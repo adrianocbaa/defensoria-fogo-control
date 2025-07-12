@@ -22,9 +22,10 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
   const [showNucleusForm, setShowNucleusForm] = useState(false);
+  const [nuclei, setNuclei] = useState(mockNuclei);
   const { toast } = useToast();
 
-  const filteredNuclei = mockNuclei.filter(nucleus => {
+  const filteredNuclei = nuclei.filter(nucleus => {
     const matchesSearch = nucleus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          nucleus.city.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -35,15 +36,15 @@ const Index = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const totalExtinguishers = mockNuclei.reduce((total, nucleus) => 
+  const totalExtinguishers = nuclei.reduce((total, nucleus) => 
     total + nucleus.fireExtinguishers.length, 0
   );
 
-  const expiredExtinguishers = mockNuclei.reduce((total, nucleus) => 
+  const expiredExtinguishers = nuclei.reduce((total, nucleus) => 
     total + nucleus.fireExtinguishers.filter(ext => ext.status === 'expired').length, 0
   );
 
-  const nucleiWithHydrant = mockNuclei.filter(nucleus => nucleus.hasHydrant).length;
+  const nucleiWithHydrant = nuclei.filter(nucleus => nucleus.hasHydrant).length;
 
   const handleViewDetails = (nucleusId: string) => {
     // TODO: Navigate to nucleus details page
@@ -51,7 +52,26 @@ const Index = () => {
   };
 
   const handleNucleusSubmit = (data: any) => {
-    console.log('Dados do novo núcleo:', data);
+    const newNucleus = {
+      id: crypto.randomUUID(),
+      name: data.name,
+      city: data.city,
+      address: data.address,
+      coordinates: data.coordinates,
+      hasHydrant: data.hasHydrant,
+      contact: {},
+      fireExtinguishers: [],
+      documents: [],
+      fireDepartmentLicense: data.hasAVCB ? {
+        validUntil: data.avcbExpirationDate,
+        documentUrl: data.avcbFile?.name
+      } : undefined,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    setNuclei([...nuclei, newNucleus]);
+    
     toast({
       title: "Núcleo cadastrado com sucesso!",
       description: `${data.name} foi adicionado ao sistema.`,
@@ -104,7 +124,7 @@ const Index = () => {
             <Building2 className="h-5 w-5 text-primary" />
             <span className="text-sm font-medium text-muted-foreground">Total de Núcleos</span>
           </div>
-          <div className="text-2xl font-bold text-foreground">{mockNuclei.length}</div>
+          <div className="text-2xl font-bold text-foreground">{nuclei.length}</div>
         </div>
 
         <div className="bg-card rounded-lg border p-4">
@@ -174,7 +194,7 @@ const Index = () => {
       {/* Results Count */}
       <div className="flex items-center gap-2 mb-4">
         <span className="text-sm text-muted-foreground">
-          Exibindo {filteredNuclei.length} de {mockNuclei.length} núcleos
+          Exibindo {filteredNuclei.length} de {nuclei.length} núcleos
         </span>
         {filterHydrant !== 'all' && (
           <Badge variant="secondary" className="text-xs">

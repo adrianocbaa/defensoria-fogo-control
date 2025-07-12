@@ -29,6 +29,12 @@ import { cn } from '@/lib/utils';
 
 const nucleusFormSchema = z.object({
   name: z.string().min(1, 'Nome do núcleo é obrigatório'),
+  city: z.string().min(1, 'Cidade é obrigatória'),
+  address: z.string().min(1, 'Endereço é obrigatório'),
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }),
   hasHydrant: z.boolean(),
   hasAVCB: z.boolean(),
   avcbExpirationDate: z.date().optional(),
@@ -75,6 +81,9 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
     resolver: zodResolver(nucleusFormSchema),
     defaultValues: {
       name: '',
+      city: '',
+      address: '',
+      coordinates: { lat: 0, lng: 0 },
       hasHydrant: false,
       hasAVCB: false,
       extinguishers: {
@@ -239,6 +248,78 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
               )}
             />
 
+            {/* Cidade */}
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cidade</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Digite a cidade" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Endereço */}
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Endereço</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Digite o endereço completo" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Coordenadas */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="coordinates.lat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Latitude</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="any"
+                        placeholder="-15.601"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="coordinates.lng"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Longitude</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="any"
+                        placeholder="-56.097"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Hidrante */}
             <FormField
               control={form.control}
@@ -364,9 +445,9 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
               </div>
             </div>
 
-            {/* Hidrante Information */}
+            {/* Informações do Hidrante */}
             {hasHydrant && (
-              <div className="space-y-4 p-4 border rounded-lg">
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
                 <h3 className="text-lg font-semibold text-primary">Informações do Hidrante</h3>
                 
                 <FormField
