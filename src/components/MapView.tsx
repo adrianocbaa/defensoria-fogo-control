@@ -53,7 +53,17 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
 
     // Add markers for each nucleus
     nuclei.forEach((nucleus) => {
-      if (!nucleus.coordinates) return;
+      // Validate coordinates before creating marker
+      if (!nucleus.coordinates || 
+          typeof nucleus.coordinates.lat !== 'number' || 
+          typeof nucleus.coordinates.lng !== 'number' ||
+          nucleus.coordinates.lat < -90 || 
+          nucleus.coordinates.lat > 90 ||
+          nucleus.coordinates.lng < -180 || 
+          nucleus.coordinates.lng > 180) {
+        console.warn(`Invalid coordinates for nucleus ${nucleus.name}:`, nucleus.coordinates);
+        return; // Skip this marker
+      }
 
       // Create marker element
       const markerElement = document.createElement('div');

@@ -32,8 +32,8 @@ const nucleusFormSchema = z.object({
   city: z.string().min(1, 'Cidade é obrigatória'),
   address: z.string().min(1, 'Endereço é obrigatório'),
   coordinates: z.object({
-    lat: z.number(),
-    lng: z.number(),
+    lat: z.number().min(-90, 'Latitude deve estar entre -90 e 90').max(90, 'Latitude deve estar entre -90 e 90'),
+    lng: z.number().min(-180, 'Longitude deve estar entre -180 e 180').max(180, 'Longitude deve estar entre -180 e 180'),
   }),
   hasHydrant: z.boolean(),
   hasAVCB: z.boolean(),
@@ -83,7 +83,7 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
       name: '',
       city: '',
       address: '',
-      coordinates: { lat: 0, lng: 0 },
+      coordinates: { lat: -15.6014, lng: -56.0979 }, // Default to Cuiabá coordinates
       hasHydrant: false,
       hasAVCB: false,
       extinguishers: {
