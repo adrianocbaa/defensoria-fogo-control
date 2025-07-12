@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { MapView } from '@/components/MapView';
+import { NucleusForm } from '@/components/NucleusForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { mockNuclei } from '@/data/mockNuclei';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
   Search, 
@@ -19,6 +21,8 @@ import {
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
+  const [showNucleusForm, setShowNucleusForm] = useState(false);
+  const { toast } = useToast();
 
   const filteredNuclei = mockNuclei.filter(nucleus => {
     const matchesSearch = nucleus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,6 +48,14 @@ const Index = () => {
   const handleViewDetails = (nucleusId: string) => {
     // TODO: Navigate to nucleus details page
     console.log('Navigate to nucleus details:', nucleusId);
+  };
+
+  const handleNucleusSubmit = (data: any) => {
+    console.log('Dados do novo núcleo:', data);
+    toast({
+      title: "Núcleo cadastrado com sucesso!",
+      description: `${data.name} foi adicionado ao sistema.`,
+    });
   };
 
   return (
@@ -73,7 +85,11 @@ const Index = () => {
               <BarChart3 className="h-4 w-4 mr-2" />
               Dashboard
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90">
+            <Button 
+              size="sm" 
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => setShowNucleusForm(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Novo Núcleo
             </Button>
@@ -188,6 +204,13 @@ const Index = () => {
           </Button>
         </div>
       )}
+
+      {/* Formulário de Cadastro */}
+      <NucleusForm
+        open={showNucleusForm}
+        onOpenChange={setShowNucleusForm}
+        onSubmit={handleNucleusSubmit}
+      />
     </Layout>
   );
 };
