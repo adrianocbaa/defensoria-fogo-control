@@ -18,10 +18,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 214 19% 18%;
 
-    /* Verde institucional da Defensoria */
-    --primary: 142 71% 29%;
+    /* Verde institucional da Defensoria - baseado no site oficial */
+    --primary: 140 45% 35%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 142 71% 45%;
+    --primary-glow: 140 45% 45%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 214 19% 18%;

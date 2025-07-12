@@ -48,25 +48,36 @@ const Index = () => {
 
   return (
     <Layout>
-      {/* Page Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Núcleos da Defensoria
-          </h1>
-          <p className="text-muted-foreground">
-            Gerenciamento dos sistemas de prevenção de incêndio
-          </p>
+      {/* Breadcrumb */}
+      <nav className="mb-6">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Home</span>
+          <span>/</span>
+          <span>Fale Conosco</span>
+          <span>/</span>
+          <span className="text-foreground font-medium">Núcleos e Coordenadorias</span>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" size="sm">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Dashboard
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Núcleo
-          </Button>
+      </nav>
+
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-4">
+          Núcleos e Coordenadorias
+        </h1>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <p className="text-muted-foreground">
+            Sistema de Controle de Prevenção de Incêndio dos Núcleos da Defensoria
+          </p>
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Dashboard
+            </Button>
+            <Button size="sm" className="bg-primary hover:bg-primary/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Núcleo
+            </Button>
+          </div>
         </div>
       </div>
 
