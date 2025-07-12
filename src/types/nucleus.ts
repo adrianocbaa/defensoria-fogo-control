@@ -3,9 +3,12 @@ export interface Nucleus {
   name: string;
   city: string;
   address: string;
-  phone?: string;
-  email?: string;
   hasHydrant: boolean;
+  coordinates?: { lat: number; lng: number };
+  contact?: {
+    phone?: string;
+    email?: string;
+  };
   fireExtinguishers: FireExtinguisher[];
   documents: Document[];
   fireDepartmentLicense?: {

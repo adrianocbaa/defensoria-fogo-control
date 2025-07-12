@@ -64,16 +64,16 @@ export function NucleusCard({ nucleus, onViewDetails }: NucleusCardProps) {
             <MapPin className="h-3 w-3" />
             <span>{nucleus.address}</span>
           </div>
-          {nucleus.phone && (
+          {nucleus.contact?.phone && (
             <div className="flex items-center gap-1 mb-1">
               <Phone className="h-3 w-3" />
-              <span>{nucleus.phone}</span>
+              <span>{nucleus.contact.phone}</span>
             </div>
           )}
-          {nucleus.email && (
+          {nucleus.contact?.email && (
             <div className="flex items-center gap-1">
               <Mail className="h-3 w-3" />
-              <span className="truncate">{nucleus.email}</span>
+              <span className="truncate">{nucleus.contact.email}</span>
             </div>
           )}
         </div>

@@ -6,8 +6,11 @@ export const mockNuclei: Nucleus[] = [
     name: 'Núcleo de Cuiabá',
     city: 'Cuiabá',
     address: 'Rua Cândido Rondon, 145 - Centro',
-    phone: '(65) 3613-4000',
-    email: 'cuiaba@defensoria.mt.def.br',
+    coordinates: { lat: -15.6014, lng: -56.0979 },
+    contact: {
+      phone: '(65) 3613-4000',
+      email: 'cuiaba@defensoria.mt.def.br'
+    },
     hasHydrant: true,
     fireExtinguishers: [
       {
@@ -64,8 +67,11 @@ export const mockNuclei: Nucleus[] = [
     name: 'Núcleo de Várzea Grande',
     city: 'Várzea Grande',
     address: 'Av. Couto Magalhães, 234 - Centro',
-    phone: '(65) 3613-4100',
-    email: 'varzea@defensoria.mt.def.br',
+    coordinates: { lat: -15.6467, lng: -56.1326 },
+    contact: {
+      phone: '(65) 3613-4100',
+      email: 'varzea@defensoria.mt.def.br'
+    },
     hasHydrant: false,
     fireExtinguishers: [
       {
@@ -101,8 +107,11 @@ export const mockNuclei: Nucleus[] = [
     name: 'Núcleo de Rondonópolis',
     city: 'Rondonópolis',
     address: 'Rua Barão do Rio Branco, 456 - Centro',
-    phone: '(66) 3423-5000',
-    email: 'rondonopolis@defensoria.mt.def.br',
+    coordinates: { lat: -16.4706, lng: -54.6369 },
+    contact: {
+      phone: '(66) 3423-5000',
+      email: 'rondonopolis@defensoria.mt.def.br'
+    },
     hasHydrant: true,
     fireExtinguishers: [
       {
@@ -168,8 +177,11 @@ export const mockNuclei: Nucleus[] = [
     name: 'Núcleo de Sinop',
     city: 'Sinop',
     address: 'Av. das Flores, 789 - Setor Comercial',
-    phone: '(66) 3531-2000',
-    email: 'sinop@defensoria.mt.def.br',
+    coordinates: { lat: -11.8609, lng: -55.5025 },
+    contact: {
+      phone: '(66) 3531-2000',
+      email: 'sinop@defensoria.mt.def.br'
+    },
     hasHydrant: false,
     fireExtinguishers: [
       {
@@ -195,8 +207,11 @@ export const mockNuclei: Nucleus[] = [
     name: 'Núcleo de Cáceres',
     city: 'Cáceres',
     address: 'Rua Coronel José Dulce, 321 - Centro',
-    phone: '(65) 3223-1500',
-    email: 'caceres@defensoria.mt.def.br',
+    coordinates: { lat: -16.0735, lng: -57.6781 },
+    contact: {
+      phone: '(65) 3223-1500',
+      email: 'caceres@defensoria.mt.def.br'
+    },
     hasHydrant: true,
     fireExtinguishers: [
       {

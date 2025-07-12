@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { NucleusCard } from '@/components/NucleusCard';
+import { MapView } from '@/components/MapView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -167,16 +167,8 @@ const Index = () => {
         )}
       </div>
 
-      {/* Nuclei Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredNuclei.map((nucleus) => (
-          <NucleusCard
-            key={nucleus.id}
-            nucleus={nucleus}
-            onViewDetails={handleViewDetails}
-          />
-        ))}
-      </div>
+      {/* Mapa dos Núcleos */}
+      <MapView nuclei={filteredNuclei} onViewDetails={handleViewDetails} />
 
       {/* Empty State */}
       {filteredNuclei.length === 0 && (
