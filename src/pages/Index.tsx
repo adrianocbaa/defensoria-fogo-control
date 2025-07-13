@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { MapView } from '@/components/MapView';
 import { NucleusForm } from '@/components/NucleusForm';
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
   const [showNucleusForm, setShowNucleusForm] = useState(false);
@@ -47,8 +49,7 @@ const Index = () => {
   const nucleiWithHydrant = nuclei.filter(nucleus => nucleus.hasHydrant).length;
 
   const handleViewDetails = (nucleusId: string) => {
-    // TODO: Navigate to nucleus details page
-    console.log('Navigate to nucleus details:', nucleusId);
+    navigate(`/nucleus/${nucleusId}`);
   };
 
   const handleNucleusSubmit = (data: any) => {
