@@ -305,6 +305,11 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
                       Vencido
                     </Badge>
                   )}
+                  {nucleus.fireExtinguishers.some(ext => ext.status === 'expiring-soon') && (
+                    <Badge variant="outline" className="text-xs px-1 py-0 border-orange-500 text-orange-600">
+                      Vencendo
+                    </Badge>
+                  )}
                 </div>
               </button>
             ))}
