@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { MapSelector } from '@/components/MapSelector';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -278,45 +279,19 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
               )}
             />
 
-            {/* Coordenadas */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="coordinates.lat"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Latitude</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="any"
-                        placeholder="-15.601"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="coordinates.lng"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Longitude</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="any"
-                        placeholder="-56.097"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            {/* Localização no Mapa */}
+            <div className="space-y-2">
+              <Label>Localização do Núcleo</Label>
+              <MapSelector
+                onLocationSelect={(lat, lng) => {
+                  form.setValue('coordinates.lat', lat);
+                  form.setValue('coordinates.lng', lng);
+                }}
+                initialCoordinates={{
+                  lat: form.watch('coordinates.lat') || -15.6014,
+                  lng: form.watch('coordinates.lng') || -56.0979
+                }}
+                
               />
             </div>
 
