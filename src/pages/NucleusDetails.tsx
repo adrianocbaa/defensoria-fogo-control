@@ -17,7 +17,7 @@ import {
   FileText,
   Target
 } from 'lucide-react';
-import { mockNuclei } from '@/data/mockNuclei';
+import { useNuclei } from '@/contexts/NucleiContext';
 import { ExtinguisherType } from '@/types/nucleus';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -32,8 +32,9 @@ const extinguisherTypeLabels: Record<ExtinguisherType, string> = {
 export default function NucleusDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { getNucleusById } = useNuclei();
   
-  const nucleus = mockNuclei.find(n => n.id === id);
+  const nucleus = getNucleusById(id || '');
   
   if (!nucleus) {
     return (

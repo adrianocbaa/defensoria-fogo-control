@@ -4,9 +4,10 @@ import { Layout } from '@/components/Layout';
 import { MapView } from '@/components/MapView';
 import { NucleusForm } from '@/components/NucleusForm';
 import { Button } from '@/components/ui/button';
+import { useNuclei } from '@/contexts/NucleiContext';
+import { NucleusCard } from '@/components/NucleusCard';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { mockNuclei } from '@/data/mockNuclei';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
@@ -21,11 +22,11 @@ import {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { nuclei, addNucleus } = useNuclei();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
   const [filterExpired, setFilterExpired] = useState<'all' | 'expired'>('all');
   const [showNucleusForm, setShowNucleusForm] = useState(false);
-  const [nuclei, setNuclei] = useState(mockNuclei);
   const { toast } = useToast();
 
   const filteredNuclei = nuclei.filter(nucleus => {
@@ -79,7 +80,7 @@ const Index = () => {
       updatedAt: new Date()
     };
     
-    setNuclei([...nuclei, newNucleus]);
+    addNucleus(newNucleus);
     
     toast({
       title: "Núcleo cadastrado com sucesso!",
