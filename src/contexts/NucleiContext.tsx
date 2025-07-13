@@ -6,6 +6,7 @@ interface NucleiContextType {
   nuclei: Nucleus[];
   setNuclei: React.Dispatch<React.SetStateAction<Nucleus[]>>;
   addNucleus: (nucleus: Nucleus) => void;
+  updateNucleus: (nucleus: Nucleus) => void;
   getNucleusById: (id: string) => Nucleus | undefined;
 }
 
@@ -18,6 +19,12 @@ export function NucleiProvider({ children }: { children: ReactNode }) {
     setNuclei(prev => [...prev, nucleus]);
   };
 
+  const updateNucleus = (updatedNucleus: Nucleus) => {
+    setNuclei(prev => prev.map(nucleus => 
+      nucleus.id === updatedNucleus.id ? updatedNucleus : nucleus
+    ));
+  };
+
   const getNucleusById = (id: string) => {
     return nuclei.find(nucleus => nucleus.id === id);
   };
@@ -27,6 +34,7 @@ export function NucleiProvider({ children }: { children: ReactNode }) {
       nuclei, 
       setNuclei, 
       addNucleus, 
+      updateNucleus,
       getNucleusById 
     }}>
       {children}

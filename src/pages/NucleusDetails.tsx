@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { NucleusEditModal } from '@/components/NucleusEditModal';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -15,7 +17,8 @@ import {
   Clock,
   Shield,
   FileText,
-  Target
+  Target,
+  Edit
 } from 'lucide-react';
 import { useNuclei } from '@/contexts/NucleiContext';
 import { ExtinguisherType } from '@/types/nucleus';
@@ -32,7 +35,8 @@ const extinguisherTypeLabels: Record<ExtinguisherType, string> = {
 export default function NucleusDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getNucleusById } = useNuclei();
+  const { getNucleusById, updateNucleus } = useNuclei();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   const nucleus = getNucleusById(id || '');
   
@@ -70,19 +74,29 @@ export default function NucleusDetails() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-foreground">{nucleus.name}</h1>
             <div className="flex items-center gap-1 text-muted-foreground text-sm">
               <MapPin className="h-3 w-3" />
               <span>{nucleus.city} - {nucleus.address}</span>
             </div>
           </div>
-          {nucleus.hasHydrant && (
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-              <Droplets className="h-3 w-3 mr-1" />
-              Hidrante
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {nucleus.hasHydrant && (
+              <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Droplets className="h-3 w-3 mr-1" />
+                Hidrante
+              </Badge>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsEditModalOpen(true)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -282,6 +296,14 @@ export default function NucleusDetails() {
             )}
           </div>
         </div>
+
+        {/* Modal de Edição */}
+        <NucleusEditModal
+          nucleus={nucleus}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSave={updateNucleus}
+        />
       </div>
     </Layout>
   );
