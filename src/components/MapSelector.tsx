@@ -2,9 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { MapPin } from 'lucide-react';
 
@@ -19,17 +16,10 @@ export function MapSelector({ onLocationSelect, initialCoordinates }: MapSelecto
   const marker = useRef<mapboxgl.Marker | null>(null);
   const [selectedCoords, setSelectedCoords] = useState(initialCoordinates);
   const [isOpen, setIsOpen] = useState(false);
-  const [mapboxToken, setMapboxToken] = useState('pk.eyJ1IjoiYWRyaWFub2NiYSIsImEiOiJjbWQwZzhpeXUxODhoMmpvamZjNjJkaWp4In0.JJXOdRVWf2yKoxlmk_8RNQ');
-  const [tokenSubmitted, setTokenSubmitted] = useState(false);
-
-  const handleTokenSubmit = () => {
-    if (mapboxToken.trim()) {
-      setTokenSubmitted(true);
-    }
-  };
+  const mapboxToken = 'pk.eyJ1IjoiYWRyaWFub2NiYSIsImEiOiJjbWQwZzhpeXUxODhoMmpvamZjNjJkaWp4In0.JJXOdRVWf2yKoxlmk_8RNQ';
 
   useEffect(() => {
-    if (!mapContainer.current || !isOpen || !tokenSubmitted || !mapboxToken) return;
+    if (!mapContainer.current || !isOpen) return;
 
     // Initialize map
     mapboxgl.accessToken = mapboxToken;
@@ -88,7 +78,7 @@ export function MapSelector({ onLocationSelect, initialCoordinates }: MapSelecto
     return () => {
       map.current?.remove();
     };
-  }, [isOpen, tokenSubmitted, mapboxToken, initialCoordinates]);
+  }, [isOpen, mapboxToken, initialCoordinates]);
 
   const handleConfirm = () => {
     if (selectedCoords) {
@@ -113,67 +103,27 @@ export function MapSelector({ onLocationSelect, initialCoordinates }: MapSelecto
           <DialogTitle>Selecionar Localização no Mapa</DialogTitle>
         </DialogHeader>
         
-        {!tokenSubmitted ? (
-          <div className="flex items-center justify-center h-full">
-            <Card className="w-full max-w-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Configurar Mapa
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="mapbox-token">Token Público do Mapbox</Label>
-                  <Input
-                    id="mapbox-token"
-                    type="text"
-                    placeholder="pk.ey..."
-                    value={mapboxToken}
-                    onChange={(e) => setMapboxToken(e.target.value)}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Obtenha seu token em{' '}
-                    <a 
-                      href="https://mapbox.com/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      mapbox.com
-                    </a>
-                  </p>
-                </div>
-                <Button onClick={handleTokenSubmit} className="w-full">
-                  Carregar Mapa
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="flex flex-col gap-4 h-full">
+          <div className="text-sm text-muted-foreground">
+            Clique no mapa para selecionar a localização do núcleo. Você pode arrastar o marcador para ajustar a posição.
           </div>
-        ) : (
-          <div className="flex flex-col gap-4 h-full">
-            <div className="text-sm text-muted-foreground">
-              Clique no mapa para selecionar a localização do núcleo. Você pode arrastar o marcador para ajustar a posição.
+          <div ref={mapContainer} className="flex-1 rounded-lg border" />
+          {selectedCoords && (
+            <div className="text-sm">
+              <strong>Coordenadas selecionadas:</strong><br />
+              Latitude: {selectedCoords.lat.toFixed(6)}<br />
+              Longitude: {selectedCoords.lng.toFixed(6)}
             </div>
-            <div ref={mapContainer} className="flex-1 rounded-lg border" />
-            {selectedCoords && (
-              <div className="text-sm">
-                <strong>Coordenadas selecionadas:</strong><br />
-                Latitude: {selectedCoords.lat.toFixed(6)}<br />
-                Longitude: {selectedCoords.lng.toFixed(6)}
-              </div>
-            )}
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleConfirm} disabled={!selectedCoords}>
-                Confirmar Localização
-              </Button>
-            </div>
+          )}
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirm} disabled={!selectedCoords}>
+              Confirmar Localização
+            </Button>
           </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   );
