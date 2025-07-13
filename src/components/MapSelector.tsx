@@ -19,7 +19,7 @@ export function MapSelector({ onLocationSelect, initialCoordinates }: MapSelecto
   const marker = useRef<mapboxgl.Marker | null>(null);
   const [selectedCoords, setSelectedCoords] = useState(initialCoordinates);
   const [isOpen, setIsOpen] = useState(false);
-  const [mapboxToken, setMapboxToken] = useState('pk.eyJ1IjoiYWRyaWFub2NiYSIsImEiOiJjbWQwZzhpeXUxODhoMmpvamZjNjJkaWJ4In0.JJXOdRVWf2yKoxlmk_8RNQ');
+  const [mapboxToken, setMapboxToken] = useState('pk.eyJ1IjoiYWRyaWFub2NiYSIsImEiOiJjbWQwZzhpeXUxODhoMmpvamZjNjJkaWp4In0.JJXOdRVWf2yKoxlmk_8RNQ');
   const [tokenSubmitted, setTokenSubmitted] = useState(true);
 
   const handleTokenSubmit = () => {

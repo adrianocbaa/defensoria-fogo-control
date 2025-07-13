@@ -23,6 +23,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
+  const [filterExpired, setFilterExpired] = useState<'all' | 'expired'>('all');
   const [showNucleusForm, setShowNucleusForm] = useState(false);
   const [nuclei, setNuclei] = useState(mockNuclei);
   const { toast } = useToast();
@@ -31,11 +32,18 @@ const Index = () => {
     const matchesSearch = nucleus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          nucleus.city.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFilter = filterHydrant === 'all' ||
-                         (filterHydrant === 'with' && nucleus.hasHydrant) ||
-                         (filterHydrant === 'without' && !nucleus.hasHydrant);
+    const matchesHydrant = filterHydrant === 'all' ||
+                          (filterHydrant === 'with' && nucleus.hasHydrant) ||
+                          (filterHydrant === 'without' && !nucleus.hasHydrant);
 
-    return matchesSearch && matchesFilter;
+    const hasExpiredItems = filterExpired === 'all' || 
+                           (filterExpired === 'expired' && (
+                             nucleus.fireExtinguishers.some(ext => ext.status === 'expired') ||
+                             (nucleus.fireDepartmentLicense?.validUntil && 
+                              new Date(nucleus.fireDepartmentLicense.validUntil) < new Date())
+                           ));
+
+    return matchesSearch && matchesHydrant && hasExpiredItems;
   });
 
   const totalExtinguishers = nuclei.reduce((total, nucleus) => 
@@ -189,6 +197,14 @@ const Index = () => {
           >
             Sem Hidrante
           </Button>
+          <Button
+            variant={filterExpired === 'expired' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterExpired(filterExpired === 'expired' ? 'all' : 'expired')}
+          >
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Vencidos
+          </Button>
         </div>
       </div>
 
@@ -200,6 +216,11 @@ const Index = () => {
         {filterHydrant !== 'all' && (
           <Badge variant="secondary" className="text-xs">
             {filterHydrant === 'with' ? 'Com hidrante' : 'Sem hidrante'}
+          </Badge>
+        )}
+        {filterExpired === 'expired' && (
+          <Badge variant="destructive" className="text-xs">
+            Vencidos
           </Badge>
         )}
       </div>

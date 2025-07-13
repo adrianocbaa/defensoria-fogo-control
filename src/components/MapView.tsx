@@ -27,13 +27,14 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [selectedNucleus, setSelectedNucleus] = useState<Nucleus | null>(null);
-  const [mapboxToken, setMapboxToken] = useState('pk.eyJ1IjoiYWRyaWFub2NiYSIsImEiOiJjbWQwZzhpeXUxODhoMmpvamZjNjJkaWJ4In0.JJXOdRVWf2yKoxlmk_8RNQ');
+  const [mapboxToken, setMapboxToken] = useState('pk.eyJ1IjoiYWRyaWFub2NiYSIsImEiOiJjbWQwZzhpeXUxODhoMmpvamZjNjJkaWp4In0.JJXOdRVWf2yKoxlmk_8RNQ');
   const [tokenSubmitted, setTokenSubmitted] = useState(true);
 
   useEffect(() => {
     if (!mapContainer.current || !tokenSubmitted || !mapboxToken) return;
 
     // Initialize map
+    console.log('Initializing map with token:', mapboxToken.substring(0, 20) + '...');
     mapboxgl.accessToken = mapboxToken;
     
     map.current = new mapboxgl.Map({
@@ -41,6 +42,16 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
       style: 'mapbox://styles/mapbox/light-v11',
       center: [-55.6528, -15.6014], // Centro de Mato Grosso
       zoom: 6,
+      attributionControl: false
+    });
+
+    // Add error handling
+    map.current.on('error', (e) => {
+      console.error('Mapbox error:', e);
+    });
+
+    map.current.on('load', () => {
+      console.log('Map loaded successfully');
     });
 
     // Add navigation controls
