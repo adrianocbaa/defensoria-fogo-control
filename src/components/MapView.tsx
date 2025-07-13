@@ -23,6 +23,33 @@ interface MapViewProps {
   onViewDetails: (nucleusId: string) => void;
 }
 
+const getMarkerColor = (nucleus: Nucleus) => {
+  const now = new Date();
+  const twoMonthsFromNow = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000); // 60 days
+  
+  // Check for expired items
+  const hasExpiredExtinguishers = nucleus.fireExtinguishers.some(ext => ext.status === 'expired');
+  const hasExpiredLicense = nucleus.fireDepartmentLicense?.validUntil 
+    ? new Date(nucleus.fireDepartmentLicense.validUntil) < now
+    : false;
+  
+  if (hasExpiredExtinguishers || hasExpiredLicense) {
+    return '#ef4444'; // Red for expired items
+  }
+  
+  // Check for items expiring soon
+  const hasExpiringSoonExtinguishers = nucleus.fireExtinguishers.some(ext => ext.status === 'expiring-soon');
+  const hasExpiringSoonLicense = nucleus.fireDepartmentLicense?.validUntil 
+    ? new Date(nucleus.fireDepartmentLicense.validUntil) <= twoMonthsFromNow && new Date(nucleus.fireDepartmentLicense.validUntil) >= now
+    : false;
+  
+  if (hasExpiringSoonExtinguishers || hasExpiringSoonLicense) {
+    return '#f97316'; // Orange for expiring soon
+  }
+  
+  return '#22c55e'; // Green for normal status
+};
+
 export function MapView({ nuclei, onViewDetails }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -79,7 +106,7 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
       // Create marker element
       const markerElement = document.createElement('div');
       markerElement.className = 'marker';
-      markerElement.style.backgroundColor = '#22c55e';
+      markerElement.style.backgroundColor = getMarkerColor(nucleus);
       markerElement.style.width = '20px';
       markerElement.style.height = '20px';
       markerElement.style.borderRadius = '50%';

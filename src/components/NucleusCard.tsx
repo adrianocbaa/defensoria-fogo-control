@@ -29,12 +29,15 @@ export function NucleusCard({ nucleus, onViewDetails }: NucleusCardProps) {
   ).length;
 
   const isLicenseExpiringSoon = nucleus.fireDepartmentLicense?.validUntil 
-    ? new Date(nucleus.fireDepartmentLicense.validUntil) <= new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+    ? new Date(nucleus.fireDepartmentLicense.validUntil) <= new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
     : false;
 
   const isLicenseExpired = nucleus.fireDepartmentLicense?.validUntil 
     ? new Date(nucleus.fireDepartmentLicense.validUntil) < new Date()
     : false;
+
+  const hasWarnings = expiringSoonExtinguishers > 0 || (isLicenseExpiringSoon && !isLicenseExpired);
+  const hasErrors = expiredExtinguishers > 0 || isLicenseExpired;
 
   return (
     <Card className="h-full transition-all duration-200 hover:shadow-md border-l-4 border-l-primary">
@@ -49,12 +52,20 @@ export function NucleusCard({ nucleus, onViewDetails }: NucleusCardProps) {
               <span>{nucleus.city}</span>
             </div>
           </div>
-          {nucleus.hasHydrant && (
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-              <Droplets className="h-3 w-3 mr-1" />
-              Hidrante
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {hasErrors && (
+              <AlertTriangle className="h-5 w-5 text-danger" />
+            )}
+            {hasWarnings && !hasErrors && (
+              <AlertTriangle className="h-5 w-5 text-warning" />
+            )}
+            {nucleus.hasHydrant && (
+              <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Droplets className="h-3 w-3 mr-1" />
+                Hidrante
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
 
