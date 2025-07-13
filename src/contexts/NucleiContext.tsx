@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Nucleus } from '@/types/nucleus';
-import { mockNuclei } from '@/data/mockNuclei';
 
 interface NucleiContextType {
   nuclei: Nucleus[];
@@ -13,7 +12,7 @@ interface NucleiContextType {
 const NucleiContext = createContext<NucleiContextType | undefined>(undefined);
 
 export function NucleiProvider({ children }: { children: ReactNode }) {
-  const [nuclei, setNuclei] = useState<Nucleus[]>(mockNuclei);
+  const [nuclei, setNuclei] = useState<Nucleus[]>([]);
 
   const addNucleus = (nucleus: Nucleus) => {
     setNuclei(prev => [...prev, nucleus]);

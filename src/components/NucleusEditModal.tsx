@@ -24,8 +24,10 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
   const [formData, setFormData] = useState<Nucleus>(nucleus);
 
   useEffect(() => {
-    setFormData(nucleus);
-  }, [nucleus]);
+    if (open) {
+      setFormData(nucleus);
+    }
+  }, [nucleus, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -285,7 +287,7 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                     </div>
                     
                     <div>
-                      <Label>Localização *</Label>
+                      <Label>Local de Instalação *</Label>
                       <Input
                         value={extinguisher.location}
                         onChange={(e) => updateExtinguisher(extinguisher.id, 'location', e.target.value)}

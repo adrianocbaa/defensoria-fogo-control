@@ -233,9 +233,9 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
               />
             </div>
 
-            {/* Localização no Mapa */}
+            {/* Local de Instalação no Mapa */}
             <div className="space-y-2">
-              <Label>Localização do Núcleo</Label>
+              <Label>Local de Instalação do Núcleo</Label>
               <MapSelector
                 onLocationSelect={(lat, lng) => {
                   form.setValue('coordinates.lat', lat);
@@ -390,12 +390,12 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name={`extinguishers.${index}.location`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Localização</FormLabel>
+                     <FormField
+                       control={form.control}
+                       name={`extinguishers.${index}.location`}
+                       render={({ field }) => (
+                         <FormItem>
+                           <FormLabel>Local de Instalação</FormLabel>
                           <FormControl>
                             <Input placeholder="Ex: Recepção, Sala de Informática" {...field} />
                           </FormControl>
