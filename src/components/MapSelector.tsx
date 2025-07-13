@@ -19,63 +19,71 @@ export function MapSelector({ onLocationSelect, initialCoordinates }: MapSelecto
   const mapboxToken = 'pk.eyJ1IjoiYWRyaWFub2NiYSIsImEiOiJjbWQwZzhpeXUxODhoMmpvamZjNjJkaWp4In0.JJXOdRVWf2yKoxlmk_8RNQ';
 
   useEffect(() => {
-    if (!mapContainer.current || !isOpen) return;
+    if (!isOpen) return;
 
-    // Initialize map
-    mapboxgl.accessToken = mapboxToken;
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [initialCoordinates?.lng || -56.0979, initialCoordinates?.lat || -15.6014],
-      zoom: 12,
-    });
+    const initializeMap = () => {
+      if (!mapContainer.current) return;
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    // Add initial marker if coordinates exist
-    if (initialCoordinates) {
-      marker.current = new mapboxgl.Marker({ draggable: true })
-        .setLngLat([initialCoordinates.lng, initialCoordinates.lat])
-        .addTo(map.current);
-
-      // Handle marker drag
-      marker.current.on('dragend', () => {
-        if (marker.current) {
-          const lngLat = marker.current.getLngLat();
-          setSelectedCoords({ lat: lngLat.lat, lng: lngLat.lng });
-        }
-      });
-    }
-
-    // Handle map clicks
-    map.current.on('click', (e) => {
-      const { lng, lat } = e.lngLat;
+      // Initialize map
+      mapboxgl.accessToken = mapboxToken;
       
-      // Remove existing marker
-      if (marker.current) {
-        marker.current.remove();
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [initialCoordinates?.lng || -56.0979, initialCoordinates?.lat || -15.6014],
+        zoom: 12,
+      });
+
+      // Add navigation controls
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      // Add initial marker if coordinates exist
+      if (initialCoordinates) {
+        marker.current = new mapboxgl.Marker({ draggable: true })
+          .setLngLat([initialCoordinates.lng, initialCoordinates.lat])
+          .addTo(map.current);
+
+        // Handle marker drag
+        marker.current.on('dragend', () => {
+          if (marker.current) {
+            const lngLat = marker.current.getLngLat();
+            setSelectedCoords({ lat: lngLat.lat, lng: lngLat.lng });
+          }
+        });
       }
 
-      // Add new marker
-      marker.current = new mapboxgl.Marker({ draggable: true })
-        .setLngLat([lng, lat])
-        .addTo(map.current!);
-
-      // Handle marker drag
-      marker.current.on('dragend', () => {
+      // Handle map clicks
+      map.current.on('click', (e) => {
+        const { lng, lat } = e.lngLat;
+        
+        // Remove existing marker
         if (marker.current) {
-          const lngLat = marker.current.getLngLat();
-          setSelectedCoords({ lat: lngLat.lat, lng: lngLat.lng });
+          marker.current.remove();
         }
-      });
 
-      setSelectedCoords({ lat, lng });
-    });
+        // Add new marker
+        marker.current = new mapboxgl.Marker({ draggable: true })
+          .setLngLat([lng, lat])
+          .addTo(map.current!);
+
+        // Handle marker drag
+        marker.current.on('dragend', () => {
+          if (marker.current) {
+            const lngLat = marker.current.getLngLat();
+            setSelectedCoords({ lat: lngLat.lat, lng: lngLat.lng });
+          }
+        });
+
+        setSelectedCoords({ lat, lng });
+      });
+    };
+
+    // Add a small delay to ensure the container is properly rendered
+    const timer = setTimeout(initializeMap, 100);
 
     // Cleanup
     return () => {
+      clearTimeout(timer);
       map.current?.remove();
     };
   }, [isOpen, mapboxToken, initialCoordinates]);
