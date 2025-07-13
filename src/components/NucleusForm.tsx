@@ -187,6 +187,36 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
               )}
             />
 
+            {/* Local de Instalação no Mapa */}
+            <div className="space-y-2">
+              <Label>Local de Instalação do Núcleo</Label>
+              <MapSelector
+                onLocationSelect={async (lat, lng) => {
+                  form.setValue('coordinates.lat', lat);
+                  form.setValue('coordinates.lng', lng);
+                  
+                  // Fazer geocoding reverso para preencher o endereço
+                  try {
+                    const response = await fetch(
+                      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw&language=pt`
+                    );
+                    const data = await response.json();
+                    
+                    if (data.features && data.features.length > 0) {
+                      const address = data.features[0].place_name;
+                      form.setValue('address', address);
+                    }
+                  } catch (error) {
+                    console.error('Erro ao obter endereço:', error);
+                  }
+                }}
+                initialCoordinates={{
+                  lat: form.watch('coordinates.lat') || -15.6014,
+                  lng: form.watch('coordinates.lng') || -56.0979
+                }}
+              />
+            </div>
+
             {/* Endereço */}
             <FormField
               control={form.control}
@@ -230,22 +260,6 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                     <FormMessage />
                   </FormItem>
                 )}
-              />
-            </div>
-
-            {/* Local de Instalação no Mapa */}
-            <div className="space-y-2">
-              <Label>Local de Instalação do Núcleo</Label>
-              <MapSelector
-                onLocationSelect={(lat, lng) => {
-                  form.setValue('coordinates.lat', lat);
-                  form.setValue('coordinates.lng', lng);
-                }}
-                initialCoordinates={{
-                  lat: form.watch('coordinates.lat') || -15.6014,
-                  lng: form.watch('coordinates.lng') || -56.0979
-                }}
-                
               />
             </div>
 
