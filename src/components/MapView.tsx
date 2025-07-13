@@ -27,8 +27,8 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [selectedNucleus, setSelectedNucleus] = useState<Nucleus | null>(null);
-  const [mapboxToken, setMapboxToken] = useState('pk.eyJ1IjoiYWRyaWFub2NiYSIsImEiOiJjbWQwZzhpeXUxODhoMmpvamZjNjJkaWp4In0.JJXOdRVWf2yKoxlmk_8RNQ');
-  const [tokenSubmitted, setTokenSubmitted] = useState(true);
+  const [mapboxToken, setMapboxToken] = useState('');
+  const [tokenSubmitted, setTokenSubmitted] = useState(false);
 
   useEffect(() => {
     if (!mapContainer.current || !tokenSubmitted || !mapboxToken) return;
@@ -110,6 +110,48 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
     }
   };
 
+
+  if (!tokenSubmitted || !mapboxToken) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Configurar Mapa
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="mapbox-token">Token Público do Mapbox</Label>
+              <Input
+                id="mapbox-token"
+                type="text"
+                placeholder="pk.ey..."
+                value={mapboxToken}
+                onChange={(e) => setMapboxToken(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Obtenha seu token em{' '}
+                <a 
+                  href="https://mapbox.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  mapbox.com
+                </a>
+              </p>
+            </div>
+            <Button onClick={handleTokenSubmit} className="w-full" disabled={!mapboxToken.trim()}>
+              Carregar Mapa
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-[600px] border rounded-lg overflow-hidden">
