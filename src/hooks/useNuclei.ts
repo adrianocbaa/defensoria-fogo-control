@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Nucleus, FireExtinguisher, Document } from '@/types/nucleus';
 
 export function useNuclei() {
   const [nuclei, setNuclei] = useState<Nucleus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   // Fetch all nuclei with their fire extinguishers and documents
   const fetchNuclei = async () => {
@@ -93,6 +95,10 @@ export function useNuclei() {
 
   // Add new nucleus
   const addNucleus = async (nucleus: Omit<Nucleus, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) {
+      setError('Usuário não autenticado');
+      return;
+    }
     try {
       // Insert nucleus
       const { data: nucleusData, error: nucleusError } = await supabase
@@ -108,6 +114,7 @@ export function useNuclei() {
           contact_email: nucleus.contact?.email,
           fire_department_license_valid_until: nucleus.fireDepartmentLicense?.validUntil?.toISOString().split('T')[0],
           fire_department_license_document_url: nucleus.fireDepartmentLicense?.documentUrl,
+          user_id: user.id,
         })
         .select()
         .single();

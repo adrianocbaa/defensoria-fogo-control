@@ -1,11 +1,15 @@
 import { ReactNode } from 'react';
-import { Building2, Shield } from 'lucide-react';
+import { Building2, Shield, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
+  const { user, signOut } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar governamental */}
@@ -35,12 +39,37 @@ export function Layout({ children }: LayoutProps) {
                 </p>
               </div>
             </div>
-            <div className="hidden md:flex gap-6 text-sm font-medium">
-              <span>INSTITUCIONAL</span>
-              <span>SERVIÇOS</span>
-              <span>IMPRENSA</span>
-              <span>TRANSPARÊNCIA</span>
-              <span>FALE CONOSCO</span>
+            <div className="flex items-center gap-6">
+              <div className="hidden md:flex gap-6 text-sm font-medium">
+                <span>INSTITUCIONAL</span>
+                <span>SERVIÇOS</span>
+                <span>IMPRENSA</span>
+                <span>TRANSPARÊNCIA</span>
+                <span>FALE CONOSCO</span>
+              </div>
+              
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {user?.email?.split('@')[0] || 'Usuário'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem disabled>
+                    <User className="mr-2 h-4 w-4" />
+                    {user?.email}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
