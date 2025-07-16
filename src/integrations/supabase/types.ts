@@ -14,7 +14,145 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      documents: {
+        Row: {
+          id: string
+          mime_type: string | null
+          name: string
+          nucleus_id: string
+          size: number | null
+          type: Database["public"]["Enums"]["document_type"]
+          uploaded_at: string
+          url: string
+        }
+        Insert: {
+          id?: string
+          mime_type?: string | null
+          name: string
+          nucleus_id: string
+          size?: number | null
+          type: Database["public"]["Enums"]["document_type"]
+          uploaded_at?: string
+          url: string
+        }
+        Update: {
+          id?: string
+          mime_type?: string | null
+          name?: string
+          nucleus_id?: string
+          size?: number | null
+          type?: Database["public"]["Enums"]["document_type"]
+          uploaded_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fire_extinguishers: {
+        Row: {
+          capacity: string | null
+          created_at: string
+          expiration_date: string
+          id: string
+          last_inspection: string | null
+          location: string
+          nucleus_id: string
+          serial_number: string | null
+          status: Database["public"]["Enums"]["extinguisher_status"]
+          type: Database["public"]["Enums"]["extinguisher_type"]
+          updated_at: string
+        }
+        Insert: {
+          capacity?: string | null
+          created_at?: string
+          expiration_date: string
+          id?: string
+          last_inspection?: string | null
+          location: string
+          nucleus_id: string
+          serial_number?: string | null
+          status: Database["public"]["Enums"]["extinguisher_status"]
+          type: Database["public"]["Enums"]["extinguisher_type"]
+          updated_at?: string
+        }
+        Update: {
+          capacity?: string | null
+          created_at?: string
+          expiration_date?: string
+          id?: string
+          last_inspection?: string | null
+          location?: string
+          nucleus_id?: string
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["extinguisher_status"]
+          type?: Database["public"]["Enums"]["extinguisher_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fire_extinguishers_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nuclei: {
+        Row: {
+          address: string
+          city: string
+          contact_email: string | null
+          contact_phone: string | null
+          coordinates_lat: number | null
+          coordinates_lng: number | null
+          created_at: string
+          fire_department_license_document_url: string | null
+          fire_department_license_valid_until: string | null
+          has_hydrant: boolean
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          city: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          created_at?: string
+          fire_department_license_document_url?: string | null
+          fire_department_license_valid_until?: string | null
+          has_hydrant?: boolean
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          created_at?: string
+          fire_department_license_document_url?: string | null
+          fire_department_license_valid_until?: string | null
+          has_hydrant?: boolean
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +161,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      document_type: "project" | "fire-license" | "photos" | "report"
+      extinguisher_status: "valid" | "expired" | "expiring-soon"
+      extinguisher_type: "H2O" | "PQS" | "CO2" | "ABC"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +290,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      document_type: ["project", "fire-license", "photos", "report"],
+      extinguisher_status: ["valid", "expired", "expiring-soon"],
+      extinguisher_type: ["H2O", "PQS", "CO2", "ABC"],
+    },
   },
 } as const

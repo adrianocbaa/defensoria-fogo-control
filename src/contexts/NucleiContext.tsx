@@ -1,41 +1,24 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { Nucleus } from '@/types/nucleus';
+import { useNuclei as useNucleiHook } from '@/hooks/useNuclei';
 
 interface NucleiContextType {
   nuclei: Nucleus[];
-  setNuclei: React.Dispatch<React.SetStateAction<Nucleus[]>>;
-  addNucleus: (nucleus: Nucleus) => void;
-  updateNucleus: (nucleus: Nucleus) => void;
+  loading: boolean;
+  error: string | null;
+  addNucleus: (nucleus: Omit<Nucleus, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateNucleus: (nucleus: Nucleus) => Promise<void>;
   getNucleusById: (id: string) => Nucleus | undefined;
+  refetch: () => Promise<void>;
 }
 
 const NucleiContext = createContext<NucleiContextType | undefined>(undefined);
 
 export function NucleiProvider({ children }: { children: ReactNode }) {
-  const [nuclei, setNuclei] = useState<Nucleus[]>([]);
-
-  const addNucleus = (nucleus: Nucleus) => {
-    setNuclei(prev => [...prev, nucleus]);
-  };
-
-  const updateNucleus = (updatedNucleus: Nucleus) => {
-    setNuclei(prev => prev.map(nucleus => 
-      nucleus.id === updatedNucleus.id ? updatedNucleus : nucleus
-    ));
-  };
-
-  const getNucleusById = (id: string) => {
-    return nuclei.find(nucleus => nucleus.id === id);
-  };
+  const nucleiData = useNucleiHook();
 
   return (
-    <NucleiContext.Provider value={{ 
-      nuclei, 
-      setNuclei, 
-      addNucleus, 
-      updateNucleus,
-      getNucleusById 
-    }}>
+    <NucleiContext.Provider value={nucleiData}>
       {children}
     </NucleiContext.Provider>
   );

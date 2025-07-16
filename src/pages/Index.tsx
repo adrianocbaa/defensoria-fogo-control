@@ -9,6 +9,7 @@ import { NucleusCard } from '@/components/NucleusCard';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { seedDatabase } from '@/utils/seedDatabase';
 import { 
   Plus, 
   Search, 
@@ -17,12 +18,13 @@ import {
   Droplets,
   AlertTriangle,
   Clock,
-  BarChart3
+  BarChart3,
+  Database
 } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { nuclei, addNucleus } = useNuclei();
+  const { nuclei, addNucleus, loading, refetch } = useNuclei();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
   const [filterExpired, setFilterExpired] = useState<'all' | 'expired'>('all');
@@ -150,6 +152,29 @@ const Index = () => {
             <Button variant="outline" size="sm">
               <BarChart3 className="h-4 w-4 mr-2" />
               Dashboard
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                try {
+                  await seedDatabase();
+                  await refetch();
+                  toast({
+                    title: "Dados importados com sucesso!",
+                    description: "Os dados de exemplo foram carregados no banco de dados.",
+                  });
+                } catch (error) {
+                  toast({
+                    title: "Erro ao importar dados",
+                    description: "Verifique o console para mais detalhes.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              <Database className="h-4 w-4 mr-2" />
+              Importar Dados
             </Button>
             <Button 
               size="sm" 
