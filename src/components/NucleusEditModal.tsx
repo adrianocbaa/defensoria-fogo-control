@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, Upload } from 'lucide-react';
 import { Nucleus, ExtinguisherType, DocumentType, ExtinguisherStatus } from '@/types/nucleus';
 import { useToast } from '@/hooks/use-toast';
+import { MapSelector } from '@/components/MapSelector';
 
 interface NucleusEditModalProps {
   nucleus: Nucleus;
@@ -128,6 +129,42 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
     }));
   };
 
+  const addHydrant = () => {
+    const newHydrant = {
+      id: Date.now().toString(),
+      location: '',
+      status: 'not_verified' as const,
+      hoseExpirationDate: undefined,
+      hasRegister: false,
+      hasHose: false,
+      hasKey: false,
+      hasCoupling: false,
+      hasAdapter: false,
+      hasNozzle: false,
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      hydrants: [...prev.hydrants, newHydrant]
+    }));
+  };
+
+  const removeHydrant = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      hydrants: prev.hydrants.filter(hydrant => hydrant.id !== id)
+    }));
+  };
+
+  const updateHydrant = (id: string, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      hydrants: prev.hydrants.map(hydrant => 
+        hydrant.id === id ? { ...hydrant, [field]: value } : hydrant
+      )
+    }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -169,14 +206,18 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                   required
                 />
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="hasHydrant"
-                  checked={false}
-                  disabled
-                  onCheckedChange={() => {}}
+              <div className="md:col-span-2">
+                <Label>Local de Instalação no Mapa</Label>
+                <MapSelector
+                  address={formData.address}
+                  onLocationSelect={(lat, lng) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      coordinates: { lat, lng }
+                    }));
+                  }}
+                  initialCoordinates={formData.coordinates || { lat: -15.6014, lng: -56.0979 }}
                 />
-                <Label htmlFor="hasHydrant">Hidrantes (configurar separadamente)</Label>
               </div>
             </CardContent>
           </Card>
@@ -247,7 +288,7 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                 <CardTitle className="text-lg">Extintores de Incêndio</CardTitle>
                 <Button type="button" onClick={addExtinguisher} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
+                  Adicionar Extintor
                 </Button>
               </div>
             </CardHeader>
@@ -333,6 +374,131 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                           e.target.value ? new Date(e.target.value) : undefined
                         )}
                       />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Hidrantes */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Hidrantes</CardTitle>
+                <Button type="button" onClick={addHydrant} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Hidrante
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.hydrants.map((hydrant, index) => (
+                <div key={hydrant.id} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium">Hidrante {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeHydrant(hydrant.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Local de Instalação *</Label>
+                      <Input
+                        value={hydrant.location}
+                        onChange={(e) => updateHydrant(hydrant.id, 'location', e.target.value)}
+                        placeholder="Ex: Hall de entrada, Térreo"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Status</Label>
+                      <Select
+                        value={hydrant.status}
+                        onValueChange={(value) => updateHydrant(hydrant.id, 'status', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="verified">Verificado</SelectItem>
+                          <SelectItem value="not_verified">Não Verificado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Validade da Mangueira</Label>
+                      <Input
+                        type="date"
+                        value={hydrant.hoseExpirationDate 
+                          ? new Date(hydrant.hoseExpirationDate).toISOString().split('T')[0]
+                          : ''
+                        }
+                        onChange={(e) => updateHydrant(hydrant.id, 'hoseExpirationDate', 
+                          e.target.value ? new Date(e.target.value) : undefined
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium mb-3 block">Componentes Disponíveis</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hydrant.hasRegister}
+                          onCheckedChange={(checked) => updateHydrant(hydrant.id, 'hasRegister', checked)}
+                        />
+                        <Label className="text-sm">Registro</Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hydrant.hasHose}
+                          onCheckedChange={(checked) => updateHydrant(hydrant.id, 'hasHose', checked)}
+                        />
+                        <Label className="text-sm">Mangueira</Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hydrant.hasKey}
+                          onCheckedChange={(checked) => updateHydrant(hydrant.id, 'hasKey', checked)}
+                        />
+                        <Label className="text-sm">Chave</Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hydrant.hasCoupling}
+                          onCheckedChange={(checked) => updateHydrant(hydrant.id, 'hasCoupling', checked)}
+                        />
+                        <Label className="text-sm">Engate</Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hydrant.hasAdapter}
+                          onCheckedChange={(checked) => updateHydrant(hydrant.id, 'hasAdapter', checked)}
+                        />
+                        <Label className="text-sm">Adaptador</Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hydrant.hasNozzle}
+                          onCheckedChange={(checked) => updateHydrant(hydrant.id, 'hasNozzle', checked)}
+                        />
+                        <Label className="text-sm">Esguicho</Label>
+                      </div>
                     </div>
                   </div>
                 </div>
