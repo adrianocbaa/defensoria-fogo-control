@@ -9,7 +9,7 @@ export function useNuclei() {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  // Fetch all nuclei with their fire extinguishers and documents
+  // Fetch all nuclei with their fire extinguishers, hydrants and documents
   const fetchNuclei = async () => {
     try {
       setLoading(true);
@@ -29,6 +29,13 @@ export function useNuclei() {
 
       if (extinguishersError) throw extinguishersError;
 
+      // Fetch hydrants
+      const { data: hydrantsData, error: hydrantsError } = await supabase
+        .from('hydrants')
+        .select('*');
+
+      if (hydrantsError) throw hydrantsError;
+
       // Fetch documents
       const { data: documentsData, error: documentsError } = await supabase
         .from('documents')
@@ -42,7 +49,20 @@ export function useNuclei() {
         name: nucleus.name,
         city: nucleus.city,
         address: nucleus.address,
-        hydrants: [], // Will be loaded separately
+        hydrants: hydrantsData
+          .filter(hydrant => hydrant.nucleus_id === nucleus.id)
+          .map(hydrant => ({
+            id: hydrant.id,
+            location: hydrant.location,
+            status: hydrant.status as 'verified' | 'not_verified',
+            hoseExpirationDate: hydrant.hose_expiration_date ? new Date(hydrant.hose_expiration_date) : undefined,
+            hasRegister: hydrant.has_register || false,
+            hasHose: hydrant.has_hose || false,
+            hasKey: hydrant.has_key || false,
+            hasCoupling: hydrant.has_coupling || false,
+            hasAdapter: hydrant.has_adapter || false,
+            hasNozzle: hydrant.has_nozzle || false,
+          })),
         coordinates: nucleus.coordinates_lat && nucleus.coordinates_lng 
           ? { lat: Number(nucleus.coordinates_lat), lng: Number(nucleus.coordinates_lng) }
           : undefined,
@@ -141,6 +161,28 @@ export function useNuclei() {
         if (extError) throw extError;
       }
 
+      // Insert hydrants
+      if (nucleus.hydrants.length > 0) {
+        const { error: hydError } = await supabase
+          .from('hydrants')
+          .insert(
+            nucleus.hydrants.map(hydrant => ({
+              nucleus_id: nucleusData.id,
+              location: hydrant.location,
+              status: hydrant.status,
+              hose_expiration_date: hydrant.hoseExpirationDate?.toISOString().split('T')[0],
+              has_register: hydrant.hasRegister,
+              has_hose: hydrant.hasHose,
+              has_key: hydrant.hasKey,
+              has_coupling: hydrant.hasCoupling,
+              has_adapter: hydrant.hasAdapter,
+              has_nozzle: hydrant.hasNozzle,
+            }))
+          );
+
+        if (hydError) throw hydError;
+      }
+
       // Insert documents
       if (nucleus.documents.length > 0) {
         const { error: docError } = await supabase
@@ -169,14 +211,15 @@ export function useNuclei() {
   // Update nucleus
   const updateNucleus = async (nucleus: Nucleus) => {
     try {
-      // Update nucleus
+      console.log('Updating nucleus:', nucleus.id);
+      
+      // Update nucleus basic info
       const { error: nucleusError } = await supabase
         .from('nuclei')
         .update({
           name: nucleus.name,
           city: nucleus.city,
           address: nucleus.address,
-          // Hydrants will be handled separately
           coordinates_lat: nucleus.coordinates?.lat,
           coordinates_lng: nucleus.coordinates?.lng,
           contact_phone: nucleus.contact?.phone,
@@ -188,10 +231,94 @@ export function useNuclei() {
 
       if (nucleusError) throw nucleusError;
 
+      // Delete existing fire extinguishers and insert new ones
+      const { error: deleteExtError } = await supabase
+        .from('fire_extinguishers')
+        .delete()
+        .eq('nucleus_id', nucleus.id);
+
+      if (deleteExtError) throw deleteExtError;
+
+      if (nucleus.fireExtinguishers.length > 0) {
+        const { error: extError } = await supabase
+          .from('fire_extinguishers')
+          .insert(
+            nucleus.fireExtinguishers.map(ext => ({
+              nucleus_id: nucleus.id,
+              type: ext.type,
+              expiration_date: ext.expirationDate.toISOString().split('T')[0],
+              location: ext.location,
+              serial_number: ext.serialNumber,
+              capacity: ext.capacity,
+              last_inspection: ext.lastInspection?.toISOString().split('T')[0],
+              status: ext.status,
+            }))
+          );
+
+        if (extError) throw extError;
+      }
+
+      // Delete existing hydrants and insert new ones
+      const { error: deleteHydError } = await supabase
+        .from('hydrants')
+        .delete()
+        .eq('nucleus_id', nucleus.id);
+
+      if (deleteHydError) throw deleteHydError;
+
+      if (nucleus.hydrants.length > 0) {
+        const { error: hydError } = await supabase
+          .from('hydrants')
+          .insert(
+            nucleus.hydrants.map(hydrant => ({
+              nucleus_id: nucleus.id,
+              location: hydrant.location,
+              status: hydrant.status,
+              hose_expiration_date: hydrant.hoseExpirationDate?.toISOString().split('T')[0],
+              has_register: hydrant.hasRegister,
+              has_hose: hydrant.hasHose,
+              has_key: hydrant.hasKey,
+              has_coupling: hydrant.hasCoupling,
+              has_adapter: hydrant.hasAdapter,
+              has_nozzle: hydrant.hasNozzle,
+            }))
+          );
+
+        if (hydError) throw hydError;
+      }
+
+      // Delete existing documents and insert new ones
+      const { error: deleteDocError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('nucleus_id', nucleus.id);
+
+      if (deleteDocError) throw deleteDocError;
+
+      if (nucleus.documents.length > 0) {
+        const { error: docError } = await supabase
+          .from('documents')
+          .insert(
+            nucleus.documents.map(doc => ({
+              nucleus_id: nucleus.id,
+              type: doc.type,
+              name: doc.name,
+              url: doc.url,
+              size: doc.size,
+              mime_type: doc.mimeType,
+            }))
+          );
+
+        if (docError) throw docError;
+      }
+
+      console.log('Nucleus updated successfully, refetching data...');
       await fetchNuclei();
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar núcleo');
       console.error('Error updating nucleus:', err);
+      throw err;
     }
   };
 
