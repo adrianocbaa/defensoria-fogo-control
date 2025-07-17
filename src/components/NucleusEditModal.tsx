@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ import { Plus, Trash2, Upload } from 'lucide-react';
 import { Nucleus, ExtinguisherType, DocumentType, ExtinguisherStatus } from '@/types/nucleus';
 import { useToast } from '@/hooks/use-toast';
 import { MapSelector } from '@/components/MapSelector';
+import { AuditHistory } from '@/components/AuditHistory';
 
 interface NucleusEditModalProps {
   nucleus: Nucleus;
@@ -172,7 +174,14 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
           <DialogTitle>Editar Núcleo</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <Tabs defaultValue="edit" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="edit">Editar</TabsTrigger>
+            <TabsTrigger value="history">Histórico</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="edit" className="mt-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informações Básicas */}
           <Card>
             <CardHeader>
@@ -575,7 +584,13 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
               Salvar Alterações
             </Button>
           </div>
-        </form>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="history" className="mt-4">
+            <AuditHistory recordId={nucleus.id} tableName="nuclei" />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
