@@ -105,6 +105,62 @@ export type Database = {
           },
         ]
       }
+      hydrants: {
+        Row: {
+          created_at: string
+          has_adapter: boolean | null
+          has_coupling: boolean | null
+          has_hose: boolean | null
+          has_key: boolean | null
+          has_nozzle: boolean | null
+          has_register: boolean | null
+          hose_expiration_date: string | null
+          id: string
+          location: string
+          nucleus_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          has_adapter?: boolean | null
+          has_coupling?: boolean | null
+          has_hose?: boolean | null
+          has_key?: boolean | null
+          has_nozzle?: boolean | null
+          has_register?: boolean | null
+          hose_expiration_date?: string | null
+          id?: string
+          location: string
+          nucleus_id: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          has_adapter?: boolean | null
+          has_coupling?: boolean | null
+          has_hose?: boolean | null
+          has_key?: boolean | null
+          has_nozzle?: boolean | null
+          has_register?: boolean | null
+          hose_expiration_date?: string | null
+          id?: string
+          location?: string
+          nucleus_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hydrants_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nuclei: {
         Row: {
           address: string
@@ -116,7 +172,6 @@ export type Database = {
           created_at: string
           fire_department_license_document_url: string | null
           fire_department_license_valid_until: string | null
-          has_hydrant: boolean
           id: string
           name: string
           updated_at: string
@@ -132,7 +187,6 @@ export type Database = {
           created_at?: string
           fire_department_license_document_url?: string | null
           fire_department_license_valid_until?: string | null
-          has_hydrant?: boolean
           id?: string
           name: string
           updated_at?: string
@@ -148,7 +202,6 @@ export type Database = {
           created_at?: string
           fire_department_license_document_url?: string | null
           fire_department_license_valid_until?: string | null
-          has_hydrant?: boolean
           id?: string
           name?: string
           updated_at?: string

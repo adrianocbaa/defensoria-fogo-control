@@ -3,13 +3,13 @@ export interface Nucleus {
   name: string;
   city: string;
   address: string;
-  hasHydrant: boolean;
   coordinates?: { lat: number; lng: number };
   contact?: {
     phone?: string;
     email?: string;
   };
   fireExtinguishers: FireExtinguisher[];
+  hydrants: Hydrant[];
   documents: Document[];
   fireDepartmentLicense?: {
     validUntil: Date;
@@ -45,6 +45,19 @@ export interface Document {
 }
 
 export type DocumentType = 'project' | 'fire-license' | 'photos' | 'report';
+
+export interface Hydrant {
+  id: string;
+  location: string;
+  status: 'verified' | 'not_verified';
+  hoseExpirationDate?: Date;
+  hasRegister: boolean;
+  hasHose: boolean;
+  hasKey: boolean;
+  hasCoupling: boolean;
+  hasAdapter: boolean;
+  hasNozzle: boolean;
+}
 
 export interface DashboardStats {
   totalExtinguishers: number;

@@ -172,12 +172,11 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="hasHydrant"
-                  checked={formData.hasHydrant}
-                  onCheckedChange={(checked) => 
-                    setFormData(prev => ({ ...prev, hasHydrant: checked as boolean }))
-                  }
+                  checked={false}
+                  disabled
+                  onCheckedChange={() => {}}
                 />
-                <Label htmlFor="hasHydrant">Possui hidrante</Label>
+                <Label htmlFor="hasHydrant">Hidrantes (configurar separadamente)</Label>
               </div>
             </CardContent>
           </Card>

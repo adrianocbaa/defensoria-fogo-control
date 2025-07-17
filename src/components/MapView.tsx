@@ -218,9 +218,9 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
 
               {/* Hydrant status */}
               <div className="flex items-center gap-2">
-                <Droplets className={`h-4 w-4 ${selectedNucleus.hasHydrant ? 'text-blue-600' : 'text-gray-400'}`} />
+                <Droplets className={`h-4 w-4 ${selectedNucleus.hydrants.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
                 <span className="text-sm">
-                  {selectedNucleus.hasHydrant ? 'Possui hidrante' : 'Sem hidrante'}
+                  {selectedNucleus.hydrants.length > 0 ? `${selectedNucleus.hydrants.length} hidrante(s)` : 'Sem hidrante'}
                 </span>
               </div>
 
@@ -295,9 +295,9 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
                 <div className="font-medium">{nucleus.name}</div>
                 <div className="text-muted-foreground">{nucleus.city}</div>
                 <div className="flex items-center gap-1 mt-1">
-                  {nucleus.hasHydrant && (
+                  {nucleus.hydrants.length > 0 && (
                     <Badge variant="secondary" className="text-xs px-1 py-0">
-                      Hidrante
+                      Hidrante ({nucleus.hydrants.length})
                     </Badge>
                   )}
                   {nucleus.fireExtinguishers.some(ext => ext.status === 'expired') && (

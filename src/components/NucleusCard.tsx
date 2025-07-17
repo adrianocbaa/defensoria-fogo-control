@@ -59,10 +59,10 @@ export function NucleusCard({ nucleus, onViewDetails }: NucleusCardProps) {
             {hasWarnings && !hasErrors && (
               <AlertTriangle className="h-5 w-5 text-warning" />
             )}
-            {nucleus.hasHydrant && (
+            {nucleus.hydrants.length > 0 && (
               <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
                 <Droplets className="h-3 w-3 mr-1" />
-                Hidrante
+                Hidrante ({nucleus.hydrants.length})
               </Badge>
             )}
           </div>

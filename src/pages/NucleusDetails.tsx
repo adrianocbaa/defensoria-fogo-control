@@ -82,10 +82,10 @@ export default function NucleusDetails() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {nucleus.hasHydrant && (
+            {nucleus.hydrants.length > 0 && (
               <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
                 <Droplets className="h-3 w-3 mr-1" />
-                Hidrante
+                Hidrante ({nucleus.hydrants.length})
               </Badge>
             )}
             <Button 

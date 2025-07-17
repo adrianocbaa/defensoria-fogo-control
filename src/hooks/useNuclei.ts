@@ -42,7 +42,7 @@ export function useNuclei() {
         name: nucleus.name,
         city: nucleus.city,
         address: nucleus.address,
-        hasHydrant: nucleus.has_hydrant,
+        hydrants: [], // Will be loaded separately
         coordinates: nucleus.coordinates_lat && nucleus.coordinates_lng 
           ? { lat: Number(nucleus.coordinates_lat), lng: Number(nucleus.coordinates_lng) }
           : undefined,
@@ -107,7 +107,7 @@ export function useNuclei() {
           name: nucleus.name,
           city: nucleus.city,
           address: nucleus.address,
-          has_hydrant: nucleus.hasHydrant,
+        // Hydrants will be handled separately
           coordinates_lat: nucleus.coordinates?.lat,
           coordinates_lng: nucleus.coordinates?.lng,
           contact_phone: nucleus.contact?.phone,
@@ -176,7 +176,7 @@ export function useNuclei() {
           name: nucleus.name,
           city: nucleus.city,
           address: nucleus.address,
-          has_hydrant: nucleus.hasHydrant,
+          // Hydrants will be handled separately
           coordinates_lat: nucleus.coordinates?.lat,
           coordinates_lng: nucleus.coordinates?.lng,
           contact_phone: nucleus.contact?.phone,

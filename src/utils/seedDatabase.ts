@@ -14,7 +14,7 @@ export async function seedDatabase() {
           name: nucleus.name,
           city: nucleus.city,
           address: nucleus.address,
-          has_hydrant: nucleus.hasHydrant,
+          // Hydrants removed from nuclei table
           coordinates_lat: nucleus.coordinates?.lat,
           coordinates_lng: nucleus.coordinates?.lng,
           contact_phone: nucleus.contact?.phone,

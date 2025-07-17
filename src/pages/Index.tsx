@@ -36,8 +36,8 @@ const Index = () => {
                          nucleus.city.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesHydrant = filterHydrant === 'all' ||
-                          (filterHydrant === 'with' && nucleus.hasHydrant) ||
-                          (filterHydrant === 'without' && !nucleus.hasHydrant);
+                           (filterHydrant === 'with' && nucleus.hydrants.length > 0) ||
+                           (filterHydrant === 'without' && nucleus.hydrants.length === 0);
 
     const hasExpiredItems = filterExpired === 'all' || 
                            (filterExpired === 'expired' && (
@@ -57,7 +57,7 @@ const Index = () => {
     total + nucleus.fireExtinguishers.filter(ext => ext.status === 'expired').length, 0
   );
 
-  const nucleiWithHydrant = nuclei.filter(nucleus => nucleus.hasHydrant).length;
+  const nucleiWithHydrant = nuclei.filter(nucleus => nucleus.hydrants.length > 0).length;
 
   const handleViewDetails = (nucleusId: string) => {
     navigate(`/nucleus/${nucleusId}`);
@@ -84,7 +84,7 @@ const Index = () => {
       city: data.city,
       address: data.address,
       coordinates: data.coordinates,
-      hasHydrant: data.hasHydrant,
+      hydrants: data.hydrants || [],
       contact: {
         phone: data.phone || undefined,
         email: data.email || undefined,

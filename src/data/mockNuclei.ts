@@ -11,7 +11,7 @@ export const mockNuclei: Nucleus[] = [
       phone: '(65) 3613-4000',
       email: 'cuiaba@defensoria.mt.def.br'
     },
-    hasHydrant: true,
+    hydrants: [],
     fireExtinguishers: [
       {
         id: '1',
@@ -72,7 +72,7 @@ export const mockNuclei: Nucleus[] = [
       phone: '(65) 3613-4100',
       email: 'varzea@defensoria.mt.def.br'
     },
-    hasHydrant: false,
+    hydrants: [],
     fireExtinguishers: [
       {
         id: '4',
@@ -112,7 +112,7 @@ export const mockNuclei: Nucleus[] = [
       phone: '(66) 3423-5000',
       email: 'rondonopolis@defensoria.mt.def.br'
     },
-    hasHydrant: true,
+    hydrants: [],
     fireExtinguishers: [
       {
         id: '6',
@@ -182,7 +182,7 @@ export const mockNuclei: Nucleus[] = [
       phone: '(66) 3531-2000',
       email: 'sinop@defensoria.mt.def.br'
     },
-    hasHydrant: false,
+    hydrants: [],
     fireExtinguishers: [
       {
         id: '9',
@@ -212,7 +212,7 @@ export const mockNuclei: Nucleus[] = [
       phone: '(65) 3223-1500',
       email: 'caceres@defensoria.mt.def.br'
     },
-    hasHydrant: true,
+    hydrants: [],
     fireExtinguishers: [
       {
         id: '10',
