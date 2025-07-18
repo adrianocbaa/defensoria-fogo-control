@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { MapSelector } from '@/components/MapSelector';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { Calendar } from '@/components/ui/calendar';
@@ -37,6 +38,8 @@ const nucleusFormSchema = z.object({
     lat: z.number().min(-90, 'Latitude deve estar entre -90 e 90').max(90, 'Latitude deve estar entre -90 e 90'),
     lng: z.number().min(-180, 'Longitude deve estar entre -180 e 180').max(180, 'Longitude deve estar entre -180 e 180'),
   }),
+  // Modo Agente (dentro do fórum)
+  isAgentMode: z.boolean(),
   // Informações de contato
   phone: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
@@ -91,6 +94,7 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
       city: '',
       address: '',
       coordinates: { lat: -15.6014, lng: -56.0979 }, // Default to Cuiabá coordinates
+      isAgentMode: false,
       phone: '',
       email: '',
       hasAVCB: false,
@@ -101,6 +105,7 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
   });
 
   const hasAVCB = form.watch('hasAVCB');
+  const isAgentMode = form.watch('isAgentMode');
   const extinguishers = form.watch('extinguishers');
   const hydrants = form.watch('hydrants');
   const documents = form.watch('documents');
@@ -217,8 +222,30 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="relative">
           <DialogTitle>Cadastro de Novo Núcleo</DialogTitle>
+          
+          {/* Toggle Modo Agente no canto superior direito */}
+          <div className="absolute top-0 right-0 flex items-center space-x-2">
+            <Label htmlFor="agent-mode" className="text-sm font-medium">
+              Modo Agente
+            </Label>
+            <FormField
+              control={form.control}
+              name="isAgentMode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Switch
+                      id="agent-mode"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
         </DialogHeader>
 
         <Form {...form}>
@@ -357,14 +384,15 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
             </div>
 
             {/* Extintores de Incêndio */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-primary">Extintores de Incêndio</h3>
-                <Button type="button" onClick={addExtinguisher} size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Adicionar Extintor
-                </Button>
-              </div>
+            {!isAgentMode && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-primary">Extintores de Incêndio</h3>
+                  <Button type="button" onClick={addExtinguisher} size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar Extintor
+                  </Button>
+                </div>
 
               {extinguishers.map((extintor, index) => (
                 <div key={index} className="p-4 border rounded-lg space-y-4">
@@ -528,17 +556,19 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                    </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
             {/* Hidrantes */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-primary">Hidrantes</h3>
-                <Button type="button" onClick={addHydrant} size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Adicionar Hidrante
-                </Button>
-              </div>
+            {!isAgentMode && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-primary">Hidrantes</h3>
+                  <Button type="button" onClick={addHydrant} size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar Hidrante
+                  </Button>
+                </div>
 
               {hydrants.map((hidrant, index) => (
                 <div key={index} className="p-4 border rounded-lg space-y-4">
@@ -711,7 +741,8 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
             {/* Documentos */}
             <div className="space-y-4">
