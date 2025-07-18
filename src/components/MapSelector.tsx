@@ -52,14 +52,29 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
   }, [address, initialCoordinates]);
 
   useEffect(() => {
-    if (!isOpen || !mapContainer.current) return;
+    console.log('MapSelector useEffect triggered:', { isOpen, hasContainer: !!mapContainer.current });
+    
+    if (!isOpen || !mapContainer.current) {
+      console.log('Early return - isOpen:', isOpen, 'hasContainer:', !!mapContainer.current);
+      return;
+    }
 
     // Add a small delay to ensure the modal is fully rendered
     const timeout = setTimeout(() => {
-      if (!mapContainer.current) return;
+      console.log('Timeout executed, container check:', !!mapContainer.current);
+      
+      if (!mapContainer.current) {
+        console.log('No container available after timeout');
+        return;
+      }
+
+      // Check container dimensions
+      const rect = mapContainer.current.getBoundingClientRect();
+      console.log('Container dimensions:', rect);
 
       // Clean up any existing map instance
       if (map.current) {
+        console.log('Removing existing map');
         map.current.remove();
         map.current = null;
       }
@@ -70,37 +85,49 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
 
       const mapZoom = selectedCoords || initialCoordinates ? 16 : 12;
 
-      // Initialize map
-      map.current = L.map(mapContainer.current, {
-        preferCanvas: true,
-        zoomControl: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
-        boxZoom: true,
-        keyboard: true,
-        attributionControl: true
-      }).setView(mapCenter, mapZoom);
+      console.log('Initializing Leaflet map:', { mapCenter, mapZoom });
 
-      // Add tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-        detectRetina: true
-      }).addTo(map.current);
+      try {
+        // Initialize map
+        map.current = L.map(mapContainer.current, {
+          preferCanvas: true,
+          zoomControl: true,
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+          boxZoom: true,
+          keyboard: true,
+          attributionControl: true
+        }).setView(mapCenter, mapZoom);
 
-      // Force map resize after initialization with multiple attempts
-      setTimeout(() => {
-        if (map.current) {
-          map.current.invalidateSize();
-          map.current.getContainer().style.height = '400px';
-        }
-      }, 100);
+        console.log('Map instance created:', !!map.current);
 
-      setTimeout(() => {
-        if (map.current) {
-          map.current.invalidateSize();
-        }
-      }, 500);
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+          detectRetina: true
+        }).addTo(map.current);
+
+        console.log('Tile layer added');
+
+        // Force map resize after initialization with multiple attempts
+        setTimeout(() => {
+          if (map.current) {
+            console.log('First invalidateSize call');
+            map.current.invalidateSize();
+            map.current.getContainer().style.height = '400px';
+          }
+        }, 100);
+
+        setTimeout(() => {
+          if (map.current) {
+            console.log('Second invalidateSize call');
+            map.current.invalidateSize();
+          }
+        }, 500);
+      } catch (error) {
+        console.error('Error initializing map:', error);
+      }
 
       // Add initial marker if coordinates exist
       if (selectedCoords) {
