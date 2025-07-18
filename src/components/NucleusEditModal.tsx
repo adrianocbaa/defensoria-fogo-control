@@ -206,8 +206,8 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  required
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
                 />
               </div>
               <div>
@@ -215,8 +215,8 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                 <Input
                   id="city"
                   value={formData.city}
-                  onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                  required
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
                 />
               </div>
               <div className="md:col-span-2">
@@ -224,22 +224,20 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                 <Textarea
                   id="address"
                   value={formData.address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                  required
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
                 />
               </div>
               <div className="md:col-span-2">
                 <Label>Local de Instalação no Mapa</Label>
-                <MapSelector
-                  address={formData.address}
-                  onLocationSelect={(lat, lng) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      coordinates: { lat, lng }
-                    }));
-                  }}
-                  initialCoordinates={formData.coordinates || { lat: -15.6014, lng: -56.0979 }}
-                />
+                <div className="p-4 bg-muted rounded-md border">
+                  <p className="text-sm text-muted-foreground">
+                    Localização: {formData.coordinates?.lat?.toFixed(6)}, {formData.coordinates?.lng?.toFixed(6)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    As coordenadas não podem ser alteradas após o cadastro
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
