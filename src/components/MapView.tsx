@@ -162,7 +162,7 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
   }, [validNuclei, mapCenter]);
 
   return (
-    <div className="relative w-full h-[600px] border rounded-lg overflow-hidden">
+    <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
       {/* Map container */}
       <div ref={mapContainer} className="absolute inset-0" />
       
