@@ -63,67 +63,72 @@ const Index = () => {
     navigate(`/nucleus/${nucleusId}`);
   };
 
-  const handleNucleusSubmit = (data: any) => {
-    // Função para calcular status do extintor baseado na data de vencimento
-    const calculateExtinguisherStatus = (expirationDate: Date) => {
-      const now = new Date();
-      const diffInMonths = (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
-      
-      if (diffInMonths < 0) {
-        return 'expired' as const;
-      } else if (diffInMonths <= 6) {
-        return 'expiring-soon' as const;
-      } else {
-        return 'valid' as const;
-      }
-    };
+  const handleNucleusSubmit = async (data: any) => {
+    try {
+      // Função para calcular status do extintor baseado na data de vencimento
+      const calculateExtinguisherStatus = (expirationDate: Date) => {
+        const now = new Date();
+        const diffInMonths = (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        
+        if (diffInMonths < 0) {
+          return 'expired' as const;
+        } else if (diffInMonths <= 6) {
+          return 'expiring-soon' as const;
+        } else {
+          return 'valid' as const;
+        }
+      };
 
-    const newNucleus = {
-      id: crypto.randomUUID(),
-      name: data.name,
-      city: data.city,
-      address: data.address,
-      coordinates: data.coordinates,
-      hydrants: data.hydrants || [],
-      contact: {
-        phone: data.phone || undefined,
-        email: data.email || undefined,
-      },
-      fireExtinguishers: data.extinguishers.map((ext: any, index: number) => ({
-        id: `${Date.now()}-${index}`,
-        type: ext.type,
-        expirationDate: ext.expirationDate,
-        location: ext.location,
-        serialNumber: ext.serialNumber || undefined,
-        capacity: ext.capacity || undefined,
-        lastInspection: ext.lastInspection || undefined,
-        status: calculateExtinguisherStatus(ext.expirationDate)
-      })),
-      documents: data.documents.map((doc: any, index: number) => ({
-        id: `${Date.now()}-doc-${index}`,
-        type: doc.type,
-        name: doc.name,
-        url: `/documents/${doc.file?.name || 'document.pdf'}`,
-        uploadedAt: new Date(),
-        size: doc.file?.size || 0,
-        mimeType: doc.file?.type || 'application/pdf'
-      })),
-      fireDepartmentLicense: data.hasAVCB && data.avcbExpirationDate ? {
-        validUntil: data.avcbExpirationDate,
-        documentUrl: '/documents/alvara.pdf'
-      } : undefined,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    addNucleus(newNucleus);
-    
-    toast({
-      title: "Núcleo cadastrado com sucesso!",
-      description: `${data.name} foi adicionado ao sistema.`,
-    });
-    
-    setShowNucleusForm(false);
+      const newNucleus = {
+        name: data.name,
+        city: data.city,
+        address: data.address,
+        coordinates: data.coordinates,
+        hydrants: data.hydrants || [],
+        contact: {
+          phone: data.phone || undefined,
+          email: data.email || undefined,
+        },
+        fireExtinguishers: (data.extinguishers || []).map((ext: any) => ({
+          type: ext.type,
+          expirationDate: new Date(ext.expirationDate),
+          location: ext.location,
+          capacity: ext.capacity || undefined,
+          hydrostaticTest: ext.hydrostaticTest ? new Date(ext.hydrostaticTest) : undefined,
+          supportType: ext.supportType || undefined,
+          hasVerticalSignage: ext.hasVerticalSignage || false,
+          status: calculateExtinguisherStatus(new Date(ext.expirationDate))
+        })),
+        documents: (data.documents || []).map((doc: any) => ({
+          type: doc.type,
+          name: doc.name,
+          url: `/documents/${doc.file?.name || 'document.pdf'}`,
+          uploadedAt: new Date(),
+          size: doc.file?.size || 0,
+          mimeType: doc.file?.type || 'application/pdf'
+        })),
+        fireDepartmentLicense: data.hasAVCB && data.avcbExpirationDate ? {
+          validUntil: new Date(data.avcbExpirationDate),
+          documentUrl: '/documents/alvara.pdf'
+        } : undefined,
+      };
+      
+      await addNucleus(newNucleus);
+      
+      toast({
+        title: "Núcleo cadastrado com sucesso!",
+        description: `${data.name} foi adicionado ao sistema.`,
+      });
+      
+      setShowNucleusForm(false);
+    } catch (error) {
+      toast({
+        title: "Erro ao cadastrar núcleo",
+        description: "Tente novamente ou verifique os dados inseridos.",
+        variant: "destructive",
+      });
+      console.error('Erro ao cadastrar núcleo:', error);
+    }
   };
 
   return (
