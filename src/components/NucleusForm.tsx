@@ -230,20 +230,10 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
             <Label htmlFor="agent-mode" className="text-sm font-medium">
               Modo Agente
             </Label>
-            <FormField
-              control={form.control}
-              name="isAgentMode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Switch
-                      id="agent-mode"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
+            <Switch
+              id="agent-mode"
+              checked={form.watch('isAgentMode')}
+              onCheckedChange={(checked) => form.setValue('isAgentMode', checked)}
             />
           </div>
         </DialogHeader>
