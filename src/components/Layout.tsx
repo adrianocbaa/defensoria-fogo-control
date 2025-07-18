@@ -18,8 +18,12 @@ export function Layout({ children }: LayoutProps) {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="border-2 border-primary-foreground rounded p-2">
-                <Shield className="h-8 w-8" />
+              <div className="flex items-center justify-center">
+                <img 
+                  src="/lovable-uploads/2b606e12-c9d1-4e56-8a6b-2ef102b2a25d.png" 
+                  alt="Defensoria Pública Logo" 
+                  className="h-16 w-auto"
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-bold">
