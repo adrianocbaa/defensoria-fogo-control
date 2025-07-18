@@ -27,12 +27,16 @@ export function Layout({ children }: LayoutProps) {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="bg-white rounded p-2">
-                <img 
-                  src="/lovable-uploads/54c4e836-3b73-4fbc-94db-18ca73e83b5d.png" 
-                  alt="DIF - Diretoria de Infraestrutura Física - DPMT" 
-                  className="h-12 w-auto"
-                />
+              <div className="border-2 border-primary-foreground rounded p-2">
+                <Shield className="h-8 w-8" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">
+                  DEFENSORIA PÚBLICA
+                </h1>
+                <p className="text-sm text-primary-foreground/90">
+                  DO ESTADO DE MATO GROSSO
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-6">
