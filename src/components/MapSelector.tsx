@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -32,36 +32,6 @@ function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number,
   return null;
 }
 
-// Custom marker component that updates position
-function DraggableMarker({ 
-  position, 
-  onPositionChange 
-}: { 
-  position: [number, number];
-  onPositionChange: (lat: number, lng: number) => void;
-}) {
-  const markerRef = useRef<L.Marker>(null);
-
-  const eventHandlers = {
-    dragend() {
-      const marker = markerRef.current;
-      if (marker != null) {
-        const { lat, lng } = marker.getLatLng();
-        onPositionChange(lat, lng);
-      }
-    },
-  };
-
-  return (
-    <Marker
-      draggable={true}
-      eventHandlers={eventHandlers}
-      position={position}
-      ref={markerRef}
-    />
-  );
-}
-
 export function MapSelector({ onLocationSelect, initialCoordinates, address }: MapSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(
@@ -91,13 +61,9 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
     }
   }, [address, initialCoordinates]);
 
-  const handleLocationClick = useCallback((lat: number, lng: number) => {
+  const handleLocationClick = (lat: number, lng: number) => {
     setSelectedCoords({ lat, lng });
-  }, []);
-
-  const handleMarkerDrag = useCallback((lat: number, lng: number) => {
-    setSelectedCoords({ lat, lng });
-  }, []);
+  };
 
   const handleConfirm = () => {
     if (selectedCoords) {
@@ -131,7 +97,7 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
         
         <div className="flex flex-col gap-4 h-full">
           <div className="text-sm text-muted-foreground">
-            Clique no mapa para selecionar a localização do núcleo. Você pode arrastar o marcador para ajustar a posição.
+            Clique no mapa para selecionar a localização do núcleo.
           </div>
           
           <div className="flex-1 rounded-lg border overflow-hidden">
@@ -140,7 +106,7 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
               zoom={mapZoom}
               style={{ height: '100%', width: '100%' }}
               className="leaflet-container"
-              key={`${mapCenter[0]}-${mapCenter[1]}`} // Force re-render when center changes
+              key={`${mapCenter[0]}-${mapCenter[1]}-${isOpen}`} // Force re-render when center changes or dialog opens
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -150,9 +116,8 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
               <MapClickHandler onLocationSelect={handleLocationClick} />
               
               {selectedCoords && (
-                <DraggableMarker
+                <Marker
                   position={[selectedCoords.lat, selectedCoords.lng]}
-                  onPositionChange={handleMarkerDrag}
                 />
               )}
             </MapContainer>
