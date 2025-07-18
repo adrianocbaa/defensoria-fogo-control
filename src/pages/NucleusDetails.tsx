@@ -19,7 +19,9 @@ import {
   FileText,
   Target,
   Edit,
-  Trash2
+  Trash2,
+  Download,
+  Eye
 } from 'lucide-react';
 import { useNuclei } from '@/contexts/NucleiContext';
 import { useToast } from '@/hooks/use-toast';
@@ -303,23 +305,68 @@ export default function NucleusDetails() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {nucleus.documents.map((document) => (
-                      <div 
-                        key={document.id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                      >
-                        <div>
-                          <p className="text-sm font-medium">{document.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Enviado em: {format(new Date(document.uploadedAt), 'dd/MM/yyyy', { locale: ptBR })}
-                          </p>
+                  <div className="space-y-3">
+                    {nucleus.documents.map((document) => {
+                      const typeLabels = {
+                        'project': 'Projeto',
+                        'fire-license': 'Alvará',
+                        'photos': 'Fotos',
+                        'report': 'Relatório'
+                      };
+
+                      return (
+                        <div 
+                          key={document.id}
+                          className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{document.name}</p>
+                            <div className="flex items-center gap-4 mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                {typeLabels[document.type] || document.type}
+                              </Badge>
+                              <p className="text-xs text-muted-foreground">
+                                Enviado em: {format(new Date(document.uploadedAt), 'dd/MM/yyyy', { locale: ptBR })}
+                              </p>
+                              {document.size && (
+                                <p className="text-xs text-muted-foreground">
+                                  {(document.size / 1024).toFixed(1)} KB
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(document.url, '_blank')}
+                              className="flex items-center gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              Visualizar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const link = window.document.createElement('a');
+                                link.href = document.url;
+                                link.download = document.name;
+                                link.target = '_blank';
+                                window.document.body.appendChild(link);
+                                link.click();
+                                window.document.body.removeChild(link);
+                              }}
+                              className="flex items-center gap-1"
+                            >
+                              <Download className="h-3 w-3" />
+                              Download
+                            </Button>
+                          </div>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          {document.type}
-                        </Badge>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

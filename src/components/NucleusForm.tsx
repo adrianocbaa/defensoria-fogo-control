@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MapSelector } from '@/components/MapSelector';
+import { DocumentUpload } from '@/components/DocumentUpload';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -69,6 +70,8 @@ const nucleusFormSchema = z.object({
     name: z.string().min(1, 'Nome do documento é obrigatório'),
     type: z.enum(['project', 'fire-license', 'photos', 'report']),
     file: z.any(),
+    url: z.string().optional(),
+    uploadedAt: z.date().optional(),
   })),
 });
 
@@ -178,6 +181,11 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
         file: null,
       }
     ]);
+  };
+
+  const addDocumentFromUpload = (newDocument: any) => {
+    const currentDocuments = form.getValues('documents');
+    form.setValue('documents', [...currentDocuments, newDocument]);
   };
 
   const removeDocument = (index: number) => {
@@ -709,11 +717,10 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-primary">Documentos</h3>
-                <Button type="button" onClick={addDocument} size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Adicionar Documento
-                </Button>
               </div>
+
+              {/* Upload Component */}
+              <DocumentUpload onDocumentAdd={addDocumentFromUpload} />
 
               {documents.map((document, index) => (
                 <div key={index} className="p-4 border rounded-lg space-y-4">
@@ -766,17 +773,25 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                       )}
                     />
 
-                    <div className="md:col-span-2">
-                      <Label>Arquivo</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Input
-                          type="file"
-                          onChange={(e) => handleFileUpload(e, index)}
-                          className="flex-1"
-                        />
-                        <Upload className="h-4 w-4 text-muted-foreground" />
+                    {document.url && (
+                      <div className="md:col-span-2">
+                        <Label>Link do Documento</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={document.url}
+                            readOnly
+                            className="bg-muted"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => window.open(document.url, '_blank')}
+                          >
+                            Visualizar
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               ))}

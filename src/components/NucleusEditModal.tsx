@@ -14,6 +14,7 @@ import { Nucleus, ExtinguisherType, DocumentType, ExtinguisherStatus } from '@/t
 import { useToast } from '@/hooks/use-toast';
 import { MapSelector } from '@/components/MapSelector';
 import { AuditHistory } from '@/components/AuditHistory';
+import { DocumentUpload } from '@/components/DocumentUpload';
 
 interface NucleusEditModalProps {
   nucleus: Nucleus;
@@ -113,15 +114,7 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
     }));
   };
 
-  const addDocument = () => {
-    const newDocument = {
-      id: Date.now().toString(),
-      type: 'project' as DocumentType,
-      name: '',
-      url: '',
-      uploadedAt: new Date()
-    };
-    
+  const addDocument = (newDocument: any) => {
     setFormData(prev => ({
       ...prev,
       documents: [...prev.documents, newDocument]
@@ -579,13 +572,13 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Documentos</CardTitle>
-                <Button type="button" onClick={addDocument} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
-                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Upload Component */}
+              <DocumentUpload onDocumentAdd={addDocument} />
+              
+              {/* Document List */}
               {formData.documents.map((document, index) => (
                 <div key={document.id} className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-4">
@@ -627,6 +620,26 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    {document.url && (
+                      <div className="md:col-span-2">
+                        <Label>Link do Documento</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={document.url}
+                            readOnly
+                            className="bg-muted"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => window.open(document.url, '_blank')}
+                          >
+                            Visualizar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
