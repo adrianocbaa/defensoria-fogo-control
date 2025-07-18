@@ -46,10 +46,9 @@ const nucleusFormSchema = z.object({
   extinguishers: z.array(z.object({
     type: z.enum(['H2O', 'PQS', 'CO2', 'ABC']),
     location: z.string().min(1, 'Localização é obrigatória'),
-    serialNumber: z.string().optional(),
     capacity: z.string().optional(),
     expirationDate: z.date(),
-    lastInspection: z.date().optional(),
+    hydrostaticTest: z.date().optional(),
     supportType: z.enum(['wall', 'tripod']).optional(),
     hasVerticalSignage: z.boolean().optional(),
   })),
@@ -111,10 +110,9 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
       {
         type: 'ABC' as const,
         location: '',
-        serialNumber: '',
         capacity: '',
         expirationDate: new Date(),
-        lastInspection: undefined,
+        hydrostaticTest: undefined,
         supportType: undefined,
         hasVerticalSignage: false,
       }
@@ -426,95 +424,81 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name={`extinguishers.${index}.serialNumber`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Número de Série</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: EXT001" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                     <FormField
+                       control={form.control}
+                       name={`extinguishers.${index}.expirationDate`}
+                       render={({ field }) => (
+                         <FormItem className="flex flex-col">
+                           <FormLabel>Data de Vencimento</FormLabel>
+                           <Popover>
+                             <PopoverTrigger asChild>
+                               <FormControl>
+                                 <Button
+                                   variant="outline"
+                                   className={cn(
+                                     "pl-3 text-left font-normal",
+                                     !field.value && "text-muted-foreground"
+                                   )}
+                                 >
+                                   {field.value ? (
+                                     format(field.value, "dd/MM/yyyy")
+                                   ) : (
+                                     <span>Selecionar data</span>
+                                   )}
+                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                 </Button>
+                               </FormControl>
+                             </PopoverTrigger>
+                             <PopoverContent className="w-auto p-0 z-50" align="start">
+                               <Calendar
+                                 mode="single"
+                                 selected={field.value}
+                                 onSelect={field.onChange}
+                                 initialFocus
+                                 className="p-3 pointer-events-auto"
+                               />
+                             </PopoverContent>
+                           </Popover>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
 
-                    <FormField
-                      control={form.control}
-                      name={`extinguishers.${index}.expirationDate`}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Data de Vencimento</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "dd/MM/yyyy")
-                                  ) : (
-                                    <span>Selecionar data</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 z-50" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`extinguishers.${index}.lastInspection`}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Última Inspeção (Opcional)</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "dd/MM/yyyy")
-                                  ) : (
-                                    <span>Selecionar data</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 z-50" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
+                     <FormField
+                       control={form.control}
+                       name={`extinguishers.${index}.hydrostaticTest`}
+                       render={({ field }) => (
+                         <FormItem className="flex flex-col">
+                           <FormLabel>Teste Hidrostático</FormLabel>
+                           <Popover>
+                             <PopoverTrigger asChild>
+                               <FormControl>
+                                 <Button
+                                   variant="outline"
+                                   className={cn(
+                                     "pl-3 text-left font-normal",
+                                     !field.value && "text-muted-foreground"
+                                   )}
+                                 >
+                                   {field.value ? (
+                                     format(field.value, "dd/MM/yyyy")
+                                   ) : (
+                                     <span>Selecionar data</span>
+                                   )}
+                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                 </Button>
+                               </FormControl>
+                             </PopoverTrigger>
+                             <PopoverContent className="w-auto p-0 z-50" align="start">
+                               <Calendar
+                                 mode="single"
+                                 selected={field.value}
+                                 onSelect={field.onChange}
+                                 initialFocus
+                                 className="p-3 pointer-events-auto"
+                               />
+                             </PopoverContent>
+                           </Popover>
                            <FormMessage />
                          </FormItem>
                        )}
