@@ -18,9 +18,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'ABC',
         expirationDate: new Date('2024-03-15'),
         location: 'Recepção',
-        serialNumber: 'EXT001',
         capacity: '6kg',
-        lastInspection: new Date('2023-09-15'),
+        hydrostaticTest: new Date('2023-12-15'),
         status: 'expired'
       },
       {
@@ -28,9 +27,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'CO2',
         expirationDate: new Date('2024-08-20'),
         location: 'Sala de Informática',
-        serialNumber: 'EXT002',
         capacity: '5kg',
-        lastInspection: new Date('2024-02-20'),
+        supportType: 'wall' as const,
         status: 'expiring-soon'
       },
       {
@@ -38,9 +36,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'H2O',
         expirationDate: new Date('2025-01-10'),
         location: 'Corredor Principal',
-        serialNumber: 'EXT003',
         capacity: '10L',
-        lastInspection: new Date('2024-01-10'),
+        hasVerticalSignage: true,
         status: 'valid'
       }
     ],
@@ -79,9 +76,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'PQS',
         expirationDate: new Date('2024-12-05'),
         location: 'Entrada Principal',
-        serialNumber: 'EXT004',
         capacity: '4kg',
-        lastInspection: new Date('2024-06-05'),
+        hydrostaticTest: new Date('2024-01-05'),
         status: 'valid'
       },
       {
@@ -89,9 +85,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'ABC',
         expirationDate: new Date('2024-08-15'),
         location: 'Sala de Reuniões',
-        serialNumber: 'EXT005',
         capacity: '6kg',
-        lastInspection: new Date('2024-02-15'),
+        supportType: 'tripod' as const,
         status: 'expiring-soon'
       }
     ],
@@ -119,9 +114,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'H2O',
         expirationDate: new Date('2025-02-28'),
         location: 'Hall de Entrada',
-        serialNumber: 'EXT006',
         capacity: '10L',
-        lastInspection: new Date('2024-02-28'),
+        hasVerticalSignage: false,
         status: 'valid'
       },
       {
@@ -129,9 +123,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'CO2',
         expirationDate: new Date('2024-07-10'),
         location: 'Arquivo',
-        serialNumber: 'EXT007',
         capacity: '5kg',
-        lastInspection: new Date('2024-01-10'),
+        hydrostaticTest: new Date('2023-11-20'),
         status: 'expiring-soon'
       },
       {
@@ -139,9 +132,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'ABC',
         expirationDate: new Date('2023-12-01'),
         location: 'Cozinha',
-        serialNumber: 'EXT008',
         capacity: '6kg',
-        lastInspection: new Date('2023-06-01'),
+        supportType: 'wall' as const,
         status: 'expired'
       }
     ],
@@ -189,9 +181,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'PQS',
         expirationDate: new Date('2024-11-30'),
         location: 'Recepção',
-        serialNumber: 'EXT009',
         capacity: '4kg',
-        lastInspection: new Date('2024-05-30'),
+        hydrostaticTest: new Date('2024-02-15'),
         status: 'valid'
       }
     ],
@@ -219,9 +210,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'ABC',
         expirationDate: new Date('2024-04-20'),
         location: 'Sala dos Defensores',
-        serialNumber: 'EXT010',
         capacity: '6kg',
-        lastInspection: new Date('2023-10-20'),
+        hasVerticalSignage: true,
         status: 'expired'
       },
       {
@@ -229,9 +219,8 @@ export const mockNuclei: Nucleus[] = [
         type: 'H2O',
         expirationDate: new Date('2024-10-05'),
         location: 'Biblioteca',
-        serialNumber: 'EXT011',
         capacity: '10L',
-        lastInspection: new Date('2024-04-05'),
+        supportType: 'tripod' as const,
         status: 'expiring-soon'
       }
     ],

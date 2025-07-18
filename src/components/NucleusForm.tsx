@@ -306,45 +306,23 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
 
               {hasAVCB && (
                 <div className="ml-6 space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="avcbExpirationDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Data de validade do Alvará</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "dd/MM/yyyy")
-                                ) : (
-                                  <span>Selecionar data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 z-50" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                              className="p-3 pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                   <FormField
+                     control={form.control}
+                     name="avcbExpirationDate"
+                     render={({ field }) => (
+                       <FormItem>
+                         <FormLabel>Data de validade do Alvará</FormLabel>
+                         <FormControl>
+                           <Input
+                             type="date"
+                             value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                             onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)}
+                           />
+                         </FormControl>
+                         <FormMessage />
+                       </FormItem>
+                     )}
+                   />
                 </div>
               )}
             </div>
@@ -424,41 +402,41 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                       )}
                     />
 
-                      <FormField
-                        control={form.control}
-                        name={`extinguishers.${index}.expirationDate`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Data de Vencimento</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                       <FormField
+                         control={form.control}
+                         name={`extinguishers.${index}.expirationDate`}
+                         render={({ field }) => (
+                           <FormItem>
+                             <FormLabel>Data de Vencimento</FormLabel>
+                             <FormControl>
+                               <Input
+                                 type="date"
+                                 value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                                 onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)}
+                               />
+                             </FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )}
+                       />
 
-                      <FormField
-                        control={form.control}
-                        name={`extinguishers.${index}.hydrostaticTest`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Teste Hidrostático</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                       <FormField
+                         control={form.control}
+                         name={`extinguishers.${index}.hydrostaticTest`}
+                         render={({ field }) => (
+                           <FormItem>
+                             <FormLabel>Teste Hidrostático</FormLabel>
+                             <FormControl>
+                               <Input
+                                 type="date"
+                                 value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                                 onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)}
+                               />
+                             </FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )}
+                       />
 
                      <FormField
                        control={form.control}
@@ -564,45 +542,23 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name={`hydrants.${index}.hoseExpirationDate`}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Validade da Mangueira (Opcional)</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "dd/MM/yyyy")
-                                  ) : (
-                                    <span>Selecionar data</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 z-50" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                     <FormField
+                       control={form.control}
+                       name={`hydrants.${index}.hoseExpirationDate`}
+                       render={({ field }) => (
+                         <FormItem>
+                           <FormLabel>Validade da Mangueira (Opcional)</FormLabel>
+                           <FormControl>
+                             <Input
+                               type="date"
+                               value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                               onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined)}
+                             />
+                           </FormControl>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
                   </div>
 
                   {/* Acessórios do Hidrante */}

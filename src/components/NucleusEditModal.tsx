@@ -72,9 +72,10 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
       type: 'ABC' as ExtinguisherType,
       expirationDate: new Date(),
       location: '',
-      serialNumber: '',
       capacity: '',
-      lastInspection: new Date(),
+      hydrostaticTest: undefined,
+      supportType: undefined,
+      hasVerticalSignage: false,
       status: 'valid' as ExtinguisherStatus
     };
     
@@ -269,24 +270,29 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
               <CardTitle className="text-lg">Alvará do Corpo de Bombeiros (AVCB)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div>
-                <Label htmlFor="licenseValidUntil">Data de Validade</Label>
-                <Input
-                  id="licenseValidUntil"
-                  type="date"
-                  value={formData.fireDepartmentLicense?.validUntil 
-                    ? new Date(formData.fireDepartmentLicense.validUntil).toISOString().split('T')[0] 
-                    : ''
-                  }
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    fireDepartmentLicense: { 
-                      ...prev.fireDepartmentLicense,
-                      validUntil: new Date(e.target.value)
-                    }
-                  }))}
-                />
-              </div>
+               <div>
+                 <Label htmlFor="licenseValidUntil">Data de Validade</Label>
+                 <Input
+                   id="licenseValidUntil"
+                   type="date"
+                   value={formData.fireDepartmentLicense?.validUntil 
+                     ? new Date(formData.fireDepartmentLicense.validUntil.getTime() + formData.fireDepartmentLicense.validUntil.getTimezoneOffset() * 60000).toISOString().split('T')[0] 
+                     : ''
+                   }
+                   onChange={(e) => {
+                     if (e.target.value) {
+                       const date = new Date(e.target.value + 'T00:00:00');
+                       setFormData(prev => ({ 
+                         ...prev, 
+                         fireDepartmentLicense: { 
+                           ...prev.fireDepartmentLicense,
+                           validUntil: date
+                         }
+                       }));
+                     }
+                   }}
+                 />
+               </div>
             </CardContent>
           </Card>
 
@@ -316,74 +322,101 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label>Tipo *</Label>
-                      <Select
-                        value={extinguisher.type}
-                        onValueChange={(value) => updateExtinguisher(extinguisher.id, 'type', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="H2O">Água</SelectItem>
-                          <SelectItem value="PQS">Pó Químico Seco</SelectItem>
-                          <SelectItem value="CO2">Gás Carbônico</SelectItem>
-                          <SelectItem value="ABC">Multipropósito</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label>Local de Instalação *</Label>
-                      <Input
-                        value={extinguisher.location}
-                        onChange={(e) => updateExtinguisher(extinguisher.id, 'location', e.target.value)}
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Capacidade</Label>
-                      <Input
-                        value={extinguisher.capacity || ''}
-                        onChange={(e) => updateExtinguisher(extinguisher.id, 'capacity', e.target.value)}
-                        placeholder="Ex: 6kg"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Número de Série</Label>
-                      <Input
-                        value={extinguisher.serialNumber || ''}
-                        onChange={(e) => updateExtinguisher(extinguisher.id, 'serialNumber', e.target.value)}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Data de Vencimento *</Label>
-                      <Input
-                        type="date"
-                        value={new Date(extinguisher.expirationDate).toISOString().split('T')[0]}
-                        onChange={(e) => updateExtinguisher(extinguisher.id, 'expirationDate', new Date(e.target.value))}
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Última Inspeção</Label>
-                      <Input
-                        type="date"
-                        value={extinguisher.lastInspection 
-                          ? new Date(extinguisher.lastInspection).toISOString().split('T')[0]
-                          : ''
-                        }
-                        onChange={(e) => updateExtinguisher(extinguisher.id, 'lastInspection', 
-                          e.target.value ? new Date(e.target.value) : undefined
-                        )}
-                      />
-                    </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                       <Label>Tipo *</Label>
+                       <Select
+                         value={extinguisher.type}
+                         onValueChange={(value) => updateExtinguisher(extinguisher.id, 'type', value)}
+                       >
+                         <SelectTrigger>
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="H2O">Água</SelectItem>
+                           <SelectItem value="PQS">Pó Químico Seco</SelectItem>
+                           <SelectItem value="CO2">Gás Carbônico</SelectItem>
+                           <SelectItem value="ABC">Multipropósito</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     
+                     <div>
+                       <Label>Capacidade</Label>
+                       <Input
+                         value={extinguisher.capacity || ''}
+                         onChange={(e) => updateExtinguisher(extinguisher.id, 'capacity', e.target.value)}
+                         placeholder="Ex: 6kg"
+                       />
+                     </div>
+                     
+                     <div>
+                       <Label>Local de Instalação *</Label>
+                       <Input
+                         value={extinguisher.location}
+                         onChange={(e) => updateExtinguisher(extinguisher.id, 'location', e.target.value)}
+                         required
+                       />
+                     </div>
+                     
+                     <div>
+                       <Label>Data de Vencimento *</Label>
+                       <Input
+                         type="date"
+                         value={extinguisher.expirationDate 
+                           ? new Date(extinguisher.expirationDate.getTime() + extinguisher.expirationDate.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+                           : ''
+                         }
+                         onChange={(e) => {
+                           if (e.target.value) {
+                             const date = new Date(e.target.value + 'T00:00:00');
+                             updateExtinguisher(extinguisher.id, 'expirationDate', date);
+                           }
+                         }}
+                         required
+                       />
+                     </div>
+                     
+                     <div>
+                       <Label>Teste Hidrostático</Label>
+                       <Input
+                         type="date"
+                         value={extinguisher.hydrostaticTest 
+                           ? new Date(extinguisher.hydrostaticTest.getTime() + extinguisher.hydrostaticTest.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+                           : ''
+                         }
+                         onChange={(e) => {
+                           const date = e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined;
+                           updateExtinguisher(extinguisher.id, 'hydrostaticTest', date);
+                         }}
+                       />
+                     </div>
+                     
+                     <div>
+                       <Label>Tipo de Suporte</Label>
+                       <Select
+                         value={extinguisher.supportType || ''}
+                         onValueChange={(value) => updateExtinguisher(extinguisher.id, 'supportType', value || undefined)}
+                       >
+                         <SelectTrigger>
+                           <SelectValue placeholder="Selecionar suporte" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="wall">Parede</SelectItem>
+                           <SelectItem value="tripod">Tripé</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                   </div>
+                   
+                   <div className="mt-4">
+                     <div className="flex items-center space-x-2">
+                       <Checkbox
+                         checked={extinguisher.hasVerticalSignage || false}
+                         onCheckedChange={(checked) => updateExtinguisher(extinguisher.id, 'hasVerticalSignage', checked)}
+                       />
+                       <Label>Possui Sinalização Vertical</Label>
+                     </div>
                   </div>
                 </div>
               ))}
@@ -443,19 +476,20 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                       </Select>
                     </div>
                     
-                    <div>
-                      <Label>Validade da Mangueira</Label>
-                      <Input
-                        type="date"
-                        value={hydrant.hoseExpirationDate 
-                          ? new Date(hydrant.hoseExpirationDate).toISOString().split('T')[0]
-                          : ''
-                        }
-                        onChange={(e) => updateHydrant(hydrant.id, 'hoseExpirationDate', 
-                          e.target.value ? new Date(e.target.value) : undefined
-                        )}
-                      />
-                    </div>
+                     <div>
+                       <Label>Validade da Mangueira</Label>
+                       <Input
+                         type="date"
+                         value={hydrant.hoseExpirationDate 
+                           ? new Date(hydrant.hoseExpirationDate.getTime() + hydrant.hoseExpirationDate.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+                           : ''
+                         }
+                         onChange={(e) => {
+                           const date = e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined;
+                           updateHydrant(hydrant.id, 'hoseExpirationDate', date);
+                         }}
+                       />
+                     </div>
                   </div>
                   
                   <div className="mt-4">

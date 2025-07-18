@@ -24,9 +24,8 @@ export interface FireExtinguisher {
   type: ExtinguisherType;
   expirationDate: Date;
   location: string;
-  serialNumber?: string;
   capacity?: string;
-  lastInspection?: Date;
+  hydrostaticTest?: Date;
   status: ExtinguisherStatus;
   supportType?: ExtinguisherSupportType;
   hasVerticalSignage?: boolean;

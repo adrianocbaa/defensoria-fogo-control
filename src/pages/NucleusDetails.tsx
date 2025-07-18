@@ -236,9 +236,9 @@ export default function NucleusDetails() {
                               <p className="text-sm font-medium">
                                 {extinguisher.location}
                               </p>
-                              {extinguisher.serialNumber && (
+                              {extinguisher.capacity && (
                                 <p className="text-xs text-muted-foreground">
-                                  Série: {extinguisher.serialNumber}
+                                  Capacidade: {extinguisher.capacity}
                                 </p>
                               )}
                             </div>
@@ -276,11 +276,11 @@ export default function NucleusDetails() {
                                 Vencimento: {format(new Date(extinguisher.expirationDate), 'dd/MM/yyyy', { locale: ptBR })}
                               </span>
                             </div>
-                            {extinguisher.lastInspection && (
+                            {extinguisher.hydrostaticTest && (
                               <div className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
                                 <span>
-                                  Última inspeção: {format(new Date(extinguisher.lastInspection), 'dd/MM/yyyy', { locale: ptBR })}
+                                  Teste Hidrostático: {format(new Date(extinguisher.hydrostaticTest), 'dd/MM/yyyy', { locale: ptBR })}
                                 </span>
                               </div>
                             )}

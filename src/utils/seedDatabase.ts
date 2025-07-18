@@ -43,9 +43,10 @@ export async function seedDatabase() {
               type: ext.type,
               expiration_date: ext.expirationDate.toISOString().split('T')[0],
               location: ext.location,
-              serial_number: ext.serialNumber,
               capacity: ext.capacity,
-              last_inspection: ext.lastInspection?.toISOString().split('T')[0],
+              hydrostatic_test: ext.hydrostaticTest?.toISOString().split('T')[0],
+              support_type: ext.supportType,
+              has_vertical_signage: ext.hasVerticalSignage,
               status: ext.status,
             }))
           );
