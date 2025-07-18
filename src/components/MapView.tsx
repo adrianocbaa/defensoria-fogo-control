@@ -129,27 +129,36 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
         setSelectedNucleus(nucleus);
       });
 
-      // Add popup
+      // Add popup with conditional content based on isAgentMode
       const popupContent = `
         <div style="min-width: 200px;">
           <h3 style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">${nucleus.name}</h3>
           <p style="font-size: 12px; color: #666; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
             📍 ${nucleus.city}
           </p>
-          <div style="display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: ${nucleus.hydrants.length > 0 ? '#2563eb' : '#9ca3af'};">💧</span>
-              <span style="font-size: 12px;">
-                ${nucleus.hydrants.length > 0 ? `${nucleus.hydrants.length} hidrante(s)` : 'Sem hidrante'}
+          ${nucleus.isAgentMode === true ? `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span style="color: #2563eb;">🏛️</span>
+              <span style="font-size: 12px; font-weight: 500; color: #2563eb;">
+                Núcleo instalado no Fórum
               </span>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: #dc2626;">🧯</span>
-              <span style="font-size: 12px;">
-                ${nucleus.fireExtinguishers.length} extintor(es)
-              </span>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: ${nucleus.hydrants.length > 0 ? '#2563eb' : '#9ca3af'};">💧</span>
+                <span style="font-size: 12px;">
+                  ${nucleus.hydrants.length > 0 ? `${nucleus.hydrants.length} hidrante(s)` : 'Sem hidrante'}
+                </span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="color: #dc2626;">🧯</span>
+                <span style="font-size: 12px;">
+                  ${nucleus.fireExtinguishers.length} extintor(es)
+                </span>
+              </div>
             </div>
-          </div>
+          `}
         </div>
       `;
       
@@ -200,21 +209,43 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
                 <p className="text-sm text-muted-foreground">{selectedNucleus.address}</p>
               </div>
 
-              {/* Hydrant status */}
-              <div className="flex items-center gap-2">
-                <Droplets className={`h-4 w-4 ${selectedNucleus.hydrants.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
-                <span className="text-sm">
-                  {selectedNucleus.hydrants.length > 0 ? `${selectedNucleus.hydrants.length} hidrante(s)` : 'Sem hidrante'}
-                </span>
-              </div>
+              {/* Forum mode indicator or fire safety info */}
+              {selectedNucleus.isAgentMode === true ? (
+                <div className="flex items-center gap-2 p-2 rounded bg-blue-50 border border-blue-200">
+                  <Building2 className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-600">
+                    Núcleo instalado no Fórum
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {/* Hydrant status */}
+                  <div className="flex items-center gap-2">
+                    <Droplets className={`h-4 w-4 ${selectedNucleus.hydrants.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+                    <span className="text-sm">
+                      {selectedNucleus.hydrants.length > 0 ? `${selectedNucleus.hydrants.length} hidrante(s)` : 'Sem hidrante'}
+                    </span>
+                  </div>
 
-              {/* Fire extinguishers summary */}
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-primary" />
-                <span className="text-sm">
-                  {selectedNucleus.fireExtinguishers.length} extintor(es)
-                </span>
-              </div>
+                  {/* Fire extinguishers summary */}
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-primary" />
+                    <span className="text-sm">
+                      {selectedNucleus.fireExtinguishers.length} extintor(es)
+                    </span>
+                  </div>
+
+                  {/* Expired items */}
+                  {selectedNucleus.fireExtinguishers.some(ext => ext.status === 'expired') && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-danger" />
+                      <span className="text-sm text-danger">
+                        {selectedNucleus.fireExtinguishers.filter(ext => ext.status === 'expired').length} extintor(es) vencido(s)
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* License status */}
               {selectedNucleus.fireDepartmentLicense?.validUntil && (
@@ -237,16 +268,6 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
                       </>
                     );
                   })()}
-                </div>
-              )}
-
-              {/* Expired items */}
-              {selectedNucleus.fireExtinguishers.some(ext => ext.status === 'expired') && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-danger" />
-                  <span className="text-sm text-danger">
-                    {selectedNucleus.fireExtinguishers.filter(ext => ext.status === 'expired').length} extintor(es) vencido(s)
-                  </span>
                 </div>
               )}
 
@@ -303,20 +324,28 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
                 <div className="font-medium">{nucleus.name}</div>
                 <div className="text-muted-foreground">{nucleus.city}</div>
                 <div className="flex items-center gap-1 mt-1">
-                  {nucleus.hydrants.length > 0 && (
-                    <Badge variant="secondary" className="text-xs px-1 py-0">
-                      Hidrante ({nucleus.hydrants.length})
+                  {nucleus.isAgentMode === true ? (
+                    <Badge variant="secondary" className="text-xs px-1 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                      Fórum
                     </Badge>
-                  )}
-                  {nucleus.fireExtinguishers.some(ext => ext.status === 'expired') && (
-                    <Badge variant="destructive" className="text-xs px-1 py-0">
-                      Vencido
-                    </Badge>
-                  )}
-                  {nucleus.fireExtinguishers.some(ext => ext.status === 'expiring-soon') && (
-                    <Badge variant="outline" className="text-xs px-1 py-0 border-orange-500 text-orange-600">
-                      Vencendo
-                    </Badge>
+                  ) : (
+                    <>
+                      {nucleus.hydrants.length > 0 && (
+                        <Badge variant="secondary" className="text-xs px-1 py-0">
+                          Hidrante ({nucleus.hydrants.length})
+                        </Badge>
+                      )}
+                      {nucleus.fireExtinguishers.some(ext => ext.status === 'expired') && (
+                        <Badge variant="destructive" className="text-xs px-1 py-0">
+                          Vencido
+                        </Badge>
+                      )}
+                      {nucleus.fireExtinguishers.some(ext => ext.status === 'expiring-soon') && (
+                        <Badge variant="outline" className="text-xs px-1 py-0 border-orange-500 text-orange-600">
+                          Vencendo
+                        </Badge>
+                      )}
+                    </>
                   )}
                 </div>
               </button>
