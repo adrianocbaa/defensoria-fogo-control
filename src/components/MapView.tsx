@@ -1,5 +1,4 @@
-import React, { useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Nucleus } from '@/types/nucleus';
@@ -17,7 +16,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-// Fix for default markers in React Leaflet
+// Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -75,6 +74,8 @@ const createCustomIcon = (color: string) => {
 };
 
 export function MapView({ nuclei, onViewDetails }: MapViewProps) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<L.Map | null>(null);
   const [selectedNucleus, setSelectedNucleus] = useState<Nucleus | null>(null);
 
   // Filter nuclei with valid coordinates
@@ -102,62 +103,68 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
     return [avgLat, avgLng];
   }, [validNuclei]);
 
+  useEffect(() => {
+    if (!mapContainer.current) return;
+
+    // Initialize map
+    map.current = L.map(mapContainer.current).setView(mapCenter as [number, number], 6);
+
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map.current);
+
+    // Add markers for each nucleus
+    validNuclei.forEach((nucleus) => {
+      const marker = L.marker(
+        [nucleus.coordinates!.lat, nucleus.coordinates!.lng],
+        { icon: createCustomIcon(getMarkerColor(nucleus)) }
+      ).addTo(map.current!);
+
+      // Add click event
+      marker.on('click', () => {
+        setSelectedNucleus(nucleus);
+      });
+
+      // Add popup
+      const popupContent = `
+        <div style="min-width: 200px;">
+          <h3 style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">${nucleus.name}</h3>
+          <p style="font-size: 12px; color: #666; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+            📍 ${nucleus.city}
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: ${nucleus.hydrants.length > 0 ? '#2563eb' : '#9ca3af'};">💧</span>
+              <span style="font-size: 12px;">
+                ${nucleus.hydrants.length > 0 ? `${nucleus.hydrants.length} hidrante(s)` : 'Sem hidrante'}
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #dc2626;">🧯</span>
+              <span style="font-size: 12px;">
+                ${nucleus.fireExtinguishers.length} extintor(es)
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      marker.bindPopup(popupContent);
+    });
+
+    // Cleanup
+    return () => {
+      if (map.current) {
+        map.current.remove();
+      }
+    };
+  }, [validNuclei, mapCenter]);
+
   return (
     <div className="relative w-full h-[600px] border rounded-lg overflow-hidden">
       {/* Map container */}
-      <MapContainer
-        center={mapCenter as [number, number]}
-        zoom={6}
-        style={{ height: '100%', width: '100%' }}
-        className="leaflet-container"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        
-        {validNuclei.map((nucleus) => (
-          <Marker
-            key={nucleus.id}
-            position={[nucleus.coordinates!.lat, nucleus.coordinates!.lng]}
-            icon={createCustomIcon(getMarkerColor(nucleus))}
-            eventHandlers={{
-              click: () => setSelectedNucleus(nucleus),
-            }}
-          >
-            <Popup>
-              <div className="min-w-[200px]">
-                <h3 className="font-semibold text-sm mb-2">{nucleus.name}</h3>
-                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {nucleus.city}
-                </p>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Droplets className={`h-3 w-3 ${nucleus.hydrants.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <span className="text-xs">
-                      {nucleus.hydrants.length > 0 ? `${nucleus.hydrants.length} hidrante(s)` : 'Sem hidrante'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-3 w-3 text-primary" />
-                    <span className="text-xs">
-                      {nucleus.fireExtinguishers.length} extintor(es)
-                    </span>
-                  </div>
-                </div>
-                <Button 
-                  size="sm" 
-                  onClick={() => onViewDetails(nucleus.id)}
-                  className="w-full mt-2 text-xs"
-                >
-                  Ver Detalhes
-                </Button>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+      <div ref={mapContainer} className="absolute inset-0" />
       
       {/* Nucleus info panel */}
       {selectedNucleus && (

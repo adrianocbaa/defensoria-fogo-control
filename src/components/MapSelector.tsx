@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { MapPin } from 'lucide-react';
 
-// Fix for default markers in React Leaflet
+// Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -20,19 +19,10 @@ interface MapSelectorProps {
   address?: string; // Para geocoding automático
 }
 
-// Component to handle map clicks
-function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click: (e) => {
-      const { lat, lng } = e.latlng;
-      onLocationSelect(lat, lng);
-    },
-  });
-  
-  return null;
-}
-
 export function MapSelector({ onLocationSelect, initialCoordinates, address }: MapSelectorProps) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<L.Map | null>(null);
+  const marker = useRef<L.Marker | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(
     initialCoordinates || null
@@ -61,9 +51,72 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
     }
   }, [address, initialCoordinates]);
 
-  const handleLocationClick = (lat: number, lng: number) => {
-    setSelectedCoords({ lat, lng });
-  };
+  useEffect(() => {
+    if (!isOpen || !mapContainer.current) return;
+
+    const mapCenter: [number, number] = selectedCoords 
+      ? [selectedCoords.lat, selectedCoords.lng]
+      : [-15.6014, -55.6528]; // Centro de Mato Grosso (default)
+
+    const mapZoom = selectedCoords || initialCoordinates ? 16 : 12;
+
+    // Initialize map
+    map.current = L.map(mapContainer.current).setView(mapCenter, mapZoom);
+
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map.current);
+
+    // Add initial marker if coordinates exist
+    if (selectedCoords) {
+      marker.current = L.marker([selectedCoords.lat, selectedCoords.lng], { draggable: true })
+        .addTo(map.current);
+
+      // Handle marker drag
+      marker.current.on('dragend', () => {
+        if (marker.current) {
+          const { lat, lng } = marker.current.getLatLng();
+          setSelectedCoords({ lat, lng });
+        }
+      });
+    }
+
+    // Handle map clicks
+    map.current.on('click', (e) => {
+      const { lat, lng } = e.latlng;
+      
+      // Remove existing marker
+      if (marker.current) {
+        marker.current.remove();
+      }
+
+      // Add new marker
+      marker.current = L.marker([lat, lng], { draggable: true })
+        .addTo(map.current!);
+
+      // Handle marker drag
+      marker.current.on('dragend', () => {
+        if (marker.current) {
+          const { lat, lng } = marker.current.getLatLng();
+          setSelectedCoords({ lat, lng });
+        }
+      });
+
+      setSelectedCoords({ lat, lng });
+    });
+
+    // Cleanup
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+      if (marker.current) {
+        marker.current = null;
+      }
+    };
+  }, [isOpen, selectedCoords, initialCoordinates]);
 
   const handleConfirm = () => {
     if (selectedCoords) {
@@ -71,12 +124,6 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
       setIsOpen(false);
     }
   };
-
-  const mapCenter: [number, number] = selectedCoords 
-    ? [selectedCoords.lat, selectedCoords.lng]
-    : [-15.6014, -55.6528]; // Centro de Mato Grosso (default)
-
-  const mapZoom = selectedCoords || initialCoordinates ? 16 : 12;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -97,31 +144,10 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
         
         <div className="flex flex-col gap-4 h-full">
           <div className="text-sm text-muted-foreground">
-            Clique no mapa para selecionar a localização do núcleo.
+            Clique no mapa para selecionar a localização do núcleo. Você pode arrastar o marcador para ajustar a posição.
           </div>
           
-          <div className="flex-1 rounded-lg border overflow-hidden">
-            <MapContainer
-              center={mapCenter}
-              zoom={mapZoom}
-              style={{ height: '100%', width: '100%' }}
-              className="leaflet-container"
-              key={`${mapCenter[0]}-${mapCenter[1]}-${isOpen}`} // Force re-render when center changes or dialog opens
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              
-              <MapClickHandler onLocationSelect={handleLocationClick} />
-              
-              {selectedCoords && (
-                <Marker
-                  position={[selectedCoords.lat, selectedCoords.lng]}
-                />
-              )}
-            </MapContainer>
-          </div>
+          <div ref={mapContainer} className="flex-1 rounded-lg border" />
           
           {selectedCoords && (
             <div className="text-sm">
