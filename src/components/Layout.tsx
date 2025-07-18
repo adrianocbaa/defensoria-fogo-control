@@ -29,8 +29,8 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex items-center gap-4">
               <div className="bg-white rounded p-2">
                 <img 
-                  src="/lovable-uploads/a8db7abe-32e2-4385-9613-4be5de210585.png" 
-                  alt="Defensoria Pública do Estado de Mato Grosso" 
+                  src="/lovable-uploads/54c4e836-3b73-4fbc-94db-18ca73e83b5d.png" 
+                  alt="DIF - Diretoria de Infraestrutura Física - DPMT" 
                   className="h-12 w-auto"
                 />
               </div>
