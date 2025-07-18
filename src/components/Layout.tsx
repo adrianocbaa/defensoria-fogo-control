@@ -12,15 +12,6 @@ export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth();
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar governamental */}
-      <div className="bg-primary/90 text-primary-foreground text-xs py-1">
-        <div className="container mx-auto px-4 flex justify-end gap-4">
-          <span>Contraste</span>
-          <span>Acessibilidade</span>
-          <span>Ouvidoria</span>
-          <span>Webmail</span>
-        </div>
-      </div>
 
       {/* Header principal */}
       <header className="bg-primary text-primary-foreground shadow-lg">
@@ -41,11 +32,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <div className="flex items-center gap-6">
               <div className="hidden md:flex gap-6 text-sm font-medium">
-                <span>INSTITUCIONAL</span>
-                <span>SERVIÇOS</span>
-                <span>IMPRENSA</span>
-                <span>TRANSPARÊNCIA</span>
-                <span>FALE CONOSCO</span>
+                <span>PREVENTIVOS DE INCÊNDIO</span>
               </div>
               
               {/* User Menu */}

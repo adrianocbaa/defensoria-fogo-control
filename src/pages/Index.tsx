@@ -133,54 +133,17 @@ const Index = () => {
 
   return (
     <Layout>
-      {/* Breadcrumb */}
-      <nav className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Home</span>
-          <span>/</span>
-          <span>Fale Conosco</span>
-          <span>/</span>
-          <span className="text-foreground font-medium">Núcleos e Coordenadorias</span>
-        </div>
-      </nav>
 
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-4">
-          Núcleos e Coordenadorias
+          Núcleos DPE-MT
         </h1>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <p className="text-muted-foreground">
             Sistema de Controle de Prevenção de Incêndio dos Núcleos da Defensoria
           </p>
           <div className="flex gap-3">
-            <Button variant="outline" size="sm">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Dashboard
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={async () => {
-                try {
-                  await seedDatabase();
-                  await refetch();
-                  toast({
-                    title: "Dados importados com sucesso!",
-                    description: "Os dados de exemplo foram carregados no banco de dados.",
-                  });
-                } catch (error) {
-                  toast({
-                    title: "Erro ao importar dados",
-                    description: "Verifique o console para mais detalhes.",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            >
-              <Database className="h-4 w-4 mr-2" />
-              Importar Dados
-            </Button>
             <Button 
               size="sm" 
               className="bg-primary hover:bg-primary/90"
