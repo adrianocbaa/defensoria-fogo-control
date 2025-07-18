@@ -50,6 +50,8 @@ const nucleusFormSchema = z.object({
     capacity: z.string().optional(),
     expirationDate: z.date(),
     lastInspection: z.date().optional(),
+    supportType: z.enum(['wall', 'tripod']).optional(),
+    hasVerticalSignage: z.boolean().optional(),
   })),
   // Hidrantes
   hydrants: z.array(z.object({
@@ -113,6 +115,8 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
         capacity: '',
         expirationDate: new Date(),
         lastInspection: undefined,
+        supportType: undefined,
+        hasVerticalSignage: false,
       }
     ]);
   };
@@ -511,11 +515,52 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                               />
                             </PopoverContent>
                           </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+
+                     <FormField
+                       control={form.control}
+                       name={`extinguishers.${index}.supportType`}
+                       render={({ field }) => (
+                         <FormItem>
+                           <FormLabel>Tipo de Suporte</FormLabel>
+                           <FormControl>
+                             <select
+                               {...field}
+                               className="w-full p-2 border border-border rounded-md bg-background"
+                             >
+                               <option value="">Selecionar suporte</option>
+                               <option value="wall">Parede</option>
+                               <option value="tripod">Tripé</option>
+                             </select>
+                           </FormControl>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+
+                     <FormField
+                       control={form.control}
+                       name={`extinguishers.${index}.hasVerticalSignage`}
+                       render={({ field }) => (
+                         <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                           <FormControl>
+                             <Checkbox
+                               checked={field.value}
+                               onCheckedChange={field.onChange}
+                             />
+                           </FormControl>
+                           <div className="space-y-1 leading-none">
+                             <FormLabel>
+                               Possui Sinalização Vertical
+                             </FormLabel>
+                           </div>
+                         </FormItem>
+                       )}
+                     />
+                   </div>
                 </div>
               ))}
             </div>

@@ -99,12 +99,14 @@ export type Database = {
           capacity: string | null
           created_at: string
           expiration_date: string
+          has_vertical_signage: boolean | null
           id: string
           last_inspection: string | null
           location: string
           nucleus_id: string
           serial_number: string | null
           status: Database["public"]["Enums"]["extinguisher_status"]
+          support_type: string | null
           type: Database["public"]["Enums"]["extinguisher_type"]
           updated_at: string
         }
@@ -112,12 +114,14 @@ export type Database = {
           capacity?: string | null
           created_at?: string
           expiration_date: string
+          has_vertical_signage?: boolean | null
           id?: string
           last_inspection?: string | null
           location: string
           nucleus_id: string
           serial_number?: string | null
           status: Database["public"]["Enums"]["extinguisher_status"]
+          support_type?: string | null
           type: Database["public"]["Enums"]["extinguisher_type"]
           updated_at?: string
         }
@@ -125,12 +129,14 @@ export type Database = {
           capacity?: string | null
           created_at?: string
           expiration_date?: string
+          has_vertical_signage?: boolean | null
           id?: string
           last_inspection?: string | null
           location?: string
           nucleus_id?: string
           serial_number?: string | null
           status?: Database["public"]["Enums"]["extinguisher_status"]
+          support_type?: string | null
           type?: Database["public"]["Enums"]["extinguisher_type"]
           updated_at?: string
         }
