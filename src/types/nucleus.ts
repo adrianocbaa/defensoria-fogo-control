@@ -3,6 +3,7 @@ export interface Nucleus {
   name: string;
   city: string;
   address: string;
+  isAgentMode?: boolean;
   coordinates?: { lat: number; lng: number };
   contact?: {
     phone?: string;

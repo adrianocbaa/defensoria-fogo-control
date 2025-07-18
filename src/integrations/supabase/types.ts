@@ -221,6 +221,7 @@ export type Database = {
           fire_department_license_document_url: string | null
           fire_department_license_valid_until: string | null
           id: string
+          is_agent_mode: boolean
           name: string
           updated_at: string
           user_id: string | null
@@ -236,6 +237,7 @@ export type Database = {
           fire_department_license_document_url?: string | null
           fire_department_license_valid_until?: string | null
           id?: string
+          is_agent_mode?: boolean
           name: string
           updated_at?: string
           user_id?: string | null
@@ -251,6 +253,7 @@ export type Database = {
           fire_department_license_document_url?: string | null
           fire_department_license_valid_until?: string | null
           id?: string
+          is_agent_mode?: boolean
           name?: string
           updated_at?: string
           user_id?: string | null

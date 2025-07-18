@@ -49,6 +49,7 @@ export function useNuclei() {
         name: nucleus.name,
         city: nucleus.city,
         address: nucleus.address,
+        isAgentMode: nucleus.is_agent_mode || false,
         hydrants: hydrantsData
           .filter(hydrant => hydrant.nucleus_id === nucleus.id)
           .map(hydrant => ({
@@ -130,6 +131,7 @@ export function useNuclei() {
           name: nucleus.name,
           city: nucleus.city,
           address: nucleus.address,
+          is_agent_mode: nucleus.isAgentMode || false,
         // Hydrants will be handled separately
           coordinates_lat: nucleus.coordinates?.lat,
           coordinates_lng: nucleus.coordinates?.lng,
@@ -224,6 +226,7 @@ export function useNuclei() {
           name: nucleus.name,
           city: nucleus.city,
           address: nucleus.address,
+          is_agent_mode: nucleus.isAgentMode || false,
           coordinates_lat: nucleus.coordinates?.lat,
           coordinates_lng: nucleus.coordinates?.lng,
           contact_phone: nucleus.contact?.phone,

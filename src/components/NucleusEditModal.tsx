@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -176,8 +177,20 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="relative">
           <DialogTitle>Editar Núcleo</DialogTitle>
+          
+          {/* Toggle Modo Agente no canto superior direito */}
+          <div className="absolute top-0 right-0 flex items-center space-x-2">
+            <Label htmlFor="edit-agent-mode" className="text-sm font-medium">
+              Modo Agente
+            </Label>
+            <Switch
+              id="edit-agent-mode"
+              checked={formData.isAgentMode || false}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isAgentMode: checked }))}
+            />
+          </div>
         </DialogHeader>
         
         <Tabs defaultValue="edit" className="w-full">
@@ -300,16 +313,17 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
           </Card>
 
           {/* Extintores de Incêndio */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Extintores de Incêndio</CardTitle>
-                <Button type="button" onClick={addExtinguisher} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Extintor
-                </Button>
-              </div>
-            </CardHeader>
+          {!formData.isAgentMode && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Extintores de Incêndio</CardTitle>
+                  <Button type="button" onClick={addExtinguisher} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Extintor
+                  </Button>
+                </div>
+              </CardHeader>
             <CardContent className="space-y-4">
               {formData.fireExtinguishers.map((extinguisher, index) => (
                 <div key={extinguisher.id} className="p-4 border rounded-lg">
@@ -439,10 +453,12 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                 </div>
               ))}
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
           {/* Hidrantes */}
-          <Card>
+          {!formData.isAgentMode && (
+            <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Hidrantes</CardTitle>
@@ -565,7 +581,8 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                 </div>
               ))}
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
           {/* Documentos */}
           <Card>
