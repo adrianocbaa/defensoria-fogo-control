@@ -61,7 +61,7 @@ export function NucleusCard({ nucleus, onViewDetails, onDelete }: NucleusCardPro
             {hasWarnings && !hasErrors && (
               <AlertTriangle className="h-5 w-5 text-warning" />
             )}
-            {!nucleus.isAgentMode && nucleus.hydrants.length > 0 && (
+            {nucleus.isAgentMode !== true && nucleus.hydrants.length > 0 && (
               <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
                 <Droplets className="h-3 w-3 mr-1" />
                 Hidrante ({nucleus.hydrants.length})
@@ -92,7 +92,7 @@ export function NucleusCard({ nucleus, onViewDetails, onDelete }: NucleusCardPro
         </div>
 
         {/* Status Summary */}
-        {!nucleus.isAgentMode ? (
+        {nucleus.isAgentMode !== true ? (
           <div className="grid grid-cols-2 gap-2 pt-2 border-t">
             <div className="text-center">
               <div className="text-lg font-semibold text-foreground">
@@ -120,14 +120,14 @@ export function NucleusCard({ nucleus, onViewDetails, onDelete }: NucleusCardPro
 
         {/* Alerts */}
         <div className="space-y-1">
-          {!nucleus.isAgentMode && expiredExtinguishers > 0 && (
+          {nucleus.isAgentMode !== true && expiredExtinguishers > 0 && (
             <div className="flex items-center gap-2 text-xs p-2 rounded bg-danger/10 text-danger border border-danger/20">
               <AlertTriangle className="h-3 w-3" />
               <span>{expiredExtinguishers} extintor(es) vencido(s)</span>
             </div>
           )}
           
-          {!nucleus.isAgentMode && expiringSoonExtinguishers > 0 && (
+          {nucleus.isAgentMode !== true && expiringSoonExtinguishers > 0 && (
             <div className="flex items-center gap-2 text-xs p-2 rounded bg-warning/10 text-warning-foreground border border-warning/20">
               <Clock className="h-3 w-3" />
               <span>{expiringSoonExtinguishers} extintor(es) vencendo</span>

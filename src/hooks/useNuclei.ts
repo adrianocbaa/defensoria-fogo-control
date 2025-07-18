@@ -44,68 +44,72 @@ export function useNuclei() {
       if (documentsError) throw documentsError;
 
       // Combine data
-      const combinedNuclei: Nucleus[] = nucleiData.map(nucleus => ({
-        id: nucleus.id,
-        name: nucleus.name,
-        city: nucleus.city,
-        address: nucleus.address,
-        isAgentMode: nucleus.is_agent_mode || false,
-        hydrants: hydrantsData
-          .filter(hydrant => hydrant.nucleus_id === nucleus.id)
-          .map(hydrant => ({
-            id: hydrant.id,
-            location: hydrant.location,
-            status: hydrant.status as 'verified' | 'not_verified',
-            hoseExpirationDate: hydrant.hose_expiration_date ? new Date(hydrant.hose_expiration_date) : undefined,
-            hasRegister: hydrant.has_register || false,
-            hasHose: hydrant.has_hose || false,
-            hasKey: hydrant.has_key || false,
-            hasCoupling: hydrant.has_coupling || false,
-            hasAdapter: hydrant.has_adapter || false,
-            hasNozzle: hydrant.has_nozzle || false,
-          })),
-        coordinates: nucleus.coordinates_lat && nucleus.coordinates_lng 
-          ? { lat: Number(nucleus.coordinates_lat), lng: Number(nucleus.coordinates_lng) }
-          : undefined,
-        contact: {
-          phone: nucleus.contact_phone || undefined,
-          email: nucleus.contact_email || undefined,
-        },
-        fireExtinguishers: extinguishersData
-          .filter(ext => ext.nucleus_id === nucleus.id)
-          .map(ext => ({
-            id: ext.id,
-            type: ext.type as FireExtinguisher['type'],
-            expirationDate: new Date(ext.expiration_date),
-            location: ext.location,
-            serialNumber: ext.serial_number || undefined,
-            capacity: ext.capacity || undefined,
-            lastInspection: ext.last_inspection ? new Date(ext.last_inspection) : undefined,
-            hydrostaticTest: ext.hydrostatic_test ? new Date(ext.hydrostatic_test) : undefined,
-            supportType: ext.support_type as FireExtinguisher['supportType'] || undefined,
-            hasVerticalSignage: ext.has_vertical_signage || false,
-            status: ext.status as FireExtinguisher['status'],
-          })),
-        documents: documentsData
-          .filter(doc => doc.nucleus_id === nucleus.id)
-          .map(doc => ({
-            id: doc.id,
-            type: doc.type as Document['type'],
-            name: doc.name,
-            url: doc.url,
-            uploadedAt: new Date(doc.uploaded_at),
-            size: doc.size || undefined,
-            mimeType: doc.mime_type || undefined,
-          })),
-        fireDepartmentLicense: nucleus.fire_department_license_valid_until
-          ? {
-              validUntil: new Date(nucleus.fire_department_license_valid_until),
-              documentUrl: nucleus.fire_department_license_document_url || undefined,
-            }
-          : undefined,
-        createdAt: new Date(nucleus.created_at),
-        updatedAt: new Date(nucleus.updated_at),
-      }));
+      const combinedNuclei: Nucleus[] = nucleiData.map(nucleus => {
+        const combinedNucleus = {
+          id: nucleus.id,
+          name: nucleus.name,
+          city: nucleus.city,
+          address: nucleus.address,
+          isAgentMode: nucleus.is_agent_mode || false,
+          hydrants: hydrantsData
+            .filter(hydrant => hydrant.nucleus_id === nucleus.id)
+            .map(hydrant => ({
+              id: hydrant.id,
+              location: hydrant.location,
+              status: hydrant.status as 'verified' | 'not_verified',
+              hoseExpirationDate: hydrant.hose_expiration_date ? new Date(hydrant.hose_expiration_date) : undefined,
+              hasRegister: hydrant.has_register || false,
+              hasHose: hydrant.has_hose || false,
+              hasKey: hydrant.has_key || false,
+              hasCoupling: hydrant.has_coupling || false,
+              hasAdapter: hydrant.has_adapter || false,
+              hasNozzle: hydrant.has_nozzle || false,
+            })),
+          coordinates: nucleus.coordinates_lat && nucleus.coordinates_lng 
+            ? { lat: Number(nucleus.coordinates_lat), lng: Number(nucleus.coordinates_lng) }
+            : undefined,
+          contact: {
+            phone: nucleus.contact_phone || undefined,
+            email: nucleus.contact_email || undefined,
+          },
+          fireExtinguishers: extinguishersData
+            .filter(ext => ext.nucleus_id === nucleus.id)
+            .map(ext => ({
+              id: ext.id,
+              type: ext.type as FireExtinguisher['type'],
+              expirationDate: new Date(ext.expiration_date),
+              location: ext.location,
+              serialNumber: ext.serial_number || undefined,
+              capacity: ext.capacity || undefined,
+              lastInspection: ext.last_inspection ? new Date(ext.last_inspection) : undefined,
+              hydrostaticTest: ext.hydrostatic_test ? new Date(ext.hydrostatic_test) : undefined,
+              supportType: ext.support_type as FireExtinguisher['supportType'] || undefined,
+              hasVerticalSignage: ext.has_vertical_signage || false,
+              status: ext.status as FireExtinguisher['status'],
+            })),
+          documents: documentsData
+            .filter(doc => doc.nucleus_id === nucleus.id)
+            .map(doc => ({
+              id: doc.id,
+              type: doc.type as Document['type'],
+              name: doc.name,
+              url: doc.url,
+              uploadedAt: new Date(doc.uploaded_at),
+              size: doc.size || undefined,
+              mimeType: doc.mime_type || undefined,
+            })),
+          fireDepartmentLicense: nucleus.fire_department_license_valid_until
+            ? {
+                validUntil: new Date(nucleus.fire_department_license_valid_until),
+                documentUrl: nucleus.fire_department_license_document_url || undefined,
+              }
+            : undefined,
+          createdAt: new Date(nucleus.created_at),
+          updatedAt: new Date(nucleus.updated_at),
+        };
+        
+        return combinedNucleus;
+      });
 
       setNuclei(combinedNuclei);
       setError(null);
