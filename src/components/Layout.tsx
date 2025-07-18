@@ -20,7 +20,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center">
                 <img 
-                  src="/lovable-uploads/2b606e12-c9d1-4e56-8a6b-2ef102b2a25d.png" 
+                  src="/lovable-uploads/b1b86eb2-3439-4770-9572-77fb9dd247a3.png" 
                   alt="Defensoria Pública Logo" 
                   className="h-16 w-auto"
                 />
