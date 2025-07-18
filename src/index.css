@@ -147,3 +147,8 @@ All colors MUST be HSL.
 .custom-marker {
   z-index: 1000 !important;
 }
+
+/* Popover z-index fix for calendars */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
