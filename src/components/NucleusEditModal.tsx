@@ -180,10 +180,10 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
         <DialogHeader className="relative">
           <DialogTitle>Editar Núcleo</DialogTitle>
           
-          {/* Toggle Modo Agente no canto superior direito */}
+          {/* Toggle Fórum no canto superior direito */}
           <div className="absolute top-0 right-0 flex items-center space-x-2">
             <Label htmlFor="edit-agent-mode" className="text-sm font-medium">
-              Modo Agente
+              Fórum
             </Label>
             <Switch
               id="edit-agent-mode"

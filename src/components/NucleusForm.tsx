@@ -225,10 +225,10 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
         <DialogHeader className="relative">
           <DialogTitle>Cadastro de Novo Núcleo</DialogTitle>
           
-          {/* Toggle Modo Agente no canto superior direito */}
+          {/* Toggle Fórum no canto superior direito */}
           <div className="absolute top-0 right-0 flex items-center space-x-2">
             <Label htmlFor="agent-mode" className="text-sm font-medium">
-              Modo Agente
+              Fórum
             </Label>
             <Switch
               id="agent-mode"
