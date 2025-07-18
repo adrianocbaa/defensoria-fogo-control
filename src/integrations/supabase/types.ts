@@ -100,6 +100,7 @@ export type Database = {
           created_at: string
           expiration_date: string
           has_vertical_signage: boolean | null
+          hydrostatic_test: string | null
           id: string
           last_inspection: string | null
           location: string
@@ -115,6 +116,7 @@ export type Database = {
           created_at?: string
           expiration_date: string
           has_vertical_signage?: boolean | null
+          hydrostatic_test?: string | null
           id?: string
           last_inspection?: string | null
           location: string
@@ -130,6 +132,7 @@ export type Database = {
           created_at?: string
           expiration_date?: string
           has_vertical_signage?: boolean | null
+          hydrostatic_test?: string | null
           id?: string
           last_inspection?: string | null
           location?: string
