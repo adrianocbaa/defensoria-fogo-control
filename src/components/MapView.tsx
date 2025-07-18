@@ -13,7 +13,10 @@ import {
   Clock, 
   Phone,
   Mail,
-  ExternalLink
+  ExternalLink,
+  FileText,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 // Fix for default markers in Leaflet
@@ -212,6 +215,30 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
                   {selectedNucleus.fireExtinguishers.length} extintor(es)
                 </span>
               </div>
+
+              {/* License status */}
+              {selectedNucleus.fireDepartmentLicense?.validUntil && (
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const now = new Date();
+                    const validUntil = new Date(selectedNucleus.fireDepartmentLicense.validUntil);
+                    const isExpired = validUntil < now;
+                    
+                    return (
+                      <>
+                        {isExpired ? (
+                          <XCircle className="h-4 w-4 text-red-600" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        )}
+                        <span className={`text-sm ${isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                          Alvará {isExpired ? 'vencido' : 'válido'}
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* Expired items */}
               {selectedNucleus.fireExtinguishers.some(ext => ext.status === 'expired') && (
