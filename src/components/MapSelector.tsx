@@ -52,29 +52,18 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
   }, [address, initialCoordinates]);
 
   useEffect(() => {
-    console.log('MapSelector useEffect triggered:', { isOpen, hasContainer: !!mapContainer.current });
-    
-    if (!isOpen || !mapContainer.current) {
-      console.log('Early return - isOpen:', isOpen, 'hasContainer:', !!mapContainer.current);
-      return;
-    }
+    if (!isOpen) return;
 
-    // Add a small delay to ensure the modal is fully rendered
-    const timeout = setTimeout(() => {
-      console.log('Timeout executed, container check:', !!mapContainer.current);
-      
+    // Wait for the modal to be fully rendered and accessible
+    const initializeMap = () => {
       if (!mapContainer.current) {
-        console.log('No container available after timeout');
+        // If container is not ready, try again in next frame
+        requestAnimationFrame(initializeMap);
         return;
       }
 
-      // Check container dimensions
-      const rect = mapContainer.current.getBoundingClientRect();
-      console.log('Container dimensions:', rect);
-
       // Clean up any existing map instance
       if (map.current) {
-        console.log('Removing existing map');
         map.current.remove();
         map.current = null;
       }
@@ -84,8 +73,6 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
         : [-15.6014, -55.6528]; // Centro de Mato Grosso (default)
 
       const mapZoom = selectedCoords || initialCoordinates ? 16 : 12;
-
-      console.log('Initializing Leaflet map:', { mapCenter, mapZoom });
 
       try {
         // Initialize map
@@ -99,8 +86,6 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
           attributionControl: true
         }).setView(mapCenter, mapZoom);
 
-        console.log('Map instance created:', !!map.current);
-
         // Add tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -108,65 +93,57 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
           detectRetina: true
         }).addTo(map.current);
 
-        console.log('Tile layer added');
-
-        // Force map resize after initialization with multiple attempts
+        // Force map resize after initialization
         setTimeout(() => {
           if (map.current) {
-            console.log('First invalidateSize call');
             map.current.invalidateSize();
-            map.current.getContainer().style.height = '400px';
           }
         }, 100);
 
-        setTimeout(() => {
-          if (map.current) {
-            console.log('Second invalidateSize call');
-            map.current.invalidateSize();
+        // Add initial marker if coordinates exist
+        if (selectedCoords) {
+          marker.current = L.marker([selectedCoords.lat, selectedCoords.lng], { draggable: true })
+            .addTo(map.current);
+
+          // Handle marker drag
+          marker.current.on('dragend', () => {
+            if (marker.current) {
+              const { lat, lng } = marker.current.getLatLng();
+              setSelectedCoords({ lat, lng });
+            }
+          });
+        }
+
+        // Handle map clicks
+        map.current.on('click', (e) => {
+          const { lat, lng } = e.latlng;
+          
+          // Remove existing marker
+          if (marker.current) {
+            marker.current.remove();
           }
-        }, 500);
+
+          // Add new marker
+          marker.current = L.marker([lat, lng], { draggable: true })
+            .addTo(map.current!);
+
+          // Handle marker drag
+          marker.current.on('dragend', () => {
+            if (marker.current) {
+              const { lat, lng } = marker.current.getLatLng();
+              setSelectedCoords({ lat, lng });
+            }
+          });
+
+          setSelectedCoords({ lat, lng });
+        });
       } catch (error) {
         console.error('Error initializing map:', error);
       }
+    };
 
-      // Add initial marker if coordinates exist
-      if (selectedCoords) {
-        marker.current = L.marker([selectedCoords.lat, selectedCoords.lng], { draggable: true })
-          .addTo(map.current);
-
-        // Handle marker drag
-        marker.current.on('dragend', () => {
-          if (marker.current) {
-            const { lat, lng } = marker.current.getLatLng();
-            setSelectedCoords({ lat, lng });
-          }
-        });
-      }
-
-      // Handle map clicks
-      map.current.on('click', (e) => {
-        const { lat, lng } = e.latlng;
-        
-        // Remove existing marker
-        if (marker.current) {
-          marker.current.remove();
-        }
-
-        // Add new marker
-        marker.current = L.marker([lat, lng], { draggable: true })
-          .addTo(map.current!);
-
-        // Handle marker drag
-        marker.current.on('dragend', () => {
-          if (marker.current) {
-            const { lat, lng } = marker.current.getLatLng();
-            setSelectedCoords({ lat, lng });
-          }
-        });
-
-        setSelectedCoords({ lat, lng });
-      });
-    }, 500); // Longer delay to ensure modal is fully rendered
+    // Start initialization with a delay to ensure modal is rendered
+    const timeout = setTimeout(initializeMap, 500);
 
     // Cleanup
     return () => {
@@ -179,7 +156,7 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
         marker.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, selectedCoords, initialCoordinates]);
 
   const handleConfirm = () => {
     if (selectedCoords) {
