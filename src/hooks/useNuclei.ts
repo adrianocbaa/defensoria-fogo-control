@@ -80,6 +80,9 @@ export function useNuclei() {
             serialNumber: ext.serial_number || undefined,
             capacity: ext.capacity || undefined,
             lastInspection: ext.last_inspection ? new Date(ext.last_inspection) : undefined,
+            hydrostaticTest: ext.hydrostatic_test ? new Date(ext.hydrostatic_test) : undefined,
+            supportType: ext.support_type as FireExtinguisher['supportType'] || undefined,
+            hasVerticalSignage: ext.has_vertical_signage || false,
             status: ext.status as FireExtinguisher['status'],
           })),
         documents: documentsData
@@ -241,21 +244,23 @@ export function useNuclei() {
       if (deleteExtError) throw deleteExtError;
 
       if (nucleus.fireExtinguishers.length > 0) {
+        const extinguishersData = nucleus.fireExtinguishers.map(ext => ({
+          nucleus_id: nucleus.id,
+          type: ext.type,
+          expiration_date: ext.expirationDate.toISOString().split('T')[0],
+          location: ext.location,
+          capacity: ext.capacity,
+          hydrostatic_test: ext.hydrostaticTest?.toISOString().split('T')[0],
+          support_type: ext.supportType,
+          has_vertical_signage: ext.hasVerticalSignage,
+          status: ext.status,
+        }));
+        
+        console.log('Extinguishers data being saved:', extinguishersData);
+        
         const { error: extError } = await supabase
           .from('fire_extinguishers')
-          .insert(
-            nucleus.fireExtinguishers.map(ext => ({
-              nucleus_id: nucleus.id,
-              type: ext.type,
-              expiration_date: ext.expirationDate.toISOString().split('T')[0],
-              location: ext.location,
-              capacity: ext.capacity,
-              hydrostatic_test: ext.hydrostaticTest?.toISOString().split('T')[0],
-              support_type: ext.supportType,
-              has_vertical_signage: ext.hasVerticalSignage,
-              status: ext.status,
-            }))
-          );
+          .insert(extinguishersData);
 
         if (extError) throw extError;
       }
