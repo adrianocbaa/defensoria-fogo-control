@@ -36,14 +36,8 @@ export function Layout({ children }: LayoutProps) {
               </div>
             </div>
             <div className="flex items-center gap-6">
-              <div className="hidden md:flex gap-6 text-sm font-medium items-center">
+              <div className="hidden md:flex gap-6 text-sm font-medium">
                 <span>PREVENTIVOS DE INCÊNDIO</span>
-                <Link to="/public" target="_blank">
-                  <Button variant="outline" size="sm" className="gap-2 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10">
-                    <Eye className="h-4 w-4" />
-                    Visão Pública
-                  </Button>
-                </Link>
               </div>
               
               {/* User Menu */}
