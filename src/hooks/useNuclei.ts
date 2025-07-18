@@ -322,6 +322,33 @@ export function useNuclei() {
     }
   };
 
+  // Delete nucleus
+  const deleteNucleus = async (nucleusId: string) => {
+    try {
+      // Delete related data first (due to foreign key constraints)
+      await Promise.all([
+        supabase.from('fire_extinguishers').delete().eq('nucleus_id', nucleusId),
+        supabase.from('hydrants').delete().eq('nucleus_id', nucleusId),
+        supabase.from('documents').delete().eq('nucleus_id', nucleusId),
+      ]);
+
+      // Delete the nucleus itself
+      const { error: nucleusError } = await supabase
+        .from('nuclei')
+        .delete()
+        .eq('id', nucleusId);
+
+      if (nucleusError) throw nucleusError;
+
+      await fetchNuclei();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao deletar núcleo');
+      console.error('Error deleting nucleus:', err);
+      throw err;
+    }
+  };
+
   // Get nucleus by ID
   const getNucleusById = (id: string) => {
     return nuclei.find(nucleus => nucleus.id === id);
@@ -337,6 +364,7 @@ export function useNuclei() {
     error,
     addNucleus,
     updateNucleus,
+    deleteNucleus,
     getNucleusById,
     refetch: fetchNuclei,
   };

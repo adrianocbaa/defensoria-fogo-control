@@ -8,6 +8,7 @@ interface NucleiContextType {
   error: string | null;
   addNucleus: (nucleus: Omit<Nucleus, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateNucleus: (nucleus: Nucleus) => Promise<void>;
+  deleteNucleus: (nucleusId: string) => Promise<void>;
   getNucleusById: (id: string) => Nucleus | undefined;
   refetch: () => Promise<void>;
 }

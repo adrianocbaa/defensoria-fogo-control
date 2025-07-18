@@ -11,15 +11,17 @@ import {
   Eye,
   AlertTriangle,
   Clock,
-  Shield
+  Shield,
+  Trash2
 } from 'lucide-react';
 
 interface NucleusCardProps {
   nucleus: Nucleus;
   onViewDetails: (nucleusId: string) => void;
+  onDelete?: (nucleusId: string) => void;
 }
 
-export function NucleusCard({ nucleus, onViewDetails }: NucleusCardProps) {
+export function NucleusCard({ nucleus, onViewDetails, onDelete }: NucleusCardProps) {
   const expiredExtinguishers = nucleus.fireExtinguishers.filter(
     ext => ext.status === 'expired'
   ).length;
@@ -138,14 +140,25 @@ export function NucleusCard({ nucleus, onViewDetails }: NucleusCardProps) {
       </CardContent>
 
       <CardFooter className="pt-3">
-        <Button 
-          onClick={() => onViewDetails(nucleus.id)}
-          className="w-full" 
-          variant="outline"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          Ver Detalhes
-        </Button>
+        <div className="flex gap-2 w-full">
+          <Button 
+            onClick={() => onViewDetails(nucleus.id)}
+            className="flex-1" 
+            variant="outline"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Ver Detalhes
+          </Button>
+          {onDelete && (
+            <Button 
+              onClick={() => onDelete(nucleus.id)}
+              variant="destructive"
+              size="icon"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

@@ -150,5 +150,5 @@ All colors MUST be HSL.
 
 /* Popover z-index fix for calendars */
 [data-radix-popper-content-wrapper] {
-  z-index: 50 !important;
+  z-index: 9999 !important;
 }

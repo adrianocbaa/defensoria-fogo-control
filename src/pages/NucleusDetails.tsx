@@ -18,9 +18,11 @@ import {
   Shield,
   FileText,
   Target,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { useNuclei } from '@/contexts/NucleiContext';
+import { useToast } from '@/hooks/use-toast';
 import { ExtinguisherType } from '@/types/nucleus';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -35,8 +37,9 @@ const extinguisherTypeLabels: Record<ExtinguisherType, string> = {
 export default function NucleusDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getNucleusById, updateNucleus } = useNuclei();
+  const { getNucleusById, updateNucleus, deleteNucleus } = useNuclei();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { toast } = useToast();
   
   const nucleus = getNucleusById(id || '');
   
@@ -60,6 +63,25 @@ export default function NucleusDetails() {
   const isLicenseExpired = nucleus.fireDepartmentLicense?.validUntil 
     ? new Date(nucleus.fireDepartmentLicense.validUntil) < new Date()
     : false;
+
+  const handleDeleteNucleus = async () => {
+    if (window.confirm(`Tem certeza que deseja excluir o núcleo "${nucleus.name}"? Esta ação não pode ser desfeita.`)) {
+      try {
+        await deleteNucleus(nucleus.id);
+        toast({
+          title: "Núcleo excluído com sucesso!",
+          description: `${nucleus.name} foi removido do sistema.`,
+        });
+        navigate('/');
+      } catch (error) {
+        toast({
+          title: "Erro ao excluir núcleo",
+          description: "Ocorreu um erro ao tentar excluir o núcleo. Tente novamente.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   return (
     <Layout>
@@ -95,6 +117,14 @@ export default function NucleusDetails() {
             >
               <Edit className="h-4 w-4 mr-2" />
               Editar
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={handleDeleteNucleus}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
             </Button>
           </div>
         </div>
