@@ -1,8 +1,9 @@
 import { ReactNode } from 'react';
-import { Building2, Shield, LogOut, User } from 'lucide-react';
+import { Building2, Shield, LogOut, User, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Link } from 'react-router-dom';
 
 interface LayoutProps {
   children: ReactNode;
@@ -35,8 +36,14 @@ export function Layout({ children }: LayoutProps) {
               </div>
             </div>
             <div className="flex items-center gap-6">
-              <div className="hidden md:flex gap-6 text-sm font-medium">
+              <div className="hidden md:flex gap-6 text-sm font-medium items-center">
                 <span>PREVENTIVOS DE INCÊNDIO</span>
+                <Link to="/public" target="_blank">
+                  <Button variant="outline" size="sm" className="gap-2 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10">
+                    <Eye className="h-4 w-4" />
+                    Visão Pública
+                  </Button>
+                </Link>
               </div>
               
               {/* User Menu */}

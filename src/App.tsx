@@ -4,12 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { NucleiProvider } from "@/contexts/NucleiContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import NucleusDetails from "./pages/NucleusDetails";
 import AuthPage from "./pages/AuthPage";
+import PublicView from "./pages/PublicView";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,7 @@ const AppRoutes = () => {
 
   return (
     <Routes>
+      <Route path="/public" element={<PublicView />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route 
         path="/" 
@@ -50,15 +53,17 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <NucleiProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </NucleiProvider>
+    <AuthProvider>
+      <NucleiProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </NucleiProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
