@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -102,6 +102,27 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
   const hydrants = form.watch('hydrants');
   const documents = form.watch('documents');
   const address = form.watch('address');
+
+  // Watch for type changes and auto-set capacity
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name && name.includes('.type')) {
+        const typeMatch = name.match(/extinguishers\.(\d+)\.type/);
+        if (typeMatch) {
+          const index = parseInt(typeMatch[1]);
+          const type = value.extinguishers?.[index]?.type;
+          
+          if (type === 'H2O') {
+            form.setValue(`extinguishers.${index}.capacity`, '10L');
+          } else if (['ABC', 'PQS', 'CO2'].includes(type as string)) {
+            form.setValue(`extinguishers.${index}.capacity`, '');
+          }
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const addExtinguisher = () => {
     const currentExtinguishers = form.getValues('extinguishers');
@@ -374,19 +395,37 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name={`extinguishers.${index}.capacity`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Capacidade</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: 6kg, 10L" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                     <FormField
+                       control={form.control}
+                       name={`extinguishers.${index}.capacity`}
+                       render={({ field }) => {
+                         const currentType = form.watch(`extinguishers.${index}.type`);
+                         return (
+                           <FormItem>
+                             <FormLabel>Capacidade</FormLabel>
+                             <FormControl>
+                               {currentType === 'H2O' ? (
+                                 <Input 
+                                   value="10L" 
+                                   readOnly 
+                                   className="bg-muted"
+                                 />
+                               ) : (
+                                 <select
+                                   {...field}
+                                   className="w-full p-2 border border-border rounded-md bg-background"
+                                 >
+                                   <option value="">Selecione a capacidade</option>
+                                   <option value="4kg">4kg</option>
+                                   <option value="6kg">6kg</option>
+                                 </select>
+                               )}
+                             </FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         );
+                       }}
+                     />
 
                      <FormField
                        control={form.control}

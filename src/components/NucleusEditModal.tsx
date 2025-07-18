@@ -95,9 +95,21 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
   const updateExtinguisher = (id: string, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      fireExtinguishers: prev.fireExtinguishers.map(ext => 
-        ext.id === id ? { ...ext, [field]: value } : ext
-      )
+      fireExtinguishers: prev.fireExtinguishers.map(ext => {
+        if (ext.id === id) {
+          const updated = { ...ext, [field]: value };
+          // Auto-set capacity when type changes
+          if (field === 'type') {
+            if (value === 'H2O') {
+              updated.capacity = '10L';
+            } else {
+              updated.capacity = ''; // Reset for other types
+            }
+          }
+          return updated;
+        }
+        return ext;
+      })
     }));
   };
 
@@ -341,14 +353,29 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                        </Select>
                      </div>
                      
-                     <div>
-                       <Label>Capacidade</Label>
-                       <Input
-                         value={extinguisher.capacity || ''}
-                         onChange={(e) => updateExtinguisher(extinguisher.id, 'capacity', e.target.value)}
-                         placeholder="Ex: 6kg"
-                       />
-                     </div>
+                      <div>
+                        <Label>Capacidade</Label>
+                        {extinguisher.type === 'H2O' ? (
+                          <Input
+                            value="10L"
+                            readOnly
+                            className="bg-muted"
+                          />
+                        ) : (
+                          <Select
+                            value={extinguisher.capacity || ''}
+                            onValueChange={(value) => updateExtinguisher(extinguisher.id, 'capacity', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a capacidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="4kg">4kg</SelectItem>
+                              <SelectItem value="6kg">6kg</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
                      
                      <div>
                        <Label>Local de Instalação *</Label>
