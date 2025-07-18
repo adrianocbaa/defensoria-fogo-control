@@ -54,60 +54,81 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
   useEffect(() => {
     if (!isOpen || !mapContainer.current) return;
 
-    const mapCenter: [number, number] = selectedCoords 
-      ? [selectedCoords.lat, selectedCoords.lng]
-      : [-15.6014, -55.6528]; // Centro de Mato Grosso (default)
+    // Add a small delay to ensure the modal is fully rendered
+    const timeout = setTimeout(() => {
+      if (!mapContainer.current) return;
 
-    const mapZoom = selectedCoords || initialCoordinates ? 16 : 12;
+      const mapCenter: [number, number] = selectedCoords 
+        ? [selectedCoords.lat, selectedCoords.lng]
+        : [-15.6014, -55.6528]; // Centro de Mato Grosso (default)
 
-    // Initialize map
-    map.current = L.map(mapContainer.current).setView(mapCenter, mapZoom);
+      const mapZoom = selectedCoords || initialCoordinates ? 16 : 12;
 
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map.current);
+      // Initialize map
+      map.current = L.map(mapContainer.current, {
+        preferCanvas: true,
+        zoomControl: true,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
+        keyboard: true
+      }).setView(mapCenter, mapZoom);
 
-    // Add initial marker if coordinates exist
-    if (selectedCoords) {
-      marker.current = L.marker([selectedCoords.lat, selectedCoords.lng], { draggable: true })
-        .addTo(map.current);
+      // Add tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map.current);
 
-      // Handle marker drag
-      marker.current.on('dragend', () => {
-        if (marker.current) {
-          const { lat, lng } = marker.current.getLatLng();
-          setSelectedCoords({ lat, lng });
+      // Force map resize after initialization
+      setTimeout(() => {
+        if (map.current) {
+          map.current.invalidateSize();
         }
-      });
-    }
+      }, 100);
 
-    // Handle map clicks
-    map.current.on('click', (e) => {
-      const { lat, lng } = e.latlng;
-      
-      // Remove existing marker
-      if (marker.current) {
-        marker.current.remove();
+      // Add initial marker if coordinates exist
+      if (selectedCoords) {
+        marker.current = L.marker([selectedCoords.lat, selectedCoords.lng], { draggable: true })
+          .addTo(map.current);
+
+        // Handle marker drag
+        marker.current.on('dragend', () => {
+          if (marker.current) {
+            const { lat, lng } = marker.current.getLatLng();
+            setSelectedCoords({ lat, lng });
+          }
+        });
       }
 
-      // Add new marker
-      marker.current = L.marker([lat, lng], { draggable: true })
-        .addTo(map.current!);
-
-      // Handle marker drag
-      marker.current.on('dragend', () => {
+      // Handle map clicks
+      map.current.on('click', (e) => {
+        const { lat, lng } = e.latlng;
+        
+        // Remove existing marker
         if (marker.current) {
-          const { lat, lng } = marker.current.getLatLng();
-          setSelectedCoords({ lat, lng });
+          marker.current.remove();
         }
-      });
 
-      setSelectedCoords({ lat, lng });
-    });
+        // Add new marker
+        marker.current = L.marker([lat, lng], { draggable: true })
+          .addTo(map.current!);
+
+        // Handle marker drag
+        marker.current.on('dragend', () => {
+          if (marker.current) {
+            const { lat, lng } = marker.current.getLatLng();
+            setSelectedCoords({ lat, lng });
+          }
+        });
+
+        setSelectedCoords({ lat, lng });
+      });
+    }, 300); // Delay to ensure modal is fully rendered
 
     // Cleanup
     return () => {
+      clearTimeout(timeout);
       if (map.current) {
         map.current.remove();
         map.current = null;
@@ -116,7 +137,7 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
         marker.current = null;
       }
     };
-  }, [isOpen, selectedCoords, initialCoordinates]);
+  }, [isOpen]);
 
   const handleConfirm = () => {
     if (selectedCoords) {
@@ -147,7 +168,11 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
             Clique no mapa para selecionar a localização do núcleo. Você pode arrastar o marcador para ajustar a posição.
           </div>
           
-          <div ref={mapContainer} className="flex-1 rounded-lg border" />
+          <div 
+            ref={mapContainer} 
+            className="flex-1 rounded-lg border min-h-[400px] w-full"
+            style={{ height: '400px' }}
+          />
           
           {selectedCoords && (
             <div className="text-sm">
