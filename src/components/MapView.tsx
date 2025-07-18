@@ -1,12 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Nucleus } from '@/types/nucleus';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { 
   MapPin, 
   Building2, 
@@ -17,6 +16,14 @@ import {
   Mail,
   ExternalLink
 } from 'lucide-react';
+
+// Fix for default markers in React Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface MapViewProps {
   nuclei: Nucleus[];
@@ -50,144 +57,111 @@ const getMarkerColor = (nucleus: Nucleus) => {
   return '#22c55e'; // Green for normal status
 };
 
+// Create custom icon function
+const createCustomIcon = (color: string) => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: ${color};
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    "></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
+};
+
 export function MapView({ nuclei, onViewDetails }: MapViewProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
   const [selectedNucleus, setSelectedNucleus] = useState<Nucleus | null>(null);
-  const [mapboxToken, setMapboxToken] = useState('');
-  const [tokenSubmitted, setTokenSubmitted] = useState(false);
 
-  useEffect(() => {
-    if (!mapContainer.current || !tokenSubmitted || !mapboxToken) return;
-
-    // Initialize map
-    console.log('Initializing map with token:', mapboxToken.substring(0, 20) + '...');
-    mapboxgl.accessToken = mapboxToken;
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [-55.6528, -15.6014], // Centro de Mato Grosso
-      zoom: 6,
-      attributionControl: false
+  // Filter nuclei with valid coordinates
+  const validNuclei = useMemo(() => {
+    return nuclei.filter(nucleus => {
+      return nucleus.coordinates && 
+             typeof nucleus.coordinates.lat === 'number' && 
+             typeof nucleus.coordinates.lng === 'number' &&
+             nucleus.coordinates.lat >= -90 && 
+             nucleus.coordinates.lat <= 90 &&
+             nucleus.coordinates.lng >= -180 && 
+             nucleus.coordinates.lng <= 180;
     });
+  }, [nuclei]);
 
-    // Add error handling
-    map.current.on('error', (e) => {
-      console.error('Mapbox error:', e);
-    });
-
-    map.current.on('load', () => {
-      console.log('Map loaded successfully');
-    });
-
-    // Add navigation controls
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-      }),
-      'top-right'
-    );
-
-    // Add markers for each nucleus
-    nuclei.forEach((nucleus) => {
-      // Validate coordinates before creating marker
-      if (!nucleus.coordinates || 
-          typeof nucleus.coordinates.lat !== 'number' || 
-          typeof nucleus.coordinates.lng !== 'number' ||
-          nucleus.coordinates.lat < -90 || 
-          nucleus.coordinates.lat > 90 ||
-          nucleus.coordinates.lng < -180 || 
-          nucleus.coordinates.lng > 180) {
-        console.warn(`Invalid coordinates for nucleus ${nucleus.name}:`, nucleus.coordinates);
-        return; // Skip this marker
-      }
-
-      // Create marker element
-      const markerElement = document.createElement('div');
-      markerElement.className = 'marker';
-      markerElement.style.backgroundColor = getMarkerColor(nucleus);
-      markerElement.style.width = '20px';
-      markerElement.style.height = '20px';
-      markerElement.style.borderRadius = '50%';
-      markerElement.style.border = '2px solid white';
-      markerElement.style.cursor = 'pointer';
-      markerElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-
-      // Add marker to map
-      new mapboxgl.Marker(markerElement)
-        .setLngLat([nucleus.coordinates.lng, nucleus.coordinates.lat])
-        .addTo(map.current!);
-
-      // Add click event
-      markerElement.addEventListener('click', () => {
-        setSelectedNucleus(nucleus);
-      });
-    });
-
-    // Cleanup
-    return () => {
-      map.current?.remove();
-    };
-  }, [nuclei, tokenSubmitted, mapboxToken]);
-
-
-  const handleTokenSubmit = () => {
-    if (mapboxToken.trim()) {
-      setTokenSubmitted(true);
+  // Calculate map center based on nuclei
+  const mapCenter = useMemo(() => {
+    if (validNuclei.length === 0) {
+      return [-15.6014, -55.6528]; // Centro de Mato Grosso (default)
     }
-  };
 
-  if (!tokenSubmitted || !mapboxToken) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Configurar Mapa
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="mapbox-token">Token Público do Mapbox</Label>
-              <Input
-                id="mapbox-token"
-                type="text"
-                placeholder="pk.ey..."
-                value={mapboxToken}
-                onChange={(e) => setMapboxToken(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Obtenha seu token em{' '}
-                <a 
-                  href="https://mapbox.com/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  mapbox.com
-                </a>
-              </p>
-            </div>
-            <Button onClick={handleTokenSubmit} className="w-full" disabled={!mapboxToken.trim()}>
-              Carregar Mapa
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+    const avgLat = validNuclei.reduce((sum, nucleus) => sum + nucleus.coordinates!.lat, 0) / validNuclei.length;
+    const avgLng = validNuclei.reduce((sum, nucleus) => sum + nucleus.coordinates!.lng, 0) / validNuclei.length;
+    
+    return [avgLat, avgLng];
+  }, [validNuclei]);
 
   return (
     <div className="relative w-full h-[600px] border rounded-lg overflow-hidden">
       {/* Map container */}
-      <div ref={mapContainer} className="absolute inset-0" />
+      <MapContainer
+        center={mapCenter as [number, number]}
+        zoom={6}
+        style={{ height: '100%', width: '100%' }}
+        className="leaflet-container"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        {validNuclei.map((nucleus) => (
+          <Marker
+            key={nucleus.id}
+            position={[nucleus.coordinates!.lat, nucleus.coordinates!.lng]}
+            icon={createCustomIcon(getMarkerColor(nucleus))}
+            eventHandlers={{
+              click: () => setSelectedNucleus(nucleus),
+            }}
+          >
+            <Popup>
+              <div className="min-w-[200px]">
+                <h3 className="font-semibold text-sm mb-2">{nucleus.name}</h3>
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {nucleus.city}
+                </p>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Droplets className={`h-3 w-3 ${nucleus.hydrants.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+                    <span className="text-xs">
+                      {nucleus.hydrants.length > 0 ? `${nucleus.hydrants.length} hidrante(s)` : 'Sem hidrante'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-3 w-3 text-primary" />
+                    <span className="text-xs">
+                      {nucleus.fireExtinguishers.length} extintor(es)
+                    </span>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  onClick={() => onViewDetails(nucleus.id)}
+                  className="w-full mt-2 text-xs"
+                >
+                  Ver Detalhes
+                </Button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
       
       {/* Nucleus info panel */}
       {selectedNucleus && (
-        <div className="absolute top-4 left-4 w-80 bg-white rounded-lg shadow-lg border">
+        <div className="absolute top-4 left-4 w-80 bg-white rounded-lg shadow-lg border z-[1000]">
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -277,7 +251,7 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
       )}
 
       {/* Nucleus list sidebar */}
-      <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto">
+      <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
         <div className="p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
             <Building2 className="h-4 w-4" />
