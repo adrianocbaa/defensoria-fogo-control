@@ -28,11 +28,15 @@ export interface FireExtinguisher {
   capacity?: string;
   lastInspection?: Date;
   status: ExtinguisherStatus;
+  supportType?: ExtinguisherSupportType;
+  hasVerticalSignage?: boolean;
 }
 
 export type ExtinguisherType = 'H2O' | 'PQS' | 'CO2' | 'ABC';
 
 export type ExtinguisherStatus = 'valid' | 'expired' | 'expiring-soon';
+
+export type ExtinguisherSupportType = 'wall' | 'tripod';
 
 export interface Document {
   id: string;
