@@ -58,6 +58,12 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
     const timeout = setTimeout(() => {
       if (!mapContainer.current) return;
 
+      // Clean up any existing map instance
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+
       const mapCenter: [number, number] = selectedCoords 
         ? [selectedCoords.lat, selectedCoords.lng]
         : [-15.6014, -55.6528]; // Centro de Mato Grosso (default)
@@ -71,21 +77,30 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
         scrollWheelZoom: true,
         doubleClickZoom: true,
         boxZoom: true,
-        keyboard: true
+        keyboard: true,
+        attributionControl: true
       }).setView(mapCenter, mapZoom);
 
       // Add tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
+        maxZoom: 19,
+        detectRetina: true
       }).addTo(map.current);
 
-      // Force map resize after initialization
+      // Force map resize after initialization with multiple attempts
+      setTimeout(() => {
+        if (map.current) {
+          map.current.invalidateSize();
+          map.current.getContainer().style.height = '400px';
+        }
+      }, 100);
+
       setTimeout(() => {
         if (map.current) {
           map.current.invalidateSize();
         }
-      }, 100);
+      }, 500);
 
       // Add initial marker if coordinates exist
       if (selectedCoords) {
@@ -124,7 +139,7 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
 
         setSelectedCoords({ lat, lng });
       });
-    }, 300); // Delay to ensure modal is fully rendered
+    }, 500); // Longer delay to ensure modal is fully rendered
 
     // Cleanup
     return () => {
@@ -170,8 +185,13 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
           
           <div 
             ref={mapContainer} 
-            className="flex-1 rounded-lg border min-h-[400px] w-full"
-            style={{ height: '400px' }}
+            className="flex-1 rounded-lg border min-h-[400px] w-full relative"
+            style={{ 
+              height: '400px',
+              minHeight: '400px',
+              width: '100%',
+              zIndex: 1
+            }}
           />
           
           {selectedCoords && (
