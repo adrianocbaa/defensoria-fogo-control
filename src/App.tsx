@@ -41,11 +41,7 @@ const AppRoutes = () => {
       />
       <Route 
         path="/nucleus/:id" 
-        element={
-          <ProtectedRoute>
-            <NucleusDetails />
-          </ProtectedRoute>
-        } 
+        element={<NucleusDetails />} 
       />
       <Route 
         path="/admin" 
