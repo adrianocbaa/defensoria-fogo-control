@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useNuclei } from '@/contexts/NucleiContext';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRole } from '@/hooks/useUserRole';
 import { ExtinguisherType } from '@/types/nucleus';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,6 +42,7 @@ export default function NucleusDetails() {
   const navigate = useNavigate();
   const { getNucleusById, updateNucleus, deleteNucleus } = useNuclei();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { canEdit } = useUserRole();
   const { toast } = useToast();
   
   const nucleus = getNucleusById(id || '');
@@ -119,22 +121,26 @@ export default function NucleusDetails() {
                 Hidrante ({nucleus.hydrants.length})
               </Badge>
             )}
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsEditModalOpen(true)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={handleDeleteNucleus}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
-            </Button>
+            {canEdit && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsEditModalOpen(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+            )}
+            {canEdit && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleDeleteNucleus}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </Button>
+            )}
           </div>
         </div>
 

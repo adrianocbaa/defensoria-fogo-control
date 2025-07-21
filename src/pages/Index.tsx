@@ -150,14 +150,6 @@ const Index = () => {
             <div className="flex gap-3">
               <Button 
                 size="sm" 
-                variant="outline"
-                onClick={() => navigate('/map-pins')}
-              >
-                <Palette className="h-4 w-4 mr-2" />
-                Personalizar Pins
-              </Button>
-              <Button 
-                size="sm" 
                 className="bg-primary hover:bg-primary/90"
                 onClick={() => setShowNucleusForm(true)}
               >
