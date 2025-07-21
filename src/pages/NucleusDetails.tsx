@@ -115,24 +115,26 @@ export default function NucleusDetails() {
                 Hidrante ({nucleus.hydrants.length})
               </Badge>
             )}
-            <PermissionGuard requiresEdit showMessage={false}>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setIsEditModalOpen(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={handleDeleteNucleus}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
-              </Button>
-            </PermissionGuard>
+            {canEdit && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleDeleteNucleus}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -380,14 +382,14 @@ export default function NucleusDetails() {
         </div>
 
         {/* Modal de Edição */}
-        <PermissionGuard requiresEdit>
+        {canEdit && (
           <NucleusEditModal
             nucleus={nucleus}
             open={isEditModalOpen}
             onOpenChange={setIsEditModalOpen}
             onSave={updateNucleus}
           />
-        </PermissionGuard>
+        )}
       </div>
     </Layout>
   );
