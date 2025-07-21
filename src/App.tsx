@@ -13,6 +13,7 @@ import NucleusDetails from "./pages/NucleusDetails";
 import AuthPage from "./pages/AuthPage";
 import PublicView from "./pages/PublicView";
 import AdminPanel from "./pages/AdminPanel";
+import MapPinSelector from "./pages/MapPinSelector";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,14 @@ const AppRoutes = () => {
       <Route 
         path="/nucleus/:id" 
         element={<NucleusDetails />} 
+      />
+      <Route 
+        path="/map-pins" 
+        element={
+          <ProtectedRoute>
+            <MapPinSelector />
+          </ProtectedRoute>
+        } 
       />
       <Route 
         path="/admin" 

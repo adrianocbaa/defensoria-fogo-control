@@ -148,6 +148,18 @@ All colors MUST be HSL.
   z-index: 1000 !important;
 }
 
+/* Pin animations */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.3; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
 /* Popover z-index fix for calendars */
 [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;

@@ -20,7 +20,8 @@ import {
   AlertTriangle,
   Clock,
   BarChart3,
-  Database
+  Database,
+  Palette
 } from 'lucide-react';
 
 const Index = () => {
@@ -147,6 +148,14 @@ const Index = () => {
           </p>
           {canEdit && (
             <div className="flex gap-3">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate('/map-pins')}
+              >
+                <Palette className="h-4 w-4 mr-2" />
+                Personalizar Pins
+              </Button>
               <Button 
                 size="sm" 
                 className="bg-primary hover:bg-primary/90"
