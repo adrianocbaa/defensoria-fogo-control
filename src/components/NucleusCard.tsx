@@ -2,6 +2,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Nucleus } from '@/types/nucleus';
+import { useUserRole } from '@/hooks/useUserRole';
 import { 
   MapPin, 
   Phone, 
@@ -22,6 +23,7 @@ interface NucleusCardProps {
 }
 
 export function NucleusCard({ nucleus, onViewDetails, onDelete }: NucleusCardProps) {
+  const { canEdit } = useUserRole();
   const expiredExtinguishers = nucleus.fireExtinguishers.filter(
     ext => ext.status === 'expired'
   ).length;
@@ -160,7 +162,7 @@ export function NucleusCard({ nucleus, onViewDetails, onDelete }: NucleusCardPro
             <Eye className="h-4 w-4 mr-2" />
             Ver Detalhes
           </Button>
-          {onDelete && (
+          {onDelete && canEdit && (
             <Button 
               onClick={() => onDelete(nucleus.id)}
               variant="destructive"

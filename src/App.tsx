@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import NucleusDetails from "./pages/NucleusDetails";
 import AuthPage from "./pages/AuthPage";
 import PublicView from "./pages/PublicView";
+import AdminPanel from "./pages/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <NucleusDetails />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <AdminPanel />
           </ProtectedRoute>
         } 
       />

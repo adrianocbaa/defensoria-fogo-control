@@ -295,12 +295,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_edit: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
+      get_user_role: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
+      is_admin: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
     }
     Enums: {
       document_type: "project" | "fire-license" | "photos" | "report"
       extinguisher_status: "valid" | "expired" | "expiring-soon"
       extinguisher_type: "H2O" | "PQS" | "CO2" | "ABC"
+      user_role: "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -431,6 +443,7 @@ export const Constants = {
       document_type: ["project", "fire-license", "photos", "report"],
       extinguisher_status: ["valid", "expired", "expiring-soon"],
       extinguisher_type: ["H2O", "PQS", "CO2", "ABC"],
+      user_role: ["admin", "editor", "viewer"],
     },
   },
 } as const

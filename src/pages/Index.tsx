@@ -9,6 +9,7 @@ import { NucleusCard } from '@/components/NucleusCard';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRole } from '@/hooks/useUserRole';
 import { seedDatabase } from '@/utils/seedDatabase';
 import { 
   Plus, 
@@ -25,6 +26,7 @@ import {
 const Index = () => {
   const navigate = useNavigate();
   const { nuclei, addNucleus, loading, refetch } = useNuclei();
+  const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
   const [filterExpired, setFilterExpired] = useState<'all' | 'expired'>('all');
@@ -143,16 +145,18 @@ const Index = () => {
           <p className="text-muted-foreground">
             Sistema de Controle de Prevenção de Incêndio dos Núcleos da Defensoria
           </p>
-          <div className="flex gap-3">
-            <Button 
-              size="sm" 
-              className="bg-primary hover:bg-primary/90"
-              onClick={() => setShowNucleusForm(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Núcleo
-            </Button>
-          </div>
+          {canEdit && (
+            <div className="flex gap-3">
+              <Button 
+                size="sm" 
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => setShowNucleusForm(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Núcleo
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
