@@ -44,20 +44,7 @@ export default function NucleusDetails() {
   const { getNucleusById, updateNucleus, deleteNucleus } = useNuclei();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
-  const { canEdit, loading } = useUserRole();
-  
-  // If user role is still loading, show loading state
-  if (loading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-muted-foreground">Carregando...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  const { canEdit } = useUserRole();
   
   const nucleus = getNucleusById(id || '');
   
