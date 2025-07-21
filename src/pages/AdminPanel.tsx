@@ -74,22 +74,24 @@ export default function AdminPanel() {
     }
 
     try {
+      console.log('Saving changes:', changesToSave);
+      
       for (const [userId, newRole] of changesToSave) {
+        console.log(`Updating user ${userId} to role ${newRole}`);
         const { error } = await supabase
           .from('profiles')
           .update({ role: newRole })
           .eq('user_id', userId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating role:', error);
+          throw error;
+        }
+        console.log(`Successfully updated user ${userId} to ${newRole}`);
       }
 
-      // Update local state
-      setProfiles(profiles.map(profile => 
-        pendingChanges[profile.user_id] 
-          ? { ...profile, role: pendingChanges[profile.user_id] }
-          : profile
-      ));
-
+      // Refresh profiles from database to get latest data
+      await fetchProfiles();
       setPendingChanges({});
 
       toast({
