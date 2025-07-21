@@ -31,15 +31,15 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
   const { canEdit } = useUserRole();
   const [formData, setFormData] = useState<Nucleus>(nucleus);
 
-  if (!canEdit) {
-    return null;
-  }
-
   useEffect(() => {
     if (open) {
       setFormData(nucleus);
     }
   }, [nucleus, open]);
+
+  if (!canEdit) {
+    return null;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
