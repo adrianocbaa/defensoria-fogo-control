@@ -61,11 +61,30 @@ const getMarkerColor = (nucleus: Nucleus) => {
 
 // Create custom icon function with pulsing style
 const createCustomIcon = (color: string) => {
+  // Green pins are static (no animation)
+  if (color === '#22c55e') {
+    const staticPin = `<div style="
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: ${color};
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    "></div>`;
+    
+    return L.divIcon({
+      className: 'custom-marker',
+      html: staticPin,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+  
   // Get animation speed based on color/status
   const getAnimationSpeed = (color: string) => {
     if (color === '#ef4444') return '1s'; // Red (problems) - fastest
-    if (color === '#f97316') return '1.5s'; // Orange (expiring) - medium
-    return '2s'; // Green (ok) - normal
+    if (color === '#f97316') return '2s'; // Orange (expiring) - same as green was
+    return '2s'; // Default
   };
 
   const animationSpeed = getAnimationSpeed(color);
@@ -378,7 +397,14 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
                           Vencido
                         </Badge>
                       )}
-                      {nucleus.fireExtinguishers.some(ext => ext.status === 'expiring-soon') && (
+                      {(nucleus.fireExtinguishers.some(ext => ext.status === 'expiring-soon') || 
+                        (() => {
+                          const now = new Date();
+                          const twoMonthsFromNow = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+                          return nucleus.fireDepartmentLicense?.validUntil 
+                            ? new Date(nucleus.fireDepartmentLicense.validUntil) <= twoMonthsFromNow && new Date(nucleus.fireDepartmentLicense.validUntil) >= now
+                            : false;
+                        })()) && (
                         <Badge variant="outline" className="text-xs px-1 py-0 border-orange-500 text-orange-600">
                           Vencendo
                         </Badge>
