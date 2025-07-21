@@ -62,8 +62,15 @@ export default function NucleusDetails() {
     );
   }
 
+  const now = new Date();
+  const twoMonthsFromNow = new Date(now.getTime() + (60 * 24 * 60 * 60 * 1000)); // 60 dias
+  
   const isLicenseExpired = nucleus.fireDepartmentLicense?.validUntil 
-    ? new Date(nucleus.fireDepartmentLicense.validUntil) < new Date()
+    ? new Date(nucleus.fireDepartmentLicense.validUntil) < now
+    : false;
+    
+  const isLicenseExpiringSoon = nucleus.fireDepartmentLicense?.validUntil 
+    ? new Date(nucleus.fireDepartmentLicense.validUntil) <= twoMonthsFromNow && new Date(nucleus.fireDepartmentLicense.validUntil) >= now
     : false;
 
   const handleDeleteNucleus = async () => {
@@ -173,12 +180,19 @@ export default function NucleusDetails() {
                   <div className={`flex items-center gap-2 text-xs p-2 rounded border ${
                     isLicenseExpired 
                       ? 'bg-danger/10 text-danger border-danger/20' 
-                      : 'bg-success/10 text-success border-success/20'
+                      : isLicenseExpiringSoon 
+                        ? 'bg-warning/10 text-warning border-warning/20'
+                        : 'bg-success/10 text-success border-success/20'
                   }`}>
                     {isLicenseExpired ? (
                       <>
                         <AlertTriangle className="h-3 w-3" />
                         <span>Alvará vencido</span>
+                      </>
+                    ) : isLicenseExpiringSoon ? (
+                      <>
+                        <Clock className="h-3 w-3" />
+                        <span>Alvará vencendo em breve</span>
                       </>
                     ) : (
                       <>
