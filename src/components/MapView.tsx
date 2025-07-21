@@ -59,127 +59,58 @@ const getMarkerColor = (nucleus: Nucleus) => {
   return '#22c55e'; // Green for normal status
 };
 
-// Create custom icon function
+// Create custom icon function with pulsing style
 const createCustomIcon = (color: string) => {
-  const savedStyle = localStorage.getItem('mapPinStyle') as 'classic' | 'modern-gradient' | 'pin-3d' | 'pulsing' | 'minimalist' || 'classic';
-  
-  const pinStyles = {
-    classic: `<div style="
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background-color: ${color};
-      border: 2px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>`,
-    
-    'modern-gradient': `<div style="
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, ${color}, ${color}dd);
-      border: 3px solid white;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1);
-      position: relative;
-    ">
-      <div style="
-        width: 8px;
-        height: 8px;
-        background: white;
-        border-radius: 50%;
-        position: absolute;
-        top: 4px;
-        left: 4px;
-        opacity: 0.7;
-      "></div>
-    </div>`,
-    
-    'pin-3d': `<div style="
-      width: 0;
-      height: 0;
-      border-left: 12px solid transparent;
-      border-right: 12px solid transparent;
-      border-top: 20px solid ${color};
-      position: relative;
-      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
-    ">
-      <div style="
-        width: 14px;
-        height: 14px;
-        background: ${color};
-        border: 2px solid white;
-        border-radius: 50%;
-        position: absolute;
-        top: -26px;
-        left: -9px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-      "></div>
-    </div>`,
-    
-    pulsing: `<div style="
-      width: 20px;
-      height: 20px;
-      position: relative;
-    ">
-      <div style="
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background-color: ${color};
-        border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        position: absolute;
-        animation: pulse 2s infinite;
-      "></div>
-      <div style="
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background-color: ${color}40;
-        position: absolute;
-        animation: pulse-ring 2s infinite;
-      "></div>
-    </div>
-    <style>
-      @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-      }
-      @keyframes pulse-ring {
-        0% { transform: scale(1); opacity: 0.3; }
-        100% { transform: scale(2); opacity: 0; }
-      }
-    </style>`,
-    
-    minimalist: `<div style="
-      width: 18px;
-      height: 18px;
-      background-color: ${color};
-      border: 2px solid white;
-      border-radius: 4px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
-      position: relative;
-      transform: rotate(45deg);
-    ">
-      <div style="
-        width: 6px;
-        height: 6px;
-        background: white;
-        border-radius: 2px;
-        position: absolute;
-        top: 4px;
-        left: 4px;
-        opacity: 0.9;
-      "></div>
-    </div>`
+  // Get animation speed based on color/status
+  const getAnimationSpeed = (color: string) => {
+    if (color === '#ef4444') return '1s'; // Red (problems) - fastest
+    if (color === '#f97316') return '1.5s'; // Orange (expiring) - medium
+    return '2s'; // Green (ok) - normal
   };
+
+  const animationSpeed = getAnimationSpeed(color);
+  
+  const pulsingPin = `<div style="
+    width: 20px;
+    height: 20px;
+    position: relative;
+  ">
+    <div style="
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: ${color};
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      position: absolute;
+      animation: pulse-${color.replace('#', '')} ${animationSpeed} infinite;
+    "></div>
+    <div style="
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: ${color}40;
+      position: absolute;
+      animation: pulse-ring-${color.replace('#', '')} ${animationSpeed} infinite;
+    "></div>
+  </div>
+  <style>
+    @keyframes pulse-${color.replace('#', '')} {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    @keyframes pulse-ring-${color.replace('#', '')} {
+      0% { transform: scale(1); opacity: 0.3; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+  </style>`;
 
   return L.divIcon({
     className: 'custom-marker',
-    html: pinStyles[savedStyle],
-    iconSize: savedStyle === 'pin-3d' ? [24, 32] : [24, 24],
-    iconAnchor: savedStyle === 'pin-3d' ? [12, 32] : [12, 12],
+    html: pulsingPin,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
   });
 };
 
