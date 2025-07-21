@@ -28,6 +28,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ExtinguisherType } from '@/types/nucleus';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useUserRole } from '@/hooks/useUserRole';
+import { PermissionGuard } from '@/components/PermissionGuard';
 
 const extinguisherTypeLabels: Record<ExtinguisherType, string> = {
   'H2O': 'Água',
@@ -42,6 +44,7 @@ export default function NucleusDetails() {
   const { getNucleusById, updateNucleus, deleteNucleus } = useNuclei();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
+  const { canEdit } = useUserRole();
   
   const nucleus = getNucleusById(id || '');
   
@@ -112,22 +115,24 @@ export default function NucleusDetails() {
                 Hidrante ({nucleus.hydrants.length})
               </Badge>
             )}
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsEditModalOpen(true)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={handleDeleteNucleus}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
-            </Button>
+            <PermissionGuard requiresEdit showMessage={false}>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsEditModalOpen(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleDeleteNucleus}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </Button>
+            </PermissionGuard>
           </div>
         </div>
 
@@ -375,12 +380,14 @@ export default function NucleusDetails() {
         </div>
 
         {/* Modal de Edição */}
-        <NucleusEditModal
-          nucleus={nucleus}
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onSave={updateNucleus}
-        />
+        <PermissionGuard requiresEdit>
+          <NucleusEditModal
+            nucleus={nucleus}
+            open={isEditModalOpen}
+            onOpenChange={setIsEditModalOpen}
+            onSave={updateNucleus}
+          />
+        </PermissionGuard>
       </div>
     </Layout>
   );

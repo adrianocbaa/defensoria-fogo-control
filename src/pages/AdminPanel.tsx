@@ -54,30 +54,53 @@ export default function AdminPanel() {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: UserRole) => {
+  const [pendingChanges, setPendingChanges] = useState<Record<string, UserRole>>({});
+  
+  const updateUserRole = (userId: string, newRole: UserRole) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      [userId]: newRole
+    }));
+  };
+
+  const saveChanges = async () => {
+    const changesToSave = Object.entries(pendingChanges);
+    if (changesToSave.length === 0) {
+      toast({
+        title: 'Nenhuma alteração',
+        description: 'Não há alterações para salvar',
+      });
+      return;
+    }
+
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('user_id', userId);
+      for (const [userId, newRole] of changesToSave) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: newRole })
+          .eq('user_id', userId);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
+      // Update local state
       setProfiles(profiles.map(profile => 
-        profile.user_id === userId 
-          ? { ...profile, role: newRole }
+        pendingChanges[profile.user_id] 
+          ? { ...profile, role: pendingChanges[profile.user_id] }
           : profile
       ));
 
+      setPendingChanges({});
+
       toast({
         title: 'Sucesso',
-        description: 'Permissão atualizada com sucesso',
+        description: `${changesToSave.length} permissão(ões) atualizada(s) com sucesso`,
       });
     } catch (error) {
-      console.error('Error updating user role:', error);
+      console.error('Error updating user roles:', error);
       toast({
         title: 'Erro',
-        description: 'Erro ao atualizar permissão',
+        description: 'Erro ao atualizar permissões',
         variant: 'destructive',
       });
     }
@@ -172,12 +195,15 @@ export default function AdminPanel() {
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Badge variant={getRoleBadgeVariant(profile.role)}>
-                        {getRoleLabel(profile.role)}
+                      <Badge variant={getRoleBadgeVariant(pendingChanges[profile.user_id] || profile.role)}>
+                        {getRoleLabel(pendingChanges[profile.user_id] || profile.role)}
+                        {pendingChanges[profile.user_id] && (
+                          <span className="ml-1 text-xs opacity-70">(pendente)</span>
+                        )}
                       </Badge>
                       
                       <Select
-                        value={profile.role}
+                        value={pendingChanges[profile.user_id] || profile.role}
                         onValueChange={(value: UserRole) => updateUserRole(profile.user_id, value)}
                       >
                         <SelectTrigger className="w-40">
@@ -196,6 +222,22 @@ export default function AdminPanel() {
             )}
           </CardContent>
         </Card>
+
+        {Object.keys(pendingChanges).length > 0 && (
+          <div className="mt-4 flex justify-end">
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setPendingChanges({})}
+              >
+                Cancelar Alterações
+              </Button>
+              <Button onClick={saveChanges}>
+                Salvar Alterações ({Object.keys(pendingChanges).length})
+              </Button>
+            </div>
+          </div>
+        )}
 
         <Card className="mt-6">
           <CardHeader>

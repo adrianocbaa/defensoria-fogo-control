@@ -29,6 +29,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const nucleusFormSchema = z.object({
   name: z.string().min(1, 'Nome do núcleo é obrigatório'),
@@ -87,6 +88,7 @@ interface NucleusFormProps {
 }
 
 export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) {
+  const { canEdit } = useUserRole();
   const form = useForm<NucleusFormData>({
     resolver: zodResolver(nucleusFormSchema),
     defaultValues: {
@@ -218,6 +220,10 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
     form.reset();
     onOpenChange(false);
   };
+
+  if (!canEdit) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

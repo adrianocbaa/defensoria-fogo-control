@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { MapSelector } from '@/components/MapSelector';
 import { AuditHistory } from '@/components/AuditHistory';
 import { DocumentUpload } from '@/components/DocumentUpload';
+import { useUserRole } from '@/hooks/useUserRole';
+import { PermissionGuard } from '@/components/PermissionGuard';
 
 interface NucleusEditModalProps {
   nucleus: Nucleus;
@@ -26,7 +28,12 @@ interface NucleusEditModalProps {
 
 export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: NucleusEditModalProps) {
   const { toast } = useToast();
+  const { canEdit } = useUserRole();
   const [formData, setFormData] = useState<Nucleus>(nucleus);
+
+  if (!canEdit) {
+    return null;
+  }
 
   useEffect(() => {
     if (open) {
