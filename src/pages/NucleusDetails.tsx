@@ -39,13 +39,21 @@ const extinguisherTypeLabels: Record<ExtinguisherType, string> = {
 };
 
 export default function NucleusDetails() {
-  console.log('NucleusDetails: Component rendering');
+  console.log('=== NucleusDetails: Component START ===');
   
   const { id } = useParams<{ id: string }>();
   console.log('NucleusDetails: ID from params:', id);
   
+  if (!id) {
+    console.error('NucleusDetails: No ID provided in params');
+  }
+  
   const navigate = useNavigate();
+  console.log('NucleusDetails: Getting hooks...');
+  
   const { getNucleusById, updateNucleus, deleteNucleus } = useNuclei();
+  console.log('NucleusDetails: useNuclei hooks obtained successfully');
+  
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
   
