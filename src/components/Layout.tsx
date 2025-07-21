@@ -41,8 +41,6 @@ export function Layout({ children }: LayoutProps) {
               <div className="hidden md:flex gap-6 text-sm font-medium">
                 <a 
                   href="https://painel.dif.app.br/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
                   className="hover:text-primary-foreground/80 transition-colors cursor-pointer"
                 >
                   PREVENTIVOS DE INCÊNDIO
