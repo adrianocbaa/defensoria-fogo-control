@@ -39,45 +39,27 @@ const extinguisherTypeLabels: Record<ExtinguisherType, string> = {
 };
 
 export default function NucleusDetails() {
-  console.log('=== NucleusDetails: Component START ===');
-  
   const { id } = useParams<{ id: string }>();
-  console.log('NucleusDetails: ID from params:', id);
-  
-  if (!id) {
-    console.error('NucleusDetails: No ID provided in params');
-  }
-  
   const navigate = useNavigate();
-  console.log('NucleusDetails: Getting hooks...');
-  
   const { getNucleusById, updateNucleus, deleteNucleus } = useNuclei();
-  console.log('NucleusDetails: useNuclei hooks obtained successfully');
-  
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
-  
-  console.log('NucleusDetails: About to call useUserRole');
-  const { canEdit, role, loading } = useUserRole();
-  console.log('NucleusDetails: useUserRole result:', { canEdit, role, loading });
+  const { canEdit, loading } = useUserRole();
   
   // If user role is still loading, show loading state
   if (loading) {
-    console.log('NucleusDetails: User role still loading, showing loading state');
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <p className="text-muted-foreground">Carregando permissões...</p>
+            <p className="text-muted-foreground">Carregando...</p>
           </div>
         </div>
       </Layout>
     );
   }
   
-  console.log('NucleusDetails: About to call getNucleusById');
   const nucleus = getNucleusById(id || '');
-  console.log('NucleusDetails: nucleus found:', !!nucleus);
   
   if (!nucleus) {
     return (

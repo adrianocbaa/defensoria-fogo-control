@@ -48,31 +48,7 @@ export function useUserRole() {
 
   useEffect(() => {
     fetchUserRole();
-
-    // Set up real-time listener for role changes
-    const channel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `user_id=eq.${user?.id}`
-        },
-        (payload) => {
-          console.log('Profile updated:', payload);
-          if (payload.new && 'role' in payload.new) {
-            setRole((payload.new.role as UserRole) || 'viewer');
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
+  }, [user?.id]); // Adicionar user?.id como dependência específica
 
   const isAdmin = role === 'admin';
   const canEdit = role === 'admin' || role === 'editor';
