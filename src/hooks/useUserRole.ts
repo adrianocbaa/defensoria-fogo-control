@@ -10,45 +10,39 @@ export function useUserRole() {
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async () => {
-    console.log('useUserRole: fetchUserRole called, user:', user);
-    
     if (!user) {
-      console.log('useUserRole: No user, setting viewer role');
       setRole('viewer');
       setLoading(false);
       return;
     }
 
     try {
-      console.log('useUserRole: Fetching role for user:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
         .eq('user_id', user.id)
         .single();
 
-      console.log('useUserRole: Supabase response:', { data, error });
-
       if (error) {
-        console.error('Error fetching user role:', error);
         setRole('viewer');
       } else {
-        const newRole = (data?.role as UserRole) || 'viewer';
-        console.log('useUserRole: Setting role to:', newRole);
-        setRole(newRole);
+        setRole((data?.role as UserRole) || 'viewer');
       }
     } catch (error) {
-      console.error('Error fetching user role:', error);
       setRole('viewer');
     } finally {
-      console.log('useUserRole: Setting loading to false');
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUserRole();
-  }, [user?.id]); // Adicionar user?.id como dependência específica
+    if (user?.id) {
+      fetchUserRole();
+    } else {
+      setRole('viewer');
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   const isAdmin = role === 'admin';
   const canEdit = role === 'admin' || role === 'editor';
