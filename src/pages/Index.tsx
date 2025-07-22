@@ -89,6 +89,7 @@ const Index = () => {
         city: data.city,
         address: data.address,
         coordinates: data.coordinates,
+        isAgentMode: data.isAgentMode || false,
         hydrants: data.hydrants || [],
         contact: {
           phone: data.phone || undefined,
