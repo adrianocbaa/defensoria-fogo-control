@@ -141,7 +141,7 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
       location: copyFromExtinguisher.location,
       capacity: copyFromExtinguisher.capacity,
       expirationDate: new Date(),
-      hydrostaticTest: undefined,
+      hydrostaticTest: copyFromExtinguisher.hydrostaticTest,
       supportType: copyFromExtinguisher.supportType,
       hasVerticalSignage: copyFromExtinguisher.hasVerticalSignage,
     } : {
@@ -394,34 +394,10 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-primary">Extintores de Incêndio</h3>
-                  <div className="flex gap-2">
-                    {extinguishers.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Label className="text-sm">Copiar de:</Label>
-                        <select
-                          className="text-sm p-1 border border-border rounded bg-background"
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              const selectedIndex = parseInt(e.target.value);
-                              addExtinguisher(extinguishers[selectedIndex]);
-                              e.target.value = '';
-                            }
-                          }}
-                        >
-                          <option value="">Selecionar extintor</option>
-                          {extinguishers.map((ext, idx) => (
-                            <option key={idx} value={idx}>
-                              Extintor {idx + 1} ({ext.type} - {ext.location})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    <Button type="button" onClick={() => addExtinguisher()} size="sm">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Adicionar Extintor
-                    </Button>
-                  </div>
+                  <Button type="button" onClick={() => addExtinguisher()} size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar Extintor
+                  </Button>
                 </div>
 
               {extinguishers.map((extintor, index) => (

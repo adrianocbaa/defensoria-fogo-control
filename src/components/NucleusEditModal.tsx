@@ -336,14 +336,42 @@ export function NucleusEditModal({ nucleus, open, onOpenChange, onSave }: Nucleu
                 <div key={extinguisher.id} className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-medium">Extintor {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeExtinguisher(extinguisher.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newExtinguisher = {
+                            id: Date.now().toString(),
+                            type: extinguisher.type,
+                            expirationDate: new Date(),
+                            location: extinguisher.location,
+                            capacity: extinguisher.capacity,
+                            hydrostaticTest: extinguisher.hydrostaticTest,
+                            supportType: extinguisher.supportType,
+                            hasVerticalSignage: extinguisher.hasVerticalSignage,
+                            status: 'valid' as ExtinguisherStatus
+                          };
+                          setFormData(prev => ({
+                            ...prev,
+                            fireExtinguishers: [...prev.fireExtinguishers, newExtinguisher]
+                          }));
+                        }}
+                        title="Copiar extintor"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeExtinguisher(extinguisher.id)}
+                        title="Excluir extintor"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
