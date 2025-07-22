@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
 import { seedDatabase } from '@/utils/seedDatabase';
+import { normalizeText } from '@/lib/utils';
 import { 
   Plus, 
   Search, 
@@ -35,8 +36,9 @@ const Index = () => {
   const { toast } = useToast();
 
   const filteredNuclei = nuclei.filter(nucleus => {
-    const matchesSearch = nucleus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         nucleus.city.toLowerCase().includes(searchTerm.toLowerCase());
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    const matchesSearch = normalizeText(nucleus.name).includes(normalizedSearchTerm) ||
+                         normalizeText(nucleus.city).includes(normalizedSearchTerm);
     
     const matchesHydrant = filterHydrant === 'all' ||
                            (filterHydrant === 'with' && nucleus.hydrants.length > 0) ||
