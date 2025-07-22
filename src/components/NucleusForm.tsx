@@ -428,14 +428,26 @@ export function NucleusForm({ open, onOpenChange, onSubmit }: NucleusFormProps) 
                 <div key={index} className="p-4 border rounded-lg space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Extintor {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeExtinguisher(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => addExtinguisher(extintor)}
+                        title="Copiar extintor"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeExtinguisher(index)}
+                        title="Excluir extintor"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
