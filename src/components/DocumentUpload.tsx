@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { DocumentType } from '@/types/nucleus';
 
 interface DocumentUploadProps {
@@ -26,6 +27,7 @@ export function DocumentUpload({ onDocumentAdd }: DocumentUploadProps) {
   const [documentType, setDocumentType] = useState<DocumentType>('project');
   const [documentName, setDocumentName] = useState('');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -45,13 +47,22 @@ export function DocumentUpload({ onDocumentAdd }: DocumentUploadProps) {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setUploading(true);
 
     try {
       // Generate unique filename
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `documents/${fileName}`;
+      const filePath = `${user.id}/documents/${fileName}`;
 
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
