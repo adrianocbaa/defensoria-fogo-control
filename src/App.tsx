@@ -15,6 +15,7 @@ import PublicView from "./pages/PublicView";
 import AdminPanel from "./pages/AdminPanel";
 import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
+import Obras from "./pages/Obras";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Maintenance />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/obras" 
+        element={
+          <ProtectedRoute>
+            <Obras />
           </ProtectedRoute>
         } 
       />

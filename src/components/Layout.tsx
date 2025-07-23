@@ -51,6 +51,12 @@ export function Layout({ children }: LayoutProps) {
                 >
                   MANUTENÇÃO
                 </Link>
+                <Link 
+                  to="/obras" 
+                  className="hover:text-primary-foreground/80 transition-colors cursor-pointer"
+                >
+                  OBRAS
+                </Link>
               </div>
               
               {/* User Menu */}
