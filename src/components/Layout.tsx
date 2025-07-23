@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Building2, Shield, LogOut, User, Eye, Settings } from 'lucide-react';
+import { Building2, Shield, LogOut, User, Eye, Settings, Wrench } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,12 @@ export function Layout({ children }: LayoutProps) {
                 >
                   PREVENTIVOS DE INCÊNDIO
                 </a>
+                <Link 
+                  to="/maintenance" 
+                  className="hover:text-primary-foreground/80 transition-colors cursor-pointer"
+                >
+                  MANUTENÇÃO
+                </Link>
               </div>
               
               {/* User Menu */}
