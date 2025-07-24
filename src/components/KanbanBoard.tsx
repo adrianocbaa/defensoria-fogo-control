@@ -20,6 +20,7 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -119,6 +120,10 @@ interface DroppableColumnProps {
 }
 
 function DroppableColumn({ id, title, tickets }: DroppableColumnProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: id,
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -129,7 +134,14 @@ function DroppableColumn({ id, title, tickets }: DroppableColumnProps) {
       </div>
 
       <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3 min-h-[200px] p-2 rounded-lg border-2 border-dashed border-transparent hover:border-muted-foreground/30 transition-colors">
+        <div 
+          ref={setNodeRef}
+          className={`space-y-3 min-h-[200px] p-2 rounded-lg border-2 border-dashed transition-colors ${
+            isOver 
+              ? 'border-primary bg-primary/5' 
+              : 'border-transparent hover:border-muted-foreground/30'
+          }`}
+        >
           {tickets.map((ticket) => (
             <DraggableTicket key={ticket.id} ticket={ticket} />
           ))}
