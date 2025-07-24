@@ -2,8 +2,16 @@ import { AlertCircle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MaintenanceTimeline } from '@/components/MaintenanceTimeline';
 import { MaintenanceMap } from '@/components/MaintenanceMap';
+import { KanbanBoard } from '@/components/KanbanBoard';
 
-export function MaintenanceDashboard() {
+interface MaintenanceDashboardProps {
+  activeSection?: string;
+}
+
+export function MaintenanceDashboard({ activeSection = 'overview' }: MaintenanceDashboardProps) {
+  if (activeSection === 'tickets') {
+    return <KanbanBoard />;
+  }
   const stats = [
     {
       title: 'Chamados Abertos',

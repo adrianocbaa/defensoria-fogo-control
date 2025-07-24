@@ -4,13 +4,18 @@ import { MaintenanceSidebar } from '@/components/MaintenanceSidebar';
 import { MaintenanceDashboard } from '@/components/MaintenanceDashboard';
 
 export default function Maintenance() {
+  const [activeSection, setActiveSection] = useState('overview');
+
   return (
     <div className="h-[calc(100vh-200px)] w-full">
       <SidebarProvider>
         <div className="flex w-full h-full">
-          <MaintenanceSidebar />
+          <MaintenanceSidebar 
+            activeSection={activeSection}
+            onSectionChange={setActiveSection}
+          />
           <main className="flex-1 overflow-auto">
-            <MaintenanceDashboard />
+            <MaintenanceDashboard activeSection={activeSection} />
           </main>
         </div>
       </SidebarProvider>

@@ -26,7 +26,7 @@ import {
 
 const menuItems = [
   { title: 'Visão Geral', icon: LayoutDashboard, id: 'overview' },
-  { title: 'Chamados Abertos', icon: AlertCircle, id: 'open-tickets' },
+  { title: 'Chamados', icon: AlertCircle, id: 'tickets' },
   { title: 'Planejamento de Viagens', icon: MapPin, id: 'travel-planning' },
   { title: 'Ordens de Serviço', icon: FileText, id: 'work-orders' },
   { title: 'Contratos e Fornecedores', icon: Users, id: 'contracts' },
