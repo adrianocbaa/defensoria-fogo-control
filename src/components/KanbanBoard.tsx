@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical } from 'lucide-react';
+import { CreateTaskModal } from './CreateTaskModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -345,9 +346,17 @@ export function KanbanBoard() {
     setActiveTicket(null);
   };
 
-  const handleCreateTask = () => {
-    console.log('Criar nova tarefa');
-    // TODO: Implementar modal de criação de tarefa
+  const handleCreateTask = (taskData: Omit<Ticket, 'id' | 'createdAt'>) => {
+    const newTicket: Ticket = {
+      ...taskData,
+      id: `CH-${String(Date.now()).slice(-3)}`,
+      createdAt: 'Agora mesmo'
+    };
+
+    setTickets(prev => ({
+      ...prev,
+      [taskData.status]: [...prev[taskData.status], newTicket]
+    }));
   };
 
   return (
@@ -363,10 +372,7 @@ export function KanbanBoard() {
             <h2 className="text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
             <p className="text-muted-foreground">Arraste as tarefas entre as colunas para alterar o status</p>
           </div>
-          <Button onClick={handleCreateTask} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Nova Tarefa
-          </Button>
+          <CreateTaskModal onCreateTask={handleCreateTask} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
