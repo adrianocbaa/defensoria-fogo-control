@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, MapPin, Wrench, Zap, Droplets } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   DndContext,
   DragEndEvent,
@@ -151,20 +158,54 @@ function DraggableTicket({ ticket }: DraggableTicketProps) {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Editar tarefa:', ticket.id);
+    // TODO: Implementar modal de edição
+  };
+
+  const handleView = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Ver tarefa:', ticket.id);
+    // TODO: Implementar modal de visualização
+  };
+
   return (
     <Card 
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={`cursor-grab hover:shadow-md transition-shadow ${isDragging ? 'shadow-lg' : ''}`}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-sm font-medium">
+          <CardTitle className="text-sm font-medium" {...attributes} {...listeners}>
             {ticket.title}
           </CardTitle>
-          <ticket.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <div className="flex items-center gap-1">
+            <ticket.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0 hover:bg-muted"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem onClick={handleView} className="text-xs">
+                  <Eye className="mr-2 h-3 w-3" />
+                  Ver
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEdit} className="text-xs">
+                  <Edit className="mr-2 h-3 w-3" />
+                  Editar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardHeader>
       
@@ -304,6 +345,11 @@ export function KanbanBoard() {
     setActiveTicket(null);
   };
 
+  const handleCreateTask = () => {
+    console.log('Criar nova tarefa');
+    // TODO: Implementar modal de criação de tarefa
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -312,9 +358,15 @@ export function KanbanBoard() {
       onDragEnd={handleDragEnd}
     >
       <div className="p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
-          <p className="text-muted-foreground">Arraste as tarefas entre as colunas para alterar o status</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
+            <p className="text-muted-foreground">Arraste as tarefas entre as colunas para alterar o status</p>
+          </div>
+          <Button onClick={handleCreateTask} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Tarefa
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -336,7 +388,9 @@ export function KanbanBoard() {
                   <CardTitle className="text-sm font-medium">
                     {activeTicket.title}
                   </CardTitle>
-                  <activeTicket.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div className="flex items-center gap-1">
+                    <activeTicket.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </div>
                 </div>
               </CardHeader>
               
