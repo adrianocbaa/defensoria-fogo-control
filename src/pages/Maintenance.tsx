@@ -31,14 +31,15 @@ export default function Maintenance() {
         </div>
       </header>
 
-      <SidebarProvider>
-        <div className="flex w-full">
+      {/* Container principal abaixo do header */}
+      <div className="flex h-[calc(100vh-120px)] w-full">
+        <SidebarProvider>
           <MaintenanceSidebar />
-          <main className="flex-1">
+          <main className="flex-1 overflow-auto">
             <MaintenanceDashboard />
           </main>
-        </div>
-      </SidebarProvider>
+        </SidebarProvider>
+      </div>
     </div>
   );
 }
