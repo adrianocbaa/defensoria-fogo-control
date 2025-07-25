@@ -221,11 +221,11 @@ export function TravelCalendar() {
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header */}
-      <div className="border-b bg-card px-6 py-4">
+      {/* Header with improved layout */}
+      <div className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 px-6 py-4">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Calendário de Viagens</h1>
+            <h1 className="text-2xl font-bold text-foreground">Calendário de Viagens</h1>
             <p className="text-muted-foreground">Gerencie viagens de manutenção de servidores</p>
           </div>
           <div className="flex items-center gap-2">
@@ -233,12 +233,16 @@ export function TravelCalendar() {
               variant="outline" 
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
+              className="h-9"
             >
               <Filter className="h-4 w-4 mr-2" />
               Filtros
             </Button>
             {canEdit && (
-              <Button onClick={() => setShowCreateModal(true)}>
+              <Button 
+                onClick={() => setShowCreateModal(true)}
+                className="h-9"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Nova Viagem
               </Button>
@@ -246,14 +250,14 @@ export function TravelCalendar() {
           </div>
         </div>
 
-        {/* Filtros */}
+        {/* Improved Filters */}
         {showFilters && (
-          <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+          <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Servidor</Label>
+                <Label className="text-sm font-medium">Servidor</Label>
                 <Select value={servidorFilter} onValueChange={setServidorFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9">
                     <SelectValue placeholder="Todos os servidores" />
                   </SelectTrigger>
                   <SelectContent>
@@ -267,9 +271,9 @@ export function TravelCalendar() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Destino</Label>
+                <Label className="text-sm font-medium">Destino</Label>
                 <Select value={destinoFilter} onValueChange={setDestinoFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9">
                     <SelectValue placeholder="Todos os destinos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -283,8 +287,8 @@ export function TravelCalendar() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Total do Mês</Label>
-                <Badge variant="secondary" className="w-fit">
+                <Label className="text-sm font-medium">Total do Mês</Label>
+                <Badge variant="secondary" className="w-fit h-6">
                   {getTravelsForMonth().length} viagens
                 </Badge>
               </div>
@@ -293,51 +297,55 @@ export function TravelCalendar() {
         )}
       </div>
 
-      {/* Calendário */}
-      <div className="flex-1 p-6">
-        <Card className="h-full">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">
-                {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentMonth(new Date())}
-                >
-                  Hoje
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+      {/* Modern Calendar Layout */}
+      <div className="flex-1 p-6 bg-muted/5">
+        <div className="max-w-full h-full">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between mb-6 bg-card p-4 rounded-lg border shadow-sm">
+            <h2 className="text-2xl font-semibold text-foreground">
+              {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+            </h2>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentMonth(new Date())}
+                className="h-9 px-3 mx-1"
+              >
+                Hoje
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            {/* Cabeçalho dos dias da semana */}
-            <div className="grid grid-cols-7 gap-1 mb-4">
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
+            {/* Days of Week Header */}
+            <div className="grid grid-cols-7 border-b bg-muted/30">
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                <div key={day} className="p-4 text-center text-sm font-semibold text-muted-foreground border-r last:border-r-0">
                   {day}
                 </div>
               ))}
             </div>
 
-            {/* Grid do calendário */}
-            <div className="grid grid-cols-7 gap-1">
+            {/* Calendar Days Grid */}
+            <div className="grid grid-cols-7">
               {getDaysInMonth().map(({ date, isCurrentMonth }, index) => {
                 const daysInMonth = getDaysInMonth();
                 const dayTravels = getTravelsForDate(date);
@@ -347,20 +355,22 @@ export function TravelCalendar() {
                   <div
                     key={index}
                     className={`
-                      relative min-h-[140px] p-1 border rounded-lg transition-colors
-                      ${isCurrentMonth ? 'bg-background' : 'bg-muted/20'}
-                      ${isToday ? 'ring-2 ring-primary' : ''}
+                      relative min-h-[120px] border-r border-b last:border-r-0 p-2 transition-colors
+                      ${isCurrentMonth ? 'bg-background hover:bg-muted/20' : 'bg-muted/10'}
+                      ${isToday ? 'bg-primary/5 border-primary/20' : ''}
                     `}
                   >
+                    {/* Date Number */}
                     <div className={`
-                      text-sm font-medium mb-1 p-1
+                      inline-flex items-center justify-center w-7 h-7 text-sm font-medium mb-2 rounded-full
                       ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}
-                      ${isToday ? 'text-primary font-bold' : ''}
+                      ${isToday ? 'bg-primary text-primary-foreground font-bold' : ''}
                     `}>
                       {date.getDate()}
                     </div>
                     
-                    <div className="space-y-0.5 px-1">
+                    {/* Travel Events */}
+                    <div className="space-y-1">
                       {dayTravels.map((travel, travelIndex) => {
                         const position = getTravelPosition(travel, date, daysInMonth);
                         
@@ -370,34 +380,31 @@ export function TravelCalendar() {
                           <div
                             key={travel.id}
                             className={`
-                              relative text-xs cursor-pointer transition-all hover:scale-105 z-10
+                              relative text-xs cursor-pointer transition-all hover:opacity-80 group
                               ${getTravelColor(travelIndex)}
-                              ${position.position === 'start' ? 'rounded-l-md rounded-r-none pl-1 pr-0' : ''}
-                              ${position.position === 'end' ? 'rounded-r-md rounded-l-none pl-0 pr-1' : ''}
-                              ${position.position === 'middle' ? 'rounded-none px-0' : ''}
-                              ${position.position === 'single' ? 'rounded-md px-1' : ''}
-                              py-0.5
+                              ${position.position === 'start' ? 'rounded-l-md rounded-r-none' : ''}
+                              ${position.position === 'end' ? 'rounded-r-md rounded-l-none' : ''}
+                              ${position.position === 'middle' ? 'rounded-none' : ''}
+                              ${position.position === 'single' ? 'rounded-md' : ''}
+                              px-2 py-1 border
                             `}
                             onClick={() => handleViewTravel(travel)}
                             title={`${travel.servidor} - ${travel.destino}`}
                           >
-                            {/* Mostrar informações apenas no primeiro dia da viagem */}
+                            {/* Show content only on start or single day */}
                             {position.position === 'start' || position.position === 'single' ? (
                               <>
-                                <div className="font-medium truncate text-[10px]">
+                                <div className="font-medium truncate text-[11px] leading-tight">
                                   {travel.servidor}
                                 </div>
-                                <div className="flex items-center gap-0.5 opacity-75 text-[9px]">
-                                  <MapPin className="h-2 w-2 flex-shrink-0" />
+                                <div className="flex items-center gap-1 opacity-75 text-[10px]">
+                                  <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
                                   <span className="truncate">{travel.destino}</span>
                                 </div>
                               </>
                             ) : (
-                              // Para posições middle e end, apenas uma linha de continuação
-                              <div className="h-4 flex items-center">
-                                <div className="w-full text-center text-[9px] opacity-60">
-                                  ···
-                                </div>
+                              <div className="h-6 flex items-center justify-center">
+                                <div className="w-full border-t border-current opacity-40"></div>
                               </div>
                             )}
                           </div>
@@ -408,8 +415,8 @@ export function TravelCalendar() {
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Modais */}
