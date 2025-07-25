@@ -5,6 +5,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, Palette } from 'lucide-react';
 import { CreateTaskModal } from './CreateTaskModal';
+import { ViewTaskModal } from './ViewTaskModal';
+import { EditTaskModal } from './EditTaskModal';
+import { Progress } from '@/components/ui/progress';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,9 +124,11 @@ interface DroppableColumnProps {
   id: string;
   title: string;
   tickets: Ticket[];
+  onViewTicket: (ticket: Ticket) => void;
+  onEditTicket: (ticket: Ticket) => void;
 }
 
-function DroppableColumn({ id, title, tickets }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -147,7 +152,12 @@ function DroppableColumn({ id, title, tickets }: DroppableColumnProps) {
           }`}
         >
           {tickets.map((ticket) => (
-            <DraggableTicket key={ticket.id} ticket={ticket} />
+            <DraggableTicket 
+              key={ticket.id} 
+              ticket={ticket} 
+              onViewTicket={onViewTicket}
+              onEditTicket={onEditTicket}
+            />
           ))}
         </div>
       </SortableContext>
@@ -157,9 +167,11 @@ function DroppableColumn({ id, title, tickets }: DroppableColumnProps) {
 
 interface DraggableTicketProps {
   ticket: Ticket;
+  onViewTicket: (ticket: Ticket) => void;
+  onEditTicket: (ticket: Ticket) => void;
 }
 
-function DraggableTicket({ ticket }: DraggableTicketProps) {
+function DraggableTicket({ ticket, onViewTicket, onEditTicket }: DraggableTicketProps) {
   const {
     attributes,
     listeners,
@@ -177,14 +189,18 @@ function DraggableTicket({ ticket }: DraggableTicketProps) {
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Editar tarefa:', ticket.id);
-    // TODO: Implementar modal de edição
+    onEditTicket(ticket);
   };
 
   const handleView = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Ver tarefa:', ticket.id);
-    // TODO: Implementar modal de visualização
+    onViewTicket(ticket);
+  };
+
+  const getServicesProgress = () => {
+    if (!ticket.services || ticket.services.length === 0) return 0;
+    const completed = ticket.services.filter(s => s.completed).length;
+    return (completed / ticket.services.length) * 100;
   };
 
   return (
@@ -246,6 +262,17 @@ function DraggableTicket({ ticket }: DraggableTicketProps) {
           <span>{ticket.location}</span>
         </div>
 
+        {/* Barra de progresso dos serviços */}
+        {ticket.services && ticket.services.length > 0 && (
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">Progresso</span>
+              <span className="text-xs text-muted-foreground">{Math.round(getServicesProgress())}%</span>
+            </div>
+            <Progress value={getServicesProgress()} className="w-full h-1.5" />
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
@@ -271,6 +298,9 @@ function DraggableTicket({ ticket }: DraggableTicketProps) {
 export function KanbanBoard() {
   const [tickets, setTickets] = useState(initialTickets);
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -377,6 +407,36 @@ export function KanbanBoard() {
     }));
   };
 
+  const handleViewTicket = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setViewModalOpen(true);
+  };
+
+  const handleEditTicket = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateTicket = (updatedTicket: Ticket) => {
+    setTickets(prev => {
+      const newTickets = { ...prev };
+      
+      // Encontrar e remover o ticket antigo
+      for (const [status, statusTickets] of Object.entries(newTickets)) {
+        const ticketIndex = statusTickets.findIndex(t => t.id === updatedTicket.id);
+        if (ticketIndex !== -1) {
+          newTickets[status] = statusTickets.filter(t => t.id !== updatedTicket.id);
+          break;
+        }
+      }
+      
+      // Adicionar o ticket atualizado no status correto
+      newTickets[updatedTicket.status] = [...newTickets[updatedTicket.status], updatedTicket];
+      
+      return newTickets;
+    });
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -400,6 +460,8 @@ export function KanbanBoard() {
               id={status}
               title={status}
               tickets={statusTickets}
+              onViewTicket={handleViewTicket}
+              onEditTicket={handleEditTicket}
             />
           ))}
         </div>
@@ -457,6 +519,20 @@ export function KanbanBoard() {
             </Card>
           ) : null}
         </DragOverlay>
+
+        {/* Modais */}
+        <ViewTaskModal 
+          ticket={selectedTicket}
+          open={viewModalOpen}
+          onOpenChange={setViewModalOpen}
+        />
+        
+        <EditTaskModal 
+          ticket={selectedTicket}
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          onUpdateTask={handleUpdateTicket}
+        />
       </div>
     </DndContext>
   );
