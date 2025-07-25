@@ -87,6 +87,40 @@ export function TravelCalendar() {
     });
   };
 
+  const getTravelPosition = (travel: Travel, date: Date, daysInMonth: any[]) => {
+    const startDate = parseISO(travel.data_ida);
+    const endDate = parseISO(travel.data_volta);
+    
+    // Encontrar posição inicial e final no grid
+    const startIndex = daysInMonth.findIndex(day => 
+      isSameDay(day.date, startDate) && day.isCurrentMonth
+    );
+    const endIndex = daysInMonth.findIndex(day => 
+      isSameDay(day.date, endDate) && day.isCurrentMonth
+    );
+    
+    const currentIndex = daysInMonth.findIndex(day => 
+      isSameDay(day.date, date)
+    );
+    
+    if (startIndex === -1 || endIndex === -1 || currentIndex === -1) {
+      return { show: false, position: 'middle' };
+    }
+    
+    // Determinar se deve mostrar e qual posição
+    if (currentIndex === startIndex && currentIndex === endIndex) {
+      return { show: true, position: 'single' };
+    } else if (currentIndex === startIndex) {
+      return { show: true, position: 'start' };
+    } else if (currentIndex === endIndex) {
+      return { show: true, position: 'end' };
+    } else if (currentIndex > startIndex && currentIndex < endIndex) {
+      return { show: true, position: 'middle' };
+    }
+    
+    return { show: false, position: 'middle' };
+  };
+
   const getTravelsForMonth = () => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -305,6 +339,7 @@ export function TravelCalendar() {
             {/* Grid do calendário */}
             <div className="grid grid-cols-7 gap-1">
               {getDaysInMonth().map(({ date, isCurrentMonth }, index) => {
+                const daysInMonth = getDaysInMonth();
                 const dayTravels = getTravelsForDate(date);
                 const isToday = isSameDay(date, new Date());
                 
@@ -312,55 +347,62 @@ export function TravelCalendar() {
                   <div
                     key={index}
                     className={`
-                      min-h-[120px] p-2 border rounded-lg transition-colors hover:bg-muted/50
+                      relative min-h-[140px] p-1 border rounded-lg transition-colors
                       ${isCurrentMonth ? 'bg-background' : 'bg-muted/20'}
                       ${isToday ? 'ring-2 ring-primary' : ''}
                     `}
                   >
                     <div className={`
-                      text-sm font-medium mb-2
+                      text-sm font-medium mb-1 p-1
                       ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}
                       ${isToday ? 'text-primary font-bold' : ''}
                     `}>
                       {date.getDate()}
                     </div>
                     
-                    <div className="space-y-1">
-                      {dayTravels.slice(0, 3).map((travel, travelIndex) => (
-                        <div
-                          key={travel.id}
-                          className={`
-                            text-xs p-1 rounded border cursor-pointer transition-all hover:scale-105
-                            ${getTravelColor(travelIndex)}
-                          `}
-                          onClick={() => handleViewTravel(travel)}
-                          title={`${travel.servidor} - ${travel.destino}`}
-                        >
-                          <div className="font-medium truncate">
-                            {travel.servidor}
+                    <div className="space-y-0.5 px-1">
+                      {dayTravels.map((travel, travelIndex) => {
+                        const position = getTravelPosition(travel, date, daysInMonth);
+                        
+                        if (!position.show) return null;
+                        
+                        return (
+                          <div
+                            key={travel.id}
+                            className={`
+                              relative text-xs cursor-pointer transition-all hover:scale-105 z-10
+                              ${getTravelColor(travelIndex)}
+                              ${position.position === 'start' ? 'rounded-l-md rounded-r-none pl-1 pr-0' : ''}
+                              ${position.position === 'end' ? 'rounded-r-md rounded-l-none pl-0 pr-1' : ''}
+                              ${position.position === 'middle' ? 'rounded-none px-0' : ''}
+                              ${position.position === 'single' ? 'rounded-md px-1' : ''}
+                              py-0.5
+                            `}
+                            onClick={() => handleViewTravel(travel)}
+                            title={`${travel.servidor} - ${travel.destino}`}
+                          >
+                            {/* Mostrar informações apenas no primeiro dia da viagem */}
+                            {position.position === 'start' || position.position === 'single' ? (
+                              <>
+                                <div className="font-medium truncate text-[10px]">
+                                  {travel.servidor}
+                                </div>
+                                <div className="flex items-center gap-0.5 opacity-75 text-[9px]">
+                                  <MapPin className="h-2 w-2 flex-shrink-0" />
+                                  <span className="truncate">{travel.destino}</span>
+                                </div>
+                              </>
+                            ) : (
+                              // Para posições middle e end, apenas uma linha de continuação
+                              <div className="h-4 flex items-center">
+                                <div className="w-full text-center text-[9px] opacity-60">
+                                  ···
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="flex items-center gap-1 opacity-75">
-                            <MapPin className="h-2 w-2" />
-                            <span className="truncate">{travel.destino}</span>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {dayTravels.length > 3 && (
-                        <div 
-                          className="text-xs text-muted-foreground text-center py-1 cursor-pointer hover:bg-muted rounded"
-                          onClick={() => {
-                            // Criar modal ou expandir lista para mostrar todas as viagens do dia
-                            const allTravelsText = dayTravels.slice(3).map(t => `${t.servidor} - ${t.destino}`).join('\n');
-                            toast({
-                              title: `Viagens de ${format(date, 'dd/MM/yyyy')}`,
-                              description: allTravelsText,
-                            });
-                          }}
-                        >
-                          +{dayTravels.length - 3} mais
-                        </div>
-                      )}
+                        );
+                      })}
                     </div>
                   </div>
                 );
