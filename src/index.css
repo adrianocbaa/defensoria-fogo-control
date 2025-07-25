@@ -33,8 +33,8 @@ All colors MUST be HSL.
     --accent-foreground: 214 19% 18%;
 
     /* Cores de alerta para vencimentos */
-    --warning: 43 96% 56%;
-    --warning-foreground: 214 19% 18%;
+    --warning: 25 95% 53%;
+    --warning-foreground: 0 0% 100%;
     
     --danger: 0 84% 50%;
     --danger-foreground: 0 0% 100%;

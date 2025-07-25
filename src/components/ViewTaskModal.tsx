@@ -7,7 +7,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { MapPin, Clock, User, FileText, Settings, CheckCircle2 } from 'lucide-react';
+import { MapPin, Clock, User, FileText, Settings, CheckCircle2, Wrench, Zap, Droplets, Shield, Wind, PaintRoller } from 'lucide-react';
 
 interface Ticket {
   id: string;
@@ -33,8 +33,17 @@ interface ViewTaskModalProps {
 
 const priorityColors = {
   'Alta': 'destructive',
-  'Média': 'default',
+  'Média': 'warning',
   'Baixa': 'secondary'
+};
+
+const typeIcons = {
+  'Hidráulica': Droplets,
+  'Elétrica': Zap,
+  'Climatização': Wind,
+  'Segurança': Shield,
+  'Pintura': PaintRoller,
+  'Geral': Wrench,
 };
 
 export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps) {
@@ -51,7 +60,10 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ticket.icon className="h-5 w-5" />
+            {(() => {
+              const IconComponent = typeIcons[ticket.type as keyof typeof typeIcons] || ticket.icon;
+              return <IconComponent className="h-5 w-5" />;
+            })()}
             Detalhes da Tarefa - {ticket.id}
           </DialogTitle>
         </DialogHeader>

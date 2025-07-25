@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Wrench, Zap, Droplets, Shield, Wind, Palette, X } from 'lucide-react';
+import { Plus, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -47,7 +47,7 @@ const taskTypes = [
   { value: 'Elétrica', icon: Zap },
   { value: 'Climatização', icon: Wind },
   { value: 'Segurança', icon: Shield },
-  { value: 'Pintura', icon: Palette },
+  { value: 'Pintura', icon: PaintRoller },
   { value: 'Geral', icon: Wrench },
 ];
 
@@ -240,7 +240,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               <SelectContent>
                 <SelectItem value="Em Análise">Em Análise</SelectItem>
                 <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                <SelectItem value="Aguardando Peças">Aguardando Peças</SelectItem>
+                <SelectItem value="Serviços Pausados">Serviços Pausados</SelectItem>
                 <SelectItem value="Concluído">Concluído</SelectItem>
               </SelectContent>
             </Select>
