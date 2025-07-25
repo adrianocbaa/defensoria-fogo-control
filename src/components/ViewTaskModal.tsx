@@ -64,7 +64,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
               const IconComponent = typeIcons[ticket.type as keyof typeof typeIcons] || ticket.icon;
               return <IconComponent className="h-5 w-5" />;
             })()}
-            Detalhes da Tarefa - {ticket.id}
+            {ticket.title}
           </DialogTitle>
         </DialogHeader>
         

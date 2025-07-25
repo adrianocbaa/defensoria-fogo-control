@@ -241,23 +241,6 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status Inicial</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Em Análise">Em Análise</SelectItem>
-                <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                <SelectItem value="Serviços Pausados">Serviços Pausados</SelectItem>
-                <SelectItem value="Concluído">Concluído</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Observações */}
           <div className="space-y-2">

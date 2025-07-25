@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller } from 'lucide-react';
+import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check } from 'lucide-react';
 import { CreateTaskModal } from './CreateTaskModal';
 import { ViewTaskModal } from './ViewTaskModal';
 import { EditTaskModal } from './EditTaskModal';
@@ -126,9 +126,10 @@ interface DroppableColumnProps {
   tickets: Ticket[];
   onViewTicket: (ticket: Ticket) => void;
   onEditTicket: (ticket: Ticket) => void;
+  onMarkAsExecuted?: (ticketId: string) => void;
 }
 
-function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -157,6 +158,7 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket }: Dro
               ticket={ticket} 
               onViewTicket={onViewTicket}
               onEditTicket={onEditTicket}
+              onMarkAsExecuted={onMarkAsExecuted}
             />
           ))}
         </div>
@@ -169,9 +171,10 @@ interface DraggableTicketProps {
   ticket: Ticket;
   onViewTicket: (ticket: Ticket) => void;
   onEditTicket: (ticket: Ticket) => void;
+  onMarkAsExecuted?: (ticketId: string) => void;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket }: DraggableTicketProps) {
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted }: DraggableTicketProps) {
   const {
     attributes,
     listeners,
@@ -238,6 +241,15 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket }: DraggableTicket
                   <Edit className="mr-2 h-3 w-3" />
                   Editar
                 </DropdownMenuItem>
+                {ticket.status === 'Concluído' && onMarkAsExecuted && (
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkAsExecuted(ticket.id);
+                  }} className="text-xs">
+                    <Check className="mr-2 h-3 w-3" />
+                    Executado
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -437,6 +449,17 @@ export function KanbanBoard() {
     });
   };
 
+  const handleMarkAsExecuted = (ticketId: string) => {
+    setTickets(prevTickets => {
+      const newTickets = { ...prevTickets };
+      // Remove a tarefa de todas as colunas
+      Object.keys(newTickets).forEach(status => {
+        newTickets[status] = newTickets[status].filter(ticket => ticket.id !== ticketId);
+      });
+      return newTickets;
+    });
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -462,6 +485,7 @@ export function KanbanBoard() {
               tickets={statusTickets}
               onViewTicket={handleViewTicket}
               onEditTicket={handleEditTicket}
+              onMarkAsExecuted={handleMarkAsExecuted}
             />
           ))}
         </div>
