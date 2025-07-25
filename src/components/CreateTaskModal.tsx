@@ -17,7 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Wrench, Zap, Droplets, Shield, Wind } from 'lucide-react';
+import { Plus, Wrench, Zap, Droplets, Shield, Wind, Palette, X } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface Ticket {
   id: string;
@@ -29,6 +32,10 @@ interface Ticket {
   createdAt: string;
   icon: any;
   status: string;
+  observations?: string[];
+  services?: { name: string; completed: boolean }[];
+  requestType?: 'email' | 'processo';
+  processNumber?: string;
 }
 
 interface CreateTaskModalProps {
@@ -40,6 +47,7 @@ const taskTypes = [
   { value: 'Elétrica', icon: Zap },
   { value: 'Climatização', icon: Wind },
   { value: 'Segurança', icon: Shield },
+  { value: 'Pintura', icon: Palette },
   { value: 'Geral', icon: Wrench },
 ];
 
@@ -53,11 +61,49 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     assignee: '',
     status: 'Em Análise'
   });
+  
+  const [observation, setObservation] = useState('');
+  const [observations, setObservations] = useState<string[]>([]);
+  const [services, setServices] = useState<{ name: string; completed: boolean }[]>([]);
+  const [newService, setNewService] = useState('');
+  const [requestType, setRequestType] = useState<'email' | 'processo' | ''>('');
+  const [processNumber, setProcessNumber] = useState('');
+
+  const addObservation = () => {
+    if (observation.trim()) {
+      const newObs = `${observation} - Usuário Admin (${new Date().toLocaleString()})`;
+      setObservations(prev => [...prev, newObs]);
+      setObservation('');
+    }
+  };
+
+  const addService = () => {
+    if (newService.trim()) {
+      setServices(prev => [...prev, { name: newService, completed: false }]);
+      setNewService('');
+    }
+  };
+
+  const toggleService = (index: number) => {
+    setServices(prev => prev.map((service, i) => 
+      i === index ? { ...service, completed: !service.completed } : service
+    ));
+  };
+
+  const removeService = (index: number) => {
+    setServices(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getServicesProgress = () => {
+    if (services.length === 0) return 0;
+    const completed = services.filter(s => s.completed).length;
+    return (completed / services.length) * 100;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.priority || !formData.type || !formData.location || !formData.assignee) {
+    if (!formData.title || !formData.priority || !formData.type || !formData.location || !formData.assignee || !requestType) {
       return;
     }
 
@@ -70,7 +116,11 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       location: formData.location,
       assignee: formData.assignee,
       icon: selectedTaskType?.icon || Wrench,
-      status: formData.status
+      status: formData.status,
+      observations,
+      services,
+      requestType: requestType as 'email' | 'processo',
+      processNumber: requestType === 'processo' ? processNumber : undefined
     });
 
     // Reset form
@@ -82,6 +132,12 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       assignee: '',
       status: 'Em Análise'
     });
+    setObservation('');
+    setObservations([]);
+    setServices([]);
+    setNewService('');
+    setRequestType('');
+    setProcessNumber('');
     
     setOpen(false);
   };
@@ -94,7 +150,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
           Nova Tarefa
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova Tarefa de Manutenção</DialogTitle>
         </DialogHeader>
@@ -188,6 +244,116 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 <SelectItem value="Concluído">Concluído</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Observações */}
+          <div className="space-y-2">
+            <Label>Observações</Label>
+            <div className="flex gap-2">
+              <Input
+                value={observation}
+                onChange={(e) => setObservation(e.target.value)}
+                placeholder="Digite uma observação..."
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addObservation())}
+              />
+              <Button type="button" onClick={addObservation} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {observations.length > 0 && (
+              <div className="max-h-32 overflow-y-auto space-y-1 p-2 border rounded-md bg-muted/30">
+                {observations.map((obs, index) => (
+                  <div key={index} className="text-sm text-muted-foreground">
+                    {obs}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Serviços */}
+          <div className="space-y-2">
+            <Label>Serviços</Label>
+            <div className="flex gap-2">
+              <Input
+                value={newService}
+                onChange={(e) => setNewService(e.target.value)}
+                placeholder="Adicionar serviço..."
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
+              />
+              <Button type="button" onClick={addService} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {services.length > 0 && (
+              <div className="space-y-2">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Progresso dos Serviços</span>
+                    <span className="text-sm text-muted-foreground">{Math.round(getServicesProgress())}%</span>
+                  </div>
+                  <Progress value={getServicesProgress()} className="w-full" />
+                </div>
+                
+                <div className="max-h-32 overflow-y-auto space-y-2 p-2 border rounded-md bg-muted/30">
+                  {services.map((service, index) => (
+                    <div key={index} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <Checkbox
+                          checked={service.completed}
+                          onCheckedChange={() => toggleService(index)}
+                        />
+                        <span className={`text-sm ${service.completed ? 'line-through text-muted-foreground' : ''}`}>
+                          {service.name}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeService(index)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tipo de Solicitação */}
+          <div className="space-y-3">
+            <Label>Tipo de Solicitação *</Label>
+            <RadioGroup
+              value={requestType}
+              onValueChange={(value) => setRequestType(value as 'email' | 'processo')}
+              className="flex gap-6"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="email" id="email" />
+                <Label htmlFor="email">E-mail</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="processo" id="processo" />
+                <Label htmlFor="processo">Processo</Label>
+              </div>
+            </RadioGroup>
+            
+            {requestType === 'processo' && (
+              <div className="space-y-2">
+                <Label htmlFor="processNumber">Número do Processo</Label>
+                <Input
+                  id="processNumber"
+                  value={processNumber}
+                  onChange={(e) => setProcessNumber(e.target.value)}
+                  placeholder="Digite o número do processo..."
+                  required
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">

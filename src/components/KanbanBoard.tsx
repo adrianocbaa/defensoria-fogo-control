@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical } from 'lucide-react';
+import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, Palette } from 'lucide-react';
 import { CreateTaskModal } from './CreateTaskModal';
 import {
   DropdownMenu,
@@ -39,6 +39,10 @@ interface Ticket {
   createdAt: string;
   icon: any;
   status: string;
+  observations?: string[];
+  services?: { name: string; completed: boolean }[];
+  requestType?: 'email' | 'processo';
+  processNumber?: string;
 }
 
 const initialTickets: Record<string, Ticket[]> = {
@@ -188,10 +192,12 @@ function DraggableTicket({ ticket }: DraggableTicketProps) {
       ref={setNodeRef}
       style={style}
       className={`cursor-grab hover:shadow-md transition-shadow ${isDragging ? 'shadow-lg' : ''}`}
+      {...attributes} 
+      {...listeners}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-sm font-medium" {...attributes} {...listeners}>
+          <CardTitle className="text-sm font-medium">
             {ticket.title}
           </CardTitle>
           <div className="flex items-center gap-1">
