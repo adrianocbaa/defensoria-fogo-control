@@ -236,8 +236,12 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
                       setDataVoltaOpen(false);
                     }}
                     disabled={(date) => {
-                      const minDate = formData.data_ida ? new Date(formData.data_ida) : new Date();
-                      return date < minDate;
+                      if (!formData.data_ida) return date < new Date();
+                      const minDate = new Date(formData.data_ida);
+                      minDate.setHours(0, 0, 0, 0);
+                      const currentDate = new Date(date);
+                      currentDate.setHours(0, 0, 0, 0);
+                      return currentDate < minDate;
                     }}
                     locale={ptBR}
                     initialFocus

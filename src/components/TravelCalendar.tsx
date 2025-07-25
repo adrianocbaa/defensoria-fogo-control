@@ -347,7 +347,17 @@ export function TravelCalendar() {
                       ))}
                       
                       {dayTravels.length > 3 && (
-                        <div className="text-xs text-muted-foreground text-center py-1">
+                        <div 
+                          className="text-xs text-muted-foreground text-center py-1 cursor-pointer hover:bg-muted rounded"
+                          onClick={() => {
+                            // Criar modal ou expandir lista para mostrar todas as viagens do dia
+                            const allTravelsText = dayTravels.slice(3).map(t => `${t.servidor} - ${t.destino}`).join('\n');
+                            toast({
+                              title: `Viagens de ${format(date, 'dd/MM/yyyy')}`,
+                              description: allTravelsText,
+                            });
+                          }}
+                        >
                           +{dayTravels.length - 3} mais
                         </div>
                       )}

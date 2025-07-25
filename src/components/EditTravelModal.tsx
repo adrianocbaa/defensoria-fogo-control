@@ -175,7 +175,7 @@ export function EditTravelModal({
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="z-[60]">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                   <AlertDialogDescription>
@@ -288,8 +288,12 @@ export function EditTravelModal({
                       setDataVoltaOpen(false);
                     }}
                     disabled={(date) => {
-                      const minDate = formData.data_ida ? new Date(formData.data_ida) : new Date();
-                      return date < minDate;
+                      if (!formData.data_ida) return false;
+                      const minDate = new Date(formData.data_ida);
+                      minDate.setHours(0, 0, 0, 0);
+                      const currentDate = new Date(date);
+                      currentDate.setHours(0, 0, 0, 0);
+                      return currentDate < minDate;
                     }}
                     locale={ptBR}
                     initialFocus
