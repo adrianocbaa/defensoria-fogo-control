@@ -23,7 +23,7 @@ import {
   Download,
   Eye
 } from 'lucide-react';
-import { useNuclei } from '@/contexts/NucleiContext';
+import { useNucleiContext } from '@/contexts/NucleiContext';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
 import { ExtinguisherType } from '@/types/nucleus';
@@ -40,7 +40,7 @@ const extinguisherTypeLabels: Record<ExtinguisherType, string> = {
 export default function NucleusDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getNucleusById, updateNucleus, deleteNucleus } = useNuclei();
+  const { getNucleusById, updateNucleus, deleteNucleus } = useNucleiContext();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { canEdit } = useUserRole();
   const { toast } = useToast();

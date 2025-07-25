@@ -1,6 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Nucleus } from '@/types/nucleus';
-import { useNuclei as useNucleiHook } from '@/hooks/useNuclei';
+import { useNuclei as useNucleiData } from '@/hooks/useNuclei';
 
 interface NucleiContextType {
   nuclei: Nucleus[];
@@ -16,19 +16,19 @@ interface NucleiContextType {
 const NucleiContext = createContext<NucleiContextType | undefined>(undefined);
 
 export function NucleiProvider({ children }: { children: ReactNode }) {
-  const nucleiData = useNucleiHook();
+  const nucleiContextData = useNucleiData();
 
   return (
-    <NucleiContext.Provider value={nucleiData}>
+    <NucleiContext.Provider value={nucleiContextData}>
       {children}
     </NucleiContext.Provider>
   );
 }
 
-export function useNuclei() {
+export function useNucleiContext() {
   const context = useContext(NucleiContext);
   if (context === undefined) {
-    throw new Error('useNuclei must be used within a NucleiProvider');
+    throw new Error('useNucleiContext must be used within a NucleiProvider');
   }
   return context;
 }

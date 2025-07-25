@@ -4,7 +4,7 @@ import { Layout } from '@/components/Layout';
 import { MapView } from '@/components/MapView';
 import { NucleusForm } from '@/components/NucleusForm';
 import { Button } from '@/components/ui/button';
-import { useNuclei } from '@/contexts/NucleiContext';
+import { useNucleiContext } from '@/contexts/NucleiContext';
 import { NucleusCard } from '@/components/NucleusCard';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +27,7 @@ import {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { nuclei, addNucleus, loading, refetch } = useNuclei();
+  const { nuclei, addNucleus, loading, refetch } = useNucleiContext();
   const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
