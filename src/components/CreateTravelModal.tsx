@@ -15,6 +15,7 @@ import { CreateTravelData } from '@/types/travel';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMaintenanceTickets } from '@/hooks/useMaintenanceTickets';
+import { useNavigate } from 'react-router-dom';
 
 interface CreateTravelModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ interface CreateTravelModalProps {
 export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTravelModalProps) {
   const { user } = useAuth();
   const { createTicket } = useMaintenanceTickets();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CreateTravelData>({
     servidor: '',
@@ -88,6 +90,16 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      toast({
+        title: "Acesso negado",
+        description: "Você precisa fazer login para criar viagens e tarefas.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+    
     if (!validateForm()) return;
 
     setLoading(true);
@@ -116,12 +128,12 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
         travel_id: travelData.id
       };
 
-      await createTicket(ticketData);
+      const createdTicket = await createTicket(ticketData);
 
       // Atualizar a viagem com o ID da tarefa
       const { error: updateError } = await supabase
         .from('travels')
-        .update({ ticket_id: travelData.id })
+        .update({ ticket_id: createdTicket.id })
         .eq('id', travelData.id);
 
       if (updateError) throw updateError;

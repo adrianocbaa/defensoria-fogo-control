@@ -31,7 +31,10 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { toast } from '@/hooks/use-toast';
 import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 // Use MaintenanceTicket from the hook but extend it with icon for UI
 interface Ticket extends Omit<MaintenanceTicket, 'created_at' | 'request_type' | 'process_number' | 'completed_at'> {
@@ -244,6 +247,8 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted 
 
 export function KanbanBoard() {
   const { tickets: dbTickets, loading, createTicket, updateTicket, deleteTicket } = useMaintenanceTickets();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
     'Pendente': [],
     'Em andamento': [],
@@ -369,6 +374,16 @@ export function KanbanBoard() {
   };
 
   const handleCreateTask = async (taskData: Omit<Ticket, 'id' | 'createdAt' | 'icon'>) => {
+    if (!user) {
+      toast({
+        title: "Acesso negado",
+        description: "Você precisa fazer login para criar tarefas.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
     const dbTicketData = {
       title: taskData.title,
       priority: taskData.priority,
