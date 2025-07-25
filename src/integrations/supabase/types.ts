@@ -209,6 +209,60 @@ export type Database = {
           },
         ]
       }
+      maintenance_tickets: {
+        Row: {
+          assignee: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          location: string
+          observations: string[] | null
+          priority: string
+          process_number: string | null
+          request_type: string | null
+          services: Json | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assignee: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          location: string
+          observations?: string[] | null
+          priority: string
+          process_number?: string | null
+          request_type?: string | null
+          services?: Json | null
+          status: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assignee?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          location?: string
+          observations?: string[] | null
+          priority?: string
+          process_number?: string | null
+          request_type?: string | null
+          services?: Json | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       nuclei: {
         Row: {
           address: string

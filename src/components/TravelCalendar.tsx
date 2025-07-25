@@ -230,15 +230,6 @@ export function TravelCalendar() {
               <Filter className="h-4 w-4 mr-2" />
               Filtros
             </Button>
-            {canEdit && (
-              <Button 
-                onClick={() => setShowCreateModal(true)}
-                className="h-9"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Viagem
-              </Button>
-            )}
           </div>
         </div>
 

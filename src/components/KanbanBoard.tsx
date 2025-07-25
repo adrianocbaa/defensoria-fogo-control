@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -31,19 +31,12 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
 
-interface Ticket {
-  id: string;
-  title: string;
-  priority: 'Alta' | 'Média' | 'Baixa';
-  type: string;
-  location: string;
-  assignee: string;
-  createdAt: string;
+// Use MaintenanceTicket from the hook but extend it with icon for UI
+interface Ticket extends Omit<MaintenanceTicket, 'created_at' | 'request_type' | 'process_number' | 'completed_at'> {
   icon: any;
-  status: string;
-  observations?: string[];
-  services?: { name: string; completed: boolean }[];
+  createdAt: string;
   requestType?: 'email' | 'processo';
   processNumber?: string;
   completedAt?: Date;
@@ -250,11 +243,47 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted 
 }
 
 export function KanbanBoard() {
-  const [tickets, setTickets] = useState(initialTickets);
+  const { tickets: dbTickets, loading, createTicket, updateTicket, deleteTicket } = useMaintenanceTickets();
+  const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
+    'Pendente': [],
+    'Em andamento': [],
+    'Concluído': []
+  });
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
+  // Convert DB tickets to UI tickets format
+  useEffect(() => {
+    const convertedTickets = {
+      'Pendente': [],
+      'Em andamento': [],
+      'Concluído': []
+    } as { [key: string]: Ticket[] };
+
+    Object.entries(dbTickets).forEach(([status, statusTickets]) => {
+      convertedTickets[status] = (statusTickets as MaintenanceTicket[]).map(ticket => ({
+        ...ticket,
+        createdAt: new Date(ticket.created_at).toLocaleDateString('pt-BR'),
+        requestType: ticket.request_type,
+        processNumber: ticket.process_number,
+        completedAt: ticket.completed_at ? new Date(ticket.completed_at) : undefined,
+        icon: getIconForType(ticket.type)
+      }));
+    });
+
+    setTickets(convertedTickets);
+  }, [dbTickets]);
+
+  function getIconForType(type: string) {
+    switch (type.toLowerCase()) {
+      case 'elétrica': return Zap;
+      case 'hidráulica': return Droplets;
+      case 'pintura': return PaintRoller;
+      default: return Wrench;
+    }
+  }
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -331,34 +360,29 @@ export function KanbanBoard() {
       return;
     }
 
-    // Mover o ticket
-    setTickets(prev => {
-      const newTickets = { ...prev };
-      
-      // Remover do status atual
-      newTickets[sourceStatus] = newTickets[sourceStatus].filter(t => t.id !== activeId);
-      
-      // Adicionar ao novo status
-      const updatedTicket = { ...ticketToMove, status: targetStatus };
-      newTickets[targetStatus] = [...newTickets[targetStatus], updatedTicket];
-      
-      return newTickets;
-    });
+    // Atualizar ticket no banco de dados
+    updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Concluído' });
+
+    setActiveTicket(null);
 
     setActiveTicket(null);
   };
 
-  const handleCreateTask = (taskData: Omit<Ticket, 'id' | 'createdAt'>) => {
-    const newTicket: Ticket = {
-      ...taskData,
-      id: `CH-${String(Date.now()).slice(-3)}`,
-      createdAt: 'Agora mesmo'
+  const handleCreateTask = async (taskData: Omit<Ticket, 'id' | 'createdAt' | 'icon'>) => {
+    const dbTicketData = {
+      title: taskData.title,
+      priority: taskData.priority,
+      type: taskData.type,
+      location: taskData.location,
+      assignee: taskData.assignee,
+      status: taskData.status,
+      observations: taskData.observations,
+      services: taskData.services,
+      request_type: taskData.requestType,
+      process_number: taskData.processNumber
     };
 
-    setTickets(prev => ({
-      ...prev,
-      [taskData.status]: [...prev[taskData.status], newTicket]
-    }));
+    await createTicket(dbTicketData);
   };
 
   const handleViewTicket = (ticket: Ticket) => {
@@ -371,48 +395,28 @@ export function KanbanBoard() {
     setEditModalOpen(true);
   };
 
-  const handleUpdateTicket = (updatedTicket: Ticket) => {
-    setTickets(prev => {
-      const newTickets = { ...prev };
-      
-      // Encontrar e remover o ticket antigo
-      for (const [status, statusTickets] of Object.entries(newTickets)) {
-        const ticketIndex = statusTickets.findIndex(t => t.id === updatedTicket.id);
-        if (ticketIndex !== -1) {
-          newTickets[status] = statusTickets.filter(t => t.id !== updatedTicket.id);
-          break;
-        }
-      }
-      
-      // Adicionar o ticket atualizado no status correto
-      newTickets[updatedTicket.status] = [...newTickets[updatedTicket.status], updatedTicket];
-      
-      return newTickets;
-    });
+  const handleUpdateTicket = async (updatedTicket: Ticket) => {
+    const dbTicketData = {
+      title: updatedTicket.title,
+      priority: updatedTicket.priority,
+      type: updatedTicket.type,
+      location: updatedTicket.location,
+      assignee: updatedTicket.assignee,
+      status: updatedTicket.status,
+      observations: updatedTicket.observations,
+      services: updatedTicket.services,
+      request_type: updatedTicket.requestType,
+      process_number: updatedTicket.processNumber,
+      completed_at: updatedTicket.completedAt?.toISOString()
+    };
+
+    await updateTicket(updatedTicket.id, dbTicketData);
   };
 
-  const handleMarkAsExecuted = (ticketId: string) => {
-    setTickets(prevTickets => {
-      const newTickets = { ...prevTickets };
-      
-      // Encontrar o ticket e movê-lo para "Concluído" ao invés de remover
-      for (const [status, statusTickets] of Object.entries(newTickets)) {
-        const ticketIndex = statusTickets.findIndex(ticket => ticket.id === ticketId);
-        if (ticketIndex !== -1) {
-          const ticket = statusTickets[ticketIndex];
-          // Remove do status atual
-          newTickets[status] = statusTickets.filter(t => t.id !== ticketId);
-          // Adiciona ao status "Concluído" com data de conclusão
-          newTickets['Concluído'] = [...newTickets['Concluído'], {
-            ...ticket,
-            status: 'Concluído',
-            completedAt: new Date()
-          }];
-          break;
-        }
-      }
-      
-      return newTickets;
+  const handleMarkAsExecuted = async (ticketId: string) => {
+    await updateTicket(ticketId, { 
+      status: 'Concluído', 
+      completed_at: new Date().toISOString() 
     });
   };
 
@@ -429,7 +433,7 @@ export function KanbanBoard() {
             <h2 className="text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
             <p className="text-muted-foreground">Arraste as tarefas entre as colunas para alterar o status</p>
           </div>
-          <CreateTaskModal onCreateTask={handleCreateTask} />
+          <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -501,18 +505,22 @@ export function KanbanBoard() {
         </DragOverlay>
 
         {/* Modais */}
-        <ViewTaskModal 
-          ticket={selectedTicket}
-          open={viewModalOpen}
-          onOpenChange={setViewModalOpen}
-        />
+        {selectedTicket && (
+          <ViewTaskModal 
+            ticket={selectedTicket}
+            open={viewModalOpen}
+            onOpenChange={setViewModalOpen}
+          />
+        )}
         
-        <EditTaskModal 
-          ticket={selectedTicket}
-          open={editModalOpen}
-          onOpenChange={setEditModalOpen}
-          onUpdateTask={handleUpdateTicket}
-        />
+        {selectedTicket && (
+          <EditTaskModal 
+            ticket={selectedTicket}
+            open={editModalOpen}
+            onOpenChange={setEditModalOpen}
+            onUpdateTask={handleUpdateTicket}
+          />
+        )}
       </div>
     </DndContext>
   );
