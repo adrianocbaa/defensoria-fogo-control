@@ -32,6 +32,9 @@ export function TravelCalendar() {
   const [destinoFilter, setDestinoFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   
+  // View modes
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day' | 'list'>('month');
+  
   const { canEdit } = useUserRole();
   
   const fetchTravels = async () => {
@@ -255,10 +258,10 @@ export function TravelCalendar() {
           <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Servidor</Label>
+                <Label className="text-sm font-medium">Filtrar por Servidor</Label>
                 <Select value={servidorFilter} onValueChange={setServidorFilter}>
                   <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Todos os servidores" />
+                    <SelectValue placeholder="Selecionar servidor" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Todos os servidores</SelectItem>
@@ -314,14 +317,40 @@ export function TravelCalendar() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentMonth(new Date())}
-                className="h-9 px-3 mx-1"
-              >
-                Hoje
-              </Button>
+              <div className="flex items-center gap-1 mx-1">
+                <Button
+                  variant={viewMode === 'month' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('month')}
+                  className="h-9 px-3"
+                >
+                  month
+                </Button>
+                <Button
+                  variant={viewMode === 'week' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('week')}
+                  className="h-9 px-3"
+                >
+                  week
+                </Button>
+                <Button
+                  variant={viewMode === 'day' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('day')}
+                  className="h-9 px-3"
+                >
+                  day
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="h-9 px-3"
+                >
+                  list
+                </Button>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -380,32 +409,35 @@ export function TravelCalendar() {
                           <div
                             key={travel.id}
                             className={`
-                              relative text-xs cursor-pointer transition-all hover:opacity-80 group
+                              relative text-xs cursor-pointer transition-all hover:opacity-80 group mb-0.5
                               ${getTravelColor(travelIndex)}
-                              ${position.position === 'start' ? 'rounded-l-md rounded-r-none' : ''}
-                              ${position.position === 'end' ? 'rounded-r-md rounded-l-none' : ''}
-                              ${position.position === 'middle' ? 'rounded-none' : ''}
+                              ${position.position === 'start' ? 'rounded-l-md rounded-r-none ml-0' : ''}
+                              ${position.position === 'end' ? 'rounded-r-md rounded-l-none mr-0' : ''}
+                              ${position.position === 'middle' ? 'rounded-none mx-0' : ''}
                               ${position.position === 'single' ? 'rounded-md' : ''}
-                              px-2 py-1 border
+                              px-2 py-1 border h-6 flex items-center
                             `}
+                            style={{
+                              marginLeft: position.position === 'start' || position.position === 'single' ? '0' : '-1px',
+                              marginRight: position.position === 'end' || position.position === 'single' ? '0' : '-1px',
+                              zIndex: 10 + travelIndex
+                            }}
                             onClick={() => handleViewTravel(travel)}
                             title={`${travel.servidor} - ${travel.destino}`}
                           >
                             {/* Show content only on start or single day */}
                             {position.position === 'start' || position.position === 'single' ? (
-                              <>
-                                <div className="font-medium truncate text-[11px] leading-tight">
+                              <div className="flex items-center gap-1 w-full min-w-0">
+                                <div className="font-medium truncate text-[11px] flex-1">
                                   {travel.servidor}
                                 </div>
-                                <div className="flex items-center gap-1 opacity-75 text-[10px]">
-                                  <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-                                  <span className="truncate">{travel.destino}</span>
+                                <div className="flex items-center gap-0.5 opacity-75 text-[10px]">
+                                  <MapPin className="h-2 w-2 flex-shrink-0" />
+                                  <span className="truncate max-w-[40px]">{travel.destino}</span>
                                 </div>
-                              </>
-                            ) : (
-                              <div className="h-6 flex items-center justify-center">
-                                <div className="w-full border-t border-current opacity-40"></div>
                               </div>
+                            ) : (
+                              <div className="w-full h-full"></div>
                             )}
                           </div>
                         );

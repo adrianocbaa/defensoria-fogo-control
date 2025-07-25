@@ -46,72 +46,14 @@ interface Ticket {
   services?: { name: string; completed: boolean }[];
   requestType?: 'email' | 'processo';
   processNumber?: string;
+  completedAt?: Date;
 }
 
 const initialTickets: Record<string, Ticket[]> = {
-  'Em Análise': [
-    {
-      id: 'CH-001',
-      title: 'Vazamento no banheiro - 3º andar',
-      priority: 'Alta',
-      type: 'Hidráulica',
-      location: 'Sala 301',
-      assignee: 'João Silva',
-      createdAt: '2h atrás',
-      icon: Droplets,
-      status: 'Em Análise'
-    },
-    {
-      id: 'CH-002',
-      title: 'Lâmpada queimada - recepção',
-      priority: 'Baixa',
-      type: 'Elétrica',
-      location: 'Recepção',
-      assignee: 'Maria Santos',
-      createdAt: '4h atrás',
-      icon: Zap,
-      status: 'Em Análise'
-    }
-  ],
-  'Em Andamento': [
-    {
-      id: 'CH-003',
-      title: 'Manutenção do ar condicionado',
-      priority: 'Média',
-      type: 'Climatização',
-      location: 'Sala de reuniões',
-      assignee: 'Pedro Costa',
-      createdAt: '1 dia atrás',
-      icon: Wrench,
-      status: 'Em Andamento'
-    }
-  ],
-  'Serviços Pausados': [
-    {
-      id: 'CH-004',
-      title: 'Troca de fechadura - porta principal',
-      priority: 'Alta',
-      type: 'Segurança',
-      location: 'Entrada principal',
-      assignee: 'Ana Paula',
-      createdAt: '2 dias atrás',
-      icon: Wrench,
-      status: 'Serviços Pausados'
-    }
-  ],
-  'Concluído': [
-    {
-      id: 'CH-005',
-      title: 'Limpeza do sistema de ventilação',
-      priority: 'Média',
-      type: 'Ventilação',
-      location: 'Todo o prédio',
-      assignee: 'Carlos Lima',
-      createdAt: '3 dias atrás',
-      icon: Wrench,
-      status: 'Concluído'
-    }
-  ]
+  'Em Análise': [],
+  'Em Andamento': [],
+  'Serviços Pausados': [],
+  'Concluído': []
 };
 
 const priorityColors = {
@@ -452,10 +394,24 @@ export function KanbanBoard() {
   const handleMarkAsExecuted = (ticketId: string) => {
     setTickets(prevTickets => {
       const newTickets = { ...prevTickets };
-      // Remove a tarefa de todas as colunas
-      Object.keys(newTickets).forEach(status => {
-        newTickets[status] = newTickets[status].filter(ticket => ticket.id !== ticketId);
-      });
+      
+      // Encontrar o ticket e movê-lo para "Concluído" ao invés de remover
+      for (const [status, statusTickets] of Object.entries(newTickets)) {
+        const ticketIndex = statusTickets.findIndex(ticket => ticket.id === ticketId);
+        if (ticketIndex !== -1) {
+          const ticket = statusTickets[ticketIndex];
+          // Remove do status atual
+          newTickets[status] = statusTickets.filter(t => t.id !== ticketId);
+          // Adiciona ao status "Concluído" com data de conclusão
+          newTickets['Concluído'] = [...newTickets['Concluído'], {
+            ...ticket,
+            status: 'Concluído',
+            completedAt: new Date()
+          }];
+          break;
+        }
+      }
+      
       return newTickets;
     });
   };
