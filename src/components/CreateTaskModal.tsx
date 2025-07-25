@@ -17,11 +17,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, X } from 'lucide-react';
+import { Plus, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, X, CalendarIcon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ServicePhotos } from '@/components/ServicePhotos';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ServicePhoto {
   id: string;
@@ -79,6 +85,13 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [requestType, setRequestType] = useState<'email' | 'processo' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
+  const [isTravel, setIsTravel] = useState(false);
+  const [travelData, setTravelData] = useState({
+    cidade: '',
+    dataIda: undefined as Date | undefined,
+    dataVolta: undefined as Date | undefined
+  });
+  const { toast } = useToast();
 
   const addObservation = () => {
     if (observation.trim()) {
@@ -111,15 +124,35 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     return (completed / services.length) * 100;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title || !formData.priority || !formData.type || !formData.location || !formData.assignee || !requestType) {
       return;
     }
 
+    // Validar campos de viagem se necessário
+    if (isTravel && (!travelData.cidade || !travelData.dataIda || !travelData.dataVolta)) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos de viagem.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isTravel && travelData.dataIda && travelData.dataVolta && travelData.dataIda >= travelData.dataVolta) {
+      toast({
+        title: "Erro",
+        description: "A data de ida deve ser anterior à data de volta.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const selectedTaskType = taskTypes.find(t => t.value === formData.type);
     
+    // Criar a tarefa
     onCreateTask({
       title: formData.title,
       priority: formData.priority as 'Alta' | 'Média' | 'Baixa',
@@ -134,6 +167,35 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       processNumber: requestType === 'processo' ? processNumber : undefined,
       servicePhotos
     });
+
+    // Criar viagem no calendário se necessário
+    if (isTravel && travelData.cidade && travelData.dataIda && travelData.dataVolta) {
+      try {
+        const { error } = await supabase
+          .from('travels')
+          .insert({
+            servidor: formData.assignee,
+            destino: travelData.cidade,
+            data_ida: format(travelData.dataIda, 'yyyy-MM-dd'),
+            data_volta: format(travelData.dataVolta, 'yyyy-MM-dd'),
+            motivo: formData.title
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Tarefa criada e viagem adicionada ao calendário.",
+        });
+      } catch (error) {
+        console.error('Erro ao criar viagem:', error);
+        toast({
+          title: "Aviso",
+          description: "Tarefa criada, mas houve erro ao adicionar a viagem ao calendário.",
+          variant: "destructive"
+        });
+      }
+    }
 
     // Reset form
     setFormData({
@@ -151,6 +213,12 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setRequestType('');
     setProcessNumber('');
     setServicePhotos([]);
+    setIsTravel(false);
+    setTravelData({
+      cidade: '',
+      dataIda: undefined,
+      dataVolta: undefined
+    });
     
     setOpen(false);
   };
@@ -348,6 +416,91 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                   placeholder="Digite o número do processo..."
                   required
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Opção de Viagem */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="travel"
+                checked={isTravel}
+                onCheckedChange={(checked) => setIsTravel(checked as boolean)}
+              />
+              <Label htmlFor="travel">Esta tarefa envolve viagem</Label>
+            </div>
+            
+            {isTravel && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <div className="space-y-2">
+                  <Label htmlFor="cidade">Cidade de Destino *</Label>
+                  <Input
+                    id="cidade"
+                    value={travelData.cidade}
+                    onChange={(e) => setTravelData(prev => ({ ...prev, cidade: e.target.value }))}
+                    placeholder="Digite a cidade de destino..."
+                    required={isTravel}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Data de Ida *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !travelData.dataIda && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {travelData.dataIda ? format(travelData.dataIda, "dd/MM/yyyy") : "Selecionar data"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={travelData.dataIda}
+                          onSelect={(date) => setTravelData(prev => ({ ...prev, dataIda: date }))}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Data de Volta *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !travelData.dataVolta && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {travelData.dataVolta ? format(travelData.dataVolta, "dd/MM/yyyy") : "Selecionar data"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={travelData.dataVolta}
+                          onSelect={(date) => setTravelData(prev => ({ ...prev, dataVolta: date }))}
+                          disabled={(date) => !travelData.dataIda || date <= travelData.dataIda}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
               </div>
             )}
           </div>
