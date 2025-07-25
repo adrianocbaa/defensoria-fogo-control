@@ -28,6 +28,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ServicePhoto {
   id: string;
@@ -68,6 +70,8 @@ const taskTypes = [
 ];
 
 export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -127,6 +131,16 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      toast({
+        title: "Acesso negado",
+        description: "Você precisa fazer login para criar tarefas.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+    
     if (!formData.title || !formData.priority || !formData.type || !formData.location || !formData.assignee || !requestType) {
       return;
     }
@@ -171,17 +185,23 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     // Criar viagem no calendário se necessário
     if (isTravel && travelData.cidade && travelData.dataIda && travelData.dataVolta) {
       try {
-        const { error } = await supabase
+        const { data: createdTravel, error } = await supabase
           .from('travels')
           .insert({
             servidor: formData.assignee,
             destino: travelData.cidade,
             data_ida: format(travelData.dataIda, 'yyyy-MM-dd'),
             data_volta: format(travelData.dataVolta, 'yyyy-MM-dd'),
-            motivo: formData.title
-          });
+            motivo: formData.title,
+            user_id: user.id
+          })
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Aqui você poderia atualizar a tarefa com o travel_id se necessário
+        // Mas isso exigiria refatorar a função onCreateTask para retornar o ID da tarefa criada
 
         toast({
           title: "Sucesso",

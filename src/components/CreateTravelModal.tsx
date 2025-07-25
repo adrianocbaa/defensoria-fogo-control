@@ -14,7 +14,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { CreateTravelData } from '@/types/travel';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMaintenanceTickets } from '@/hooks/useMaintenanceTickets';
 import { useNavigate } from 'react-router-dom';
 
 interface CreateTravelModalProps {
@@ -25,7 +24,6 @@ interface CreateTravelModalProps {
 
 export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTravelModalProps) {
   const { user } = useAuth();
-  const { createTicket } = useMaintenanceTickets();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CreateTravelData>({
@@ -104,45 +102,25 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
     setLoading(true);
     try {
-      // Primeiro criar a viagem
-      const { data: travelData, error: travelError } = await supabase
+      setLoading(true);
+
+      // Criar apenas a viagem
+      const { error: travelError } = await supabase
         .from('travels')
         .insert([{
-          ...formData,
-          user_id: user?.id
-        }])
-        .select()
-        .single();
+          servidor: formData.servidor,
+          destino: formData.destino,
+          data_ida: formData.data_ida,
+          data_volta: formData.data_volta,
+          motivo: formData.motivo,
+          user_id: user.id
+        }]);
 
       if (travelError) throw travelError;
 
-      // Agora criar a tarefa de manutenção relacionada
-      const ticketData = {
-        title: `Viagem de Manutenção - ${formData.destino}`,
-        priority: 'Média' as 'Alta' | 'Média' | 'Baixa',
-        type: 'Viagem',
-        location: formData.destino,
-        assignee: formData.servidor,
-        status: 'Pendente' as 'Pendente' | 'Em andamento' | 'Concluído',
-        observations: [formData.motivo],
-        travel_id: travelData.id
-      };
-
-      const createdTicket = await createTicket(ticketData);
-
-      // Atualizar a viagem com o ID da tarefa
-      const { error: updateError } = await supabase
-        .from('travels')
-        .update({ ticket_id: createdTicket.id })
-        .eq('id', travelData.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: "Sucesso",
-        description: "Viagem e tarefa de manutenção criadas com sucesso",
-      });
-
+      onTravelCreated?.();
+      onClose();
+      
       setFormData({
         servidor: '',
         destino: '',
@@ -151,13 +129,15 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
         motivo: ''
       });
 
-      onTravelCreated();
-      onClose();
+      toast({
+        title: "Sucesso",
+        description: "Viagem criada com sucesso!",
+      });
     } catch (error) {
       console.error('Erro ao criar viagem:', error);
       toast({
         title: "Erro",
-        description: "Erro ao cadastrar viagem e tarefa",
+        description: "Não foi possível criar a viagem. Tente novamente.",
         variant: "destructive",
       });
     } finally {
