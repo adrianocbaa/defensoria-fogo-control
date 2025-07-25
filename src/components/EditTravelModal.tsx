@@ -175,7 +175,7 @@ export function EditTravelModal({
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="z-[60]">
+              <AlertDialogContent className="z-[9999]">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                   <AlertDialogDescription>
