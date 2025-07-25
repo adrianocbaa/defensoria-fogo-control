@@ -16,6 +16,7 @@ export interface MaintenanceTicket {
   process_number?: string;
   completed_at?: string;
   user_id?: string;
+  travel_id?: string;
   created_at: string;
   updated_at: string;
 }

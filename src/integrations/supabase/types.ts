@@ -223,6 +223,7 @@ export type Database = {
           services: Json | null
           status: string
           title: string
+          travel_id: string | null
           type: string
           updated_at: string
           user_id: string | null
@@ -240,6 +241,7 @@ export type Database = {
           services?: Json | null
           status: string
           title: string
+          travel_id?: string | null
           type: string
           updated_at?: string
           user_id?: string | null
@@ -257,11 +259,20 @@ export type Database = {
           services?: Json | null
           status?: string
           title?: string
+          travel_id?: string | null
           type?: string
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_tickets_travel_id_fkey"
+            columns: ["travel_id"]
+            isOneToOne: false
+            referencedRelation: "travels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nuclei: {
         Row: {
@@ -353,6 +364,7 @@ export type Database = {
           id: string
           motivo: string
           servidor: string
+          ticket_id: string | null
           updated_at: string
           user_id: string | null
         }
@@ -364,6 +376,7 @@ export type Database = {
           id?: string
           motivo: string
           servidor: string
+          ticket_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -375,10 +388,19 @@ export type Database = {
           id?: string
           motivo?: string
           servidor?: string
+          ticket_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "travels_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

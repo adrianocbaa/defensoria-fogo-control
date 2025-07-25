@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CreateTravelData } from '@/types/travel';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMaintenanceTickets } from '@/hooks/useMaintenanceTickets';
 
 interface CreateTravelModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface CreateTravelModalProps {
 
 export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTravelModalProps) {
   const { user } = useAuth();
+  const { createTicket } = useMaintenanceTickets();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CreateTravelData>({
     servidor: '',
@@ -90,18 +92,43 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Primeiro criar a viagem
+      const { data: travelData, error: travelError } = await supabase
         .from('travels')
         .insert([{
           ...formData,
           user_id: user?.id
-        }]);
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (travelError) throw travelError;
+
+      // Agora criar a tarefa de manutenção relacionada
+      const ticketData = {
+        title: `Viagem de Manutenção - ${formData.destino}`,
+        priority: 'Média' as 'Alta' | 'Média' | 'Baixa',
+        type: 'Viagem',
+        location: formData.destino,
+        assignee: formData.servidor,
+        status: 'Pendente' as 'Pendente' | 'Em andamento' | 'Concluído',
+        observations: [formData.motivo],
+        travel_id: travelData.id
+      };
+
+      await createTicket(ticketData);
+
+      // Atualizar a viagem com o ID da tarefa
+      const { error: updateError } = await supabase
+        .from('travels')
+        .update({ ticket_id: travelData.id })
+        .eq('id', travelData.id);
+
+      if (updateError) throw updateError;
 
       toast({
         title: "Sucesso",
-        description: "Viagem cadastrada com sucesso",
+        description: "Viagem e tarefa de manutenção criadas com sucesso",
       });
 
       setFormData({
@@ -113,11 +140,12 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
       });
 
       onTravelCreated();
+      onClose();
     } catch (error) {
       console.error('Erro ao criar viagem:', error);
       toast({
         title: "Erro",
-        description: "Erro ao cadastrar viagem",
+        description: "Erro ao cadastrar viagem e tarefa",
         variant: "destructive",
       });
     } finally {

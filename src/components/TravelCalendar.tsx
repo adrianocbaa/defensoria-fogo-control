@@ -14,8 +14,10 @@ import { Travel } from '@/types/travel';
 import { CreateTravelModal } from './CreateTravelModal';
 import { EditTravelModal } from './EditTravelModal';
 import { ViewTravelModal } from './ViewTravelModal';
+import { ViewTaskModal } from './ViewTaskModal';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from '@/hooks/use-toast';
+import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
 
 export function TravelCalendar() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -25,7 +27,9 @@ export function TravelCalendar() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showViewTaskModal, setShowViewTaskModal] = useState(false);
   const [selectedTravel, setSelectedTravel] = useState<Travel | null>(null);
+  const [selectedTask, setSelectedTask] = useState<MaintenanceTicket | null>(null);
   
   // Filtros
   const [servidorFilter, setServidorFilter] = useState('');
@@ -36,6 +40,7 @@ export function TravelCalendar() {
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day' | 'list'>('month');
   
   const { canEdit } = useUserRole();
+  const { tickets } = useMaintenanceTickets();
   
   const fetchTravels = async () => {
     try {
@@ -127,8 +132,19 @@ export function TravelCalendar() {
   };
 
   const handleViewTravel = (travel: Travel) => {
-    setSelectedTravel(travel);
-    setShowViewModal(true);
+    // Buscar a tarefa relacionada à viagem
+    const allTickets = [...tickets['Pendente'], ...tickets['Em andamento'], ...tickets['Concluído']];
+    const relatedTask = allTickets.find(ticket => ticket.travel_id === travel.id);
+    
+    if (relatedTask) {
+      // Se encontrou a tarefa, mostrar o modal da tarefa
+      setSelectedTask(relatedTask);
+      setShowViewTaskModal(true);
+    } else {
+      // Se não encontrou, mostrar o modal da viagem
+      setSelectedTravel(travel);
+      setShowViewModal(true);
+    }
   };
 
   const handleEditTravel = (travel: Travel) => {
@@ -230,6 +246,15 @@ export function TravelCalendar() {
               <Filter className="h-4 w-4 mr-2" />
               Filtros
             </Button>
+            {canEdit && (
+              <Button 
+                onClick={() => setShowCreateModal(true)}
+                className="h-9"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Viagem
+              </Button>
+            )}
           </div>
         </div>
 
@@ -458,6 +483,20 @@ export function TravelCalendar() {
             onTravelDeleted={handleTravelDeleted}
           />
         </>
+      )}
+
+      {selectedTask && (
+        <ViewTaskModal
+          ticket={{
+            ...selectedTask,
+            createdAt: new Date(selectedTask.created_at).toLocaleDateString('pt-BR'),
+            requestType: selectedTask.request_type,
+            processNumber: selectedTask.process_number,
+            icon: null
+          }}
+          open={showViewTaskModal}
+          onOpenChange={setShowViewTaskModal}
+        />
       )}
     </div>
   );
