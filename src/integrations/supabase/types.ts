@@ -290,6 +290,42 @@ export type Database = {
         }
         Relationships: []
       }
+      travels: {
+        Row: {
+          created_at: string
+          data_ida: string
+          data_volta: string
+          destino: string
+          id: string
+          motivo: string
+          servidor: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_ida: string
+          data_volta: string
+          destino: string
+          id?: string
+          motivo: string
+          servidor: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_ida?: string
+          data_volta?: string
+          destino?: string
+          id?: string
+          motivo?: string
+          servidor?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

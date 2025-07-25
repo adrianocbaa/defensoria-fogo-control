@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { MaintenanceTimeline } from '@/components/MaintenanceTimeline';
 import { MaintenanceMap } from '@/components/MaintenanceMap';
 import { KanbanBoard } from '@/components/KanbanBoard';
+import { TravelCalendar } from '@/components/TravelCalendar';
 
 interface MaintenanceDashboardProps {
   activeSection?: string;
@@ -11,6 +12,14 @@ interface MaintenanceDashboardProps {
 export function MaintenanceDashboard({ activeSection = 'overview' }: MaintenanceDashboardProps) {
   if (activeSection === 'tickets') {
     return <KanbanBoard />;
+  }
+
+  if (activeSection === 'travel-planning') {
+    return (
+      <div className="p-6">
+        <TravelCalendar />
+      </div>
+    );
   }
   const stats = [
     {
