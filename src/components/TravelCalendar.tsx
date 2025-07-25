@@ -106,22 +106,31 @@ export function TravelCalendar() {
       isSameDay(day.date, date)
     );
     
-    if (startIndex === -1 || endIndex === -1 || currentIndex === -1) {
-      return { show: false, position: 'middle' };
+    if (currentIndex === -1) {
+      return { show: false, position: 'middle', travelIndex: -1 };
     }
+    
+    // Verificar se a data atual está dentro do período da viagem
+    const isWithinTravel = isWithinInterval(date, { start: startDate, end: endDate });
+    
+    if (!isWithinTravel) {
+      return { show: false, position: 'middle', travelIndex: -1 };
+    }
+    
+    // Calcular o índice da viagem baseado na data de início para manter consistência
+    const allTravelsForMonth = getTravelsForMonth();
+    const travelIndex = allTravelsForMonth.findIndex(t => t.id === travel.id);
     
     // Determinar se deve mostrar e qual posição
-    if (currentIndex === startIndex && currentIndex === endIndex) {
-      return { show: true, position: 'single' };
-    } else if (currentIndex === startIndex) {
-      return { show: true, position: 'start' };
-    } else if (currentIndex === endIndex) {
-      return { show: true, position: 'end' };
-    } else if (currentIndex > startIndex && currentIndex < endIndex) {
-      return { show: true, position: 'middle' };
+    if (isSameDay(startDate, endDate)) {
+      return { show: true, position: 'single', travelIndex };
+    } else if (isSameDay(date, startDate)) {
+      return { show: true, position: 'start', travelIndex };
+    } else if (isSameDay(date, endDate)) {
+      return { show: true, position: 'end', travelIndex };
+    } else {
+      return { show: true, position: 'middle', travelIndex };
     }
-    
-    return { show: false, position: 'middle' };
   };
 
   const getTravelsForMonth = () => {
@@ -384,10 +393,13 @@ export function TravelCalendar() {
                   <div
                     key={index}
                     className={`
-                      relative min-h-[120px] border-r border-b last:border-r-0 p-2 transition-colors
+                      relative border-r border-b last:border-r-0 p-2 transition-colors
                       ${isCurrentMonth ? 'bg-background hover:bg-muted/20' : 'bg-muted/10'}
                       ${isToday ? 'bg-primary/5 border-primary/20' : ''}
                     `}
+                    style={{
+                      minHeight: `${120 + (dayTravels.length * 28)}px`
+                    }}
                   >
                     {/* Date Number */}
                     <div className={`
@@ -399,8 +411,8 @@ export function TravelCalendar() {
                     </div>
                     
                     {/* Travel Events */}
-                    <div className="space-y-1">
-                      {dayTravels.map((travel, travelIndex) => {
+                    <div className="relative">
+                      {dayTravels.map((travel) => {
                         const position = getTravelPosition(travel, date, daysInMonth);
                         
                         if (!position.show) return null;
@@ -409,18 +421,19 @@ export function TravelCalendar() {
                           <div
                             key={travel.id}
                             className={`
-                              relative text-xs cursor-pointer transition-all hover:opacity-80 group mb-0.5
-                              ${getTravelColor(travelIndex)}
+                              absolute text-xs cursor-pointer transition-all hover:opacity-80 group
+                              ${getTravelColor(position.travelIndex)}
                               ${position.position === 'start' ? 'rounded-l-md rounded-r-none ml-0' : ''}
                               ${position.position === 'end' ? 'rounded-r-md rounded-l-none mr-0' : ''}
                               ${position.position === 'middle' ? 'rounded-none mx-0' : ''}
                               ${position.position === 'single' ? 'rounded-md' : ''}
-                              px-2 py-1 border h-6 flex items-center
+                              px-2 py-1 border h-6 flex items-center left-0 right-0
                             `}
                             style={{
+                              top: `${24 + (position.travelIndex * 28)}px`,
                               marginLeft: position.position === 'start' || position.position === 'single' ? '0' : '-1px',
                               marginRight: position.position === 'end' || position.position === 'single' ? '0' : '-1px',
-                              zIndex: 10 + travelIndex
+                              zIndex: 10 + position.travelIndex
                             }}
                             onClick={() => handleViewTravel(travel)}
                             title={`${travel.servidor} - ${travel.destino}`}
