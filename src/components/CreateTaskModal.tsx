@@ -21,6 +21,15 @@ import { Plus, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, X } from 'lucid
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ServicePhotos } from '@/components/ServicePhotos';
+
+interface ServicePhoto {
+  id: string;
+  url: string;
+  description: string;
+  uploadedAt: string;
+  uploadedBy: string;
+}
 
 interface Ticket {
   id: string;
@@ -36,6 +45,7 @@ interface Ticket {
   services?: { name: string; completed: boolean }[];
   requestType?: 'email' | 'processo';
   processNumber?: string;
+  servicePhotos?: ServicePhoto[];
 }
 
 interface CreateTaskModalProps {
@@ -68,6 +78,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [newService, setNewService] = useState('');
   const [requestType, setRequestType] = useState<'email' | 'processo' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
+  const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
 
   const addObservation = () => {
     if (observation.trim()) {
@@ -120,7 +131,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       observations,
       services,
       requestType: requestType as 'email' | 'processo',
-      processNumber: requestType === 'processo' ? processNumber : undefined
+      processNumber: requestType === 'processo' ? processNumber : undefined,
+      servicePhotos
     });
 
     // Reset form
@@ -138,6 +150,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setNewService('');
     setRequestType('');
     setProcessNumber('');
+    setServicePhotos([]);
     
     setOpen(false);
   };
@@ -355,6 +368,12 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               </div>
             )}
           </div>
+
+          {/* Fotos dos Serviços */}
+          <ServicePhotos 
+            photos={servicePhotos}
+            onPhotosChange={setServicePhotos}
+          />
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
