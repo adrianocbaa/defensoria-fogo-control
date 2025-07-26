@@ -61,7 +61,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {(() => {
-              const IconComponent = typeIcons[ticket.type as keyof typeof typeIcons] || ticket.icon;
+              const IconComponent = typeIcons[ticket.type as keyof typeof typeIcons] || Wrench;
               return <IconComponent className="h-5 w-5" />;
             })()}
             {ticket.title}
