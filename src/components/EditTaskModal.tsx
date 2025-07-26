@@ -157,7 +157,11 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!ticket || !formData.title || !formData.priority || !formData.type || !formData.location || !formData.assignee || !requestType) {
+    // Para usuários de manutenção, não validar requestType pois eles não podem editar esse campo
+    const requiredFieldsValid = ticket && formData.title && formData.priority && formData.type && formData.location && formData.assignee;
+    const requestTypeValid = isManutencao || requestType;
+    
+    if (!requiredFieldsValid || !requestTypeValid) {
       return;
     }
 
@@ -279,7 +283,6 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
             <Select
               value={formData.status}
               onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-              disabled={isManutencao}
             >
               <SelectTrigger>
                 <SelectValue />
