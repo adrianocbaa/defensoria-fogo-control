@@ -9,14 +9,14 @@ export default function Maintenance() {
 
   return (
     <SimpleHeader>
-      <div className="h-[calc(100vh-200px)] w-full">
+      <div className="relative">
         <SidebarProvider>
-          <div className="flex w-full h-full">
+          <div className="flex w-full min-h-[calc(100vh-120px)]">
             <MaintenanceSidebar 
               activeSection={activeSection}
               onSectionChange={setActiveSection}
             />
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto bg-background">
               <MaintenanceDashboard activeSection={activeSection} />
             </main>
           </div>

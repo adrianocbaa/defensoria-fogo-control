@@ -12,12 +12,11 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Import module images
-import manutencaoImg from '@/assets/manutencao-module.jpg';
-import obraImg from '@/assets/obra-module.jpg';
-import preventivosImg from '@/assets/preventivos-module.jpg';
-import arCondicionadoImg from '@/assets/ar-condicionado-module.jpg';
-import projetosImg from '@/assets/projetos-module.jpg';
+// Import das imagens dos módulos
+import manutencaoIcon from '@/assets/manutencao-icon.jpg';
+import obraIcon from '@/assets/obra-icon.jpg';
+import arCondicionadoIcon from '@/assets/ar-condicionado-icon.jpg';
+import projetosIcon from '@/assets/projetos-icon.jpg';
 
 type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos';
 
@@ -36,7 +35,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'manutencao',
     title: 'Manutenção',
     icon: Wrench,
-    image: manutencaoImg,
+    image: manutencaoIcon,
     path: '/maintenance',
     color: 'text-orange-600',
     bgColor: 'bg-orange-50 hover:bg-orange-100 border-orange-200'
@@ -45,7 +44,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'obra',
     title: 'Obra',
     icon: HardHat,
-    image: obraImg,
+    image: obraIcon,
     path: '/obras',
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200'
@@ -54,7 +53,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'preventivos',
     title: 'Preventivos',
     icon: Shield,
-    image: preventivosImg,
+    image: '/lovable-uploads/b54777fb-13d9-4afc-aeee-1bab8c2aef68.png',
     path: '/preventivos',
     color: 'text-blue-600',
     bgColor: 'bg-blue-50 hover:bg-blue-100 border-blue-200'
@@ -63,7 +62,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'ar_condicionado',
     title: 'Ar Condicionado',
     icon: Wind,
-    image: arCondicionadoImg,
+    image: arCondicionadoIcon,
     path: '#',
     color: 'text-cyan-600',
     bgColor: 'bg-cyan-50 hover:bg-cyan-100 border-cyan-200'
@@ -72,7 +71,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'projetos',
     title: 'Projetos',
     icon: FolderKanban,
-    image: projetosImg,
+    image: projetosIcon,
     path: '#',
     color: 'text-purple-600',
     bgColor: 'bg-purple-50 hover:bg-purple-100 border-purple-200'
@@ -152,42 +151,48 @@ export default function Dashboard() {
             if (isClickable) {
               return (
                 <Link key={block.id} to={block.path} className="group">
-                  <Card className="h-64 transition-all duration-200 cursor-pointer overflow-hidden">
-                    <div 
-                      className="relative h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-200"
-                      style={{ backgroundImage: `url(${block.image})` }}
-                    >
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-200" />
-                      <CardContent className="relative flex flex-col items-center justify-center h-full p-6 text-white">
-                        <div className="mb-4 group-hover:scale-110 transition-transform duration-200">
-                          <IconComponent className="h-16 w-16 text-white drop-shadow-lg" />
+                  <Card className={`h-48 transition-all duration-200 cursor-pointer overflow-hidden ${block.bgColor}`}>
+                    <CardContent className="p-0 h-full flex flex-col">
+                      <div className="h-32 overflow-hidden">
+                        <img 
+                          src={block.image} 
+                          alt={`${block.title} icon`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      </div>
+                      <div className="flex-1 flex flex-col items-center justify-center p-4">
+                        <div className={`${block.color} mb-2`}>
+                          <IconComponent className="h-6 w-6" />
                         </div>
-                        <h3 className="text-xl font-bold text-center text-white drop-shadow-lg">
+                        <h3 className={`text-lg font-semibold ${block.color} text-center`}>
                           {block.title}
                         </h3>
-                      </CardContent>
-                    </div>
+                      </div>
+                    </CardContent>
                   </Card>
                 </Link>
               );
             } else {
               return (
-                <Card key={block.id} className="h-64 transition-all duration-200 opacity-60 overflow-hidden">
-                  <div 
-                    className="relative h-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${block.image})` }}
-                  >
-                    <div className="absolute inset-0 bg-black/60" />
-                    <CardContent className="relative flex flex-col items-center justify-center h-full p-6 text-white">
-                      <div className="mb-4">
-                        <IconComponent className="h-16 w-16 text-white drop-shadow-lg" />
+                <Card key={block.id} className={`h-48 transition-all duration-200 opacity-60 overflow-hidden ${block.bgColor}`}>
+                  <CardContent className="p-0 h-full flex flex-col">
+                    <div className="h-32 overflow-hidden">
+                      <img 
+                        src={block.image} 
+                        alt={`${block.title} icon`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 flex flex-col items-center justify-center p-4">
+                      <div className={`${block.color} mb-2`}>
+                        <IconComponent className="h-6 w-6" />
                       </div>
-                      <h3 className="text-xl font-bold text-center text-white drop-shadow-lg">
+                      <h3 className={`text-lg font-semibold ${block.color} text-center`}>
                         {block.title}
                       </h3>
-                      <p className="text-sm text-white/80 mt-2 drop-shadow">Em desenvolvimento</p>
-                    </CardContent>
-                  </div>
+                      <p className="text-xs text-muted-foreground mt-1">Em desenvolvimento</p>
+                    </div>
+                  </CardContent>
                 </Card>
               );
             }
