@@ -9,7 +9,7 @@ export interface MaintenanceTicket {
   type: string;
   location: string;
   assignee: string;
-  status: 'Pendente' | 'Em andamento' | 'Concluído';
+  status: 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído';
   observations?: string[];
   services?: { name: string; completed: boolean }[];
   request_type?: 'email' | 'processo';
@@ -25,6 +25,7 @@ export function useMaintenanceTickets() {
   const [tickets, setTickets] = useState<{ [key: string]: MaintenanceTicket[] }>({
     'Pendente': [],
     'Em andamento': [],
+    'Impedido': [],
     'Concluído': []
   });
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,7 @@ export function useMaintenanceTickets() {
       const groupedTickets = {
         'Pendente': [],
         'Em andamento': [],
+        'Impedido': [],
         'Concluído': []
       } as { [key: string]: MaintenanceTicket[] };
 
@@ -49,7 +51,7 @@ export function useMaintenanceTickets() {
           groupedTickets[ticket.status].push({
             ...ticket,
             priority: ticket.priority as 'Alta' | 'Média' | 'Baixa',
-            status: ticket.status as 'Pendente' | 'Em andamento' | 'Concluído',
+            status: ticket.status as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído',
             services: ticket.services as { name: string; completed: boolean }[] || [],
             request_type: ticket.request_type as 'email' | 'processo' | undefined
           });

@@ -252,6 +252,7 @@ export function KanbanBoard() {
   const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
     'Pendente': [],
     'Em andamento': [],
+    'Impedido': [],
     'Concluído': []
   });
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
@@ -264,6 +265,7 @@ export function KanbanBoard() {
     const convertedTickets = {
       'Pendente': [],
       'Em andamento': [],
+      'Impedido': [],
       'Concluído': []
     } as { [key: string]: Ticket[] };
 
@@ -366,7 +368,7 @@ export function KanbanBoard() {
     }
 
     // Atualizar ticket no banco de dados
-    updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Concluído' });
+    updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído' });
 
     setActiveTicket(null);
 
@@ -451,7 +453,7 @@ export function KanbanBoard() {
           <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {Object.entries(tickets).map(([status, statusTickets]) => (
             <DroppableColumn
               key={status}
