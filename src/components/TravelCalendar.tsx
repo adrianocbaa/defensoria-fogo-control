@@ -11,7 +11,7 @@ import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, addMonths
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { Travel } from '@/types/travel';
-import { CreateTravelModal } from './CreateTravelModal';
+
 import { EditTravelModal } from './EditTravelModal';
 import { ViewTravelModal } from './ViewTravelModal';
 import { ViewTaskModal } from './ViewTaskModal';
@@ -24,7 +24,7 @@ export function TravelCalendar() {
   const [travels, setTravels] = useState<Travel[]>([]);
   const [filteredTravels, setFilteredTravels] = useState<Travel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showViewTaskModal, setShowViewTaskModal] = useState(false);
@@ -152,10 +152,6 @@ export function TravelCalendar() {
     setShowEditModal(true);
   };
 
-  const handleTravelCreated = () => {
-    fetchTravels();
-    setShowCreateModal(false);
-  };
 
   const handleTravelUpdated = () => {
     fetchTravels();
@@ -246,15 +242,6 @@ export function TravelCalendar() {
               <Filter className="h-4 w-4 mr-2" />
               Filtros
             </Button>
-            {canEdit && (
-              <Button 
-                onClick={() => setShowCreateModal(true)}
-                className="h-9"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Viagem
-              </Button>
-            )}
           </div>
         </div>
 
@@ -457,11 +444,6 @@ export function TravelCalendar() {
       </div>
 
       {/* Modais */}
-      <CreateTravelModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onTravelCreated={handleTravelCreated}
-      />
 
       {selectedTravel && (
         <>
