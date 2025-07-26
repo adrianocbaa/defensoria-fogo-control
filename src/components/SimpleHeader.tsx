@@ -1,10 +1,10 @@
 import { ReactNode } from 'react';
-import { User, LogOut, Settings } from 'lucide-react';
+import { User, LogOut, Settings, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SimpleHeaderProps {
   children: ReactNode;
@@ -13,6 +13,8 @@ interface SimpleHeaderProps {
 export function SimpleHeader({ children }: SimpleHeaderProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
+  const location = useLocation();
+  const isDashboard = location.pathname === '/';
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,6 +79,16 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
 
       {/* Main Content */}
       <main>
+        {!isDashboard && (
+          <div className="container mx-auto px-4 py-4">
+            <Link to="/">
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+                Voltar ao Dashboard
+              </Button>
+            </Link>
+          </div>
+        )}
         {children}
       </main>
     </div>

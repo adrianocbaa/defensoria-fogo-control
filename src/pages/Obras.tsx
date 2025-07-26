@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function Obras() {
   return (
     <SimpleHeader>
-      <div className="space-y-6">
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Building className="h-8 w-8 text-primary" />
           <div>
@@ -67,6 +68,7 @@ export default function Obras() {
               </p>
             </CardContent>
           </Card>
+        </div>
         </div>
       </div>
     </SimpleHeader>
