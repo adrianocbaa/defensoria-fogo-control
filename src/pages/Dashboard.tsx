@@ -99,9 +99,8 @@ export default function Dashboard() {
     fetchUserSectors();
   }, [user]);
 
-  const availableBlocks = sectorBlocks.filter(block => 
-    userSectors.includes(block.id)
-  );
+  // Show all modules instead of filtering by user sectors for now
+  const availableBlocks = sectorBlocks;
 
   if (loading) {
     return (
