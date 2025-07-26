@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useUserRole, UserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Shield, Edit, Eye } from 'lucide-react';
+import { Users, Shield, Edit, Eye, Wrench } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 interface Profile {
@@ -114,6 +114,8 @@ export default function AdminPanel() {
         return <Shield className="h-4 w-4" />;
       case 'editor':
         return <Edit className="h-4 w-4" />;
+      case 'manutencao':
+        return <Wrench className="h-4 w-4" />;
       default:
         return <Eye className="h-4 w-4" />;
     }
@@ -125,6 +127,8 @@ export default function AdminPanel() {
         return 'destructive' as const;
       case 'editor':
         return 'default' as const;
+      case 'manutencao':
+        return 'outline' as const;
       default:
         return 'secondary' as const;
     }
@@ -136,6 +140,8 @@ export default function AdminPanel() {
         return 'Administrador';
       case 'editor':
         return 'Editor';
+      case 'manutencao':
+        return 'Manutenção';
       default:
         return 'Visualizador';
     }
@@ -214,6 +220,7 @@ export default function AdminPanel() {
                         <SelectContent>
                           <SelectItem value="viewer">Visualizador</SelectItem>
                           <SelectItem value="editor">Editor</SelectItem>
+                          <SelectItem value="manutencao">Manutenção</SelectItem>
                           <SelectItem value="admin">Administrador</SelectItem>
                         </SelectContent>
                       </Select>
@@ -246,7 +253,7 @@ export default function AdminPanel() {
             <CardTitle>Níveis de Permissão</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Eye className="h-5 w-5 text-muted-foreground" />
@@ -264,6 +271,16 @@ export default function AdminPanel() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Pode criar, editar e excluir núcleos e equipamentos
+                </p>
+              </div>
+
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Wrench className="h-5 w-5 text-orange-500" />
+                  <h3 className="font-medium">Manutenção</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Pode gerenciar tarefas de manutenção e atualizar status
                 </p>
               </div>
               

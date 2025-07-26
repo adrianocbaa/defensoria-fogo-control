@@ -216,6 +216,7 @@ export type Database = {
           created_at: string
           id: string
           location: string
+          materials: Json | null
           observations: string[] | null
           priority: string
           process_number: string | null
@@ -234,6 +235,7 @@ export type Database = {
           created_at?: string
           id?: string
           location: string
+          materials?: Json | null
           observations?: string[] | null
           priority: string
           process_number?: string | null
@@ -252,6 +254,7 @@ export type Database = {
           created_at?: string
           id?: string
           location?: string
+          materials?: Json | null
           observations?: string[] | null
           priority?: string
           process_number?: string | null
@@ -433,7 +436,7 @@ export type Database = {
         | "preventivos"
         | "ar_condicionado"
         | "projetos"
-      user_role: "admin" | "editor" | "viewer"
+      user_role: "admin" | "editor" | "viewer" | "manutencao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -571,7 +574,7 @@ export const Constants = {
         "ar_condicionado",
         "projetos",
       ],
-      user_role: ["admin", "editor", "viewer"],
+      user_role: ["admin", "editor", "viewer", "manutencao"],
     },
   },
 } as const

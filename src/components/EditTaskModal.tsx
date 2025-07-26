@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, X } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -32,6 +34,7 @@ interface Ticket {
   status: string;
   observations?: string[];
   services?: { name: string; completed: boolean }[];
+  materials?: { name: string; completed: boolean }[];
   requestType?: 'email' | 'processo';
   processNumber?: string;
 }
@@ -53,6 +56,9 @@ const taskTypes = [
 ];
 
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
+  const { isManutencao, canEdit } = useUserRole();
+  const { users: maintenanceUsers } = useMaintenanceUsers();
+  
   const [formData, setFormData] = useState({
     title: '',
     priority: '' as 'Alta' | 'Média' | 'Baixa' | '',
@@ -65,7 +71,9 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [observation, setObservation] = useState('');
   const [observations, setObservations] = useState<string[]>([]);
   const [services, setServices] = useState<{ name: string; completed: boolean }[]>([]);
+  const [materials, setMaterials] = useState<{ name: string; completed: boolean }[]>([]);
   const [newService, setNewService] = useState('');
+  const [newMaterial, setNewMaterial] = useState('');
   const [requestType, setRequestType] = useState<'email' | 'processo' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
 
@@ -82,6 +90,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       });
       setObservations(ticket.observations || []);
       setServices(ticket.services || []);
+      setMaterials(ticket.materials || []);
       setRequestType(ticket.requestType || '');
       setProcessNumber(ticket.processNumber || '');
     }
@@ -116,10 +125,33 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     setServices(prev => prev.filter((_, i) => i !== index));
   };
 
+  const addMaterial = () => {
+    if (newMaterial.trim()) {
+      setMaterials(prev => [...prev, { name: newMaterial, completed: false }]);
+      setNewMaterial('');
+    }
+  };
+
+  const toggleMaterial = (index: number) => {
+    setMaterials(prev => prev.map((material, i) => 
+      i === index ? { ...material, completed: !material.completed } : material
+    ));
+  };
+
+  const removeMaterial = (index: number) => {
+    setMaterials(prev => prev.filter((_, i) => i !== index));
+  };
+
   const getServicesProgress = () => {
     if (services.length === 0) return 0;
     const completed = services.filter(s => s.completed).length;
     return (completed / services.length) * 100;
+  };
+
+  const getMaterialsProgress = () => {
+    if (materials.length === 0) return 0;
+    const completed = materials.filter(m => m.completed).length;
+    return (completed / materials.length) * 100;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -133,17 +165,18 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     
     const updatedTicket: Ticket = {
       ...ticket,
-      title: formData.title,
-      priority: formData.priority as 'Alta' | 'Média' | 'Baixa',
-      type: formData.type,
-      location: formData.location,
-      assignee: formData.assignee,
+      title: isManutencao ? ticket.title : formData.title,
+      priority: isManutencao ? ticket.priority : formData.priority as 'Alta' | 'Média' | 'Baixa',
+      type: isManutencao ? ticket.type : formData.type,
+      location: isManutencao ? ticket.location : formData.location,
+      assignee: isManutencao ? ticket.assignee : formData.assignee,
       icon: selectedTaskType?.icon || ticket.icon,
       status: formData.status,
       observations,
       services,
-      requestType: requestType as 'email' | 'processo',
-      processNumber: requestType === 'processo' ? processNumber : undefined
+      materials,
+      requestType: isManutencao ? ticket.requestType : requestType as 'email' | 'processo',
+      processNumber: isManutencao ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined)
     };
 
     onUpdateTask(updatedTicket);
@@ -166,6 +199,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="Descreva o problema..."
+              disabled={isManutencao}
               required
             />
           </div>
@@ -223,13 +257,32 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
 
           <div className="space-y-2">
             <Label htmlFor="assignee">Responsável</Label>
-            <Input
-              id="assignee"
-              value={formData.assignee}
-              onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
-              placeholder="Nome do responsável"
-              required
-            />
+            {isManutencao || !canEdit ? (
+              <Input
+                id="assignee"
+                value={formData.assignee}
+                onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
+                placeholder="Nome do responsável"
+                required
+              />
+            ) : (
+              <Select
+                value={formData.assignee}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um responsável..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {maintenanceUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.display_name || user.user_id}>
+                      {user.display_name || user.user_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -328,6 +381,59 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                         variant="ghost"
                         size="sm"
                         onClick={() => removeService(index)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Materiais */}
+          <div className="space-y-2">
+            <Label>Materiais</Label>
+            <div className="flex gap-2">
+              <Input
+                value={newMaterial}
+                onChange={(e) => setNewMaterial(e.target.value)}
+                placeholder="Adicionar material..."
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMaterial())}
+              />
+              <Button type="button" onClick={addMaterial} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {materials.length > 0 && (
+              <div className="space-y-2">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Progresso dos Materiais</span>
+                    <span className="text-sm text-muted-foreground">{Math.round(getMaterialsProgress())}%</span>
+                  </div>
+                  <Progress value={getMaterialsProgress()} className="w-full" />
+                </div>
+                
+                <div className="max-h-32 overflow-y-auto space-y-2 p-2 border rounded-md bg-muted/30">
+                  {materials.map((material, index) => (
+                    <div key={index} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <Checkbox
+                          checked={material.completed}
+                          onCheckedChange={() => toggleMaterial(index)}
+                        />
+                        <span className={`text-sm ${material.completed ? 'line-through text-muted-foreground' : ''}`}>
+                          {material.name}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeMaterial(index)}
                         className="h-6 w-6 p-0"
                       >
                         <X className="h-3 w-3" />

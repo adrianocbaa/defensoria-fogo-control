@@ -12,6 +12,7 @@ export interface MaintenanceTicket {
   status: 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído';
   observations?: string[];
   services?: { name: string; completed: boolean }[];
+  materials?: { name: string; completed: boolean }[];
   request_type?: 'email' | 'processo';
   process_number?: string;
   completed_at?: string;
@@ -53,6 +54,7 @@ export function useMaintenanceTickets() {
             priority: ticket.priority as 'Alta' | 'Média' | 'Baixa',
             status: ticket.status as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído',
             services: ticket.services as { name: string; completed: boolean }[] || [],
+            materials: ticket.materials as { name: string; completed: boolean }[] || [],
             request_type: ticket.request_type as 'email' | 'processo' | undefined
           });
         }
