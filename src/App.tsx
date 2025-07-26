@@ -7,6 +7,7 @@ import { NucleiProvider } from "@/contexts/NucleiContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import NucleusDetails from "./pages/NucleusDetails";
@@ -16,6 +17,7 @@ import AdminPanel from "./pages/AdminPanel";
 import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
 import Obras from "./pages/Obras";
+import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosPage } from "./pages/SectorPages";
 
 const queryClient = new QueryClient();
 
@@ -34,14 +36,60 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/public" element={<PublicView />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      
+      {/* Main Dashboard */}
       <Route 
         path="/" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Sector Pages */}
+      <Route 
+        path="/manutencao" 
+        element={
+          <ProtectedRoute>
+            <ManutencaoPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/obra" 
+        element={
+          <ProtectedRoute>
+            <ObraPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/preventivos" 
         element={
           <ProtectedRoute>
             <Index />
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/ar-condicionado" 
+        element={
+          <ProtectedRoute>
+            <ArCondicionadoPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/projetos" 
+        element={
+          <ProtectedRoute>
+            <ProjetosPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Legacy Routes */}
       <Route 
         path="/nucleus/:id" 
         element={<NucleusDetails />} 

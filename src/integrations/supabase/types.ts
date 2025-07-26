@@ -332,6 +332,7 @@ export type Database = {
           display_name: string | null
           id: string
           role: Database["public"]["Enums"]["user_role"] | null
+          sectors: Database["public"]["Enums"]["sector_type"][] | null
           updated_at: string
           user_id: string
         }
@@ -341,6 +342,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           role?: Database["public"]["Enums"]["user_role"] | null
+          sectors?: Database["public"]["Enums"]["sector_type"][] | null
           updated_at?: string
           user_id: string
         }
@@ -350,6 +352,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           role?: Database["public"]["Enums"]["user_role"] | null
+          sectors?: Database["public"]["Enums"]["sector_type"][] | null
           updated_at?: string
           user_id?: string
         }
@@ -424,6 +427,12 @@ export type Database = {
       document_type: "project" | "fire-license" | "photos" | "report"
       extinguisher_status: "valid" | "expired" | "expiring-soon"
       extinguisher_type: "H2O" | "PQS" | "CO2" | "ABC"
+      sector_type:
+        | "manutencao"
+        | "obra"
+        | "preventivos"
+        | "ar_condicionado"
+        | "projetos"
       user_role: "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
@@ -555,6 +564,13 @@ export const Constants = {
       document_type: ["project", "fire-license", "photos", "report"],
       extinguisher_status: ["valid", "expired", "expiring-soon"],
       extinguisher_type: ["H2O", "PQS", "CO2", "ABC"],
+      sector_type: [
+        "manutencao",
+        "obra",
+        "preventivos",
+        "ar_condicionado",
+        "projetos",
+      ],
       user_role: ["admin", "editor", "viewer"],
     },
   },
