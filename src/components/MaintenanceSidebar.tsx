@@ -54,7 +54,7 @@ export function MaintenanceSidebar({
   };
 
   return (
-    <Sidebar className="w-64 border-r bg-card">
+    <Sidebar className="w-64 border-r bg-card relative z-0">
       <SidebarContent>
         <div className="p-4">
           <h2 className="text-lg font-semibold text-foreground mb-4">Menu Principal</h2>
