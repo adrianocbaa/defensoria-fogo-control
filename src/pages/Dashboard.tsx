@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent } from '@/components/ui/card';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { 
   Wrench, 
   HardHat, 
@@ -28,7 +28,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'manutencao',
     title: 'Manutenção',
     icon: Wrench,
-    path: '/manutencao',
+    path: '/maintenance',
     color: 'text-orange-600',
     bgColor: 'bg-orange-50 hover:bg-orange-100 border-orange-200'
   },
@@ -36,7 +36,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'obra',
     title: 'Obra',
     icon: HardHat,
-    path: '/obra',
+    path: '/obras',
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200'
   },
@@ -52,7 +52,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'ar_condicionado',
     title: 'Ar Condicionado',
     icon: Wind,
-    path: '/ar-condicionado',
+    path: '#',
     color: 'text-cyan-600',
     bgColor: 'bg-cyan-50 hover:bg-cyan-100 border-cyan-200'
   },
@@ -60,7 +60,7 @@ const sectorBlocks: SectorBlock[] = [
     id: 'projetos',
     title: 'Projetos',
     icon: FolderKanban,
-    path: '/projetos',
+    path: '#',
     color: 'text-purple-600',
     bgColor: 'bg-purple-50 hover:bg-purple-100 border-purple-200'
   }
@@ -112,7 +112,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <SimpleHeader>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -134,20 +134,38 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {availableBlocks.map((block) => {
             const IconComponent = block.icon;
-            return (
-              <Link key={block.id} to={block.path} className="group">
-                <Card className={`h-40 transition-all duration-200 cursor-pointer ${block.bgColor}`}>
+            const isClickable = block.path !== '#';
+            
+            if (isClickable) {
+              return (
+                <Link key={block.id} to={block.path} className="group">
+                  <Card className={`h-40 transition-all duration-200 cursor-pointer ${block.bgColor}`}>
+                    <CardContent className="flex flex-col items-center justify-center h-full p-6">
+                      <div className={`${block.color} mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                        <IconComponent className="h-12 w-12" />
+                      </div>
+                      <h3 className={`text-lg font-semibold ${block.color} text-center`}>
+                        {block.title}
+                      </h3>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            } else {
+              return (
+                <Card key={block.id} className={`h-40 transition-all duration-200 opacity-60 ${block.bgColor}`}>
                   <CardContent className="flex flex-col items-center justify-center h-full p-6">
-                    <div className={`${block.color} mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                    <div className={`${block.color} mb-4`}>
                       <IconComponent className="h-12 w-12" />
                     </div>
                     <h3 className={`text-lg font-semibold ${block.color} text-center`}>
                       {block.title}
                     </h3>
+                    <p className="text-xs text-muted-foreground mt-2">Em desenvolvimento</p>
                   </CardContent>
                 </Card>
-              </Link>
-            );
+              );
+            }
           })}
         </div>
 
@@ -159,6 +177,6 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-    </div>
+    </SimpleHeader>
   );
 }

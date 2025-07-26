@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -10,7 +11,7 @@ interface SectorPageProps {
 
 function SectorPage({ title, description }: SectorPageProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <SimpleHeader>
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/">
@@ -39,7 +40,7 @@ function SectorPage({ title, description }: SectorPageProps) {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </SimpleHeader>
   );
 }
 

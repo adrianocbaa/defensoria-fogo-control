@@ -1,10 +1,10 @@
-import { Layout } from '@/components/Layout';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { Building, Hammer, MapPin, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Obras() {
   return (
-    <Layout>
+    <SimpleHeader>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Building className="h-8 w-8 text-primary" />
@@ -69,6 +69,6 @@ export default function Obras() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </SimpleHeader>
   );
 }

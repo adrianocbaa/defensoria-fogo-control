@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout } from '@/components/Layout';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { MapView } from '@/components/MapView';
 import { NucleusForm } from '@/components/NucleusForm';
 import { Button } from '@/components/ui/button';
@@ -138,7 +138,7 @@ const Index = () => {
   };
 
   return (
-    <Layout>
+    <SimpleHeader>
 
       {/* Page Header */}
       <div className="mb-8">
@@ -291,7 +291,7 @@ const Index = () => {
         onOpenChange={setShowNucleusForm}
         onSubmit={handleNucleusSubmit}
       />
-    </Layout>
+    </SimpleHeader>
   );
 };
 
