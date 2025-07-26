@@ -56,7 +56,7 @@ export function MaintenanceSidebar({
   };
 
   return (
-    <Sidebar className="w-64 border-r bg-card h-screen">
+    <Sidebar className="w-64 border-r bg-card h-[calc(100vh-120px)] sticky top-0">
       <SidebarContent>
         <div className="p-4">
           <h2 className="text-lg font-semibold text-foreground mb-4">Menu Principal</h2>

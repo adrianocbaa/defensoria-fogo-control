@@ -9,17 +9,17 @@ export default function Maintenance() {
 
   return (
     <SimpleHeader>
-      <div className="flex w-full">
-        <SidebarProvider>
+      <SidebarProvider>
+        <div className="flex w-full min-h-screen">
           <MaintenanceSidebar 
             activeSection={activeSection}
             onSectionChange={setActiveSection}
           />
-        </SidebarProvider>
-        <main className="flex-1 overflow-auto">
-          <MaintenanceDashboard activeSection={activeSection} />
-        </main>
-      </div>
+          <main className="flex-1 overflow-auto">
+            <MaintenanceDashboard activeSection={activeSection} />
+          </main>
+        </div>
+      </SidebarProvider>
     </SimpleHeader>
   );
 }
