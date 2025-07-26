@@ -37,7 +37,7 @@ export function TravelCalendar() {
   const [showFilters, setShowFilters] = useState(false);
   
   // View modes
-  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day' | 'list'>('month');
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   
   const { canEdit } = useUserRole();
   const { tickets } = useMaintenanceTickets();
@@ -316,7 +316,7 @@ export function TravelCalendar() {
                   onClick={() => setViewMode('month')}
                   className="h-9 px-3"
                 >
-                  month
+                  Mês
                 </Button>
                 <Button
                   variant={viewMode === 'week' ? 'default' : 'outline'}
@@ -324,7 +324,7 @@ export function TravelCalendar() {
                   onClick={() => setViewMode('week')}
                   className="h-9 px-3"
                 >
-                  week
+                  Semana
                 </Button>
                 <Button
                   variant={viewMode === 'day' ? 'default' : 'outline'}
@@ -332,15 +332,7 @@ export function TravelCalendar() {
                   onClick={() => setViewMode('day')}
                   className="h-9 px-3"
                 >
-                  day
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="h-9 px-3"
-                >
-                  list
+                  Dia
                 </Button>
               </div>
               <Button

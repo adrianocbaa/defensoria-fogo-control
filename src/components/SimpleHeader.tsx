@@ -20,21 +20,21 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
     <div className="w-full bg-background">
       {/* Simplified Header */}
       <header className="w-full bg-primary text-primary-foreground shadow-lg">
-        <div className="container mx-auto px-4 py-6">
+        <div className="w-full px-4 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 w-[260px]">
               <div className="flex items-center justify-center">
                 <img 
                   src="/lovable-uploads/b1b86eb2-3439-4770-9572-77fb9dd247a3.png" 
                   alt="Defensoria Pública Logo" 
-                  className="h-16 w-auto"
+                  className="h-10 w-auto"
                 />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-lg font-bold">
                   DEFENSORIA PÚBLICA
                 </h1>
-                <p className="text-sm text-primary-foreground/90">
+                <p className="text-xs text-primary-foreground/90">
                   DO ESTADO DE MATO GROSSO
                 </p>
               </div>
