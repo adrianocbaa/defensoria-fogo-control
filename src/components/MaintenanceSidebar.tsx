@@ -29,12 +29,12 @@ const menuItems = [
   { title: 'Visão Geral', icon: LayoutDashboard, id: 'overview' },
   { title: 'Chamados', icon: AlertCircle, id: 'tickets' },
   { title: 'Viagens', icon: MapPin, id: 'travel-planning' },
-  { title: 'Ordens de Serviço', icon: FileText, id: 'work-orders' },
-  { title: 'Contratos e Fornecedores', icon: Users, id: 'contracts' },
-  { title: 'Almoxarifado', icon: Package, id: 'inventory' },
+  { title: 'Contratos e ATAs', icon: Users, id: 'contracts' },
+  { title: 'Inventário de Equipamentos', icon: Package, id: 'inventory' },
   { title: 'Manutenções Preventivas', icon: Calendar, id: 'preventive' },
   { title: 'Histórico de Atendimentos', icon: History, id: 'history' },
   { title: 'Relatórios', icon: BarChart3, id: 'reports' },
+  { title: 'Configurações', icon: Settings, id: 'settings' },
 ];
 
 interface MaintenanceSidebarProps {
