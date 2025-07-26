@@ -35,6 +35,7 @@ import { toast } from '@/hooks/use-toast';
 import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useUserRole } from '@/hooks/useUserRole';
 
 // Use MaintenanceTicket from the hook but extend it with icon for UI
 interface Ticket extends Omit<MaintenanceTicket, 'created_at' | 'request_type' | 'process_number' | 'completed_at'> {
@@ -65,9 +66,10 @@ interface DroppableColumnProps {
   onViewTicket: (ticket: Ticket) => void;
   onEditTicket: (ticket: Ticket) => void;
   onMarkAsExecuted?: (ticketId: string) => void;
+  isManutencao?: boolean;
 }
 
-function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, isManutencao }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -97,6 +99,7 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMar
               onViewTicket={onViewTicket}
               onEditTicket={onEditTicket}
               onMarkAsExecuted={onMarkAsExecuted}
+              isManutencao={isManutencao}
             />
           ))}
         </div>
@@ -110,9 +113,10 @@ interface DraggableTicketProps {
   onViewTicket: (ticket: Ticket) => void;
   onEditTicket: (ticket: Ticket) => void;
   onMarkAsExecuted?: (ticketId: string) => void;
+  isManutencao?: boolean;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted }: DraggableTicketProps) {
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, isManutencao }: DraggableTicketProps) {
   const {
     attributes,
     listeners,
@@ -179,7 +183,7 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted 
                   <Edit className="mr-2 h-3 w-3" />
                   Editar
                 </DropdownMenuItem>
-                {ticket.status === 'Concluído' && onMarkAsExecuted && (
+                {ticket.status === 'Concluído' && onMarkAsExecuted && !isManutencao && (
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
                     onMarkAsExecuted(ticket.id);
@@ -249,6 +253,7 @@ export function KanbanBoard() {
   const { tickets: dbTickets, loading, createTicket, updateTicket, deleteTicket } = useMaintenanceTickets();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isManutencao, canEdit } = useUserRole();
   const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
     'Pendente': [],
     'Em andamento': [],
@@ -367,10 +372,14 @@ export function KanbanBoard() {
       return;
     }
 
+    // Verificar se usuário de manutenção está tentando mover para coluna não permitida
+    if (isManutencao && !['Em andamento', 'Impedido', 'Concluído'].includes(targetStatus)) {
+      setActiveTicket(null);
+      return;
+    }
+
     // Atualizar ticket no banco de dados
     updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído' });
-
-    setActiveTicket(null);
 
     setActiveTicket(null);
   };
@@ -455,17 +464,25 @@ export function KanbanBoard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {Object.entries(tickets).map(([status, statusTickets]) => (
-            <DroppableColumn
-              key={status}
-              id={status}
-              title={status}
-              tickets={statusTickets}
-              onViewTicket={handleViewTicket}
-              onEditTicket={handleEditTicket}
-              onMarkAsExecuted={handleMarkAsExecuted}
-            />
-          ))}
+          {Object.entries(tickets).map(([status, statusTickets]) => {
+            // Para usuários de manutenção, mostrar apenas as colunas permitidas
+            if (isManutencao && !['Em andamento', 'Impedido', 'Concluído'].includes(status)) {
+              return null;
+            }
+            
+            return (
+              <DroppableColumn
+                key={status}
+                id={status}
+                title={status}
+                tickets={statusTickets}
+                onViewTicket={handleViewTicket}
+                onEditTicket={handleEditTicket}
+                onMarkAsExecuted={handleMarkAsExecuted}
+                isManutencao={isManutencao}
+              />
+            );
+          })}
         </div>
 
         <DragOverlay>

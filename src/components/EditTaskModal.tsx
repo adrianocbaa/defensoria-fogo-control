@@ -211,6 +211,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 value={formData.priority}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value as 'Alta' | 'Média' | 'Baixa' }))}
                 required
+                disabled={isManutencao}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione..." />
@@ -229,6 +230,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 value={formData.type}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
                 required
+                disabled={isManutencao}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione..." />
@@ -251,38 +253,21 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               value={formData.location}
               onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
               placeholder="Ex: Sala 301, Recepção..."
+              disabled={isManutencao}
               required
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="assignee">Responsável</Label>
-            {isManutencao || !canEdit ? (
-              <Input
-                id="assignee"
-                value={formData.assignee}
-                onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
-                placeholder="Nome do responsável"
-                required
-              />
-            ) : (
-              <Select
-                value={formData.assignee}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um responsável..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {maintenanceUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.display_name || user.user_id}>
-                      {user.display_name || user.user_id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Input
+              id="assignee"
+              value={formData.assignee}
+              onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
+              placeholder="Nome do responsável"
+              disabled={isManutencao}
+              required
+            />
           </div>
 
           <div className="space-y-2">
@@ -290,6 +275,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
             <Select
               value={formData.status}
               onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+              disabled={isManutencao}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -446,36 +432,38 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
           </div>
 
           {/* Tipo de Solicitação */}
-          <div className="space-y-3">
-            <Label>Tipo de Solicitação *</Label>
-            <RadioGroup
-              value={requestType}
-              onValueChange={(value) => setRequestType(value as 'email' | 'processo')}
-              className="flex gap-6"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="email" id="email" />
-                <Label htmlFor="email">E-mail</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="processo" id="processo" />
-                <Label htmlFor="processo">Processo</Label>
-              </div>
-            </RadioGroup>
-            
-            {requestType === 'processo' && (
-              <div className="space-y-2">
-                <Label htmlFor="processNumber">Número do Processo</Label>
-                <Input
-                  id="processNumber"
-                  value={processNumber}
-                  onChange={(e) => setProcessNumber(e.target.value)}
-                  placeholder="Digite o número do processo..."
-                  required
-                />
-              </div>
-            )}
-          </div>
+          {!isManutencao && (
+            <div className="space-y-3">
+              <Label>Tipo de Solicitação *</Label>
+              <RadioGroup
+                value={requestType}
+                onValueChange={(value) => setRequestType(value as 'email' | 'processo')}
+                className="flex gap-6"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="email" id="email" />
+                  <Label htmlFor="email">E-mail</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="processo" id="processo" />
+                  <Label htmlFor="processo">Processo</Label>
+                </div>
+              </RadioGroup>
+              
+              {requestType === 'processo' && (
+                <div className="space-y-2">
+                  <Label htmlFor="processNumber">Número do Processo</Label>
+                  <Input
+                    id="processNumber"
+                    value={processNumber}
+                    onChange={(e) => setProcessNumber(e.target.value)}
+                    placeholder="Digite o número do processo..."
+                    required
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

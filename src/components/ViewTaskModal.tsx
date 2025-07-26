@@ -21,6 +21,7 @@ interface Ticket {
   status: string;
   observations?: string[];
   services?: { name: string; completed: boolean }[];
+  materials?: { name: string; completed: boolean }[];
   requestType?: 'email' | 'processo';
   processNumber?: string;
 }
@@ -53,6 +54,12 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
     if (!ticket.services || ticket.services.length === 0) return 0;
     const completed = ticket.services.filter(s => s.completed).length;
     return (completed / ticket.services.length) * 100;
+  };
+
+  const getMaterialsProgress = () => {
+    if (!ticket.materials || ticket.materials.length === 0) return 0;
+    const completed = ticket.materials.filter(m => m.completed).length;
+    return (completed / ticket.materials.length) * 100;
   };
 
   return (
@@ -173,6 +180,50 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
                             : ''
                         }`}>
                           {service.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Materiais */}
+          {ticket.materials && ticket.materials.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-medium text-sm text-muted-foreground">MATERIAIS</h3>
+                </div>
+                
+                <div className="ml-7 space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Progresso</span>
+                      <span className="text-sm text-muted-foreground">{Math.round(getMaterialsProgress())}%</span>
+                    </div>
+                    <Progress value={getMaterialsProgress()} className="w-full" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {ticket.materials.map((material, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <CheckCircle2 
+                          className={`h-4 w-4 ${
+                            material.completed 
+                              ? 'text-green-500' 
+                              : 'text-muted-foreground'
+                          }`} 
+                        />
+                        <span className={`text-sm ${
+                          material.completed 
+                            ? 'line-through text-muted-foreground' 
+                            : ''
+                        }`}>
+                          {material.name}
                         </span>
                       </div>
                     ))}

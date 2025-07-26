@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 
 interface ServicePhoto {
   id: string;
@@ -72,6 +73,7 @@ const taskTypes = [
 export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { users: maintenanceUsers } = useMaintenanceUsers();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -320,13 +322,22 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
 
           <div className="space-y-2">
             <Label htmlFor="assignee">Responsável</Label>
-            <Input
-              id="assignee"
+            <Select
               value={formData.assignee}
-              onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
-              placeholder="Nome do responsável"
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
               required
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um responsável..." />
+              </SelectTrigger>
+              <SelectContent>
+                {maintenanceUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.display_name || user.user_id}>
+                    {user.display_name || user.user_id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
 
