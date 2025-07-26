@@ -40,16 +40,27 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
               </div>
             </div>
             
-            {/* User Menu Only */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {user?.email?.split('@')[0] || 'Usuário'}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
+            <div className="flex items-center gap-2">
+              {/* Back to Dashboard Button */}
+              {!isDashboard && (
+                <Link to="/">
+                  <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Voltar ao Dashboard</span>
+                  </Button>
+                </Link>
+              )}
+              
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {user?.email?.split('@')[0] || 'Usuário'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem disabled>
                   <User className="mr-2 h-4 w-4" />
@@ -72,23 +83,14 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
                   Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main>
-        {!isDashboard && (
-          <div className="container mx-auto px-4 py-4">
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" />
-                Voltar ao Dashboard
-              </Button>
-            </Link>
-          </div>
-        )}
         {children}
       </main>
     </div>
