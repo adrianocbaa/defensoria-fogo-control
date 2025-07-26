@@ -154,7 +154,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     return (completed / materials.length) * 100;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!ticket || !formData.title || !formData.priority || !formData.type || !formData.location || !formData.assignee || !requestType) {
@@ -179,8 +179,12 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       processNumber: isManutencao ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined)
     };
 
-    onUpdateTask(updatedTicket);
-    onOpenChange(false);
+    try {
+      await onUpdateTask(updatedTicket);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Erro ao atualizar tarefa:', error);
+    }
   };
 
   if (!ticket) return null;

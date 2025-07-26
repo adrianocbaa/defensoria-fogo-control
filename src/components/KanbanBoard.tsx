@@ -117,6 +117,9 @@ interface DraggableTicketProps {
 }
 
 function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, isManutencao }: DraggableTicketProps) {
+  // Para usuários de manutenção, permitir drag apenas se o ticket estiver nas colunas corretas
+  const canDrag = !isManutencao || ['Em andamento', 'Impedido', 'Concluído'].includes(ticket.status);
+  
   const {
     attributes,
     listeners,
@@ -124,7 +127,10 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: ticket.id });
+  } = useSortable({ 
+    id: ticket.id,
+    disabled: !canDrag
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -375,6 +381,11 @@ export function KanbanBoard() {
     // Verificar se usuário de manutenção está tentando mover para coluna não permitida
     if (isManutencao && !['Em andamento', 'Impedido', 'Concluído'].includes(targetStatus)) {
       setActiveTicket(null);
+      toast({
+        title: "Movimento não permitido",
+        description: "Usuários de manutenção só podem mover tarefas entre Em andamento, Impedido e Concluído",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -460,7 +471,7 @@ export function KanbanBoard() {
             <h2 className="text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
             <p className="text-muted-foreground">Arraste as tarefas entre as colunas para alterar o status</p>
           </div>
-          <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />
+          {!isManutencao && <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">

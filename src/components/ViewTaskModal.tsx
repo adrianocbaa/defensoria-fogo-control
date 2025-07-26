@@ -239,13 +239,13 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
               <Separator />
               <div className="space-y-4">
                 <h3 className="font-medium text-sm text-muted-foreground">OBSERVAÇÕES</h3>
-                <div className="space-y-2 p-3 border rounded-md bg-muted/30">
-                  {ticket.observations.map((obs, index) => (
-                    <div key={index} className="text-sm text-muted-foreground">
-                      {obs}
-                    </div>
-                  ))}
-                </div>
+                 <div className="space-y-2 p-3 border rounded-md bg-muted/30">
+                   {ticket.observations.slice().reverse().map((obs, index) => (
+                     <div key={index} className="text-sm text-muted-foreground">
+                       {obs}
+                     </div>
+                   ))}
+                 </div>
               </div>
             </>
           )}
