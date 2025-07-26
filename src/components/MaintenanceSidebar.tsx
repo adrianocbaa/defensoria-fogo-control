@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { 
   LayoutDashboard, 
   AlertCircle, 
+  AlertTriangle,
   MapPin, 
   FileText, 
   Users, 
@@ -27,6 +28,7 @@ import {
 const menuItems = [
   { title: 'Visão Geral', icon: LayoutDashboard, id: 'overview' },
   { title: 'Chamados', icon: AlertCircle, id: 'tickets' },
+  { title: 'Alertas', icon: AlertTriangle, id: 'alerts' },
   { title: 'Viagens', icon: MapPin, id: 'travel-planning' },
   { title: 'Ordens de Serviço', icon: FileText, id: 'work-orders' },
   { title: 'Contratos e Fornecedores', icon: Users, id: 'contracts' },

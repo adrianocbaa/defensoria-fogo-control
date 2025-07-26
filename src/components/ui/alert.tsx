@@ -11,6 +11,26 @@ const alertVariants = cva(
         default: "bg-background text-foreground",
         destructive:
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        success:
+          "border-green-200 bg-green-50 text-green-800 dark:border-green-800/50 dark:bg-green-900/20 dark:text-green-400 [&>svg]:text-green-600 dark:[&>svg]:text-green-400",
+        warning:
+          "border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800/50 dark:bg-yellow-900/20 dark:text-yellow-400 [&>svg]:text-yellow-600 dark:[&>svg]:text-yellow-400",
+        info:
+          "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800/50 dark:bg-blue-900/20 dark:text-blue-400 [&>svg]:text-blue-600 dark:[&>svg]:text-blue-400",
+        secondary:
+          "border-gray-200 bg-gray-50 text-gray-800 dark:border-gray-800/50 dark:bg-gray-900/20 dark:text-gray-400 [&>svg]:text-gray-600 dark:[&>svg]:text-gray-400",
+        outline:
+          "border-2 bg-transparent",
+        "outline-primary":
+          "border-2 border-primary bg-transparent text-primary [&>svg]:text-primary",
+        "outline-success":
+          "border-2 border-green-500 bg-transparent text-green-700 dark:text-green-400 [&>svg]:text-green-600 dark:[&>svg]:text-green-400",
+        "outline-warning":
+          "border-2 border-yellow-500 bg-transparent text-yellow-700 dark:text-yellow-400 [&>svg]:text-yellow-600 dark:[&>svg]:text-yellow-400",
+        "outline-destructive":
+          "border-2 border-destructive bg-transparent text-destructive [&>svg]:text-destructive",
+        "outline-info":
+          "border-2 border-blue-500 bg-transparent text-blue-700 dark:text-blue-400 [&>svg]:text-blue-600 dark:[&>svg]:text-blue-400",
       },
     },
     defaultVariants: {

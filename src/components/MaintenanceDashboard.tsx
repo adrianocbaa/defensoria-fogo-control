@@ -4,6 +4,7 @@ import { MaintenanceTimeline } from '@/components/MaintenanceTimeline';
 import { MaintenanceMap } from '@/components/MaintenanceMap';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { TravelCalendar } from '@/components/TravelCalendar';
+import { AlertsShowcase } from '@/components/AlertsShowcase';
 
 interface MaintenanceDashboardProps {
   activeSection?: string;
@@ -12,6 +13,10 @@ interface MaintenanceDashboardProps {
 export function MaintenanceDashboard({ activeSection = 'overview' }: MaintenanceDashboardProps) {
   if (activeSection === 'tickets') {
     return <KanbanBoard />;
+  }
+
+  if (activeSection === 'alerts') {
+    return <AlertsShowcase />;
   }
 
   if (activeSection === 'travel-planning') {
