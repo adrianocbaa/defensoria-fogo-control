@@ -189,8 +189,8 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
             </>
           )}
 
-          {/* Materiais - sempre mostrar se existir */}
-          {ticket.materials && ticket.materials.length > 0 && (
+          {/* Materiais - sempre mostrar se o campo existir */}
+          {ticket.materials && (
             <>
               <Separator />
               <div className="space-y-4">
@@ -209,24 +209,30 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
                   </div>
                   
                   <div className="space-y-2">
-                    {ticket.materials.map((material, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <CheckCircle2 
-                          className={`h-4 w-4 ${
+                    {ticket.materials.length > 0 ? (
+                      ticket.materials.map((material, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <CheckCircle2 
+                            className={`h-4 w-4 ${
+                              material.completed 
+                                ? 'text-green-500' 
+                                : 'text-muted-foreground'
+                            }`} 
+                          />
+                          <span className={`text-sm ${
                             material.completed 
-                              ? 'text-green-500' 
-                              : 'text-muted-foreground'
-                          }`} 
-                        />
-                        <span className={`text-sm ${
-                          material.completed 
-                            ? 'line-through text-muted-foreground' 
-                            : ''
-                        }`}>
-                          {material.name}
-                        </span>
+                              ? 'line-through text-muted-foreground' 
+                              : ''
+                          }`}>
+                            {material.name}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        Nenhum material cadastrado
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>

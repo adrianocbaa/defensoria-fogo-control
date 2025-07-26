@@ -288,9 +288,9 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Em Análise">Em Análise</SelectItem>
-                <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                <SelectItem value="Serviços Pausados">Serviços Pausados</SelectItem>
+                <SelectItem value="Pendente">Pendente</SelectItem>
+                <SelectItem value="Em andamento">Em andamento</SelectItem>
+                <SelectItem value="Impedido">Impedido</SelectItem>
                 <SelectItem value="Concluído">Concluído</SelectItem>
               </SelectContent>
             </Select>
