@@ -79,7 +79,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     type: '',
     location: '',
     assignee: '',
-    status: 'Em Análise'
+    status: 'Pendente'
   });
   
   const [observation, setObservation] = useState('');
@@ -224,7 +224,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       type: '',
       location: '',
       assignee: '',
-      status: 'Em Análise'
+      status: 'Pendente'
     });
     setObservation('');
     setObservations([]);

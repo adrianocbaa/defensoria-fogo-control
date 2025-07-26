@@ -431,9 +431,10 @@ export function KanbanBoard() {
   };
 
   const handleMarkAsExecuted = async (ticketId: string) => {
-    await updateTicket(ticketId, { 
-      status: 'Concluído', 
-      completed_at: new Date().toISOString() 
+    await deleteTicket(ticketId);
+    toast({
+      title: "Sucesso",
+      description: "Tarefa marcada como executada e removida do kanban!",
     });
   };
 
