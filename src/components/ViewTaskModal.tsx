@@ -133,7 +133,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
 
           <Separator />
 
-          {/* Tipo de Solicitação */}
+          {/* Tipo de Solicitação - sempre mostrar */}
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -145,7 +145,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
             </p>
           </div>
 
-          {/* Serviços */}
+          {/* Serviços - sempre mostrar se existir */}
           {ticket.services && ticket.services.length > 0 && (
             <>
               <Separator />
@@ -189,7 +189,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
             </>
           )}
 
-          {/* Materiais */}
+          {/* Materiais - sempre mostrar se existir */}
           {ticket.materials && ticket.materials.length > 0 && (
             <>
               <Separator />
@@ -233,7 +233,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
             </>
           )}
 
-          {/* Observações */}
+          {/* Observações - sempre mostrar se existir */}
           {ticket.observations && ticket.observations.length > 0 && (
             <>
               <Separator />
