@@ -10,7 +10,7 @@ export default function Maintenance() {
   return (
     <SimpleHeader>
       <SidebarProvider>
-        <div className="flex w-full h-full">
+        <div className="flex w-full min-h-screen">
           <MaintenanceSidebar 
             activeSection={activeSection}
             onSectionChange={setActiveSection}
