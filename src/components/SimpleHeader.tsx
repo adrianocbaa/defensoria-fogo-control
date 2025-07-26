@@ -19,7 +19,7 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
   return (
     <div className="w-full bg-background">
       {/* Simplified Header */}
-      <header className="bg-primary text-primary-foreground shadow-lg">
+      <header className="w-full bg-primary text-primary-foreground shadow-lg">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
