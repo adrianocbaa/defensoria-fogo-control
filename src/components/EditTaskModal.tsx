@@ -86,7 +86,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
         type: ticket.type,
         location: ticket.location,
         assignee: ticket.assignee,
-        status: ticket.status
+        status: ticket.status || 'Em andamento' // Definir um status padrão se estiver vazio
       });
       setObservations(ticket.observations || []);
       setServices(ticket.services || []);
@@ -157,11 +157,18 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validar se o status está preenchido
+    if (!formData.status) {
+      console.error('Status é obrigatório');
+      return;
+    }
+    
     // Para usuários de manutenção, não validar requestType pois eles não podem editar esse campo
     const requiredFieldsValid = ticket && formData.title && formData.priority && formData.type && formData.location && formData.assignee;
     const requestTypeValid = isManutencao || requestType;
     
     if (!requiredFieldsValid || !requestTypeValid) {
+      console.error('Campos obrigatórios não preenchidos');
       return;
     }
 
