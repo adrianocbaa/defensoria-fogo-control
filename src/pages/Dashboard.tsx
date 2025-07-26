@@ -25,22 +25,6 @@ interface SectorBlock {
 
 const sectorBlocks: SectorBlock[] = [
   {
-    id: 'manutencao',
-    title: 'Manutenção',
-    icon: Wrench,
-    path: '/maintenance',
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50 hover:bg-orange-100 border-orange-200'
-  },
-  {
-    id: 'obra',
-    title: 'Obra',
-    icon: HardHat,
-    path: '/obras',
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200'
-  },
-  {
     id: 'preventivos',
     title: 'Preventivos',
     icon: Shield,
@@ -49,12 +33,28 @@ const sectorBlocks: SectorBlock[] = [
     bgColor: 'bg-blue-50 hover:bg-blue-100 border-blue-200'
   },
   {
+    id: 'manutencao',
+    title: 'Manutenção',
+    icon: Wrench,
+    path: '/maintenance',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50 hover:bg-orange-100 border-orange-200'
+  },
+  {
     id: 'ar_condicionado',
     title: 'Ar Condicionado',
     icon: Wind,
     path: '#',
     color: 'text-cyan-600',
     bgColor: 'bg-cyan-50 hover:bg-cyan-100 border-cyan-200'
+  },
+  {
+    id: 'obra',
+    title: 'Obra',
+    icon: HardHat,
+    path: '/obras',
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200'
   },
   {
     id: 'projetos',
