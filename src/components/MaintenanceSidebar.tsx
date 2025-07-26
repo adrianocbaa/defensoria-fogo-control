@@ -35,7 +35,6 @@ const menuItems = [
   { title: 'Manutenções Preventivas', icon: Calendar, id: 'preventive' },
   { title: 'Histórico de Atendimentos', icon: History, id: 'history' },
   { title: 'Relatórios', icon: BarChart3, id: 'reports' },
-  { title: 'Configurações', icon: Settings, id: 'settings' },
 ];
 
 interface MaintenanceSidebarProps {
