@@ -121,12 +121,6 @@ export default function Dashboard() {
               Selecione o módulo que deseja acessar
             </p>
           </div>
-          <Link 
-            to="/preventivos" 
-            className="text-sm text-primary hover:underline"
-          >
-            Voltar para visualização clássica
-          </Link>
         </div>
 
         {/* Modules Grid */}
