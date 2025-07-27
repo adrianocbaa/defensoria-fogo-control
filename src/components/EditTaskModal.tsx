@@ -163,8 +163,15 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       return;
     }
     
-    // Para usuários de manutenção, não validar requestType pois eles não podem editar esse campo
-    const requiredFieldsValid = ticket && formData.title && formData.priority && formData.type && formData.location && formData.assignee;
+    // Para usuários de manutenção, usar dados do ticket original para validação
+    // pois eles não podem editar todos os campos
+    const titleValid = isManutencao ? ticket.title : formData.title;
+    const priorityValid = isManutencao ? ticket.priority : formData.priority;
+    const typeValid = isManutencao ? ticket.type : formData.type;
+    const locationValid = isManutencao ? ticket.location : formData.location;
+    const assigneeValid = isManutencao ? ticket.assignee : formData.assignee;
+    
+    const requiredFieldsValid = ticket && titleValid && priorityValid && typeValid && locationValid && assigneeValid;
     const requestTypeValid = isManutencao || requestType;
     
     if (!requiredFieldsValid || !requestTypeValid) {
