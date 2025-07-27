@@ -45,7 +45,7 @@ export function useUserRole() {
   }, [user?.id]);
 
   const isAdmin = role === 'admin';
-  const canEdit = role === 'admin' || role === 'editor';
+  const canEdit = role === 'admin' || role === 'editor' || role === 'gm';
   const isGM = role === 'gm';
 
   const refreshRole = () => {
