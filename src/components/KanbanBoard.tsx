@@ -379,8 +379,9 @@ export function KanbanBoard() {
       return;
     }
 
-    // Usuários de manutenção só podem mover tarefas entre certas colunas
-    if (isManutencao && !['Em andamento', 'Impedido', 'Concluído'].includes(targetStatus)) {
+    // Usuários de manutenção só podem mover tarefas de Pendente para certas colunas,
+    // mas podem mover livremente entre Em andamento, Impedido e Concluído
+    if (isManutencao && sourceStatus === 'Pendente' && !['Em andamento', 'Impedido', 'Concluído'].includes(targetStatus)) {
       setActiveTicket(null);
       toast({
         title: "Movimento não permitido",
@@ -414,11 +415,12 @@ export function KanbanBoard() {
       location: taskData.location,
       assignee: taskData.assignee,
       status: taskData.status,
-      observations: taskData.observations,
-      services: taskData.services,
-      materials: taskData.materials,
+      observations: taskData.observations || [],
+      services: taskData.services || [],
+      materials: taskData.materials || [],
       request_type: taskData.requestType,
-      process_number: taskData.processNumber
+      process_number: taskData.processNumber,
+      user_id: user?.id
     };
 
     await createTicket(dbTicketData);
