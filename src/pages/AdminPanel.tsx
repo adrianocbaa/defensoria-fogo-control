@@ -114,7 +114,7 @@ export default function AdminPanel() {
         return <Shield className="h-4 w-4" />;
       case 'editor':
         return <Edit className="h-4 w-4" />;
-      case 'manutencao':
+      case 'gm':
         return <Wrench className="h-4 w-4" />;
       default:
         return <Eye className="h-4 w-4" />;
@@ -127,7 +127,7 @@ export default function AdminPanel() {
         return 'destructive' as const;
       case 'editor':
         return 'default' as const;
-      case 'manutencao':
+      case 'gm':
         return 'outline' as const;
       default:
         return 'secondary' as const;
@@ -140,8 +140,8 @@ export default function AdminPanel() {
         return 'Administrador';
       case 'editor':
         return 'Editor';
-      case 'manutencao':
-        return 'Manutenção';
+      case 'gm':
+        return 'GM';
       default:
         return 'Visualizador';
     }
@@ -220,7 +220,7 @@ export default function AdminPanel() {
                         <SelectContent>
                           <SelectItem value="viewer">Visualizador</SelectItem>
                           <SelectItem value="editor">Editor</SelectItem>
-                          <SelectItem value="manutencao">Manutenção</SelectItem>
+                          <SelectItem value="gm">GM</SelectItem>
                           <SelectItem value="admin">Administrador</SelectItem>
                         </SelectContent>
                       </Select>
@@ -277,7 +277,7 @@ export default function AdminPanel() {
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Wrench className="h-5 w-5 text-orange-500" />
-                  <h3 className="font-medium">Manutenção</h3>
+                  <h3 className="font-medium">GM</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Pode gerenciar tarefas de manutenção e atualizar status

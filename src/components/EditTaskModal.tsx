@@ -56,7 +56,7 @@ const taskTypes = [
 ];
 
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
-  const { isManutencao, canEdit } = useUserRole();
+  const { isGM, canEdit } = useUserRole();
   const { users: maintenanceUsers } = useMaintenanceUsers();
   
   const [formData, setFormData] = useState({
@@ -165,14 +165,14 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     
     // Para usuários de manutenção, usar dados do ticket original para validação
     // pois eles não podem editar todos os campos
-    const titleValid = isManutencao ? ticket.title : formData.title;
-    const priorityValid = isManutencao ? ticket.priority : formData.priority;
-    const typeValid = isManutencao ? ticket.type : formData.type;
-    const locationValid = isManutencao ? ticket.location : formData.location;
-    const assigneeValid = isManutencao ? ticket.assignee : formData.assignee;
+    const titleValid = isGM ? ticket.title : formData.title;
+    const priorityValid = isGM ? ticket.priority : formData.priority;
+    const typeValid = isGM ? ticket.type : formData.type;
+    const locationValid = isGM ? ticket.location : formData.location;
+    const assigneeValid = isGM ? ticket.assignee : formData.assignee;
     
     const requiredFieldsValid = ticket && titleValid && priorityValid && typeValid && locationValid && assigneeValid;
-    const requestTypeValid = isManutencao || requestType;
+    const requestTypeValid = isGM || requestType;
     
     if (!requiredFieldsValid || !requestTypeValid) {
       console.error('Campos obrigatórios não preenchidos');
@@ -183,18 +183,18 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     
     const updatedTicket: Ticket = {
       ...ticket,
-      title: isManutencao ? ticket.title : formData.title,
-      priority: isManutencao ? ticket.priority : formData.priority as 'Alta' | 'Média' | 'Baixa',
-      type: isManutencao ? ticket.type : formData.type,
-      location: isManutencao ? ticket.location : formData.location,
-      assignee: isManutencao ? ticket.assignee : formData.assignee,
+      title: isGM ? ticket.title : formData.title,
+      priority: isGM ? ticket.priority : formData.priority as 'Alta' | 'Média' | 'Baixa',
+      type: isGM ? ticket.type : formData.type,
+      location: isGM ? ticket.location : formData.location,
+      assignee: isGM ? ticket.assignee : formData.assignee,
       icon: selectedTaskType?.icon || ticket.icon,
       status: formData.status,
       observations,
       services,
       materials,
-      requestType: isManutencao ? ticket.requestType : requestType as 'email' | 'processo',
-      processNumber: isManutencao ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined)
+      requestType: isGM ? ticket.requestType : requestType as 'email' | 'processo',
+      processNumber: isGM ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined)
     };
 
     try {
@@ -221,7 +221,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="Descreva o problema..."
-              disabled={isManutencao}
+              disabled={isGM}
               required
             />
           </div>
@@ -233,7 +233,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 value={formData.priority}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value as 'Alta' | 'Média' | 'Baixa' }))}
                 required
-                disabled={isManutencao}
+                disabled={isGM}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione..." />
@@ -252,7 +252,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 value={formData.type}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
                 required
-                disabled={isManutencao}
+                disabled={isGM}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione..." />
@@ -275,7 +275,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               value={formData.location}
               onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
               placeholder="Ex: Sala 301, Recepção..."
-              disabled={isManutencao}
+              disabled={isGM}
               required
             />
           </div>
@@ -287,7 +287,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               value={formData.assignee}
               onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
               placeholder="Nome do responsável"
-              disabled={isManutencao}
+              disabled={isGM}
               required
             />
           </div>
@@ -453,7 +453,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
           </div>
 
           {/* Tipo de Solicitação */}
-          {!isManutencao && (
+          {!isGM && (
             <div className="space-y-3">
               <Label>Tipo de Solicitação *</Label>
               <RadioGroup

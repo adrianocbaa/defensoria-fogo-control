@@ -260,7 +260,7 @@ export function KanbanBoard() {
   const { tickets: dbTickets, loading, createTicket, updateTicket, deleteTicket } = useMaintenanceTickets();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { isManutencao, canEdit } = useUserRole();
+  const { isGM, canEdit } = useUserRole();
   const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
     'Pendente': [],
     'Em andamento': [],
@@ -380,7 +380,7 @@ export function KanbanBoard() {
     }
 
     // Permitir que usuários de manutenção movam livremente entre suas colunas permitidas
-    if (isManutencao) {
+    if (isGM) {
       const allowedStatuses = ['Em andamento', 'Impedido', 'Concluído'];
       if (!allowedStatuses.includes(sourceStatus) || !allowedStatuses.includes(targetStatus)) {
         setActiveTicket(null);
@@ -478,13 +478,13 @@ export function KanbanBoard() {
             <h2 className="text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
             <p className="text-muted-foreground">Arraste as tarefas entre as colunas para alterar o status</p>
           </div>
-          {!isManutencao && <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />}
+          {!isGM && <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {Object.entries(tickets).map(([status, statusTickets]) => {
             // Para usuários de manutenção, mostrar apenas as colunas permitidas
-            if (isManutencao && !['Em andamento', 'Impedido', 'Concluído'].includes(status)) {
+            if (isGM && !['Em andamento', 'Impedido', 'Concluído'].includes(status)) {
               return null;
             }
             
@@ -497,7 +497,7 @@ export function KanbanBoard() {
                 onViewTicket={handleViewTicket}
                 onEditTicket={handleEditTicket}
                 onMarkAsExecuted={handleMarkAsExecuted}
-                isManutencao={isManutencao}
+                isManutencao={isGM}
               />
             );
           })}
