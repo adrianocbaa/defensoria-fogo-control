@@ -52,6 +52,7 @@ interface Ticket {
   status: string;
   observations?: string[];
   services?: { name: string; completed: boolean }[];
+  materials?: { name: string; completed: boolean }[];
   requestType?: 'email' | 'processo';
   processNumber?: string;
   servicePhotos?: ServicePhoto[];
@@ -87,7 +88,9 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [observation, setObservation] = useState('');
   const [observations, setObservations] = useState<string[]>([]);
   const [services, setServices] = useState<{ name: string; completed: boolean }[]>([]);
+  const [materials, setMaterials] = useState<{ name: string; completed: boolean }[]>([]);
   const [newService, setNewService] = useState('');
+  const [newMaterial, setNewMaterial] = useState('');
   const [requestType, setRequestType] = useState<'email' | 'processo' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
@@ -124,10 +127,33 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setServices(prev => prev.filter((_, i) => i !== index));
   };
 
+  const addMaterial = () => {
+    if (newMaterial.trim()) {
+      setMaterials(prev => [...prev, { name: newMaterial, completed: false }]);
+      setNewMaterial('');
+    }
+  };
+
+  const toggleMaterial = (index: number) => {
+    setMaterials(prev => prev.map((material, i) => 
+      i === index ? { ...material, completed: !material.completed } : material
+    ));
+  };
+
+  const removeMaterial = (index: number) => {
+    setMaterials(prev => prev.filter((_, i) => i !== index));
+  };
+
   const getServicesProgress = () => {
     if (services.length === 0) return 0;
     const completed = services.filter(s => s.completed).length;
     return (completed / services.length) * 100;
+  };
+
+  const getMaterialsProgress = () => {
+    if (materials.length === 0) return 0;
+    const completed = materials.filter(m => m.completed).length;
+    return (completed / materials.length) * 100;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,6 +205,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       status: formData.status,
       observations,
       services,
+      materials,
       requestType: requestType as 'email' | 'processo',
       processNumber: requestType === 'processo' ? processNumber : undefined,
       servicePhotos
@@ -231,7 +258,9 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setObservation('');
     setObservations([]);
     setServices([]);
+    setMaterials([]);
     setNewService('');
+    setNewMaterial('');
     setRequestType('');
     setProcessNumber('');
     setServicePhotos([]);
@@ -408,6 +437,59 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => removeService(index)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Materiais */}
+          <div className="space-y-2">
+            <Label>Materiais</Label>
+            <div className="flex gap-2">
+              <Input
+                value={newMaterial}
+                onChange={(e) => setNewMaterial(e.target.value)}
+                placeholder="Adicionar material..."
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMaterial())}
+              />
+              <Button type="button" onClick={addMaterial} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {materials.length > 0 && (
+              <div className="space-y-2">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Progresso dos Materiais</span>
+                    <span className="text-sm text-muted-foreground">{Math.round(getMaterialsProgress())}%</span>
+                  </div>
+                  <Progress value={getMaterialsProgress()} className="w-full" />
+                </div>
+                
+                <div className="max-h-32 overflow-y-auto space-y-2 p-2 border rounded-md bg-muted/30">
+                  {materials.map((material, index) => (
+                    <div key={index} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <Checkbox
+                          checked={material.completed}
+                          onCheckedChange={() => toggleMaterial(index)}
+                        />
+                        <span className={`text-sm ${material.completed ? 'line-through text-muted-foreground' : ''}`}>
+                          {material.name}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeMaterial(index)}
                         className="h-6 w-6 p-0"
                       >
                         <X className="h-3 w-3" />

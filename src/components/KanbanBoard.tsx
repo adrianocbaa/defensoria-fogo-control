@@ -117,8 +117,8 @@ interface DraggableTicketProps {
 }
 
 function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, isManutencao }: DraggableTicketProps) {
-  // Para usuários de manutenção, permitir drag apenas se o ticket estiver nas colunas corretas
-  const canDrag = !isManutencao || ['Em andamento', 'Impedido', 'Concluído'].includes(ticket.status);
+  // Permitir drag para todos os usuários
+  const canDrag = true;
   
   const {
     attributes,
@@ -159,6 +159,7 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
       ref={setNodeRef}
       style={style}
       className={`cursor-grab hover:shadow-md transition-shadow ${isDragging ? 'shadow-lg' : ''}`}
+      onClick={() => onViewTicket(ticket)}
       {...attributes} 
       {...listeners}
     >
@@ -378,7 +379,7 @@ export function KanbanBoard() {
       return;
     }
 
-    // Verificar se usuário de manutenção está tentando mover para coluna não permitida
+    // Usuários de manutenção só podem mover tarefas entre certas colunas
     if (isManutencao && !['Em andamento', 'Impedido', 'Concluído'].includes(targetStatus)) {
       setActiveTicket(null);
       toast({
@@ -415,6 +416,7 @@ export function KanbanBoard() {
       status: taskData.status,
       observations: taskData.observations,
       services: taskData.services,
+      materials: taskData.materials,
       request_type: taskData.requestType,
       process_number: taskData.processNumber
     };
@@ -442,6 +444,7 @@ export function KanbanBoard() {
       status: updatedTicket.status,
       observations: updatedTicket.observations,
       services: updatedTicket.services,
+      materials: updatedTicket.materials,
       request_type: updatedTicket.requestType,
       process_number: updatedTicket.processNumber,
       completed_at: updatedTicket.completedAt?.toISOString()
