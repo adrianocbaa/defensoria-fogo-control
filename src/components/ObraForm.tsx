@@ -73,7 +73,13 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
-  const [photos, setPhotos] = useState<string[]>(initialData?.fotos || []);
+  const [photos, setPhotos] = useState<Array<{url: string; uploadedAt: string; fileName: string}>>(
+    initialData?.fotos?.map(url => ({
+      url,
+      uploadedAt: new Date().toISOString(),
+      fileName: url.split('/').pop() || ''
+    })) || []
+  );
   const [documents, setDocuments] = useState<Document[]>(initialData?.documentos || []);
 
   const form = useForm<ObraFormData>({
@@ -127,7 +133,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         secretaria_responsavel: data.secretaria_responsavel || null,
         coordinates_lat: data.coordinates_lat || null,
         coordinates_lng: data.coordinates_lng || null,
-        fotos: photos,
+        fotos: photos.map(p => p.url),
         documentos: documents,
         created_by: user.id,
       };

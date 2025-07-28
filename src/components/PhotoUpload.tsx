@@ -6,13 +6,19 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import { ImageProcessor } from '@/components/ImageProcessor';
 import { toast } from 'sonner';
 
+interface PhotoMetadata {
+  url: string;
+  uploadedAt: string;
+  fileName: string;
+}
+
 interface PhotoUploadProps {
-  photos: string[];
-  onPhotosChange: (photos: string[]) => void;
+  photos: PhotoMetadata[];
+  onPhotosChange: (photos: PhotoMetadata[]) => void;
   maxPhotos?: number;
 }
 
-export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 10 }: PhotoUploadProps) {
+export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUploadProps) {
   const { uploadFile, uploading } = useFileUpload();
   const [dragOver, setDragOver] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -30,44 +36,62 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 10 }: PhotoUpl
     }
 
     setProcessing(true);
-    const newPhotos: string[] = [];
+    const newPhotos: PhotoMetadata[] = [];
 
-    try {
-      for (const file of photoFiles) {
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-          toast.error(`Arquivo ${file.name} é muito grande. Máximo: 5MB`);
-          continue;
+    // Process files in batches of 5 to avoid overwhelming the system
+    const batchSize = 5;
+    for (let i = 0; i < photoFiles.length; i += batchSize) {
+      const batch = photoFiles.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (file) => {
+        try {
+          if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            toast.error(`Arquivo ${file.name} é muito grande. Máximo: 5MB`);
+            return;
+          }
+
+          // Process image with watermark
+          toast.info(`Processando ${file.name}...`);
+          const processedBlob = await ImageProcessor.processImageWithWatermark(file);
+          
+          // Create a new file from the processed blob
+          const processedFile = new File([processedBlob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+
+          const result = await uploadFile(processedFile, 'service-photos', 'obras');
+          
+          if (result.error) {
+            toast.error(`Erro ao fazer upload de ${file.name}: ${result.error}`);
+          } else if (result.url) {
+            newPhotos.push({
+              url: result.url,
+              uploadedAt: new Date().toISOString(),
+              fileName: file.name
+            });
+            toast.success(`Foto ${file.name} processada e enviada com sucesso`);
+          }
+        } catch (error) {
+          console.error(`Error processing ${file.name}:`, error);
+          toast.error(`Erro ao processar ${file.name}`);
         }
-
-        // Process image with watermark
-        toast.info(`Processando ${file.name}...`);
-        const processedBlob = await ImageProcessor.processImageWithWatermark(file);
-        
-        // Create a new file from the processed blob
-        const processedFile = new File([processedBlob], file.name, {
-          type: 'image/jpeg',
-          lastModified: Date.now(),
-        });
-
-        const result = await uploadFile(processedFile, 'service-photos', 'obras');
-        
-        if (result.error) {
-          toast.error(`Erro ao fazer upload de ${file.name}: ${result.error}`);
-        } else if (result.url) {
-          newPhotos.push(result.url);
-          toast.success(`Foto ${file.name} processada e enviada com sucesso`);
-        }
+      }));
+      
+      // Small delay between batches
+      if (i + batchSize < photoFiles.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-
-      if (newPhotos.length > 0) {
-        onPhotosChange([...photos, ...newPhotos]);
-      }
-    } catch (error) {
-      console.error('Error processing images:', error);
-      toast.error('Erro ao processar as imagens');
-    } finally {
-      setProcessing(false);
     }
+
+    if (newPhotos.length > 0) {
+      onPhotosChange([...photos, ...newPhotos]);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    const newPhotos = photos.filter((_, i) => i !== index);
+    onPhotosChange(newPhotos);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -86,10 +110,6 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 10 }: PhotoUpl
     handleFileSelect(e.dataTransfer.files);
   };
 
-  const removePhoto = (index: number) => {
-    const newPhotos = photos.filter((_, i) => i !== index);
-    onPhotosChange(newPhotos);
-  };
 
   return (
     <div className="space-y-4">
@@ -155,7 +175,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 10 }: PhotoUpl
             <div key={index} className="relative group">
               <div className="aspect-square rounded-lg overflow-hidden bg-muted">
                 <img
-                  src={photo}
+                  src={photo.url}
                   alt={`Foto ${index + 1}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -170,6 +190,12 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 10 }: PhotoUpl
               >
                 <X className="h-3 w-3" />
               </Button>
+              <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded">
+                {new Date(photo.uploadedAt).toLocaleDateString('pt-BR', { 
+                  month: 'short', 
+                  year: '2-digit' 
+                }).toUpperCase()}
+              </div>
             </div>
           ))}
         </div>

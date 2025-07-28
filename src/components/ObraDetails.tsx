@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, MapPin, Calendar, Building2, Users, FileText, Image, Download, Loader2, DollarSign, TrendingUp } from 'lucide-react';
-import { ImageGallery } from '@/components/ImageGallery';
+import { PhotoGalleryByMonth } from '@/components/PhotoGalleryByMonth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -53,8 +53,6 @@ const formatDate = (dateString: string) => {
 
 function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: () => void; loading?: boolean }) {
   const [photosLoading, setPhotosLoading] = useState(true);
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
   // Simulate photo loading delay
   React.useEffect(() => {
@@ -72,6 +70,13 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
 
   const fotos = obra.fotos || [];
   const documentos = obra.documentos || [];
+  
+  // Convert simple URL array to PhotoMetadata format
+  const photosWithMetadata = fotos.map((url, index) => ({
+    url,
+    uploadedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 30 days
+    fileName: `foto-${index + 1}.jpg`
+  }));
 
   return (
     <div className="space-y-4 lg:space-y-6 animate-fade-in">
@@ -229,55 +234,19 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
         </AccordionItem>
 
         {/* Fotos */}
-        {fotos.length > 0 && (
+        {photosWithMetadata.length > 0 && (
           <AccordionItem value="fotos" className="border rounded-lg">
             <AccordionTrigger className="px-4 hover:no-underline">
               <div className="flex items-center gap-2">
                 <Image className="h-4 w-4" />
-                <span className="font-semibold">Fotos ({fotos.length})</span>
+                <span className="font-semibold">Fotos ({photosWithMetadata.length})</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               {photosLoading ? (
-                <PhotoGalleryLoadingSkeleton count={fotos.length} />
+                <PhotoGalleryLoadingSkeleton count={photosWithMetadata.length} />
               ) : (
-                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                   {fotos.map((foto, index) => (
-                     <div 
-                       key={index} 
-                       className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer"
-                       onClick={() => {
-                         setSelectedImageIndex(index);
-                         setGalleryOpen(true);
-                       }}
-                     >
-                       <img 
-                         src={foto} 
-                         alt={`Foto ${index + 1} da obra`}
-                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                         loading="lazy"
-                         onError={(e) => {
-                           const target = e.target as HTMLImageElement;
-                           target.src = 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400';
-                         }}
-                       />
-                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                         <Button variant="secondary" size="sm" className="shadow-lg pointer-events-none">
-                           <Image className="h-3 w-3 mr-1" />
-                           Ver
-                         </Button>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-              )}
-              {fotos.length > 6 && (
-                <div className="mt-3 text-center">
-                  <Button variant="outline" size="sm">
-                    +Fotos ({fotos.length - 6} restantes)
-                  </Button>
-                </div>
+                <PhotoGalleryByMonth photos={photosWithMetadata} maxRecentPhotos={20} />
               )}
             </AccordionContent>
           </AccordionItem>
@@ -325,13 +294,6 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
 
       </Accordion>
 
-      {/* Galeria de Imagens */}
-      <ImageGallery
-        images={fotos}
-        isOpen={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
-        initialIndex={selectedImageIndex}
-      />
     </div>
   );
 }
