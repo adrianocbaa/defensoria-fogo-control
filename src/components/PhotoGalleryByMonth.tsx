@@ -27,7 +27,7 @@ interface PhotoGalleryByMonthProps {
 }
 
 export function PhotoGalleryByMonth({ photos, maxRecentPhotos = 20 }: PhotoGalleryByMonthProps) {
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<string>('latest');
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [currentViewPhotos, setCurrentViewPhotos] = useState<string[]>([]);
@@ -111,7 +111,7 @@ export function PhotoGalleryByMonth({ photos, maxRecentPhotos = 20 }: PhotoGalle
                 <SelectValue placeholder="Escolher mês" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Mais recente</SelectItem>
+                <SelectItem value="latest">Mais recente</SelectItem>
                 {photosByMonth.map((monthData) => (
                   <SelectItem key={monthData.monthYear} value={monthData.monthYear}>
                     {monthData.monthYear} ({monthData.count})
@@ -179,17 +179,17 @@ export function PhotoGalleryByMonth({ photos, maxRecentPhotos = 20 }: PhotoGalle
 
       {/* Main photo grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {(selectedMonth ? 
-          photosByMonth.find(m => m.monthYear === selectedMonth)?.photos || [] : 
-          recentPhotos
+        {(selectedMonth === 'latest' ? 
+          recentPhotos :
+          photosByMonth.find(m => m.monthYear === selectedMonth)?.photos || []
         ).map((photo, index) => (
           <div 
             key={index}
             className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer"
             onClick={() => openGallery(
-              selectedMonth ? 
-                photosByMonth.find(m => m.monthYear === selectedMonth)?.photos || [] : 
-                recentPhotos, 
+              selectedMonth === 'latest' ? 
+                recentPhotos :
+                photosByMonth.find(m => m.monthYear === selectedMonth)?.photos || [], 
               index
             )}
           >

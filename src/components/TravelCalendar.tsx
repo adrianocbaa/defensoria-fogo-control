@@ -32,8 +32,8 @@ export function TravelCalendar() {
   const [selectedTask, setSelectedTask] = useState<MaintenanceTicket | null>(null);
   
   // Filtros
-  const [servidorFilter, setServidorFilter] = useState('');
-  const [destinoFilter, setDestinoFilter] = useState('');
+  const [servidorFilter, setServidorFilter] = useState('all');
+  const [destinoFilter, setDestinoFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   
   // View modes
@@ -71,14 +71,14 @@ export function TravelCalendar() {
     let filtered = travels;
     
     // Filtro por servidor
-    if (servidorFilter) {
+    if (servidorFilter && servidorFilter !== 'all') {
       filtered = filtered.filter(travel => 
         travel.servidor.toLowerCase().includes(servidorFilter.toLowerCase())
       );
     }
     
     // Filtro por destino
-    if (destinoFilter) {
+    if (destinoFilter && destinoFilter !== 'all') {
       filtered = filtered.filter(travel => 
         travel.destino.toLowerCase().includes(destinoFilter.toLowerCase())
       );
@@ -256,7 +256,7 @@ export function TravelCalendar() {
                     <SelectValue placeholder="Selecionar servidor" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os servidores</SelectItem>
+                    <SelectItem value="all">Todos os servidores</SelectItem>
                     {uniqueServidores.map(servidor => (
                       <SelectItem key={servidor} value={servidor}>
                         {servidor}
@@ -272,7 +272,7 @@ export function TravelCalendar() {
                     <SelectValue placeholder="Todos os destinos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os destinos</SelectItem>
+                    <SelectItem value="all">Todos os destinos</SelectItem>
                     {uniqueDestinos.map(destino => (
                       <SelectItem key={destino} value={destino}>
                         {destino}
