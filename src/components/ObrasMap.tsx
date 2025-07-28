@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { obrasSimuladas, type ObraStatus } from '@/data/mockObras';
+import { type ObraStatus, type Obra } from '@/data/mockObras';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -74,9 +74,10 @@ const getStatusLabel = (status: ObraStatus): string => {
 
 interface ObrasMapProps {
   className?: string;
+  obras: Obra[];
 }
 
-export function ObrasMap({ className }: ObrasMapProps) {
+export function ObrasMap({ className, obras }: ObrasMapProps) {
   const mapRef = useRef<L.Map | null>(null);
 
   // Coordenadas do centro de Mato Grosso
@@ -107,7 +108,7 @@ export function ObrasMap({ className }: ObrasMapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {obrasSimuladas.map((obra) => (
+        {obras.map((obra) => (
           <Marker
             key={obra.id}
             position={obra.coordenadas}
