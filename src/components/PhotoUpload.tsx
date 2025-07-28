@@ -169,15 +169,21 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
 
     return Object.entries(grouped)
       .sort(([a], [b]) => b.localeCompare(a)) // Sort by month descending
-      .map(([month, monthPhotos]) => ({
-        month,
-        monthLabel: new Date(month + '-01').toLocaleDateString('pt-BR', { 
+      .map(([month, monthPhotos]) => {
+        // Parse month string (YYYY-MM) to get correct display
+        const [year, monthNum] = month.split('-');
+        const monthLabel = new Date(parseInt(year), parseInt(monthNum) - 1, 1).toLocaleDateString('pt-BR', { 
           month: 'long', 
           year: 'numeric' 
-        }),
-        photos: monthPhotos,
-        count: monthPhotos.length
-      }));
+        });
+        
+        return {
+          month,
+          monthLabel,
+          photos: monthPhotos,
+          count: monthPhotos.length
+        };
+      });
   }, [photos, selectedMonth]);
 
   const monthOptions = generateMonthOptions();

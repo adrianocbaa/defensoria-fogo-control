@@ -44,7 +44,9 @@ export function PhotoGalleryCollapsible({
       const monthYear = photo.monthFolder;
       if (!monthYear) return acc; // Ignorar fotos sem monthFolder
       
-      const date = new Date(monthYear + '-01'); // Parse YYYY-MM format
+      // Parse month string (YYYY-MM) corretamente
+      const [year, monthNum] = monthYear.split('-');
+      const date = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
       const monthName = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase();
       
       if (!acc[monthYear]) {
@@ -65,9 +67,9 @@ export function PhotoGalleryCollapsible({
 
     // Sort by date (most recent first)
     return Object.values(grouped).sort((a, b) => {
-      const aDate = Object.keys(grouped).find(key => grouped[key].monthYear === a.monthYear) || '';
-      const bDate = Object.keys(grouped).find(key => grouped[key].monthYear === b.monthYear) || '';
-      return bDate.localeCompare(aDate);
+      const aKey = Object.keys(grouped).find(key => grouped[key].monthYear === a.monthYear) || '';
+      const bKey = Object.keys(grouped).find(key => grouped[key].monthYear === b.monthYear) || '';
+      return bKey.localeCompare(aKey);
     });
   }, [photos]);
 
