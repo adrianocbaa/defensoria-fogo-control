@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, MapPin, Calendar, Building2, Users, FileText, Image, Download, Loader2, DollarSign, TrendingUp } from 'lucide-react';
-import { PhotoGalleryByMonth } from '@/components/PhotoGalleryByMonth';
+import { PhotoGalleryCollapsible } from '@/components/PhotoGalleryCollapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -267,7 +267,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
               {photosLoading ? (
                 <PhotoGalleryLoadingSkeleton count={photosWithMetadata.length} />
               ) : (
-                <PhotoGalleryByMonth photos={photosWithMetadata} maxRecentPhotos={20} />
+                <PhotoGalleryCollapsible photos={photosWithMetadata} />
               )}
             </AccordionContent>
           </AccordionItem>
