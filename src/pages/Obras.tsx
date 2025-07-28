@@ -4,11 +4,14 @@ import { Button } from '@/components/ui/button';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { ObrasMap } from '@/components/ObrasMap';
 import { ObrasFilters, type FiltersData } from '@/components/ObrasFilters';
-import { obrasSimuladas } from '@/data/mockObras';
+import { ObraDetails } from '@/components/ObraDetails';
+import { obrasSimuladas, type Obra } from '@/data/mockObras';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Obras() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedObra, setSelectedObra] = useState<Obra | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [filters, setFilters] = useState<FiltersData>({
     status: [],
     tipos: [],
@@ -65,6 +68,16 @@ export default function Obras() {
     setFilters(newFilters);
   };
 
+  const handleObraClick = (obra: Obra) => {
+    setSelectedObra(obra);
+    setDetailsOpen(true);
+  };
+
+  const handleDetailsClose = () => {
+    setDetailsOpen(false);
+    setSelectedObra(null);
+  };
+
   return (
     <SimpleHeader>
       <div className="min-h-screen bg-background">
@@ -115,10 +128,11 @@ export default function Obras() {
 
           {/* Map area */}
           <div className="flex-1 relative">
-            <ObrasMap 
-              obras={filteredObras}
-              className="h-full w-full" 
-            />
+          <ObrasMap 
+            obras={filteredObras}
+            onObraClick={handleObraClick}
+            className="h-full w-full" 
+          />
             
             {/* Results counter */}
             <div className="absolute top-4 right-4 bg-background/95 backdrop-blur-sm px-4 py-2 rounded-lg border shadow-sm z-10">
@@ -136,6 +150,13 @@ export default function Obras() {
             onClick={() => setSidebarOpen(false)}
           />
         )}
+
+        {/* Obra Details Panel/Modal */}
+        <ObraDetails 
+          obra={selectedObra}
+          isOpen={detailsOpen}
+          onClose={handleDetailsClose}
+        />
       </div>
     </SimpleHeader>
   );

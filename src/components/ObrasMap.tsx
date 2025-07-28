@@ -75,9 +75,10 @@ const getStatusLabel = (status: ObraStatus): string => {
 interface ObrasMapProps {
   className?: string;
   obras?: Obra[];
+  onObraClick?: (obra: Obra) => void;
 }
 
-export function ObrasMap({ className, obras = [] }: ObrasMapProps) {
+export function ObrasMap({ className, obras = [], onObraClick }: ObrasMapProps) {
   const mapRef = useRef<L.Map | null>(null);
 
   // Coordenadas do centro de Mato Grosso
@@ -113,6 +114,11 @@ export function ObrasMap({ className, obras = [] }: ObrasMapProps) {
             key={obra.id}
             position={obra.coordenadas}
             icon={createStatusIcon(obra.status)}
+            eventHandlers={{
+              click: () => {
+                onObraClick?.(obra);
+              }
+            }}
           >
             <Popup className="obra-popup">
               <div className="p-2 min-w-[200px]">
@@ -144,12 +150,18 @@ export function ObrasMap({ className, obras = [] }: ObrasMapProps) {
                   </div>
                   
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Valor:</span>
-                    <span className="font-medium text-gray-900">{formatCurrency(obra.valor)}</span>
+                    <span className="text-gray-600">Execução:</span>
+                    <span className="font-medium text-gray-900">{obra.porcentagemExecucao}%</span>
                   </div>
                 </div>
                 
-                <button className="mt-3 w-full bg-blue-600 text-white text-xs py-1.5 px-3 rounded hover:bg-blue-700 transition-colors">
+                <button 
+                  className="mt-3 w-full bg-blue-600 text-white text-xs py-1.5 px-3 rounded hover:bg-blue-700 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onObraClick?.(obra);
+                  }}
+                >
                   Ver Detalhes
                 </button>
               </div>
