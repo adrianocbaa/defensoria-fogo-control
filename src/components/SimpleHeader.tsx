@@ -12,7 +12,7 @@ interface SimpleHeaderProps {
 
 export function SimpleHeader({ children }: SimpleHeaderProps) {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, canEdit } = useUserRole();
   const location = useLocation();
   const isDashboard = location.pathname === '/';
 
@@ -47,6 +47,16 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
                   <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
                     <ArrowLeft className="h-4 w-4" />
                     <span className="hidden sm:inline">Voltar ao Dashboard</span>
+                  </Button>
+                </Link>
+              )}
+              
+              {/* Painel de Obras Button - visible for Editor/Admin users */}
+              {canEdit && (
+                <Link to="/admin/obras">
+                  <Button variant="outline" size="sm" className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Painel de Obras</span>
                   </Button>
                 </Link>
               )}
