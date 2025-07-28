@@ -10,6 +10,7 @@ interface PhotoMetadata {
   url: string;
   uploadedAt: string;
   fileName: string;
+  monthFolder?: string; // Format: YYYY-MM
 }
 
 interface PhotosByMonth {
@@ -36,11 +37,14 @@ export function PhotoGalleryCollapsible({
   const [currentViewPhotos, setCurrentViewPhotos] = useState<string[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   
-  // Group photos by month
+  // Group photos by month using monthFolder (selected by user)
   const photosByMonth = useMemo(() => {
     const grouped = photos.reduce((acc, photo) => {
-      const date = new Date(photo.uploadedAt);
-      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      // SEMPRE usar monthFolder se existir, senão pular a foto
+      const monthYear = photo.monthFolder;
+      if (!monthYear) return acc; // Ignorar fotos sem monthFolder
+      
+      const date = new Date(monthYear + '-01'); // Parse YYYY-MM format
       const monthName = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase();
       
       if (!acc[monthYear]) {
@@ -60,7 +64,11 @@ export function PhotoGalleryCollapsible({
     }, {} as Record<string, PhotosByMonth>);
 
     // Sort by date (most recent first)
-    return Object.values(grouped).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
+    return Object.values(grouped).sort((a, b) => {
+      const aDate = Object.keys(grouped).find(key => grouped[key].monthYear === a.monthYear) || '';
+      const bDate = Object.keys(grouped).find(key => grouped[key].monthYear === b.monthYear) || '';
+      return bDate.localeCompare(aDate);
+    });
   }, [photos]);
 
   const openGallery = (photos: PhotoMetadata[], index: number) => {

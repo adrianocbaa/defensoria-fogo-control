@@ -129,6 +129,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
   const removePhoto = (index: number) => {
     const newPhotos = photos.filter((_, i) => i !== index);
     onPhotosChange(newPhotos);
+    toast.success('Foto removida');
   };
 
   const handleDragOver = (e: React.DragEvent) => {
