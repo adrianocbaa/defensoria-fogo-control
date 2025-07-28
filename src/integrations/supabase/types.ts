@@ -328,6 +328,72 @@ export type Database = {
         }
         Relationships: []
       }
+      obras: {
+        Row: {
+          coordinates_lat: number | null
+          coordinates_lng: number | null
+          created_at: string
+          created_by: string | null
+          data_inicio: string | null
+          documentos: Json | null
+          empresa_responsavel: string | null
+          fotos: Json | null
+          id: string
+          municipio: string
+          nome: string
+          porcentagem_execucao: number | null
+          previsao_termino: string | null
+          secretaria_responsavel: string | null
+          status: string
+          tipo: string
+          updated_at: string
+          valor_executado: number | null
+          valor_total: number
+        }
+        Insert: {
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          created_at?: string
+          created_by?: string | null
+          data_inicio?: string | null
+          documentos?: Json | null
+          empresa_responsavel?: string | null
+          fotos?: Json | null
+          id?: string
+          municipio: string
+          nome: string
+          porcentagem_execucao?: number | null
+          previsao_termino?: string | null
+          secretaria_responsavel?: string | null
+          status: string
+          tipo: string
+          updated_at?: string
+          valor_executado?: number | null
+          valor_total: number
+        }
+        Update: {
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          created_at?: string
+          created_by?: string | null
+          data_inicio?: string | null
+          documentos?: Json | null
+          empresa_responsavel?: string | null
+          fotos?: Json | null
+          id?: string
+          municipio?: string
+          nome?: string
+          porcentagem_execucao?: number | null
+          previsao_termino?: string | null
+          secretaria_responsavel?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor_executado?: number | null
+          valor_total?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

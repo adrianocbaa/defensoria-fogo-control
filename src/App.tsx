@@ -17,6 +17,8 @@ import AdminPanel from "./pages/AdminPanel";
 import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
 import Obras from "./pages/Obras";
+import { AdminObras } from "./pages/AdminObras";
+import { AdminObraEdit } from "./pages/AdminObraEdit";
 import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosPage } from "./pages/SectorPages";
 
 const queryClient = new QueryClient();
@@ -123,6 +125,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Obras />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/obras" 
+        element={
+          <ProtectedRoute>
+            <AdminObras />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/obras/:id/editar" 
+        element={
+          <ProtectedRoute>
+            <AdminObraEdit />
           </ProtectedRoute>
         } 
       />
