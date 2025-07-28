@@ -1,6 +1,7 @@
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { Building, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ObrasMap } from '@/components/ObrasMap';
 import { useState } from 'react';
 
 export default function Obras() {
@@ -93,17 +94,7 @@ export default function Obras() {
 
             {/* Main map area */}
             <div className="flex-1 min-h-0">
-              <div className="h-full bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20 flex items-center justify-center">
-                <div className="text-center space-y-2">
-                  <Building className="h-12 w-12 text-muted-foreground mx-auto" />
-                  <p className="text-lg font-medium text-muted-foreground">
-                    Área do Mapa
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Mapa interativo será implementado na próxima etapa
-                  </p>
-                </div>
-              </div>
+              <ObrasMap className="h-full" />
             </div>
           </div>
         </div>
