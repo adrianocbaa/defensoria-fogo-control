@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Menu, X, RotateCcw } from 'lucide-react';
+import { Menu, X, RotateCcw, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { ObrasMap } from '@/components/ObrasMap';
 import { ObrasFilters, type FiltersData } from '@/components/ObrasFilters';
 import { ObraDetails } from '@/components/ObraDetails';
 import { ErrorState } from '@/components/LoadingStates';
+import { PermissionGuard } from '@/components/PermissionGuard';
 import { useObrasData } from '@/hooks/useObrasData';
 import { type Obra } from '@/data/mockObras';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -114,11 +116,22 @@ export default function Obras() {
         {/* Page Header */}
         <div className="border-b bg-card transition-colors">
           <div className="container mx-auto px-3 lg:px-4 py-4 lg:py-6">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Mapa de Obras Públicas</h1>
-              <p className="text-sm lg:text-base text-muted-foreground">
-                Visualize e acompanhe o andamento das obras públicas no estado
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Mapa de Obras Públicas</h1>
+                <p className="text-sm lg:text-base text-muted-foreground">
+                  Visualize e acompanhe o andamento das obras públicas no estado
+                </p>
+              </div>
+              
+              <PermissionGuard requiresEdit showMessage={false}>
+                <Button asChild>
+                  <Link to="/admin/obras/nova">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Cadastrar Obra
+                  </Link>
+                </Button>
+              </PermissionGuard>
             </div>
           </div>
         </div>
