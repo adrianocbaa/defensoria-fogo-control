@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { MapPin, Upload } from 'lucide-react';
+import { formatCurrency } from '@/lib/formatters';
 import { MapSelector } from './MapSelector';
 import { PhotoUpload } from './PhotoUpload';
 import { DocumentsUpload } from './DocumentsUpload';
+import { PhotoGalleryCollapsible } from './PhotoGalleryCollapsible';
 
 const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -269,13 +271,13 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                 <FormItem>
                   <FormLabel>Valor Inicial do Contrato (R$) *</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
+                     <Input 
+                       type="number" 
+                       step="0.01"
+                       placeholder="0,00" 
+                       {...field}
+                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -289,13 +291,13 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                 <FormItem>
                   <FormLabel>Valor Aditivado (R$)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
+                     <Input 
+                       type="number" 
+                       step="0.01"
+                       placeholder="0,00" 
+                       {...field}
+                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -309,13 +311,13 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                 <FormItem>
                   <FormLabel>Valor Pago (R$)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
+                     <Input 
+                       type="number" 
+                       step="0.01"
+                       placeholder="0,00" 
+                       {...field}
+                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -402,10 +404,26 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
           </div>
 
           {/* Photos Upload */}
-          <PhotoUpload
-            photos={photos}
-            onPhotosChange={setPhotos}
-          />
+          <div className="space-y-4">
+            <PhotoUpload
+              photos={photos}
+              onPhotosChange={setPhotos}
+            />
+            
+            {/* Collapsible Photo Gallery for editing */}
+            {photos.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Fotos Cadastradas</h3>
+                <PhotoGalleryCollapsible
+                  photos={photos}
+                  onPhotoRemove={(photoUrl) => {
+                    setPhotos(prev => prev.filter(p => p.url !== photoUrl));
+                  }}
+                  isEditing={true}
+                />
+              </div>
+            )}
+          </div>
 
           {/* Documents Upload */}
           <DocumentsUpload

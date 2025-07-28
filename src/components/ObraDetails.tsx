@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useIsMobile } from '@/hooks/use-mobile';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/components/LoadingStates';
+import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 
 interface ObraDetailsProps {
   obra: Obra | null;
@@ -38,13 +39,6 @@ const getStatusLabel = (status: ObraStatus) => {
     case 'paralisada': return 'Paralisada';
     default: return status;
   }
-};
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
 };
 
 const formatDate = (dateString: string) => {
@@ -140,10 +134,10 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm font-medium text-muted-foreground">Contrato:</span>
-                  <p className="text-sm">{obra.n_contrato || 'Não informado'}</p>
-                </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">Contrato:</span>
+                <p className="text-sm">{(obra as any).n_contrato || 'Não informado'}</p>
+              </div>
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Objeto:</span>
                 <p className="text-sm">{obra.nome}</p>
@@ -216,7 +210,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Andamento da Obra:</span>
-                  <span className="text-lg font-semibold text-blue-600">{percentualAndamento.toFixed(1)}%</span>
+                  <span className="text-lg font-semibold text-blue-600">{formatPercentageValue(percentualAndamento)}</span>
                 </div>
                 <Progress value={percentualAndamento} className="h-3" />
                 <div className="flex justify-between text-sm text-muted-foreground">
