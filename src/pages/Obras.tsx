@@ -124,14 +124,6 @@ export default function Obras() {
                 </p>
               </div>
               
-              <PermissionGuard requiresEdit showMessage={false}>
-                <Button asChild>
-                  <Link to="/admin/obras/nova">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Cadastrar Obra
-                  </Link>
-                </Button>
-              </PermissionGuard>
             </div>
           </div>
         </div>
