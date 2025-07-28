@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { type ObraStatus, type Obra } from '@/data/mockObras';
+import { MapLoadingSkeleton } from '@/components/LoadingStates';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -76,38 +78,82 @@ interface ObrasMapProps {
   className?: string;
   obras?: Obra[];
   onObraClick?: (obra: Obra) => void;
+  loading?: boolean;
 }
 
-export function ObrasMap({ className, obras = [], onObraClick }: ObrasMapProps) {
+export function ObrasMap({ className, obras = [], onObraClick, loading = false }: ObrasMapProps) {
   const mapRef = useRef<L.Map | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   // Coordenadas do centro de Mato Grosso
   const matogrossoCenter: [number, number] = [-12.64, -55.42];
   const initialZoom = 7;
 
   useEffect(() => {
-    // Garantir que os estilos do Leaflet são aplicados corretamente
+    // Simulate map initialization time
     const timer = setTimeout(() => {
+      setMapReady(true);
       if (mapRef.current) {
         mapRef.current.invalidateSize();
       }
-    }, 100);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Show loading skeleton while data is loading or map is initializing
+  if (loading || !mapReady) {
+    return (
+      <div className={`h-full w-full ${className}`}>
+        <MapLoadingSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className={`h-full w-full ${className}`}>
       <MapContainer
         center={matogrossoCenter}
         zoom={initialZoom}
-        className="h-full w-full rounded-lg"
+        className="h-full w-full rounded-lg transition-all duration-300"
         ref={mapRef}
+        zoomControl={false}
+        scrollWheelZoom={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        
+        {/* Zoom Control positioned for better UX */}
+        <div className="leaflet-top leaflet-right">
+          <div className="leaflet-control-zoom leaflet-bar leaflet-control">
+            <a className="leaflet-control-zoom-in" href="#" title="Zoom in" role="button" aria-label="Zoom in">+</a>
+            <a className="leaflet-control-zoom-out" href="#" title="Zoom out" role="button" aria-label="Zoom out">−</a>
+          </div>
+        </div>
+
+        {/* Marker Cluster Group for better performance */}
+        <MarkerClusterGroup
+          chunkedLoading
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+          zoomToBoundsOnClick={true}
+          maxClusterRadius={50}
+          iconCreateFunction={(cluster) => {
+            const count = cluster.getChildCount();
+            let size = 'small';
+            
+            if (count >= 10) size = 'large';
+            else if (count >= 5) size = 'medium';
+            
+            return L.divIcon({
+              html: `<div class="cluster-marker cluster-${size}"><span>${count}</span></div>`,
+              className: 'custom-cluster-icon',
+              iconSize: size === 'large' ? [50, 50] : size === 'medium' ? [40, 40] : [30, 30]
+            });
+          }}
+        >
         
         {obras.map((obra) => (
           <Marker
@@ -168,7 +214,64 @@ export function ObrasMap({ className, obras = [], onObraClick }: ObrasMapProps) 
             </Popup>
           </Marker>
         ))}
+        </MarkerClusterGroup>
       </MapContainer>
+      
+      {/* Custom Cluster Styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .custom-cluster-icon {
+          background: transparent !important;
+          border: none !important;
+        }
+        
+        .cluster-marker {
+          background: rgba(59, 130, 246, 0.8);
+          border: 3px solid white;
+          border-radius: 50%;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          transition: all 0.2s ease;
+        }
+        
+        .cluster-marker:hover {
+          background: rgba(59, 130, 246, 1);
+          transform: scale(1.1);
+        }
+        
+        .cluster-small { width: 30px; height: 30px; font-size: 12px; }
+        .cluster-medium { width: 40px; height: 40px; font-size: 14px; }
+        .cluster-large { width: 50px; height: 50px; font-size: 16px; }
+        
+        .obra-marker {
+          transition: all 0.2s ease;
+        }
+        
+        .obra-marker:hover {
+          transform: scale(1.1);
+          z-index: 1000;
+        }
+        
+        .leaflet-popup {
+          animation: fadeInUp 0.3s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        `
+      }} />
     </div>
   );
 }

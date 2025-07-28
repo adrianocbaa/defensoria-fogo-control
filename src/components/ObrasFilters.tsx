@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { X, Filter, RotateCcw } from 'lucide-react';
 import { type ObraStatus } from '@/data/mockObras';
+import { useDebounce } from '@/hooks/useDebounce';
+import { FiltersLoadingSkeleton } from '@/components/LoadingStates';
 
 export interface FiltersData {
   status: ObraStatus[];
@@ -23,6 +25,7 @@ interface ObrasFiltersProps {
   availableTypes: string[];
   availableMunicipios: string[];
   maxValue: number;
+  loading?: boolean;
 }
 
 const statusOptions = [
@@ -36,7 +39,8 @@ export function ObrasFilters({
   onFiltersChange, 
   availableTypes, 
   availableMunicipios, 
-  maxValue 
+  maxValue,
+  loading = false
 }: ObrasFiltersProps) {
   const { watch, setValue, reset } = useForm<FiltersData>({
     defaultValues: {
@@ -49,11 +53,14 @@ export function ObrasFilters({
   });
 
   const currentFilters = watch();
+  
+  // Debounce filter changes to improve performance
+  const debouncedFilters = useDebounce(currentFilters, 300);
 
-  // Trigger filter change whenever form values change
-  React.useEffect(() => {
-    onFiltersChange(currentFilters);
-  }, [currentFilters, onFiltersChange]);
+  // Trigger filter change when debounced values change
+  useEffect(() => {
+    onFiltersChange(debouncedFilters);
+  }, [debouncedFilters, onFiltersChange]);
 
   const handleStatusChange = (status: ObraStatus, checked: boolean) => {
     const currentStatus = currentFilters.status;
@@ -89,35 +96,44 @@ export function ObrasFilters({
                           currentFilters.valorMin > 0 ||
                           currentFilters.valorMax < maxValue;
 
+  // Show loading skeleton while data loads
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <FiltersLoadingSkeleton />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5" />
-          <h2 className="text-lg font-semibold">Filtros</h2>
+          <Filter className="h-4 w-4 lg:h-5 lg:w-5" />
+          <h2 className="text-base lg:text-lg font-semibold">Filtros</h2>
         </div>
         {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClearFilters}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <RotateCcw className="h-4 w-4 mr-1" />
-            Limpar
+            <RotateCcw className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+            <span className="hidden sm:inline">Limpar</span>
           </Button>
         )}
       </div>
 
       {/* Status Filter */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Status da Obra</CardTitle>
+      <Card className="transition-all duration-200 hover:shadow-sm">
+        <CardHeader className="pb-2 lg:pb-3">
+          <CardTitle className="text-sm lg:text-base font-medium">Status da Obra</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2 lg:space-y-3">
           {statusOptions.map((option) => (
-            <div key={option.value} className="flex items-center space-x-3">
+            <div key={option.value} className="flex items-center space-x-2 lg:space-x-3">
               <Checkbox
                 id={`status-${option.value}`}
                 checked={currentFilters.status.includes(option.value)}
@@ -127,9 +143,9 @@ export function ObrasFilters({
               />
               <label 
                 htmlFor={`status-${option.value}`}
-                className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                className="flex items-center gap-2 text-xs lg:text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer transition-colors hover:text-primary"
               >
-                <div className={`w-3 h-3 rounded-full ${option.color}`} />
+                <div className={`w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full ${option.color}`} />
                 {option.label}
               </label>
             </div>
