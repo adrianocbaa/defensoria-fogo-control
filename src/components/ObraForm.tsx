@@ -18,6 +18,7 @@ import { DocumentsUpload } from './DocumentsUpload';
 const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   municipio: z.string().min(1, 'Município é obrigatório'),
+  n_contrato: z.string().min(1, 'Número do contrato é obrigatório'),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
   tipo: z.string().min(1, 'Tipo é obrigatório'),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
@@ -80,6 +81,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     defaultValues: {
       nome: initialData?.nome || '',
       municipio: initialData?.municipio || '',
+      n_contrato: initialData?.n_contrato || '',
       status: initialData?.status || 'planejamento',
       tipo: initialData?.tipo || '',
       valor_total: initialData?.valor_total || 0,
@@ -113,6 +115,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
       const obraData: any = {
         nome: data.nome,
         municipio: data.municipio,
+        n_contrato: data.n_contrato,
         status: data.status,
         tipo: data.tipo,
         valor_total: data.valor_total,
@@ -193,6 +196,20 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                   <FormLabel>Município *</FormLabel>
                   <FormControl>
                     <Input placeholder="Digite o município" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="n_contrato"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Número do Contrato *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Digite o número do contrato" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

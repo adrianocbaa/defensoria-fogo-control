@@ -3,6 +3,7 @@ import { X, Upload, Image, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import { ImageProcessor } from '@/components/ImageProcessor';
 import { toast } from 'sonner';
 
 interface PhotoUploadProps {
@@ -14,6 +15,7 @@ interface PhotoUploadProps {
 export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 10 }: PhotoUploadProps) {
   const { uploadFile, uploading } = useFileUpload();
   const [dragOver, setDragOver] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files) return;
@@ -27,20 +29,44 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 10 }: PhotoUpl
       return;
     }
 
-    for (const file of photoFiles) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error(`Arquivo ${file.name} é muito grande. Máximo: 5MB`);
-        continue;
+    setProcessing(true);
+    const newPhotos: string[] = [];
+
+    try {
+      for (const file of photoFiles) {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          toast.error(`Arquivo ${file.name} é muito grande. Máximo: 5MB`);
+          continue;
+        }
+
+        // Process image with watermark
+        toast.info(`Processando ${file.name}...`);
+        const processedBlob = await ImageProcessor.processImageWithWatermark(file);
+        
+        // Create a new file from the processed blob
+        const processedFile = new File([processedBlob], file.name, {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        });
+
+        const result = await uploadFile(processedFile, 'service-photos', 'obras');
+        
+        if (result.error) {
+          toast.error(`Erro ao fazer upload de ${file.name}: ${result.error}`);
+        } else if (result.url) {
+          newPhotos.push(result.url);
+          toast.success(`Foto ${file.name} processada e enviada com sucesso`);
+        }
       }
 
-      const result = await uploadFile(file, 'service-photos', 'obras');
-      
-      if (result.error) {
-        toast.error(`Erro ao fazer upload de ${file.name}: ${result.error}`);
-      } else if (result.url) {
-        onPhotosChange([...photos, result.url]);
-        toast.success(`Foto ${file.name} enviada com sucesso`);
+      if (newPhotos.length > 0) {
+        onPhotosChange([...photos, ...newPhotos]);
       }
+    } catch (error) {
+      console.error('Error processing images:', error);
+      toast.error('Erro ao processar as imagens');
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -101,22 +127,22 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 10 }: PhotoUpl
               onChange={(e) => handleFileSelect(e.target.files)}
               className="hidden"
               id="photo-upload"
-              disabled={uploading || photos.length >= maxPhotos}
+              disabled={uploading || processing || photos.length >= maxPhotos}
             />
             <Button
               type="button"
               variant="outline"
               size="sm"
-              disabled={uploading || photos.length >= maxPhotos}
+              disabled={uploading || processing || photos.length >= maxPhotos}
               onClick={() => document.getElementById('photo-upload')?.click()}
               className="flex items-center gap-2"
             >
-              {uploading ? (
+              {uploading || processing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Image className="h-4 w-4" />
               )}
-              {uploading ? 'Enviando...' : 'Selecionar Fotos'}
+              {uploading || processing ? 'Processando...' : 'Selecionar Fotos'}
             </Button>
           </div>
         </CardContent>

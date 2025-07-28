@@ -340,6 +340,7 @@ export type Database = {
           fotos: Json | null
           id: string
           municipio: string
+          n_contrato: string | null
           nome: string
           porcentagem_execucao: number | null
           previsao_termino: string | null
@@ -361,6 +362,7 @@ export type Database = {
           fotos?: Json | null
           id?: string
           municipio: string
+          n_contrato?: string | null
           nome: string
           porcentagem_execucao?: number | null
           previsao_termino?: string | null
@@ -382,6 +384,7 @@ export type Database = {
           fotos?: Json | null
           id?: string
           municipio?: string
+          n_contrato?: string | null
           nome?: string
           porcentagem_execucao?: number | null
           previsao_termino?: string | null

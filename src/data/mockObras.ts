@@ -5,6 +5,7 @@ export interface Obra {
   id: string;
   nome: string;
   municipio: string;
+  n_contrato?: string;
   status: ObraStatus;
   coordenadas: [number, number]; // [lat, lng]
   tipo: string;
@@ -25,6 +26,7 @@ export const obrasSimuladas: Obra[] = [
     id: 'exemplo-1',
     nome: 'Exemplo: Construção da Ponte do Rio Teles Pires',
     municipio: 'Sinop',
+    n_contrato: 'CNT-2023-001',
     status: 'em_andamento',
     coordenadas: [-11.86, -55.50],
     tipo: 'Infraestrutura',
@@ -50,6 +52,7 @@ export const obrasSimuladas: Obra[] = [
     id: 'exemplo-2',
     nome: 'Exemplo: Reforma do Hospital Municipal',
     municipio: 'Cuiabá',
+    n_contrato: 'CNT-2022-058',
     status: 'concluida',
     coordenadas: [-15.60, -56.10],
     tipo: 'Saúde',
