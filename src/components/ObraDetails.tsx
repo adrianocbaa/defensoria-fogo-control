@@ -255,23 +255,25 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
         </AccordionItem>
 
         {/* Fotos */}
-        {photosWithMetadata.length > 0 && (
-          <AccordionItem value="fotos" className="border rounded-lg">
-            <AccordionTrigger className="px-4 hover:no-underline">
-              <div className="flex items-center gap-2">
-                <Image className="h-4 w-4" />
-                <span className="font-semibold">Fotos ({photosWithMetadata.length})</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              {photosLoading ? (
+        <AccordionItem value="fotos" className="border rounded-lg">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              <span className="font-semibold">Álbum de Fotos ({photosWithMetadata.length})</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            {photosWithMetadata.length > 0 ? (
+              photosLoading ? (
                 <PhotoGalleryLoadingSkeleton count={photosWithMetadata.length} />
               ) : (
                 <PhotoGalleryCollapsible photos={photosWithMetadata} />
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        )}
+              )
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma foto cadastrada</p>
+            )}
+          </AccordionContent>
+        </AccordionItem>
 
         {/* Documentos */}
         <AccordionItem value="documentos" className="border rounded-lg">
