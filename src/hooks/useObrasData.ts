@@ -53,7 +53,7 @@ export function useObrasData(): UseObrasDataReturn {
         previsaoTermino: obra.previsao_termino || '',
         empresaResponsavel: obra.empresa_responsavel || 'Não informado',
         secretariaResponsavel: obra.secretaria_responsavel || 'Não informado',
-        fotos: Array.isArray(obra.fotos) ? obra.fotos.filter((foto): foto is string => typeof foto === 'string') : [],
+        fotos: Array.isArray(obra.fotos) ? obra.fotos as any[] : [],
         documentos: Array.isArray(obra.documentos) ? obra.documentos.filter((doc): doc is { nome: string; tipo: string } => 
           typeof doc === 'object' && doc !== null && 'nome' in doc && 'tipo' in doc) : [],
         // Incluir campos específicos do banco

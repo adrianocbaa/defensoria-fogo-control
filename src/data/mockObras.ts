@@ -16,7 +16,7 @@ export interface Obra {
   previsaoTermino: string;
   empresaResponsavel: string;
   secretariaResponsavel: string;
-  fotos: string[];
+  fotos: (string | any)[];
   documentos: { nome: string; tipo: string }[];
 }
 
