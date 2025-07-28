@@ -10,23 +10,12 @@ export class ImageProcessor {
   }
 
   private static async loadLogo(): Promise<HTMLImageElement> {
-    // Create a simple DIF logo using canvas if no image is available
-    const canvas = document.createElement('canvas');
-    canvas.width = 120;
-    canvas.height = 40;
-    const ctx = canvas.getContext('2d')!;
-    
-    // Draw simple DIF logo
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, 120, 40);
-    ctx.fillStyle = '#007B3C';
-    ctx.font = 'bold 16px Arial';
-    ctx.fillText('DIF', 10, 25);
-    
     const logoImg = new Image();
-    logoImg.src = canvas.toDataURL();
-    return new Promise((resolve) => {
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.src = '/lovable-uploads/1e60d86b-4ca2-4886-89a4-0622c8b88e79.png';
+    return new Promise((resolve, reject) => {
       logoImg.onload = () => resolve(logoImg);
+      logoImg.onerror = reject;
     });
   }
 
