@@ -12,6 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { toast } from 'sonner';
 import { MapPin, Upload } from 'lucide-react';
 import { MapSelector } from './MapSelector';
+import { PhotoUpload } from './PhotoUpload';
+import { DocumentsUpload } from './DocumentsUpload';
 
 const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -31,9 +33,18 @@ const obraSchema = z.object({
 
 type ObraFormData = z.infer<typeof obraSchema>;
 
+interface Document {
+  name: string;
+  type: string;
+  url: string;
+}
+
 interface ObraFormProps {
   obraId?: string;
-  initialData?: Partial<ObraFormData>;
+  initialData?: Partial<ObraFormData> & {
+    fotos?: string[];
+    documentos?: Document[];
+  };
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -61,6 +72,8 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
+  const [photos, setPhotos] = useState<string[]>(initialData?.fotos || []);
+  const [documents, setDocuments] = useState<Document[]>(initialData?.documentos || []);
 
   const form = useForm<ObraFormData>({
     resolver: zodResolver(obraSchema),
@@ -111,6 +124,8 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         secretaria_responsavel: data.secretaria_responsavel || null,
         coordinates_lat: data.coordinates_lat || null,
         coordinates_lng: data.coordinates_lng || null,
+        fotos: photos,
+        documentos: documents,
         created_by: user.id,
       };
 
@@ -373,6 +388,18 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               </div>
             )}
           </div>
+
+          {/* Photos Upload */}
+          <PhotoUpload
+            photos={photos}
+            onPhotosChange={setPhotos}
+          />
+
+          {/* Documents Upload */}
+          <DocumentsUpload
+            documents={documents}
+            onDocumentsChange={setDocuments}
+          />
 
           <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={onCancel}>

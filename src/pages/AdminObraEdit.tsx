@@ -23,6 +23,8 @@ interface ObraData {
   secretaria_responsavel: string | null;
   coordinates_lat: number | null;
   coordinates_lng: number | null;
+  fotos: any;
+  documentos: any;
 }
 
 export function AdminObraEdit() {
@@ -104,6 +106,8 @@ export function AdminObraEdit() {
             initialData={obra ? {
               ...obra,
               status: obra.status as any,
+              fotos: Array.isArray(obra.fotos) ? obra.fotos : [],
+              documentos: Array.isArray(obra.documentos) ? obra.documentos : [],
             } : undefined}
             onSuccess={handleSuccess}
             onCancel={handleCancel}
