@@ -45,7 +45,7 @@ interface Document {
 interface ObraFormProps {
   obraId?: string;
   initialData?: Partial<ObraFormData> & {
-    fotos?: string[];
+    fotos?: any[];
     documentos?: Document[];
   };
   onSuccess: () => void;
@@ -66,8 +66,14 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
   const [photos, setPhotos] = useState<Array<{url: string; uploadedAt: string; fileName: string; monthFolder?: string}>>(
-    initialData?.fotos?.map(url => {
-      // Extrair monthFolder da URL se possível (formato: /obras/YYYY-MM/)
+    initialData?.fotos?.map(photo => {
+      // Se já é um objeto completo, retorna ele mesmo
+      if (typeof photo === 'object' && photo.url) {
+        return photo;
+      }
+      
+      // Se é apenas uma URL, tenta extrair monthFolder
+      const url = typeof photo === 'string' ? photo : photo;
       const monthMatch = url.match(/\/obras\/(\d{4}-\d{2})\//);
       return {
         url,
@@ -130,7 +136,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         secretaria_responsavel: data.secretaria_responsavel || null,
         coordinates_lat: data.coordinates_lat || null,
         coordinates_lng: data.coordinates_lng || null,
-        fotos: photos.map(p => p.url),
+        fotos: photos,
         documentos: documents,
         created_by: user.id,
       };
