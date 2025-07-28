@@ -20,10 +20,10 @@ const obraSchema = z.object({
   municipio: z.string().min(1, 'Município é obrigatório'),
   n_contrato: z.string().min(1, 'Número do contrato é obrigatório'),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
-  tipo: z.string().min(1, 'Tipo é obrigatório'),
+  tipo: z.enum(['Reforma', 'Construção']),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
+  valor_aditivado: z.number().min(0).optional(),
   valor_executado: z.number().min(0).optional(),
-  porcentagem_execucao: z.number().min(0).max(100).optional(),
   data_inicio: z.string().optional(),
   previsao_termino: z.string().optional(),
   empresa_responsavel: z.string().optional(),
@@ -57,17 +57,7 @@ const statusOptions = [
   { value: 'paralisada', label: 'Paralisada' },
 ];
 
-const tipoOptions = [
-  'Infraestrutura',
-  'Educação',
-  'Saúde',
-  'Habitação',
-  'Transporte',
-  'Meio Ambiente',
-  'Saneamento',
-  'Energia',
-  'Outros'
-];
+const tipoOptions = ['Reforma', 'Construção'];
 
 export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormProps) {
   const { user } = useAuth();
@@ -89,10 +79,10 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
       municipio: initialData?.municipio || '',
       n_contrato: initialData?.n_contrato || '',
       status: initialData?.status || 'planejamento',
-      tipo: initialData?.tipo || '',
+      tipo: (initialData?.tipo as "Reforma" | "Construção") || 'Reforma',
       valor_total: initialData?.valor_total || 0,
+      valor_aditivado: (initialData as any)?.valor_aditivado || 0,
       valor_executado: initialData?.valor_executado || 0,
-      porcentagem_execucao: initialData?.porcentagem_execucao || 0,
       data_inicio: initialData?.data_inicio || '',
       previsao_termino: initialData?.previsao_termino || '',
       empresa_responsavel: initialData?.empresa_responsavel || '',
@@ -125,8 +115,8 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         status: data.status,
         tipo: data.tipo,
         valor_total: data.valor_total,
+        valor_aditivado: data.valor_aditivado || 0,
         valor_executado: data.valor_executado || 0,
-        porcentagem_execucao: data.porcentagem_execucao || 0,
         data_inicio: data.data_inicio || null,
         previsao_termino: data.previsao_termino || null,
         empresa_responsavel: data.empresa_responsavel || null,
@@ -277,7 +267,27 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               name="valor_total"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor Total (R$) *</FormLabel>
+                  <FormLabel>Valor Inicial do Contrato (R$) *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.01"
+                      placeholder="0.00" 
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="valor_aditivado"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor Aditivado (R$)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -297,7 +307,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               name="valor_executado"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor Executado (R$)</FormLabel>
+                  <FormLabel>Valor Pago (R$)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -305,27 +315,6 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                       placeholder="0.00" 
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="porcentagem_execucao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Execução (%)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0"
-                      max="100"
-                      placeholder="0" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                     />
                   </FormControl>
                   <FormMessage />

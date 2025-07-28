@@ -348,6 +348,7 @@ export type Database = {
           status: string
           tipo: string
           updated_at: string
+          valor_aditivado: number | null
           valor_executado: number | null
           valor_total: number
         }
@@ -370,6 +371,7 @@ export type Database = {
           status: string
           tipo: string
           updated_at?: string
+          valor_aditivado?: number | null
           valor_executado?: number | null
           valor_total: number
         }
@@ -392,6 +394,7 @@ export type Database = {
           status?: string
           tipo?: string
           updated_at?: string
+          valor_aditivado?: number | null
           valor_executado?: number | null
           valor_total?: number
         }

@@ -54,6 +54,15 @@ const formatDate = (dateString: string) => {
 function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: () => void; loading?: boolean }) {
   const [photosLoading, setPhotosLoading] = useState(true);
   
+  // Cálculos financeiros
+  const valorInicial = obra?.valor || 0;
+  const valorAditivado = (obra as any)?.valor_aditivado || 0;
+  const valorFinal = valorInicial + valorAditivado;
+  const valorPago = obra?.valorExecutado || 0;
+  
+  // Cálculo do percentual de execução baseado em (Valor Pago / Valor Final) * 100
+  const percentualAndamento = valorFinal > 0 ? Math.min((valorPago / valorFinal) * 100, 100) : 0;
+  
   // Simulate photo loading delay
   React.useEffect(() => {
     if (obra.fotos && obra.fotos.length > 0) {
@@ -187,22 +196,18 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <span className="text-sm font-medium text-muted-foreground">(A) Valor inicial do contrato:</span>
-                  <p className="text-lg font-semibold">{formatCurrency(obra.valor)}</p>
+                  <span className="text-sm font-medium text-muted-foreground">Valor Inicial do Contrato:</span>
+                  <p className="text-lg font-semibold">{formatCurrency(valorInicial)}</p>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-muted-foreground">(B) Valor dos aditivos:</span>
-                  <p className="text-lg font-semibold">R$ 0,00</p>
+                  <span className="text-sm font-medium text-muted-foreground">Valor Aditivado:</span>
+                  <p className="text-lg font-semibold">{formatCurrency(valorAditivado)}</p>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-muted-foreground">(C) Valor de reajustes:</span>
-                  <p className="text-lg font-semibold">R$ 0,00</p>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-muted-foreground">(D) Valor total do contrato (A+B+C):</span>
-                  <p className="text-lg font-semibold text-primary">{formatCurrency(obra.valor)}</p>
+                  <span className="text-sm font-medium text-muted-foreground">Valor Final:</span>
+                  <p className="text-lg font-semibold text-primary">{formatCurrency(valorFinal)}</p>
                 </div>
               </div>
               
@@ -210,24 +215,20 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Executado:</span>
-                  <span className="text-lg font-semibold text-green-600">{obra.porcentagemExecucao}%</span>
+                  <span className="text-sm font-medium">Andamento da Obra:</span>
+                  <span className="text-lg font-semibold text-blue-600">{percentualAndamento.toFixed(1)}%</span>
                 </div>
-                <Progress value={obra.porcentagemExecucao} className="h-3" />
-                <div className="flex justify-between text-sm">
-                  <span>R$ {formatCurrency(obra.valorExecutado).replace('R$ ', '')}</span>
-                  <span>R$ {formatCurrency(obra.valor).replace('R$ ', '')}</span>
+                <Progress value={percentualAndamento} className="h-3" />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <div>
+                    <span className="font-medium">Valor Pago: </span>
+                    <span>{formatCurrency(valorPago)}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Valor Final: </span>
+                    <span>{formatCurrency(valorFinal)}</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Pago:</span>
-                <span className="text-lg font-semibold text-blue-600">{obra.porcentagemExecucao}%</span>
-              </div>
-              <Progress value={obra.porcentagemExecucao} className="h-3" />
-              <div className="flex justify-between text-sm">
-                <span>R$ {formatCurrency(obra.valorExecutado).replace('R$ ', '')}</span>
-                <span>R$ {formatCurrency(obra.valor).replace('R$ ', '')}</span>
               </div>
             </div>
           </AccordionContent>

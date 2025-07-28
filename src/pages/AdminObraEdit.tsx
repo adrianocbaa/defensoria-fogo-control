@@ -12,11 +12,12 @@ interface ObraData {
   id: string;
   nome: string;
   municipio: string;
+  n_contrato?: string;
   status: string;
   tipo: string;
   valor_total: number;
+  valor_aditivado?: number;
   valor_executado: number;
-  porcentagem_execucao: number;
   data_inicio: string | null;
   previsao_termino: string | null;
   empresa_responsavel: string | null;
@@ -106,6 +107,7 @@ export function AdminObraEdit() {
             initialData={obra ? {
               ...obra,
               status: obra.status as any,
+              tipo: (obra.tipo === 'Reforma' || obra.tipo === 'Construção') ? obra.tipo : 'Reforma',
               fotos: Array.isArray(obra.fotos) ? obra.fotos : [],
               documentos: Array.isArray(obra.documentos) ? obra.documentos : [],
             } : undefined}
