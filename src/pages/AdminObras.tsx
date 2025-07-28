@@ -54,8 +54,21 @@ export function AdminObras() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setObras(data || []);
-      setFilteredObras(data || []);
+      
+      // Calcular porcentagem de execução corretamente
+      const obrasWithCalculatedExecution = (data || []).map(obra => {
+        const valorFinal = Number(obra.valor_total) + Number(obra.valor_aditivado || 0);
+        const valorPago = Number(obra.valor_executado || 0);
+        const porcentagemExecucao = valorFinal > 0 ? (valorPago / valorFinal) * 100 : 0;
+        
+        return {
+          ...obra,
+          porcentagem_execucao: Number(porcentagemExecucao.toFixed(2))
+        };
+      });
+      
+      setObras(obrasWithCalculatedExecution);
+      setFilteredObras(obrasWithCalculatedExecution);
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');

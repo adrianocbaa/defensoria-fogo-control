@@ -65,12 +65,17 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
-  const [photos, setPhotos] = useState<Array<{url: string; uploadedAt: string; fileName: string}>>(
-    initialData?.fotos?.map(url => ({
-      url,
-      uploadedAt: new Date().toISOString(),
-      fileName: url.split('/').pop() || ''
-    })) || []
+  const [photos, setPhotos] = useState<Array<{url: string; uploadedAt: string; fileName: string; monthFolder?: string}>>(
+    initialData?.fotos?.map(url => {
+      // Extrair monthFolder da URL se possível (formato: /obras/YYYY-MM/)
+      const monthMatch = url.match(/\/obras\/(\d{4}-\d{2})\//);
+      return {
+        url,
+        uploadedAt: new Date().toISOString(),
+        fileName: url.split('/').pop() || '',
+        monthFolder: monthMatch ? monthMatch[1] : undefined
+      };
+    }) || []
   );
   const [documents, setDocuments] = useState<Document[]>(initialData?.documentos || []);
 

@@ -98,12 +98,12 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
           if (result.error) {
             toast.error(`Erro ao fazer upload de ${file.name}: ${result.error}`);
           } else if (result.url) {
-            newPhotos.push({
-              url: result.url,
-              uploadedAt: new Date().toISOString(),
-              fileName: file.name,
-              monthFolder: selectedMonth
-            });
+                    newPhotos.push({
+                      url: result.url,
+                      uploadedAt: new Date().toISOString(),
+                      fileName: file.name,
+                      monthFolder: selectedMonth // SEMPRE usar o mês selecionado pelo usuário
+                    });
             toast.success(`Foto ${file.name} processada e enviada com sucesso`);
           }
         } catch (error) {
