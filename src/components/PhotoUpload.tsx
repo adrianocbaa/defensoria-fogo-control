@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { X, Upload, Image, Loader2, Calendar } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Upload, Image, Loader2, Calendar, AlertCircle, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { ImageProcessor } from '@/components/ImageProcessor';
 import { toast } from 'sonner';
@@ -61,7 +62,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
     }
 
     if (!selectedMonth) {
-      toast.error('Selecione o mês da pasta para organizar as fotos');
+      toast.error('Selecione o mês de referência antes de adicionar fotos.');
       return;
     }
 
@@ -119,7 +120,10 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
 
     if (newPhotos.length > 0) {
       onPhotosChange([...photos, ...newPhotos]);
+      toast.success(`${newPhotos.length} foto${newPhotos.length !== 1 ? 's' : ''} enviada${newPhotos.length !== 1 ? 's' : ''} para pasta ${selectedMonth}`);
     }
+    
+    setProcessing(false);
   };
 
   const removePhoto = (index: number) => {
@@ -140,9 +144,37 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
+    // Validação obrigatória antes do drop
+    if (!selectedMonth) {
+      toast.error('Selecione o mês de referência antes de adicionar fotos');
+      return;
+    }
     handleFileSelect(e.dataTransfer.files);
   };
 
+  // Group photos by month for organized display
+  const photosByMonth = useMemo(() => {
+    const grouped = photos.reduce((acc, photo) => {
+      const month = photo.monthFolder || selectedMonth;
+      if (!acc[month]) {
+        acc[month] = [];
+      }
+      acc[month].push(photo);
+      return acc;
+    }, {} as Record<string, PhotoMetadata[]>);
+
+    return Object.entries(grouped)
+      .sort(([a], [b]) => b.localeCompare(a)) // Sort by month descending
+      .map(([month, monthPhotos]) => ({
+        month,
+        monthLabel: new Date(month + '-01').toLocaleDateString('pt-BR', { 
+          month: 'long', 
+          year: 'numeric' 
+        }),
+        photos: monthPhotos,
+        count: monthPhotos.length
+      }));
+  }, [photos, selectedMonth]);
 
   const monthOptions = generateMonthOptions();
 
@@ -231,37 +263,86 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
         </CardContent>
       </Card>
 
-      {/* Photo Gallery */}
-      {photos.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {photos.map((photo, index) => (
-            <div key={index} className="relative group">
-              <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                <img
-                  src={photo.url}
-                  alt={`Foto ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removePhoto(index)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-              <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded">
-                {photo.monthFolder || new Date(photo.uploadedAt).toLocaleDateString('pt-BR', { 
-                  month: 'short', 
-                  year: '2-digit' 
-                }).toUpperCase()}
-              </div>
-            </div>
+      {/* Validation Alert */}
+      {!selectedMonth && photos.length === 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Selecione o mês de referência antes de adicionar fotos para organização adequada.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Photo Gallery Grouped by Month */}
+      {photosByMonth.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <FolderOpen className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium">Fotos Organizadas por Mês</span>
+          </div>
+          
+          {photosByMonth.map((monthGroup) => (
+            <Card key={monthGroup.month}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    {monthGroup.monthLabel}
+                  </div>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {monthGroup.count} foto{monthGroup.count !== 1 ? 's' : ''}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {monthGroup.photos.map((photo, photoIndex) => {
+                    const globalIndex = photos.findIndex(p => p.url === photo.url);
+                    return (
+                      <div key={photoIndex} className="relative group">
+                        <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                          <img
+                            src={photo.url}
+                            alt={`${monthGroup.monthLabel} - Foto ${photoIndex + 1}`}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute -top-1 -right-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(globalIndex)}
+                        >
+                          <X className="h-2 w-2" />
+                        </Button>
+                        <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 py-0.5 rounded">
+                          {new Date(photo.uploadedAt).toLocaleDateString('pt-BR', { 
+                            day: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
+      )}
+
+      {/* Empty State */}
+      {photos.length === 0 && selectedMonth && (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <Image className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground mb-2">Nenhuma foto adicionada</p>
+            <p className="text-xs text-muted-foreground">
+              Pasta de destino selecionada: <code>/obras/{selectedMonth}/</code>
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
