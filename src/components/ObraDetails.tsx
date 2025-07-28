@@ -142,7 +142,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <span className="text-sm font-medium text-muted-foreground">Contrato:</span>
-                  <p className="text-sm">{obra.n_contrato || obra.id}</p>
+                  <p className="text-sm">{obra.n_contrato || 'Não informado'}</p>
                 </div>
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Objeto:</span>
@@ -157,7 +157,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <p className="text-sm">{obra.empresaResponsavel || 'Não informado'}</p>
               </div>
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Secretaria Responsável:</span>
+                <span className="text-sm font-medium text-muted-foreground">Fiscal do Contrato:</span>
                 <p className="text-sm">{obra.secretariaResponsavel || 'Não informado'}</p>
               </div>
             </div>

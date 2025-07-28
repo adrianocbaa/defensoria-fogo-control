@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { X, Upload, Image, Loader2 } from 'lucide-react';
+import { X, Upload, Image, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { ImageProcessor } from '@/components/ImageProcessor';
 import { toast } from 'sonner';
@@ -10,6 +12,7 @@ interface PhotoMetadata {
   url: string;
   uploadedAt: string;
   fileName: string;
+  monthFolder?: string; // Format: YYYY-MM
 }
 
 interface PhotoUploadProps {
@@ -18,10 +21,32 @@ interface PhotoUploadProps {
   maxPhotos?: number;
 }
 
+// Generate month options for the current year and 6 months before
+const generateMonthOptions = () => {
+  const options = [];
+  const now = new Date();
+  
+  for (let i = -6; i <= 12; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const displayName = date.toLocaleDateString('pt-BR', { 
+      month: 'long', 
+      year: 'numeric' 
+    });
+    options.push({ value: yearMonth, label: displayName });
+  }
+  
+  return options;
+};
+
 export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUploadProps) {
   const { uploadFile, uploading } = useFileUpload();
   const [dragOver, setDragOver] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files) return;
@@ -32,6 +57,11 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
 
     if (photos.length + photoFiles.length > maxPhotos) {
       toast.error(`Máximo de ${maxPhotos} fotos permitidas`);
+      return;
+    }
+
+    if (!selectedMonth) {
+      toast.error('Selecione o mês da pasta para organizar as fotos');
       return;
     }
 
@@ -60,7 +90,9 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
             lastModified: Date.now(),
           });
 
-          const result = await uploadFile(processedFile, 'service-photos', 'obras');
+          // Upload to specific month folder
+          const folderPath = `obras/${selectedMonth}`;
+          const result = await uploadFile(processedFile, 'service-photos', folderPath);
           
           if (result.error) {
             toast.error(`Erro ao fazer upload de ${file.name}: ${result.error}`);
@@ -68,7 +100,8 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
             newPhotos.push({
               url: result.url,
               uploadedAt: new Date().toISOString(),
-              fileName: file.name
+              fileName: file.name,
+              monthFolder: selectedMonth
             });
             toast.success(`Foto ${file.name} processada e enviada com sucesso`);
           }
@@ -111,6 +144,8 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
   };
 
 
+  const monthOptions = generateMonthOptions();
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -118,6 +153,29 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
         <span className="text-xs text-muted-foreground">
           {photos.length}/{maxPhotos} fotos
         </span>
+      </div>
+
+      {/* Month Selection */}
+      <div className="space-y-2">
+        <Label htmlFor="month-selector" className="text-sm font-medium flex items-center gap-2">
+          <Calendar className="h-4 w-4" />
+          📅 Mês da Pasta *
+        </Label>
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger id="month-selector">
+            <SelectValue placeholder="Selecione o mês para organizar as fotos" />
+          </SelectTrigger>
+          <SelectContent>
+            {monthOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          As fotos serão organizadas na pasta: <code>/obras/{selectedMonth}/</code>
+        </p>
       </div>
 
       {/* Upload Area */}
@@ -153,7 +211,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
               type="button"
               variant="outline"
               size="sm"
-              disabled={uploading || processing || photos.length >= maxPhotos}
+              disabled={uploading || processing || photos.length >= maxPhotos || !selectedMonth}
               onClick={() => document.getElementById('photo-upload')?.click()}
               className="flex items-center gap-2"
             >
@@ -164,6 +222,11 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
               )}
               {uploading || processing ? 'Processando...' : 'Selecionar Fotos'}
             </Button>
+            {!selectedMonth && (
+              <p className="text-xs text-destructive mt-1">
+                Selecione um mês antes de fazer upload das fotos
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -191,7 +254,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
                 <X className="h-3 w-3" />
               </Button>
               <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded">
-                {new Date(photo.uploadedAt).toLocaleDateString('pt-BR', { 
+                {photo.monthFolder || new Date(photo.uploadedAt).toLocaleDateString('pt-BR', { 
                   month: 'short', 
                   year: '2-digit' 
                 }).toUpperCase()}

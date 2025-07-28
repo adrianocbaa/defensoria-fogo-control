@@ -31,10 +31,16 @@ export function PhotoGalleryByMonth({ photos, maxRecentPhotos = 20 }: PhotoGalle
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [currentViewPhotos, setCurrentViewPhotos] = useState<string[]>([]);
+  
+  // Stable photos reference to prevent unnecessary re-renders
+  const stablePhotos = useMemo(() => photos, [photos.length, photos.map(p => p.url).join(',')]);
+  
+  // Prevent re-initializing selectedMonth on every render
+  const [initialSelectedMonth] = useState('latest');
 
   // Group photos by month
   const photosByMonth = useMemo(() => {
-    const grouped = photos.reduce((acc, photo) => {
+    const grouped = stablePhotos.reduce((acc, photo) => {
       const date = new Date(photo.uploadedAt);
       const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase();
@@ -57,7 +63,7 @@ export function PhotoGalleryByMonth({ photos, maxRecentPhotos = 20 }: PhotoGalle
 
     // Sort by date (most recent first)
     return Object.values(grouped).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
-  }, [photos]);
+  }, [stablePhotos]);
 
   // Get most recent photos
   const recentPhotos = useMemo(() => {
@@ -79,7 +85,7 @@ export function PhotoGalleryByMonth({ photos, maxRecentPhotos = 20 }: PhotoGalle
     setGalleryOpen(true);
   };
 
-  if (photos.length === 0) {
+  if (stablePhotos.length === 0) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -260,7 +266,7 @@ export function PhotoGalleryByMonth({ photos, maxRecentPhotos = 20 }: PhotoGalle
       {photosByMonth.length > 1 && (
         <div className="text-center pt-4 border-t">
           <p className="text-sm text-muted-foreground">
-            Total: {photos.length} fotos em {photosByMonth.length} mês{photosByMonth.length !== 1 ? 'es' : ''}
+            Total: {stablePhotos.length} fotos em {photosByMonth.length} mês{photosByMonth.length !== 1 ? 'es' : ''}
           </p>
         </div>
       )}

@@ -369,9 +369,9 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               name="secretaria_responsavel"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Secretaria Responsável</FormLabel>
+                  <FormLabel>Fiscal do Contrato</FormLabel>
                   <FormControl>
-                    <Input placeholder="Digite a secretaria responsável" {...field} />
+                    <Input placeholder="Digite o fiscal do contrato" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
