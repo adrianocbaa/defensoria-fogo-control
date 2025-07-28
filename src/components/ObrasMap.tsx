@@ -74,10 +74,10 @@ const getStatusLabel = (status: ObraStatus): string => {
 
 interface ObrasMapProps {
   className?: string;
-  obras: Obra[];
+  obras?: Obra[];
 }
 
-export function ObrasMap({ className, obras }: ObrasMapProps) {
+export function ObrasMap({ className, obras = [] }: ObrasMapProps) {
   const mapRef = useRef<L.Map | null>(null);
 
   // Coordenadas do centro de Mato Grosso

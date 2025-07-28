@@ -12,7 +12,7 @@ export default function Obras() {
   const [filters, setFilters] = useState<FiltersData>({
     status: [],
     tipos: [],
-    municipio: '',
+    municipio: 'all',
     valorMin: 0,
     valorMax: Math.max(...obrasSimuladas.map(obra => obra.valor))
   });
@@ -48,7 +48,7 @@ export default function Obras() {
       }
 
       // Municipality filter
-      if (filters.municipio && obra.municipio !== filters.municipio) {
+      if (filters.municipio && filters.municipio !== 'all' && obra.municipio !== filters.municipio) {
         return false;
       }
 

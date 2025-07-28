@@ -42,7 +42,7 @@ export function ObrasFilters({
     defaultValues: {
       status: [],
       tipos: [],
-      municipio: '',
+      municipio: 'all',
       valorMin: 0,
       valorMax: maxValue
     }
@@ -77,7 +77,7 @@ export function ObrasFilters({
     reset({
       status: [],
       tipos: [],
-      municipio: '',
+      municipio: 'all',
       valorMin: 0,
       valorMax: maxValue
     });
@@ -85,7 +85,7 @@ export function ObrasFilters({
 
   const hasActiveFilters = currentFilters.status.length > 0 || 
                           currentFilters.tipos.length > 0 || 
-                          currentFilters.municipio !== '' ||
+                          (currentFilters.municipio !== 'all' && currentFilters.municipio !== '') ||
                           currentFilters.valorMin > 0 ||
                           currentFilters.valorMax < maxValue;
 
@@ -177,7 +177,7 @@ export function ObrasFilters({
               <SelectValue placeholder="Selecione um município" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os municípios</SelectItem>
+              <SelectItem value="all">Todos os municípios</SelectItem>
               {availableMunicipios.map((municipio) => (
                 <SelectItem key={municipio} value={municipio}>
                   {municipio}
@@ -242,12 +242,12 @@ export function ObrasFilters({
                   />
                 </Badge>
               ))}
-              {currentFilters.municipio && (
+              {currentFilters.municipio && currentFilters.municipio !== 'all' && (
                 <Badge variant="secondary" className="text-xs">
                   {currentFilters.municipio}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
-                    onClick={() => setValue('municipio', '')}
+                    onClick={() => setValue('municipio', 'all')}
                   />
                 </Badge>
               )}
