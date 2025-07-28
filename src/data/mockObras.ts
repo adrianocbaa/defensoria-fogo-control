@@ -19,7 +19,7 @@ export interface Obra {
   documentos: { nome: string; tipo: string }[];
 }
 
-// Obra de exemplo demonstrativa - apenas para visitantes não autenticados
+// Obras de exemplo demonstrativas - apenas para visitantes não autenticados
 export const obrasSimuladas: Obra[] = [
   {
     id: 'exemplo-1',
@@ -44,6 +44,29 @@ export const obrasSimuladas: Obra[] = [
       { nome: 'Projeto Executivo.pdf', tipo: 'Projeto' },
       { nome: 'Licença Ambiental.pdf', tipo: 'Licença' },
       { nome: 'Cronograma Físico-Financeiro.pdf', tipo: 'Cronograma' }
+    ]
+  },
+  {
+    id: 'exemplo-2',
+    nome: 'Exemplo: Reforma do Hospital Municipal',
+    municipio: 'Cuiabá',
+    status: 'concluida',
+    coordenadas: [-15.60, -56.10],
+    tipo: 'Saúde',
+    valor: 8500000,
+    valorExecutado: 8500000,
+    porcentagemExecucao: 100,
+    dataInicio: '2022-08-10',
+    previsaoTermino: '2023-12-20',
+    empresaResponsavel: 'Saúde & Construção SA',
+    secretariaResponsavel: 'Secretaria de Saúde',
+    fotos: [
+      'https://images.unsplash.com/photo-1496307653780-42ee777d4833?w=400',
+      'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=400'
+    ],
+    documentos: [
+      { nome: 'Projeto Arquitetônico.pdf', tipo: 'Projeto' },
+      { nome: 'Habite-se.pdf', tipo: 'Licença' }
     ]
   }
 ];
