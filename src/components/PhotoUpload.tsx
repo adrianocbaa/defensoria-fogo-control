@@ -155,7 +155,10 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
   // Group photos by month for organized display
   const photosByMonth = useMemo(() => {
     const grouped = photos.reduce((acc, photo) => {
-      const month = photo.monthFolder || selectedMonth;
+      // SEMPRE usar monthFolder se existir, senão ignorar a foto
+      const month = photo.monthFolder;
+      if (!month) return acc; // Pular fotos sem monthFolder
+      
       if (!acc[month]) {
         acc[month] = [];
       }

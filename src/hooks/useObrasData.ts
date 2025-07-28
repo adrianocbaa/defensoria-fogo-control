@@ -55,7 +55,10 @@ export function useObrasData(): UseObrasDataReturn {
         secretariaResponsavel: obra.secretaria_responsavel || 'Não informado',
         fotos: Array.isArray(obra.fotos) ? obra.fotos.filter((foto): foto is string => typeof foto === 'string') : [],
         documentos: Array.isArray(obra.documentos) ? obra.documentos.filter((doc): doc is { nome: string; tipo: string } => 
-          typeof doc === 'object' && doc !== null && 'nome' in doc && 'tipo' in doc) : []
+          typeof doc === 'object' && doc !== null && 'nome' in doc && 'tipo' in doc) : [],
+        // Incluir campos específicos do banco
+        n_contrato: obra.n_contrato,
+        valor_aditivado: Number(obra.valor_aditivado || 0)
       }));
       
       // Se não há obras reais, mostrar obra de exemplo + mensagem
