@@ -74,21 +74,47 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   const fotos = obra.fotos || [];
   const documentos = obra.documentos || [];
   
-  // Convert simple URL array to PhotoMetadata format
-  const photosWithMetadata = fotos.map((url, index) => ({
-    url,
-    uploadedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 30 days
-    fileName: `foto-${index + 1}.jpg`
-  }));
+  // Convert photos to PhotoMetadata format, handling both new object format and legacy URL arrays
+  const photosWithMetadata = fotos.map((photo: any, index) => {
+    // Handle null/undefined photos
+    if (!photo) {
+      return {
+        url: '',
+        uploadedAt: new Date().toISOString(),
+        fileName: `foto-${index + 1}.jpg`,
+        monthFolder: undefined
+      };
+    }
+
+    // If photo is already an object with metadata, use it
+    if (typeof photo === 'object' && photo.url) {
+      return {
+        url: photo.url,
+        uploadedAt: photo.uploadedAt || new Date().toISOString(),
+        fileName: photo.fileName || `foto-${index + 1}.jpg`,
+        monthFolder: photo.monthFolder
+      };
+    }
+    
+    // Legacy support: if photo is just a URL string
+    const url = typeof photo === 'string' ? photo : String(photo);
+    const monthMatch = url.match(/\/obras\/(\d{4}-\d{2})\//);
+    return {
+      url,
+      uploadedAt: new Date().toISOString(),
+      fileName: url.split('/').pop() || `foto-${index + 1}.jpg`,
+      monthFolder: monthMatch ? monthMatch[1] : undefined
+    };
+  }).filter(photo => photo.url); // Remove photos with empty URLs
 
   return (
     <div className="space-y-4 lg:space-y-6 animate-fade-in">
       {/* Header com foto principal */}
       <div className="relative">
-        {fotos.length > 0 && (
+        {photosWithMetadata.length > 0 && (
           <div className="w-full h-48 lg:h-64 rounded-lg overflow-hidden mb-4">
             <img
-              src={fotos[0]}
+              src={photosWithMetadata[0].url}
               alt="Foto principal da obra"
               className="w-full h-full object-cover"
               onError={(e) => {
