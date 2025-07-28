@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { X, Upload, Image, Loader2, Calendar, AlertCircle, FolderOpen } from 'lucide-react';
+import React, { useState } from 'react';
+import { Upload, Image, Loader2, Calendar, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -98,12 +98,12 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
           if (result.error) {
             toast.error(`Erro ao fazer upload de ${file.name}: ${result.error}`);
           } else if (result.url) {
-                    newPhotos.push({
-                      url: result.url,
-                      uploadedAt: new Date().toISOString(),
-                      fileName: file.name,
-                      monthFolder: selectedMonth // SEMPRE usar o mês selecionado pelo usuário
-                    });
+            newPhotos.push({
+              url: result.url,
+              uploadedAt: new Date().toISOString(),
+              fileName: file.name,
+              monthFolder: selectedMonth // SEMPRE usar o mês selecionado pelo usuário
+            });
             toast.success(`Foto ${file.name} processada e enviada com sucesso`);
           }
         } catch (error) {
@@ -126,12 +126,6 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
     setProcessing(false);
   };
 
-  const removePhoto = (index: number) => {
-    const newPhotos = photos.filter((_, i) => i !== index);
-    onPhotosChange(newPhotos);
-    toast.success('Foto removida');
-  };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(true);
@@ -152,39 +146,6 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
     }
     handleFileSelect(e.dataTransfer.files);
   };
-
-  // Group photos by month for organized display
-  const photosByMonth = useMemo(() => {
-    const grouped = photos.reduce((acc, photo) => {
-      // SEMPRE usar monthFolder se existir, senão ignorar a foto
-      const month = photo.monthFolder;
-      if (!month) return acc; // Pular fotos sem monthFolder
-      
-      if (!acc[month]) {
-        acc[month] = [];
-      }
-      acc[month].push(photo);
-      return acc;
-    }, {} as Record<string, PhotoMetadata[]>);
-
-    return Object.entries(grouped)
-      .sort(([a], [b]) => b.localeCompare(a)) // Sort by month descending
-      .map(([month, monthPhotos]) => {
-        // Parse month string (YYYY-MM) to get correct display
-        const [year, monthNum] = month.split('-');
-        const monthLabel = new Date(parseInt(year), parseInt(monthNum) - 1, 1).toLocaleDateString('pt-BR', { 
-          month: 'long', 
-          year: 'numeric' 
-        });
-        
-        return {
-          month,
-          monthLabel,
-          photos: monthPhotos,
-          count: monthPhotos.length
-        };
-      });
-  }, [photos, selectedMonth]);
 
   const monthOptions = generateMonthOptions();
 
@@ -281,65 +242,6 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
             Selecione o mês de referência antes de adicionar fotos para organização adequada.
           </AlertDescription>
         </Alert>
-      )}
-
-      {/* Photo Gallery Grouped by Month */}
-      {photosByMonth.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-4">
-            <FolderOpen className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium">Fotos Organizadas por Mês</span>
-          </div>
-          
-          {photosByMonth.map((monthGroup) => (
-            <Card key={monthGroup.month}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    {monthGroup.monthLabel}
-                  </div>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {monthGroup.count} foto{monthGroup.count !== 1 ? 's' : ''}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {monthGroup.photos.map((photo, photoIndex) => {
-                    const globalIndex = photos.findIndex(p => p.url === photo.url);
-                    return (
-                      <div key={photoIndex} className="relative group">
-                        <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                          <img
-                            src={photo.url}
-                            alt={`${monthGroup.monthLabel} - Foto ${photoIndex + 1}`}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                            loading="lazy"
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute -top-1 -right-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removePhoto(globalIndex)}
-                        >
-                          <X className="h-2 w-2" />
-                        </Button>
-                        <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 py-0.5 rounded">
-                          {new Date(photo.uploadedAt).toLocaleDateString('pt-BR', { 
-                            day: '2-digit'
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       )}
 
       {/* Empty State */}
