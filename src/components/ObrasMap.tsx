@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -72,6 +72,19 @@ const getStatusLabel = (status: ObraStatus): string => {
     paralisada: 'Paralisada'
   };
   return labels[status];
+};
+
+// Função para calcular porcentagem de execução
+const calculateExecutionPercentage = (obra: Obra): string => {
+  if (!obra.valor || obra.valor === 0) {
+    return '0,00%';
+  }
+  
+  const percentage = (obra.valorExecutado / obra.valor) * 100;
+  return percentage.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }) + '%';
 };
 
 interface ObrasMapProps {
@@ -166,6 +179,55 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
               }
             }}
           >
+            {/* Hover Tooltip */}
+            <Tooltip
+              permanent={false}
+              direction="top"
+              offset={[0, -10]}
+              opacity={0.95}
+              className="obra-tooltip"
+            >
+              <div className="p-3 min-w-[220px] bg-white border border-gray-200 rounded-lg shadow-lg">
+                <h3 className="font-semibold text-sm mb-2 text-gray-900 truncate">
+                  {obra.nome}
+                </h3>
+                
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">🏙️ Município:</span>
+                    <span className="font-medium text-gray-900">{obra.municipio}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">🔄 Status:</span>
+                    <span className={`font-medium px-2 py-0.5 rounded-full text-white text-xs ${
+                      obra.status === 'concluida' ? 'bg-green-500' :
+                      obra.status === 'em_andamento' ? 'bg-blue-500' :
+                      obra.status === 'planejada' ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`}>
+                      {getStatusLabel(obra.status)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">🏷️ Tipo:</span>
+                    <span className="font-medium text-gray-900">{obra.tipo}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">📊 Execução:</span>
+                    <span className="font-medium text-gray-900">{calculateExecutionPercentage(obra)}</span>
+                  </div>
+                </div>
+                
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <span className="text-xs text-gray-500">Clique para ver detalhes</span>
+                </div>
+              </div>
+            </Tooltip>
+
+            {/* Click Popup */}
             <Popup className="obra-popup">
               <div className="p-2 min-w-[200px]">
                 <h3 className="font-semibold text-sm mb-2 text-gray-900">
@@ -197,7 +259,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
                   
                   <div className="flex justify-between">
                     <span className="text-gray-600">Execução:</span>
-                    <span className="font-medium text-gray-900">{obra.porcentagemExecucao}%</span>
+                    <span className="font-medium text-gray-900">{calculateExecutionPercentage(obra)}</span>
                   </div>
                 </div>
                 
@@ -258,6 +320,22 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
         
         .leaflet-popup {
           animation: fadeInUp 0.3s ease-out;
+        }
+        
+        .obra-tooltip .leaflet-tooltip {
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+          z-index: 1000 !important;
+        }
+        
+        .obra-tooltip .leaflet-tooltip:before {
+          display: none !important;
+        }
+        
+        .obra-tooltip:hover {
+          z-index: 1001 !important;
         }
         
         @keyframes fadeInUp {
