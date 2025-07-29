@@ -83,6 +83,8 @@ const formatExecutionPercentage = (obra: Obra): string => {
   }) + '%';
 };
 
+// Force cache refresh for build
+
 interface ObrasMapProps {
   className?: string;
   obras?: Obra[];
