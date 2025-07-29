@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { MapView } from '@/components/MapView';
 import { NucleusForm } from '@/components/NucleusForm';
 import { Button } from '@/components/ui/button';
@@ -142,16 +143,11 @@ const Index = () => {
       {/* Page Header */}
       <div className="border-b bg-card transition-colors">
         <div className="container mx-auto px-6 lg:px-8 py-4 lg:py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Núcleos DPE-MT</h1>
-              <p className="text-sm lg:text-base text-muted-foreground">
-                Sistema de Controle de Prevenção de Incêndio dos Núcleos da Defensoria
-              </p>
-            </div>
-            
-            {canEdit && (
-              <div className="flex items-center gap-2">
+          <PageHeader
+            title="Núcleos DPE-MT"
+            subtitle="Sistema de Controle de Prevenção de Incêndio dos Núcleos da Defensoria"
+            actions={
+              canEdit && (
                 <Button 
                   size="sm" 
                   className="bg-primary hover:bg-primary/90"
@@ -160,9 +156,9 @@ const Index = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Núcleo
                 </Button>
-              </div>
-            )}
-          </div>
+              )
+            }
+          />
         </div>
       </div>
 

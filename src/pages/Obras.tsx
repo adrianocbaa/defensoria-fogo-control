@@ -3,6 +3,7 @@ import { Menu, X, RotateCcw, Plus, List, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleHeader } from '@/components/SimpleHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { ObrasMap } from '@/components/ObrasMap';
 import { ObrasFilters, type FiltersData } from '@/components/ObrasFilters';
 import { ObraDetails } from '@/components/ObraDetails';
@@ -96,37 +97,29 @@ export default function Obras() {
     <SimpleHeader>
       <div className="min-h-screen bg-background">
         {/* Page Header */}
-        <div className="border-b bg-card transition-colors">
-          <div className="container mx-auto px-6 lg:px-8 py-4 lg:py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Mapa de Obras Públicas</h1>
-                <p className="text-sm lg:text-base text-muted-foreground">
-                  Visualize e acompanhe o andamento das obras públicas no estado
-                </p>
-              </div>
+        <PageHeader
+          title="Mapa de Obras Públicas"
+          subtitle="Visualize e acompanhe o andamento das obras públicas no estado"
+          actions={
+            <>
+              <Link to="/dashboard">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Estatísticas</span>
+                </Button>
+              </Link>
               
-              <div className="flex items-center gap-2">
-                {/* Dashboard Público de Estatísticas - apenas na página de obras */}
-                <Link to="/dashboard">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Estatísticas</span>
-                  </Button>
-                </Link>
-                
-                <PermissionGuard requiresEdit showMessage={false}>
-                  <Button asChild variant="outline">
-                    <Link to="/admin/obras/lista">
-                      <List className="h-4 w-4 mr-2" />
-                      Ver como Lista
-                    </Link>
-                  </Button>
-                </PermissionGuard>
-              </div>
-            </div>
-          </div>
-        </div>
+              <PermissionGuard requiresEdit showMessage={false}>
+                <Button asChild variant="outline">
+                  <Link to="/admin/obras/lista">
+                    <List className="h-4 w-4 mr-2" />
+                    Ver como Lista
+                  </Link>
+                </Button>
+              </PermissionGuard>
+            </>
+          }
+        />
 
         {/* Mobile sidebar toggle */}
         <div className="md:hidden px-3 lg:px-4 py-2 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
