@@ -74,16 +74,22 @@ const getStatusLabel = (status: ObraStatus): string => {
   return labels[status];
 };
 
-// Função para formatar porcentagem de execução (Andamento da Obra)
+// Função para calcular porcentagem de execução 
+// Fórmula: Valor Pago (valorExecutado) / Valor Final (valor) * 100
 const formatExecutionPercentage = (obra: Obra): string => {
-  const percentage = obra.porcentagemExecucao || 0;
+  if (!obra.valor || obra.valor === 0) {
+    return '0,00%';
+  }
+  
+  const valorPago = obra.valorExecutado || 0;
+  const valorFinal = obra.valor;
+  const percentage = (valorPago / valorFinal) * 100;
+  
   return percentage.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }) + '%';
 };
-
-// Force cache refresh for build
 
 interface ObrasMapProps {
   className?: string;
