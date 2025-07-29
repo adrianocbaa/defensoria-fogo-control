@@ -7,6 +7,7 @@ import { NucleiProvider } from "@/contexts/NucleiContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import MainDashboard from "./pages/MainDashboard";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -40,13 +41,14 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/public" element={<PublicView />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       
       {/* Main Dashboard */}
       <Route 
         path="/" 
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <MainDashboard />
           </ProtectedRoute>
         } 
       />
