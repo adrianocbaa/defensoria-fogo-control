@@ -74,17 +74,9 @@ const getStatusLabel = (status: ObraStatus): string => {
   return labels[status];
 };
 
-// Função para calcular porcentagem de execução
-// Fórmula: Valor pago (valor_executado) / Valor Final (valor_total) * 100
-const calculateExecutionPercentage = (obra: Obra): string => {
-  if (!obra.valor || obra.valor === 0) {
-    return '0,00%';
-  }
-  
-  const valorPago = obra.valorExecutado || 0;
-  const valorFinal = obra.valor;
-  const percentage = (valorPago / valorFinal) * 100;
-  
+// Função para formatar porcentagem de execução (Andamento da Obra)
+const formatExecutionPercentage = (obra: Obra): string => {
+  const percentage = obra.porcentagemExecucao || 0;
   return percentage.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -221,7 +213,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
                   
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">📊 Execução:</span>
-                    <span className="font-medium text-gray-900">{calculateExecutionPercentage(obra)}</span>
+                    <span className="font-medium text-gray-900">{formatExecutionPercentage(obra)}</span>
                   </div>
                 </div>
                 
@@ -230,54 +222,6 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
                 </div>
               </div>
             </Tooltip>
-
-            {/* Click Popup */}
-            <Popup className="obra-popup">
-              <div className="p-2 min-w-[200px]">
-                <h3 className="font-semibold text-sm mb-2 text-gray-900">
-                  {obra.nome}
-                </h3>
-                
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Município:</span>
-                    <span className="font-medium text-gray-900">{obra.municipio}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <span className={`font-medium px-2 py-0.5 rounded-full text-white text-xs ${
-                      obra.status === 'concluida' ? 'bg-green-500' :
-                      obra.status === 'em_andamento' ? 'bg-blue-500' :
-                      obra.status === 'planejada' ? 'bg-yellow-500' :
-                      'bg-red-500'
-                    }`}>
-                      {getStatusLabel(obra.status)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tipo:</span>
-                    <span className="font-medium text-gray-900">{obra.tipo}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Execução:</span>
-                    <span className="font-medium text-gray-900">{calculateExecutionPercentage(obra)}</span>
-                  </div>
-                </div>
-                
-                <button 
-                  className="mt-3 w-full bg-blue-600 text-white text-xs py-1.5 px-3 rounded hover:bg-blue-700 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onObraClick?.(obra);
-                  }}
-                >
-                  Ver Detalhes
-                </button>
-              </div>
-            </Popup>
           </Marker>
         ))}
         </MarkerClusterGroup>
