@@ -225,7 +225,23 @@ export function MapView({ nuclei, onViewDetails }: MapViewProps) {
         </div>
       `;
       
+      // Bind popup and configure hover events
       marker.bindPopup(popupContent);
+      
+      // Show popup on hover
+      marker.on('mouseover', function() {
+        this.openPopup();
+      });
+      
+      // Hide popup on mouse leave
+      marker.on('mouseout', function() {
+        this.closePopup();
+      });
+      
+      // Keep popup open on click (mobile compatibility)
+      marker.on('click', function() {
+        this.openPopup();
+      });
     });
 
     // Cleanup
