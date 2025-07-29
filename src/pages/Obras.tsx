@@ -20,19 +20,10 @@ export default function Obras() {
   const [filters, setFilters] = useState<FiltersData>({
     status: [],
     tipos: [],
-    municipio: 'all',
-    valorMin: 0,
-    valorMax: 30000000 // Default max value, will be updated when data loads
+    municipio: ''
   });
   const isMobile = useIsMobile();
 
-  // Update max value when data loads
-  React.useEffect(() => {
-    if (obrasData.length > 0) {
-      const maxVal = Math.max(...obrasData.map(obra => obra.valor));
-      setFilters(prev => ({ ...prev, valorMax: maxVal }));
-    }
-  }, [obrasData]);
 
   // Calculate filter options from data
   const availableTypes = useMemo(() => 
@@ -45,10 +36,6 @@ export default function Obras() {
     [obrasData]
   );
 
-  const maxValue = useMemo(() => 
-    obrasData.length > 0 ? Math.max(...obrasData.map(obra => obra.valor)) : 30000000, 
-    [obrasData]
-  );
 
   // Filter obras based on current filters
   const filteredObras = useMemo(() => {
@@ -63,13 +50,8 @@ export default function Obras() {
         return false;
       }
 
-      // Municipality filter
-      if (filters.municipio && filters.municipio !== 'all' && obra.municipio !== filters.municipio) {
-        return false;
-      }
-
-      // Value range filter
-      if (obra.valor < filters.valorMin || obra.valor > filters.valorMax) {
+      // Municipality filter (search by partial match)
+      if (filters.municipio && !obra.municipio.toLowerCase().includes(filters.municipio.toLowerCase())) {
         return false;
       }
 
@@ -171,7 +153,6 @@ export default function Obras() {
                 onFiltersChange={handleFiltersChange}
                 availableTypes={availableTypes}
                 availableMunicipios={availableMunicipios}
-                maxValue={maxValue}
                 loading={loading}
               />
             </div>
@@ -202,17 +183,14 @@ export default function Obras() {
               
               {/* Reset filters floating button */}
               {(filters.status.length > 0 || filters.tipos.length > 0 || 
-                (filters.municipio !== 'all' && filters.municipio !== '') ||
-                filters.valorMin > 0 || filters.valorMax < maxValue) && (
+                filters.municipio !== '') && (
                 <Button
                   size="sm"
                   variant="secondary"
                   onClick={() => setFilters({
                     status: [],
                     tipos: [],
-                    municipio: 'all',
-                    valorMin: 0,
-                    valorMax: maxValue
+                    municipio: ''
                   })}
                   className="mt-2 w-full transition-all duration-200 hover:scale-105"
                 >

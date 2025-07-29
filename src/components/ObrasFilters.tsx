@@ -3,11 +3,9 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { X, Filter, RotateCcw } from 'lucide-react';
+import { X, Filter, RotateCcw, Search } from 'lucide-react';
 import { type ObraStatus } from '@/data/mockObras';
 import { useDebounce } from '@/hooks/useDebounce';
 import { FiltersLoadingSkeleton } from '@/components/LoadingStates';
@@ -16,15 +14,12 @@ export interface FiltersData {
   status: ObraStatus[];
   tipos: string[];
   municipio: string;
-  valorMin: number;
-  valorMax: number;
 }
 
 interface ObrasFiltersProps {
   onFiltersChange: (filters: FiltersData) => void;
   availableTypes: string[];
   availableMunicipios: string[];
-  maxValue: number;
   loading?: boolean;
 }
 
@@ -39,16 +34,13 @@ export function ObrasFilters({
   onFiltersChange, 
   availableTypes, 
   availableMunicipios, 
-  maxValue,
   loading = false
 }: ObrasFiltersProps) {
   const { watch, setValue, reset } = useForm<FiltersData>({
     defaultValues: {
       status: [],
       tipos: [],
-      municipio: 'all',
-      valorMin: 0,
-      valorMax: maxValue
+      municipio: ''
     }
   });
 
@@ -84,17 +76,13 @@ export function ObrasFilters({
     reset({
       status: [],
       tipos: [],
-      municipio: 'all',
-      valorMin: 0,
-      valorMax: maxValue
+      municipio: ''
     });
   };
 
   const hasActiveFilters = currentFilters.status.length > 0 || 
                           currentFilters.tipos.length > 0 || 
-                          (currentFilters.municipio !== 'all' && currentFilters.municipio !== '') ||
-                          currentFilters.valorMin > 0 ||
-                          currentFilters.valorMax < maxValue;
+                          (currentFilters.municipio !== '');
 
   // Show loading skeleton while data loads
   if (loading) {
@@ -185,45 +173,13 @@ export function ObrasFilters({
           <CardTitle className="text-sm font-medium">Município</CardTitle>
         </CardHeader>
         <CardContent>
-          <Select 
-            value={currentFilters.municipio} 
-            onValueChange={(value) => setValue('municipio', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um município" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os municípios</SelectItem>
-              {availableMunicipios.map((municipio) => (
-                <SelectItem key={municipio} value={municipio}>
-                  {municipio}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {/* Value Range Filter */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Valor da Obra</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <Label className="text-xs text-muted-foreground">
-              R$ {currentFilters.valorMin.toLocaleString('pt-BR')} - R$ {currentFilters.valorMax.toLocaleString('pt-BR')}
-            </Label>
-            <Slider
-              value={[currentFilters.valorMin, currentFilters.valorMax]}
-              onValueChange={([min, max]) => {
-                setValue('valorMin', min);
-                setValue('valorMax', max);
-              }}
-              max={maxValue}
-              min={0}
-              step={1000000}
-              className="w-full"
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por município..."
+              value={currentFilters.municipio}
+              onChange={(e) => setValue('municipio', e.target.value)}
+              className="pl-10"
             />
           </div>
         </CardContent>
@@ -258,12 +214,12 @@ export function ObrasFilters({
                   />
                 </Badge>
               ))}
-              {currentFilters.municipio && currentFilters.municipio !== 'all' && (
+              {currentFilters.municipio && (
                 <Badge variant="secondary" className="text-xs">
-                  {currentFilters.municipio}
+                  Município: {currentFilters.municipio}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
-                    onClick={() => setValue('municipio', 'all')}
+                    onClick={() => setValue('municipio', '')}
                   />
                 </Badge>
               )}
