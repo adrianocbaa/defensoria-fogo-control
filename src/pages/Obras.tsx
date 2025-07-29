@@ -8,12 +8,12 @@ import { ObrasFilters, type FiltersData } from '@/components/ObrasFilters';
 import { ObraDetails } from '@/components/ObraDetails';
 import { ErrorState } from '@/components/LoadingStates';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { useObrasData } from '@/hooks/useObrasData';
+import { useObras } from '@/hooks/useObras';
 import { type Obra } from '@/data/mockObras';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Obras() {
-  const { obras: obrasData, loading, error, refetch } = useObrasData();
+  const { obras: obrasData, loading, error, refetch } = useObras();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedObra, setSelectedObra] = useState<Obra | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);

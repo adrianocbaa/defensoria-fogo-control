@@ -72,6 +72,9 @@ export function AdminObras() {
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');
+      // Em caso de erro, exibir array vazio
+      setObras([]);
+      setFilteredObras([]);
     } finally {
       setLoading(false);
     }
