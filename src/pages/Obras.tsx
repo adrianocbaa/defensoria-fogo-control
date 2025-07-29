@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Menu, X, RotateCcw, Plus, List } from 'lucide-react';
+import { Menu, X, RotateCcw, Plus, List, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleHeader } from '@/components/SimpleHeader';
@@ -97,7 +97,7 @@ export default function Obras() {
       <div className="min-h-screen bg-background">
         {/* Page Header */}
         <div className="border-b bg-card transition-colors">
-          <div className="container mx-auto px-3 lg:px-4 py-4 lg:py-6">
+          <div className="container mx-auto px-6 lg:px-8 py-4 lg:py-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Mapa de Obras Públicas</h1>
@@ -106,14 +106,24 @@ export default function Obras() {
                 </p>
               </div>
               
-              <PermissionGuard requiresEdit showMessage={false}>
-                <Button asChild variant="outline">
-                  <Link to="/admin/obras/lista">
-                    <List className="h-4 w-4 mr-2" />
-                    Ver como Lista
-                  </Link>
-                </Button>
-              </PermissionGuard>
+              <div className="flex items-center gap-2">
+                {/* Dashboard Público de Estatísticas - apenas na página de obras */}
+                <Link to="/dashboard">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Estatísticas</span>
+                  </Button>
+                </Link>
+                
+                <PermissionGuard requiresEdit showMessage={false}>
+                  <Button asChild variant="outline">
+                    <Link to="/admin/obras/lista">
+                      <List className="h-4 w-4 mr-2" />
+                      Ver como Lista
+                    </Link>
+                  </Button>
+                </PermissionGuard>
+              </div>
             </div>
           </div>
         </div>
