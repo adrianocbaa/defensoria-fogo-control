@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { ErrorState } from '@/components/LoadingStates';
 import { Skeleton } from '@/components/ui/skeleton';
+// Force cache refresh
 import { useObras } from '@/hooks/useObras';
 import { TrendingUp, MapPin, CheckCircle, DollarSign, Calendar } from 'lucide-react';
 
