@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Menu, X, RotateCcw, Plus } from 'lucide-react';
+import { Menu, X, RotateCcw, Plus, List } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleHeader } from '@/components/SimpleHeader';
@@ -124,6 +124,14 @@ export default function Obras() {
                 </p>
               </div>
               
+              <PermissionGuard requiresEdit showMessage={false}>
+                <Button asChild variant="outline">
+                  <Link to="/admin/obras/lista">
+                    <List className="h-4 w-4 mr-2" />
+                    Ver como Lista
+                  </Link>
+                </Button>
+              </PermissionGuard>
             </div>
           </div>
         </div>

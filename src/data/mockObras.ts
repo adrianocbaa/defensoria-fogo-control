@@ -18,6 +18,7 @@ export interface Obra {
   secretariaResponsavel: string;
   fotos: (string | any)[];
   documentos: { nome: string; tipo: string }[];
+  valor_aditivado?: number;
 }
 
 // Obras de exemplo demonstrativas - apenas para visitantes não autenticados

@@ -20,6 +20,7 @@ import Obras from "./pages/Obras";
 import { AdminObras } from "./pages/AdminObras";
 import { AdminObraEdit } from "./pages/AdminObraEdit";
 import { AdminObraNova } from "./pages/AdminObraNova";
+import { ObrasLista } from "./pages/ObrasLista";
 import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosPage } from "./pages/SectorPages";
 
 const queryClient = new QueryClient();
@@ -150,6 +151,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <AdminObraEdit />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/obras/lista" 
+        element={
+          <ProtectedRoute>
+            <ObrasLista />
           </ProtectedRoute>
         } 
       />
