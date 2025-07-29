@@ -40,6 +40,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/public" element={<PublicView />} />
+      <Route path="/public/obras" element={<Obras />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       
