@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
+import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -162,13 +163,10 @@ export default function AdminPanel() {
   return (
     <Layout>
       <div className="container mx-auto py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Users className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">Painel Administrativo</h1>
-            <p className="text-muted-foreground">Gerencie permissões de usuários</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Painel Administrativo"
+          subtitle="Gerencie permissões de usuários"
+        />
 
         <Card>
           <CardHeader>

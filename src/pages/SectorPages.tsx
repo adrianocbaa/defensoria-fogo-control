@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SimpleHeader } from '@/components/SimpleHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -13,9 +14,9 @@ function SectorPage({ title, description }: SectorPageProps) {
   return (
     <SimpleHeader>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
-        </div>
+        <PageHeader
+          title={title}
+        />
         
         <Card>
           <CardHeader>

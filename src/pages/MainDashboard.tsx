@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { SimpleHeader } from '@/components/SimpleHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { 
   Wrench, 
   HardHat, 
@@ -113,15 +114,10 @@ export default function Dashboard() {
   return (
     <SimpleHeader>
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Módulos</h1>
-            <p className="text-muted-foreground mt-1">
-              Selecione o módulo que deseja acessar
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="Módulos"
+          subtitle="Selecione o módulo que deseja acessar"
+        />
 
         {/* Modules Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

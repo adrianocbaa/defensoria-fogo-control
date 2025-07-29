@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PermissionGuard } from '@/components/PermissionGuard';
+import { PageHeader } from '@/components/PageHeader';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,23 +132,20 @@ export function AdminObras() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Gerenciar Obras</h1>
-          <p className="text-muted-foreground mt-2">
-            Visualize e gerencie todas as obras públicas
-          </p>
-        </div>
-        
-        <PermissionGuard requiresEdit showMessage={false}>
-          <Button asChild>
-            <Link to="/admin/obras/nova">
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Obra
-            </Link>
-          </Button>
-        </PermissionGuard>
-      </div>
+      <PageHeader
+        title="Gerenciar Obras"
+        subtitle="Visualize e gerencie todas as obras públicas"
+        actions={
+          <PermissionGuard requiresEdit showMessage={false}>
+            <Button asChild>
+              <Link to="/admin/obras/nova">
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Obra
+              </Link>
+            </Button>
+          </PermissionGuard>
+        }
+      />
 
       <Card>
         <CardHeader>

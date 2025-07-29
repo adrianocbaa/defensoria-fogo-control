@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SimpleHeader } from '@/components/SimpleHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { ErrorState } from '@/components/LoadingStates';
 import { Skeleton } from '@/components/ui/skeleton';
 // Force cache refresh
@@ -140,20 +141,10 @@ export default function Dashboard() {
   return (
     <SimpleHeader>
       <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="border-b bg-card">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">Dashboard - Obras Públicas</h1>
-                <p className="text-muted-foreground">
-                  Estatísticas e indicadores das obras públicas no estado
-                </p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Dashboard - Obras Públicas"
+          subtitle="Estatísticas e indicadores das obras públicas no estado"
+        />
 
         <div className="container mx-auto px-4 py-6 space-y-6">
           {/* Filters */}

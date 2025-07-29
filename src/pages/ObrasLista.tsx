@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PermissionGuard } from '@/components/PermissionGuard';
+import { PageHeader } from '@/components/PageHeader';
 import { useObras } from '@/hooks/useObras';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,21 +63,18 @@ export function ObrasLista() {
   return (
     <PermissionGuard requiresEdit>
       <div className="container mx-auto py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Lista de Obras</h1>
-            <p className="text-muted-foreground mt-2">
-              Visualização em tabela de todas as obras públicas
-            </p>
-          </div>
-          
-          <Button asChild variant="outline">
-            <Link to="/obras">
-              <Map className="h-4 w-4 mr-2" />
-              Ver como Mapa
-            </Link>
-          </Button>
-        </div>
+        <PageHeader
+          title="Lista de Obras"
+          subtitle="Visualização em tabela de todas as obras públicas"
+          actions={
+            <Button asChild variant="outline">
+              <Link to="/obras">
+                <Map className="h-4 w-4 mr-2" />
+                Ver como Mapa
+              </Link>
+            </Button>
+          }
+        />
 
         <Card>
           <CardHeader>
