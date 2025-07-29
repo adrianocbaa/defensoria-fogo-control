@@ -74,16 +74,12 @@ const getStatusLabel = (status: ObraStatus): string => {
   return labels[status];
 };
 
-// Função para calcular porcentagem de execução 
-// Fórmula: Valor Pago (valorExecutado) / Valor Final (valor) * 100
+// Função para calcular porcentagem de execução (mesmo cálculo do ObraDetails)
+// Fórmula: (Valor Pago / Valor Final) * 100 - limitado a máximo 100%
 const formatExecutionPercentage = (obra: Obra): string => {
-  if (!obra.valor || obra.valor === 0) {
-    return '0,00%';
-  }
-  
   const valorPago = obra.valorExecutado || 0;
-  const valorFinal = obra.valor;
-  const percentage = (valorPago / valorFinal) * 100;
+  const valorFinal = (obra.valor || 0) + (obra.valor_aditivado || 0);
+  const percentage = valorFinal > 0 ? Math.min((valorPago / valorFinal) * 100, 100) : 0;
   
   return percentage.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
