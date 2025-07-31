@@ -52,40 +52,7 @@ export function Medicao() {
   const [loading, setLoading] = useState(true);
 
   // Estados do sistema de medição
-  const [items, setItems] = useState<Item[]>([
-    {
-      id: 1,
-      item: '1.1.1',
-      codigo: '90778',
-      banco: 'SINAPI',
-      descricao: 'ENGENHEIRO CIVIL DE OBRA PLENO COM ENCARGOS COMPLEMENTARES',
-      und: 'H',
-      quantidade: 1150,
-      valorUnitario: 125.68,
-      valorTotal: 144533.61,
-      aditivo: { qnt: 0, percentual: 0, total: 0 },
-      totalContrato: 144533.61,
-      importado: false,
-      nivel: 3,
-      ehAdministracaoLocal: true
-    },
-    {
-      id: 2,
-      item: '1.1.2',
-      codigo: '93572',
-      banco: 'SINAPI',
-      descricao: 'ENCARREGADO GERAL DE OBRAS COM ENCARGOS COMPLEMENTARES',
-      und: 'MES',
-      quantidade: 10,
-      valorUnitario: 5360.45,
-      valorTotal: 53604.47,
-      aditivo: { qnt: 0, percentual: 0, total: 0 },
-      totalContrato: 53604.47,
-      importado: false,
-      nivel: 3,
-      ehAdministracaoLocal: true
-    }
-  ]);
+  const [items, setItems] = useState<Item[]>([]);
 
   const [medicoes, setMedicoes] = useState<Medicao[]>([
     { id: 1, nome: '1ª MEDIÇÃO', dados: {} },
@@ -367,13 +334,24 @@ export function Medicao() {
     });
   };
 
+  // Função para marcar/desmarcar item como administração local
+  const toggleAdministracaoLocal = (itemId: number) => {
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === itemId
+          ? { ...item, ehAdministracaoLocal: !item.ehAdministracaoLocal }
+          : item
+      )
+    );
+  };
+
   // Função para importar dados da planilha
   const importarDados = (dadosImportados: Item[]) => {
     const dadosComNivel = dadosImportados.map(item => ({
       ...item,
       importado: true,
       nivel: determinarNivel(item.item),
-      ehAdministracaoLocal: item.item.startsWith('1.1.') // Marcar itens 1.1.x como administração local
+      ehAdministracaoLocal: false // Inicialmente nenhum item é marcado como administração local
     }));
     
     const dadosComTotais = calcularTotaisHierarquicos(dadosComNivel);
@@ -592,9 +570,12 @@ export function Medicao() {
                         <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT</TableHead>
                         <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">%</TableHead>
                         <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                        <TableHead className="min-w-[100px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
                       </>
                     )}
-                    <TableHead className="min-w-[100px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
+                    {!mostrarAditivo && (
+                      <TableHead className="min-w-[100px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
+                    )}
                     <TableHead className="min-w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
                     <TableHead className="min-w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
                     <TableHead className="min-w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
@@ -602,7 +583,7 @@ export function Medicao() {
                     <TableHead className="min-w-[50px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">%</TableHead>
                     <TableHead className="min-w-[80px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">TOTAL</TableHead>
                     <TableHead className="min-w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT.</TableHead>
-                    <TableHead className="min-w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Ações</TableHead>
+                    <TableHead className="min-w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Admin. Local</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -664,13 +645,20 @@ export function Medicao() {
                                 R$ {item.aditivo.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </div>
                             </TableCell>
+                            <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                              <div className="text-right font-mono text-xs px-1 font-bold">
+                                R$ {item.totalContrato.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                            </TableCell>
                           </>
                         )}
-                        <TableCell className="border border-gray-300 p-1">
-                          <div className="text-right font-mono text-xs px-1 font-bold">
-                            R$ {item.totalContrato.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </TableCell>
+                        {!mostrarAditivo && (
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="text-right font-mono text-xs px-1 font-bold">
+                              R$ {item.totalContrato.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                           {item.ehAdministracaoLocal ? (
                             <div className="text-right font-mono text-xs px-1">
@@ -720,13 +708,12 @@ export function Medicao() {
                         <TableCell className="border border-gray-300 p-1">
                           <div className="flex gap-1 justify-center">
                             <Button
-                              variant="destructive"
+                              variant={item.ehAdministracaoLocal ? "default" : "outline"}
                               size="sm"
-                              onClick={() => removerItem(item.id)}
-                              disabled={item.importado}
-                              className="h-6 w-6 p-0 text-xs"
+                              onClick={() => toggleAdministracaoLocal(item.id)}
+                              className="h-6 w-14 p-0 text-xs"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Settings className="h-3 w-3" />
                             </Button>
                           </div>
                         </TableCell>
