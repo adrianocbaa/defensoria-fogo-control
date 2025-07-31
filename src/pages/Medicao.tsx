@@ -672,9 +672,20 @@ export function Medicao() {
                           </div>
                         </TableCell>
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
-                          <div className="text-right font-mono text-xs px-1">
-                            {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
+                          {item.ehAdministracaoLocal ? (
+                            <div className="text-right font-mono text-xs px-1">
+                              {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          ) : (
+                            <Input
+                              type="number"
+                              value={medicaoData.qnt || ''}
+                              onChange={(e) => atualizarMedicao(item.id, medicaoAtual, 'qnt', e.target.value)}
+                              className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
+                              step="0.01"
+                              min="0"
+                            />
+                          )}
                         </TableCell>
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                           <div className="text-center font-mono text-xs px-1">
