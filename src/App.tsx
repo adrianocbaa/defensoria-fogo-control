@@ -23,6 +23,7 @@ import { AdminObraEdit } from "./pages/AdminObraEdit";
 import { AdminObraNova } from "./pages/AdminObraNova";
 import { ObrasLista } from "./pages/ObrasLista";
 import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosPage } from "./pages/SectorPages";
+import { Medicao } from "./pages/Medicao";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const AppRoutes = () => {
       <Route path="/public" element={<PublicView />} />
       <Route path="/public/obras" element={<Obras />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route path="/medicao/:id" element={<ProtectedRoute><Medicao /></ProtectedRoute>} />
       <Route path="/dashboard" element={<Dashboard />} />
       
       {/* Main Dashboard */}

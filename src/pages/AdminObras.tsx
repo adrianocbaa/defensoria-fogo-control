@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2 } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Obra {
@@ -210,6 +210,14 @@ export function AdminObras() {
                           title="Visualizar no mapa"
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/medicao/${obra.id}`)}
+                          title="Medição"
+                        >
+                          <Ruler className="h-4 w-4" />
                         </Button>
                         
                         <PermissionGuard requiresEdit showMessage={false}>
