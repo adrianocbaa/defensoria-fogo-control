@@ -764,18 +764,12 @@ export function Medicao() {
                         </TableCell>
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                           <div className="text-center font-mono text-xs px-1">
-                            {ehItemPai(item.item, items) ? 
-                              (medicaoData.percentual.toFixed(2)) : 
-                              (calcularPercentual(medicaoData.qnt, item.quantidade).toFixed(2))
-                            }%
+                            {medicaoData.percentual.toFixed(2)}%
                           </div>
                         </TableCell>
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                           <div className="text-right font-mono text-xs px-1">
-                            R$ {ehItemPai(item.item, items) ? 
-                              medicaoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) :
-                              calcularTotal(medicaoData.qnt, item.valorUnitario).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                            }
+                            R$ {medicaoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </TableCell>
                         <TableCell className="bg-purple-100 border border-purple-300 p-1">
