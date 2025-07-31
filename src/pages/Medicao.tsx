@@ -575,43 +575,34 @@ export function Medicao() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-1">
             <div className="overflow-x-auto border rounded-lg">
-              <Table>
+              <Table className="text-xs">
                 <TableHeader>
-                  <TableRow className="bg-slate-100">
-                    <TableHead className="w-24 font-bold text-center border-r">Item</TableHead>
-                    <TableHead className="w-28 font-bold text-center border-r">Código</TableHead>
-                    <TableHead className="w-24 font-bold text-center border-r">Banco</TableHead>
-                    <TableHead className="min-w-[350px] font-bold text-center border-r">Descrição</TableHead>
-                    <TableHead className="w-20 font-bold text-center border-r">Und</TableHead>
-                    <TableHead className="w-32 font-bold text-center border-r">Quant.</TableHead>
-                    <TableHead className="w-36 font-bold text-center border-r">Valor Unit.</TableHead>
-                    <TableHead className="w-40 font-bold text-center border-r">Valor Total</TableHead>
+                  <TableRow className="bg-slate-100 border-b-2">
+                    <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Item</TableHead>
+                    <TableHead className="min-w-[70px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Código Banco</TableHead>
+                    <TableHead className="min-w-[300px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Descrição</TableHead>
+                    <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Und</TableHead>
+                    <TableHead className="min-w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
+                    <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
+                    <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
                     {mostrarAditivo && (
-                      <TableHead className="bg-blue-100 w-60 border-r border-blue-300">
-                        <div className="text-center">
-                          <div className="font-bold text-blue-800 mb-2">ADITIVO/SUPRESSÃO/EXTRACONTRATUAL</div>
-                          <div className="grid grid-cols-3 gap-1 text-xs font-semibold text-blue-700">
-                            <div className="bg-blue-50 p-1 rounded">QNT</div>
-                            <div className="bg-blue-50 p-1 rounded">%</div>
-                            <div className="bg-blue-50 p-1 rounded">TOTAL</div>
-                          </div>
-                        </div>
-                      </TableHead>
+                      <>
+                        <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT</TableHead>
+                        <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">%</TableHead>
+                        <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                      </>
                     )}
-                    <TableHead className="w-40 font-bold text-center border-r">Total Contrato</TableHead>
-                    <TableHead className="bg-green-100 w-72 border-r border-green-300">
-                      <div className="text-center">
-                        <div className="font-bold text-green-800 mb-2">{medicoes.find(m => m.id === medicaoAtual)?.nome}</div>
-                        <div className="grid grid-cols-3 gap-1 text-xs font-semibold text-green-700">
-                          <div className="bg-green-50 p-1 rounded">QNT</div>
-                          <div className="bg-green-50 p-1 rounded">%</div>
-                          <div className="bg-green-50 p-1 rounded">TOTAL</div>
-                        </div>
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-24 font-bold text-center">Ações</TableHead>
+                    <TableHead className="min-w-[100px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
+                    <TableHead className="min-w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
+                    <TableHead className="min-w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
+                    <TableHead className="min-w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                    <TableHead className="min-w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT</TableHead>
+                    <TableHead className="min-w-[50px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">%</TableHead>
+                    <TableHead className="min-w-[80px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                    <TableHead className="min-w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT.</TableHead>
+                    <TableHead className="min-w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -620,174 +611,109 @@ export function Medicao() {
                     const estiloLinha = obterEstiloLinha(item);
                     
                     return (
-                      <TableRow key={item.id} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors`}>
-                        <TableCell className="border-r p-3">
-                          <Input
-                            value={item.item}
-                            onChange={(e) => {
-                              setItems(prev => prev.map(i => i.id === item.id ? { ...i, item: e.target.value } : i));
-                            }}
-                            className="w-full text-center font-mono text-sm"
-                            readOnly={item.importado}
-                          />
-                        </TableCell>
-                        <TableCell className="border-r p-3">
-                          <Input
-                            value={item.codigo}
-                            onChange={(e) => {
-                              setItems(prev => prev.map(i => i.id === item.id ? { ...i, codigo: e.target.value } : i));
-                            }}
-                            className="w-full text-center font-mono text-sm"
-                            readOnly={item.importado}
-                          />
-                        </TableCell>
-                        <TableCell className="border-r p-3">
-                          <Input
-                            value={item.banco}
-                            onChange={(e) => {
-                              setItems(prev => prev.map(i => i.id === item.id ? { ...i, banco: e.target.value } : i));
-                            }}
-                            className="w-full text-center text-sm"
-                            readOnly={item.importado}
-                          />
-                        </TableCell>
-                        <TableCell className="border-r p-3">
-                          <Input
-                            value={item.descricao}
-                            onChange={(e) => {
-                              setItems(prev => prev.map(i => i.id === item.id ? { ...i, descricao: e.target.value } : i));
-                            }}
-                            className="w-full text-sm"
-                            readOnly={item.importado}
-                          />
-                        </TableCell>
-                        <TableCell className="border-r p-3">
-                          <Input
-                            value={item.und}
-                            onChange={(e) => {
-                              setItems(prev => prev.map(i => i.id === item.id ? { ...i, und: e.target.value } : i));
-                            }}
-                            className="w-full text-center text-sm"
-                            readOnly={item.importado}
-                          />
-                        </TableCell>
-                        <TableCell className="border-r p-3">
-                          {ehItemPai(item.item, items) ? (
-                            <Badge variant="secondary" className="w-full justify-center font-mono text-sm py-2">
-                              {item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </Badge>
-                          ) : (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={item.quantidade}
-                              onChange={(e) => {
-                                const novaQuantidade = parseFloat(e.target.value) || 0;
-                                setItems(prev => {
-                                  const itemsAtualizados = prev.map(i => i.id === item.id ? { 
-                                    ...i, 
-                                    quantidade: novaQuantidade,
-                                    valorTotal: novaQuantidade * i.valorUnitario
-                                  } : i);
-                                  return calcularTotaisHierarquicos(itemsAtualizados);
-                                });
-                              }}
-                              className="w-full text-center font-mono text-sm"
-                              readOnly={item.importado}
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell className="border-r p-3">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={item.valorUnitario}
-                            onChange={(e) => {
-                              const novoValor = parseFloat(e.target.value) || 0;
-                              setItems(prev => {
-                                const itemsAtualizados = prev.map(i => i.id === item.id ? { 
-                                  ...i, 
-                                  valorUnitario: novoValor,
-                                  valorTotal: i.quantidade * novoValor
-                                } : i);
-                                return calcularTotaisHierarquicos(itemsAtualizados);
-                              });
-                            }}
-                            className="w-full text-center font-mono text-sm"
-                            readOnly={item.importado || ehItemPai(item.item, items)}
-                          />
-                        </TableCell>
-                        <TableCell className="border-r p-3">
-                          <Badge variant="secondary" className="w-full justify-center font-mono text-sm py-2 bg-gray-100 text-gray-800">
-                            {formatCurrency(item.valorTotal)}
-                          </Badge>
-                        </TableCell>
-                        {mostrarAditivo && (
-                          <TableCell className="bg-blue-50 border-r border-blue-300 p-3">
-                            <div className="grid grid-cols-3 gap-3">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={item.aditivo.qnt}
-                                onChange={(e) => atualizarAditivo(item.id, 'qnt', e.target.value)}
-                                className="w-full text-center font-mono text-sm"
-                                placeholder="0.00"
-                                readOnly={ehItemPai(item.item, items)}
-                              />
-                              <div className="text-sm text-center py-2 bg-white rounded border font-mono font-semibold text-blue-800">
-                                {item.aditivo.percentual.toFixed(2)}%
-                              </div>
-                              <div className="text-xs text-center py-2 bg-white rounded border font-mono font-semibold text-blue-800 leading-6">
-                                {formatCurrency(item.aditivo.total)}
-                              </div>
-                            </div>
-                          </TableCell>
-                        )}
-                        <TableCell className="border-r p-3">
-                          <Badge variant="outline" className="text-green-700 w-full justify-center font-mono text-sm py-2 bg-green-50 border-green-300">
-                            {formatCurrency(item.totalContrato)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="bg-green-50 border-r border-green-300 p-3">
-                          <div className="grid grid-cols-3 gap-3">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={medicaoData.qnt}
-                              onChange={(e) => atualizarMedicao(item.id, medicaoAtual, 'qnt', e.target.value)}
-                              className="w-full text-center font-mono text-sm"
-                              placeholder="0.00"
-                              readOnly={ehItemPai(item.item, items) || item.ehAdministracaoLocal}
-                            />
-                            <div className="text-sm text-center py-2 bg-white rounded border font-mono font-semibold text-green-800">
-                              {medicaoData.percentual.toFixed(2)}%
-                            </div>
-                            <div className="text-xs text-center py-2 bg-white rounded border font-mono font-semibold text-green-800 leading-6">
-                              {formatCurrency(medicaoData.total)}
-                            </div>
+                      <TableRow key={item.id} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
+                        <TableCell className="border border-gray-300 p-1">
+                          <div className="text-center font-mono text-xs font-bold px-1">
+                            {item.item}
                           </div>
                         </TableCell>
-                        <TableCell className="p-3">
+                        <TableCell className="border border-gray-300 p-1">
+                          <div className="text-center font-mono text-xs px-1">
+                            {item.codigo}
+                          </div>
+                        </TableCell>
+                        <TableCell className="border border-gray-300 p-1 max-w-xs" title={item.descricao}>
+                          <div className="text-xs px-1 truncate">
+                            {item.descricao}
+                          </div>
+                        </TableCell>
+                        <TableCell className="border border-gray-300 p-1">
+                          <div className="text-center font-mono text-xs px-1">
+                            {item.und}
+                          </div>
+                        </TableCell>
+                        <TableCell className="border border-gray-300 p-1">
+                          <div className="text-right font-mono text-xs px-1">
+                            {item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="border border-gray-300 p-1">
+                          <div className="text-right font-mono text-xs px-1">
+                            R$ {item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="border border-gray-300 p-1">
+                          <div className="text-right font-mono text-xs px-1">
+                            R$ {item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </TableCell>
+                        {mostrarAditivo && (
+                          <>
+                            <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                              <div className="text-right font-mono text-xs px-1">
+                                {item.aditivo.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                            </TableCell>
+                            <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                              <div className="text-center font-mono text-xs px-1">
+                                {item.aditivo.percentual.toFixed(2)}%
+                              </div>
+                            </TableCell>
+                            <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                              <div className="text-right font-mono text-xs px-1">
+                                R$ {item.aditivo.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                            </TableCell>
+                          </>
+                        )}
+                        <TableCell className="border border-gray-300 p-1">
+                          <div className="text-right font-mono text-xs px-1 font-bold">
+                            R$ {item.totalContrato.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
+                          <div className="text-right font-mono text-xs px-1">
+                            {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
+                          <div className="text-center font-mono text-xs px-1">
+                            {medicaoData.percentual.toFixed(2)}%
+                          </div>
+                        </TableCell>
+                        <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
+                          <div className="text-right font-mono text-xs px-1">
+                            R$ {medicaoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="bg-purple-100 border border-purple-300 p-1">
+                          <div className="text-right font-mono text-xs px-1">
+                            0,00
+                          </div>
+                        </TableCell>
+                        <TableCell className="bg-purple-100 border border-purple-300 p-1">
+                          <div className="text-center font-mono text-xs px-1">
+                            0,00%
+                          </div>
+                        </TableCell>
+                        <TableCell className="bg-purple-100 border border-purple-300 p-1">
+                          <div className="text-right font-mono text-xs px-1">
+                            R$ 0,00
+                          </div>
+                        </TableCell>
+                        <TableCell className="bg-purple-100 border border-purple-300 p-1">
+                          <div className="text-right font-mono text-xs px-1">
+                            0,00
+                          </div>
+                        </TableCell>
+                        <TableCell className="border border-gray-300 p-1">
                           <div className="flex gap-1 justify-center">
-                            {!item.ehAdministracaoLocal && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setItems(prev => prev.map(i => i.id === item.id ? { ...i, ehAdministracaoLocal: true } : i));
-                                }}
-                                title="Marcar como Administração Local"
-                                className="h-8 w-8 p-0"
-                              >
-                                <Settings className="h-3 w-3" />
-                              </Button>
-                            )}
                             <Button
                               variant="destructive"
                               size="sm"
                               onClick={() => removerItem(item.id)}
                               disabled={item.importado}
-                              className="h-8 w-8 p-0"
+                              className="h-6 w-6 p-0 text-xs"
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
