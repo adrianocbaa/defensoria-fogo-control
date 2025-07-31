@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/PageHeader';
@@ -155,63 +155,66 @@ export function Medicao() {
     return itemsComTotais;
   };
 
-  // Função para calcular totais hierárquicos de medições
-  const calcularTotaisHierarquicosMedicoes = (items: Item[], medicaoId: number) => {
-    const medicao = medicoes.find(m => m.id === medicaoId);
-    if (!medicao) return {};
-
-    const dadosCalculados = { ...medicao.dados };
-
-    // Ordenar por item para processar hierarquicamente
-    const itemsOrdenados = [...items].sort((a, b) => {
-      const aPartes = a.item.split('.').map(Number);
-      const bPartes = b.item.split('.').map(Number);
-      
-      for (let i = 0; i < Math.max(aPartes.length, bPartes.length); i++) {
-        const aParte = aPartes[i] || 0;
-        const bParte = bPartes[i] || 0;
-        if (aParte !== bParte) return aParte - bParte;
-      }
-      return 0;
-    });
-
-    // Processar do nível mais profundo para o mais superficial
-    const maxNivel = Math.max(...itemsOrdenados.map(item => determinarNivel(item.item)));
+  // Memoizar dados hierárquicos para performance
+  const dadosHierarquicosMemoizados = useMemo(() => {
+    const cache: { [medicaoId: number]: { [itemId: number]: { qnt: number; percentual: number; total: number } } } = {};
     
-    for (let nivel = maxNivel; nivel >= 1; nivel--) {
-      itemsOrdenados.forEach(item => {
-        if (determinarNivel(item.item) === nivel && ehItemPai(item.item, itemsOrdenados)) {
-          // Somar todos os filhos diretos
-          const filhos = itemsOrdenados.filter(filho => {
-            const filhoPartes = filho.item.split('.');
-            const paiPartes = item.item.split('.');
-            return filhoPartes.length === paiPartes.length + 1 &&
-                   filho.item.startsWith(item.item + '.');
-          });
-          
-          let qntTotal = 0;
-          let valorTotal = 0;
-          
-          filhos.forEach(filho => {
-            const dadosFilho = dadosCalculados[filho.id] || { qnt: 0, percentual: 0, total: 0 };
-            qntTotal += dadosFilho.qnt || 0;
-            valorTotal += dadosFilho.total || 0;
-          });
-          
-          // Calcular percentual baseado na quantidade total do contrato
-          const percentualCalculado = item.totalContrato > 0 ? (valorTotal / item.totalContrato) * 100 : 0;
-          
-          dadosCalculados[item.id] = {
-            qnt: qntTotal,
-            percentual: percentualCalculado,
-            total: valorTotal
-          };
+    medicoes.forEach(medicao => {
+      const dadosCalculados = { ...medicao.dados };
+
+      // Ordenar por item para processar hierarquicamente
+      const itemsOrdenados = [...items].sort((a, b) => {
+        const aPartes = a.item.split('.').map(Number);
+        const bPartes = b.item.split('.').map(Number);
+        
+        for (let i = 0; i < Math.max(aPartes.length, bPartes.length); i++) {
+          const aParte = aPartes[i] || 0;
+          const bParte = bPartes[i] || 0;
+          if (aParte !== bParte) return aParte - bParte;
         }
+        return 0;
       });
-    }
+
+      // Processar do nível mais profundo para o mais superficial
+      const maxNivel = Math.max(...itemsOrdenados.map(item => determinarNivel(item.item)));
+      
+      for (let nivel = maxNivel; nivel >= 1; nivel--) {
+        itemsOrdenados.forEach(item => {
+          if (determinarNivel(item.item) === nivel && ehItemPai(item.item, itemsOrdenados)) {
+            // Somar todos os filhos diretos
+            const filhos = itemsOrdenados.filter(filho => {
+              const filhoPartes = filho.item.split('.');
+              const paiPartes = item.item.split('.');
+              return filhoPartes.length === paiPartes.length + 1 &&
+                     filho.item.startsWith(item.item + '.');
+            });
+            
+            let qntTotal = 0;
+            let valorTotal = 0;
+            
+            filhos.forEach(filho => {
+              const dadosFilho = dadosCalculados[filho.id] || { qnt: 0, percentual: 0, total: 0 };
+              qntTotal += dadosFilho.qnt || 0;
+              valorTotal += dadosFilho.total || 0;
+            });
+            
+            // Calcular percentual baseado na quantidade total do contrato
+            const percentualCalculado = item.totalContrato > 0 ? (valorTotal / item.totalContrato) * 100 : 0;
+            
+            dadosCalculados[item.id] = {
+              qnt: qntTotal,
+              percentual: percentualCalculado,
+              total: valorTotal
+            };
+          }
+        });
+      }
+      
+      cache[medicao.id] = dadosCalculados;
+    });
     
-    return dadosCalculados;
-  };
+    return cache;
+  }, [items, medicoes]);
 
   // Função para calcular percentual baseado na quantidade
   const calcularPercentual = (quantidade: number, quantidadeTotal: number) => {
@@ -441,8 +444,8 @@ export function Medicao() {
   const calcularValorAcumulado = (itemId: number) => {
     let totalAcumulado = 0;
     for (let i = 1; i <= medicaoAtual; i++) {
-      const dadosHierarquicos = calcularTotaisHierarquicosMedicoes(items, i);
-      if (dadosHierarquicos[itemId]) {
+      const dadosHierarquicos = dadosHierarquicosMemoizados[i];
+      if (dadosHierarquicos && dadosHierarquicos[itemId]) {
         totalAcumulado += dadosHierarquicos[itemId].total || 0;
       }
     }
@@ -465,8 +468,8 @@ export function Medicao() {
   const calcularQuantidadeAcumulada = (itemId: number) => {
     let qntAcumulada = 0;
     for (let i = 1; i <= medicaoAtual; i++) {
-      const dadosHierarquicos = calcularTotaisHierarquicosMedicoes(items, i);
-      if (dadosHierarquicos[itemId]) {
+      const dadosHierarquicos = dadosHierarquicosMemoizados[i];
+      if (dadosHierarquicos && dadosHierarquicos[itemId]) {
         qntAcumulada += dadosHierarquicos[itemId].qnt || 0;
       }
     }
@@ -664,9 +667,9 @@ export function Medicao() {
                         <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT</TableHead>
                         <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">%</TableHead>
                         <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                        <TableHead className="min-w-[100px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
                       </>
                     )}
-                    <TableHead className="min-w-[100px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
                     <TableHead className="min-w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
                     <TableHead className="min-w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
                     <TableHead className="min-w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
@@ -678,9 +681,8 @@ export function Medicao() {
                 </TableHeader>
                 <TableBody>
                   {items.map(item => {
-                    // Calcular dados hierárquicos para a medição atual
-                    const dadosHierarquicos = calcularTotaisHierarquicosMedicoes(items, medicaoAtual);
-                    const medicaoData = dadosHierarquicos[item.id] || { qnt: 0, percentual: 0, total: 0 };
+                    // Usar dados hierárquicos memoizados para performance
+                    const medicaoData = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 };
                     const estiloLinha = obterEstiloLinha(item);
                     
                     return (
@@ -743,13 +745,6 @@ export function Medicao() {
                               </div>
                             </TableCell>
                           </>
-                        )}
-                         {!mostrarAditivo && (
-                          <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                            <div className="text-right font-mono text-xs px-1 font-bold">
-                              R$ {item.totalContrato.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                          </TableCell>
                         )}
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                           {item.ehAdministracaoLocal ? (
