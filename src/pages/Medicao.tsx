@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap } from 'lucide-react';
+import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
 import * as LoadingStates from '@/components/LoadingStates';
@@ -379,6 +379,42 @@ export function Medicao() {
     return '';
   };
 
+  // Função para calcular valores acumulados até a medição atual
+  const calcularValorAcumulado = (itemId: number) => {
+    let totalAcumulado = 0;
+    for (let i = 1; i <= medicaoAtual; i++) {
+      const medicao = medicoes.find(m => m.id === i);
+      if (medicao && medicao.dados[itemId]) {
+        totalAcumulado += medicao.dados[itemId].total || 0;
+      }
+    }
+    return totalAcumulado;
+  };
+
+  // Função para calcular percentual acumulado
+  const calcularPercentualAcumulado = (itemId: number) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return 0;
+    
+    const valorAcumulado = calcularValorAcumulado(itemId);
+    const totalContrato = item.totalContrato;
+    
+    if (totalContrato === 0) return 0;
+    return (valorAcumulado / totalContrato) * 100;
+  };
+
+  // Função para calcular quantidade acumulada
+  const calcularQuantidadeAcumulada = (itemId: number) => {
+    let qntAcumulada = 0;
+    for (let i = 1; i <= medicaoAtual; i++) {
+      const medicao = medicoes.find(m => m.id === i);
+      if (medicao && medicao.dados[itemId]) {
+        qntAcumulada += medicao.dados[itemId].qnt || 0;
+      }
+    }
+    return qntAcumulada;
+  };
+
   // Função para formatar moeda
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -565,24 +601,20 @@ export function Medicao() {
                     <TableHead className="min-w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
                     <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
                     <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
-                    {mostrarAditivo && (
+                     {mostrarAditivo && (
                       <>
                         <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT</TableHead>
                         <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">%</TableHead>
                         <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL</TableHead>
-                        <TableHead className="min-w-[100px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
                       </>
                     )}
-                    {!mostrarAditivo && (
-                      <TableHead className="min-w-[100px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
-                    )}
+                    <TableHead className="min-w-[100px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
                     <TableHead className="min-w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
                     <TableHead className="min-w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
                     <TableHead className="min-w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
                     <TableHead className="min-w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT</TableHead>
                     <TableHead className="min-w-[50px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">%</TableHead>
                     <TableHead className="min-w-[80px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">TOTAL</TableHead>
-                    <TableHead className="min-w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT.</TableHead>
                     <TableHead className="min-w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Admin. Local</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -652,8 +684,8 @@ export function Medicao() {
                             </TableCell>
                           </>
                         )}
-                        {!mostrarAditivo && (
-                          <TableCell className="border border-gray-300 p-1">
+                         {!mostrarAditivo && (
+                          <TableCell className="bg-blue-100 border border-blue-300 p-1">
                             <div className="text-right font-mono text-xs px-1 font-bold">
                               R$ {item.totalContrato.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
@@ -687,22 +719,17 @@ export function Medicao() {
                         </TableCell>
                         <TableCell className="bg-purple-100 border border-purple-300 p-1">
                           <div className="text-right font-mono text-xs px-1">
-                            0,00
+                            {calcularQuantidadeAcumulada(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </TableCell>
                         <TableCell className="bg-purple-100 border border-purple-300 p-1">
                           <div className="text-center font-mono text-xs px-1">
-                            0,00%
+                            {calcularPercentualAcumulado(item.id).toFixed(2)}%
                           </div>
                         </TableCell>
                         <TableCell className="bg-purple-100 border border-purple-300 p-1">
                           <div className="text-right font-mono text-xs px-1">
-                            R$ 0,00
-                          </div>
-                        </TableCell>
-                        <TableCell className="bg-purple-100 border border-purple-300 p-1">
-                          <div className="text-right font-mono text-xs px-1">
-                            0,00
+                            R$ {calcularValorAcumulado(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </TableCell>
                         <TableCell className="border border-gray-300 p-1">
@@ -711,9 +738,9 @@ export function Medicao() {
                               variant={item.ehAdministracaoLocal ? "default" : "outline"}
                               size="sm"
                               onClick={() => toggleAdministracaoLocal(item.id)}
-                              className="h-6 w-14 p-0 text-xs"
+                              className="h-6 w-8 p-0 text-xs"
                             >
-                              <Settings className="h-3 w-3" />
+                              <Check className="h-3 w-3" />
                             </Button>
                           </div>
                         </TableCell>
