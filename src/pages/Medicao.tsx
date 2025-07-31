@@ -155,6 +155,64 @@ export function Medicao() {
     return itemsComTotais;
   };
 
+  // Função para calcular totais hierárquicos de medições
+  const calcularTotaisHierarquicosMedicoes = (items: Item[], medicaoId: number) => {
+    const medicao = medicoes.find(m => m.id === medicaoId);
+    if (!medicao) return {};
+
+    const dadosCalculados = { ...medicao.dados };
+
+    // Ordenar por item para processar hierarquicamente
+    const itemsOrdenados = [...items].sort((a, b) => {
+      const aPartes = a.item.split('.').map(Number);
+      const bPartes = b.item.split('.').map(Number);
+      
+      for (let i = 0; i < Math.max(aPartes.length, bPartes.length); i++) {
+        const aParte = aPartes[i] || 0;
+        const bParte = bPartes[i] || 0;
+        if (aParte !== bParte) return aParte - bParte;
+      }
+      return 0;
+    });
+
+    // Processar do nível mais profundo para o mais superficial
+    const maxNivel = Math.max(...itemsOrdenados.map(item => determinarNivel(item.item)));
+    
+    for (let nivel = maxNivel; nivel >= 1; nivel--) {
+      itemsOrdenados.forEach(item => {
+        if (determinarNivel(item.item) === nivel && ehItemPai(item.item, itemsOrdenados)) {
+          // Somar todos os filhos diretos
+          const filhos = itemsOrdenados.filter(filho => {
+            const filhoPartes = filho.item.split('.');
+            const paiPartes = item.item.split('.');
+            return filhoPartes.length === paiPartes.length + 1 &&
+                   filho.item.startsWith(item.item + '.');
+          });
+          
+          let qntTotal = 0;
+          let valorTotal = 0;
+          
+          filhos.forEach(filho => {
+            const dadosFilho = dadosCalculados[filho.id] || { qnt: 0, percentual: 0, total: 0 };
+            qntTotal += dadosFilho.qnt || 0;
+            valorTotal += dadosFilho.total || 0;
+          });
+          
+          // Calcular percentual baseado na quantidade total do contrato
+          const percentualCalculado = item.totalContrato > 0 ? (valorTotal / item.totalContrato) * 100 : 0;
+          
+          dadosCalculados[item.id] = {
+            qnt: qntTotal,
+            percentual: percentualCalculado,
+            total: valorTotal
+          };
+        }
+      });
+    }
+    
+    return dadosCalculados;
+  };
+
   // Função para calcular percentual baseado na quantidade
   const calcularPercentual = (quantidade: number, quantidadeTotal: number) => {
     if (quantidadeTotal === 0) return 0;
@@ -379,13 +437,13 @@ export function Medicao() {
     return '';
   };
 
-  // Função para calcular valores acumulados até a medição atual
+  // Função para calcular valores acumulados até a medição atual com hierarquia
   const calcularValorAcumulado = (itemId: number) => {
     let totalAcumulado = 0;
     for (let i = 1; i <= medicaoAtual; i++) {
-      const medicao = medicoes.find(m => m.id === i);
-      if (medicao && medicao.dados[itemId]) {
-        totalAcumulado += medicao.dados[itemId].total || 0;
+      const dadosHierarquicos = calcularTotaisHierarquicosMedicoes(items, i);
+      if (dadosHierarquicos[itemId]) {
+        totalAcumulado += dadosHierarquicos[itemId].total || 0;
       }
     }
     return totalAcumulado;
@@ -403,13 +461,13 @@ export function Medicao() {
     return (valorAcumulado / totalContrato) * 100;
   };
 
-  // Função para calcular quantidade acumulada
+  // Função para calcular quantidade acumulada com hierarquia
   const calcularQuantidadeAcumulada = (itemId: number) => {
     let qntAcumulada = 0;
     for (let i = 1; i <= medicaoAtual; i++) {
-      const medicao = medicoes.find(m => m.id === i);
-      if (medicao && medicao.dados[itemId]) {
-        qntAcumulada += medicao.dados[itemId].qnt || 0;
+      const dadosHierarquicos = calcularTotaisHierarquicosMedicoes(items, i);
+      if (dadosHierarquicos[itemId]) {
+        qntAcumulada += dadosHierarquicos[itemId].qnt || 0;
       }
     }
     return qntAcumulada;
@@ -620,7 +678,9 @@ export function Medicao() {
                 </TableHeader>
                 <TableBody>
                   {items.map(item => {
-                    const medicaoData = medicoes.find(m => m.id === medicaoAtual)?.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+                    // Calcular dados hierárquicos para a medição atual
+                    const dadosHierarquicos = calcularTotaisHierarquicosMedicoes(items, medicaoAtual);
+                    const medicaoData = dadosHierarquicos[item.id] || { qnt: 0, percentual: 0, total: 0 };
                     const estiloLinha = obterEstiloLinha(item);
                     
                     return (
