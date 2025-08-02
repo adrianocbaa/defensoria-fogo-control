@@ -1,18 +1,5 @@
 import { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  AlertCircle, 
-  AlertTriangle,
-  MapPin, 
-  FileText, 
-  Users, 
-  Package, 
-  Calendar, 
-  History, 
-  BarChart3, 
-  Settings,
-  ChevronRight
-} from 'lucide-react';
+import { BarChart3, AlertCircle, AlertTriangle, MapPin, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
@@ -26,21 +13,11 @@ import {
 } from '@/components/ui/sidebar';
 
 const menuItems = [
-  { title: 'Visão Geral', icon: LayoutDashboard, id: 'overview' },
-  { title: 'Chamados', icon: AlertCircle, id: 'tickets' },
-  { title: 'Viagens', icon: MapPin, id: 'travel-planning' },
-  { title: 'Ordens de Serviço', icon: FileText, id: 'work-orders' },
-  { title: 'Contratos e Fornecedores', icon: Users, id: 'contracts' },
-  { title: 'Inventário - Dashboard', icon: Package, id: 'inventory' },
-  { title: 'Lista de Materiais', icon: Package, id: 'materials-list' },
-  { title: 'Movimentação', icon: Package, id: 'stock-movement' },
-  { title: 'Relatório de Estoque', icon: Package, id: 'stock-report' },
-  { title: 'Notificações', icon: Package, id: 'notifications' },
-  { title: 'Manutenções Preventivas', icon: Calendar, id: 'preventive' },
-  { title: 'Histórico de Atendimentos', icon: History, id: 'history' },
-  { title: 'Relatórios', icon: BarChart3, id: 'reports' },
-  { title: 'Configurações', icon: Settings, id: 'settings' },
-  { title: 'Teste', icon: Settings, id: 'settings' },
+  { id: 'overview', title: 'Visão Geral', icon: BarChart3 },
+  { id: 'tickets', title: 'Chamados', icon: AlertCircle },
+  { id: 'alerts', title: 'Alertas', icon: AlertTriangle },
+  { id: 'travel', title: 'Planejamento de Viagens', icon: MapPin },
+  { id: 'inventory', title: 'Inventário de Equipamentos', icon: Package },
 ];
 
 interface MaintenanceSidebarProps {

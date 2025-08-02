@@ -1,160 +1,164 @@
-import { AlertTriangle, Package, TrendingDown, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useMaterials } from '@/hooks/useMaterials';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Package, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface DashboardStats {
+  totalMaterials: number;
+  lowStock: number;
+  recentMovements: number;
+  totalValue: number;
+}
+
+interface LowStockItem {
+  id: string;
+  code: string;
+  description: string;
+  current_stock: number;
+  minimum_stock: number;
+  unit: string;
+}
 
 export function InventoryDashboard() {
-  const { materials, loading, getLowStockMaterials } = useMaterials();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalMaterials: 0,
+    lowStock: 0,
+    recentMovements: 0,
+    totalValue: 0
+  });
+  const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      // Get total materials and low stock items
+      const { data: materials, error: materialsError } = await supabase
+        .from('materials')
+        .select('*');
+
+      if (materialsError) throw materialsError;
+
+      const lowStock = materials?.filter(m => m.current_stock <= m.minimum_stock) || [];
+      
+      // Get recent movements (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data: movements, error: movementsError } = await supabase
+        .from('stock_movements')
+        .select('*')
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      if (movementsError) throw movementsError;
+
+      setStats({
+        totalMaterials: materials?.length || 0,
+        lowStock: lowStock.length,
+        recentMovements: movements?.length || 0,
+        totalValue: 0 // This would need price data
+      });
+
+      setLowStockItems(lowStock);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <div className="p-6">Carregando dashboard...</div>;
   }
 
-  const lowStockMaterials = getLowStockMaterials();
-  const totalValue = materials.reduce((sum, m) => sum + (m.current_stock * 10), 0); // Valor estimado
-  const totalItems = materials.reduce((sum, m) => sum + m.current_stock, 0);
-
-  const stats = [
-    {
-      title: 'Total de Materiais',
-      value: materials.length.toString(),
-      description: 'Diferentes tipos cadastrados',
-      icon: Package,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      title: 'Itens em Estoque',
-      value: totalItems.toFixed(0),
-      description: 'Quantidade total disponível',
-      icon: TrendingUp,
-      color: 'text-green-500',
-      bgColor: 'bg-green-50'
-    },
-    {
-      title: 'Estoque Baixo',
-      value: lowStockMaterials.length.toString(),
-      description: 'Materiais abaixo do mínimo',
-      icon: AlertTriangle,
-      color: 'text-red-500',
-      bgColor: 'bg-red-50'
-    },
-    {
-      title: 'Valor Estimado',
-      value: `R$ ${totalValue.toLocaleString('pt-BR')}`,
-      description: 'Valor total em estoque',
-      icon: TrendingDown,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-50'
-    }
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard do Almoxarifado</h1>
-        <p className="text-muted-foreground">
-          Visão geral do inventário e alertas de estoque
-        </p>
+        <h2 className="text-2xl font-bold">Dashboard do Inventário</h2>
+        <p className="text-muted-foreground">Visão geral do estoque e movimentações</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-md ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                {stat.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Materiais</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalMaterials}</div>
+            <p className="text-xs text-muted-foreground">itens cadastrados</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{stats.lowStock}</div>
+            <p className="text-xs text-muted-foreground">itens abaixo do mínimo</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Movimentações</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.recentMovements}</div>
+            <p className="text-xs text-muted-foreground">últimos 7 dias</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ 0,00</div>
+            <p className="text-xs text-muted-foreground">em implementação</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Alertas de Estoque Baixo */}
-      {lowStockMaterials.length > 0 && (
+      {/* Low Stock Alerts */}
+      {stats.lowStock > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               Alertas de Estoque Baixo
             </CardTitle>
-            <CardDescription>
-              Materiais que precisam de reposição urgente
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {lowStockMaterials.map((material) => (
-                <div key={material.id} className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+              {lowStockItems.map((item) => (
+                <Alert key={item.id} variant="destructive">
+                  <AlertDescription className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium text-sm">
-                        {material.code} - {material.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Estoque atual: {material.current_stock} {material.unit}
-                      </p>
+                      <strong>{item.code}</strong> - {item.description}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="destructive" className="text-xs">
-                      Crítico
-                    </Badge>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Mín: {material.minimum_stock} {material.unit}
-                    </p>
-                  </div>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {item.current_stock} / {item.minimum_stock} {item.unit}
+                      </Badge>
+                    </div>
+                  </AlertDescription>
+                </Alert>
               ))}
             </div>
           </CardContent>
         </Card>
       )}
-
-      {/* Resumo por Unidade */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumo por Unidade</CardTitle>
-          <CardDescription>
-            Distribuição dos materiais por tipo de unidade
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            {['KG', 'M', 'LITRO', 'PC', 'CX'].map((unit) => {
-              const materialsByUnit = materials.filter(m => m.unit === unit);
-              const totalByUnit = materialsByUnit.reduce((sum, m) => sum + m.current_stock, 0);
-              
-              return (
-                <div key={unit} className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{materialsByUnit.length}</div>
-                  <div className="text-sm text-muted-foreground">materiais</div>
-                  <Badge variant="outline" className="mt-2">{unit}</Badge>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Total: {totalByUnit.toFixed(1)} {unit}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

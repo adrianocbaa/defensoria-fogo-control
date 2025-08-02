@@ -1,234 +1,303 @@
-import { useState } from 'react';
-import { Search, Filter, Download, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useMaterials } from '@/hooks/useMaterials';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Download, Filter, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+interface MaterialStock {
+  id: string;
+  code: string;
+  description: string;
+  unit: string;
+  current_stock: number;
+  minimum_stock: number;
+}
 
 export function StockReport() {
-  const { materials, loading } = useMaterials();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [unitFilter, setUnitFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [materials, setMaterials] = useState<MaterialStock[]>([]);
+  const [filteredMaterials, setFilteredMaterials] = useState<MaterialStock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [unitFilter, setUnitFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const filteredMaterials = materials.filter(material => {
-    const matchesSearch = material.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         material.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesUnit = unitFilter === 'all' || material.unit === unitFilter;
-    
-    const isLowStock = material.current_stock <= material.minimum_stock;
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'low' && isLowStock) ||
-                         (statusFilter === 'normal' && !isLowStock);
+  const units = ['KG', 'M', 'LITRO', 'PC', 'CX'];
+  const statusOptions = [
+    { value: 'all', label: 'Todos' },
+    { value: 'low', label: 'Estoque Baixo' },
+    { value: 'attention', label: 'Atenção' },
+    { value: 'ok', label: 'OK' }
+  ];
 
-    return matchesSearch && matchesUnit && matchesStatus;
-  });
+  useEffect(() => {
+    loadMaterials();
+  }, []);
 
-  const getStockStatus = (material: any) => {
-    if (material.current_stock <= material.minimum_stock) {
-      return { variant: 'destructive' as const, label: 'Crítico', icon: AlertTriangle };
+  useEffect(() => {
+    applyFilters();
+  }, [materials, unitFilter, statusFilter]);
+
+  const loadMaterials = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('materials')
+        .select('*')
+        .order('code');
+
+      if (error) throw error;
+      setMaterials(data || []);
+    } catch (error) {
+      console.error('Error loading materials:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar o relatório",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-    if (material.current_stock <= material.minimum_stock * 1.5) {
-      return { variant: 'secondary' as const, label: 'Atenção', icon: null };
-    }
-    return { variant: 'default' as const, label: 'Normal', icon: null };
   };
 
-  const exportToCSV = () => {
-    const headers = ['Código', 'Descrição', 'Unidade', 'Estoque Atual', 'Estoque Mínimo', 'Status'];
-    const rows = filteredMaterials.map(material => [
-      material.code,
-      material.description,
-      material.unit,
-      material.current_stock,
-      material.minimum_stock,
-      getStockStatus(material).label
-    ]);
+  const applyFilters = () => {
+    let filtered = [...materials];
 
-    const csvContent = [headers, ...rows]
-      .map(row => row.join(','))
-      .join('\n');
+    // Filter by unit
+    if (unitFilter !== 'all') {
+      filtered = filtered.filter(material => material.unit === unitFilter);
+    }
 
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(material => {
+        const status = getStockStatus(material.current_stock, material.minimum_stock);
+        if (statusFilter === 'low') return status.type === 'low';
+        if (statusFilter === 'attention') return status.type === 'attention';
+        if (statusFilter === 'ok') return status.type === 'ok';
+        return true;
+      });
+    }
+
+    setFilteredMaterials(filtered);
+  };
+
+  const getStockStatus = (current: number, minimum: number) => {
+    if (current <= minimum) {
+      return { 
+        type: 'low', 
+        label: 'Baixo', 
+        variant: 'destructive' as const,
+        icon: <AlertTriangle className="h-4 w-4" />
+      };
+    }
+    if (current <= minimum * 1.5) {
+      return { 
+        type: 'attention', 
+        label: 'Atenção', 
+        variant: 'secondary' as const,
+        icon: null
+      };
+    }
+    return { 
+      type: 'ok', 
+      label: 'OK', 
+      variant: 'default' as const,
+      icon: null
+    };
+  };
+
+  const exportReport = () => {
+    const csvData = [
+      ['Código', 'Descrição', 'Unidade', 'Estoque Atual', 'Estoque Mínimo', 'Status'],
+      ...filteredMaterials.map(material => {
+        const status = getStockStatus(material.current_stock, material.minimum_stock);
+        return [
+          material.code,
+          material.description,
+          material.unit,
+          material.current_stock,
+          material.minimum_stock,
+          status.label
+        ];
+      })
+    ];
+
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio_estoque_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', 'relatorio-estoque.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    toast({
+      title: "Sucesso",
+      description: "Relatório exportado com sucesso"
+    });
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <div className="p-6">Carregando relatório...</div>;
   }
 
+  const lowStockCount = materials.filter(m => m.current_stock <= m.minimum_stock).length;
+  const attentionCount = materials.filter(m => 
+    m.current_stock > m.minimum_stock && m.current_stock <= m.minimum_stock * 1.5
+  ).length;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Relatório de Estoque</h1>
-          <p className="text-muted-foreground">
-            Visualize e analise o estoque atual de todos os materiais
-          </p>
+          <h2 className="text-2xl font-bold">Relatório de Estoque</h2>
+          <p className="text-muted-foreground">Visão completa dos níveis de estoque</p>
         </div>
-        <Button onClick={exportToCSV}>
-          <Download className="mr-2 h-4 w-4" />
+        <Button onClick={exportReport} className="flex items-center gap-2">
+          <Download className="h-4 w-4" />
           Exportar CSV
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total de Itens</p>
+                <p className="text-2xl font-bold">{materials.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Estoque Baixo</p>
+                <p className="text-2xl font-bold text-destructive">{lowStockCount}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Necessita Atenção</p>
+                <p className="text-2xl font-bold text-orange-600">{attentionCount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
             Filtros
           </CardTitle>
-          <CardDescription>
-            Filtre os materiais por critérios específicos
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por código ou descrição..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Unidade</label>
+              <Select value={unitFilter} onValueChange={setUnitFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {units.map(unit => (
+                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <Select value={unitFilter} onValueChange={setUnitFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filtrar por unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as unidades</SelectItem>
-                <SelectItem value="KG">KG - Quilograma</SelectItem>
-                <SelectItem value="M">M - Metro</SelectItem>
-                <SelectItem value="LITRO">LITRO - Litro</SelectItem>
-                <SelectItem value="PC">PC - Peça</SelectItem>
-                <SelectItem value="CX">CX - Caixa</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filtrar por status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="low">Estoque baixo</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{filteredMaterials.length}</div>
-            <p className="text-xs text-muted-foreground">Materiais encontrados</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">
-              {filteredMaterials.filter(m => m.current_stock > m.minimum_stock * 1.5).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Com estoque normal</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-600">
-              {filteredMaterials.filter(m => m.current_stock > m.minimum_stock && m.current_stock <= m.minimum_stock * 1.5).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Requer atenção</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-red-600">
-              {filteredMaterials.filter(m => m.current_stock <= m.minimum_stock).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Estoque crítico</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Report Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Relatório Detalhado</CardTitle>
-          <CardDescription>
-            {filteredMaterials.length} material(is) listado(s)
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead>Estoque Atual</TableHead>
-                <TableHead>Estoque Mínimo</TableHead>
-                <TableHead>Diferença</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMaterials.map((material) => {
-                const status = getStockStatus(material);
-                const difference = material.current_stock - material.minimum_stock;
-                return (
-                  <TableRow key={material.id} className={
-                    material.current_stock <= material.minimum_stock ? 'bg-red-50' : ''
-                  }>
-                    <TableCell className="font-medium">{material.code}</TableCell>
-                    <TableCell>{material.description}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{material.unit}</Badge>
-                    </TableCell>
-                    <TableCell>{material.current_stock}</TableCell>
-                    <TableCell>{material.minimum_stock}</TableCell>
-                    <TableCell className={difference < 0 ? 'text-red-600' : 'text-green-600'}>
-                      {difference > 0 ? '+' : ''}{difference}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={status.variant} className="flex items-center gap-1">
-                        {status.icon && <status.icon className="h-3 w-3" />}
-                        {status.label}
-                      </Badge>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Unidade</TableHead>
+                  <TableHead className="text-center">Estoque Atual</TableHead>
+                  <TableHead className="text-center">Estoque Mínimo</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">% do Mínimo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMaterials.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      Nenhum material encontrado com os filtros aplicados
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredMaterials.map((material) => {
+                    const status = getStockStatus(material.current_stock, material.minimum_stock);
+                    const percentage = material.minimum_stock > 0 
+                      ? Math.round((material.current_stock / material.minimum_stock) * 100)
+                      : 100;
 
-          {filteredMaterials.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Nenhum material encontrado com os filtros aplicados.</p>
-            </div>
-          )}
+                    return (
+                      <TableRow 
+                        key={material.id}
+                        className={status.type === 'low' ? 'bg-destructive/10' : ''}
+                      >
+                        <TableCell className="font-medium">{material.code}</TableCell>
+                        <TableCell>{material.description}</TableCell>
+                        <TableCell>{material.unit}</TableCell>
+                        <TableCell className="text-center">{material.current_stock}</TableCell>
+                        <TableCell className="text-center">{material.minimum_stock}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={status.variant} className="flex items-center gap-1 w-fit">
+                            {status.icon}
+                            {status.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className={
+                            percentage < 100 ? 'text-destructive font-medium' : 
+                            percentage < 150 ? 'text-orange-600' : 'text-green-600'
+                          }>
+                            {percentage}%
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
