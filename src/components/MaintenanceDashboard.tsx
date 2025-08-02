@@ -5,6 +5,11 @@ import { MaintenanceMap } from '@/components/MaintenanceMap';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { TravelCalendar } from '@/components/TravelCalendar';
 import { AlertsShowcase } from '@/components/AlertsShowcase';
+import { InventoryDashboard } from '@/components/inventory/InventoryDashboard';
+import { MaterialsList } from '@/components/inventory/MaterialsList';
+import { StockMovement } from '@/components/inventory/StockMovement';
+import { StockReport } from '@/components/inventory/StockReport';
+import { MobileNotifications } from '@/components/inventory/MobileNotifications';
 
 interface MaintenanceDashboardProps {
   activeSection?: string;
@@ -23,6 +28,47 @@ export function MaintenanceDashboard({ activeSection = 'overview' }: Maintenance
     return (
       <div className="p-6">
         <TravelCalendar />
+      </div>
+    );
+  }
+
+  // Inventory sections
+  if (activeSection === 'inventory') {
+    return (
+      <div className="p-6">
+        <InventoryDashboard />
+      </div>
+    );
+  }
+
+  if (activeSection === 'materials-list') {
+    return (
+      <div className="p-6">
+        <MaterialsList />
+      </div>
+    );
+  }
+
+  if (activeSection === 'stock-movement') {
+    return (
+      <div className="p-6">
+        <StockMovement />
+      </div>
+    );
+  }
+
+  if (activeSection === 'stock-report') {
+    return (
+      <div className="p-6">
+        <StockReport />
+      </div>
+    );
+  }
+
+  if (activeSection === 'notifications') {
+    return (
+      <div className="p-6">
+        <MobileNotifications />
       </div>
     );
   }

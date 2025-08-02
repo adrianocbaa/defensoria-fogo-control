@@ -277,6 +277,39 @@ export type Database = {
           },
         ]
       }
+      materials: {
+        Row: {
+          code: string
+          created_at: string
+          current_stock: number
+          description: string
+          id: string
+          minimum_stock: number
+          unit: Database["public"]["Enums"]["unit_type"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_stock?: number
+          description: string
+          id?: string
+          minimum_stock?: number
+          unit: Database["public"]["Enums"]["unit_type"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_stock?: number
+          description?: string
+          id?: string
+          minimum_stock?: number
+          unit?: Database["public"]["Enums"]["unit_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nuclei: {
         Row: {
           address: string
@@ -433,6 +466,47 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          material_id: string
+          quantity: number
+          type: Database["public"]["Enums"]["movement_type"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          material_id: string
+          quantity: number
+          type: Database["public"]["Enums"]["movement_type"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          material_id?: string
+          quantity?: number
+          type?: Database["public"]["Enums"]["movement_type"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       travels: {
         Row: {
           created_at: string
@@ -502,12 +576,14 @@ export type Database = {
       document_type: "project" | "fire-license" | "photos" | "report"
       extinguisher_status: "valid" | "expired" | "expiring-soon"
       extinguisher_type: "H2O" | "PQS" | "CO2" | "ABC"
+      movement_type: "ENTRADA" | "SAIDA" | "DESCARTE"
       sector_type:
         | "manutencao"
         | "obra"
         | "preventivos"
         | "ar_condicionado"
         | "projetos"
+      unit_type: "KG" | "M" | "LITRO" | "PC" | "CX"
       user_role: "admin" | "editor" | "viewer" | "manutencao" | "gm"
     }
     CompositeTypes: {
@@ -639,6 +715,7 @@ export const Constants = {
       document_type: ["project", "fire-license", "photos", "report"],
       extinguisher_status: ["valid", "expired", "expiring-soon"],
       extinguisher_type: ["H2O", "PQS", "CO2", "ABC"],
+      movement_type: ["ENTRADA", "SAIDA", "DESCARTE"],
       sector_type: [
         "manutencao",
         "obra",
@@ -646,6 +723,7 @@ export const Constants = {
         "ar_condicionado",
         "projetos",
       ],
+      unit_type: ["KG", "M", "LITRO", "PC", "CX"],
       user_role: ["admin", "editor", "viewer", "manutencao", "gm"],
     },
   },
