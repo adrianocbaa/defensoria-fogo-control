@@ -103,7 +103,7 @@ export function MovementForm({ onBack, onSave }: MovementFormProps) {
         .from('stock_movements')
         .insert({
           material_id: formData.materialId,
-          type: formData.type,
+          type: formData.type as 'ENTRADA' | 'SAIDA' | 'DESCARTE',
           quantity: formData.quantity,
           date: format(formData.date, 'yyyy-MM-dd'),
           description: formData.notes || null,

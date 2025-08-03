@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, AlertCircle, AlertTriangle, MapPin, Package } from 'lucide-react';
+import { BarChart3, AlertCircle, AlertTriangle, MapPin, Package, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
