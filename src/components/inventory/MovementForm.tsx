@@ -11,6 +11,7 @@ import { ArrowLeft, Save, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { toast } from '@/hooks/use-toast';
 
 interface Material {
@@ -103,7 +104,7 @@ export function MovementForm({ onBack, onSave }: MovementFormProps) {
         .from('stock_movements')
         .insert({
           material_id: formData.materialId,
-          type: formData.type as 'ENTRADA' | 'SAIDA' | 'DESCARTE',
+          type: formData.type as Database['public']['Enums']['movement_type'],
           quantity: formData.quantity,
           date: format(formData.date, 'yyyy-MM-dd'),
           description: formData.notes || null,
