@@ -42,9 +42,21 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Cores específicas para inventário */
+    --inventory-success: 142 76% 36%;
+    --inventory-warning: 38 92% 50%;
+    --inventory-danger: 0 84% 60%;
+    --inventory-info: 199 89% 48%;
+    --inventory-neutral: 210 40% 50%;
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 142 71% 29%;
+
+    /* Gradientes para status */
+    --gradient-success: linear-gradient(135deg, hsl(var(--inventory-success)), hsl(142 76% 45%));
+    --gradient-warning: linear-gradient(135deg, hsl(var(--inventory-warning)), hsl(38 92% 60%));
+    --gradient-danger: linear-gradient(135deg, hsl(var(--inventory-danger)), hsl(0 84% 70%));
 
     --radius: 0.5rem;
 
@@ -163,4 +175,100 @@ All colors MUST be HSL.
 /* Popover z-index fix for calendars */
 [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;
+}
+
+/* Componentes customizados para inventário */
+@layer components {
+  /* Status Indicators */
+  .status-indicator {
+    @apply flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all;
+  }
+  
+  .status-critical {
+    @apply bg-red-50 text-red-700 border border-red-200 hover:bg-red-100;
+  }
+  
+  .status-warning {
+    @apply bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100;
+  }
+  
+  .status-success {
+    @apply bg-green-50 text-green-700 border border-green-200 hover:bg-green-100;
+  }
+  
+  .status-neutral {
+    @apply bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100;
+  }
+
+  /* Card Variants */
+  .card-enhanced {
+    @apply bg-card border border-border/50 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md hover:border-border;
+  }
+  
+  .card-stats {
+    @apply card-enhanced p-6 relative overflow-hidden;
+  }
+  
+  .card-stats::before {
+    @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 to-primary/60;
+    content: '';
+  }
+
+  /* Mobile-first responsive grid */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+  
+  .grid-stats {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+
+  /* Table responsivo */
+  .table-responsive {
+    @apply w-full overflow-x-auto;
+  }
+  
+  .table-row-critical {
+    @apply bg-red-50/50 border-l-4 border-red-500;
+  }
+  
+  .table-row-warning {
+    @apply bg-yellow-50/50 border-l-4 border-yellow-500;
+  }
+
+  /* Mobile notification styles */
+  .notification-mobile {
+    @apply bg-white border-l-4 border-red-500 rounded-lg shadow-lg p-4 max-w-sm mx-auto;
+  }
+  
+  /* Form enhancements */
+  .form-section {
+    @apply space-y-4 p-6 bg-card border border-border/50 rounded-lg;
+  }
+  
+  /* Filter bar */
+  .filter-bar {
+    @apply flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg border border-border/50;
+  }
+  
+  /* Action buttons */
+  .btn-action {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors;
+  }
+  
+  .btn-primary {
+    @apply btn-action bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+  
+  .btn-success {
+    @apply btn-action bg-green-600 text-white hover:bg-green-700;
+  }
+  
+  .btn-warning {
+    @apply btn-action bg-yellow-600 text-white hover:bg-yellow-700;
+  }
+  
+  .btn-danger {
+    @apply btn-action bg-red-600 text-white hover:bg-red-700;
+  }
 }
