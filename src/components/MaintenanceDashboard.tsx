@@ -20,8 +20,67 @@ export function MaintenanceDashboard({ activeSection = 'overview' }: Maintenance
     return <KanbanBoard />;
   }
 
-  if (activeSection === 'alerts') {
-    return <AlertsShowcase />;
+  if (activeSection === 'service-orders') {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">Ordens de Serviço</h1>
+        <p className="text-muted-foreground">Gerenciamento de ordens de serviço em desenvolvimento...</p>
+      </div>
+    );
+  }
+
+  if (activeSection === 'contracts') {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">Contratos e Fornecedores</h1>
+        <p className="text-muted-foreground">Gestão de contratos e fornecedores em desenvolvimento...</p>
+      </div>
+    );
+  }
+
+  if (activeSection === 'preventive') {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">Manutenções Preventivas</h1>
+        <p className="text-muted-foreground">Sistema de manutenções preventivas em desenvolvimento...</p>
+      </div>
+    );
+  }
+
+  if (activeSection === 'history') {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">Histórico de Atendimentos</h1>
+        <p className="text-muted-foreground">Histórico completo de atendimentos em desenvolvimento...</p>
+      </div>
+    );
+  }
+
+  if (activeSection === 'reports') {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">Relatórios</h1>
+        <p className="text-muted-foreground">Sistema de relatórios em desenvolvimento...</p>
+      </div>
+    );
+  }
+
+  if (activeSection === 'settings') {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">Configurações</h1>
+        <p className="text-muted-foreground">Configurações do sistema em desenvolvimento...</p>
+      </div>
+    );
+  }
+
+  if (activeSection === 'test') {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">Teste</h1>
+        <p className="text-muted-foreground">Área de testes em desenvolvimento...</p>
+      </div>
+    );
   }
 
   if (activeSection === 'travel') {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, AlertCircle, AlertTriangle, MapPin, Package, ChevronRight } from 'lucide-react';
+import { BarChart3, AlertCircle, AlertTriangle, MapPin, Package, ChevronRight, FileText, Users, Wrench, History, Settings, TestTube } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
@@ -15,9 +15,15 @@ import {
 const menuItems = [
   { id: 'overview', title: 'Visão Geral', icon: BarChart3 },
   { id: 'tickets', title: 'Chamados', icon: AlertCircle },
-  { id: 'alerts', title: 'Alertas', icon: AlertTriangle },
-  { id: 'travel', title: 'Planejamento de Viagens', icon: MapPin },
+  { id: 'travel', title: 'Viagens', icon: MapPin },
+  { id: 'service-orders', title: 'Ordens de Serviço', icon: FileText },
+  { id: 'contracts', title: 'Contratos e Fornecedores', icon: Users },
   { id: 'inventory', title: 'Inventário de Equipamentos', icon: Package },
+  { id: 'preventive', title: 'Manutenções Preventivas', icon: Wrench },
+  { id: 'history', title: 'Histórico de Atendimentos', icon: History },
+  { id: 'reports', title: 'Relatórios', icon: BarChart3 },
+  { id: 'settings', title: 'Configurações', icon: Settings },
+  { id: 'test', title: 'Teste', icon: TestTube },
 ];
 
 interface MaintenanceSidebarProps {
