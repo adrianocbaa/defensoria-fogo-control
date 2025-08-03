@@ -24,7 +24,7 @@ export function MaintenanceDashboard({ activeSection = 'overview' }: Maintenance
     return <AlertsShowcase />;
   }
 
-  if (activeSection === 'travel-planning') {
+  if (activeSection === 'travel') {
     return (
       <div className="p-6">
         <TravelCalendar />
