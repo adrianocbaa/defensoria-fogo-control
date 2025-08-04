@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type UserRole = 'admin' | 'editor' | 'viewer' | 'gm';
+export type UserRole = 'admin' | 'editor' | 'viewer' | 'gm' | 'manutencao';
 
 export function useUserRole() {
   const { user } = useAuth();

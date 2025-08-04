@@ -7,16 +7,17 @@ import {
   HardHat, 
   Shield, 
   Wind, 
-  FolderKanban 
+  FolderKanban,
+  Package 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos';
+type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado';
 
 interface SectorBlock {
-  id: Sector;
+  id: Sector | string;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   path: string;
@@ -64,6 +65,14 @@ const sectorBlocks: SectorBlock[] = [
     path: '#',
     color: 'text-purple-600',
     bgColor: 'bg-purple-50 hover:bg-purple-100 border-purple-200'
+  },
+  {
+    id: 'almoxarifado',
+    title: 'Almoxarifado',
+    icon: Package,
+    path: '/inventory',
+    color: 'text-green-600',
+    bgColor: 'bg-green-50 hover:bg-green-100 border-green-200'
   }
 ];
 
