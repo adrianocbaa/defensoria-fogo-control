@@ -1,3 +1,4 @@
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   BarChart3,
   Package,
@@ -33,7 +34,11 @@ interface InventorySidebarProps {
 }
 
 export function InventorySidebar({ activeSection = 'dashboard', onSectionChange }: InventorySidebarProps) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const handleSectionClick = (sectionId: string) => {
+    navigate(`/inventory?section=${sectionId}`);
     onSectionChange?.(sectionId);
   };
 
