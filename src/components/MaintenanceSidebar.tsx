@@ -18,7 +18,7 @@ const menuItems = [
   { id: 'travel', title: 'Viagens', icon: MapPin },
   { id: 'service-orders', title: 'Ordens de Serviço', icon: FileText },
   { id: 'contracts', title: 'Contratos e Fornecedores', icon: Users },
-  { id: 'inventory', title: 'Inventário de Equipamentos', icon: Package },
+  { id: 'inventory', title: 'Almoxarifado', icon: Package },
   { id: 'preventive', title: 'Manutenções Preventivas', icon: Wrench },
   { id: 'history', title: 'Histórico de Atendimentos', icon: History },
   { id: 'reports', title: 'Relatórios', icon: BarChart3 },
