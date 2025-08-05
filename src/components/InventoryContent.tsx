@@ -35,10 +35,8 @@ export function InventoryContent({ activeSection }: InventoryContentProps) {
   };
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="container mx-auto p-6 space-y-6">
-        {renderContent()}
-      </div>
+    <div className="p-6 space-y-6">
+      {renderContent()}
     </div>
   );
 }
