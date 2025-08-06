@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/components/LoadingStates';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
@@ -48,14 +49,15 @@ const formatDate = (dateString: string) => {
 function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: () => void; loading?: boolean }) {
   const [photosLoading, setPhotosLoading] = useState(true);
   
-  // Cálculos financeiros
-  const valorInicial = obra?.valor || 0;
-  const valorAditivado = (obra as any)?.valor_aditivado || 0;
-  const valorFinal = valorInicial + valorAditivado;
-  const valorPago = obra?.valorExecutado || 0;
+  // Buscar dados financeiros das medições
+  const { dados: dadosFinanceiros, loading: loadingFinanceiro } = useMedicoesFinanceiro(obra.id);
   
-  // Cálculo do percentual de execução baseado em (Valor Pago / Valor Final) * 100
-  const percentualAndamento = valorFinal > 0 ? Math.min((valorPago / valorFinal) * 100, 100) : 0;
+  // Usar dados das medições se disponíveis, senão usar dados da obra
+  const valorInicial = dadosFinanceiros.valorTotalOriginal > 0 ? dadosFinanceiros.valorTotalOriginal : (obra?.valor || 0);
+  const valorAditivado = dadosFinanceiros.valorAditivado > 0 ? dadosFinanceiros.valorAditivado : ((obra as any)?.valor_aditivado || 0);
+  const valorFinal = dadosFinanceiros.valorFinal > 0 ? dadosFinanceiros.valorFinal : (valorInicial + valorAditivado);
+  const valorPago = dadosFinanceiros.valorPago > 0 ? dadosFinanceiros.valorPago : (obra?.valorExecutado || 0);
+  const percentualAndamento = dadosFinanceiros.percentualExecutado > 0 ? dadosFinanceiros.percentualExecutado : (valorFinal > 0 ? Math.min((valorPago / valorFinal) * 100, 100) : 0);
   
   // Simulate photo loading delay
   React.useEffect(() => {
@@ -216,6 +218,25 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
             <div className="space-y-4">
+              {loadingFinanceiro ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando dados das medições...
+                </div>
+              ) : dadosFinanceiros.valorTotalOriginal > 0 ? (
+                <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-xs text-blue-700">
+                    ✓ Dados atualizados com base nas medições registradas
+                  </p>
+                </div>
+              ) : (
+                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-xs text-yellow-700">
+                    ⚠️ Nenhuma medição encontrada. Exibindo dados do contrato original.
+                  </p>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <span className="text-sm font-medium text-muted-foreground">Valor Inicial do Contrato:</span>
@@ -241,7 +262,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <Progress value={percentualAndamento} className="h-3" />
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <div>
-                    <span className="font-medium">Valor Pago: </span>
+                    <span className="font-medium">Valor Executado: </span>
                     <span>{formatCurrency(valorPago)}</span>
                   </div>
                   <div>
