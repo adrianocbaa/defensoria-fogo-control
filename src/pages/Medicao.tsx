@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/PageHeader';
@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check } from 'lucide-react';
+import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
 import * as LoadingStates from '@/components/LoadingStates';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Obra {
   id: string;
@@ -43,29 +44,33 @@ interface Medicao {
   id: number;
   nome: string;
   dados: { [itemId: number]: { qnt: number; percentual: number; total: number } };
+  bloqueada?: boolean;
+  dataBloqueio?: string;
+  usuarioBloqueio?: string;
+}
+
+interface Aditivo {
+  id: number;
+  nome: string;
+  dados: { [itemId: number]: { qnt: number; percentual: number; total: number } };
 }
 
 export function Medicao() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useUserRole();
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Estados do sistema de medição
   const [items, setItems] = useState<Item[]>([]);
 
-  const [medicoes, setMedicoes] = useState<Medicao[]>([
-    { id: 1, nome: '1ª MEDIÇÃO', dados: {} },
-    { id: 2, nome: '2ª MEDIÇÃO', dados: {} },
-    { id: 3, nome: '3ª MEDIÇÃO', dados: {} },
-    { id: 4, nome: '4ª MEDIÇÃO', dados: {} },
-    { id: 5, nome: '5ª MEDIÇÃO', dados: {} },
-    { id: 6, nome: '6ª MEDIÇÃO', dados: {} }
-  ]);
+  const [medicoes, setMedicoes] = useState<Medicao[]>([]);
+  const [aditivos, setAditivos] = useState<Aditivo[]>([]);
 
-  const [medicaoAtual, setMedicaoAtual] = useState(1);
+  const [medicaoAtual, setMedicaoAtual] = useState<number | null>(null);
   const [modalImportarAberto, setModalImportarAberto] = useState(false);
-  const [mostrarAditivo, setMostrarAditivo] = useState(true);
+  const [mostrarAditivos, setMostrarAditivos] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -198,8 +203,9 @@ export function Medicao() {
               valorTotal += dadosFilho.total || 0;
             });
             
-            // Calcular percentual baseado na quantidade total do contrato
-            const percentualCalculado = item.totalContrato > 0 ? (valorTotal / item.totalContrato) * 100 : 0;
+            // Calcular percentual baseado na quantidade total do contrato incluindo aditivos
+            const totalContratoComAditivos = calcularTotalContratoComAditivos(item);
+            const percentualCalculado = totalContratoComAditivos > 0 ? (valorTotal / totalContratoComAditivos) * 100 : 0;
             
             dadosCalculados[item.id] = {
               qnt: qntTotal,
@@ -214,7 +220,7 @@ export function Medicao() {
     });
     
     return cache;
-  }, [items, medicoes]);
+  }, [items, medicoes, aditivos]);
 
   // Função para calcular percentual baseado na quantidade
   const calcularPercentual = (quantidade: number, quantidadeTotal: number) => {
@@ -301,37 +307,25 @@ export function Medicao() {
     toast.success(`Administração Local calculada! Porcentagem de execução: ${(porcentagemExecucao * 100).toFixed(2)}%`);
   };
 
-  // Função para atualizar aditivo/supressão/extracontratual
-  const atualizarAditivo = (itemId: number, campo: string, valor: string) => {
-    setItems(prevItems => {
-      const itemsAtualizados = prevItems.map(item => {
-        if (item.id === itemId) {
-          const novoAditivo = { ...item.aditivo, [campo]: parseFloat(valor) || 0 };
-          
-          // Recalcular percentual e total automaticamente
-          if (campo === 'qnt') {
-            novoAditivo.percentual = calcularPercentual(novoAditivo.qnt, item.quantidade);
-            novoAditivo.total = calcularTotal(novoAditivo.qnt, item.valorUnitario);
-          }
-          
-          // Recalcular total do contrato
-          const novoTotalContrato = item.valorTotal + novoAditivo.total;
-          
-          return {
-            ...item,
-            aditivo: novoAditivo,
-            totalContrato: novoTotalContrato
-          };
-        }
-        return item;
-      });
-      
-      return calcularTotaisHierarquicos(itemsAtualizados);
-    });
+  // Função para calcular total do contrato incluindo aditivos
+  const calcularTotalContratoComAditivos = (item: Item) => {
+    const totalAditivos = aditivos.reduce((sum, aditivo) => {
+      const aditivoData = aditivo.dados[item.id];
+      return sum + (aditivoData?.total || 0);
+    }, 0);
+    
+    return item.valorTotal + totalAditivos;
   };
 
   // Função para atualizar dados de medição
   const atualizarMedicao = (itemId: number, medicaoId: number, campo: string, valor: string) => {
+    // Verificar se a medição está bloqueada
+    const medicao = medicoes.find(m => m.id === medicaoId);
+    if (medicao?.bloqueada && !isAdmin) {
+      toast.error('Esta medição está bloqueada. Apenas administradores podem editá-la.');
+      return;
+    }
+
     const valorNumerico = parseFloat(valor) || 0;
     
     setMedicoes(prevMedicoes =>
@@ -362,6 +356,41 @@ export function Medicao() {
           };
         }
         return medicao;
+      })
+    );
+  };
+
+  // Função para atualizar dados de aditivo
+  const atualizarAditivo = (itemId: number, aditivoId: number, campo: string, valor: string) => {
+    const valorNumerico = parseFloat(valor) || 0;
+    
+    setAditivos(prevAditivos =>
+      prevAditivos.map(aditivo => {
+        if (aditivo.id === aditivoId) {
+          const dadosAtuais = aditivo.dados[itemId] || { qnt: 0, percentual: 0, total: 0 };
+          const novosDados = {
+            ...aditivo.dados,
+            [itemId]: {
+              ...dadosAtuais,
+              [campo]: valorNumerico
+            }
+          };
+          
+          // Recalcular percentual e total automaticamente
+          if (campo === 'qnt') {
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+              novosDados[itemId].percentual = calcularPercentual(valorNumerico, item.quantidade);
+              novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
+            }
+          }
+          
+          return {
+            ...aditivo,
+            dados: novosDados
+          };
+        }
+        return aditivo;
       })
     );
   };
@@ -406,6 +435,91 @@ export function Medicao() {
     );
   };
 
+  // Função para criar nova medição
+  const criarNovaMedicao = () => {
+    const numeroMedicao = medicoes.length + 1;
+    const novaMedicao: Medicao = {
+      id: Date.now(),
+      nome: `${numeroMedicao}ª MEDIÇÃO`,
+      dados: {},
+      bloqueada: false
+    };
+    
+    setMedicoes([...medicoes, novaMedicao]);
+    setMedicaoAtual(novaMedicao.id);
+    toast.success(`${numeroMedicao}ª Medição criada com sucesso!`);
+  };
+
+  // Função para criar novo aditivo
+  const criarNovoAditivo = () => {
+    const numeroAditivo = aditivos.length + 1;
+    const novoAditivo: Aditivo = {
+      id: Date.now(),
+      nome: `ADITIVO ${numeroAditivo}`,
+      dados: {}
+    };
+    
+    setAditivos([...aditivos, novoAditivo]);
+    toast.success(`Aditivo ${numeroAditivo} criado com sucesso!`);
+  };
+
+  // Função para salvar e bloquear medição
+  const salvarEBloquearMedicao = (medicaoId: number) => {
+    const medicao = medicoes.find(m => m.id === medicaoId);
+    if (!medicao) return;
+
+    // Verificar se há dados preenchidos
+    const temDados = Object.values(medicao.dados).some(dados => 
+      dados.qnt > 0 || dados.percentual > 0 || dados.total > 0
+    );
+
+    if (!temDados) {
+      toast.error('Não é possível bloquear uma medição sem dados preenchidos.');
+      return;
+    }
+
+    setMedicoes(prevMedicoes =>
+      prevMedicoes.map(m =>
+        m.id === medicaoId
+          ? {
+              ...m,
+              bloqueada: true,
+              dataBloqueio: new Date().toLocaleString('pt-BR'),
+              usuarioBloqueio: 'Usuário Atual' // Aqui você pode usar dados do usuário logado
+            }
+          : m
+      )
+    );
+
+    toast.success(`${medicao.nome} foi bloqueada com sucesso!`);
+  };
+
+  // Função para reabrir medição (apenas admins)
+  const reabrirMedicao = (medicaoId: number) => {
+    if (!isAdmin) {
+      toast.error('Apenas administradores podem reabrir medições.');
+      return;
+    }
+
+    const medicao = medicoes.find(m => m.id === medicaoId);
+    if (!medicao) return;
+
+    setMedicoes(prevMedicoes =>
+      prevMedicoes.map(m =>
+        m.id === medicaoId
+          ? {
+              ...m,
+              bloqueada: false,
+              dataBloqueio: undefined,
+              usuarioBloqueio: undefined
+            }
+          : m
+      )
+    );
+
+    toast.success(`${medicao.nome} foi reaberta para edição.`);
+  };
+
   // Função para importar dados da planilha
   const importarDados = (dadosImportados: Item[]) => {
     const dadosComNivel = dadosImportados.map(item => ({
@@ -442,9 +556,14 @@ export function Medicao() {
 
   // Função para calcular valores acumulados até a medição atual com hierarquia
   const calcularValorAcumulado = (itemId: number) => {
+    if (!medicaoAtual) return 0;
+    
     let totalAcumulado = 0;
-    for (let i = 1; i <= medicaoAtual; i++) {
-      const dadosHierarquicos = dadosHierarquicosMemoizados[i];
+    const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
+    
+    for (let i = 0; i <= medicaoAtualIndex; i++) {
+      const medicao = medicoes[i];
+      const dadosHierarquicos = dadosHierarquicosMemoizados[medicao.id];
       if (dadosHierarquicos && dadosHierarquicos[itemId]) {
         totalAcumulado += dadosHierarquicos[itemId].total || 0;
       }
@@ -458,7 +577,7 @@ export function Medicao() {
     if (!item) return 0;
     
     const valorAcumulado = calcularValorAcumulado(itemId);
-    const totalContrato = item.totalContrato;
+    const totalContrato = calcularTotalContratoComAditivos(item);
     
     if (totalContrato === 0) return 0;
     return (valorAcumulado / totalContrato) * 100;
@@ -466,9 +585,14 @@ export function Medicao() {
 
   // Função para calcular quantidade acumulada com hierarquia
   const calcularQuantidadeAcumulada = (itemId: number) => {
+    if (!medicaoAtual) return 0;
+    
     let qntAcumulada = 0;
-    for (let i = 1; i <= medicaoAtual; i++) {
-      const dadosHierarquicos = dadosHierarquicosMemoizados[i];
+    const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
+    
+    for (let i = 0; i <= medicaoAtualIndex; i++) {
+      const medicao = medicoes[i];
+      const dadosHierarquicos = dadosHierarquicosMemoizados[medicao.id];
       if (dadosHierarquicos && dadosHierarquicos[itemId]) {
         qntAcumulada += dadosHierarquicos[itemId].qnt || 0;
       }
@@ -504,15 +628,20 @@ export function Medicao() {
   // Calcular totais gerais
   const totaisGerais = {
     valorTotal: items.reduce((sum, item) => sum + item.valorTotal, 0),
-    aditivoTotal: items.reduce((sum, item) => sum + (item.aditivo?.total || 0), 0),
-    totalContrato: items.reduce((sum, item) => sum + item.totalContrato, 0),
+    aditivoTotal: aditivos.reduce((aditivoSum, aditivo) => {
+      return aditivoSum + items.reduce((itemSum, item) => {
+        const aditivoData = aditivo.dados[item.id];
+        return itemSum + (aditivoData?.total || 0);
+      }, 0);
+    }, 0),
+    totalContrato: items.reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0),
     administracaoLocalTotal: items
       .filter(item => item.ehAdministracaoLocal)
-      .reduce((sum, item) => sum + item.totalContrato, 0)
+      .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0)
   };
 
   // Calcular total de serviços executados na medição atual (apenas itens que NÃO são administração local)
-  const medicaoAtualData = medicoes.find(m => m.id === medicaoAtual);
+  const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
   const totalServicosExecutados = medicaoAtualData ? 
     Object.entries(medicaoAtualData.dados).reduce((sum, [itemId, dados]) => {
       const item = items.find(i => i.id === parseInt(itemId));
@@ -580,28 +709,106 @@ export function Medicao() {
           </Card>
         </div>
 
-        {/* Seletor de Medição */}
+        {/* Medições */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5" />
-              Medições
-            </CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="h-5 w-5" />
+                Medições
+              </CardTitle>
+              <Button onClick={criarNovaMedicao} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Nova Medição
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {medicoes.map(medicao => (
-                <Button
-                  key={medicao.id}
-                  variant={medicaoAtual === medicao.id ? "default" : "outline"}
-                  onClick={() => setMedicaoAtual(medicao.id)}
-                  className="text-sm"
-                >
-                  {medicao.nome}
-                </Button>
+                <div key={medicao.id} className="flex items-center gap-2">
+                  <Button
+                    variant={medicaoAtual === medicao.id ? "default" : "outline"}
+                    onClick={() => setMedicaoAtual(medicao.id)}
+                    className="text-sm"
+                    disabled={medicao.bloqueada && !isAdmin}
+                  >
+                    {medicao.bloqueada && <Lock className="h-3 w-3 mr-1" />}
+                    {medicao.nome}
+                  </Button>
+                  
+                  {medicaoAtual === medicao.id && (
+                    <div className="flex gap-1">
+                      {!medicao.bloqueada ? (
+                        <Button
+                          size="sm"
+                          onClick={() => salvarEBloquearMedicao(medicao.id)}
+                          className="flex items-center gap-1"
+                        >
+                          <Lock className="h-3 w-3" />
+                          Salvar e Bloquear
+                        </Button>
+                      ) : (
+                        <>
+                          <Badge variant="secondary" className="text-xs">
+                            Concluído em {medicao.dataBloqueio}
+                          </Badge>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => reabrirMedicao(medicao.id)}
+                              className="flex items-center gap-1"
+                            >
+                              <Unlock className="h-3 w-3" />
+                              Reabrir
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </CardContent>
+        </Card>
+
+        {/* Aditivos */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Aditivos
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={mostrarAditivos ? "default" : "outline"}
+                  onClick={() => setMostrarAditivos(!mostrarAditivos)}
+                  className="flex items-center gap-2"
+                >
+                  {mostrarAditivos ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {mostrarAditivos ? 'Ocultar' : 'Mostrar'} Aditivos
+                </Button>
+                <Button onClick={criarNovoAditivo} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Novo Aditivo
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          {mostrarAditivos && aditivos.length > 0 && (
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {aditivos.map(aditivo => (
+                  <Badge key={aditivo.id} variant="outline" className="text-sm">
+                    {aditivo.nome}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Tabela Principal */}
@@ -617,14 +824,6 @@ export function Medicao() {
                 >
                   <Zap className="h-4 w-4" />
                   Calcular Administração Local
-                </Button>
-                <Button
-                  variant={mostrarAditivo ? "default" : "outline"}
-                  onClick={() => setMostrarAditivo(!mostrarAditivo)}
-                  className="flex items-center gap-2"
-                >
-                  {mostrarAditivo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  {mostrarAditivo ? 'Ocultar' : 'Mostrar'} Aditivo
                 </Button>
                 <Dialog open={modalImportarAberto} onOpenChange={setModalImportarAberto}>
                   <DialogTrigger asChild>
@@ -662,14 +861,14 @@ export function Medicao() {
                     <TableHead className="min-w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
                     <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
                     <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
-                     {mostrarAditivo && (
-                      <>
-                        <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT</TableHead>
-                        <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">%</TableHead>
-                        <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL</TableHead>
-                        <TableHead className="min-w-[100px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
-                      </>
-                    )}
+                     {mostrarAditivos && aditivos.map(aditivo => (
+                      <React.Fragment key={`header-${aditivo.id}`}>
+                        <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT {aditivo.nome}</TableHead>
+                        <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">% {aditivo.nome}</TableHead>
+                        <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL {aditivo.nome}</TableHead>
+                      </React.Fragment>
+                    ))}
+                    <TableHead className="min-w-[100px] bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
                     <TableHead className="min-w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
                     <TableHead className="min-w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
                     <TableHead className="min-w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
@@ -682,8 +881,9 @@ export function Medicao() {
                 <TableBody>
                   {items.map(item => {
                     // Usar dados hierárquicos memoizados para performance
-                    const medicaoData = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 };
+                    const medicaoData = medicaoAtual ? (dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 }) : { qnt: 0, percentual: 0, total: 0 };
                     const estiloLinha = obterEstiloLinha(item);
+                    const medicaoAtualObj = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
                     
                     return (
                       <TableRow key={item.id} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
@@ -722,36 +922,44 @@ export function Medicao() {
                             R$ {item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </TableCell>
-                        {mostrarAditivo && (
-                          <>
-                            <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                              <div className="text-right font-mono text-xs px-1">
-                                {item.aditivo.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </div>
-                            </TableCell>
-                            <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                              <div className="text-center font-mono text-xs px-1">
-                                {item.aditivo.percentual.toFixed(2)}%
-                              </div>
-                            </TableCell>
-                            <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                              <div className="text-right font-mono text-xs px-1">
-                                R$ {item.aditivo.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </div>
-                            </TableCell>
-                            <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                              <div className="text-right font-mono text-xs px-1 font-bold">
-                                R$ {item.totalContrato.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </div>
-                            </TableCell>
-                          </>
-                        )}
+                        {mostrarAditivos && aditivos.map(aditivo => {
+                          const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+                          return (
+                            <React.Fragment key={`aditivo-${aditivo.id}-${item.id}`}>
+                              <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                <Input
+                                  type="number"
+                                  value={aditivoData.qnt || ''}
+                                  onChange={(e) => atualizarAditivo(item.id, aditivo.id, 'qnt', e.target.value)}
+                                  className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
+                                  step="0.01"
+                                  min="0"
+                                />
+                              </TableCell>
+                              <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                <div className="text-center font-mono text-xs px-1">
+                                  {aditivoData.percentual.toFixed(2)}%
+                                </div>
+                              </TableCell>
+                              <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                <div className="text-right font-mono text-xs px-1">
+                                  R$ {aditivoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                              </TableCell>
+                            </React.Fragment>
+                          );
+                        })}
+                        <TableCell className="bg-green-100 border border-green-300 p-1">
+                          <div className="text-right font-mono text-xs px-1 font-bold">
+                            R$ {calcularTotalContratoComAditivos(item).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </TableCell>
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                           {item.ehAdministracaoLocal ? (
                             <div className="text-right font-mono text-xs px-1">
                               {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
-                          ) : (
+                          ) : medicaoAtual && medicaoAtualObj ? (
                             <Input
                               type="number"
                               value={medicaoData.qnt || ''}
@@ -759,7 +967,12 @@ export function Medicao() {
                               className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
                               step="0.01"
                               min="0"
+                              disabled={medicaoAtualObj.bloqueada && !isAdmin}
                             />
+                          ) : (
+                            <div className="text-right font-mono text-xs px-1 text-muted-foreground">
+                              Selecione uma medição
+                            </div>
                           )}
                         </TableCell>
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
