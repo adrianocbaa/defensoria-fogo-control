@@ -30,19 +30,28 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         setLoading(true);
         setError(null);
 
-        // Por enquanto, retornar dados zerados até que as tabelas de medições sejam criadas
-        // Esta integração será ativada quando as tabelas medicoes e aditivos forem criadas no Supabase
+        // Tentar buscar dados do resumo financeiro no localStorage
+        const resumoSalvo = localStorage.getItem(`resumo_financeiro_${obraId}`);
         
-        // Simular um pequeno delay para mostrar o loading
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        setDados({
-          valorTotalOriginal: 0,
-          valorAditivado: 0,
-          valorFinal: 0,
-          percentualExecutado: 0,
-          valorPago: 0
-        });
+        if (resumoSalvo) {
+          const resumo = JSON.parse(resumoSalvo);
+          setDados({
+            valorTotalOriginal: resumo.valorOriginal || 0,
+            valorAditivado: resumo.valorAditivado || 0,
+            valorFinal: resumo.valorFinal || 0,
+            percentualExecutado: resumo.percentualExecutado || 0,
+            valorPago: 0 // Mantém valor pago zerado por enquanto
+          });
+        } else {
+          // Se não há dados salvos, retornar zeros
+          setDados({
+            valorTotalOriginal: 0,
+            valorAditivado: 0,
+            valorFinal: 0,
+            percentualExecutado: 0,
+            valorPago: 0
+          });
+        }
 
         // TODO: Implementar quando as tabelas forem criadas:
         // 1. Buscar medições: supabase.from('medicoes').select(...).eq('obra_id', obraId)
@@ -58,6 +67,17 @@ export const useMedicoesFinanceiro = (obraId: string) => {
     };
 
     fetchMedicoesFinanceiro();
+
+    // Escutar eventos de atualização de medições
+    const handleMedicaoAtualizada = () => {
+      fetchMedicoesFinanceiro();
+    };
+
+    window.addEventListener('medicaoAtualizada', handleMedicaoAtualizada);
+
+    return () => {
+      window.removeEventListener('medicaoAtualizada', handleMedicaoAtualizada);
+    };
   }, [obraId]);
 
   const refetch = () => {

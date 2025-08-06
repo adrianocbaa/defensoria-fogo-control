@@ -510,7 +510,7 @@ export function Medicao() {
   };
 
   // Função para salvar e bloquear medição
-  const salvarEBloquearMedicao = (medicaoId: number) => {
+  const salvarEBloquearMedicao = async (medicaoId: number) => {
     const medicao = medicoes.find(m => m.id === medicaoId);
     if (!medicao) return;
 
@@ -524,20 +524,43 @@ export function Medicao() {
       return;
     }
 
-    setMedicoes(prevMedicoes =>
-      prevMedicoes.map(m =>
-        m.id === medicaoId
-          ? {
-              ...m,
-              bloqueada: true,
-              dataBloqueio: new Date().toLocaleString('pt-BR'),
-              usuarioBloqueio: 'Usuário Atual' // Aqui você pode usar dados do usuário logado
-            }
-          : m
-      )
-    );
+    try {
+      setMedicoes(prevMedicoes =>
+        prevMedicoes.map(m =>
+          m.id === medicaoId
+            ? {
+                ...m,
+                bloqueada: true,
+                dataBloqueio: new Date().toLocaleString('pt-BR'),
+                usuarioBloqueio: 'Usuário Atual' // Aqui você pode usar dados do usuário logado
+              }
+            : m
+        )
+      );
 
-    toast.success(`${medicao.nome} foi bloqueada com sucesso!`);
+      // Calcular totais e disparar atualização para a página de obras
+      const resumoFinanceiro = {
+        obraId: obra.id,
+        valorOriginal: totaisGerais.valorTotal,
+        valorAditivado: totaisGerais.aditivoTotal,
+        valorFinal: totaisGerais.totalContrato,
+        percentualExecutado: totalServicosExecutados > 0 ? 
+          (totalServicosExecutados / totaisGerais.totalContrato) * 100 : 0
+      };
+
+      // Salvar resumo financeiro no localStorage para ser consumido pela página de obras
+      localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
+      
+      // Disparar evento customizado para notificar outras páginas
+      window.dispatchEvent(new CustomEvent('medicaoAtualizada', { 
+        detail: resumoFinanceiro 
+      }));
+
+      toast.success(`${medicao.nome} foi bloqueada com sucesso! Resumo financeiro atualizado.`);
+    } catch (error) {
+      console.error('Erro ao salvar medição:', error);
+      toast.error("Não foi possível atualizar o resumo financeiro da obra. Tente novamente.");
+    }
   };
 
   // Função para reabrir medição (apenas admins)
