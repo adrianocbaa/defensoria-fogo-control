@@ -98,6 +98,16 @@ export function Medicao() {
     }
   };
 
+  // Função para calcular total do contrato incluindo aditivos
+  const calcularTotalContratoComAditivos = (item: Item) => {
+    const totalAditivos = aditivos.reduce((sum, aditivo) => {
+      const aditivoData = aditivo.dados[item.id];
+      return sum + (aditivoData?.total || 0);
+    }, 0);
+    
+    return item.valorTotal + totalAditivos;
+  };
+
   // Função para determinar o nível hierárquico baseado no item
   const determinarNivel = (itemStr: string) => {
     if (!itemStr) return 3;
@@ -307,15 +317,6 @@ export function Medicao() {
     toast.success(`Administração Local calculada! Porcentagem de execução: ${(porcentagemExecucao * 100).toFixed(2)}%`);
   };
 
-  // Função para calcular total do contrato incluindo aditivos
-  const calcularTotalContratoComAditivos = (item: Item) => {
-    const totalAditivos = aditivos.reduce((sum, aditivo) => {
-      const aditivoData = aditivo.dados[item.id];
-      return sum + (aditivoData?.total || 0);
-    }, 0);
-    
-    return item.valorTotal + totalAditivos;
-  };
 
   // Função para atualizar dados de medição
   const atualizarMedicao = (itemId: number, medicaoId: number, campo: string, valor: string) => {
