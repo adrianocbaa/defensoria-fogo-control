@@ -1017,8 +1017,8 @@ export function Medicao() {
                                  disabled={medicaoAtualObj.bloqueada && !isAdmin}
                                />
                              ) : (
-                               <div className="text-right font-mono text-xs px-1 text-gray-500 italic">
-                                 {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                               <div className="text-right font-mono text-xs px-1">
+                                 {/* Célula em branco para itens pai */}
                                </div>
                              )
                            ) : (
