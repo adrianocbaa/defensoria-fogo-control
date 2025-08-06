@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 
 interface MedicaoFinanceira {
   valorTotalOriginal: number;
-  valorAditivado: number;
-  valorFinal: number;
+  totalAditivo: number;
+  totalContrato: number;
+  servicosExecutados: number;
   percentualExecutado: number;
   valorPago: number;
 }
@@ -11,8 +12,9 @@ interface MedicaoFinanceira {
 export const useMedicoesFinanceiro = (obraId: string) => {
   const [dados, setDados] = useState<MedicaoFinanceira>({
     valorTotalOriginal: 0,
-    valorAditivado: 0,
-    valorFinal: 0,
+    totalAditivo: 0,
+    totalContrato: 0,
+    servicosExecutados: 0,
     percentualExecutado: 0,
     valorPago: 0
   });
@@ -35,19 +37,25 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         
         if (resumoSalvo) {
           const resumo = JSON.parse(resumoSalvo);
+          const servicosExecutados = resumo.servicosExecutados || 0;
+          const totalContrato = resumo.totalContrato || 0;
+          const percentualExecutado = totalContrato > 0 ? (servicosExecutados / totalContrato) * 100 : 0;
+          
           setDados({
-            valorTotalOriginal: resumo.valorOriginal || 0,
-            valorAditivado: resumo.valorAditivado || 0,
-            valorFinal: resumo.valorFinal || 0,
-            percentualExecutado: resumo.percentualExecutado || 0,
+            valorTotalOriginal: resumo.valorTotalOriginal || 0,
+            totalAditivo: resumo.totalAditivo || 0,
+            totalContrato: totalContrato,
+            servicosExecutados: servicosExecutados,
+            percentualExecutado: percentualExecutado,
             valorPago: 0 // Mantém valor pago zerado por enquanto
           });
         } else {
           // Se não há dados salvos, retornar zeros
           setDados({
             valorTotalOriginal: 0,
-            valorAditivado: 0,
-            valorFinal: 0,
+            totalAditivo: 0,
+            totalContrato: 0,
+            servicosExecutados: 0,
             percentualExecutado: 0,
             valorPago: 0
           });
@@ -92,8 +100,9 @@ export const useMedicoesFinanceiro = (obraId: string) => {
 
           setDados({
             valorTotalOriginal: 0,
-            valorAditivado: 0,
-            valorFinal: 0,
+            totalAditivo: 0,
+            totalContrato: 0,
+            servicosExecutados: 0,
             percentualExecutado: 0,
             valorPago: 0
           });

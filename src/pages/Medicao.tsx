@@ -541,11 +541,10 @@ export function Medicao() {
       // Calcular totais e disparar atualização para a página de obras
       const resumoFinanceiro = {
         obraId: obra.id,
-        valorOriginal: totaisGerais.valorTotal,
-        valorAditivado: totaisGerais.aditivoTotal,
-        valorFinal: totaisGerais.totalContrato,
-        percentualExecutado: totalServicosExecutados > 0 ? 
-          (totalServicosExecutados / totaisGerais.totalContrato) * 100 : 0
+        valorTotalOriginal: totaisGerais.valorTotal,
+        totalAditivo: totaisGerais.aditivoTotal,
+        totalContrato: totaisGerais.totalContrato,
+        servicosExecutados: totalServicosExecutados
       };
 
       // Salvar resumo financeiro no localStorage para ser consumido pela página de obras

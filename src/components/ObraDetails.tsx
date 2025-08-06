@@ -54,10 +54,11 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   
   // Usar dados das medições se disponíveis, senão usar dados da obra
   const valorInicial = dadosFinanceiros.valorTotalOriginal > 0 ? dadosFinanceiros.valorTotalOriginal : (obra?.valor || 0);
-  const valorAditivado = dadosFinanceiros.valorAditivado > 0 ? dadosFinanceiros.valorAditivado : ((obra as any)?.valor_aditivado || 0);
-  const valorFinal = dadosFinanceiros.valorFinal > 0 ? dadosFinanceiros.valorFinal : (valorInicial + valorAditivado);
+  const valorAditivado = dadosFinanceiros.totalAditivo > 0 ? dadosFinanceiros.totalAditivo : ((obra as any)?.valor_aditivado || 0);
+  const valorFinal = dadosFinanceiros.totalContrato > 0 ? dadosFinanceiros.totalContrato : (valorInicial + valorAditivado);
+  const valorExecutado = dadosFinanceiros.servicosExecutados > 0 ? dadosFinanceiros.servicosExecutados : (obra?.valorExecutado || 0);
   const valorPago = dadosFinanceiros.valorPago > 0 ? dadosFinanceiros.valorPago : (obra?.valorExecutado || 0);
-  const percentualAndamento = dadosFinanceiros.percentualExecutado > 0 ? dadosFinanceiros.percentualExecutado : (valorFinal > 0 ? Math.min((valorPago / valorFinal) * 100, 100) : 0);
+  const percentualAndamento = dadosFinanceiros.percentualExecutado > 0 ? dadosFinanceiros.percentualExecutado : (valorFinal > 0 ? Math.min((valorExecutado / valorFinal) * 100, 100) : 0);
   
   // Simulate photo loading delay
   React.useEffect(() => {
@@ -263,7 +264,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <div>
                     <span className="font-medium">Valor Executado: </span>
-                    <span>{formatCurrency(valorPago)}</span>
+                    <span>{formatCurrency(valorExecutado)}</span>
                   </div>
                   <div>
                     <span className="font-medium">Valor Final: </span>
