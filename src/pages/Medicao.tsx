@@ -108,6 +108,27 @@ export function Medicao() {
     return item.valorTotal + totalAditivos;
   };
 
+  // Função para verificar se um item é de primeiro nível (sem pontos ou apenas números)
+  const ehItemPrimeiroNivel = (codigo: string) => {
+    // Um item é de primeiro nível se seu código corresponde a apenas números (ex: "1", "2", "3")
+    // Ignora subitens como "1.1", "1.1.1", etc.
+    return /^\d+$/.test(codigo.trim());
+  };
+
+  // Função para calcular Valor Total Original (soma apenas itens de primeiro nível)
+  const calcularValorTotalOriginal = useMemo(() => {
+    return items
+      .filter(item => ehItemPrimeiroNivel(item.item))
+      .reduce((total, item) => total + item.valorTotal, 0);
+  }, [items]);
+
+  // Função para calcular Total do Contrato (soma apenas itens de primeiro nível da coluna Total Contrato)
+  const calcularTotalContrato = useMemo(() => {
+    return items
+      .filter(item => ehItemPrimeiroNivel(item.item))
+      .reduce((total, item) => total + item.totalContrato, 0);
+  }, [items]);
+
   // Função para determinar o nível hierárquico baseado no item
   const determinarNivel = (itemStr: string) => {
     if (!itemStr) return 3;
@@ -681,7 +702,7 @@ export function Medicao() {
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Valor Total Original</div>
-              <div className="text-2xl font-bold">{formatCurrency(totaisGerais.valorTotal)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(calcularValorTotalOriginal)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -693,7 +714,7 @@ export function Medicao() {
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Total do Contrato</div>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totaisGerais.totalContrato)}</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(calcularTotalContrato)}</div>
             </CardContent>
           </Card>
           <Card>
