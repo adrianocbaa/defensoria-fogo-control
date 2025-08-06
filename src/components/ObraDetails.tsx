@@ -53,12 +53,12 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   const { dados: dadosFinanceiros, loading: loadingFinanceiro } = useMedicoesFinanceiro(obra.id);
   
   // Usar dados das medições se disponíveis, senão usar dados da obra
-  const valorInicial = dadosFinanceiros.valorTotalOriginal > 0 ? dadosFinanceiros.valorTotalOriginal : (obra?.valor || 0);
-  const valorAditivado = dadosFinanceiros.totalAditivo > 0 ? dadosFinanceiros.totalAditivo : ((obra as any)?.valor_aditivado || 0);
-  const valorFinal = dadosFinanceiros.totalContrato > 0 ? dadosFinanceiros.totalContrato : (valorInicial + valorAditivado);
-  const valorExecutado = dadosFinanceiros.servicosExecutados > 0 ? dadosFinanceiros.servicosExecutados : (obra?.valorExecutado || 0);
+  const valorInicial = dadosFinanceiros.valorTotalOriginal || (obra?.valor || 0);
+  const valorAditivado = dadosFinanceiros.totalAditivo || ((obra as any)?.valor_aditivado || 0);
+  const valorFinal = dadosFinanceiros.servicosExecutados || (obra?.valorExecutado || 0); // Valor Final = Serviços Executados
+  const valorExecutado = dadosFinanceiros.totalContrato || (valorInicial + valorAditivado); // Valor Executado = Total do Contrato
   const valorPago = dadosFinanceiros.valorPago > 0 ? dadosFinanceiros.valorPago : (obra?.valorExecutado || 0);
-  const percentualAndamento = dadosFinanceiros.percentualExecutado > 0 ? dadosFinanceiros.percentualExecutado : (valorFinal > 0 ? Math.min((valorExecutado / valorFinal) * 100, 100) : 0);
+  const percentualAndamento = valorExecutado > 0 ? Math.min((valorFinal / valorExecutado) * 100, 100) : 0;
   
   // Simulate photo loading delay
   React.useEffect(() => {
@@ -249,7 +249,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 </div>
                 <div>
                   <span className="text-sm font-medium text-muted-foreground">Valor Final:</span>
-                  <p className="text-lg font-semibold text-primary">{formatCurrency(valorFinal)}</p>
+                  <p className="text-lg font-semibold text-primary">{formatCurrency(valorExecutado)}</p>
                 </div>
               </div>
               
@@ -264,11 +264,11 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <div>
                     <span className="font-medium">Valor Executado: </span>
-                    <span>{formatCurrency(valorExecutado)}</span>
+                    <span>{formatCurrency(valorFinal)}</span>
                   </div>
                   <div>
                     <span className="font-medium">Valor Final: </span>
-                    <span>{formatCurrency(valorFinal)}</span>
+                    <span>{formatCurrency(valorExecutado)}</span>
                   </div>
                 </div>
               </div>
