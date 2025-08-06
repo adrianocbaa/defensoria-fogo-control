@@ -115,6 +115,30 @@ export function Medicao() {
     return /^\d+$/.test(codigo.trim());
   };
 
+  // Função para identificar itens que possuem subitens (códigos pai)
+  const obterCodigosComFilhos = useMemo(() => {
+    const todosCodigos = items.map(item => item.item.trim());
+    const codigosComFilhos = new Set<string>();
+    
+    todosCodigos.forEach(codigo => {
+      if (codigo.includes('.')) {
+        // Para cada código com ponto, adiciona os códigos pai
+        const partes = codigo.split('.');
+        for (let i = 1; i < partes.length; i++) {
+          const codigoPai = partes.slice(0, i).join('.');
+          codigosComFilhos.add(codigoPai);
+        }
+      }
+    });
+    
+    return codigosComFilhos;
+  }, [items]);
+
+  // Função para verificar se um item é folha (não possui subitens)
+  const ehItemFolha = (codigo: string) => {
+    return !obterCodigosComFilhos.has(codigo.trim());
+  };
+
   // Função para calcular Valor Total Original (soma apenas itens de primeiro nível)
   const calcularValorTotalOriginal = useMemo(() => {
     return items
@@ -976,27 +1000,33 @@ export function Medicao() {
                             R$ {calcularTotalContratoComAditivos(item).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </TableCell>
-                        <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
-                          {item.ehAdministracaoLocal ? (
-                            <div className="text-right font-mono text-xs px-1">
-                              {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                          ) : medicaoAtual && medicaoAtualObj ? (
-                            <Input
-                              type="number"
-                              value={medicaoData.qnt || ''}
-                              onChange={(e) => atualizarMedicao(item.id, medicaoAtual, 'qnt', e.target.value)}
-                              className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
-                              step="0.01"
-                              min="0"
-                              disabled={medicaoAtualObj.bloqueada && !isAdmin}
-                            />
-                          ) : (
-                            <div className="text-right font-mono text-xs px-1 text-muted-foreground">
-                              Selecione uma medição
-                            </div>
-                          )}
-                        </TableCell>
+                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
+                           {item.ehAdministracaoLocal ? (
+                             <div className="text-right font-mono text-xs px-1">
+                               {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                             </div>
+                           ) : medicaoAtual && medicaoAtualObj ? (
+                             ehItemFolha(item.item) ? (
+                               <Input
+                                 type="number"
+                                 value={medicaoData.qnt || ''}
+                                 onChange={(e) => atualizarMedicao(item.id, medicaoAtual, 'qnt', e.target.value)}
+                                 className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
+                                 step="0.01"
+                                 min="0"
+                                 disabled={medicaoAtualObj.bloqueada && !isAdmin}
+                               />
+                             ) : (
+                               <div className="text-right font-mono text-xs px-1 text-gray-500 italic">
+                                 {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                               </div>
+                             )
+                           ) : (
+                             <div className="text-right font-mono text-xs px-1 text-muted-foreground">
+                               Selecione uma medição
+                             </div>
+                           )}
+                         </TableCell>
                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                           <div className="text-center font-mono text-xs px-1">
                             {medicaoData.percentual.toFixed(2)}%
