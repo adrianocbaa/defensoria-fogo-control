@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
 import * as LoadingStates from '@/components/LoadingStates';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useMedicoes } from '@/hooks/useMedicoes';
 
 interface Obra {
   id: string;
@@ -59,6 +60,7 @@ export function Medicao() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
+  const { saveMedicao, updateMedicao, saveAditivo, updateAditivo } = useMedicoes();
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -512,7 +514,7 @@ export function Medicao() {
   // Função para salvar e bloquear medição
   const salvarEBloquearMedicao = async (medicaoId: number) => {
     const medicao = medicoes.find(m => m.id === medicaoId);
-    if (!medicao) return;
+    if (!medicao || !obra) return;
 
     // Verificar se há dados preenchidos
     const temDados = Object.values(medicao.dados).some(dados => 
@@ -525,6 +527,59 @@ export function Medicao() {
     }
 
     try {
+      // Salvar medições no banco de dados
+      const medicoesSalvas = [];
+      const currentDate = new Date();
+      const mes = currentDate.getMonth() + 1;
+      const ano = currentDate.getFullYear();
+
+      for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
+        const itemId = parseInt(itemIdStr);
+        const item = items.find(i => i.id === itemId);
+        
+        if (item && dados.qnt > 0) {
+          const medicaoData = {
+            obra_id: obra.id,
+            servico_codigo: item.codigo,
+            servico_descricao: item.descricao,
+            unidade: item.und,
+            quantidade_projeto: item.quantidade,
+            preco_unitario: item.valorUnitario,
+            valor_total: item.valorTotal,
+            quantidade_executada: dados.qnt,
+            valor_executado: dados.total,
+            mes_execucao: mes,
+            ano_execucao: ano
+          };
+
+          const medicaoSalva = await saveMedicao(medicaoData);
+          medicoesSalvas.push(medicaoSalva);
+        }
+      }
+
+      // Salvar aditivos no banco de dados
+      for (const aditivo of aditivos) {
+        for (const [itemIdStr, dados] of Object.entries(aditivo.dados)) {
+          const itemId = parseInt(itemIdStr);
+          const item = items.find(i => i.id === itemId);
+          
+          if (item && dados.qnt > 0) {
+            const aditivoData = {
+              obra_id: obra.id,
+              servico_codigo: item.codigo,
+              servico_descricao: item.descricao,
+              unidade: item.und,
+              quantidade: dados.qnt,
+              preco_unitario: item.valorUnitario,
+              valor_total: dados.total,
+              tipo: aditivo.nome
+            };
+
+            await saveAditivo(aditivoData);
+          }
+        }
+      }
+
       setMedicoes(prevMedicoes =>
         prevMedicoes.map(m =>
           m.id === medicaoId
@@ -532,7 +587,7 @@ export function Medicao() {
                 ...m,
                 bloqueada: true,
                 dataBloqueio: new Date().toLocaleString('pt-BR'),
-                usuarioBloqueio: 'Usuário Atual' // Aqui você pode usar dados do usuário logado
+                usuarioBloqueio: 'Usuário Atual'
               }
             : m
         )
@@ -555,10 +610,10 @@ export function Medicao() {
         detail: resumoFinanceiro 
       }));
 
-      toast.success(`${medicao.nome} foi bloqueada com sucesso! Resumo financeiro atualizado.`);
+      toast.success(`${medicao.nome} foi bloqueada e salva no banco de dados com sucesso! (${medicoesSalvas.length} itens salvos)`);
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
-      toast.error("Não foi possível atualizar o resumo financeiro da obra. Tente novamente.");
+      toast.error("Erro ao salvar medição no banco de dados. Tente novamente.");
     }
   };
 

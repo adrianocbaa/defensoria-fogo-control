@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      aditivos: {
+        Row: {
+          created_at: string
+          id: string
+          obra_id: string
+          preco_unitario: number
+          quantidade: number
+          servico_codigo: string
+          servico_descricao: string
+          tipo: string
+          unidade: string
+          updated_at: string
+          user_id: string | null
+          valor_total: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          obra_id: string
+          preco_unitario?: number
+          quantidade?: number
+          servico_codigo: string
+          servico_descricao: string
+          tipo?: string
+          unidade: string
+          updated_at?: string
+          user_id?: string | null
+          valor_total?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          obra_id?: string
+          preco_unitario?: number
+          quantidade?: number
+          servico_codigo?: string
+          servico_descricao?: string
+          tipo?: string
+          unidade?: string
+          updated_at?: string
+          user_id?: string | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aditivos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           changed_fields: string[] | null
@@ -309,6 +362,68 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      medicoes: {
+        Row: {
+          ano_execucao: number
+          created_at: string
+          id: string
+          mes_execucao: number
+          obra_id: string
+          preco_unitario: number
+          quantidade_executada: number
+          quantidade_projeto: number
+          servico_codigo: string
+          servico_descricao: string
+          unidade: string
+          updated_at: string
+          user_id: string | null
+          valor_executado: number
+          valor_total: number
+        }
+        Insert: {
+          ano_execucao: number
+          created_at?: string
+          id?: string
+          mes_execucao: number
+          obra_id: string
+          preco_unitario?: number
+          quantidade_executada?: number
+          quantidade_projeto?: number
+          servico_codigo: string
+          servico_descricao: string
+          unidade: string
+          updated_at?: string
+          user_id?: string | null
+          valor_executado?: number
+          valor_total?: number
+        }
+        Update: {
+          ano_execucao?: number
+          created_at?: string
+          id?: string
+          mes_execucao?: number
+          obra_id?: string
+          preco_unitario?: number
+          quantidade_executada?: number
+          quantidade_projeto?: number
+          servico_codigo?: string
+          servico_descricao?: string
+          unidade?: string
+          updated_at?: string
+          user_id?: string | null
+          valor_executado?: number
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nuclei: {
         Row: {
