@@ -599,7 +599,8 @@ export function Medicao() {
         valorTotalOriginal: calcularValorTotalOriginal,
         totalAditivo: totaisGerais.aditivoTotal,
         totalContrato: calcularTotalContrato,
-        servicosExecutados: totalServicosExecutados
+        servicosExecutados: totalServicosExecutados,
+        valorAcumulado: valorAcumuladoTotal
       };
 
       // Salvar resumo financeiro no localStorage para ser consumido pela página de obras

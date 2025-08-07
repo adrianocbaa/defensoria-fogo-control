@@ -55,10 +55,10 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   // Usar dados das medições se disponíveis, senão usar dados da obra
   const valorInicial = dadosFinanceiros.valorTotalOriginal || (obra?.valor || 0);
   const valorAditivado = dadosFinanceiros.totalAditivo || ((obra as any)?.valor_aditivado || 0);
-  const valorFinal = dadosFinanceiros.servicosExecutados || (obra?.valorExecutado || 0); // Valor Final = Serviços Executados
-  const valorExecutado = dadosFinanceiros.totalContrato || (valorInicial + valorAditivado); // Valor Executado = Total do Contrato
+  const valorFinal = dadosFinanceiros.totalContrato || (valorInicial + valorAditivado); // Valor Final = Total do Contrato
+  const valorExecutado = dadosFinanceiros.valorAcumulado || (obra?.valorExecutado || 0); // Valor Executado = Valor Acumulado
   const valorPago = dadosFinanceiros.valorPago > 0 ? dadosFinanceiros.valorPago : (obra?.valorExecutado || 0);
-  const percentualAndamento = valorExecutado > 0 ? Math.min((valorFinal / valorExecutado) * 100, 100) : 0;
+  const percentualAndamento = valorFinal > 0 ? Math.min((valorExecutado / valorFinal) * 100, 100) : 0;
   
   // Simulate photo loading delay
   React.useEffect(() => {
@@ -264,11 +264,11 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <div>
                     <span className="font-medium">Valor Executado: </span>
-                    <span>{formatCurrency(valorFinal)}</span>
+                    <span>{formatCurrency(valorExecutado)}</span>
                   </div>
                   <div>
                     <span className="font-medium">Valor Final: </span>
-                    <span>{formatCurrency(valorExecutado)}</span>
+                    <span>{formatCurrency(valorFinal)}</span>
                   </div>
                 </div>
               </div>

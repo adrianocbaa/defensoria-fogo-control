@@ -5,6 +5,7 @@ interface MedicaoFinanceira {
   totalAditivo: number;
   totalContrato: number;
   servicosExecutados: number;
+  valorAcumulado: number;
   percentualExecutado: number;
   valorPago: number;
 }
@@ -15,6 +16,7 @@ export const useMedicoesFinanceiro = (obraId: string) => {
     totalAditivo: 0,
     totalContrato: 0,
     servicosExecutados: 0,
+    valorAcumulado: 0,
     percentualExecutado: 0,
     valorPago: 0
   });
@@ -38,14 +40,16 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         if (resumoSalvo) {
           const resumo = JSON.parse(resumoSalvo);
           const servicosExecutados = resumo.servicosExecutados || 0;
+          const valorAcumulado = resumo.valorAcumulado || 0;
           const totalContrato = resumo.totalContrato || 0;
-          const percentualExecutado = totalContrato > 0 ? (servicosExecutados / totalContrato) * 100 : 0;
+          const percentualExecutado = totalContrato > 0 ? (valorAcumulado / totalContrato) * 100 : 0;
           
           setDados({
             valorTotalOriginal: resumo.valorTotalOriginal || 0,
             totalAditivo: resumo.totalAditivo || 0,
             totalContrato: totalContrato,
             servicosExecutados: servicosExecutados,
+            valorAcumulado: valorAcumulado,
             percentualExecutado: percentualExecutado,
             valorPago: 0 // Mantém valor pago zerado por enquanto
           });
@@ -56,6 +60,7 @@ export const useMedicoesFinanceiro = (obraId: string) => {
             totalAditivo: 0,
             totalContrato: 0,
             servicosExecutados: 0,
+            valorAcumulado: 0,
             percentualExecutado: 0,
             valorPago: 0
           });
@@ -103,6 +108,7 @@ export const useMedicoesFinanceiro = (obraId: string) => {
             totalAditivo: 0,
             totalContrato: 0,
             servicosExecutados: 0,
+            valorAcumulado: 0,
             percentualExecutado: 0,
             valorPago: 0
           });
