@@ -21,6 +21,7 @@ interface Item {
   importado: boolean;
   nivel: number;
   ehAdministracaoLocal: boolean;
+  ordem: number;
 }
 
 interface ImportarPlanilhaProps {
@@ -104,7 +105,8 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
           totalContrato: parseFloat(row[8]) || parseFloat(row[7]) || 0,
           importado: true,
           nivel: 3,
-          ehAdministracaoLocal: false
+          ehAdministracaoLocal: false,
+          ordem: i - headerRowIndex // Preservar ordem original da planilha
         }
         
         dadosProcessados.push(item)

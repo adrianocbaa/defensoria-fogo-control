@@ -40,6 +40,7 @@ interface Item {
   importado: boolean;
   nivel: number;
   ehAdministracaoLocal: boolean;
+  ordem: number;
 }
 
 interface Medicao {
@@ -111,7 +112,7 @@ export function Medicao() {
         .from('orcamento_items')
         .select('*')
         .eq('obra_id', id)
-        .order('created_at', { ascending: true });
+        .order('ordem', { ascending: true });
 
       if (orcamentoError) throw orcamentoError;
 
@@ -131,7 +132,8 @@ export function Medicao() {
           totalContrato: item.total_contrato,
           importado: true,
           nivel: item.nivel,
-          ehAdministracaoLocal: item.eh_administracao_local
+          ehAdministracaoLocal: item.eh_administracao_local,
+          ordem: item.ordem || 0
         }));
 
         setItems(itemsConvertidos);
