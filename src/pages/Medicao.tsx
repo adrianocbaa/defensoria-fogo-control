@@ -764,15 +764,11 @@ export function Medicao() {
       .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0)
   };
 
-  // Calcular total de serviços executados na medição atual (apenas itens que NÃO são administração local)
+  // Calcular total de serviços executados na medição atual (incluindo administração local)
   const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
   const totalServicosExecutados = medicaoAtualData ? 
     Object.entries(medicaoAtualData.dados).reduce((sum, [itemId, dados]) => {
-      const item = items.find(i => i.id === parseInt(itemId));
-      if (item && !item.ehAdministracaoLocal) {
-        return sum + (dados.total || 0);
-      }
-      return sum;
+      return sum + (dados.total || 0);
     }, 0) : 0;
 
   // Calcular valor acumulado - soma de todos os TOTAL das medições anteriores até a medição atual
