@@ -105,14 +105,45 @@ export function Medicao() {
     if (!id) return;
     
     try {
-      // Buscar medições salvas no banco de dados
-      const { data: medicoesSalvas, error } = await supabase
+      // Primeiro, buscar os items da planilha orçamentária
+      const { data: orcamentoItems, error: orcamentoError } = await supabase
+        .from('orcamento_items')
+        .select('*')
+        .eq('obra_id', id)
+        .order('created_at', { ascending: true });
+
+      if (orcamentoError) throw orcamentoError;
+
+      if (orcamentoItems && orcamentoItems.length > 0) {
+        // Converter items do orçamento para o formato da interface
+        const itemsConvertidos: Item[] = orcamentoItems.map(item => ({
+          id: Math.abs(hashCode(item.codigo)),
+          item: item.item,
+          codigo: item.codigo,
+          banco: item.banco,
+          descricao: item.descricao,
+          und: item.unidade,
+          quantidade: item.quantidade,
+          valorUnitario: item.valor_unitario,
+          valorTotal: item.valor_total,
+          aditivo: { qnt: 0, percentual: 0, total: 0 },
+          totalContrato: item.total_contrato,
+          importado: true,
+          nivel: item.nivel,
+          ehAdministracaoLocal: item.eh_administracao_local
+        }));
+
+        setItems(itemsConvertidos);
+      }
+
+      // Depois, buscar as medições salvas no banco de dados
+      const { data: medicoesSalvas, error: medicoesError } = await supabase
         .from('medicoes')
         .select('*')
         .eq('obra_id', id)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (medicoesError) throw medicoesError;
 
       if (medicoesSalvas && medicoesSalvas.length > 0) {
         // Converter dados do banco para o formato esperado pela interface
@@ -157,37 +188,9 @@ export function Medicao() {
         });
 
         setMedicoes(medicoesConvertidas);
-
-        // Também precisamos reconstruir os items baseados nas medições salvas
-        const itemsMap = new Map();
-        medicoesSalvas.forEach(medicao => {
-          const itemId = Math.abs(hashCode(medicao.servico_codigo));
-          if (!itemsMap.has(itemId)) {
-            itemsMap.set(itemId, {
-              id: itemId,
-              item: medicao.servico_codigo,
-              codigo: medicao.servico_codigo,
-              banco: 'SINAPI', // Valor padrão
-              descricao: medicao.servico_descricao,
-              und: medicao.unidade,
-              quantidade: medicao.quantidade_projeto,
-              valorUnitario: medicao.preco_unitario,
-              valorTotal: medicao.valor_total,
-              aditivo: { qnt: 0, percentual: 0, total: 0 },
-              totalContrato: medicao.valor_total,
-              importado: true,
-              nivel: 1, // Valor padrão
-              ehAdministracaoLocal: false // Valor padrão
-            });
-          }
-        });
-
-        if (itemsMap.size > 0) {
-          setItems(Array.from(itemsMap.values()));
-        }
       }
     } catch (error) {
-      console.error('Erro ao carregar medições salvas:', error);
+      console.error('Erro ao carregar dados salvos:', error);
       // Não mostrar toast de erro para não incomodar o usuário
     }
   };
@@ -577,14 +580,38 @@ export function Medicao() {
   };
 
   // Função para marcar/desmarcar item como administração local
-  const toggleAdministracaoLocal = (itemId: number) => {
-    setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === itemId
-          ? { ...item, ehAdministracaoLocal: !item.ehAdministracaoLocal }
-          : item
-      )
-    );
+  const toggleAdministracaoLocal = async (itemId: number) => {
+    if (!id) return;
+
+    try {
+      const item = items.find(i => i.id === itemId);
+      if (!item) return;
+
+      const novoStatus = !item.ehAdministracaoLocal;
+
+      // Atualizar no banco de dados
+      const { error } = await supabase
+        .from('orcamento_items')
+        .update({ eh_administracao_local: novoStatus })
+        .eq('obra_id', id)
+        .eq('codigo', item.codigo);
+
+      if (error) throw error;
+
+      // Atualizar no estado local
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === itemId
+            ? { ...item, ehAdministracaoLocal: novoStatus }
+            : item
+        )
+      );
+
+      toast.success(`Item ${novoStatus ? 'marcado como' : 'desmarcado de'} Administração Local`);
+    } catch (error) {
+      console.error('Erro ao atualizar administração local:', error);
+      toast.error('Erro ao atualizar status de administração local');
+    }
   };
 
   // Função para criar nova medição
@@ -749,20 +776,56 @@ export function Medicao() {
   };
 
   // Função para importar dados da planilha
-  const importarDados = (dadosImportados: Item[]) => {
-    const dadosComNivel = dadosImportados.map(item => ({
-      ...item,
-      importado: true,
-      nivel: determinarNivel(item.item),
-      ehAdministracaoLocal: false // Inicialmente nenhum item é marcado como administração local
-    }));
-    
-    const dadosComTotais = calcularTotaisHierarquicos(dadosComNivel);
-    setItems(dadosComTotais);
-    
-    // Limpar dados de medições ao importar nova planilha
-    setMedicoes(medicoes.map(medicao => ({ ...medicao, dados: {} })));
-    toast.success('Planilha importada com sucesso!');
+  const importarDados = async (dadosImportados: Item[]) => {
+    if (!id) return;
+
+    try {
+      const dadosComNivel = dadosImportados.map(item => ({
+        ...item,
+        importado: true,
+        nivel: determinarNivel(item.item),
+        ehAdministracaoLocal: false // Inicialmente nenhum item é marcado como administração local
+      }));
+      
+      const dadosComTotais = calcularTotaisHierarquicos(dadosComNivel);
+      setItems(dadosComTotais);
+      
+      // Salvar items da planilha no banco de dados
+      const itemsParaSalvar = dadosComTotais.map(item => ({
+        obra_id: id,
+        item: item.item,
+        codigo: item.codigo,
+        banco: item.banco,
+        descricao: item.descricao,
+        unidade: item.und,
+        quantidade: item.quantidade,
+        valor_unitario: item.valorUnitario,
+        valor_total: item.valorTotal,
+        total_contrato: item.totalContrato,
+        nivel: item.nivel,
+        eh_administracao_local: item.ehAdministracaoLocal
+      }));
+
+      // Primeiro, deletar items existentes da obra (se houver)
+      await supabase
+        .from('orcamento_items')
+        .delete()
+        .eq('obra_id', id);
+
+      // Inserir novos items
+      const { error } = await supabase
+        .from('orcamento_items')
+        .insert(itemsParaSalvar);
+
+      if (error) throw error;
+      
+      // Limpar dados de medições ao importar nova planilha
+      setMedicoes(medicoes.map(medicao => ({ ...medicao, dados: {} })));
+      toast.success('Planilha importada e salva com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar planilha:', error);
+      toast.error('Erro ao salvar planilha no banco de dados');
+    }
   };
 
   // Função para obter estilo da linha baseado no nível

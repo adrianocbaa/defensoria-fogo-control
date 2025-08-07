@@ -548,6 +548,60 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_items: {
+        Row: {
+          banco: string
+          codigo: string
+          created_at: string
+          descricao: string
+          eh_administracao_local: boolean
+          id: string
+          item: string
+          nivel: number
+          obra_id: string
+          quantidade: number
+          total_contrato: number
+          unidade: string
+          updated_at: string
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          banco: string
+          codigo: string
+          created_at?: string
+          descricao: string
+          eh_administracao_local?: boolean
+          id?: string
+          item: string
+          nivel?: number
+          obra_id: string
+          quantidade?: number
+          total_contrato?: number
+          unidade: string
+          updated_at?: string
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Update: {
+          banco?: string
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          eh_administracao_local?: boolean
+          id?: string
+          item?: string
+          nivel?: number
+          obra_id?: string
+          quantidade?: number
+          total_contrato?: number
+          unidade?: string
+          updated_at?: string
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
