@@ -541,9 +541,9 @@ export function Medicao() {
       // Calcular totais e disparar atualização para a página de obras
       const resumoFinanceiro = {
         obraId: obra.id,
-        valorTotalOriginal: totaisGerais.valorTotal,
+        valorTotalOriginal: calcularValorTotalOriginal,
         totalAditivo: totaisGerais.aditivoTotal,
-        totalContrato: totaisGerais.totalContrato,
+        totalContrato: calcularTotalContrato,
         servicosExecutados: totalServicosExecutados
       };
 
