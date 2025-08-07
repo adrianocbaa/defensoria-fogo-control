@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
@@ -775,7 +776,44 @@ export function Medicao() {
     toast.success(`${medicao.nome} foi reaberta para edição.`);
   };
 
-  // Função para importar dados da planilha
+  // Função para excluir medição (apenas admins)
+  const excluirMedicao = async (medicaoId: number) => {
+    if (!isAdmin) {
+      toast.error('Apenas administradores podem excluir medições.');
+      return;
+    }
+
+    if (!id) return;
+    
+    try {
+      const medicao = medicoes.find(m => m.id === medicaoId);
+      if (!medicao) return;
+
+      // Buscar as medições do banco que correspondem a esta medição
+      // Como não temos mes/ano explícito, vamos usar a data de criação para identificar
+      const { error } = await supabase
+        .from('medicoes')
+        .delete()
+        .eq('obra_id', id)
+        .gte('created_at', medicao.dataBloqueio || new Date().toISOString())
+        .lt('created_at', new Date(new Date(medicao.dataBloqueio || new Date()).getTime() + 24 * 60 * 60 * 1000).toISOString());
+
+      if (error) throw error;
+
+      // Remover do estado local
+      setMedicoes(prevMedicoes => prevMedicoes.filter(m => m.id !== medicaoId));
+      
+      // Se a medição excluída era a atual, limpar seleção
+      if (medicaoAtual === medicaoId) {
+        setMedicaoAtual(null);
+      }
+
+      toast.success('Medição excluída com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir medição:', error);
+      toast.error('Erro ao excluir medição');
+    }
+  };
   const importarDados = async (dadosImportados: Item[]) => {
     if (!id) return;
 
@@ -1066,15 +1104,47 @@ export function Medicao() {
                             Concluído em {medicao.dataBloqueio}
                           </Badge>
                           {isAdmin && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => reabrirMedicao(medicao.id)}
-                              className="flex items-center gap-1"
-                            >
-                              <Unlock className="h-3 w-3" />
-                              Reabrir
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => reabrirMedicao(medicao.id)}
+                                className="flex items-center gap-1"
+                              >
+                                <Unlock className="h-3 w-3" />
+                                Reabrir
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                    Excluir
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza de que deseja excluir a "{medicao.nome}"? 
+                                      Esta ação não pode ser desfeita e todos os dados desta medição serão perdidos permanentemente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => excluirMedicao(medicao.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Excluir Medição
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           )}
                         </>
                       )}
