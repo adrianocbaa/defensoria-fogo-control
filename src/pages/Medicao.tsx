@@ -77,6 +77,7 @@ export function Medicao() {
   useEffect(() => {
     if (id) {
       fetchObra();
+      fetchMedicoesSalvas();
     }
   }, [id]);
 
@@ -98,6 +99,109 @@ export function Medicao() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchMedicoesSalvas = async () => {
+    if (!id) return;
+    
+    try {
+      // Buscar medições salvas no banco de dados
+      const { data: medicoesSalvas, error } = await supabase
+        .from('medicoes')
+        .select('*')
+        .eq('obra_id', id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (medicoesSalvas && medicoesSalvas.length > 0) {
+        // Converter dados do banco para o formato esperado pela interface
+        const medicoesConvertidas: Medicao[] = [];
+        const medicoesGrouped = new Map();
+
+        // Agrupar medições por mês/ano
+        medicoesSalvas.forEach(medicao => {
+          const key = `${medicao.mes_execucao}-${medicao.ano_execucao}`;
+          if (!medicoesGrouped.has(key)) {
+            medicoesGrouped.set(key, []);
+          }
+          medicoesGrouped.get(key).push(medicao);
+        });
+
+        // Criar objetos de medição no formato da interface
+        let medicaoId = 1;
+        medicoesGrouped.forEach((medicoes, key) => {
+          const [mes, ano] = key.split('-');
+          const medicao: Medicao = {
+            id: medicaoId++,
+            nome: `${medicaoId - 1}ª MEDIÇÃO`,
+            dados: {},
+            bloqueada: true, // Medições salvas são consideradas bloqueadas
+            dataBloqueio: medicoes[0].created_at,
+            usuarioBloqueio: 'Sistema'
+          };
+
+          // Preencher dados da medição
+          medicoes.forEach(item => {
+            // Gerar um ID único baseado no código do serviço
+            const itemId = Math.abs(hashCode(item.servico_codigo));
+            medicao.dados[itemId] = {
+              qnt: item.quantidade_executada,
+              percentual: item.quantidade_projeto > 0 ? 
+                (item.quantidade_executada / item.quantidade_projeto) * 100 : 0,
+              total: item.valor_executado
+            };
+          });
+
+          medicoesConvertidas.push(medicao);
+        });
+
+        setMedicoes(medicoesConvertidas);
+
+        // Também precisamos reconstruir os items baseados nas medições salvas
+        const itemsMap = new Map();
+        medicoesSalvas.forEach(medicao => {
+          const itemId = Math.abs(hashCode(medicao.servico_codigo));
+          if (!itemsMap.has(itemId)) {
+            itemsMap.set(itemId, {
+              id: itemId,
+              item: medicao.servico_codigo,
+              codigo: medicao.servico_codigo,
+              banco: 'SINAPI', // Valor padrão
+              descricao: medicao.servico_descricao,
+              und: medicao.unidade,
+              quantidade: medicao.quantidade_projeto,
+              valorUnitario: medicao.preco_unitario,
+              valorTotal: medicao.valor_total,
+              aditivo: { qnt: 0, percentual: 0, total: 0 },
+              totalContrato: medicao.valor_total,
+              importado: true,
+              nivel: 1, // Valor padrão
+              ehAdministracaoLocal: false // Valor padrão
+            });
+          }
+        });
+
+        if (itemsMap.size > 0) {
+          setItems(Array.from(itemsMap.values()));
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar medições salvas:', error);
+      // Não mostrar toast de erro para não incomodar o usuário
+    }
+  };
+
+  // Função auxiliar para gerar hash de string
+  const hashCode = (str: string) => {
+    let hash = 0;
+    if (str.length === 0) return hash;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
   };
 
   // Função para calcular total do contrato incluindo aditivos
