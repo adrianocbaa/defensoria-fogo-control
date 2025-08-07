@@ -559,6 +559,7 @@ export type Database = {
           item: string
           nivel: number
           obra_id: string
+          ordem: number | null
           quantidade: number
           total_contrato: number
           unidade: string
@@ -576,6 +577,7 @@ export type Database = {
           item: string
           nivel?: number
           obra_id: string
+          ordem?: number | null
           quantidade?: number
           total_contrato?: number
           unidade: string
@@ -593,6 +595,7 @@ export type Database = {
           item?: string
           nivel?: number
           obra_id?: string
+          ordem?: number | null
           quantidade?: number
           total_contrato?: number
           unidade?: string

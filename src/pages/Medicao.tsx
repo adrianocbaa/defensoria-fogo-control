@@ -569,7 +569,8 @@ export function Medicao() {
       totalContrato: 0,
       importado: false,
       nivel: 3,
-      ehAdministracaoLocal: false
+      ehAdministracaoLocal: false,
+      ordem: items.length
     };
     setItems([...items, novoItem]);
   };
@@ -843,7 +844,8 @@ export function Medicao() {
         valor_total: item.valorTotal,
         total_contrato: item.totalContrato,
         nivel: item.nivel,
-        eh_administracao_local: item.ehAdministracaoLocal
+        eh_administracao_local: item.ehAdministracaoLocal,
+        ordem: item.ordem
       }));
 
       // Primeiro, deletar items existentes da obra (se houver)
@@ -1263,7 +1265,7 @@ export function Medicao() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map(item => {
+                  {[...items].sort((a, b) => (a.ordem || 0) - (b.ordem || 0)).map(item => {
                     // Usar dados hierárquicos memoizados para performance
                     const medicaoData = medicaoAtual ? (dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 }) : { qnt: 0, percentual: 0, total: 0 };
                     const estiloLinha = obterEstiloLinha(item);
