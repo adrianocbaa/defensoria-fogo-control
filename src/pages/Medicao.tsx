@@ -678,7 +678,7 @@ export function Medicao() {
   };
 
   // Função para calcular valores acumulados até a medição atual com hierarquia
-  const calcularValorAcumulado = (itemId: number) => {
+  const calcularValorAcumuladoItem = (itemId: number) => {
     if (!medicaoAtual) return 0;
     
     let totalAcumulado = 0;
@@ -699,7 +699,7 @@ export function Medicao() {
     const item = items.find(i => i.id === itemId);
     if (!item) return 0;
     
-    const valorAcumulado = calcularValorAcumulado(itemId);
+    const valorAcumulado = calcularValorAcumuladoItem(itemId);
     const totalContrato = calcularTotalContratoComAditivos(item);
     
     if (totalContrato === 0) return 0;
@@ -774,6 +774,31 @@ export function Medicao() {
       return sum;
     }, 0) : 0;
 
+  // Calcular valor acumulado - soma de todos os TOTAL das medições anteriores até a medição atual
+  const calcularValorAcumuladoTotal = () => {
+    if (!medicaoAtual) return 0;
+    
+    // Encontrar o índice da medição atual
+    const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
+    if (medicaoAtualIndex === -1) return 0;
+
+    // Somar todas as medições até a atual (inclusive)
+    let valorAcumulado = 0;
+    
+    for (let i = 0; i <= medicaoAtualIndex; i++) {
+      const medicao = medicoes[i];
+      if (medicao.dados) {
+        Object.entries(medicao.dados).forEach(([itemId, dados]) => {
+          valorAcumulado += dados.total || 0;
+        });
+      }
+    }
+    
+    return valorAcumulado;
+  };
+
+  const valorAcumuladoTotal = calcularValorAcumuladoTotal();
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
@@ -820,14 +845,14 @@ export function Medicao() {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Administração Local</div>
-              <div className="text-2xl font-bold text-purple-600">{formatCurrency(totaisGerais.administracaoLocalTotal)}</div>
+              <div className="text-sm text-muted-foreground">Serviços Executados</div>
+              <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalServicosExecutados)}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Serviços Executados</div>
-              <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalServicosExecutados)}</div>
+              <div className="text-sm text-muted-foreground">Valor Acumulado</div>
+              <div className="text-2xl font-bold text-purple-600">{formatCurrency(valorAcumuladoTotal)}</div>
             </CardContent>
           </Card>
         </div>
@@ -1124,11 +1149,11 @@ export function Medicao() {
                             {calcularPercentualAcumulado(item.id).toFixed(2)}%
                           </div>
                         </TableCell>
-                        <TableCell className="bg-purple-100 border border-purple-300 p-1">
-                          <div className="text-right font-mono text-xs px-1">
-                            R$ {calcularValorAcumulado(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </TableCell>
+                         <TableCell className="bg-purple-100 border border-purple-300 p-1">
+                           <div className="text-right font-mono text-xs px-1">
+                             R$ {calcularValorAcumuladoItem(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                           </div>
+                         </TableCell>
                         <TableCell className="border border-gray-300 p-1">
                           <div className="flex gap-1 justify-center">
                             <Button
