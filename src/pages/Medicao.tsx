@@ -721,17 +721,8 @@ const criarNovaMedicao = async () => {
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  const getMaxRoot = () => {
-    const roots = items.map(i => parseInt((i.item || '').split('.')[0] || '0', 10) || 0);
-    return roots.length ? Math.max(...roots) : 0;
-  };
+  // removed remap helpers: no remapping per user decision
 
-  const remapCode = (code: string, delta: number) => {
-    const parts = (code || '1').split('.');
-    const root = parseInt(parts[0] || '0', 10) || 0;
-    parts[0] = String(root + delta);
-    return parts.join('.');
-  };
 
   // Confirmação do modal de Novo Aditivo
   const confirmarNovoAditivo = async ({ extracontratual, file }: { extracontratual: boolean; file?: File | null; }) => {
@@ -778,16 +769,23 @@ const criarNovaMedicao = async () => {
       };
 
       const body = rows.slice(1);
-      const maxRoot = getMaxRoot();
       const baseOrdem = items.reduce((m, it) => Math.max(m, it.ordem || 0), 0);
 
+      const existentes = new Set(items.map(it => (it.item || '').trim()));
       const novos: Item[] = [];
+      const duplicados: string[] = [];
+      const vistosNoArquivo = new Set<string>();
       body.forEach((r, i) => {
         const quant = parseNumber(idx.quant >= 0 ? r[idx.quant] : 0);
         if (quant <= 0) return; // exige Quant > 0
 
         const codeRaw = idx.item >= 0 ? String(r[idx.item] || '').trim() : String(i + 1);
-        const code = remapCode(codeRaw || String(i + 1), maxRoot);
+        const code = codeRaw || String(i + 1);
+        if (existentes.has(code) || vistosNoArquivo.has(code)) {
+          duplicados.push(code);
+          return;
+        }
+        vistosNoArquivo.add(code);
         const nivel = code.split('.').length;
 
         const descricao = idx.descricao >= 0 ? String(r[idx.descricao] || '').trim() : '';
@@ -816,6 +814,10 @@ const criarNovaMedicao = async () => {
         };
         novos.push(novo);
       });
+
+      if (duplicados.length > 0) {
+        throw new Error('COD_DUP:' + duplicados.join(','));
+      }
 
       if (!novos.length) throw new Error('Nenhum dado válido foi encontrado na planilha.');
 
@@ -846,11 +848,15 @@ const criarNovaMedicao = async () => {
       const { error: insertErr } = await supabase.from('orcamento_items').insert(rowsToInsert as any);
       if (insertErr) throw insertErr;
 
-      toast.success(`Aditivo ${numeroAditivo} criado e ${novos.length} itens extracontratuais anexados.`);
-    } catch (e: any) {
-      console.error(e);
-      toast.error('Não foi possível ler a planilha. Verifique o layout.');
-    }
+      } catch (e: any) {
+        console.error(e);
+        if (typeof e?.message === 'string' && e.message.startsWith('COD_DUP:')) {
+          const lista = e.message.replace('COD_DUP:', '');
+          toast.error(`Códigos duplicados na base ou em outro aditivo: ${lista}. Importação bloqueada.`);
+        } else {
+          toast.error('Não foi possível ler a planilha. Verifique o layout.');
+        }
+      }
   };
   // Função para salvar e bloquear medição
   const salvarEBloquearMedicao = async (medicaoId: number) => {
