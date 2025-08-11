@@ -777,12 +777,24 @@ const criarNovaMedicao = async () => {
       const vistosNoArquivo = new Set<string>();
       let seq = 0; // manter ordem sequencial contínua para os itens aceitos
       body.forEach((r, i) => {
-        const codeRaw = idx.item >= 0 ? String(r[idx.item] || '').trim() : String(i + 1);
-        const code = codeRaw || String(i + 1);
+        const code = idx.item >= 0 ? String(r[idx.item] ?? '').trim() : '';
+        const descricao = idx.descricao >= 0 ? String(r[idx.descricao] ?? '').trim() : '';
+        const und = idx.und >= 0 ? String(r[idx.und] ?? '').trim() : '';
+        const codigoBanco = idx.codigoBanco >= 0 ? String(r[idx.codigoBanco] ?? '').trim() : '';
+        const quant = parseNumber(idx.quant >= 0 ? r[idx.quant] : 0);
+        const valorUnit = parseNumber(idx.valorUnit >= 0 ? r[idx.valorUnit] : 0);
+        const valorTotalPlanilha = parseNumber(idx.valorTotal >= 0 ? r[idx.valorTotal] : 0);
+
+        // Ignorar linhas completamente vazias (sem código, descrição, unidade, quantidade e valores)
+        const linhaVazia = !code && !descricao && !und && !codigoBanco && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0;
+        if (linhaVazia) return;
+
+        // Exigir código para identificar o item (não gerar códigos artificiais)
+        if (!code) return;
+
         const nivel = code.split('.').length;
 
-        const quant = parseNumber(idx.quant >= 0 ? r[idx.quant] : 0);
-        // Incluir cabeçalhos de nível 1 mesmo com quantidade vazia/zero
+        // Incluir cabeçalhos de nível 1 mesmo com quantidade vazia/zero; demais níveis exigem quantidade > 0
         if (quant <= 0 && nivel !== 1) return;
 
         if (existentes.has(code) || vistosNoArquivo.has(code)) {
@@ -791,10 +803,6 @@ const criarNovaMedicao = async () => {
         }
         vistosNoArquivo.add(code);
 
-        const descricao = idx.descricao >= 0 ? String(r[idx.descricao] || '').trim() : '';
-        const und = idx.und >= 0 ? String(r[idx.und] || '').trim() : '';
-        const codigoBanco = idx.codigoBanco >= 0 ? String(r[idx.codigoBanco] || '').trim() : '';
-        const valorUnit = parseNumber(idx.valorUnit >= 0 ? r[idx.valorUnit] : 0);
         // Valor total importado não entra no Valor Total Original
         const valorTotalOriginal = 0;
 
