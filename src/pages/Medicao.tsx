@@ -112,6 +112,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const [modalImportarAberto, setModalImportarAberto] = useState(false);
   const [mostrarAditivos, setMostrarAditivos] = useState(true);
   const [novoAditivoAberto, setNovoAditivoAberto] = useState(false);
+  const [confirm, setConfirm] = useState<{ open: boolean; type?: 'reabrir-medicao' | 'excluir-medicao' | 'excluir-aditivo'; medicaoId?: number; aditivoId?: number }>({ open: false });
 
   useEffect(() => {
     if (id) {
@@ -768,6 +769,33 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     }
   };
 
+  // Salvar e publicar (bloquear) aditivo
+  const publicarAditivo = async (aditivoLocalId: number) => {
+    const ad = aditivos.find(a => a.id === aditivoLocalId);
+    if (!ad || !ad.sessionId) {
+      toast.error('Aditivo inválido');
+      return;
+    }
+    try {
+      const payload = items.reduce((arr, it) => {
+        const d = ad.dados[it.id];
+        if (!d) return arr;
+        const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
+        if (!hasData) return arr;
+        arr.push({ item_code: it.codigo, qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
+        return arr;
+      }, [] as { item_code: string; qtd: number; pct: number; total: number }[]);
+
+      await upsertAditivoItems(ad.sessionId, payload);
+      await blockAditivoSession(ad.sessionId);
+      setAditivos(prev => prev.map(a => a.id === aditivoLocalId ? { ...a, bloqueada: true } : a));
+      toast.success('Aditivo publicado.');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao publicar aditivo');
+    }
+  };
+
   const editarAditivo = async (aditivoLocalId: number) => {
     const ad = aditivos.find(a => a.id === aditivoLocalId);
     if (!ad || !ad.sessionId) return;
@@ -787,13 +815,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     try {
       await deleteAditivoSession(ad.sessionId);
       setAditivos(prev => prev.filter(a => a.id !== aditivoLocalId));
-      toast.success(`${ad.nome} excluído.`);
+      toast.success('Aditivo excluído.');
     } catch (e) {
       console.error(e);
       toast.error('Erro ao excluir aditivo');
     }
   };
-  // Função para adicionar novo item
   const adicionarItem = () => {
     const novoItem: Item = {
       id: Date.now(),
@@ -1171,14 +1198,14 @@ const criarNovaMedicao = async () => {
             ? {
                 ...m,
                 bloqueada: true,
-                dataBloqueio: new Date().toLocaleString('pt-BR'),
+                dataBloqueio: new Date().toISOString(),
                 usuarioBloqueio: 'Usuário Atual',
               }
             : m
         )
       );
 
-      // Calcular totais e disparar atualização para a página de obras
+      toast.success('Medição publicada.');
       const resumoFinanceiro = {
         obraId: obra.id,
         valorTotalOriginal: calcularValorTotalOriginal,
@@ -1191,7 +1218,7 @@ const criarNovaMedicao = async () => {
       localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
       window.dispatchEvent(new CustomEvent('medicaoAtualizada', { detail: resumoFinanceiro }));
 
-      toast.success('Medição publicada.');
+      
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
       toast.error(`Erro ao salvar medição no banco: ${ (error as any)?.message || 'Tente novamente.'}`);
@@ -1226,7 +1253,7 @@ const criarNovaMedicao = async () => {
             : m
         )
       );
-      toast.success(`${medicao.nome} foi reaberta para edição.`);
+      toast.success('Medição reaberta.');
     } catch (error) {
       console.error('Erro ao reabrir medição:', error);
       toast.error('Erro ao reabrir medição');
@@ -1539,85 +1566,97 @@ const criarNovaMedicao = async () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {medicoes.map(medicao => (
-                <div key={medicao.id} className="flex items-center gap-2">
-                  <Button
-                    variant={medicaoAtual === medicao.id ? "default" : "outline"}
-                    onClick={() => setMedicaoAtual(medicao.id)}
-                    className="text-sm"
-                    disabled={medicao.bloqueada && !isAdmin}
-                  >
-                    {medicao.bloqueada && <Lock className="h-3 w-3 mr-1" />}
-                    {medicao.nome}
-                  </Button>
-                  
-                  {medicaoAtual === medicao.id && (
-                    <div className="flex gap-1">
-                      {!medicao.bloqueada ? (
-                        <Button
-                          size="sm"
-                          onClick={() => salvarEBloquearMedicao(medicao.id)}
-                          className="flex items-center gap-1"
-                        >
-                          <Lock className="h-3 w-3" />
-                          Salvar e Bloquear
-                        </Button>
-                      ) : (
+            <TooltipProvider>
+              <div className="flex flex-wrap items-center gap-2">
+                {medicoes.map((m) => {
+                  const isActive = medicaoAtual === m.id;
+                  const label = `${m.bloqueada ? '🔒' : '✏️'} ${m.id}ª Medição`;
+                  const iso = m.dataBloqueio ? new Date(m.dataBloqueio).toISOString() : '';
+                  return (
+                    <div key={m.id} className="flex items-center gap-2">
+                      <Button
+                        variant={isActive ? 'secondary' : 'outline'}
+                        size="sm"
+                        className="h-8 rounded-full px-3"
+                        onClick={() => setMedicaoAtual(m.id)}
+                        disabled={m.bloqueada && !isAdmin}
+                        title={m.bloqueada && m.dataBloqueio ? relativeTimePTBR(m.dataBloqueio) : ''}
+                      >
+                        {label}
+                      </Button>
+
+                      {isActive && (
                         <>
-                          <Badge variant="secondary" className="text-xs">
-                            Concluído em {medicao.dataBloqueio}
-                          </Badge>
-                          {isAdmin && (
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => reabrirMedicao(medicao.id)}
-                                className="flex items-center gap-1"
-                              >
-                                <Unlock className="h-3 w-3" />
-                                Reabrir
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Ações da medição">
+                                <MoreVertical className="h-4 w-4" />
                               </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="flex items-center gap-1"
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="min-w-[200px]">
+                              {m.bloqueada ? (
+                                <>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setConfirm({ open: true, type: 'reabrir-medicao', medicaoId: m.id });
+                                    }}
                                   >
-                                    <Trash2 className="h-3 w-3" />
-                                    Excluir
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Tem certeza de que deseja excluir a "{medicao.nome}"? 
-                                      Esta ação não pode ser desfeita e todos os dados desta medição serão perdidos permanentemente.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                      onClick={() => excluirMedicao(medicao.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Excluir Medição
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
+                                    🔓 Reabrir
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
+                                    }}
+                                  >
+                                    🗑️ Excluir
+                                  </DropdownMenuItem>
+                                </>
+                              ) : (
+                                <>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      salvarEBloquearMedicao(m.id);
+                                    }}
+                                  >
+                                    ✅ Salvar e Bloquear
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
+                                    }}
+                                  >
+                                    🗑️ Excluir
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+
+                          {m.bloqueada && m.dataBloqueio && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="text-xs text-muted-foreground">
+                                  Concluída · {formatDateTimePTBR(m.dataBloqueio)}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <span>{iso}</span>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </>
                       )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
           </CardContent>
         </Card>
 
@@ -1631,7 +1670,7 @@ const criarNovaMedicao = async () => {
               </CardTitle>
               <div className="flex gap-2">
                 <Button
-                  variant={mostrarAditivos ? "default" : "outline"}
+                  variant={mostrarAditivos ? 'secondary' : 'outline'}
                   onClick={() => setMostrarAditivos(!mostrarAditivos)}
                   className="flex items-center gap-2"
                 >
@@ -1650,37 +1689,110 @@ const criarNovaMedicao = async () => {
               </div>
             </div>
           </CardHeader>
+          {mostrarAditivos && (
             <CardContent>
-              <div className="flex flex-col gap-2">
-                {aditivos.map(aditivo => (
-                  <div key={aditivo.id} className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-sm flex items-center gap-1">
-                      {aditivo.bloqueada && <Lock className="h-3 w-3" />} {aditivo.nome}
+              <div className="flex flex-wrap items-center gap-3">
+                {aditivos.map((a) => (
+                  <div key={a.id} className="flex items-center gap-2">
+                    <Badge variant="outline" className="h-8 rounded-full px-3 text-sm">
+                      {a.nome}
                     </Badge>
-                    <Button size="sm" onClick={() => salvarAditivo(aditivo.id)} className="h-7 px-2">Salvar</Button>
-                    <Button size="sm" variant="outline" onClick={() => editarAditivo(aditivo.id)} className="h-7 px-2">Editar</Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive" className="h-7 px-2 flex items-center gap-1">
-                          <Trash2 className="h-3 w-3" /> Excluir
+                    <Badge variant={a.bloqueada ? 'default' : 'secondary'} className="text-xs">
+                      {a.bloqueada ? 'Publicado' : 'Rascunho'}
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Ações do aditivo">
+                          <MoreVertical className="h-4 w-4" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir {aditivo.nome}?</AlertDialogTitle>
-                          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => excluirAditivo(aditivo.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="min-w-[200px]">
+                        {a.bloqueada ? (
+                          <>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                editarAditivo(a.id);
+                              }}
+                            >
+                              ✏️ Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                              }}
+                            >
+                              🗑️ Excluir
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                publicarAditivo(a.id);
+                              }}
+                            >
+                              ✅ Salvar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                              }}
+                            >
+                              🗑️ Excluir
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ))}
               </div>
             </CardContent>
+          )}
         </Card>
+
+        {/* Confirmações */}
+        <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {confirm.type === 'reabrir-medicao' && 'Reabrir medição?'}
+                {confirm.type === 'excluir-medicao' && 'Excluir medição?'}
+                {confirm.type === 'excluir-aditivo' && 'Excluir aditivo?'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirm.type === 'reabrir-medicao' && 'A medição voltará para edição.'}
+                {confirm.type?.startsWith('excluir') && 'Esta ação não pode ser desfeita.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (confirm.type === 'reabrir-medicao' && confirm.medicaoId != null) {
+                    reabrirMedicao(confirm.medicaoId);
+                  }
+                  if (confirm.type === 'excluir-medicao' && confirm.medicaoId != null) {
+                    excluirMedicao(confirm.medicaoId);
+                  }
+                  if (confirm.type === 'excluir-aditivo' && confirm.aditivoId != null) {
+                    excluirAditivo(confirm.aditivoId);
+                  }
+                  setConfirm({ open: false });
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Confirmar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Tabela Principal */}
         <Card className="shadow-lg">
