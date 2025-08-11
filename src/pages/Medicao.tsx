@@ -424,14 +424,14 @@ export function Medicao() {
       }
     });
 
-    // 2. Calcular Total do Contrato considerando apenas itens de primeiro nível (evita dupla contagem)
+    // 2. Calcular Total do Contrato considerando apenas itens folha (evita dupla contagem)
     const totalDoContrato = items
-      .filter(item => ehItemPrimeiroNivel(item.item))
+      .filter(item => ehItemFolha(item.item))
       .reduce((sum, item) => sum + item.totalContrato, 0);
 
-    // 3. Calcular Total da Administração Local considerando apenas itens de primeiro nível
+    // 3. Calcular Total da Administração Local considerando apenas itens folha selecionados como AL
     const totalAdministracaoLocal = items
-      .filter(item => item.ehAdministracaoLocal && ehItemPrimeiroNivel(item.item))
+      .filter(item => item.ehAdministracaoLocal && ehItemFolha(item.item))
       .reduce((sum, item) => sum + item.totalContrato, 0);
     if (totalServicosExecutados === 0) {
       toast.error('Nenhum serviço foi medido ainda. Insira valores de medição antes de calcular a administração local.');
