@@ -513,7 +513,33 @@ export function Medicao() {
     }
 
     const valorNumerico = parseFloat(valor) || 0;
-    
+
+    // Validar limite de 100% (não ultrapassar disponível)
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const medicaoIndex = medicoes.findIndex(m => m.id === medicaoId);
+    let qntAcumAnterior = 0;
+    for (let i = 0; i < medicaoIndex; i++) {
+      const dh = dadosHierarquicosMemoizados[medicoes[i].id];
+      if (dh && dh[itemId]) {
+        qntAcumAnterior += dh[itemId].qnt || 0;
+      }
+    }
+
+    const quantidadeProjeto = item.quantidade;
+    const qntProposta = campo === 'percentual' 
+      ? (valorNumerico / 100) * quantidadeProjeto 
+      : valorNumerico;
+
+    const disponivel = quantidadeProjeto - qntAcumAnterior;
+    if (qntProposta > disponivel + 1e-9) {
+      toast.warning(
+        `Quantidade informada ultrapassa 100% do item. Disponível: ${disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Revise a medição.`
+      );
+      return; // não aplica
+    }
+
     setMedicoes(prevMedicoes =>
       prevMedicoes.map(medicao => {
         if (medicao.id === medicaoId) {
@@ -525,18 +551,18 @@ export function Medicao() {
               [campo]: valorNumerico
             }
           };
-          
-          // Recalcular percentual e total automaticamente para a medição (base nas fórmulas: pct = qnt/Quant, total = pct% * TOTAL_CONTRATO)
+
+          // Recalcular percentual e total automaticamente para a medição
           if (campo === 'qnt') {
-            const item = items.find(i => i.id === itemId);
-            if (item) {
-              const quantidadeProjeto = item.quantidade;
-              const percentualCalculado = quantidadeProjeto > 0 ? (valorNumerico / quantidadeProjeto) * 100 : 0;
-              novosDados[itemId].percentual = percentualCalculado;
-              novosDados[itemId].total = (percentualCalculado / 100) * calcularTotalContratoComAditivos(item);
-            }
+            const percentualCalculado = quantidadeProjeto > 0 ? (qntProposta / quantidadeProjeto) * 100 : 0;
+            novosDados[itemId].percentual = percentualCalculado;
+            novosDados[itemId].total = (percentualCalculado / 100) * calcularTotalContratoComAditivos(item);
+          } else if (campo === 'percentual') {
+            const qntEquivalente = qntProposta;
+            novosDados[itemId].qnt = qntEquivalente;
+            novosDados[itemId].total = (valorNumerico / 100) * calcularTotalContratoComAditivos(item);
           }
-          
+
           return {
             ...medicao,
             dados: novosDados
@@ -687,6 +713,35 @@ export function Medicao() {
 
     if (!temDados) {
       toast.error('Não é possível bloquear uma medição sem dados preenchidos.');
+      return;
+    }
+
+    // Hard guard: validar que nenhum item excede 100%
+    const medicaoIndex = medicoes.findIndex(m => m.id === medicaoId);
+    const itensInvalidos: { codigo: string; disponivel: number; digitado: number }[] = [];
+    for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
+      const itemId = parseInt(itemIdStr);
+      const item = items.find(i => i.id === itemId);
+      if (!item) continue;
+
+      let qntAcumAnterior = 0;
+      for (let i = 0; i < medicaoIndex; i++) {
+        const dh = dadosHierarquicosMemoizados[medicoes[i].id];
+        if (dh && dh[itemId]) {
+          qntAcumAnterior += dh[itemId].qnt || 0;
+        }
+      }
+      const disponivel = item.quantidade - qntAcumAnterior;
+      if (dados.qnt > disponivel + 1e-9) {
+        itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
+      }
+    }
+
+    if (itensInvalidos.length > 0) {
+      const lista = itensInvalidos
+        .map(it => `${it.codigo}: disponível ${it.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, digitado ${it.digitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+        .join('\n');
+      toast.error(`Itens ultrapassam 100% e impedem o salvamento:\n${lista}`);
       return;
     }
 
