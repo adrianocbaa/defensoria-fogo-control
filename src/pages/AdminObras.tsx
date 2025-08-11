@@ -45,6 +45,7 @@ export function AdminObras() {
   const [searchTerm, setSearchTerm] = useState('');
   const { canEdit } = useUserRole();
   const navigate = useNavigate();
+  const [execPercents, setExecPercents] = useState<Record<string, number>>({});
 
   const fetchObras = async () => {
     try {
@@ -97,6 +98,43 @@ export function AdminObras() {
       setFilteredObras(filtered);
     }
   }, [searchTerm, obras]);
+
+  // Sincroniza Execução com o Sistema de Medição (localStorage + evento)
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    try {
+      obras.forEach((o) => {
+        const raw = localStorage.getItem(`resumo_financeiro_${o.id}`);
+        if (raw) {
+          const data = JSON.parse(raw);
+          const total = Number(data?.totalContrato) || 0;
+          const acumulado = Number(data?.valorAcumulado) || 0;
+          const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
+          map[o.id] = pct;
+        }
+      });
+    } catch {}
+    setExecPercents(map);
+  }, [obras]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<any>).detail;
+      if (!detail?.obraId) return;
+      const total = Number(detail?.totalContrato) || 0;
+      const acumulado = Number(detail?.valorAcumulado) || 0;
+      const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
+      setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
+    };
+    window.addEventListener('medicaoAtualizada', handler as EventListener);
+    return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
+  }, []);
+
+  const getFormattedExec = (o: Obra): string => {
+    const p = execPercents[o.id];
+    const value = typeof p === 'number' ? p : Number(o.porcentagem_execucao || 0);
+    return value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '%';
+  };
 
   const handleDelete = async (id: string, nome: string) => {
     if (!window.confirm(`Tem certeza que deseja excluir a obra "${nome}"?`)) {
@@ -200,7 +238,7 @@ export function AdminObras() {
                       </Badge>
                     </TableCell>
                     <TableCell>{formatCurrency(obra.valor_total)}</TableCell>
-                    <TableCell>{obra.porcentagem_execucao}%</TableCell>
+                    <TableCell>{getFormattedExec(obra)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button
