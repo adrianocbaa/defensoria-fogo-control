@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PageHeader } from '@/components/PageHeader';
@@ -75,11 +75,6 @@ export function Medicao() {
   const [medicaoAtual, setMedicaoAtual] = useState<number | null>(null);
   const [modalImportarAberto, setModalImportarAberto] = useState(false);
   const [mostrarAditivos, setMostrarAditivos] = useState(true);
-
-  // Debounce e sanidade para inputs por célula
-  const cellTimersRef = useRef<Map<string, number>>(new Map());
-  const lastEditRef = useRef<{ ts: number; key: string } | null>(null);
-  const autoFillBugRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (id) {
@@ -293,12 +288,6 @@ export function Medicao() {
     );
   };
 
-  // Profundidade máxima detectada (usado para cores por nível)
-  const maxNivel = useMemo(() => {
-    if (!items || items.length === 0) return 1;
-    return Math.max(...items.map(it => determinarNivel(it.item)));
-  }, [items]);
-
   // Função para calcular totais hierárquicos
   const calcularTotaisHierarquicos = (items: Item[]) => {
     const itemsComTotais = [...items];
@@ -389,9 +378,9 @@ export function Medicao() {
               valorTotal += dadosFilho.total || 0;
             });
             
-            // Calcular percentual do pai baseado em quantidade: pct_mN = (Σ qnt filhos) / Quant_pai * 100
-            const quantidadeBase = item.quantidade > 0 ? item.quantidade : filhos.reduce((s, f) => s + (f.quantidade || 0), 0);
-            const percentualCalculado = quantidadeBase > 0 ? (qntTotal / quantidadeBase) * 100 : 0;
+            // Calcular percentual baseado na quantidade total do contrato incluindo aditivos
+            const totalContratoComAditivos = calcularTotalContratoComAditivos(item);
+            const percentualCalculado = totalContratoComAditivos > 0 ? (valorTotal / totalContratoComAditivos) * 100 : 0;
             
             dadosCalculados[item.id] = {
               qnt: qntTotal,
@@ -504,88 +493,38 @@ export function Medicao() {
       return;
     }
 
-    const item = items.find(i => i.id === itemId);
-    if (!item) return;
-
-    // Apenas folhas são editáveis
-    if (!ehItemFolha(item.item)) return;
-
     const valorNumerico = parseFloat(valor) || 0;
-
-    // Validação 100% (qtd)
-    if (campo === 'qnt') {
-      const qntAcumAnterior = calcularQuantidadeAcumuladaAnterior(itemId);
-      const qtdDisponivel = (item.quantidade ?? 0) - qntAcumAnterior;
-      if (valorNumerico > qtdDisponivel + 1e-9) {
-        toast.warning(`Quantidade informada ultrapassa 100% do item. Disponível: ${qtdDisponivel.toLocaleString('pt-BR')}. Revise a medição.`);
-        return;
-      }
-    }
-
-    const key = `${medicaoId}:${itemId}:${campo}`;
-
-    // Sanity check para detectar autopreenchimento
-    const now = Date.now();
-    if (lastEditRef.current && lastEditRef.current.key !== key && now - lastEditRef.current.ts < 50) {
-      console.warn('Detectamos alteração em múltiplas linhas para um único input.');
-      autoFillBugRef.current = true;
-    }
-    lastEditRef.current = { ts: now, key };
-
-    // Debounce por célula
-    const prevTimer = cellTimersRef.current.get(key);
-    if (prevTimer) window.clearTimeout(prevTimer);
-
-    const timerId = window.setTimeout(() => {
-      setMedicoes(prevMedicoes =>
-        prevMedicoes.map(med => {
-          if (med.id === medicaoId) {
-            const dadosAtuais = med.dados[itemId] || { qnt: 0, percentual: 0, total: 0 };
-            const novosDadosItem = { ...dadosAtuais } as { qnt: number; percentual: number; total: number };
-
-            if (campo === 'qnt') {
-              const quantidadeTotal = (item.quantidade ?? 0) + (item.aditivo?.qnt ?? 0);
-              const percentualCalculado = calcularPercentual(valorNumerico, quantidadeTotal);
-              const totalContratoItem = calcularTotalContratoComAditivos(item);
-              const totalCalculado = (percentualCalculado / 100) * totalContratoItem;
-
-              novosDadosItem.qnt = valorNumerico;
-              novosDadosItem.percentual = percentualCalculado;
-              novosDadosItem.total = totalCalculado;
-            } else if (campo === 'percentual') {
-              const quantidadeTotal = (item.quantidade ?? 0) + (item.aditivo?.qnt ?? 0);
-              const qntCalculada = (valorNumerico / 100) * quantidadeTotal;
-
-              // Revalida com base na quantidade derivada
-              const qntAcumAnterior = calcularQuantidadeAcumuladaAnterior(itemId);
-              const qtdDisponivel = (item.quantidade ?? 0) - qntAcumAnterior;
-              if (qntCalculada > qtdDisponivel + 1e-9) {
-                toast.warning(`Quantidade informada ultrapassa 100% do item. Disponível: ${qtdDisponivel.toLocaleString('pt-BR')}. Revise a medição.`);
-                return med; // não aplica
-              }
-
-              const totalContratoItem = calcularTotalContratoComAditivos(item);
-              const totalCalculado = (valorNumerico / 100) * totalContratoItem;
-
-              novosDadosItem.qnt = qntCalculada;
-              novosDadosItem.percentual = valorNumerico;
-              novosDadosItem.total = totalCalculado;
-            } else {
-              // Campo genérico (ex.: total)
-              (novosDadosItem as any)[campo] = valorNumerico;
+    
+    setMedicoes(prevMedicoes =>
+      prevMedicoes.map(medicao => {
+        if (medicao.id === medicaoId) {
+          const dadosAtuais = medicao.dados[itemId] || { qnt: 0, percentual: 0, total: 0 };
+          const novosDados = {
+            ...medicao.dados,
+            [itemId]: {
+              ...dadosAtuais,
+              [campo]: valorNumerico
             }
-
-            return {
-              ...med,
-              dados: { ...med.dados, [itemId]: novosDadosItem }
-            };
+          };
+          
+          // Recalcular percentual e total automaticamente para a medição
+          if (campo === 'qnt') {
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+              const quantidadeTotal = item.quantidade + (item.aditivo?.qnt || 0);
+              novosDados[itemId].percentual = calcularPercentual(valorNumerico, quantidadeTotal);
+              novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
+            }
           }
-          return med;
-        })
-      );
-    }, 150);
-
-    cellTimersRef.current.set(key, timerId);
+          
+          return {
+            ...medicao,
+            dados: novosDados
+          };
+        }
+        return medicao;
+      })
+    );
   };
 
   // Função para atualizar dados de aditivo
@@ -721,13 +660,6 @@ export function Medicao() {
     const medicao = medicoes.find(m => m.id === medicaoId);
     if (!medicao || !obra) return;
 
-    // Sanidade: bug de autopreenchimento
-    if (autoFillBugRef.current) {
-      console.error('Detectamos alteração em múltiplas linhas para um único input. Revise a configuração do formulário.');
-      toast.error('Detectamos alteração em múltiplas linhas para um único input. Revise a configuração do formulário.');
-      return;
-    }
-
     // Verificar se há dados preenchidos
     const temDados = Object.values(medicao.dados).some(dados => 
       dados.qnt > 0 || dados.percentual > 0 || dados.total > 0
@@ -735,23 +667,6 @@ export function Medicao() {
 
     if (!temDados) {
       toast.error('Não é possível bloquear uma medição sem dados preenchidos.');
-      return;
-    }
-
-    // Hard guard: validar 100%
-    const erros: string[] = [];
-    items.forEach(item => {
-      if (!ehItemFolha(item.item)) return;
-      const qntAtual = medicao.dados[item.id]?.qnt || 0;
-      const qntAcumAnterior = calcularQuantidadeAcumuladaAnterior(item.id);
-      const disponivel = (item.quantidade ?? 0) - qntAcumAnterior;
-      if (qntAtual > disponivel + 1e-9) {
-        erros.push(`${item.item} - disponível: ${disponivel.toLocaleString('pt-BR')}`);
-      }
-    });
-    if (erros.length > 0) {
-      console.error('Itens que excederam o limite:', erros);
-      toast.error(`Itens com quantidade acima de 100%:\n${erros.join('\n')}`);
       return;
     }
 
@@ -964,22 +879,21 @@ export function Medicao() {
     }
   };
 
-  // Função para obter estilo da linha baseado no nível (último nível sempre branco)
+  // Função para obter estilo da linha baseado no nível
   const obterEstiloLinha = (item: Item) => {
     const nivel = determinarNivel(item.item);
-    const baseClasse = (() => {
-      if (maxNivel === 2) {
-        return nivel === 1 ? 'row-lv1' : 'row-lv3';
-      }
-      if (nivel === 1) return 'row-lv1';
-      if (nivel === 2) return 'row-lv2';
-      return 'row-lv3';
-    })();
-
+    const ehPai = ehItemPai(item.item, items);
+    
     if (item.ehAdministracaoLocal) {
-      return `${baseClasse} bg-purple-50 border-l-4 border-purple-400`;
+      return 'bg-purple-50 border-l-4 border-purple-400';
+    } else if (nivel === 1) {
+      return 'bg-blue-50 font-bold text-blue-900';
+    } else if (nivel === 2) {
+      return 'bg-green-50 font-semibold text-green-800';
+    } else if (ehPai) {
+      return 'bg-yellow-50 font-medium text-yellow-800';
     }
-    return baseClasse;
+    return '';
   };
 
   // Função para calcular valores acumulados até a medição atual com hierarquia
@@ -1019,23 +933,6 @@ export function Medicao() {
     const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
     
     for (let i = 0; i <= medicaoAtualIndex; i++) {
-      const medicao = medicoes[i];
-      const dadosHierarquicos = dadosHierarquicosMemoizados[medicao.id];
-      if (dadosHierarquicos && dadosHierarquicos[itemId]) {
-        qntAcumulada += dadosHierarquicos[itemId].qnt || 0;
-      }
-    }
-    return qntAcumulada;
-  };
-
-  // Quantidade acumulada anterior à medição ativa (para validação 100%)
-  const calcularQuantidadeAcumuladaAnterior = (itemId: number) => {
-    if (!medicaoAtual) return 0;
-    const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
-    if (medicaoAtualIndex <= 0) return 0;
-
-    let qntAcumulada = 0;
-    for (let i = 0; i < medicaoAtualIndex; i++) {
       const medicao = medicoes[i];
       const dadosHierarquicos = dadosHierarquicosMemoizados[medicao.id];
       if (dadosHierarquicos && dadosHierarquicos[itemId]) {
