@@ -1628,8 +1628,7 @@ const criarNovaMedicao = async () => {
             </div>
           </CardHeader>
           <CardContent className="p-1">
-            <div className="table-wrap border rounded-lg">
-              <div className="table-scroll">
+            <div className="table-wrap border rounded-lg overflow-hidden">
                 <Table className="text-xs table-fixed">
                   <colgroup>
                     <col style={{ width: '50px' }} />
@@ -1842,7 +1841,6 @@ const criarNovaMedicao = async () => {
                     })}
                   </TableBody>
                 </Table>
-              </div>
             </div>
           </CardContent>
         </Card>
