@@ -129,7 +129,7 @@ export function Medicao() {
       if (orcamentoItems && orcamentoItems.length > 0) {
         // Converter items do orçamento para o formato da interface
         const itemsConvertidos: Item[] = orcamentoItems.map(item => ({
-          id: stableIdFromCodigo(item.codigo),
+          id: stableIdForRow(item.item, item.codigo, item.ordem || 0),
           item: item.item,
           codigo: item.codigo,
           banco: item.banco,
@@ -237,6 +237,15 @@ export function Medicao() {
     return Math.abs(combined);
   };
 
+  // ID estável robusto por linha combinando hierarquia (item), código banco e ordem
+  const stableIdForRow = (itemStr: string, codigo: string, ordem: number | null | undefined) => {
+    const base = `${itemStr || ''}#${codigo || ''}#${ordem ?? ''}`;
+    let h1 = 5381;
+    for (let i = 0; i < base.length; i++) {
+      h1 = ((h1 << 5) + h1) ^ base.charCodeAt(i);
+    }
+    return Math.abs(h1 >>> 0) * 4096 + (Math.abs(hashCode(base)) % 4096);
+  };
   // Função para calcular total do contrato incluindo aditivos
   const calcularTotalContratoComAditivos = (item: Item) => {
     const totalAditivos = aditivos.reduce((sum, aditivo) => {
@@ -502,6 +511,18 @@ export function Medicao() {
     toast.success(`Administração Local calculada! Porcentagem de execução: ${(porcentagemExecucao * 100).toFixed(2)}%`);
   };
 
+  // Debounce por célula (medição)
+  const debouncersRef = React.useRef(new Map<string, number>());
+  const onChangeMedicaoDebounced = (itemId: number, medicaoId: number, campo: string, valor: string, delay = 150) => {
+    const key = `${medicaoId}:${itemId}:${campo}`;
+    const prev = debouncersRef.current.get(key);
+    if (prev) window.clearTimeout(prev);
+    const timeout = window.setTimeout(() => {
+      atualizarMedicao(itemId, medicaoId, campo, valor);
+      debouncersRef.current.delete(key);
+    }, delay);
+    debouncersRef.current.set(key, timeout);
+  };
 
   // Função para atualizar dados de medição
   const atualizarMedicao = (itemId: number, medicaoId: number, campo: string, valor: string) => {
@@ -907,11 +928,22 @@ export function Medicao() {
     if (!id) return;
 
     try {
-      const dadosComNivel = dadosImportados.map(item => ({
-        ...item,
+      const dadosComNivel = dadosImportados.map((item, idx) => ({
+        id: stableIdForRow(item.item, item.codigo, item.ordem ?? idx),
+        item: item.item,
+        codigo: item.codigo,
+        banco: item.banco,
+        descricao: item.descricao,
+        und: item.und,
+        quantidade: item.quantidade,
+        valorUnitario: item.valorUnitario,
+        valorTotal: item.valorTotal,
+        aditivo: { ...(item.aditivo || { qnt: 0, percentual: 0, total: 0 }) },
+        totalContrato: item.totalContrato,
         importado: true,
         nivel: determinarNivel(item.item),
-        ehAdministracaoLocal: false // Inicialmente nenhum item é marcado como administração local
+        ehAdministracaoLocal: false, // Inicialmente nenhum item é marcado como administração local
+        ordem: item.ordem ?? idx
       }));
       
       const dadosComTotais = calcularTotaisHierarquicos(dadosComNivel);
@@ -1359,7 +1391,7 @@ export function Medicao() {
                       const medicaoAtualObj = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
                       
                       return (
-                        <TableRow key={item.id} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
+                        <TableRow key={`row-${item.id}`} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-center font-mono text-xs font-bold px-1">
                               {item.item}
@@ -1430,15 +1462,15 @@ export function Medicao() {
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                             {medicaoAtual && medicaoAtualObj ? (
                               ehItemFolha(item.item) && !item.ehAdministracaoLocal ? (
-                                <Input
-                                  type="number"
-                                  value={medicaoData.qnt || ''}
-                                  onChange={(e) => atualizarMedicao(item.id, medicaoAtual, 'qnt', e.target.value)}
-                                  className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
-                                  step="0.01"
-                                  min="0"
-                                  disabled={medicaoAtualObj.bloqueada && !isAdmin}
-                                />
+                                  <Input
+                                    type="number"
+                                    value={medicaoData.qnt || ''}
+                                    onChange={(e) => onChangeMedicaoDebounced(item.id, medicaoAtual, 'qnt', e.target.value)}
+                                    className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
+                                    step="0.01"
+                                    min="0"
+                                    disabled={medicaoAtualObj.bloqueada && !isAdmin}
+                                  />
                               ) : (
                                 <div className="text-right font-mono text-xs px-1">
                                   {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
