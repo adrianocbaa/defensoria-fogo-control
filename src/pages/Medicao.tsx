@@ -9,7 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
 import NovoAditivoModal from '@/components/NovoAditivoModal';
@@ -67,6 +71,25 @@ interface Aditivo {
   bloqueada?: boolean;
   created_at?: string;
 }
+
+// Datas: formatação pt-BR
+const formatDateTimePTBR = (iso?: string) => {
+  if (!iso) return '';
+  try {
+    return format(new Date(iso), 'dd/MM/yyyy HH:mm', { locale: ptBR });
+  } catch {
+    return '';
+  }
+};
+
+const relativeTimePTBR = (iso?: string) => {
+  if (!iso) return '';
+  try {
+    return formatDistanceToNow(new Date(iso), { locale: ptBR, addSuffix: true });
+  } catch {
+    return '';
+  }
+};
 
 export function Medicao() {
   const { id } = useParams();
@@ -1168,7 +1191,7 @@ const criarNovaMedicao = async () => {
       localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
       window.dispatchEvent(new CustomEvent('medicaoAtualizada', { detail: resumoFinanceiro }));
 
-      toast.success(`${medicao.nome} bloqueada e salva com sucesso! (${payload.length} itens)`);
+      toast.success('Medição publicada.');
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
       toast.error(`Erro ao salvar medição no banco: ${ (error as any)?.message || 'Tente novamente.'}`);
