@@ -627,6 +627,7 @@ export type Database = {
       }
       orcamento_items: {
         Row: {
+          aditivo_num: number | null
           banco: string
           codigo: string
           created_at: string
@@ -637,6 +638,7 @@ export type Database = {
           nivel: number
           obra_id: string
           ordem: number | null
+          origem: string
           quantidade: number
           total_contrato: number
           unidade: string
@@ -645,6 +647,7 @@ export type Database = {
           valor_unitario: number
         }
         Insert: {
+          aditivo_num?: number | null
           banco: string
           codigo: string
           created_at?: string
@@ -655,6 +658,7 @@ export type Database = {
           nivel?: number
           obra_id: string
           ordem?: number | null
+          origem?: string
           quantidade?: number
           total_contrato?: number
           unidade: string
@@ -663,6 +667,7 @@ export type Database = {
           valor_unitario?: number
         }
         Update: {
+          aditivo_num?: number | null
           banco?: string
           codigo?: string
           created_at?: string
@@ -673,6 +678,7 @@ export type Database = {
           nivel?: number
           obra_id?: string
           ordem?: number | null
+          origem?: string
           quantidade?: number
           total_contrato?: number
           unidade?: string

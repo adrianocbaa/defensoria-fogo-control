@@ -12,10 +12,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
+import NovoAditivoModal from '@/components/NovoAditivoModal';
 import * as LoadingStates from '@/components/LoadingStates';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useMedicaoSessions } from '@/hooks/useMedicaoSessions';
 import { useMedicaoItems } from '@/hooks/useMedicaoItems';
+import * as XLSX from 'xlsx';
 
 interface Obra {
   id: string;
@@ -78,6 +80,7 @@ export function Medicao() {
   const [medicaoAtual, setMedicaoAtual] = useState<number | null>(null);
   const [modalImportarAberto, setModalImportarAberto] = useState(false);
   const [mostrarAditivos, setMostrarAditivos] = useState(true);
+  const [novoAditivoAberto, setNovoAditivoAberto] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -690,7 +693,7 @@ const criarNovaMedicao = async () => {
   }
 };
 
-  // Função para criar novo aditivo
+  // Função para criar novo aditivo (sem anexos)
   const criarNovoAditivo = () => {
     const numeroAditivo = aditivos.length + 1;
     const novoAditivo: Aditivo = {
@@ -698,11 +701,157 @@ const criarNovaMedicao = async () => {
       nome: `ADITIVO ${numeroAditivo}`,
       dados: {}
     };
-    
     setAditivos([...aditivos, novoAditivo]);
     toast.success(`Aditivo ${numeroAditivo} criado com sucesso!`);
   };
 
+  // Helpers para importação extracontratual
+  const normalizeHeader = (s: any) => String(s || '')
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  const parseNumber = (v: any) => {
+    if (typeof v === 'number') return v;
+    if (v == null) return 0;
+    const str = String(v).toString().trim();
+    if (!str) return 0;
+    // remove thousands and fix decimal
+    const n = str.replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.-]/g, '');
+    const parsed = parseFloat(n);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const getMaxRoot = () => {
+    const roots = items.map(i => parseInt((i.item || '').split('.')[0] || '0', 10) || 0);
+    return roots.length ? Math.max(...roots) : 0;
+  };
+
+  const remapCode = (code: string, delta: number) => {
+    const parts = (code || '1').split('.');
+    const root = parseInt(parts[0] || '0', 10) || 0;
+    parts[0] = String(root + delta);
+    return parts.join('.');
+  };
+
+  // Confirmação do modal de Novo Aditivo
+  const confirmarNovoAditivo = async ({ extracontratual, file }: { extracontratual: boolean; file?: File | null; }) => {
+    const numeroAditivo = aditivos.length + 1;
+
+    // 1) Criar aditivo em memória para exibir colunas
+    const novoAditivo: Aditivo = {
+      id: Date.now(),
+      nome: `ADITIVO ${numeroAditivo}`,
+      dados: {}
+    };
+    setAditivos(prev => [...prev, novoAditivo]);
+
+    if (!extracontratual || !file || !id) {
+      toast.success(`Aditivo ${numeroAditivo} criado.`);
+      return;
+    }
+
+    try {
+      // 2) Ler planilha (.xlsx ou .csv)
+      let workbook: XLSX.WorkBook;
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text = await file.text();
+        workbook = XLSX.read(text, { type: 'string' });
+      } else {
+        const buf = await file.arrayBuffer();
+        workbook = XLSX.read(buf, { type: 'array' });
+      }
+      const sheetName = workbook.SheetNames[0];
+      const ws = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+      if (!rows || rows.length < 2) throw new Error('Planilha vazia');
+
+      // 3) Mapear cabeçalhos
+      const header = rows[0].map(h => normalizeHeader(h));
+      const idx = {
+        item: header.findIndex(h => h === 'item'),
+        codigoBanco: header.findIndex(h => h.includes('codigo banco') || h === 'codigo' || h === 'codigobanco'),
+        descricao: header.findIndex(h => h === 'descricao'),
+        und: header.findIndex(h => h === 'und' || h === 'unidade'),
+        quant: header.findIndex(h => h.startsWith('quant')),
+        valorUnit: header.findIndex(h => h.includes('valor unit') || h.includes('valor unitario')),
+        valorTotal: header.findIndex(h => h.includes('valor total')),
+      };
+
+      const body = rows.slice(1);
+      const maxRoot = getMaxRoot();
+      const baseOrdem = items.reduce((m, it) => Math.max(m, it.ordem || 0), 0);
+
+      const novos: Item[] = [];
+      body.forEach((r, i) => {
+        const quant = parseNumber(idx.quant >= 0 ? r[idx.quant] : 0);
+        if (quant <= 0) return; // exige Quant > 0
+
+        const codeRaw = idx.item >= 0 ? String(r[idx.item] || '').trim() : String(i + 1);
+        const code = remapCode(codeRaw || String(i + 1), maxRoot);
+        const nivel = code.split('.').length;
+
+        const descricao = idx.descricao >= 0 ? String(r[idx.descricao] || '').trim() : '';
+        const und = idx.und >= 0 ? String(r[idx.und] || '').trim() : '';
+        const codigoBanco = idx.codigoBanco >= 0 ? String(r[idx.codigoBanco] || '').trim() : '';
+        const valorUnit = parseNumber(idx.valorUnit >= 0 ? r[idx.valorUnit] : 0);
+        // Valor total importado não entra no Valor Total Original
+        const valorTotalOriginal = 0;
+
+        const novo: Item = {
+          id: stableIdForRow(code, codigoBanco, baseOrdem + i + 1),
+          item: code,
+          codigo: codigoBanco,
+          banco: '',
+          descricao,
+          und,
+          quantidade: quant,
+          valorUnitario: valorUnit,
+          valorTotal: valorTotalOriginal,
+          aditivo: { qnt: 0, percentual: 0, total: 0 },
+          totalContrato: 0,
+          importado: true,
+          nivel,
+          ehAdministracaoLocal: false,
+          ordem: baseOrdem + i + 1,
+        };
+        novos.push(novo);
+      });
+
+      if (!novos.length) throw new Error('Nenhum dado válido foi encontrado na planilha.');
+
+      // 4) Atualizar estado local (merge no final) com totais hierárquicos
+      const merged = calcularTotaisHierarquicos([...items, ...novos]);
+      setItems(merged);
+
+      // 5) Persistir no banco sem sobrescrever os existentes
+      const rowsToInsert = novos.map((it) => ({
+        obra_id: id,
+        item: it.item,
+        codigo: it.codigo,
+        banco: it.banco,
+        descricao: it.descricao,
+        unidade: it.und,
+        quantidade: it.quantidade,
+        valor_unitario: it.valorUnitario,
+        valor_total: it.valorTotal, // 0 para não afetar Valor Total Original
+        total_contrato: it.totalContrato,
+        nivel: it.nivel,
+        eh_administracao_local: it.ehAdministracaoLocal,
+        ordem: it.ordem,
+        // Novos campos
+        origem: 'extracontratual',
+        aditivo_num: numeroAditivo,
+      } as any));
+
+      const { error: insertErr } = await supabase.from('orcamento_items').insert(rowsToInsert as any);
+      if (insertErr) throw insertErr;
+
+      toast.success(`Aditivo ${numeroAditivo} criado e ${novos.length} itens extracontratuais anexados.`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Não foi possível ler a planilha. Verifique o layout.');
+    }
+  };
   // Função para salvar e bloquear medição
   const salvarEBloquearMedicao = async (medicaoId: number) => {
     const medicao = medicoes.find(m => m.id === medicaoId);
@@ -1262,10 +1411,15 @@ const criarNovaMedicao = async () => {
                   {mostrarAditivos ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   {mostrarAditivos ? 'Ocultar' : 'Mostrar'} Aditivos
                 </Button>
-                <Button onClick={criarNovoAditivo} className="flex items-center gap-2">
+                <Button onClick={() => setNovoAditivoAberto(true)} className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   Novo Aditivo
                 </Button>
+                <NovoAditivoModal
+                  open={novoAditivoAberto}
+                  onOpenChange={setNovoAditivoAberto}
+                  onConfirm={confirmarNovoAditivo}
+                />
               </div>
             </div>
           </CardHeader>
