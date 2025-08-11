@@ -115,6 +115,8 @@ export function Medicao() {
     if (!id) return;
     
     try {
+      // Mapa auxiliar para relacionar código do serviço ao ID do item
+      let codigoToIdMap = new Map<string, number>();
       // Primeiro, buscar os items da planilha orçamentária
       const { data: orcamentoItems, error: orcamentoError } = await supabase
         .from('orcamento_items')
@@ -127,7 +129,7 @@ export function Medicao() {
       if (orcamentoItems && orcamentoItems.length > 0) {
         // Converter items do orçamento para o formato da interface
         const itemsConvertidos: Item[] = orcamentoItems.map(item => ({
-          id: Math.abs(hashCode(item.codigo)),
+          id: stableIdFromCodigo(item.codigo),
           item: item.item,
           codigo: item.codigo,
           banco: item.banco,
@@ -143,6 +145,9 @@ export function Medicao() {
           ehAdministracaoLocal: item.eh_administracao_local,
           ordem: item.ordem || 0
         }));
+
+        // Criar mapa código -> ID para usar ao converter medições salvas
+        codigoToIdMap = new Map(itemsConvertidos.map(i => [i.codigo, i.id]));
 
         setItems(itemsConvertidos);
       }
@@ -185,9 +190,9 @@ export function Medicao() {
 
           // Preencher dados da medição
           medicoes.forEach(item => {
-            // Gerar um ID único baseado no código do serviço
-            const itemId = Math.abs(hashCode(item.servico_codigo));
-            medicao.dados[itemId] = {
+            // Mapear código do serviço para o ID do item importado
+            const mappedId = codigoToIdMap.get(item.servico_codigo) ?? stableIdFromCodigo(item.servico_codigo);
+            medicao.dados[mappedId] = {
               qnt: item.quantidade_executada,
               percentual: item.quantidade_projeto > 0 ? 
                 (item.quantidade_executada / item.quantidade_projeto) * 100 : 0,
@@ -206,7 +211,7 @@ export function Medicao() {
     }
   };
 
-  // Função auxiliar para gerar hash de string
+  // Função auxiliar para gerar hash de string (compatível com IDs anteriores quando necessário)
   const hashCode = (str: string) => {
     let hash = 0;
     if (str.length === 0) return hash;
@@ -216,6 +221,20 @@ export function Medicao() {
       hash = hash & hash; // Convert to 32bit integer
     }
     return hash;
+  };
+
+  // ID estável e com baixa colisão a partir do código do serviço
+  const stableIdFromCodigo = (codigo: string) => {
+    let h1 = 5381;
+    let h2 = 52711;
+    for (let i = 0; i < codigo.length; i++) {
+      const ch = codigo.charCodeAt(i);
+      h1 = ((h1 << 5) + h1) ^ ch; // djb2 xor
+      h2 = ch + (h2 << 6) + (h2 << 16) - h2; // sdbm
+    }
+    // Combinar em 53 bits seguros
+    const combined = ((h1 >>> 0) * 4096) + ((h2 >>> 0) % 4096);
+    return Math.abs(combined);
   };
 
   // Função para calcular total do contrato incluindo aditivos
