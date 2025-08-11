@@ -413,25 +413,26 @@ export function Medicao() {
     const medicaoAtualData = medicoes.find(m => m.id === medicaoAtual);
     if (!medicaoAtualData) return;
 
-    // 1. Calcular Total de Serviços Executados (valor da medição dos itens que NÃO são administração local)
+    // 1. Calcular Total de Serviços Executados (valor da medição dos itens que NÃO são administração local, apenas itens folha)
     let totalServicosExecutados = 0;
     items.forEach(item => {
-      if (!item.ehAdministracaoLocal) {
+      if (!item.ehAdministracaoLocal && ehItemFolha(item.item)) {
         const medicaoData = medicaoAtualData.dados[item.id];
-        if (medicaoData && medicaoData.total && medicaoData.total > 0) {
+        if (medicaoData?.total && medicaoData.total > 0) {
           totalServicosExecutados += medicaoData.total;
         }
       }
     });
 
-    // 2. Calcular Total do Contrato (com aditivos se houver)
-    const totalDoContrato = items.reduce((sum, item) => sum + item.totalContrato, 0);
-
-    // 3. Calcular Total Administração Local (soma dos valores dos itens da administração local)
-    const totalAdministracaoLocal = items
-      .filter(item => item.ehAdministracaoLocal)
+    // 2. Calcular Total do Contrato considerando apenas itens de primeiro nível (evita dupla contagem)
+    const totalDoContrato = items
+      .filter(item => ehItemPrimeiroNivel(item.item))
       .reduce((sum, item) => sum + item.totalContrato, 0);
 
+    // 3. Calcular Total da Administração Local considerando apenas itens de primeiro nível
+    const totalAdministracaoLocal = items
+      .filter(item => item.ehAdministracaoLocal && ehItemPrimeiroNivel(item.item))
+      .reduce((sum, item) => sum + item.totalContrato, 0);
     if (totalServicosExecutados === 0) {
       toast.error('Nenhum serviço foi medido ainda. Insira valores de medição antes de calcular a administração local.');
       return;
@@ -455,13 +456,13 @@ export function Medicao() {
             if (item.ehAdministracaoLocal) {
               // % (coluna 2): Inserir a porcentagem calculada
               const percentualCalculado = porcentagemExecucao * 100;
-              
-              // QNT (coluna 1): % × Total Contrato do item
-              const quantidadeCalculada = porcentagemExecucao * item.totalContrato;
-              
-              // TOTAL (coluna 3): % × Total Contrato do item (mesmo valor que QNT neste caso)
+
+              // QNT (coluna 1): % × Quantitativo do item
+              const quantidadeCalculada = porcentagemExecucao * item.quantidade;
+
+              // TOTAL (coluna 3): % × Total Contrato do item
               const totalCalculado = porcentagemExecucao * item.totalContrato;
-              
+
               novosDados[item.id] = {
                 qnt: quantidadeCalculada,
                 percentual: percentualCalculado,
