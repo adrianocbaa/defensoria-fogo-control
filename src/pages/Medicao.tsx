@@ -1352,12 +1352,8 @@ export function Medicao() {
                             </div>
                           </TableCell>
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
-                            {item.ehAdministracaoLocal ? (
-                              <div className="text-right font-mono text-xs px-1">
-                                {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </div>
-                            ) : medicaoAtual && medicaoAtualObj ? (
-                              ehItemFolha(item.item) ? (
+                            {medicaoAtual && medicaoAtualObj ? (
+                              ehItemFolha(item.item) && !item.ehAdministracaoLocal ? (
                                 <Input
                                   type="number"
                                   value={medicaoData.qnt || ''}
@@ -1369,7 +1365,7 @@ export function Medicao() {
                                 />
                               ) : (
                                 <div className="text-right font-mono text-xs px-1">
-                                  {/* Célula em branco para itens pai */}
+                                  {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                               )
                             ) : (
