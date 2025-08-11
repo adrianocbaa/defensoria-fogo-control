@@ -721,7 +721,6 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     };
     setItems([...items, novoItem]);
   };
-  };
 
   // Função para remover item
   const removerItem = (itemId: number) => {
