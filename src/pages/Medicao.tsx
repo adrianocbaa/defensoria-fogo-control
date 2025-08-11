@@ -469,6 +469,59 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     return (quantidade / quantidadeTotal) * 100;
   };
 
+  // Sincronizar resumo financeiro (localStorage + evento) SEMPRE, antes de retornos condicionais
+  React.useEffect(() => {
+    if (!obra?.id) return;
+
+    // 1) Valor Total Original = soma dos itens de 1º nível (valorTotal importado)
+    const valorTotalOriginal = items
+      .filter(item => ehItemPrimeiroNivel(item.item))
+      .reduce((total, item) => total + item.valorTotal, 0);
+
+    // 2) Total Aditivo = soma dos aditivos de todos os itens
+    const totalAditivo = aditivos.reduce((aditivoSum, aditivo) => {
+      return aditivoSum + items.reduce((itemSum, item) => {
+        const aditivoData = aditivo.dados[item.id];
+        return itemSum + (aditivoData?.total || 0);
+      }, 0);
+    }, 0);
+
+    // 3) Total do Contrato (final) = soma dos itens de 1º nível com aditivos hierárquicos
+    const totalContrato = items
+      .filter(item => ehItemPrimeiroNivel(item.item))
+      .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0);
+
+    // 4) Serviços Executados (medição atual)
+    const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
+    const servicosExecutados = medicaoAtualData
+      ? Object.values(medicaoAtualData.dados).reduce((sum, d: any) => sum + (d.total || 0), 0)
+      : 0;
+
+    // 5) Valor Acumulado (até a medição atual)
+    let valorAcumulado = 0;
+    if (medicaoAtual) {
+      const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
+      for (let i = 0; i <= medicaoAtualIndex; i++) {
+        const dados = medicoes[i].dados;
+        valorAcumulado += Object.values(dados).reduce((s, d: any) => s + (d.total || 0), 0);
+      }
+    }
+
+    const resumoFinanceiro = {
+      obraId: obra.id,
+      valorTotalOriginal,
+      totalAditivo,
+      totalContrato,
+      servicosExecutados,
+      valorAcumulado,
+    };
+
+    try {
+      localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
+      window.dispatchEvent(new CustomEvent('medicaoAtualizada', { detail: resumoFinanceiro }));
+    } catch {}
+  }, [obra?.id, items, aditivos, medicoes, medicaoAtual]);
+
   // Função para calcular total baseado na quantidade e valor unitário
   const calcularTotal = (quantidade: number, valorUnitario: number) => {
     return quantidade * valorUnitario;
@@ -1389,23 +1442,6 @@ const criarNovaMedicao = async () => {
   };
 
   const valorAcumuladoTotal = calcularValorAcumuladoTotal();
-
-  // Sincronizar resumo financeiro para outras páginas (ObraDetails)
-  React.useEffect(() => {
-    if (!obra?.id) return;
-    const resumoFinanceiro = {
-      obraId: obra.id,
-      valorTotalOriginal: calcularValorTotalOriginal,
-      totalAditivo: totaisGerais.aditivoTotal,
-      totalContrato: calcularTotalContrato,
-      servicosExecutados: totalServicosExecutados,
-      valorAcumulado: valorAcumuladoTotal,
-    };
-    try {
-      localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
-      window.dispatchEvent(new CustomEvent('medicaoAtualizada', { detail: resumoFinanceiro }));
-    } catch {}
-  }, [obra?.id, calcularValorTotalOriginal, totaisGerais.aditivoTotal, calcularTotalContrato, totalServicosExecutados, valorAcumuladoTotal]);
 
   return (
     <div className="medicao-page min-h-screen bg-gray-50 py-3">
