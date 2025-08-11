@@ -1705,6 +1705,13 @@ const criarNovaMedicao = async () => {
                               {item.descricao}
                             </div>
                           </TableCell>
+                          {/* Und */}
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="text-center font-mono text-xs px-1">
+                              {item.und}
+                            </div>
+                          </TableCell>
+                          {/* Quant. */}
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-right font-mono text-xs px-1">
                               {determinarNivel(item.item) === 1
@@ -1712,6 +1719,7 @@ const criarNovaMedicao = async () => {
                                 : item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                           </TableCell>
+                          {/* Valor unit com BDI e Desc. */}
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-right font-mono text-xs px-1">
                               {determinarNivel(item.item) === 1
@@ -1719,6 +1727,7 @@ const criarNovaMedicao = async () => {
                                 : `R$ ${item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                             </div>
                           </TableCell>
+                          {/* Valor total com BDI e Desconto */}
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-right font-mono text-xs px-1">
                               R$ {item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
