@@ -14,7 +14,8 @@ import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
 import * as LoadingStates from '@/components/LoadingStates';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useMedicoes } from '@/hooks/useMedicoes';
+import { useMedicaoSessions } from '@/hooks/useMedicaoSessions';
+import { useMedicaoItems } from '@/hooks/useMedicaoItems';
 
 interface Obra {
   id: string;
@@ -63,7 +64,8 @@ export function Medicao() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
-  const { saveMedicao, updateMedicao, saveAditivo, updateAditivo } = useMedicoes();
+  const { createSession, blockSession, reopenSession, deleteSession } = useMedicaoSessions();
+  const { upsertItems } = useMedicaoItems();
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -669,20 +671,12 @@ const criarNovaMedicao = async () => {
   if (!id) return;
   try {
     const nextSeq = (medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0) + 1;
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData?.user?.id ?? null;
-    const { data, error } = await supabase
-      .from('medicao_sessions')
-      .insert([{ obra_id: id, sequencia: nextSeq, status: 'aberta', user_id: userId }])
-      .select('id, sequencia, status, created_at')
-      .single();
-
-    if (error) throw error;
+    const newSession = await createSession(id, nextSeq);
 
     const novaMedicao: Medicao = {
-      id: data.sequencia,
-      sessionId: data.id,
-      nome: `${data.sequencia}ª MEDIÇÃO`,
+      id: newSession.sequencia,
+      sessionId: newSession.id,
+      nome: `${newSession.sequencia}ª MEDIÇÃO`,
       dados: {},
       bloqueada: false,
     };
@@ -780,31 +774,21 @@ const criarNovaMedicao = async () => {
             : qtd * item.valorUnitario;
 
           return {
-            medicao_id: medicao.sessionId,
             item_code: item.codigo,
             qtd,
             pct,
             total,
-            user_id: userId,
-          } as any;
+          };
         })
-        .filter(Boolean) as any[];
+        .filter(Boolean) as { item_code: string; qtd: number; pct: number; total: number }[];
 
       if (payload.length === 0) {
         toast.error('Não há itens com quantidade para salvar.');
         return;
       }
 
-      const { error: upsertError } = await supabase
-        .from('medicao_items')
-        .upsert(payload, { onConflict: 'medicao_id,item_code' });
-      if (upsertError) throw upsertError;
-
-      const { error: statusError } = await supabase
-        .from('medicao_sessions')
-        .update({ status: 'bloqueada' })
-        .eq('id', medicao.sessionId);
-      if (statusError) throw statusError;
+      await upsertItems(medicao.sessionId, payload, userId);
+      await blockSession(medicao.sessionId);
 
       setMedicoes(prevMedicoes =>
         prevMedicoes.map(m =>
@@ -840,7 +824,7 @@ const criarNovaMedicao = async () => {
   };
 
   // Função para reabrir medição (apenas admins)
-  const reabrirMedicao = (medicaoId: number) => {
+  const reabrirMedicao = async (medicaoId: number) => {
     if (!isAdmin) {
       toast.error('Apenas administradores podem reabrir medições.');
       return;
@@ -848,21 +832,30 @@ const criarNovaMedicao = async () => {
 
     const medicao = medicoes.find(m => m.id === medicaoId);
     if (!medicao) return;
+    if (!medicao.sessionId) {
+      toast.error('Sessão de medição inválida.');
+      return;
+    }
 
-    setMedicoes(prevMedicoes =>
-      prevMedicoes.map(m =>
-        m.id === medicaoId
-          ? {
-              ...m,
-              bloqueada: false,
-              dataBloqueio: undefined,
-              usuarioBloqueio: undefined
-            }
-          : m
-      )
-    );
-
-    toast.success(`${medicao.nome} foi reaberta para edição.`);
+    try {
+      await reopenSession(medicao.sessionId);
+      setMedicoes(prevMedicoes =>
+        prevMedicoes.map(m =>
+          m.id === medicaoId
+            ? {
+                ...m,
+                bloqueada: false,
+                dataBloqueio: undefined,
+                usuarioBloqueio: undefined
+              }
+            : m
+        )
+      );
+      toast.success(`${medicao.nome} foi reaberta para edição.`);
+    } catch (error) {
+      console.error('Erro ao reabrir medição:', error);
+      toast.error('Erro ao reabrir medição');
+    }
   };
 
   // Função para excluir medição (apenas admins)
@@ -872,26 +865,19 @@ const criarNovaMedicao = async () => {
       return;
     }
 
-    if (!id) return;
-    
     try {
       const medicao = medicoes.find(m => m.id === medicaoId);
       if (!medicao) return;
+      if (!medicao.sessionId) {
+        toast.error('Sessão de medição inválida.');
+        return;
+      }
 
-      // Buscar as medições do banco que correspondem a esta medição
-      // Como não temos mes/ano explícito, vamos usar a data de criação para identificar
-      const { error } = await supabase
-        .from('medicoes')
-        .delete()
-        .eq('obra_id', id)
-        .gte('created_at', medicao.dataBloqueio || new Date().toISOString())
-        .lt('created_at', new Date(new Date(medicao.dataBloqueio || new Date()).getTime() + 24 * 60 * 60 * 1000).toISOString());
-
-      if (error) throw error;
+      await deleteSession(medicao.sessionId);
 
       // Remover do estado local
       setMedicoes(prevMedicoes => prevMedicoes.filter(m => m.id !== medicaoId));
-      
+
       // Se a medição excluída era a atual, limpar seleção
       if (medicaoAtual === medicaoId) {
         setMedicaoAtual(null);
