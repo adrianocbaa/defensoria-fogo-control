@@ -17,6 +17,8 @@ import * as LoadingStates from '@/components/LoadingStates';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useMedicaoSessions } from '@/hooks/useMedicaoSessions';
 import { useMedicaoItems } from '@/hooks/useMedicaoItems';
+import { useAditivoSessions } from '@/hooks/useAditivoSessions';
+import { useAditivoItems } from '@/hooks/useAditivoItems';
 import * as XLSX from 'xlsx';
 
 interface Obra {
@@ -57,17 +59,23 @@ interface Medicao {
 }
 
 interface Aditivo {
-  id: number;
+  id: number; // local UI id
   nome: string;
   dados: { [itemId: number]: { qnt: number; percentual: number; total: number } };
+  sessionId?: string; // Supabase aditivo_sessions.id
+  sequencia?: number;
+  bloqueada?: boolean;
+  created_at?: string;
 }
 
 export function Medicao() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useUserRole();
-  const { createSession, blockSession, reopenSession, deleteSession } = useMedicaoSessions();
-  const { upsertItems } = useMedicaoItems();
+const { isAdmin } = useUserRole();
+const { createSession, blockSession, reopenSession, deleteSession } = useMedicaoSessions();
+const { createSession: createAditivoSession, reopenSession: reopenAditivoSession, deleteSession: deleteAditivoSession, fetchSessionsWithItems: fetchAditivoSessions, blockSession: blockAditivoSession } = useAditivoSessions();
+const { upsertItems } = useMedicaoItems();
+const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -191,6 +199,38 @@ export function Medicao() {
         });
         setMedicoes(medicoesConvertidas);
         setMedicaoAtual(medicoesConvertidas[0]?.id ?? null);
+      }
+
+      // Buscar sessões de aditivo e itens
+      const { data: adSessions, error: adSessionsError } = await supabase
+        .from('aditivo_sessions')
+        .select('id, sequencia, status, created_at, aditivo_items ( item_code, qtd, pct, total )')
+        .eq('obra_id', id)
+        .order('sequencia', { ascending: true });
+      if (adSessionsError) throw adSessionsError;
+      if (adSessions && adSessions.length > 0) {
+        const aditivosConvertidos: Aditivo[] = adSessions.map((s: any) => {
+          const a: Aditivo = {
+            id: s.sequencia,
+            nome: `ADITIVO ${s.sequencia}`,
+            dados: {},
+            sessionId: s.id,
+            sequencia: s.sequencia,
+            bloqueada: s.status === 'bloqueada',
+            created_at: s.created_at,
+          };
+          const itens = (s.aditivo_items || []) as any[];
+          itens.forEach((it: any) => {
+            const mappedId = codigoToIdMap.get(it.item_code) ?? stableIdFromCodigo(it.item_code);
+            a.dados[mappedId] = {
+              qnt: Number(it.qtd) || 0,
+              percentual: Number(it.pct) || 0,
+              total: Number(it.total) || 0,
+            };
+          });
+          return a;
+        });
+        setAditivos(aditivosConvertidos);
       }
     } catch (error) {
       console.error('Erro ao carregar dados salvos:', error);
@@ -734,18 +774,38 @@ const criarNovaMedicao = async () => {
   const confirmarNovoAditivo = async ({ extracontratual, file }: { extracontratual: boolean; file?: File | null; }) => {
     const numeroAditivo = aditivos.length + 1;
 
-    // 1) Criar aditivo em memória para exibir colunas
+    if (!id) {
+      toast.error('Obra inválida');
+      return;
+    }
+
+    // Criar sessão do aditivo no Supabase
+    let newSession;
+    try {
+      newSession = await createAditivoSession(id, numeroAditivo);
+    } catch (e) {
+      console.error(e);
+      toast.error('Não foi possível criar a sessão do aditivo.');
+      return;
+    }
+
+    // Adicionar aditivo em memória com vínculo da sessão
     const novoAditivo: Aditivo = {
-      id: Date.now(),
+      id: numeroAditivo,
       nome: `ADITIVO ${numeroAditivo}`,
-      dados: {}
+      dados: {},
+      sessionId: newSession.id,
+      sequencia: newSession.sequencia,
+      bloqueada: newSession.status === 'bloqueada',
+      created_at: newSession.created_at,
     };
     setAditivos(prev => [...prev, novoAditivo]);
 
-    if (!extracontratual || !file || !id) {
+    if (!extracontratual || !file) {
       toast.success(`Aditivo ${numeroAditivo} criado.`);
       return;
     }
+
 
     try {
       // 2) Ler planilha (.xlsx ou .csv)
@@ -820,9 +880,9 @@ const criarNovaMedicao = async () => {
           banco: '',
           descricao,
           und,
-          quantidade: quant,
-          valorUnitario: valorUnit,
-          valorTotal: valorTotalOriginal,
+          quantidade: (nivel === 1 ? 0 : quant),
+          valorUnitario: (nivel === 1 ? 0 : valorUnit),
+          valorTotal: (nivel === 1 ? valorTotalPlanilha : valorTotalOriginal),
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: 0,
           importado: true,
