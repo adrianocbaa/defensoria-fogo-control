@@ -80,9 +80,15 @@ export const useMedicoes = () => {
 
   const saveMedicao = async (medicao: Omit<Medicao, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Anexar o usuário autenticado para satisfazer políticas de RLS
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id;
+
+      const payload = userId ? { ...medicao, user_id: userId } : medicao;
+
       const { data, error } = await supabase
         .from('medicoes')
-        .insert([medicao])
+        .insert([payload])
         .select()
         .single();
 
@@ -93,7 +99,7 @@ export const useMedicoes = () => {
       return data;
     } catch (error: any) {
       console.error('Erro ao salvar medição:', error);
-      toast.error('Erro ao salvar medição');
+      toast.error(`Erro ao salvar medição: ${error?.message || 'verifique os dados'}`);
       throw error;
     }
   };
@@ -139,9 +145,14 @@ export const useMedicoes = () => {
 
   const saveAditivo = async (aditivo: Omit<Aditivo, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Anexar o usuário autenticado para políticas de RLS
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id;
+      const payload = userId ? { ...aditivo, user_id: userId } : aditivo;
+
       const { data, error } = await supabase
         .from('aditivos')
-        .insert([aditivo])
+        .insert([payload])
         .select()
         .single();
 
@@ -152,7 +163,7 @@ export const useMedicoes = () => {
       return data;
     } catch (error: any) {
       console.error('Erro ao salvar aditivo:', error);
-      toast.error('Erro ao salvar aditivo');
+      toast.error(`Erro ao salvar aditivo: ${error?.message || 'verifique os dados'}`);
       throw error;
     }
   };

@@ -701,7 +701,7 @@ export function Medicao() {
         const itemId = parseInt(itemIdStr);
         const item = items.find(i => i.id === itemId);
         
-        if (item && dados.qnt > 0) {
+        if (item && dados.qnt > 0 && item.codigo && item.codigo.trim().length > 0) {
           const medicaoData = {
             obra_id: obra.id,
             servico_codigo: item.codigo,
@@ -727,7 +727,7 @@ export function Medicao() {
           const itemId = parseInt(itemIdStr);
           const item = items.find(i => i.id === itemId);
           
-          if (item && dados.qnt > 0) {
+          if (item && dados.qnt > 0 && item.codigo && item.codigo.trim().length > 0) {
             const aditivoData = {
               obra_id: obra.id,
               servico_codigo: item.codigo,
@@ -778,7 +778,7 @@ export function Medicao() {
       toast.success(`${medicao.nome} foi bloqueada e salva no banco de dados com sucesso! (${medicoesSalvas.length} itens salvos)`);
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
-      toast.error("Erro ao salvar medição no banco de dados. Tente novamente.");
+      toast.error(`Erro ao salvar medição no banco: ${error?.message || 'Tente novamente.'}`);
     }
   };
 
