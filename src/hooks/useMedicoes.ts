@@ -15,6 +15,7 @@ export interface Medicao {
   valor_executado: number;
   mes_execucao: number;
   ano_execucao: number;
+  numero_medicao: number;
   user_id?: string;
   created_at?: string;
   updated_at?: string;
