@@ -97,6 +97,7 @@ interface ObrasMapProps {
 export function ObrasMap({ className, obras = [], onObraClick, loading = false }: ObrasMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [execPercents, setExecPercents] = useState<Record<string, number>>({});
 
   // Coordenadas do centro de Mato Grosso
   const matogrossoCenter: [number, number] = [-12.64, -55.42];
@@ -113,6 +114,46 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Sincroniza "Execução" com "Andamento da obra" (Sistema de Medição)
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    try {
+      obras.forEach((o) => {
+        const raw = localStorage.getItem(`resumo_financeiro_${o.id}`);
+        if (raw) {
+          const data = JSON.parse(raw);
+          const total = Number(data?.totalContrato) || 0;
+          const acumulado = Number(data?.valorAcumulado) || 0;
+          const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
+          map[o.id] = pct;
+        }
+      });
+    } catch {}
+    setExecPercents(map);
+  }, [obras]);
+
+  // Ouvinte: atualizações em tempo real vindas da tela de Medição
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<any>).detail;
+      if (!detail?.obraId) return;
+      const total = Number(detail?.totalContrato) || 0;
+      const acumulado = Number(detail?.valorAcumulado) || 0;
+      const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
+      setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
+    };
+    window.addEventListener('medicaoAtualizada', handler as EventListener);
+    return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
+  }, []);
+
+  const getFormattedExec = (o: Obra): string => {
+    const p = execPercents[o.id];
+    if (typeof p === 'number') {
+      return p.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+    }
+    return formatExecutionPercentage(o);
+  };
 
   // Show loading skeleton while data is loading or map is initializing
   if (loading || !mapReady) {
@@ -217,7 +258,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
                   
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">📊 Execução:</span>
-                    <span className="font-medium text-gray-900">{formatExecutionPercentage(obra)}</span>
+                    <span className="font-medium text-gray-900">{getFormattedExec(obra)}</span>
                   </div>
                 </div>
                 
