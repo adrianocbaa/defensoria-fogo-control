@@ -273,13 +273,30 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     }
     return Math.abs(h1 >>> 0) * 4096 + (Math.abs(hashCode(base)) % 4096);
   };
-  // Função para calcular total do contrato incluindo aditivos
+  // Função para calcular total do contrato incluindo aditivos hierárquicos (soma filhos)
   const calcularTotalContratoComAditivos = (item: Item) => {
+    // Coletar IDs de todos os descendentes do item (níveis abaixo)
+    const coletarDescendentesIds = (codigo: string): number[] => {
+      const stack: string[] = [codigo];
+      const ids: number[] = [];
+      while (stack.length) {
+        const current = stack.pop()!;
+        const filhos = childrenByCode.get(current)?.map(f => ({ codigo: f.item, id: f.id })) || [];
+        filhos.forEach(f => {
+          ids.push(f.id);
+          stack.push(f.codigo);
+        });
+      }
+      return ids;
+    };
+
+    const idsParaSomar = [item.id, ...coletarDescendentesIds(item.item)];
+
     const totalAditivos = aditivos.reduce((sum, aditivo) => {
-      const aditivoData = aditivo.dados[item.id];
-      return sum + (aditivoData?.total || 0);
+      const subtotal = idsParaSomar.reduce((acc, id) => acc + (aditivo.dados[id]?.total || 0), 0);
+      return sum + subtotal;
     }, 0);
-    
+
     return item.valorTotal + totalAditivos;
   };
 
