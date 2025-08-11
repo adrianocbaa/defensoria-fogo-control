@@ -345,13 +345,19 @@ export function Medicao() {
                    filho.item.startsWith(item.item + '.');
           });
           
-          item.quantidade = filhos.reduce((sum, filho) => sum + filho.quantidade, 0);
-          item.valorTotal = filhos.reduce((sum, filho) => sum + filho.valorTotal, 0);
+          const somaQuantidade = filhos.reduce((sum, filho) => sum + filho.quantidade, 0);
+          const somaValorTotal = filhos.reduce((sum, filho) => sum + filho.valorTotal, 0);
+          item.quantidade = somaQuantidade;
+          // Não substituir o Valor Total do nível 1; manter o valor importado da planilha
+          if (determinarNivel(item.item) !== 1) {
+            item.valorTotal = somaValorTotal;
+          }
           item.aditivo.total = filhos.reduce((sum, filho) => sum + filho.aditivo.total, 0);
           item.totalContrato = filhos.reduce((sum, filho) => sum + filho.totalContrato, 0);
           
           // Calcular valor unitário médio ponderado
           if (item.quantidade > 0) {
+            // Usar o valorTotal atual (importado para nível 1 ou somado para demais)
             item.valorUnitario = item.valorTotal / item.quantidade;
           }
         }
