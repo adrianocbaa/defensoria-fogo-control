@@ -332,12 +332,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       .reduce((total, item) => total + item.valorTotal, 0);
   }, [items]);
 
-  // Função para calcular Total do Contrato (soma apenas itens de primeiro nível da coluna Total Contrato)
+  // Função para calcular Total do Contrato final (nível 1) incluindo Aditivos e Extracontratuais
   const calcularTotalContrato = useMemo(() => {
     return items
       .filter(item => ehItemPrimeiroNivel(item.item))
-      .reduce((total, item) => total + item.totalContrato, 0);
-  }, [items]);
+      .reduce((total, item) => total + calcularTotalContratoComAditivos(item), 0);
+  }, [items, aditivos]);
 
   // Função para determinar o nível hierárquico baseado no item
   const determinarNivel = (itemStr: string) => {
