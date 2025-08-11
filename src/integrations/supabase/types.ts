@@ -48,7 +48,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "aditivo_items_aditivo_id_fkey"
+            columns: ["aditivo_id"]
+            isOneToOne: false
+            referencedRelation: "aditivo_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       aditivo_sessions: {
         Row: {
