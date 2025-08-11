@@ -378,9 +378,9 @@ export function Medicao() {
               valorTotal += dadosFilho.total || 0;
             });
             
-            // Calcular percentual baseado na quantidade total do contrato incluindo aditivos
-            const totalContratoComAditivos = calcularTotalContratoComAditivos(item);
-            const percentualCalculado = totalContratoComAditivos > 0 ? (valorTotal / totalContratoComAditivos) * 100 : 0;
+            // Calcular percentual baseado nas quantidades: pct = (qntTotal / Quant) * 100
+            const quantidadeProjeto = item.quantidade;
+            const percentualCalculado = quantidadeProjeto > 0 ? (qntTotal / quantidadeProjeto) * 100 : 0;
             
             dadosCalculados[item.id] = {
               qnt: qntTotal,
@@ -507,13 +507,14 @@ export function Medicao() {
             }
           };
           
-          // Recalcular percentual e total automaticamente para a medição
+          // Recalcular percentual e total automaticamente para a medição (base nas fórmulas: pct = qnt/Quant, total = pct% * TOTAL_CONTRATO)
           if (campo === 'qnt') {
             const item = items.find(i => i.id === itemId);
             if (item) {
-              const quantidadeTotal = item.quantidade + (item.aditivo?.qnt || 0);
-              novosDados[itemId].percentual = calcularPercentual(valorNumerico, quantidadeTotal);
-              novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
+              const quantidadeProjeto = item.quantidade;
+              const percentualCalculado = quantidadeProjeto > 0 ? (valorNumerico / quantidadeProjeto) * 100 : 0;
+              novosDados[itemId].percentual = percentualCalculado;
+              novosDados[itemId].total = (percentualCalculado / 100) * calcularTotalContratoComAditivos(item);
             }
           }
           
@@ -918,11 +919,11 @@ export function Medicao() {
     const item = items.find(i => i.id === itemId);
     if (!item) return 0;
     
-    const valorAcumulado = calcularValorAcumuladoItem(itemId);
-    const totalContrato = calcularTotalContratoComAditivos(item);
+    const qntAcumulada = calcularQuantidadeAcumulada(itemId);
+    const quantidadeProjeto = item.quantidade;
     
-    if (totalContrato === 0) return 0;
-    return (valorAcumulado / totalContrato) * 100;
+    if (quantidadeProjeto === 0) return 0;
+    return (qntAcumulada / quantidadeProjeto) * 100;
   };
 
   // Função para calcular quantidade acumulada com hierarquia
