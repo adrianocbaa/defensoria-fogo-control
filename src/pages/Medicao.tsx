@@ -696,6 +696,7 @@ export function Medicao() {
       const currentDate = new Date();
       const mes = currentDate.getMonth() + 1;
       const ano = currentDate.getFullYear();
+      const numeroMedicao = medicoes.findIndex(m => m.id === medicaoId) + 1;
 
       for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
         const itemId = parseInt(itemIdStr);
@@ -713,7 +714,8 @@ export function Medicao() {
             quantidade_executada: dados.qnt,
             valor_executado: dados.total,
             mes_execucao: mes,
-            ano_execucao: ano
+            ano_execucao: ano,
+            numero_medicao: numeroMedicao
           };
 
           const medicaoSalva = await saveMedicao(medicaoData);
