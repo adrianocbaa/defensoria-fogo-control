@@ -249,7 +249,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 </div>
                 <div>
                   <span className="text-sm font-medium text-muted-foreground">Valor Final:</span>
-                  <p className="text-lg font-semibold text-primary">{formatCurrency(valorExecutado)}</p>
+                  <p className="text-lg font-semibold text-primary">{formatCurrency(valorFinal)}</p>
                 </div>
               </div>
               

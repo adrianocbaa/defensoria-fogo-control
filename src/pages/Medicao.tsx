@@ -1390,6 +1390,23 @@ const criarNovaMedicao = async () => {
 
   const valorAcumuladoTotal = calcularValorAcumuladoTotal();
 
+  // Sincronizar resumo financeiro para outras páginas (ObraDetails)
+  React.useEffect(() => {
+    if (!obra?.id) return;
+    const resumoFinanceiro = {
+      obraId: obra.id,
+      valorTotalOriginal: calcularValorTotalOriginal,
+      totalAditivo: totaisGerais.aditivoTotal,
+      totalContrato: calcularTotalContrato,
+      servicosExecutados: totalServicosExecutados,
+      valorAcumulado: valorAcumuladoTotal,
+    };
+    try {
+      localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
+      window.dispatchEvent(new CustomEvent('medicaoAtualizada', { detail: resumoFinanceiro }));
+    } catch {}
+  }, [obra?.id, calcularValorTotalOriginal, totaisGerais.aditivoTotal, calcularTotalContrato, totalServicosExecutados, valorAcumuladoTotal]);
+
   return (
     <div className="medicao-page min-h-screen bg-gray-50 py-3">
       <div className="content-root w-full">
