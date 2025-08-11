@@ -1430,19 +1430,23 @@ const criarNovaMedicao = async () => {
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                             {medicaoAtual && medicaoAtualObj ? (
                               ehItemFolha(item.item) && !item.ehAdministracaoLocal ? (
-                                  <Input
-                                    type="number"
-                                    value={medicaoData.qnt || ''}
-                                    onChange={(e) => onChangeMedicaoDebounced(item.id, medicaoAtual, 'qnt', e.target.value)}
-                                    className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
-                                    step="0.01"
-                                    min="0"
-                                    disabled={medicaoAtualObj.bloqueada && !isAdmin}
-                                  />
+                                <Input
+                                  type="number"
+                                  value={medicaoData.qnt || ''}
+                                  onChange={(e) => onChangeMedicaoDebounced(item.id, medicaoAtual, 'qnt', e.target.value)}
+                                  className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
+                                  step="0.01"
+                                  min="0"
+                                  disabled={medicaoAtualObj.bloqueada && !isAdmin}
+                                />
                               ) : (
-                                <div className="text-right font-mono text-xs px-1">
-                                  {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </div>
+                                ehItemFolha(item.item) ? (
+                                  <div className="text-right font-mono text-xs px-1">
+                                    {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </div>
+                                ) : (
+                                  <div className="text-right font-mono text-xs px-1"></div>
+                                )
                               )
                             ) : (
                               <div className="text-right font-mono text-xs px-1 text-muted-foreground">
@@ -1461,9 +1465,13 @@ const criarNovaMedicao = async () => {
                             </div>
                           </TableCell>
                           <TableCell className="bg-purple-100 border border-purple-300 p-1">
-                            <div className="text-right font-mono text-xs px-1">
-                              {calcularQuantidadeAcumulada(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
+                            {ehItemFolha(item.item) ? (
+                              <div className="text-right font-mono text-xs px-1">
+                                {calcularQuantidadeAcumulada(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                            ) : (
+                              <div className="text-right font-mono text-xs px-1"></div>
+                            )}
                           </TableCell>
                           <TableCell className="bg-purple-100 border border-purple-300 p-1">
                             <div className="text-center font-mono text-xs px-1">
