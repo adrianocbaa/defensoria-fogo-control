@@ -650,6 +650,56 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     );
   };
 
+  // Persistir aditivo atual no Supabase
+  const salvarAditivo = async (aditivoLocalId: number) => {
+    const ad = aditivos.find(a => a.id === aditivoLocalId);
+    if (!ad || !ad.sessionId) {
+      toast.error('Aditivo inválido');
+      return;
+    }
+    try {
+      const payload = items.reduce((arr, it) => {
+        const d = ad.dados[it.id];
+        if (!d) return arr;
+        const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
+        if (!hasData) return arr;
+        arr.push({ item_code: it.codigo, qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
+        return arr;
+      }, [] as { item_code: string; qtd: number; pct: number; total: number }[]);
+
+      await upsertAditivoItems(ad.sessionId, payload);
+      toast.success(`${ad.nome} salvo com sucesso!`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao salvar aditivo');
+    }
+  };
+
+  const editarAditivo = async (aditivoLocalId: number) => {
+    const ad = aditivos.find(a => a.id === aditivoLocalId);
+    if (!ad || !ad.sessionId) return;
+    try {
+      await reopenAditivoSession(ad.sessionId);
+      setAditivos(prev => prev.map(a => a.id === aditivoLocalId ? { ...a, bloqueada: false } : a));
+      toast.success(`${ad.nome} liberado para edição.`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao liberar aditivo');
+    }
+  };
+
+  const excluirAditivo = async (aditivoLocalId: number) => {
+    const ad = aditivos.find(a => a.id === aditivoLocalId);
+    if (!ad || !ad.sessionId) return;
+    try {
+      await deleteAditivoSession(ad.sessionId);
+      setAditivos(prev => prev.filter(a => a.id !== aditivoLocalId));
+      toast.success(`${ad.nome} excluído.`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao excluir aditivo');
+    }
+  };
   // Função para adicionar novo item
   const adicionarItem = () => {
     const novoItem: Item = {
@@ -670,6 +720,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       ordem: items.length
     };
     setItems([...items, novoItem]);
+  };
   };
 
   // Função para remover item
@@ -1507,17 +1558,36 @@ const criarNovaMedicao = async () => {
               </div>
             </div>
           </CardHeader>
-          {mostrarAditivos && aditivos.length > 0 && (
             <CardContent>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
                 {aditivos.map(aditivo => (
-                  <Badge key={aditivo.id} variant="outline" className="text-sm">
-                    {aditivo.nome}
-                  </Badge>
+                  <div key={aditivo.id} className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-sm flex items-center gap-1">
+                      {aditivo.bloqueada && <Lock className="h-3 w-3" />} {aditivo.nome}
+                    </Badge>
+                    <Button size="sm" onClick={() => salvarAditivo(aditivo.id)} className="h-7 px-2">Salvar</Button>
+                    <Button size="sm" variant="outline" onClick={() => editarAditivo(aditivo.id)} className="h-7 px-2">Editar</Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" className="h-7 px-2 flex items-center gap-1">
+                          <Trash2 className="h-3 w-3" /> Excluir
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir {aditivo.nome}?</AlertDialogTitle>
+                          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => excluirAditivo(aditivo.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 ))}
               </div>
             </CardContent>
-          )}
         </Card>
 
         {/* Tabela Principal */}
@@ -1613,18 +1683,17 @@ const criarNovaMedicao = async () => {
                             </div>
                           </TableCell>
                           <TableCell className="border border-gray-300 p-1">
-                            <div className="text-center font-mono text-xs px-1">
-                              {item.und}
+                            <div className="text-right font-mono text-xs px-1">
+                              {determinarNivel(item.item) === 1
+                                ? ''
+                                : item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                           </TableCell>
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-right font-mono text-xs px-1">
-                              {item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                          </TableCell>
-                          <TableCell className="border border-gray-300 p-1">
-                            <div className="text-right font-mono text-xs px-1">
-                              R$ {item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {determinarNivel(item.item) === 1
+                                ? ''
+                                : `R$ ${item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                             </div>
                           </TableCell>
                           <TableCell className="border border-gray-300 p-1">
