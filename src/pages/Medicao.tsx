@@ -639,6 +639,19 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     debouncersRef.current.set(key, timeout);
   };
 
+  // Debounce por célula (aditivo)
+  const debouncersAditivoRef = React.useRef(new Map<string, number>());
+  const onChangeAditivoDebounced = (itemId: number, aditivoId: number, campo: string, valor: string, delay = 150) => {
+    const key = `${aditivoId}:${itemId}:${campo}`;
+    const prev = debouncersAditivoRef.current.get(key);
+    if (prev) window.clearTimeout(prev);
+    const timeout = window.setTimeout(() => {
+      atualizarAditivo(itemId, aditivoId, campo, valor);
+      debouncersAditivoRef.current.delete(key);
+    }, delay);
+    debouncersAditivoRef.current.set(key, timeout);
+  };
+
   // Função para atualizar dados de medição
   const atualizarMedicao = (itemId: number, medicaoId: number, campo: string, valor: string) => {
     // Verificar se a medição está bloqueada
@@ -1943,9 +1956,19 @@ const criarNovaMedicao = async () => {
                               <React.Fragment key={`aditivo-${aditivo.id}-${item.id}`}>
                                 <TableCell className="bg-blue-100 border border-blue-300 p-1">
                                   <Input
+                                    key={`adit-${aditivo.id}-${item.id}`}
                                     type="number"
-                                    value={aditivoData.qnt || ''}
-                                    onChange={(e) => atualizarAditivo(item.id, aditivo.id, 'qnt', e.target.value)}
+                                    defaultValue={aditivoData.qnt || ''}
+                                    onChange={(e) => onChangeAditivoDebounced(item.id, aditivo.id, 'qnt', e.target.value)}
+                                    onBlur={(e) => {
+                                      const key = `${aditivo.id}:${item.id}:qnt`;
+                                      const prev = debouncersAditivoRef.current.get(key);
+                                      if (prev) {
+                                        window.clearTimeout(prev);
+                                        debouncersAditivoRef.current.delete(key);
+                                      }
+                                      atualizarAditivo(item.id, aditivo.id, 'qnt', e.target.value);
+                                    }}
                                     className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
                                     step="0.01"
                                     min="0"
@@ -1973,9 +1996,19 @@ const criarNovaMedicao = async () => {
                             {medicaoAtual && medicaoAtualObj ? (
                               ehItemFolha(item.item) && !item.ehAdministracaoLocal ? (
                                 <Input
+                                  key={`med-${medicaoAtual}-${item.id}`}
                                   type="number"
-                                  value={medicaoData.qnt || ''}
+                                  defaultValue={medicaoData.qnt || ''}
                                   onChange={(e) => onChangeMedicaoDebounced(item.id, medicaoAtual, 'qnt', e.target.value)}
+                                  onBlur={(e) => {
+                                    const key = `${medicaoAtual}:${item.id}:qnt`;
+                                    const prev = debouncersRef.current.get(key);
+                                    if (prev) {
+                                      window.clearTimeout(prev);
+                                      debouncersRef.current.delete(key);
+                                    }
+                                    atualizarMedicao(item.id, medicaoAtual, 'qnt', e.target.value);
+                                  }}
                                   className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
                                   step="0.01"
                                   min="0"
