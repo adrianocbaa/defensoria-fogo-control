@@ -83,6 +83,14 @@ export function Medicao() {
     }
   }, [id]);
 
+  // Aplicar layout wide (full-width) apenas nesta página
+  useEffect(() => {
+    document.body.classList.add('medicao-layout-wide');
+    return () => {
+      document.body.classList.remove('medicao-layout-wide');
+    };
+  }, []);
+
   const fetchObra = async () => {
     try {
       setLoading(true);
@@ -1006,8 +1014,8 @@ export function Medicao() {
   const valorAcumuladoTotal = calcularValorAcumuladoTotal();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="medicao-page min-h-screen bg-gray-50 py-3">
+      <div className="content-root w-full">
         {/* Cabeçalho */}
         <Card className="mb-6">
           <CardHeader>
@@ -1030,7 +1038,7 @@ export function Medicao() {
         </Card>
 
         {/* Resumo Financeiro */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="cards-grid mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Valor Total Original</div>
@@ -1236,179 +1244,181 @@ export function Medicao() {
             </div>
           </CardHeader>
           <CardContent className="p-1">
-            <div className="overflow-x-auto border rounded-lg">
-              <Table className="text-xs">
-                <TableHeader>
-                  <TableRow className="bg-slate-100 border-b-2">
-                    <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Item</TableHead>
-                    <TableHead className="min-w-[70px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Código Banco</TableHead>
-                    <TableHead className="min-w-[300px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Descrição</TableHead>
-                    <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Und</TableHead>
-                    <TableHead className="min-w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
-                    <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
-                    <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
-                     {mostrarAditivos && aditivos.map(aditivo => (
-                      <React.Fragment key={`header-${aditivo.id}`}>
-                        <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT {aditivo.nome}</TableHead>
-                        <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">% {aditivo.nome}</TableHead>
-                        <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL {aditivo.nome}</TableHead>
-                      </React.Fragment>
-                    ))}
-                    <TableHead className="min-w-[100px] bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
-                    <TableHead className="min-w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
-                    <TableHead className="min-w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
-                    <TableHead className="min-w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
-                    <TableHead className="min-w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT</TableHead>
-                    <TableHead className="min-w-[50px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">%</TableHead>
-                    <TableHead className="min-w-[80px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">TOTAL</TableHead>
-                    <TableHead className="min-w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Admin. Local</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[...items].sort((a, b) => (a.ordem || 0) - (b.ordem || 0)).map(item => {
-                    // Usar dados hierárquicos memoizados para performance
-                    const medicaoData = medicaoAtual ? (dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 }) : { qnt: 0, percentual: 0, total: 0 };
-                    const estiloLinha = obterEstiloLinha(item);
-                    const medicaoAtualObj = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
-                    
-                    return (
-                      <TableRow key={item.id} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
-                        <TableCell className="border border-gray-300 p-1">
-                          <div className="text-center font-mono text-xs font-bold px-1">
-                            {item.item}
-                          </div>
-                        </TableCell>
-                        <TableCell className="border border-gray-300 p-1">
-                          <div className="text-center font-mono text-xs px-1">
-                            {item.codigo}
-                          </div>
-                        </TableCell>
-                        <TableCell className="border border-gray-300 p-1 max-w-xs" title={item.descricao}>
-                          <div className="text-xs px-1 truncate">
-                            {item.descricao}
-                          </div>
-                        </TableCell>
-                        <TableCell className="border border-gray-300 p-1">
-                          <div className="text-center font-mono text-xs px-1">
-                            {item.und}
-                          </div>
-                        </TableCell>
-                        <TableCell className="border border-gray-300 p-1">
-                          <div className="text-right font-mono text-xs px-1">
-                            {item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </TableCell>
-                        <TableCell className="border border-gray-300 p-1">
-                          <div className="text-right font-mono text-xs px-1">
-                            R$ {item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </TableCell>
-                        <TableCell className="border border-gray-300 p-1">
-                          <div className="text-right font-mono text-xs px-1">
-                            R$ {item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </TableCell>
-                        {mostrarAditivos && aditivos.map(aditivo => {
-                          const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-                          return (
-                            <React.Fragment key={`aditivo-${aditivo.id}-${item.id}`}>
-                              <TableCell className="bg-blue-100 border border-blue-300 p-1">
+            <div className="table-wrap border rounded-lg">
+              <div className="table-scroll">
+                <Table className="text-xs">
+                  <TableHeader>
+                    <TableRow className="bg-slate-100 border-b-2">
+                      <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Item</TableHead>
+                      <TableHead className="min-w-[70px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Código Banco</TableHead>
+                      <TableHead className="min-w-[300px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Descrição</TableHead>
+                      <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Und</TableHead>
+                      <TableHead className="min-w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
+                      <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
+                      <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
+                      {mostrarAditivos && aditivos.map(aditivo => (
+                        <React.Fragment key={`header-${aditivo.id}`}>
+                          <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT {aditivo.nome}</TableHead>
+                          <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">% {aditivo.nome}</TableHead>
+                          <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL {aditivo.nome}</TableHead>
+                        </React.Fragment>
+                      ))}
+                      <TableHead className="min-w-[100px] bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
+                      <TableHead className="min-w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
+                      <TableHead className="min-w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
+                      <TableHead className="min-w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                      <TableHead className="min-w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT</TableHead>
+                      <TableHead className="min-w-[50px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">%</TableHead>
+                      <TableHead className="min-w-[80px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                      <TableHead className="min-w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Admin. Local</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...items].sort((a, b) => (a.ordem || 0) - (b.ordem || 0)).map(item => {
+                      // Usar dados hierárquicos memoizados para performance
+                      const medicaoData = medicaoAtual ? (dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 }) : { qnt: 0, percentual: 0, total: 0 };
+                      const estiloLinha = obterEstiloLinha(item);
+                      const medicaoAtualObj = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
+                      
+                      return (
+                        <TableRow key={item.id} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="text-center font-mono text-xs font-bold px-1">
+                              {item.item}
+                            </div>
+                          </TableCell>
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="text-center font-mono text-xs px-1">
+                              {item.codigo}
+                            </div>
+                          </TableCell>
+                          <TableCell className="border border-gray-300 p-1 max-w-xs" title={item.descricao}>
+                            <div className="text-xs px-1 truncate">
+                              {item.descricao}
+                            </div>
+                          </TableCell>
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="text-center font-mono text-xs px-1">
+                              {item.und}
+                            </div>
+                          </TableCell>
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="text-right font-mono text-xs px-1">
+                              {item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </TableCell>
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="text-right font-mono text-xs px-1">
+                              R$ {item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </TableCell>
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="text-right font-mono text-xs px-1">
+                              R$ {item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </TableCell>
+                          {mostrarAditivos && aditivos.map(aditivo => {
+                            const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+                            return (
+                              <React.Fragment key={`aditivo-${aditivo.id}-${item.id}`}>
+                                <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                  <Input
+                                    type="number"
+                                    value={aditivoData.qnt || ''}
+                                    onChange={(e) => atualizarAditivo(item.id, aditivo.id, 'qnt', e.target.value)}
+                                    className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
+                                    step="0.01"
+                                    min="0"
+                                  />
+                                </TableCell>
+                                <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                  <div className="text-center font-mono text-xs px-1">
+                                    {aditivoData.percentual.toFixed(2)}%
+                                  </div>
+                                </TableCell>
+                                <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                  <div className="text-right font-mono text-xs px-1">
+                                    R$ {aditivoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </div>
+                                </TableCell>
+                              </React.Fragment>
+                            );
+                          })}
+                          <TableCell className="bg-green-100 border border-green-300 p-1">
+                            <div className="text-right font-mono text-xs px-1 font-bold">
+                              R$ {calcularTotalContratoComAditivos(item).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </TableCell>
+                          <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
+                            {item.ehAdministracaoLocal ? (
+                              <div className="text-right font-mono text-xs px-1">
+                                {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                            ) : medicaoAtual && medicaoAtualObj ? (
+                              ehItemFolha(item.item) ? (
                                 <Input
                                   type="number"
-                                  value={aditivoData.qnt || ''}
-                                  onChange={(e) => atualizarAditivo(item.id, aditivo.id, 'qnt', e.target.value)}
+                                  value={medicaoData.qnt || ''}
+                                  onChange={(e) => atualizarMedicao(item.id, medicaoAtual, 'qnt', e.target.value)}
                                   className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
                                   step="0.01"
                                   min="0"
+                                  disabled={medicaoAtualObj.bloqueada && !isAdmin}
                                 />
-                              </TableCell>
-                              <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                                <div className="text-center font-mono text-xs px-1">
-                                  {aditivoData.percentual.toFixed(2)}%
-                                </div>
-                              </TableCell>
-                              <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                              ) : (
                                 <div className="text-right font-mono text-xs px-1">
-                                  R$ {aditivoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  {/* Célula em branco para itens pai */}
                                 </div>
-                              </TableCell>
-                            </React.Fragment>
-                          );
-                        })}
-                        <TableCell className="bg-green-100 border border-green-300 p-1">
-                          <div className="text-right font-mono text-xs px-1 font-bold">
-                            R$ {calcularTotalContratoComAditivos(item).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </TableCell>
-                         <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
-                           {item.ehAdministracaoLocal ? (
-                             <div className="text-right font-mono text-xs px-1">
-                               {medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                             </div>
-                           ) : medicaoAtual && medicaoAtualObj ? (
-                             ehItemFolha(item.item) ? (
-                               <Input
-                                 type="number"
-                                 value={medicaoData.qnt || ''}
-                                 onChange={(e) => atualizarMedicao(item.id, medicaoAtual, 'qnt', e.target.value)}
-                                 className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
-                                 step="0.01"
-                                 min="0"
-                                 disabled={medicaoAtualObj.bloqueada && !isAdmin}
-                               />
-                             ) : (
-                               <div className="text-right font-mono text-xs px-1">
-                                 {/* Célula em branco para itens pai */}
-                               </div>
-                             )
-                           ) : (
-                             <div className="text-right font-mono text-xs px-1 text-muted-foreground">
-                               Selecione uma medição
-                             </div>
-                           )}
-                         </TableCell>
-                        <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
-                          <div className="text-center font-mono text-xs px-1">
-                            {medicaoData.percentual.toFixed(2)}%
-                          </div>
-                        </TableCell>
-                        <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
-                          <div className="text-right font-mono text-xs px-1">
-                            R$ {medicaoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </TableCell>
-                        <TableCell className="bg-purple-100 border border-purple-300 p-1">
-                          <div className="text-right font-mono text-xs px-1">
-                            {calcularQuantidadeAcumulada(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        </TableCell>
-                        <TableCell className="bg-purple-100 border border-purple-300 p-1">
-                          <div className="text-center font-mono text-xs px-1">
-                            {calcularPercentualAcumulado(item.id).toFixed(2)}%
-                          </div>
-                        </TableCell>
-                         <TableCell className="bg-purple-100 border border-purple-300 p-1">
-                           <div className="text-right font-mono text-xs px-1">
-                             R$ {calcularValorAcumuladoItem(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                           </div>
-                         </TableCell>
-                        <TableCell className="border border-gray-300 p-1">
-                          <div className="flex gap-1 justify-center">
-                            <Button
-                              variant={item.ehAdministracaoLocal ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => toggleAdministracaoLocal(item.id)}
-                              className="h-6 w-8 p-0 text-xs"
-                            >
-                              <Check className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                              )
+                            ) : (
+                              <div className="text-right font-mono text-xs px-1 text-muted-foreground">
+                                Selecione uma medição
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
+                            <div className="text-center font-mono text-xs px-1">
+                              {medicaoData.percentual.toFixed(2)}%
+                            </div>
+                          </TableCell>
+                          <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
+                            <div className="text-right font-mono text-xs px-1">
+                              R$ {medicaoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </TableCell>
+                          <TableCell className="bg-purple-100 border border-purple-300 p-1">
+                            <div className="text-right font-mono text-xs px-1">
+                              {calcularQuantidadeAcumulada(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </TableCell>
+                          <TableCell className="bg-purple-100 border border-purple-300 p-1">
+                            <div className="text-center font-mono text-xs px-1">
+                              {calcularPercentualAcumulado(item.id).toFixed(2)}%
+                            </div>
+                          </TableCell>
+                          <TableCell className="bg-purple-100 border border-purple-300 p-1">
+                            <div className="text-right font-mono text-xs px-1">
+                              R$ {calcularValorAcumuladoItem(item.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          </TableCell>
+                          <TableCell className="border border-gray-300 p-1">
+                            <div className="flex gap-1 justify-center">
+                              <Button
+                                variant={item.ehAdministracaoLocal ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => toggleAdministracaoLocal(item.id)}
+                                className="h-6 w-8 p-0 text-xs"
+                              >
+                                <Check className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
