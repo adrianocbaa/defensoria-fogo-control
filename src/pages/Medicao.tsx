@@ -45,6 +45,7 @@ interface Item {
 
 interface Medicao {
   id: number;
+  sessionId?: string;
   nome: string;
   dados: { [itemId: number]: { qnt: number; percentual: number; total: number } };
   bloqueada?: boolean;
@@ -152,58 +153,39 @@ export function Medicao() {
         setItems(itemsConvertidos);
       }
 
-      // Depois, buscar as medições salvas no banco de dados
-      const { data: medicoesSalvas, error: medicoesError } = await supabase
-        .from('medicoes')
-        .select('*')
+      // Depois, buscar as sessões de medição normalizadas e seus itens
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('medicao_sessions')
+        .select('id, sequencia, status, created_at, medicao_items ( item_code, qtd, pct, total )')
         .eq('obra_id', id)
-        .order('created_at', { ascending: true });
+        .order('sequencia', { ascending: true });
 
-      if (medicoesError) throw medicoesError;
+      if (sessionsError) throw sessionsError;
 
-      if (medicoesSalvas && medicoesSalvas.length > 0) {
-        // Converter dados do banco para o formato esperado pela interface
-        const medicoesConvertidas: Medicao[] = [];
-        const medicoesGrouped = new Map();
-
-        // Agrupar medições por mês/ano
-        medicoesSalvas.forEach(medicao => {
-          const key = `${medicao.mes_execucao}-${medicao.ano_execucao}`;
-          if (!medicoesGrouped.has(key)) {
-            medicoesGrouped.set(key, []);
-          }
-          medicoesGrouped.get(key).push(medicao);
-        });
-
-        // Criar objetos de medição no formato da interface
-        let medicaoId = 1;
-        medicoesGrouped.forEach((medicoes, key) => {
-          const [mes, ano] = key.split('-');
-          const medicao: Medicao = {
-            id: medicaoId++,
-            nome: `${medicaoId - 1}ª MEDIÇÃO`,
+      if (sessions && sessions.length > 0) {
+        const medicoesConvertidas: Medicao[] = sessions.map((s: any) => {
+          const m: Medicao = {
+            id: s.sequencia,
+            sessionId: s.id,
+            nome: `${s.sequencia}ª MEDIÇÃO`,
             dados: {},
-            bloqueada: true, // Medições salvas são consideradas bloqueadas
-            dataBloqueio: medicoes[0].created_at,
-            usuarioBloqueio: 'Sistema'
+            bloqueada: s.status === 'bloqueada',
+            dataBloqueio: s.status === 'bloqueada' ? s.created_at : undefined,
+            usuarioBloqueio: s.status === 'bloqueada' ? 'Sistema' : undefined,
           };
-
-          // Preencher dados da medição
-          medicoes.forEach(item => {
-            // Mapear código do serviço para o ID do item importado
-            const mappedId = codigoToIdMap.get(item.servico_codigo) ?? stableIdFromCodigo(item.servico_codigo);
-            medicao.dados[mappedId] = {
-              qnt: item.quantidade_executada,
-              percentual: item.quantidade_projeto > 0 ? 
-                (item.quantidade_executada / item.quantidade_projeto) * 100 : 0,
-              total: item.valor_executado
+          const itens = (s.medicao_items || []) as any[];
+          itens.forEach((it: any) => {
+            const mappedId = codigoToIdMap.get(it.item_code) ?? stableIdFromCodigo(it.item_code);
+            m.dados[mappedId] = {
+              qnt: Number(it.qtd) || 0,
+              percentual: Number(it.pct) || 0,
+              total: Number(it.total) || 0,
             };
           });
-
-          medicoesConvertidas.push(medicao);
+          return m;
         });
-
         setMedicoes(medicoesConvertidas);
+        setMedicaoAtual(medicoesConvertidas[0]?.id ?? null);
       }
     } catch (error) {
       console.error('Erro ao carregar dados salvos:', error);
@@ -683,19 +665,36 @@ export function Medicao() {
   };
 
   // Função para criar nova medição
-  const criarNovaMedicao = () => {
-    const numeroMedicao = medicoes.length + 1;
+const criarNovaMedicao = async () => {
+  if (!id) return;
+  try {
+    const nextSeq = (medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0) + 1;
+    const { data: authData } = await supabase.auth.getUser();
+    const userId = authData?.user?.id ?? null;
+    const { data, error } = await supabase
+      .from('medicao_sessions')
+      .insert([{ obra_id: id, sequencia: nextSeq, status: 'aberta', user_id: userId }])
+      .select('id, sequencia, status, created_at')
+      .single();
+
+    if (error) throw error;
+
     const novaMedicao: Medicao = {
-      id: Date.now(),
-      nome: `${numeroMedicao}ª MEDIÇÃO`,
+      id: data.sequencia,
+      sessionId: data.id,
+      nome: `${data.sequencia}ª MEDIÇÃO`,
       dados: {},
-      bloqueada: false
+      bloqueada: false,
     };
-    
-    setMedicoes([...medicoes, novaMedicao]);
+
+    setMedicoes(prev => [...prev, novaMedicao]);
     setMedicaoAtual(novaMedicao.id);
-    toast.success(`${numeroMedicao}ª Medição criada com sucesso!`);
-  };
+    toast.success(`${nextSeq}ª Medição criada com sucesso!`);
+  } catch (error) {
+    console.error('Erro ao criar medição:', error);
+    toast.error('Erro ao criar medição');
+  }
+};
 
   // Função para criar novo aditivo
   const criarNovoAditivo = () => {
@@ -755,60 +754,57 @@ export function Medicao() {
     }
 
     try {
-      // Salvar medições no banco de dados
-      const medicoesSalvas = [];
-      const currentDate = new Date();
-      const mes = currentDate.getMonth() + 1;
-      const ano = currentDate.getFullYear();
-      const numeroMedicao = medicoes.findIndex(m => m.id === medicaoId) + 1;
-
-      for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
-        const itemId = parseInt(itemIdStr);
-        const item = items.find(i => i.id === itemId);
-        
-        if (item && dados.qnt > 0 && item.codigo && item.codigo.trim().length > 0) {
-          const medicaoData = {
-            obra_id: obra.id,
-            servico_codigo: item.codigo,
-            servico_descricao: item.descricao,
-            unidade: item.und,
-            quantidade_projeto: item.quantidade,
-            preco_unitario: item.valorUnitario,
-            valor_total: item.valorTotal,
-            quantidade_executada: dados.qnt,
-            valor_executado: dados.total,
-            mes_execucao: mes,
-            ano_execucao: ano,
-            numero_medicao: numeroMedicao
-          };
-
-          const medicaoSalva = await saveMedicao(medicaoData);
-          medicoesSalvas.push(medicaoSalva);
-        }
+      // Persistir itens na tabela normalizada e bloquear a sessão
+      if (!medicao.sessionId) {
+        toast.error('Sessão de medição inválida. Recarregue a página.');
+        return;
       }
 
-      // Salvar aditivos no banco de dados
-      for (const aditivo of aditivos) {
-        for (const [itemIdStr, dados] of Object.entries(aditivo.dados)) {
+      // Montar payload para upsert dos itens da medição ativa
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id ?? null;
+
+      const payload = Object.entries(medicao.dados)
+        .map(([itemIdStr, dados]) => {
           const itemId = parseInt(itemIdStr);
           const item = items.find(i => i.id === itemId);
-          
-          if (item && dados.qnt > 0 && item.codigo && item.codigo.trim().length > 0) {
-            const aditivoData = {
-              obra_id: obra.id,
-              servico_codigo: item.codigo,
-              servico_descricao: item.descricao,
-              unidade: item.und,
-              quantidade: dados.qnt,
-              preco_unitario: item.valorUnitario,
-              valor_total: dados.total,
-              tipo: aditivo.nome
-            };
+          if (!item || !item.codigo || !item.codigo.trim()) return null;
 
-            await saveAditivo(aditivoData);
-          }
-        }
+          const qtd = Number(dados.qnt) || 0;
+          if (qtd <= 0) return null; // só persiste itens com QNT > 0
+          const pct = dados.percentual && !isNaN(dados.percentual)
+            ? Number(dados.percentual)
+            : (item.quantidade > 0 ? (qtd / item.quantidade) * 100 : 0);
+          const total = dados.total && !isNaN(dados.total)
+            ? Number(dados.total)
+            : qtd * item.valorUnitario;
+
+          return {
+            medicao_id: medicao.sessionId,
+            item_code: item.codigo,
+            qtd,
+            pct,
+            total,
+            user_id: userId,
+          } as any;
+        })
+        .filter(Boolean) as any[];
+
+      if (payload.length === 0) {
+        toast.error('Não há itens com quantidade para salvar.');
+        return;
       }
+
+      const { error: upsertError } = await supabase
+        .from('medicao_items')
+        .upsert(payload, { onConflict: 'medicao_id,item_code' });
+      if (upsertError) throw upsertError;
+
+      const { error: statusError } = await supabase
+        .from('medicao_sessions')
+        .update({ status: 'bloqueada' })
+        .eq('id', medicao.sessionId);
+      if (statusError) throw statusError;
 
       setMedicoes(prevMedicoes =>
         prevMedicoes.map(m =>
@@ -817,7 +813,7 @@ export function Medicao() {
                 ...m,
                 bloqueada: true,
                 dataBloqueio: new Date().toLocaleString('pt-BR'),
-                usuarioBloqueio: 'Usuário Atual'
+                usuarioBloqueio: 'Usuário Atual',
               }
             : m
         )
@@ -830,21 +826,16 @@ export function Medicao() {
         totalAditivo: totaisGerais.aditivoTotal,
         totalContrato: calcularTotalContrato,
         servicosExecutados: totalServicosExecutados,
-        valorAcumulado: valorAcumuladoTotal
+        valorAcumulado: valorAcumuladoTotal,
       };
 
-      // Salvar resumo financeiro no localStorage para ser consumido pela página de obras
       localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
-      
-      // Disparar evento customizado para notificar outras páginas
-      window.dispatchEvent(new CustomEvent('medicaoAtualizada', { 
-        detail: resumoFinanceiro 
-      }));
+      window.dispatchEvent(new CustomEvent('medicaoAtualizada', { detail: resumoFinanceiro }));
 
-      toast.success(`${medicao.nome} foi bloqueada e salva no banco de dados com sucesso! (${medicoesSalvas.length} itens salvos)`);
+      toast.success(`${medicao.nome} bloqueada e salva com sucesso! (${payload.length} itens)`);
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
-      toast.error(`Erro ao salvar medição no banco: ${error?.message || 'Tente novamente.'}`);
+      toast.error(`Erro ao salvar medição no banco: ${ (error as any)?.message || 'Tente novamente.'}`);
     }
   };
 
@@ -1003,15 +994,13 @@ export function Medicao() {
     if (!medicaoAtual) return 0;
     
     let totalAcumulado = 0;
-    const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
-    
-    for (let i = 0; i <= medicaoAtualIndex; i++) {
-      const medicao = medicoes[i];
+    const sessionsParaSomar = medicoes.filter(m => m.bloqueada && m.id <= medicaoAtual);
+    sessionsParaSomar.forEach(medicao => {
       const dadosHierarquicos = dadosHierarquicosMemoizados[medicao.id];
       if (dadosHierarquicos && dadosHierarquicos[itemId]) {
         totalAcumulado += dadosHierarquicos[itemId].total || 0;
       }
-    }
+    });
     return totalAcumulado;
   };
 
