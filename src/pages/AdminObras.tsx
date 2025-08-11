@@ -20,6 +20,7 @@ interface Obra {
   status: string;
   tipo: string;
   valor_total: number;
+  valor_aditivado?: number;
   porcentagem_execucao: number;
   created_at: string;
 }
@@ -46,6 +47,7 @@ export function AdminObras() {
   const { canEdit } = useUserRole();
   const navigate = useNavigate();
   const [execPercents, setExecPercents] = useState<Record<string, number>>({});
+  const [contractTotals, setContractTotals] = useState<Record<string, number>>({});
 
   const fetchObras = async () => {
     try {
@@ -99,9 +101,10 @@ export function AdminObras() {
     }
   }, [searchTerm, obras]);
 
-  // Sincroniza Execução com o Sistema de Medição (localStorage + evento)
+  // Sincroniza Execução e Total do Contrato com o Sistema de Medição (localStorage)
   useEffect(() => {
-    const map: Record<string, number> = {};
+    const pctMap: Record<string, number> = {};
+    const totalMap: Record<string, number> = {};
     try {
       obras.forEach((o) => {
         const raw = localStorage.getItem(`resumo_financeiro_${o.id}`);
@@ -110,11 +113,13 @@ export function AdminObras() {
           const total = Number(data?.totalContrato) || 0;
           const acumulado = Number(data?.valorAcumulado) || 0;
           const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
-          map[o.id] = pct;
+          pctMap[o.id] = pct;
+          if (total > 0) totalMap[o.id] = total;
         }
       });
     } catch {}
-    setExecPercents(map);
+    setExecPercents(pctMap);
+    setContractTotals(totalMap);
   }, [obras]);
 
   useEffect(() => {
@@ -125,6 +130,7 @@ export function AdminObras() {
       const acumulado = Number(detail?.valorAcumulado) || 0;
       const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
       setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
+      if (total > 0) setContractTotals((prev) => ({ ...prev, [detail.obraId]: total }));
     };
     window.addEventListener('medicaoAtualizada', handler as EventListener);
     return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
@@ -134,6 +140,13 @@ export function AdminObras() {
     const p = execPercents[o.id];
     const value = typeof p === 'number' ? p : Number(o.porcentagem_execucao || 0);
     return value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '%';
+  };
+
+  const getFormattedTotalContrato = (o: Obra): string => {
+    const fromMedicao = contractTotals[o.id];
+    const fallback = Number(o.valor_total || 0) + Number((o as any).valor_aditivado || 0);
+    const total = typeof fromMedicao === 'number' ? fromMedicao : fallback;
+    return formatCurrency(total);
   };
 
   const handleDelete = async (id: string, nome: string) => {
@@ -237,7 +250,7 @@ export function AdminObras() {
                         {statusLabels[obra.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatCurrency(obra.valor_total)}</TableCell>
+                    <TableCell>{getFormattedTotalContrato(obra)}</TableCell>
                     <TableCell>{getFormattedExec(obra)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
