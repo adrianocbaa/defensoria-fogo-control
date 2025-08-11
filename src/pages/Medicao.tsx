@@ -381,8 +381,8 @@ export function Medicao() {
             valorTotal += dadosFilho.total || 0;
           });
 
-          const quantidadeProjeto = parent.quantidade;
-          const percentualCalculado = quantidadeProjeto > 0 ? (qntTotal / quantidadeProjeto) * 100 : 0;
+          const totalContratoParent = calcularTotalContratoComAditivos(parent);
+          const percentualCalculado = totalContratoParent > 0 ? (valorTotal / totalContratoParent) * 100 : 0;
           dadosCalculados[parent.id] = {
             qnt: qntTotal,
             percentual: percentualCalculado,
@@ -766,12 +766,11 @@ const criarNovaMedicao = async () => {
 
           const qtd = Number(dados.qnt) || 0;
           if (qtd <= 0) return null; // só persiste itens com QNT > 0
-          const pct = dados.percentual && !isNaN(dados.percentual)
-            ? Number(dados.percentual)
-            : (item.quantidade > 0 ? (qtd / item.quantidade) * 100 : 0);
+          const totalContrato = calcularTotalContratoComAditivos(item);
           const total = dados.total && !isNaN(dados.total)
             ? Number(dados.total)
-            : qtd * item.valorUnitario;
+            : (totalContrato > 0 ? (qtd / (item.quantidade || 1)) * totalContrato : 0);
+          const pct = totalContrato > 0 ? (total / totalContrato) * 100 : 0;
 
           return {
             item_code: item.codigo,
@@ -995,11 +994,11 @@ const criarNovaMedicao = async () => {
     const item = items.find(i => i.id === itemId);
     if (!item) return 0;
     
-    const qntAcumulada = calcularQuantidadeAcumulada(itemId);
-    const quantidadeProjeto = item.quantidade;
+    const totalAcumulado = calcularValorAcumuladoItem(itemId);
+    const totalContratoItem = calcularTotalContratoComAditivos(item);
     
-    if (quantidadeProjeto === 0) return 0;
-    return (qntAcumulada / quantidadeProjeto) * 100;
+    if (totalContratoItem === 0) return 0;
+    return (totalAcumulado / totalContratoItem) * 100;
   };
 
   // Função para calcular quantidade acumulada com hierarquia
@@ -1456,7 +1455,11 @@ const criarNovaMedicao = async () => {
                           </TableCell>
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                             <div className="text-center font-mono text-xs px-1">
-                              {medicaoData.percentual.toFixed(2)}%
+                              {(
+                                (calcularTotalContratoComAditivos(item) > 0
+                                  ? (medicaoData.total / calcularTotalContratoComAditivos(item)) * 100
+                                  : 0)
+                              ).toFixed(2)}%
                             </div>
                           </TableCell>
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
