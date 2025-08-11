@@ -1630,7 +1630,31 @@ const criarNovaMedicao = async () => {
           <CardContent className="p-1">
             <div className="table-wrap border rounded-lg">
               <div className="table-scroll">
-                <Table className="text-xs">
+                <Table className="text-xs table-fixed">
+                  <colgroup>
+                    <col style={{ width: '50px' }} />
+                    <col style={{ width: '70px' }} />
+                    <col style={{ width: '300px' }} />
+                    <col style={{ width: '50px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '90px' }} />
+                    <col style={{ width: '120px' }} />
+                    {mostrarAditivos && aditivos.map((ad) => (
+                      <React.Fragment key={`col-${ad.id}`}>
+                        <col style={{ width: '70px' }} />
+                        <col style={{ width: '50px' }} />
+                        <col style={{ width: '80px' }} />
+                      </React.Fragment>
+                    ))}
+                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '70px' }} />
+                    <col style={{ width: '50px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '70px' }} />
+                    <col style={{ width: '50px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '60px' }} />
+                  </colgroup>
                   <TableHeader>
                     <TableRow className="bg-slate-100 border-b-2">
                       <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Item</TableHead>
