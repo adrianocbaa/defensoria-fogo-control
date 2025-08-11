@@ -263,28 +263,39 @@ export function Medicao() {
     return /^\d+$/.test(codigo.trim());
   };
 
-  // Função para identificar itens que possuem subitens (códigos pai)
-  const obterCodigosComFilhos = useMemo(() => {
-    const todosCodigos = items.map(item => item.item.trim());
-    const codigosComFilhos = new Set<string>();
-    
-    todosCodigos.forEach(codigo => {
-      if (codigo.includes('.')) {
-        // Para cada código com ponto, adiciona os códigos pai
-        const partes = codigo.split('.');
-        for (let i = 1; i < partes.length; i++) {
-          const codigoPai = partes.slice(0, i).join('.');
-          codigosComFilhos.add(codigoPai);
-        }
+  // Mapas de hierarquia para performance
+  const { itemsByCode, childrenByCode, levelByCode, maxNivelHierarquia, codesByLevel } = useMemo(() => {
+    const mapItems = new Map<string, Item>();
+    const mapChildren = new Map<string, Item[]>();
+    const mapLevel = new Map<string, number>();
+    const levelBuckets = new Map<number, string[]>();
+
+    items.forEach((it) => {
+      const code = it.item.trim();
+      mapItems.set(code, it);
+      const n = determinarNivel(code);
+      mapLevel.set(code, n);
+      if (!levelBuckets.has(n)) levelBuckets.set(n, []);
+      levelBuckets.get(n)!.push(code);
+    });
+
+    items.forEach((it) => {
+      const code = it.item.trim();
+      const parts = code.split('.');
+      if (parts.length > 1) {
+        const parent = parts.slice(0, -1).join('.');
+        if (!mapChildren.has(parent)) mapChildren.set(parent, []);
+        mapChildren.get(parent)!.push(it);
       }
     });
-    
-    return codigosComFilhos;
+
+    const maxNivel = items.length ? Math.max(...items.map(i => determinarNivel(i.item))) : 1;
+    return { itemsByCode: mapItems, childrenByCode: mapChildren, levelByCode: mapLevel, maxNivelHierarquia: maxNivel, codesByLevel: levelBuckets };
   }, [items]);
 
   // Função para verificar se um item é folha (não possui subitens)
   const ehItemFolha = (codigo: string) => {
-    return !obterCodigosComFilhos.has(codigo.trim());
+    return (childrenByCode.get(codigo.trim())?.length ?? 0) === 0;
   };
 
   // Função para calcular Valor Total Original (soma apenas itens de primeiro nível)
@@ -363,67 +374,44 @@ export function Medicao() {
     return itemsComTotais;
   };
 
-  // Memoizar dados hierárquicos para performance
+  // Memoizar dados hierárquicos para performance usando mapa de filhos
   const dadosHierarquicosMemoizados = useMemo(() => {
     const cache: { [medicaoId: number]: { [itemId: number]: { qnt: number; percentual: number; total: number } } } = {};
-    
+
     medicoes.forEach(medicao => {
-      const dadosCalculados = { ...medicao.dados };
+      const dadosCalculados: { [itemId: number]: { qnt: number; percentual: number; total: number } } = { ...medicao.dados };
 
-      // Ordenar por item para processar hierarquicamente
-      const itemsOrdenados = [...items].sort((a, b) => {
-        const aPartes = a.item.split('.').map(Number);
-        const bPartes = b.item.split('.').map(Number);
-        
-        for (let i = 0; i < Math.max(aPartes.length, bPartes.length); i++) {
-          const aParte = aPartes[i] || 0;
-          const bParte = bPartes[i] || 0;
-          if (aParte !== bParte) return aParte - bParte;
-        }
-        return 0;
-      });
+      for (let nivel = maxNivelHierarquia; nivel >= 1; nivel--) {
+        const codes = codesByLevel.get(nivel) || [];
+        codes.forEach(code => {
+          const parent = itemsByCode.get(code);
+          if (!parent) return;
+          const filhos = childrenByCode.get(code) || [];
+          if (filhos.length === 0) return;
 
-      // Processar do nível mais profundo para o mais superficial
-      const maxNivel = Math.max(...itemsOrdenados.map(item => determinarNivel(item.item)));
-      
-      for (let nivel = maxNivel; nivel >= 1; nivel--) {
-        itemsOrdenados.forEach(item => {
-          if (determinarNivel(item.item) === nivel && ehItemPai(item.item, itemsOrdenados)) {
-            // Somar todos os filhos diretos
-            const filhos = itemsOrdenados.filter(filho => {
-              const filhoPartes = filho.item.split('.');
-              const paiPartes = item.item.split('.');
-              return filhoPartes.length === paiPartes.length + 1 &&
-                     filho.item.startsWith(item.item + '.');
-            });
-            
-            let qntTotal = 0;
-            let valorTotal = 0;
-            
-            filhos.forEach(filho => {
-              const dadosFilho = dadosCalculados[filho.id] || { qnt: 0, percentual: 0, total: 0 };
-              qntTotal += dadosFilho.qnt || 0;
-              valorTotal += dadosFilho.total || 0;
-            });
-            
-            // Calcular percentual baseado nas quantidades: pct = (qntTotal / Quant) * 100
-            const quantidadeProjeto = item.quantidade;
-            const percentualCalculado = quantidadeProjeto > 0 ? (qntTotal / quantidadeProjeto) * 100 : 0;
-            
-            dadosCalculados[item.id] = {
-              qnt: qntTotal,
-              percentual: percentualCalculado,
-              total: valorTotal
-            };
-          }
+          let qntTotal = 0;
+          let valorTotal = 0;
+          filhos.forEach(filho => {
+            const dadosFilho = dadosCalculados[filho.id] || { qnt: 0, percentual: 0, total: 0 };
+            qntTotal += dadosFilho.qnt || 0;
+            valorTotal += dadosFilho.total || 0;
+          });
+
+          const quantidadeProjeto = parent.quantidade;
+          const percentualCalculado = quantidadeProjeto > 0 ? (qntTotal / quantidadeProjeto) * 100 : 0;
+          dadosCalculados[parent.id] = {
+            qnt: qntTotal,
+            percentual: percentualCalculado,
+            total: valorTotal
+          };
         });
       }
-      
+
       cache[medicao.id] = dadosCalculados;
     });
-    
+
     return cache;
-  }, [items, medicoes, aditivos]);
+  }, [medicoes, itemsByCode, childrenByCode, maxNivelHierarquia, codesByLevel]);
 
   // Função para calcular percentual baseado na quantidade
   const calcularPercentual = (quantidade: number, quantidadeTotal: number) => {
