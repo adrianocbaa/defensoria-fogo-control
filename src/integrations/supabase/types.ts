@@ -363,6 +363,80 @@ export type Database = {
         }
         Relationships: []
       }
+      medicao_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_code: string
+          medicao_id: string
+          pct: number
+          qtd: number
+          total: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_code: string
+          medicao_id: string
+          pct?: number
+          qtd?: number
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_code?: string
+          medicao_id?: string
+          pct?: number
+          qtd?: number
+          total?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicao_items_medicao_id_fkey"
+            columns: ["medicao_id"]
+            isOneToOne: false
+            referencedRelation: "medicao_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicao_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          obra_id: string
+          sequencia: number
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          obra_id: string
+          sequencia: number
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          obra_id?: string
+          sequencia?: number
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       medicoes: {
         Row: {
           ano_execucao: number
@@ -731,7 +805,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      medicao_acumulado_por_item: {
+        Row: {
+          item_code: string | null
+          obra_id: string | null
+          pct_sum: number | null
+          qtd_sum: number | null
+          total_sum: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_edit: {
