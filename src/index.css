@@ -78,6 +78,11 @@ All colors MUST be HSL.
 
     /* Page gutters for wide layouts */
     --page-gutter: 12px;
+
+    /* Row level backgrounds (medição) */
+    --row-lv1-bg: 214 100% 95%; /* azul claro */
+    --row-lv2-bg: 150 60% 94%;  /* verde claro */
+    --row-lv3-bg: 0 0% 100%;    /* branco */
   }
 
   .dark {
@@ -298,4 +303,9 @@ All colors MUST be HSL.
   .table-wrap { width: 100%; margin: 0; }
   .table-scroll { overflow-x: auto; }
   .medicao-page table thead th { position: sticky; top: 0; z-index: 2; }
+
+  /* Níveis de linha para medição */
+  .row-lv1 { background-color: hsl(var(--row-lv1-bg)); }
+  .row-lv2 { background-color: hsl(var(--row-lv2-bg)); }
+  .row-lv3 { background-color: hsl(var(--row-lv3-bg)); }
 }

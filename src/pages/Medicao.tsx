@@ -990,19 +990,24 @@ export function Medicao() {
 
   // Função para obter estilo da linha baseado no nível
   const obterEstiloLinha = (item: Item) => {
-    const nivel = determinarNivel(item.item);
-    const ehPai = ehItemPai(item.item, items);
-    
-    if (item.ehAdministracaoLocal) {
-      return 'bg-purple-50 border-l-4 border-purple-400';
-    } else if (nivel === 1) {
-      return 'bg-blue-50 font-bold text-blue-900';
-    } else if (nivel === 2) {
-      return 'bg-green-50 font-semibold text-green-800';
-    } else if (ehPai) {
-      return 'bg-yellow-50 font-medium text-yellow-800';
+    const n = determinarNivel(item.item);
+    const maxNivel = items.length ? Math.max(...items.map(i => determinarNivel(i.item))) : 1;
+
+    let baseClass = '';
+    if (maxNivel === 2) {
+      baseClass = n === 1 ? 'row-lv1' : 'row-lv3';
+    } else { // maxNivel >= 3
+      if (n === 1) baseClass = 'row-lv1';
+      else if (n === 2) baseClass = 'row-lv2';
+      else baseClass = 'row-lv3';
     }
-    return '';
+
+    // Mantém destaque lateral para Administração Local sem alterar a regra de fundo
+    if (item.ehAdministracaoLocal) {
+      baseClass += ' border-l-4 border-purple-400';
+    }
+
+    return baseClass;
   };
 
   // Função para calcular valores acumulados até a medição atual com hierarquia
@@ -1391,7 +1396,7 @@ export function Medicao() {
                       const medicaoAtualObj = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
                       
                       return (
-                        <TableRow key={`row-${item.id}`} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
+                        <TableRow key={`row-${item.id}-${item.ordem ?? 0}`} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-center font-mono text-xs font-bold px-1">
                               {item.item}
