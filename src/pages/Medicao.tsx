@@ -1657,28 +1657,28 @@ const criarNovaMedicao = async () => {
                   </colgroup>
                   <TableHeader>
                     <TableRow className="bg-slate-100 border-b-2">
-                      <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Item</TableHead>
-                      <TableHead className="min-w-[70px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Código Banco</TableHead>
-                      <TableHead className="min-w-[300px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Descrição</TableHead>
-                      <TableHead className="min-w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Und</TableHead>
-                      <TableHead className="min-w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
-                      <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
-                      <TableHead className="min-w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
+                      <TableHead className="w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Item</TableHead>
+                      <TableHead className="w-[70px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Código Banco</TableHead>
+                      <TableHead className="w-[300px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Descrição</TableHead>
+                      <TableHead className="w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Und</TableHead>
+                      <TableHead className="w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
+                      <TableHead className="w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
+                      <TableHead className="w-[120px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
                       {mostrarAditivos && aditivos.map(aditivo => (
                         <React.Fragment key={`header-${aditivo.id}`}>
-                          <TableHead className="min-w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT {aditivo.nome}</TableHead>
-                          <TableHead className="min-w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">% {aditivo.nome}</TableHead>
-                          <TableHead className="min-w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL {aditivo.nome}</TableHead>
+                          <TableHead className="w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT {aditivo.nome}</TableHead>
+                          <TableHead className="w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">% {aditivo.nome}</TableHead>
+                          <TableHead className="w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL {aditivo.nome}</TableHead>
                         </React.Fragment>
                       ))}
-                      <TableHead className="min-w-[100px] bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
-                      <TableHead className="min-w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
-                      <TableHead className="min-w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
-                      <TableHead className="min-w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
-                      <TableHead className="min-w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT</TableHead>
-                      <TableHead className="min-w-[50px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">%</TableHead>
-                      <TableHead className="min-w-[80px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">TOTAL</TableHead>
-                      <TableHead className="min-w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Admin. Local</TableHead>
+                      <TableHead className="w-[120px] bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
+                      <TableHead className="w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
+                      <TableHead className="w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
+                      <TableHead className="w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                      <TableHead className="w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT</TableHead>
+                      <TableHead className="w-[50px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">%</TableHead>
+                      <TableHead className="w-[80px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                      <TableHead className="w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Admin. Local</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
