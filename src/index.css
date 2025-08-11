@@ -298,4 +298,9 @@ All colors MUST be HSL.
   .table-wrap { width: 100%; margin: 0; }
   .table-scroll { overflow-x: auto; }
   .medicao-page table thead th { position: sticky; top: 0; z-index: 2; }
+
+  /* Cores por nível - último nível sempre branco */
+  .row-lv1 { background-color: hsl(214 100% 95%); }
+  .row-lv2 { background-color: hsl(146 60% 95%); }
+  .row-lv3 { background-color: hsl(0 0% 100%); }
 }
