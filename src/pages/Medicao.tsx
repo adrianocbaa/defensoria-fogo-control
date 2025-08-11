@@ -273,7 +273,7 @@ export function Medicao() {
     items.forEach((it) => {
       const code = it.item.trim();
       mapItems.set(code, it);
-      const n = determinarNivel(code);
+      const n = code ? code.split('.').length : 1;
       mapLevel.set(code, n);
       if (!levelBuckets.has(n)) levelBuckets.set(n, []);
       levelBuckets.get(n)!.push(code);
@@ -289,7 +289,7 @@ export function Medicao() {
       }
     });
 
-    const maxNivel = items.length ? Math.max(...items.map(i => determinarNivel(i.item))) : 1;
+    const maxNivel = items.length ? Math.max(...items.map(i => (i.item ? i.item.split('.').length : 1))) : 1;
     return { itemsByCode: mapItems, childrenByCode: mapChildren, levelByCode: mapLevel, maxNivelHierarquia: maxNivel, codesByLevel: levelBuckets };
   }, [items]);
 
