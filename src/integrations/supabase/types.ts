@@ -369,6 +369,7 @@ export type Database = {
           created_at: string
           id: string
           mes_execucao: number
+          numero_medicao: number
           obra_id: string
           preco_unitario: number
           quantidade_executada: number
@@ -386,6 +387,7 @@ export type Database = {
           created_at?: string
           id?: string
           mes_execucao: number
+          numero_medicao?: number
           obra_id: string
           preco_unitario?: number
           quantidade_executada?: number
@@ -403,6 +405,7 @@ export type Database = {
           created_at?: string
           id?: string
           mes_execucao?: number
+          numero_medicao?: number
           obra_id?: string
           preco_unitario?: number
           quantidade_executada?: number
