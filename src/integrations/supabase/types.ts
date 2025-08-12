@@ -895,6 +895,15 @@ export type Database = {
         }
         Relationships: []
       }
+      medicao_contrato_atual_por_item: {
+        Row: {
+          contrato_total_atual: number | null
+          item_code: string | null
+          medicao_sequencia: number | null
+          obra_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_edit: {
