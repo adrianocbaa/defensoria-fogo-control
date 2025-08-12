@@ -490,7 +490,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           const percentualCalculado = totalContratoParent > 0 ? (valorTotal / totalContratoParent) * 100 : 0;
           dadosCalculados[parent.id] = {
             qnt: qntTotal,
-            percentual: percentualCalculado,
+            percentual: Math.min(100, percentualCalculado),
             total: valorTotal
           };
         });
@@ -725,8 +725,9 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           // Recalcular percentual e total automaticamente para a medição
           if (campo === 'qnt') {
             const percentualCalculado = quantidadeProjetoAjustada > 0 ? (qntProposta / quantidadeProjetoAjustada) * 100 : 0;
-            novosDados[itemId].percentual = percentualCalculado;
-            novosDados[itemId].total = (percentualCalculado / 100) * calcularTotalContratoComAditivos(item);
+            const pctClamped = Math.min(100, percentualCalculado);
+            novosDados[itemId].percentual = pctClamped;
+            novosDados[itemId].total = (pctClamped / 100) * calcularTotalContratoComAditivos(item);
           } else if (campo === 'percentual') {
             const qntEquivalente = qntProposta;
             novosDados[itemId].qnt = qntEquivalente;
@@ -1480,7 +1481,7 @@ const criarNovaMedicao = async () => {
     const totalContratoItem = calcularTotalContratoComAditivos(item);
     
     if (totalContratoItem === 0) return 0;
-    return (totalAcumulado / totalContratoItem) * 100;
+    return Math.min(100, (totalAcumulado / totalContratoItem) * 100);
   };
 
   // Função para calcular quantidade acumulada com hierarquia
@@ -2099,9 +2100,12 @@ const criarNovaMedicao = async () => {
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                             <div className="text-center font-mono text-xs px-1">
                               {(
-                                (calcularTotalContratoComAditivos(item) > 0
-                                  ? (medicaoData.total / calcularTotalContratoComAditivos(item)) * 100
-                                  : 0)
+                                Math.min(
+                                  100,
+                                  calcularTotalContratoComAditivos(item) > 0
+                                    ? (medicaoData.total / calcularTotalContratoComAditivos(item)) * 100
+                                    : 0
+                                )
                               ).toFixed(2)}%
                             </div>
                           </TableCell>
