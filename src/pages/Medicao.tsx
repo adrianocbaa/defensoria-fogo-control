@@ -904,23 +904,63 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 const criarNovaMedicao = async () => {
   if (!id) return;
   try {
-    const nextSeq = (medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0) + 1;
-    const newSession = await createSession(id, nextSeq);
+    // Buscar a última sequência diretamente no banco para evitar conflitos
+    const { data: last, error: lastErr } = await supabase
+      .from('medicao_sessions')
+      .select('sequencia')
+      .eq('obra_id', id)
+      .order('sequencia', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (lastErr) throw lastErr;
+
+    let nextSeq = (last?.sequencia ?? 0) + 1;
+
+    // Tentar criar a sessão
+    let { data: inserted, error: insertErr } = await supabase
+      .from('medicao_sessions')
+      .insert({ obra_id: id, sequencia: nextSeq, status: 'aberta' })
+      .select('id, sequencia, status, created_at')
+      .single();
+
+    // Se houve conflito (23505), recalcular e tentar de novo uma vez
+    if (insertErr && (insertErr as any).code === '23505') {
+      const { data: last2 } = await supabase
+        .from('medicao_sessions')
+        .select('sequencia')
+        .eq('obra_id', id)
+        .order('sequencia', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      nextSeq = (last2?.sequencia ?? nextSeq) + 1;
+
+      const retry = await supabase
+        .from('medicao_sessions')
+        .insert({ obra_id: id, sequencia: nextSeq, status: 'aberta' })
+        .select('id, sequencia, status, created_at')
+        .single();
+      inserted = retry.data as any;
+      insertErr = retry.error as any;
+    }
+
+    if (insertErr) throw insertErr;
+    const newSession = inserted as any;
 
     const novaMedicao: Medicao = {
       id: newSession.sequencia,
       sessionId: newSession.id,
       nome: `${newSession.sequencia}ª MEDIÇÃO`,
       dados: {},
-      bloqueada: false,
+      bloqueada: newSession.status === 'bloqueada',
     };
 
-    setMedicoes(prev => [...prev, novaMedicao]);
+    setMedicoes(prev => [...prev, novaMedicao].sort((a, b) => a.id - b.id));
     setMedicaoAtual(novaMedicao.id);
     toast.success(`${nextSeq}ª Medição criada com sucesso!`);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao criar medição:', error);
-    toast.error('Erro ao criar medição');
+    const msg = error?.code === '42501' ? 'Sem permissão para criar medição.' : 'Erro ao criar medição';
+    toast.error(msg);
   }
 };
 
