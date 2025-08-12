@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { type Obra } from '@/data/mockObras';
+import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { toast } from 'sonner';
 
 interface UseObrasReturn {
@@ -9,6 +9,16 @@ interface UseObrasReturn {
   error: string | null;
   refetch: () => void;
 }
+
+const normalizeStatus = (s: string): ObraStatus => {
+  const val = (s || '').toLowerCase();
+  if (val === 'planejamento' || val === 'planejada') return 'planejada';
+  if (val === 'em_andamento' || val === 'andamento') return 'em_andamento';
+  if (val === 'concluida' || val === 'concluído' || val === 'concluido') return 'concluida';
+  if (val === 'paralisada' || val === 'paralizada') return 'paralisada';
+  // Fallback seguro
+  return 'em_andamento';
+};
 
 export function useObras(): UseObrasReturn {
   const [obras, setObras] = useState<Obra[]>([]);
@@ -34,7 +44,7 @@ export function useObras(): UseObrasReturn {
         id: obra.id,
         nome: obra.nome,
         municipio: obra.municipio,
-        status: obra.status as any,
+        status: normalizeStatus(obra.status as string),
         coordenadas: [Number(obra.coordinates_lat), Number(obra.coordinates_lng)] as [number, number],
         tipo: obra.tipo,
         valor: Number(obra.valor_total),

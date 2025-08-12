@@ -19,7 +19,7 @@ const createStatusIcon = (status: ObraStatus): L.DivIcon => {
   const colors = {
     concluida: '#22c55e',     // Verde
     em_andamento: '#3b82f6',  // Azul
-    planejada: '#eab308',     // Amarelo
+    planejada: '#f97316',     // Laranja
     paralisada: '#ef4444'     // Vermelho
   };
 
@@ -244,7 +244,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
                     <span className={`font-medium px-2 py-0.5 rounded-full text-white text-xs ${
                       obra.status === 'concluida' ? 'bg-green-500' :
                       obra.status === 'em_andamento' ? 'bg-blue-500' :
-                      obra.status === 'planejada' ? 'bg-yellow-500' :
+                      obra.status === 'planejada' ? 'bg-orange-500' :
                       'bg-red-500'
                     }`}>
                       {getStatusLabel(obra.status)}

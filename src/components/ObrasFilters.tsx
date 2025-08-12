@@ -26,7 +26,7 @@ interface ObrasFiltersProps {
 const statusOptions = [
   { value: 'concluida' as const, label: 'Concluída', color: 'bg-green-500' },
   { value: 'em_andamento' as const, label: 'Em Andamento', color: 'bg-blue-500' },
-  { value: 'planejada' as const, label: 'Planejada', color: 'bg-yellow-500' },
+  { value: 'planejada' as const, label: 'Planejada', color: 'bg-orange-500' },
   { value: 'paralisada' as const, label: 'Paralisada', color: 'bg-red-500' }
 ];
 

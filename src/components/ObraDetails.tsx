@@ -26,7 +26,7 @@ const getStatusColor = (status: ObraStatus) => {
   switch (status) {
     case 'concluida': return 'bg-green-500';
     case 'em_andamento': return 'bg-blue-500';
-    case 'planejada': return 'bg-yellow-500';
+    case 'planejada': return 'bg-orange-500';
     case 'paralisada': return 'bg-red-500';
     default: return 'bg-gray-500';
   }

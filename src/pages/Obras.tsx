@@ -41,8 +41,11 @@ export default function Obras() {
   // Filter obras based on current filters
   const filteredObras = useMemo(() => {
     return obrasData.filter(obra => {
+      // Normalize status to avoid mismatch (ex: 'Planejamento' -> 'planejada')
+      const obraStatus = (obra.status as string).toLowerCase() === 'planejamento' ? 'planejada' : obra.status;
+
       // Status filter
-      if (filters.status.length > 0 && !filters.status.includes(obra.status)) {
+      if (filters.status.length > 0 && !filters.status.includes(obraStatus as any)) {
         return false;
       }
 
