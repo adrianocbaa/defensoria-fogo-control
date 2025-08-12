@@ -316,10 +316,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
     const idsParaSomar = [item.id, ...coletarDescendentesIds(item.item)];
 
-    const totalAditivos = aditivos.reduce((sum, aditivo) => {
-      const subtotal = idsParaSomar.reduce((acc, id) => acc + (aditivo.dados[id]?.total || 0), 0);
-      return sum + subtotal;
-    }, 0);
+    const totalAditivos = aditivos
+      .filter(a => a.bloqueada && (medicaoAtual ? a.id < medicaoAtual : true))
+      .reduce((sum, aditivo) => {
+        const subtotal = idsParaSomar.reduce((acc, id) => acc + (aditivo.dados[id]?.total || 0), 0);
+        return sum + subtotal;
+      }, 0);
 
     return item.valorTotal + totalAditivos;
   };
@@ -1972,6 +1974,7 @@ const criarNovaMedicao = async () => {
                                     className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
                                     step="0.01"
                                     min="0"
+                                    disabled={aditivo.bloqueada && !isAdmin}
                                   />
                                 </TableCell>
                                 <TableCell className="bg-blue-100 border border-blue-300 p-1">
