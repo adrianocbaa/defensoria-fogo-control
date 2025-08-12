@@ -7,12 +7,15 @@ import { Label } from '@/components/ui/label';
 interface NovoAditivoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (options: { extracontratual: boolean; file?: File | null }) => void;
+  sequenciasDisponiveis: number[];
+  defaultSequencia: number;
+  onConfirm: (options: { extracontratual: boolean; file?: File | null; sequenciaEfetiva: number }) => void;
 }
 
-const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange, onConfirm }) => {
+const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange, sequenciasDisponiveis, defaultSequencia, onConfirm }) => {
   const [extracontratual, setExtracontratual] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [sequencia, setSequencia] = useState<number>(defaultSequencia);
   const [submitting, setSubmitting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,7 +27,7 @@ const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange,
     if (extracontratual && !file) return; // require file if selected
     setSubmitting(true);
     try {
-      onConfirm({ extracontratual, file });
+      onConfirm({ extracontratual, file, sequenciaEfetiva: sequencia });
       onOpenChange(false);
       // reset state
       setExtracontratual(false);
@@ -73,6 +76,20 @@ const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange,
               <p className="text-xs text-muted-foreground">A planilha será anexada ao final da planilha original, sem substituir.</p>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label className="text-sm">Passa a valer a partir de:</Label>
+            <select
+              className="w-full h-9 border rounded-md px-2 text-sm"
+              value={sequencia}
+              onChange={(e) => setSequencia(Number(e.target.value))}
+            >
+              {sequenciasDisponiveis.map((n) => (
+                <option key={n} value={n}>Medição {n}</option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">Percentuais a partir desta medição usarão o contrato atualizado.</p>
+          </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancelar</Button>

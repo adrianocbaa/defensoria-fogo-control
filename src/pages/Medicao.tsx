@@ -300,7 +300,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     return Math.abs(h1 >>> 0) * 4096 + (Math.abs(hashCode(base)) % 4096);
   };
   // Função para calcular total do contrato incluindo aditivos hierárquicos (soma filhos)
-  const calcularTotalContratoComAditivos = (item: Item) => {
+  const calcularTotalContratoComAditivos = (item: Item, seqLimit?: number) => {
     // Coletar IDs de todos os descendentes do item (níveis abaixo)
     const coletarDescendentesIds = (codigo: string): number[] => {
       const stack: string[] = [codigo];
@@ -319,7 +319,11 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     const idsParaSomar = [item.id, ...coletarDescendentesIds(item.item)];
 
     const totalAditivos = aditivos
-      .filter(a => a.bloqueada && (medicaoAtual ? a.id < medicaoAtual : true))
+      .filter(a => a.bloqueada && (
+        seqLimit != null
+          ? ((a.sequencia ?? 0) <= seqLimit)
+          : (medicaoAtual ? ((a.sequencia ?? 0) <= medicaoAtual) : true)
+      ))
       .reduce((sum, aditivo) => {
         const subtotal = idsParaSomar.reduce((acc, id) => acc + (aditivo.dados[id]?.total || 0), 0);
         return sum + subtotal;
@@ -486,7 +490,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
             valorTotal += dadosFilho.total || 0;
           });
 
-          const totalContratoParent = calcularTotalContratoComAditivos(parent);
+          const totalContratoParent = calcularTotalContratoComAditivos(parent, medicao.id);
           const percentualCalculado = totalContratoParent > 0 ? (valorTotal / totalContratoParent) * 100 : 0;
           dadosCalculados[parent.id] = {
             qnt: qntTotal,
@@ -546,7 +550,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       }
     }
     // Somar também os aditivos acumulados até a medição atual
-    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? a.id <= medicaoAtual : true));
+    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? ((a.sequencia ?? 0) <= medicaoAtual) : true));
     const valorAditivosAcumulado = aditivosParaSomar.reduce((adSum, a) => {
       return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
     }, 0);
@@ -699,7 +703,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
     // Considerar QNT adicionada pelos aditivos publicados anteriores a esta medição
     const qntAditivoAcum = aditivos
-      .filter(a => a.bloqueada && a.id < medicaoId)
+      .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
       .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
 
     const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
@@ -732,11 +736,11 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           if (campo === 'qnt') {
             const percentualCalculado = quantidadeProjetoAjustada > 0 ? (qntProposta / quantidadeProjetoAjustada) * 100 : 0;
             novosDados[itemId].percentual = percentualCalculado;
-            novosDados[itemId].total = (percentualCalculado / 100) * calcularTotalContratoComAditivos(item);
+            novosDados[itemId].total = (percentualCalculado / 100) * calcularTotalContratoComAditivos(item, medicaoId);
           } else if (campo === 'percentual') {
             const qntEquivalente = qntProposta;
             novosDados[itemId].qnt = qntEquivalente;
-            novosDados[itemId].total = (valorNumerico / 100) * calcularTotalContratoComAditivos(item);
+            novosDados[itemId].total = (valorNumerico / 100) * calcularTotalContratoComAditivos(item, medicaoId);
           }
 
           return {
@@ -1021,7 +1025,7 @@ const criarNovaMedicao = async () => {
 
 
   // Confirmação do modal de Novo Aditivo
-  const confirmarNovoAditivo = async ({ extracontratual, file }: { extracontratual: boolean; file?: File | null; }) => {
+  const confirmarNovoAditivo = async ({ extracontratual, file, sequenciaEfetiva }: { extracontratual: boolean; file?: File | null; sequenciaEfetiva: number; }) => {
     const numeroAditivo = aditivos.length + 1;
 
     if (!id) {
@@ -1032,7 +1036,7 @@ const criarNovaMedicao = async () => {
     // Criar sessão do aditivo no Supabase
     let newSession;
     try {
-      newSession = await createAditivoSession(id, numeroAditivo);
+      newSession = await createAditivoSession(id, sequenciaEfetiva);
     } catch (e) {
       console.error(e);
       toast.error('Não foi possível criar a sessão do aditivo.');
@@ -1216,9 +1220,9 @@ const criarNovaMedicao = async () => {
           qntAcumAnterior += dh[itemId].qnt || 0;
         }
       }
-      // Considerar QNT adicionada por aditivos publicados anteriores a esta medição
+      // Considerar QNT adicionada por aditivos publicados anteriores ou na mesma medição
       const qntAditivoAcum = aditivos
-        .filter(a => a.bloqueada && a.id < medicaoId)
+        .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
         .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
       const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
       const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
@@ -1254,7 +1258,7 @@ const criarNovaMedicao = async () => {
 
           const qtd = Number(dados.qnt) || 0;
           if (qtd <= 0) return null; // só persiste itens com QNT > 0
-          const totalContrato = calcularTotalContratoComAditivos(item);
+          const totalContrato = calcularTotalContratoComAditivos(item, medicaoId);
           const total = dados.total && !isNaN(dados.total)
             ? Number(dados.total)
             : (totalContrato > 0 ? (qtd / (item.quantidade || 1)) * totalContrato : 0);
@@ -1475,7 +1479,7 @@ const criarNovaMedicao = async () => {
       }
     });
     // Somar também aditivos por item até a medição atual
-    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? a.id <= medicaoAtual : true));
+    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? ((a.sequencia ?? 0) <= medicaoAtual) : true));
     aditivosParaSomar.forEach(a => {
       totalAcumulado += a.dados[itemId]?.total || 0;
     });
@@ -1488,7 +1492,7 @@ const criarNovaMedicao = async () => {
     if (!item) return 0;
     
     const totalAcumulado = calcularValorAcumuladoItem(itemId);
-    const totalContratoItem = calcularTotalContratoComAditivos(item);
+    const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual!);
     
     if (totalContratoItem === 0) return 0;
     return (totalAcumulado / totalContratoItem) * 100;
@@ -1579,7 +1583,7 @@ const criarNovaMedicao = async () => {
     }
 
     // Somar também todos os aditivos até a medição atual
-    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? a.id <= medicaoAtual : true));
+    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? ((a.sequencia ?? 0) <= medicaoAtual) : true));
     aditivosParaSomar.forEach(a => {
       items.forEach(item => {
         valorAcumulado += a.dados[item.id]?.total || 0;
@@ -1783,6 +1787,8 @@ const criarNovaMedicao = async () => {
                   open={novoAditivoAberto}
                   onOpenChange={setNovoAditivoAberto}
                   onConfirm={confirmarNovoAditivo}
+                  sequenciasDisponiveis={(() => { const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; return Array.from({ length: maxSeq + 1 }, (_, i) => i + 1); })()}
+                  defaultSequencia={(() => { const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; return maxSeq + 1; })()}
                 />
               </div>
             </div>
@@ -2150,8 +2156,12 @@ const criarNovaMedicao = async () => {
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                             <div className="text-center font-mono text-xs px-1">
                             {(() => {
-                              const somaAditivosTodos = aditivos.reduce((sumA, a) => sumA + descendantIds.reduce((s, id) => s + ((a.dados[id]?.total) || 0), 0), 0);
-                              const totalContratoVisual = item.valorTotal + somaAditivosTodos;
+                              const totalContratoVisual = medicaoAtual
+                                ? calcularTotalContratoComAditivos(item, medicaoAtual)
+                                : (() => {
+                                    const somaAditivosTodos = aditivos.reduce((sumA, a) => sumA + descendantIds.reduce((s, id) => s + ((a.dados[id]?.total) || 0), 0), 0);
+                                    return item.valorTotal + somaAditivosTodos;
+                                  })();
                               const pct = totalContratoVisual > 0 ? (medicaoData.total / totalContratoVisual) * 100 : 0;
                               return pct.toFixed(2) + '%';
                             })()}
