@@ -1811,10 +1811,18 @@ const criarNovaMedicao = async () => {
                             <DropdownMenuItem
                               onSelect={(e) => {
                                 e.preventDefault();
+                                salvarAditivo(a.id);
+                              }}
+                            >
+                              💾 Salvar rascunho
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
                                 publicarAditivo(a.id);
                               }}
                             >
-                              ✅ Salvar
+                              ✅ Salvar e Publicar
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
@@ -1969,9 +1977,24 @@ const criarNovaMedicao = async () => {
                       // Usar dados hierárquicos memoizados para performance
                       const medicaoData = medicaoAtual ? (dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 }) : { qnt: 0, percentual: 0, total: 0 };
                       const estiloLinha = obterEstiloLinha(item);
-                      const medicaoAtualObj = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
-                      
-                      return (
+                       const medicaoAtualObj = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
+                       
+                       // Descendentes do item (IDs) para somatórios hierárquicos
+                       const descendantIds = (() => {
+                         const ids: number[] = [];
+                         const stack: string[] = [item.item];
+                         while (stack.length) {
+                           const code = stack.pop()!;
+                           const children = childrenByCode.get(code) || [];
+                           for (const child of children) {
+                             ids.push(child.id);
+                             stack.push(child.item);
+                           }
+                         }
+                         return ids;
+                       })();
+                       
+                       return (
                         <TableRow key={`row-${item.id}-${item.ordem ?? 0}`} className={`${estiloLinha} border-b hover:bg-slate-50 transition-colors text-xs`}>
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-center font-mono text-xs font-bold px-1">
@@ -2048,7 +2071,12 @@ const criarNovaMedicao = async () => {
                                 </TableCell>
                                 <TableCell className="bg-blue-100 border border-blue-300 p-1">
                                   <div className="text-right font-mono text-xs px-1">
-                                    R$ {aditivoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {(() => {
+                                      const totalAditivoExibido = ehItemFolha(item.item)
+                                        ? aditivoData.total
+                                        : descendantIds.reduce((sum, id) => sum + ((aditivo.dados[id]?.total) || 0), 0);
+                                      return `R$ ${totalAditivoExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                    })()}
                                   </div>
                                 </TableCell>
                               </React.Fragment>
@@ -2056,7 +2084,11 @@ const criarNovaMedicao = async () => {
                           })}
                           <TableCell className="bg-green-100 border border-green-300 p-1">
                             <div className="text-right font-mono text-xs px-1 font-bold">
-                              R$ {calcularTotalContratoComAditivos(item).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {(() => {
+                                const somaAditivosTodos = aditivos.reduce((sumA, a) => sumA + descendantIds.reduce((s, id) => s + ((a.dados[id]?.total) || 0), 0), 0);
+                                const totalContratoVisual = item.valorTotal + somaAditivosTodos;
+                                return `R$ ${totalContratoVisual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                              })()}
                             </div>
                           </TableCell>
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
@@ -2098,11 +2130,12 @@ const criarNovaMedicao = async () => {
                           </TableCell>
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                             <div className="text-center font-mono text-xs px-1">
-                              {(
-                                (calcularTotalContratoComAditivos(item) > 0
-                                  ? (medicaoData.total / calcularTotalContratoComAditivos(item)) * 100
-                                  : 0)
-                              ).toFixed(2)}%
+                            {(() => {
+                              const somaAditivosTodos = aditivos.reduce((sumA, a) => sumA + descendantIds.reduce((s, id) => s + ((a.dados[id]?.total) || 0), 0), 0);
+                              const totalContratoVisual = item.valorTotal + somaAditivosTodos;
+                              const pct = totalContratoVisual > 0 ? (medicaoData.total / totalContratoVisual) * 100 : 0;
+                              return pct.toFixed(2) + '%';
+                            })()}
                             </div>
                           </TableCell>
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
