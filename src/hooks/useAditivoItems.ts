@@ -28,7 +28,7 @@ export function useAditivoItems() {
 
     const payload = Array.from(aggregated.values()).map((it) => ({
       aditivo_id: aditivoId,
-      item_code: it.item_code,
+      item_code: it.item_code.trim(),
       qtd: it.qtd,
       pct: it.pct,
       total: it.total,

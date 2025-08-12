@@ -212,7 +212,8 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           };
           const itens = (s.medicao_items || []) as any[];
           itens.forEach((it: any) => {
-            const mappedId = codigoToIdMap.get(it.item_code) ?? stableIdFromCodigo(it.item_code);
+            const code = (it.item_code || '').trim();
+            const mappedId = codigoToIdMap.get(code) ?? stableIdFromCodigo(code);
             m.dados[mappedId] = {
               qnt: Number(it.qtd) || 0,
               percentual: Number(it.pct) || 0,
@@ -245,7 +246,8 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           };
           const itens = (s.aditivo_items || []) as any[];
           itens.forEach((it: any) => {
-            const mappedId = codigoToIdMap.get(it.item_code) ?? stableIdFromCodigo(it.item_code);
+            const code = (it.item_code || '').trim();
+            const mappedId = codigoToIdMap.get(code) ?? stableIdFromCodigo(code);
             a.dados[mappedId] = {
               qnt: Number(it.qtd) || 0,
               percentual: Number(it.pct) || 0,
@@ -375,12 +377,23 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       .reduce((total, item) => total + item.valorTotal, 0);
   }, [items]);
 
-  // Função para calcular Total do Contrato final (nível 1) incluindo Aditivos e Extracontratuais
+  // Função para calcular Total do Contrato para a medição corrente (nível 1), usando aditivos publicados anteriores
   const calcularTotalContrato = useMemo(() => {
     return items
       .filter(item => ehItemPrimeiroNivel(item.item))
       .reduce((total, item) => total + calcularTotalContratoComAditivos(item), 0);
   }, [items, aditivos]);
+
+  // Totais finais (para cards/resumo): somam somente aditivos publicados
+  const totalAditivoBloqueado = useMemo(() => {
+    return aditivos
+      .filter(a => a.bloqueada)
+      .reduce((adSum, a) => {
+        return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
+      }, 0);
+  }, [aditivos, items]);
+
+  const totalContratoFinal = useMemo(() => calcularValorTotalOriginal + totalAditivoBloqueado, [calcularValorTotalOriginal, totalAditivoBloqueado]);
 
   // Função para determinar o nível hierárquico baseado no item
   const determinarNivel = (itemStr: string) => {
@@ -678,12 +691,18 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       }
     }
 
-    const quantidadeProjeto = item.quantidade;
+    // Considerar QNT adicionada pelos aditivos publicados anteriores a esta medição
+    const qntAditivoAcum = aditivos
+      .filter(a => a.bloqueada && a.id < medicaoId)
+      .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
+
+    const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
+
     const qntProposta = campo === 'percentual' 
-      ? (valorNumerico / 100) * quantidadeProjeto 
+      ? (valorNumerico / 100) * quantidadeProjetoAjustada
       : valorNumerico;
 
-    const disponivel = quantidadeProjeto - qntAcumAnterior;
+    const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
     if (qntProposta > disponivel + 1e-9) {
       toast.warning(
         `Quantidade informada ultrapassa 100% do item. Disponível: ${disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Revise a medição.`
@@ -705,7 +724,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
           // Recalcular percentual e total automaticamente para a medição
           if (campo === 'qnt') {
-            const percentualCalculado = quantidadeProjeto > 0 ? (qntProposta / quantidadeProjeto) * 100 : 0;
+            const percentualCalculado = quantidadeProjetoAjustada > 0 ? (qntProposta / quantidadeProjetoAjustada) * 100 : 0;
             novosDados[itemId].percentual = percentualCalculado;
             novosDados[itemId].total = (percentualCalculado / 100) * calcularTotalContratoComAditivos(item);
           } else if (campo === 'percentual') {
@@ -1191,7 +1210,12 @@ const criarNovaMedicao = async () => {
           qntAcumAnterior += dh[itemId].qnt || 0;
         }
       }
-      const disponivel = item.quantidade - qntAcumAnterior;
+      // Considerar QNT adicionada por aditivos publicados anteriores a esta medição
+      const qntAditivoAcum = aditivos
+        .filter(a => a.bloqueada && a.id < medicaoId)
+        .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
+      const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
+      const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
       if (dados.qnt > disponivel + 1e-9) {
         itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
       }
@@ -1231,7 +1255,7 @@ const criarNovaMedicao = async () => {
           const pct = totalContrato > 0 ? (total / totalContrato) * 100 : 0;
 
           return {
-            item_code: item.codigo,
+            item_code: item.codigo.trim(),
             qtd,
             pct,
             total,
@@ -1264,8 +1288,8 @@ const criarNovaMedicao = async () => {
       const resumoFinanceiro = {
         obraId: obra.id,
         valorTotalOriginal: calcularValorTotalOriginal,
-        totalAditivo: totaisGerais.aditivoTotal,
-        totalContrato: calcularTotalContrato,
+        totalAditivo: totalAditivoBloqueado,
+        totalContrato: totalContratoFinal,
         servicosExecutados: totalServicosExecutados,
         valorAcumulado: valorAcumuladoTotal,
       };
@@ -1583,13 +1607,13 @@ const criarNovaMedicao = async () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Total Aditivo</div>
-              <div className="text-2xl font-bold text-blue-600">{formatCurrency(totaisGerais.aditivoTotal)}</div>
+              <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalAditivoBloqueado)}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Total do Contrato</div>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(calcularTotalContrato)}</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalContratoFinal)}</div>
             </CardContent>
           </Card>
           <Card>

@@ -35,7 +35,7 @@ export function useMedicaoItems() {
 
     const payload = Array.from(aggregated.values()).map((it) => ({
       medicao_id: sessionId,
-      item_code: it.item_code,
+      item_code: it.item_code.trim(),
       qtd: it.qtd,
       pct: it.pct,
       total: it.total,
