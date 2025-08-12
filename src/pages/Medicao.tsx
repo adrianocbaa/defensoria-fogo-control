@@ -382,7 +382,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     return items
       .filter(item => ehItemPrimeiroNivel(item.item))
       .reduce((total, item) => total + calcularTotalContratoComAditivos(item), 0);
-  }, [items, aditivos]);
+  }, [items, aditivos, medicaoAtual]);
 
   // Totais finais (para cards/resumo): somam somente aditivos publicados
   const totalAditivoBloqueado = useMemo(() => {
@@ -545,6 +545,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         valorAcumulado += Object.values(dados).reduce((s, d: any) => s + (d.total || 0), 0);
       }
     }
+    // Somar também os aditivos acumulados até a medição atual
+    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? a.id <= medicaoAtual : true));
+    const valorAditivosAcumulado = aditivosParaSomar.reduce((adSum, a) => {
+      return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
+    }, 0);
+    valorAcumulado += valorAditivosAcumulado;
 
     const resumoFinanceiro = {
       obraId: obra.id,
@@ -1468,6 +1474,11 @@ const criarNovaMedicao = async () => {
         totalAcumulado += dadosHierarquicos[itemId].total || 0;
       }
     });
+    // Somar também aditivos por item até a medição atual
+    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? a.id <= medicaoAtual : true));
+    aditivosParaSomar.forEach(a => {
+      totalAcumulado += a.dados[itemId]?.total || 0;
+    });
     return totalAcumulado;
   };
 
@@ -1566,6 +1577,14 @@ const criarNovaMedicao = async () => {
         });
       }
     }
+
+    // Somar também todos os aditivos até a medição atual
+    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? a.id <= medicaoAtual : true));
+    aditivosParaSomar.forEach(a => {
+      items.forEach(item => {
+        valorAcumulado += a.dados[item.id]?.total || 0;
+      });
+    });
     
     return valorAcumulado;
   };
