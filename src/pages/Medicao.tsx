@@ -165,27 +165,31 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       if (orcamentoError) throw orcamentoError;
 
       if (orcamentoItems && orcamentoItems.length > 0) {
-        // Converter items do orçamento para o formato da interface
-        const itemsConvertidos: Item[] = orcamentoItems.map(item => ({
-          id: stableIdForRow(item.item, item.codigo, item.ordem || 0),
-          item: item.item,
-          codigo: item.codigo,
-          banco: item.banco,
-          descricao: item.descricao,
-          und: item.unidade,
-          quantidade: item.quantidade,
-          valorUnitario: item.valor_unitario,
-          valorTotal: item.valor_total,
-          aditivo: { qnt: 0, percentual: 0, total: 0 },
-          totalContrato: item.total_contrato,
-          importado: true,
-          nivel: item.nivel,
-          ehAdministracaoLocal: item.eh_administracao_local,
-          ordem: item.ordem || 0
-        }));
+        // Converter items do orçamento para o formato da interface (normalizando códigos)
+        const itemsConvertidos: Item[] = orcamentoItems.map(item => {
+          const codigoHierarquico = String(item.item ?? '').trim();
+          const codigoBanco = String(item.codigo ?? '').trim();
+          return {
+            id: stableIdForRow(codigoHierarquico, codigoBanco, item.ordem || 0),
+            item: codigoHierarquico,
+            codigo: codigoBanco,
+            banco: item.banco,
+            descricao: item.descricao,
+            und: item.unidade,
+            quantidade: item.quantidade,
+            valorUnitario: item.valor_unitario,
+            valorTotal: item.valor_total,
+            aditivo: { qnt: 0, percentual: 0, total: 0 },
+            totalContrato: item.total_contrato,
+            importado: true,
+            nivel: item.nivel,
+            ehAdministracaoLocal: item.eh_administracao_local,
+            ordem: item.ordem || 0
+          } as Item;
+        });
 
-        // Criar mapa código -> ID para usar ao converter medições salvas
-        codigoToIdMap = new Map(itemsConvertidos.map(i => [i.codigo, i.id]));
+        // Criar mapa código -> ID para usar ao converter medições salvas (chave normalizada)
+        codigoToIdMap = new Map(itemsConvertidos.map(i => [String(i.codigo).trim(), i.id]));
 
         setItems(itemsConvertidos);
       }
