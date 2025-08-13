@@ -17,13 +17,6 @@ L.Icon.Default.mergeOptions({
 
 // Função para criar ícones coloridos por status usando os pins customizados
 const createStatusIcon = (status: ObraStatus): L.DivIcon => {
-  const colors = {
-    concluida: '#22c55e',     // Verde
-    em_andamento: '#3b82f6',  // Azul
-    planejada: '#f97316',     // Laranja
-    paralisada: '#ef4444'     // Vermelho
-  };
-
   const styles = {
     concluida: 'completed',
     em_andamento: 'in-progress',
@@ -31,8 +24,15 @@ const createStatusIcon = (status: ObraStatus): L.DivIcon => {
     paralisada: 'classic'
   };
 
-  const color = colors[status];
+  const colors = {
+    concluida: '#22c55e',     // Verde
+    em_andamento: '#3b82f6',  // Azul
+    planejada: '#f97316',     // Laranja
+    paralisada: '#ef4444'     // Vermelho
+  };
+
   const style = styles[status];
+  const color = colors[status];
 
   return createCustomIcon(color, style as any);
 };

@@ -162,7 +162,7 @@ const pinStyles = {
         <div style="
           width: 24px;
           height: 24px;
-          background-color: #22c55e;
+          background-color: ${color || '#22c55e'};
           border: 2px solid white;
           border-radius: 50% 50% 50% 0;
           transform: rotate(-45deg);
@@ -201,7 +201,7 @@ const pinStyles = {
         <div style="
           width: 24px;
           height: 24px;
-          background-color: #3b82f6;
+          background-color: ${color || '#3b82f6'};
           border: 2px solid white;
           border-radius: 50% 50% 50% 0;
           transform: rotate(-45deg);
