@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { type ObraStatus, type Obra } from '@/data/mockObras';
 import { MapLoadingSkeleton } from '@/components/LoadingStates';
+import { createCustomIcon } from '@/components/MapPinOptions';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -14,7 +15,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Função para criar ícones coloridos por status
+// Função para criar ícones coloridos por status usando os pins customizados
 const createStatusIcon = (status: ObraStatus): L.DivIcon => {
   const colors = {
     concluida: '#22c55e',     // Verde
@@ -23,36 +24,17 @@ const createStatusIcon = (status: ObraStatus): L.DivIcon => {
     paralisada: '#ef4444'     // Vermelho
   };
 
-  const color = colors[status];
+  const styles = {
+    concluida: 'completed',
+    em_andamento: 'in-progress',
+    planejada: 'classic',
+    paralisada: 'classic'
+  };
 
-  return L.divIcon({
-    html: `
-      <div style="
-        background-color: ${color};
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        position: relative;
-      ">
-        <div style="
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 8px;
-          height: 8px;
-          background-color: white;
-          border-radius: 50%;
-        "></div>
-      </div>
-    `,
-    className: 'obra-marker',
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-    popupAnchor: [0, -13]
-  });
+  const color = colors[status];
+  const style = styles[status];
+
+  return createCustomIcon(color, style as any);
 };
 
 // Função para formatar valor em moeda brasileira
