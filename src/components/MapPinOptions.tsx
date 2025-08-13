@@ -209,22 +209,20 @@ const pinStyles = {
           position: absolute;
           top: 0;
         "></div>
-        <!-- Triangle play icon -->
+        <!-- Work/Construction icon -->
         <div style="
           position: absolute;
-          top: 4px;
+          top: 3px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 1;
         ">
-          <div style="
-            width: 0;
-            height: 0;
-            border-left: 4px solid white;
-            border-top: 3px solid transparent;
-            border-bottom: 3px solid transparent;
-            margin-left: 1px;
-          "></div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2L2 7v10c0 5.55 3.84 9.739 9 9.939 5.16-.2 9-4.389 9-9.939V7l-10-5z"/>
+            <path d="M8 14l-2-2 1.5-1.5L8 11l4-4 1.5 1.5L9 13"/>
+            <circle cx="12" cy="8" r="1.5" fill="white"/>
+            <path d="M10 12h4v8h-4z"/>
+          </svg>
         </div>
       </div>
     `
