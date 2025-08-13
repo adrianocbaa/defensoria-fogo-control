@@ -10,96 +10,186 @@ interface MapPinOptionsProps {
   onStyleChange: (style: MapPinStyle) => void;
 }
 
-const pinStyles = {
+interface PinStyleConfig {
+  name: string;
+  description: string;
+  preview: (color: string, imageUrl?: string) => string;
+  supportsImage?: boolean;
+}
+
+const pinStyles: Record<MapPinStyle, PinStyleConfig> = {
   classic: {
     name: 'Clássico Redondo',
-    description: 'Pin redondo simples e limpo',
-    preview: (color: string) => `
-      <div style="
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background-color: ${color};
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      "></div>
-    `
-  },
-  'modern-gradient': {
-    name: 'Gradiente Moderno',
-    description: 'Pin com gradiente e sombra suave',
-    preview: (color: string) => `
+    description: 'Pin redondo com imagem personalizada',
+    supportsImage: true,
+    preview: (color: string, imageUrl?: string) => `
       <div style="
         width: 24px;
         height: 24px;
         border-radius: 50%;
+        background-color: ${color};
+        border: 3px solid white;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      ">
+        ${imageUrl ? `
+          <img src="${imageUrl}" style="
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+          " />
+        ` : `
+          <div style="
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+          "></div>
+        `}
+      </div>
+    `
+  },
+  'modern-gradient': {
+    name: 'Gradiente Moderno',
+    description: 'Pin com gradiente e imagem personalizada',
+    supportsImage: true,
+    preview: (color: string, imageUrl?: string) => `
+      <div style="
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
         background: linear-gradient(135deg, ${color}, ${color}dd);
         border: 3px solid white;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1);
-        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
       ">
-        <div style="
-          width: 8px;
-          height: 8px;
-          background: white;
-          border-radius: 50%;
-          position: absolute;
-          top: 4px;
-          left: 4px;
-          opacity: 0.7;
-        "></div>
+        ${imageUrl ? `
+          <img src="${imageUrl}" style="
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+          " />
+        ` : `
+          <div style="
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.7;
+          "></div>
+        `}
       </div>
     `
   },
   'pin-3d': {
     name: 'Pin 3D',
-    description: 'Pin tradicional com efeito 3D',
-    preview: (color: string) => `
+    description: 'Pin tradicional com imagem personalizada',
+    supportsImage: true,
+    preview: (color: string, imageUrl?: string) => `
       <div style="
-        width: 0;
-        height: 0;
-        border-left: 12px solid transparent;
-        border-right: 12px solid transparent;
-        border-top: 20px solid ${color};
+        width: 24px;
+        height: 32px;
         position: relative;
-        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
       ">
+        <!-- Pin bottom point -->
         <div style="
-          width: 14px;
-          height: 14px;
+          width: 0;
+          height: 0;
+          border-left: 12px solid transparent;
+          border-right: 12px solid transparent;
+          border-top: 12px solid ${color};
+          position: absolute;
+          bottom: 0;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        "></div>
+        <!-- Pin circle -->
+        <div style="
+          width: 20px;
+          height: 20px;
           background: ${color};
           border: 2px solid white;
           border-radius: 50%;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
           position: absolute;
-          top: -26px;
-          left: -9px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-        "></div>
+          top: 0;
+          overflow: hidden;
+        ">
+          ${imageUrl ? `
+            <img src="${imageUrl}" style="
+              width: 12px;
+              height: 12px;
+              object-fit: contain;
+              filter: brightness(0) invert(1);
+            " />
+          ` : `
+            <div style="
+              width: 6px;
+              height: 6px;
+              background: white;
+              border-radius: 50%;
+            "></div>
+          `}
+        </div>
       </div>
     `
   },
   pulsing: {
     name: 'Pulsante',
-    description: 'Pin com animação pulsante',
-    preview: (color: string) => `
+    description: 'Pin com animação e imagem personalizada',
+    supportsImage: true,
+    preview: (color: string, imageUrl?: string) => `
       <div style="
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         position: relative;
       ">
         <div style="
-          width: 20px;
-          height: 20px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
           background-color: ${color};
           border: 2px solid white;
           box-shadow: 0 2px 8px rgba(0,0,0,0.2);
           position: absolute;
           animation: pulse 2s infinite;
-        "></div>
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        ">
+          ${imageUrl ? `
+            <img src="${imageUrl}" style="
+              width: 14px;
+              height: 14px;
+              object-fit: contain;
+              filter: brightness(0) invert(1);
+            " />
+          ` : `
+            <div style="
+              width: 6px;
+              height: 6px;
+              background: white;
+              border-radius: 50%;
+            "></div>
+          `}
+        </div>
         <div style="
-          width: 20px;
-          height: 20px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
           background-color: ${color}40;
           position: absolute;
@@ -121,35 +211,45 @@ const pinStyles = {
   },
   minimalist: {
     name: 'Minimalista',
-    description: 'Pin quadrado moderno e minimalista',
-    preview: (color: string) => `
+    description: 'Pin quadrado com imagem personalizada',
+    supportsImage: true,
+    preview: (color: string, imageUrl?: string) => `
       <div style="
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         background-color: ${color};
         border: 2px solid white;
         border-radius: 4px;
         box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
-        position: relative;
-        transform: rotate(45deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
       ">
-        <div style="
-          width: 6px;
-          height: 6px;
-          background: white;
-          border-radius: 2px;
-          position: absolute;
-          top: 4px;
-          left: 4px;
-          opacity: 0.9;
-        "></div>
+        ${imageUrl ? `
+          <img src="${imageUrl}" style="
+            width: 12px;
+            height: 12px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+          " />
+        ` : `
+          <div style="
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 2px;
+            opacity: 0.9;
+          "></div>
+        `}
       </div>
     `
   },
   completed: {
     name: 'Concluída',
     description: 'Pin personalizado para obras concluídas',
-    preview: (color: string) => `
+    supportsImage: true,
+    preview: (color: string, imageUrl?: string) => `
       <div style="
         width: 24px;
         height: 30px;
@@ -170,7 +270,7 @@ const pinStyles = {
           position: absolute;
           top: 0;
         "></div>
-        <!-- Check icon -->
+        <!-- Content -->
         <div style="
           position: absolute;
           top: 6px;
@@ -178,9 +278,18 @@ const pinStyles = {
           transform: translateX(-50%);
           z-index: 1;
         ">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9,11 12,14 22,4"></polyline>
-          </svg>
+          ${imageUrl ? `
+            <img src="${imageUrl}" style="
+              width: 12px;
+              height: 12px;
+              object-fit: contain;
+              filter: brightness(0) invert(1);
+            " />
+          ` : `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9,11 12,14 22,4"></polyline>
+            </svg>
+          `}
         </div>
       </div>
     `
@@ -188,9 +297,10 @@ const pinStyles = {
   'in-progress': {
     name: 'Em Andamento',
     description: 'Pin personalizado para obras em andamento',
-    preview: (color: string) => `
+    supportsImage: true,
+    preview: (color: string, imageUrl?: string) => `
       <div style="
-        width: 20px;
+        width: 24px;
         height: 30px;
         position: relative;
         display: flex;
@@ -199,8 +309,8 @@ const pinStyles = {
       ">
         <!-- Pin teardrop shape -->
         <div style="
-          width: 20px;
-          height: 20px;
+          width: 24px;
+          height: 24px;
           background-color: ${color || '#3b82f6'};
           border: 2px solid white;
           border-radius: 50% 50% 50% 0;
@@ -209,20 +319,26 @@ const pinStyles = {
           position: absolute;
           top: 0;
         "></div>
-        <!-- Work/Construction icon -->
+        <!-- Content -->
         <div style="
           position: absolute;
-          top: 3px;
+          top: 6px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 1;
         ">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2L2 7v10c0 5.55 3.84 9.739 9 9.939 5.16-.2 9-4.389 9-9.939V7l-10-5z"/>
-            <path d="M8 14l-2-2 1.5-1.5L8 11l4-4 1.5 1.5L9 13"/>
-            <circle cx="12" cy="8" r="1.5" fill="white"/>
-            <path d="M10 12h4v8h-4z"/>
-          </svg>
+          ${imageUrl ? `
+            <img src="${imageUrl}" style="
+              width: 12px;
+              height: 12px;
+              object-fit: contain;
+              filter: brightness(0) invert(1);
+            " />
+          ` : `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+              <path d="M12 6v12l4-4m-4 4l-4-4"/>
+            </svg>
+          `}
         </div>
       </div>
     `
@@ -291,7 +407,7 @@ export function MapPinOptions({ selectedStyle, onStyleChange }: MapPinOptionsPro
 }
 
 // Função para gerar o ícone customizado baseado no estilo escolhido
-export const createCustomIcon = (color: string, style: MapPinStyle = 'classic') => {
+export const createCustomIcon = (color: string, style: MapPinStyle = 'classic', imageUrl?: string) => {
   const L = (window as any).L;
   
   const getIconSize = (style: MapPinStyle) => {
@@ -308,7 +424,7 @@ export const createCustomIcon = (color: string, style: MapPinStyle = 'classic') 
   
   return L.divIcon({
     className: 'custom-marker',
-    html: pinStyles[style].preview(color),
+    html: pinStyles[style].preview(color, imageUrl),
     iconSize: getIconSize(style),
     iconAnchor: getIconAnchor(style),
   });
