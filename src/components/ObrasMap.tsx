@@ -33,10 +33,10 @@ const createStatusIcon = (status: ObraStatus): L.DivIcon => {
 
   // URLs das imagens para cada status
   const imageUrls = {
-    concluida: '/lovable-uploads/b1b86eb2-3439-4770-9572-77fb9dd247a3.png', // Imagem de check/concluído
-    em_andamento: '/lovable-uploads/ac3f64d3-9287-488b-acc7-9b6b57a30306.png', // Imagem de trabalho em andamento
-    planejada: '/lovable-uploads/b54777fb-13d9-4afc-aeee-1bab8c2aef68.png', // Imagem de planejamento
-    paralisada: '/lovable-uploads/2b606e12-c9d1-4e56-8a6b-2ef102b2a25d.png' // Imagem de parada/problema
+    concluida: '/lovable-uploads/b1b86eb2-3439-4770-9572-77fb9dd247a3.png', // Check verde - obra finalizada
+    em_andamento: '/lovable-uploads/ac3f64d3-9287-488b-acc7-9b6b57a30306.png', // Trabalhador - obra em execução
+    planejada: '/lovable-uploads/1e60d86b-4ca2-4886-89a4-0622c8b88e79.png', // Planejamento - obra planejada
+    paralisada: '/lovable-uploads/2b606e12-c9d1-4e56-8a6b-2ef102b2a25d.png' // Parada/problema - obra parada
   };
 
   const style = styles[status];
