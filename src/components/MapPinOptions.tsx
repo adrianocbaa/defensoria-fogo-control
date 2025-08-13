@@ -190,36 +190,41 @@ const pinStyles = {
     description: 'Pin personalizado para obras em andamento',
     preview: (color: string) => `
       <div style="
-        width: 24px;
+        width: 20px;
         height: 30px;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
       ">
-        <!-- Pin shape -->
+        <!-- Pin teardrop shape -->
         <div style="
-          width: 24px;
-          height: 24px;
+          width: 20px;
+          height: 20px;
           background-color: ${color || '#3b82f6'};
           border: 2px solid white;
           border-radius: 50% 50% 50% 0;
           transform: rotate(-45deg);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          box-shadow: 0 3px 6px rgba(0,0,0,0.3);
           position: absolute;
           top: 0;
         "></div>
-        <!-- Progress icon (Triangle play/work icon) -->
+        <!-- Triangle play icon -->
         <div style="
           position: absolute;
-          top: 6px;
+          top: 4px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 1;
         ">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
-            <polygon points="5,3 19,12 5,21"></polygon>
-          </svg>
+          <div style="
+            width: 0;
+            height: 0;
+            border-left: 4px solid white;
+            border-top: 3px solid transparent;
+            border-bottom: 3px solid transparent;
+            margin-left: 1px;
+          "></div>
         </div>
       </div>
     `
