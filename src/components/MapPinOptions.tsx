@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-export type MapPinStyle = 'classic' | 'modern-gradient' | 'pin-3d' | 'pulsing' | 'minimalist' | 'completed';
+export type MapPinStyle = 'classic' | 'modern-gradient' | 'pin-3d' | 'pulsing' | 'minimalist' | 'completed' | 'in-progress';
 
 interface MapPinOptionsProps {
   selectedStyle: MapPinStyle;
@@ -184,6 +184,45 @@ const pinStyles = {
         </div>
       </div>
     `
+  },
+  'in-progress': {
+    name: 'Em Andamento',
+    description: 'Pin personalizado para obras em andamento',
+    preview: (color: string) => `
+      <div style="
+        width: 24px;
+        height: 30px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <!-- Pin shape -->
+        <div style="
+          width: 24px;
+          height: 24px;
+          background-color: #3b82f6;
+          border: 2px solid white;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          position: absolute;
+          top: 0;
+        "></div>
+        <!-- Progress icon (Triangle play/work icon) -->
+        <div style="
+          position: absolute;
+          top: 6px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1;
+        ">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+            <polygon points="5,3 19,12 5,21"></polygon>
+          </svg>
+        </div>
+      </div>
+    `
   }
 };
 
@@ -254,13 +293,13 @@ export const createCustomIcon = (color: string, style: MapPinStyle = 'classic') 
   
   const getIconSize = (style: MapPinStyle) => {
     if (style === 'pin-3d') return [24, 32];
-    if (style === 'completed') return [24, 30];
+    if (style === 'completed' || style === 'in-progress') return [24, 30];
     return [24, 24];
   };
   
   const getIconAnchor = (style: MapPinStyle) => {
     if (style === 'pin-3d') return [12, 32];
-    if (style === 'completed') return [12, 30];
+    if (style === 'completed' || style === 'in-progress') return [12, 30];
     return [12, 12];
   };
   
