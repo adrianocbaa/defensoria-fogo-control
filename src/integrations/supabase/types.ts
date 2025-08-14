@@ -795,6 +795,60 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          address: string
+          age: number | null
+          built_area: number | null
+          condition: string | null
+          constraints: string | null
+          created_at: string | null
+          id: string
+          kind: string
+          land_area: number | null
+          lat: number | null
+          lon: number | null
+          org_id: string | null
+          quality: string | null
+          updated_at: string | null
+          zoning: string | null
+        }
+        Insert: {
+          address: string
+          age?: number | null
+          built_area?: number | null
+          condition?: string | null
+          constraints?: string | null
+          created_at?: string | null
+          id?: string
+          kind: string
+          land_area?: number | null
+          lat?: number | null
+          lon?: number | null
+          org_id?: string | null
+          quality?: string | null
+          updated_at?: string | null
+          zoning?: string | null
+        }
+        Update: {
+          address?: string
+          age?: number | null
+          built_area?: number | null
+          condition?: string | null
+          constraints?: string | null
+          created_at?: string | null
+          id?: string
+          kind?: string
+          land_area?: number | null
+          lat?: number | null
+          lon?: number | null
+          org_id?: string | null
+          quality?: string | null
+          updated_at?: string | null
+          zoning?: string | null
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -1078,6 +1132,39 @@ export type Database = {
           project_id: string
         }
         Returns: boolean
+      }
+      update_property: {
+        Args: {
+          p_address?: string
+          p_age?: number
+          p_built_area?: number
+          p_condition?: string
+          p_constraints?: string
+          p_kind?: string
+          p_land_area?: number
+          p_lat?: number
+          p_lon?: number
+          p_quality?: string
+          p_zoning?: string
+          property_id: string
+        }
+        Returns: {
+          address: string
+          age: number | null
+          built_area: number | null
+          condition: string | null
+          constraints: string | null
+          created_at: string | null
+          id: string
+          kind: string
+          land_area: number | null
+          lat: number | null
+          lon: number | null
+          org_id: string | null
+          quality: string | null
+          updated_at: string | null
+          zoning: string | null
+        }
       }
     }
     Enums: {
