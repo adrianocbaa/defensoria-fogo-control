@@ -22,7 +22,13 @@ const projectSchema = z.object({
   purpose: z.string().min(1, 'Finalidade é obrigatória'),
   base_date: z.string().min(1, 'Data base é obrigatória'),
   approach: z.string().min(1, 'Método é obrigatório'),
-  property_id: z.string().optional(),
+  property_id: z.string().optional().transform((val) => {
+    // Se vazio ou não é um UUID válido, retorna undefined
+    if (!val || val.trim() === '') return undefined;
+    // Verifica se é um UUID válido (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(val) ? val : undefined;
+  }),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -153,10 +159,13 @@ export function CreateProjectModal({ onSuccess }: CreateProjectModalProps) {
               <Label htmlFor="property_id">Imóvel (Opcional)</Label>
               <Input
                 id="property_id"
-                placeholder="ID do imóvel (se aplicável)"
+                placeholder="Ex: a1b2c3d4-e5f6-7890-abcd-ef1234567890"
                 {...register('property_id')}
                 disabled={loading}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Deixe vazio ou informe um ID UUID válido do imóvel
+              </p>
             </div>
           </div>
 
