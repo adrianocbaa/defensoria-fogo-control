@@ -316,6 +316,166 @@ export const comparablesApi = {
   }
 };
 
+export interface Sample {
+  id?: string;
+  project_id?: string;
+  project_name?: string;
+  name?: string;
+  comparable_ids?: string[];
+  criteria_json?: any;
+  created_by?: string;
+  org_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Samples API
+export const samplesApi = {
+  async getByProject(projectId: string): Promise<Sample[]> {
+    try {
+      const { data, error } = await supabase
+        .from('samples')
+        .select(`
+          *,
+          projects:project_id(purpose)
+        `)
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return (data || []).map((item: any) => ({
+        ...item,
+        project_name: item.projects?.purpose
+      }));
+    } catch (error) {
+      console.error('Error fetching project samples:', error);
+      return [];
+    }
+  },
+
+  async create(sample: Omit<Sample, 'id' | 'created_at' | 'updated_at'>): Promise<Sample> {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('samples')
+        .insert({
+          project_id: sample.project_id,
+          name: sample.name,
+          comparable_ids: sample.comparable_ids || [],
+          criteria_json: sample.criteria_json || {},
+          created_by: user.user.id,
+          org_id: sample.org_id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating sample:', error);
+      throw error;
+    }
+  },
+
+  async clone(sampleId: string, targetProjectId: string): Promise<Sample> {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('User not authenticated');
+
+      // Get the original sample
+      const { data: originalSample, error: fetchError } = await supabase
+        .from('samples')
+        .select('*, projects:project_id(purpose)')
+        .eq('id', sampleId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Create cloned sample
+      const { data, error } = await supabase
+        .from('samples')
+        .insert({
+          project_id: targetProjectId,
+          name: `Clonada de ${originalSample.projects?.purpose || 'projeto'}`,
+          comparable_ids: originalSample.comparable_ids || [],
+          criteria_json: originalSample.criteria_json || {},
+          created_by: user.user.id,
+          org_id: originalSample.org_id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error cloning sample:', error);
+      throw error;
+    }
+  },
+
+  async listMine(): Promise<Sample[]> {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('samples')
+        .select(`
+          *,
+          projects:project_id(purpose)
+        `)
+        .eq('created_by', user.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map((item: any) => ({
+        ...item,
+        project_name: item.projects?.purpose
+      }));
+    } catch (error) {
+      console.error('Error fetching user samples:', error);
+      return [];
+    }
+  },
+
+  async update(id: string, sample: Partial<Sample>): Promise<Sample> {
+    try {
+      const { data, error } = await supabase
+        .from('samples')
+        .update({
+          name: sample.name,
+          comparable_ids: sample.comparable_ids,
+          criteria_json: sample.criteria_json
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating sample:', error);
+      throw error;
+    }
+  },
+
+  async delete(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('samples')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting sample:', error);
+      throw error;
+    }
+  }
+};
+
 // Mock data for development (when no real data exists)
 // Model runs API (temporary mock until RPC functions are available)
 export const modelRunsApi = {

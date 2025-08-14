@@ -98,11 +98,13 @@ export function SelectComparablesModal({
     }
 
     try {
-      // Create sample record (placeholder - would need actual table)
       const selectedComparables = comparables.filter(c => selectedIds.includes(c.id!));
       
-      // Mock saving to samples table
-      console.log('Creating sample for project:', projectId, {
+      // Create sample record in database
+      const { samplesApi } = await import('@/services/appraisalApi');
+      await samplesApi.create({
+        project_id: projectId,
+        name: `Amostra ${new Date().toLocaleDateString('pt-BR')}`,
         comparable_ids: selectedIds,
         criteria_json: {
           kind_filter: kindFilter,

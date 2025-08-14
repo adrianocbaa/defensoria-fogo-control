@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, BarChart3, FileText, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, BarChart3, FileText, MapPin, Users, Copy } from 'lucide-react';
 import { ModelingInterface } from '@/components/appraisal/ModelingInterface';
 import { SelectComparablesModal } from '@/components/appraisal/SelectComparablesModal';
+import { ImportSampleModal } from '@/components/appraisal/ImportSampleModal';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectsApi, Project, comparablesApi, Comparable } from '@/services/appraisalApi';
+import { projectsApi, Project, comparablesApi, Comparable, samplesApi, Sample } from '@/services/appraisalApi';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -18,7 +19,9 @@ export function ProjectDetailPage() {
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [selectedComparables, setSelectedComparables] = useState<Comparable[]>([]);
+  const [activeSample, setActiveSample] = useState<Sample | null>(null);
   const [showSelectModal, setShowSelectModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,11 +50,28 @@ export function ProjectDetailPage() {
   };
 
   const loadProjectComparables = async () => {
-    // Mock: In a real implementation, this would fetch from samples table
+    if (!id) return;
+    
     try {
-      const allComparables = await comparablesApi.list();
-      // For now, just show all comparables as selected sample
-      setSelectedComparables(allComparables.slice(0, 8)); // Show first 8 as sample
+      // Load project samples
+      const samples = await samplesApi.getByProject(id);
+      
+      if (samples.length > 0) {
+        const sample = samples[0]; // Use first sample as active
+        setActiveSample(sample);
+        
+        // Load the actual comparables from the sample
+        if (sample.comparable_ids && sample.comparable_ids.length > 0) {
+          const allComparables = await comparablesApi.list();
+          const sampleComparables = allComparables.filter(c => 
+            sample.comparable_ids!.includes(c.id!)
+          );
+          setSelectedComparables(sampleComparables);
+        }
+      } else {
+        setActiveSample(null);
+        setSelectedComparables([]);
+      }
     } catch (error) {
       console.error('Error loading project comparables:', error);
     }
@@ -59,10 +79,16 @@ export function ProjectDetailPage() {
 
   const handleComparablesSelected = (comparables: Comparable[]) => {
     setSelectedComparables(comparables);
+    loadProjectComparables(); // Reload to get the updated sample
     toast({
       title: 'Sucesso',
       description: `${comparables.length} comparáveis vinculados ao projeto`,
     });
+  };
+
+  const handleSampleImported = (importedSample: Sample) => {
+    setActiveSample(importedSample);
+    loadProjectComparables(); // Reload to show imported sample
   };
 
   if (loading) {
@@ -181,27 +207,47 @@ export function ProjectDetailPage() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Amostra Ativa do Projeto</CardTitle>
-                  <Button onClick={() => setShowSelectModal(true)} variant="outline">
-                    <Users className="h-4 w-4 mr-2" />
-                    Alterar Amostra
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={() => setShowImportModal(true)} variant="outline" size="sm">
+                      <Copy className="h-4 w-4 mr-2" />
+                      Importar de Outro Projeto
+                    </Button>
+                    <Button onClick={() => setShowSelectModal(true)} variant="outline" size="sm">
+                      <Users className="h-4 w-4 mr-2" />
+                      {selectedComparables.length > 0 ? 'Editar Seleção' : 'Criar/Selecionar Amostra'}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {selectedComparables.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">
-                      Nenhum comparável selecionado para este projeto.
+                      Nenhuma amostra ativa para este projeto.
                     </p>
-                    <Button onClick={() => setShowSelectModal(true)}>
-                      <Users className="h-4 w-4 mr-2" />
-                      Selecionar Comparáveis
-                    </Button>
+                    <div className="flex gap-2 justify-center">
+                      <Button onClick={() => setShowSelectModal(true)}>
+                        <Users className="h-4 w-4 mr-2" />
+                        Criar Amostra
+                      </Button>
+                      <Button onClick={() => setShowImportModal(true)} variant="outline">
+                        <Copy className="h-4 w-4 mr-2" />
+                        Importar Amostra
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">
-                      {selectedComparables.length} comparáveis na amostra ativa
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-muted-foreground">
+                        {selectedComparables.length} comparáveis na amostra ativa
+                        {activeSample?.name && ` • ${activeSample.name}`}
+                      </div>
+                      {activeSample?.criteria_json && (
+                        <Badge variant="secondary">
+                          {Object.keys(activeSample.criteria_json).length} critérios aplicados
+                        </Badge>
+                      )}
                     </div>
                     <div className="grid gap-3">
                       {selectedComparables.map((comparable, index) => (
@@ -285,6 +331,13 @@ export function ProjectDetailPage() {
           onOpenChange={setShowSelectModal}
           projectId={id!}
           onSuccess={handleComparablesSelected}
+        />
+
+        <ImportSampleModal
+          open={showImportModal}
+          onOpenChange={setShowImportModal}
+          projectId={id!}
+          onSuccess={handleSampleImported}
         />
       </div>
     </SimpleHeader>
