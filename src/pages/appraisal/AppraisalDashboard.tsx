@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calculator, Building, BarChart3, FileText, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { TestDataSeeder } from '@/components/appraisal/TestDataSeeder';
+import { useState, useEffect } from 'react';
+import { comparablesApi, projectsApi } from '@/services/appraisalApi';
 
 const modules = [
   {
@@ -41,6 +44,33 @@ const modules = [
 ];
 
 export function AppraisalDashboard() {
+  const [stats, setStats] = useState({
+    comparables: 0,
+    projects: 0,
+    loading: true
+  });
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const [comparables, projects] = await Promise.all([
+        comparablesApi.list(),
+        projectsApi.list()
+      ]);
+      
+      setStats({
+        comparables: comparables.length,
+        projects: projects.length,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      setStats(prev => ({ ...prev, loading: false }));
+    }
+  };
   return (
     <SimpleHeader>
       <div className="container mx-auto px-4 py-8">
@@ -73,6 +103,12 @@ export function AppraisalDashboard() {
             );
           })}
         </div>
+        {/* Test Data Seeder for Sprint 5a */}
+        {stats.comparables < 8 && !stats.loading && (
+          <div className="mb-8">
+            <TestDataSeeder />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -116,7 +152,9 @@ export function AppraisalDashboard() {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">0</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {stats.loading ? '...' : stats.projects}
+                  </p>
                   <p className="text-sm text-muted-foreground">Projetos</p>
                 </div>
                 <div className="text-center">
@@ -124,12 +162,16 @@ export function AppraisalDashboard() {
                   <p className="text-sm text-muted-foreground">Imóveis</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-600">0</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {stats.loading ? '...' : stats.comparables}
+                  </p>
                   <p className="text-sm text-muted-foreground">Amostras</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-orange-600">0</p>
-                  <p className="text-sm text-muted-foreground">Relatórios</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {stats.comparables >= 8 ? '✅' : '⚠️'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">OLS Ready</p>
                 </div>
               </div>
             </CardContent>

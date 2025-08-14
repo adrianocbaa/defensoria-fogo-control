@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { CreateProjectModal } from '@/components/appraisal/CreateProjectModal';
 import { projectsApi, Project } from '@/services/appraisalApi';
 import { toast } from '@/hooks/use-toast';
@@ -127,8 +128,10 @@ export function ProjectsPage() {
                         <TableCell>{getStatusBadge(project.status)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link to={`/avaliacao-imoveis/projects/${project.id}`}>
+                                <Eye className="h-4 w-4" />
+                              </Link>
                             </Button>
                             <Button variant="ghost" size="sm">
                               <Edit className="h-4 w-4" />
