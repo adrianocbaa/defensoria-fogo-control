@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Filter, Eye, Edit, Trash2, MapPin } from 'lucide-react';
 import { CreatePropertyModal } from '@/components/appraisal/CreatePropertyModal';
+import { EditPropertyModal } from '@/components/appraisal/EditPropertyModal';
 import { useState, useEffect } from 'react';
 import { propertiesApi, Property } from '@/services/appraisalApi';
 import { toast } from '@/hooks/use-toast';
@@ -155,9 +156,10 @@ export function PropertiesPage() {
                               <Button variant="ghost" size="sm">
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                              <EditPropertyModal 
+                                property={property}
+                                onSuccess={() => fetchProperties()}
+                              />
                               <Button variant="ghost" size="sm">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
