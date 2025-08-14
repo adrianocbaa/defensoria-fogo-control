@@ -25,6 +25,7 @@ import { ObrasLista } from "./pages/ObrasLista";
 import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosPage } from "./pages/SectorPages";
 import { Medicao } from "./pages/Medicao";
 import Inventory from "./pages/Inventory";
+import AvaliacaoImoveisPage from "./pages/AvaliacaoImoveisPage";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ProjetosPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/avaliacao-imoveis" 
+        element={
+          <ProtectedRoute>
+            <AvaliacaoImoveisPage />
           </ProtectedRoute>
         } 
       />
