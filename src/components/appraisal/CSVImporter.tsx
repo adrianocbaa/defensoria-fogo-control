@@ -105,7 +105,17 @@ export function CSVImporter({ onSuccess }: CSVImporterProps) {
             const validation = csvUtils.validateComparableRow(row);
 
             if (validation.isValid) {
-              const normalized = csvUtils.normalizeComparableRow(row);
+              let normalized = csvUtils.normalizeComparableRow(row);
+              
+              // Calculate price_unit if missing (Feature C)
+              if (!normalized.price_unit && normalized.price_total) {
+                if (normalized.kind === 'urban' && normalized.built_area && normalized.built_area > 0) {
+                  normalized.price_unit = normalized.price_total / normalized.built_area;
+                } else if (normalized.kind === 'rural' && normalized.land_area && normalized.land_area > 0) {
+                  normalized.price_unit = normalized.price_total / normalized.land_area;
+                }
+              }
+              
               validatedData.push(normalized);
             } else {
               errors.push({

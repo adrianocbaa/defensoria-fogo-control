@@ -4,22 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, BarChart3, FileText, MapPin } from 'lucide-react';
+import { ArrowLeft, BarChart3, FileText, MapPin, Users } from 'lucide-react';
 import { ModelingInterface } from '@/components/appraisal/ModelingInterface';
+import { SelectComparablesModal } from '@/components/appraisal/SelectComparablesModal';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectsApi, Project } from '@/services/appraisalApi';
+import { projectsApi, Project, comparablesApi, Comparable } from '@/services/appraisalApi';
 import { toast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/formatters';
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
+  const [selectedComparables, setSelectedComparables] = useState<Comparable[]>([]);
+  const [showSelectModal, setShowSelectModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
       loadProject();
+      loadProjectComparables();
     }
   }, [id]);
 
@@ -39,6 +44,25 @@ export function ProjectDetailPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadProjectComparables = async () => {
+    // Mock: In a real implementation, this would fetch from samples table
+    try {
+      const allComparables = await comparablesApi.list();
+      // For now, just show all comparables as selected sample
+      setSelectedComparables(allComparables.slice(0, 8)); // Show first 8 as sample
+    } catch (error) {
+      console.error('Error loading project comparables:', error);
+    }
+  };
+
+  const handleComparablesSelected = (comparables: Comparable[]) => {
+    setSelectedComparables(comparables);
+    toast({
+      title: 'Sucesso',
+      description: `${comparables.length} comparáveis vinculados ao projeto`,
+    });
   };
 
   if (loading) {
@@ -121,8 +145,12 @@ export function ProjectDetailPage() {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="modeling" className="w-full">
+        <Tabs defaultValue="comparables" className="w-full">
           <TabsList>
+            <TabsTrigger value="comparables" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Amostra de Comparáveis
+            </TabsTrigger>
             <TabsTrigger value="modeling" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Modelagem Estatística
@@ -136,6 +164,76 @@ export function ProjectDetailPage() {
               Laudo
             </TabsTrigger>
           </TabsList>
+          
+          
+          <TabsContent value="comparables" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Amostra Ativa do Projeto</CardTitle>
+                  <Button onClick={() => setShowSelectModal(true)} variant="outline">
+                    <Users className="h-4 w-4 mr-2" />
+                    Alterar Amostra
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {selectedComparables.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">
+                      Nenhum comparável selecionado para este projeto.
+                    </p>
+                    <Button onClick={() => setShowSelectModal(true)}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Selecionar Comparáveis
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      {selectedComparables.length} comparáveis na amostra ativa
+                    </div>
+                    <div className="grid gap-3">
+                      {selectedComparables.map((comparable, index) => (
+                        <div key={comparable.id} className="p-3 border rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Badge variant={comparable.kind === 'urban' ? 'default' : 'secondary'}>
+                                  {comparable.kind === 'urban' ? 'Urbano' : 'Rural'}
+                                </Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  {comparable.source} • {new Date(comparable.date || '').toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Preço Total:</span><br/>
+                                  <span className="font-medium">{formatCurrency(comparable.price_total || 0)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Preço Unit:</span><br/>
+                                  <span className="font-medium">{formatCurrency(comparable.price_unit || 0)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Área Terreno:</span><br/>
+                                  <span className="font-medium">{comparable.land_area} m²</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Área Construída:</span><br/>
+                                  <span className="font-medium">{comparable.built_area} m²</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
           
           <TabsContent value="modeling" className="space-y-6">
             {id && <ModelingInterface projectId={id} />}
@@ -171,6 +269,13 @@ export function ProjectDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <SelectComparablesModal
+          open={showSelectModal}
+          onOpenChange={setShowSelectModal}
+          projectId={id!}
+          onSuccess={handleComparablesSelected}
+        />
       </div>
     </SimpleHeader>
   );
