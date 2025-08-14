@@ -26,6 +26,10 @@ import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosP
 import { Medicao } from "./pages/Medicao";
 import Inventory from "./pages/Inventory";
 import AvaliacaoImoveisPage from "./pages/AvaliacaoImoveisPage";
+import AppraisalDashboard from "./pages/appraisal/AppraisalDashboard";
+import ProjectsPage from "./pages/appraisal/ProjectsPage";
+import PropertiesPage from "./pages/appraisal/PropertiesPage";
+import MarketPage from "./pages/appraisal/MarketPage";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +105,38 @@ const AppRoutes = () => {
       />
       <Route 
         path="/avaliacao-imoveis" 
+        element={
+          <ProtectedRoute>
+            <AppraisalDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/avaliacao-imoveis/projects" 
+        element={
+          <ProtectedRoute>
+            <ProjectsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/avaliacao-imoveis/properties" 
+        element={
+          <ProtectedRoute>
+            <PropertiesPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/avaliacao-imoveis/market" 
+        element={
+          <ProtectedRoute>
+            <MarketPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/avaliacao-imoveis/reports" 
         element={
           <ProtectedRoute>
             <AvaliacaoImoveisPage />
