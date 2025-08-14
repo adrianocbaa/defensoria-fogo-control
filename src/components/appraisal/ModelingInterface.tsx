@@ -72,10 +72,13 @@ export function ModelingInterface({ projectId }: ModelingInterfaceProps) {
       return;
     }
 
-    if (comparables.length < 8) {
+    // Validação crítica: n < k+3 (amostra insuficiente)
+    const k = selectedFeatures.length + 1; // +1 para intercepto
+    const n = comparables.length;
+    if (n < k + 3) {
       toast({
-        title: 'Atenção',
-        description: 'Recomenda-se pelo menos 8 comparáveis para análise estatística confiável',
+        title: 'Amostra Insuficiente',
+        description: `São necessários pelo menos ${k + 3} comparáveis para ${selectedFeatures.length} features. Você tem apenas ${n}.`,
         variant: 'destructive',
       });
       return;
@@ -84,17 +87,45 @@ export function ModelingInterface({ projectId }: ModelingInterfaceProps) {
     setLoading(true);
 
     try {
-      // Prepare model data
-      const target = comparables.map(c => c[targetColumn]).filter(v => v != null);
-      const features: Record<string, number[]> = {};
+      // Prepare model data with validations
+      const rawTarget = comparables.map(c => c[targetColumn]);
+      
+      // Validação: Tratar NaN/Infinity no alvo
+      const target = rawTarget
+        .map(v => Number(v))
+        .filter(v => v != null && isFinite(v) && v > 0);
+      
+      if (target.length < rawTarget.length) {
+        toast({
+          title: 'Atenção',
+          description: `${rawTarget.length - target.length} observações removidas por valores inválidos no alvo`,
+          variant: 'destructive',
+        });
+      }
+      
+      const features: Record<string, any[]> = {};
       
       selectedFeatures.forEach(feature => {
         if (categoricalFeatures.includes(feature)) {
-          // Keep categorical for dummy creation
-          features[feature] = comparables.map(c => c[feature]);
+          // Normalize categorical values
+          const categoricalData = comparables.map(c => {
+            const value = String(c[feature] || '').toLowerCase().trim();
+            // Normalize quality values
+            if (feature === 'quality') {
+              if (['alto', 'alta', 'high'].includes(value)) return 'alto';
+              if (['baixo', 'baixa', 'low'].includes(value)) return 'baixo';
+              return 'medio'; // default base
+            }
+            return value;
+          });
+          features[feature] = categoricalData;
         } else {
-          // Convert to numbers for continuous variables
-          features[feature] = comparables.map(c => Number(c[feature]) || 0);
+          // Convert to numbers and validate for continuous variables
+          const numericValues = comparables.map(c => {
+            const val = Number(c[feature]);
+            return isFinite(val) && val >= 0 ? val : 0;
+          });
+          features[feature] = numericValues;
         }
       });
 
@@ -142,7 +173,8 @@ export function ModelingInterface({ projectId }: ModelingInterfaceProps) {
       const meanFeatures: Record<string, number> = {};
       selectedFeatures.forEach(feature => {
         if (!categoricalFeatures.includes(feature)) {
-          meanFeatures[feature] = features[feature].reduce((sum, val) => sum + val, 0) / features[feature].length;
+          const numericFeature = features[feature] as number[];
+          meanFeatures[feature] = numericFeature.reduce((sum, val) => sum + val, 0) / numericFeature.length;
         }
       });
 
@@ -204,6 +236,19 @@ export function ModelingInterface({ projectId }: ModelingInterfaceProps) {
 
   return (
     <div className="space-y-6">
+      {/* Sprint 5a Protocol Info */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-blue-800">📋 Protocolo Sprint 5a - Teste de Modelagem</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-2">
+          <p><strong>Target:</strong> price_unit | <strong>Features:</strong> built_area, land_area, age, quality</p>
+          <p><strong>Transforms:</strong> log(target), log(built_area), log(land_area) | <strong>Dummy base:</strong> quality_medio</p>
+          <p><strong>Expectativas:</strong> VIF &lt; 10, sinais coerentes (+built_area, +quality_alto, -quality_baixo, -age)</p>
+          <p><strong>Validações:</strong> n ≥ k+3, tratamento NaN/Infinity, residuais centrados em 0</p>
+        </CardContent>
+      </Card>
+
       {/* Configuration Panel */}
       <Card>
         <CardHeader>

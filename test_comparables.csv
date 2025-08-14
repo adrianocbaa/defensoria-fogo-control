@@ -1,0 +1,13 @@
+source,date,deal_type,price_total,land_area,built_area,quality,age,condition,lat,lon,kind
+Portal X,2025-07-15,sale,450000,250,180,medio,8,boa,-15.601,-56.098,urban
+Imob Y,2025-06-20,sale,520000,300,200,alto,5,boa,-15.612,-56.103,urban
+Class Z,2025-05-10,offer,480000,260,190,medio,10,regular,-15.590,-56.090,urban
+Portal W,2025-06-28,sale,395000,220,160,baixo,15,regular,-15.605,-56.110,urban
+Imob Centro,2025-07-05,sale,610000,320,220,alto,6,boa,-15.608,-56.095,urban
+Lista Norte,2025-06-18,sale,430000,240,175,medio,9,boa,-15.599,-56.104,urban
+Anúncio Sul,2025-07-01,offer,570000,310,210,alto,4,boa,-15.614,-56.100,urban
+Portal Leste,2025-05-30,sale,360000,210,150,baixo,18,regular,-15.592,-56.085,urban
+Imob Oeste,2025-07-10,sale,505000,295,205,medio,7,boa,-15.606,-56.112,urban
+Class Alfa,2025-06-12,sale,545000,305,215,alto,6,boa,-15.597,-56.107,urban
+Portal Beta,2025-06-22,offer,385000,230,165,baixo,12,regular,-15.610,-56.093,urban
+Imob Gama,2025-07-08,sale,475000,270,195,medio,9,boa,-15.603,-56.101,urban
