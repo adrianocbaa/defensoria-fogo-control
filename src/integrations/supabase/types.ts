@@ -910,6 +910,35 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: boolean
       }
+      create_attachment: {
+        Args: {
+          p_kind: string
+          p_meta_json?: Json
+          p_owner_id: string
+          p_owner_type: string
+          p_url: string
+        }
+        Returns: string
+      }
+      create_comparable: {
+        Args: {
+          p_age?: number
+          p_built_area?: number
+          p_condition?: string
+          p_date: string
+          p_deal_type: string
+          p_kind: string
+          p_land_area?: number
+          p_lat?: number
+          p_lon?: number
+          p_notes?: string
+          p_price_total: number
+          p_price_unit?: number
+          p_quality?: string
+          p_source: string
+        }
+        Returns: string
+      }
       create_project: {
         Args: {
           p_approach: string
@@ -919,9 +948,50 @@ export type Database = {
         }
         Returns: string
       }
+      create_property: {
+        Args: {
+          p_address: string
+          p_age?: number
+          p_built_area?: number
+          p_condition?: string
+          p_constraints?: string
+          p_kind: string
+          p_land_area?: number
+          p_lat?: number
+          p_lon?: number
+          p_quality?: string
+          p_zoning?: string
+        }
+        Returns: string
+      }
       delete_project: {
         Args: { project_id: string }
         Returns: boolean
+      }
+      get_comparables: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          age: number
+          attachments: Json
+          built_area: number
+          condition: string
+          created_at: string
+          date: string
+          deal_type: string
+          exposure_time: number
+          id: string
+          kind: string
+          land_area: number
+          lat: number
+          lon: number
+          notes: string
+          org_id: string
+          payment_terms: string
+          price_total: number
+          price_unit: number
+          quality: string
+          source: string
+        }[]
       }
       get_project_by_id: {
         Args: { project_id: string }
@@ -951,6 +1021,26 @@ export type Database = {
           purpose: string
           status: string
           updated_at: string
+        }[]
+      }
+      get_properties: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          address: string
+          age: number
+          built_area: number
+          condition: string
+          constraints: string
+          created_at: string
+          id: string
+          kind: string
+          land_area: number
+          lat: number
+          lon: number
+          org_id: string
+          quality: string
+          updated_at: string
+          zoning: string
         }[]
       }
       get_user_role: {

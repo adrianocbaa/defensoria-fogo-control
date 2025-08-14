@@ -52,12 +52,14 @@ export function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const filteredProjects = mockProjects.filter(project => {
-    const matchesSearch = project.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.property_address.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+          const filteredProjects = projects.filter(project => {
+            const matchesSearch = project.purpose?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+            return matchesSearch && matchesStatus;
+          });
+
+          const [searchTerm, setSearchTerm] = useState('');
+          const [statusFilter, setStatusFilter] = useState<string>('all');
 
   return (
     <SimpleHeader>
@@ -71,10 +73,7 @@ export function ProjectsPage() {
           <CardHeader>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <CardTitle>Lista de Projetos</CardTitle>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Projeto
-              </Button>
+              <CreateProjectModal onSuccess={handleProjectCreated} />
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">

@@ -58,93 +58,244 @@ export interface Comparable {
 // Properties API
 export const propertiesApi = {
   async list(): Promise<Property[]> {
-    // Return mock data for now - will connect to database later
-    return getMockData().properties;
+    try {
+      const { data, error } = await supabase.rpc('get_properties');
+      if (error) throw error;
+      return (data || []).map((item: any) => ({
+        ...item,
+        kind: item.kind as 'urban' | 'rural'
+      }));
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      return [];
+    }
   },
 
-  async create(property: Omit<Property, 'id' | 'created_at' | 'updated_at'>): Promise<Property> {
-    // Mock implementation for now
-    console.log('Creating property:', property);
-    return { id: 'new-' + Date.now(), ...property } as Property;
+  async create(property: Omit<Property, 'id' | 'created_at' | 'updated_at'>): Promise<{ data: Property | null; error: any }> {
+    try {
+      const { data, error } = await supabase.rpc('create_property', {
+        p_kind: property.kind,
+        p_address: property.address || '',
+        p_lat: property.lat,
+        p_lon: property.lon,
+        p_land_area: property.land_area,
+        p_built_area: property.built_area,
+        p_quality: property.quality,
+        p_age: property.age,
+        p_condition: property.condition,
+        p_zoning: property.zoning,
+        p_constraints: property.constraints
+      });
+      
+      if (error) throw error;
+      return { data: { id: data, ...property } as Property, error: null };
+    } catch (error) {
+      console.error('Error creating property:', error);
+      return { data: null, error };
+    }
   },
 
-  async update(id: string, property: Partial<Property>): Promise<Property> {
-    // Mock implementation for now
-    console.log('Updating property:', id, property);
-    return { id, ...property } as Property;
+  async update(id: string, property: Partial<Property>): Promise<{ data: Property | null; error: any }> {
+    try {
+      // Mock implementation for now
+      console.log('Updating property:', id, property);
+      return { data: { id, ...property } as Property, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
   },
 
-  async delete(id: string): Promise<void> {
-    // Mock implementation for now
-    console.log('Deleting property:', id);
+  async delete(id: string): Promise<{ error: any }> {
+    try {
+      // Mock implementation for now
+      console.log('Deleting property:', id);
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
   },
 
   async getById(id: string): Promise<Property | null> {
-    // Mock implementation for now
-    console.log('Getting property by id:', id);
-    return getMockData().properties.find(p => p.id === id) || null;
+    try {
+      // Mock implementation for now
+      console.log('Getting property by id:', id);
+      return null;
+    } catch (error) {
+      console.error('Error getting property:', error);
+      return null;
+    }
   }
 };
 
 // Projects API
 export const projectsApi = {
   async list(): Promise<Project[]> {
-    // Return mock data for now - will connect to database later
-    return getMockData().projects;
+    try {
+      const { data, error } = await supabase.rpc('get_projects');
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      return [];
+    }
   },
 
-  async create(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>): Promise<Project> {
-    // Mock implementation for now
-    console.log('Creating project:', project);
-    return { id: 'new-' + Date.now(), ...project } as Project;
+  async create(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>): Promise<{ data: Project | null; error: any }> {
+    try {
+      const { data, error } = await supabase.rpc('create_project', {
+        p_purpose: project.purpose || '',
+        p_base_date: project.base_date || new Date().toISOString().split('T')[0],
+        p_approach: project.approach || '',
+        p_property_id: project.property_id
+      });
+      
+      if (error) throw error;
+      return { data: { id: data, ...project } as Project, error: null };
+    } catch (error) {
+      console.error('Error creating project:', error);
+      return { data: null, error };
+    }
   },
 
-  async update(id: string, project: Partial<Project>): Promise<Project> {
-    // Mock implementation for now
-    console.log('Updating project:', id, project);
-    return { id, ...project } as Project;
+  async update(id: string, project: Partial<Project>): Promise<{ data: Project | null; error: any }> {
+    try {
+      const { data, error } = await supabase.rpc('update_project', {
+        project_id: id,
+        p_purpose: project.purpose,
+        p_base_date: project.base_date,
+        p_approach: project.approach,
+        p_status: project.status
+      });
+      
+      if (error) throw error;
+      return { data: { id, ...project } as Project, error: null };
+    } catch (error) {
+      console.error('Error updating project:', error);
+      return { data: null, error };
+    }
   },
 
-  async delete(id: string): Promise<void> {
-    // Mock implementation for now
-    console.log('Deleting project:', id);
+  async delete(id: string): Promise<{ error: any }> {
+    try {
+      const { error } = await supabase.rpc('delete_project', {
+        project_id: id
+      });
+      
+      return { error };
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      return { error };
+    }
   },
 
   async getById(id: string): Promise<Project | null> {
-    // Mock implementation for now
-    console.log('Getting project by id:', id);
-    return getMockData().projects.find(p => p.id === id) || null;
+    try {
+      const { data, error } = await supabase.rpc('get_project_by_id', {
+        project_id: id
+      });
+      
+      if (error) throw error;
+      return data?.[0] || null;
+    } catch (error) {
+      console.error('Error getting project:', error);
+      return null;
+    }
   }
 };
 
 // Comparables API
 export const comparablesApi = {
   async list(): Promise<Comparable[]> {
-    // Return mock data for now - will connect to database later
-    return getMockData().comparables;
+    try {
+      const { data, error } = await supabase.rpc('get_comparables');
+      if (error) throw error;
+      return (data || []).map((item: any) => ({
+        ...item,
+        kind: item.kind as 'urban' | 'rural',
+        deal_type: item.deal_type as 'sale' | 'rent' | 'offer'
+      }));
+    } catch (error) {
+      console.error('Error fetching comparables:', error);
+      return [];
+    }
   },
 
-  async create(comparable: Omit<Comparable, 'id' | 'created_at'>): Promise<Comparable> {
-    // Mock implementation for now
-    console.log('Creating comparable:', comparable);
-    return { id: 'new-' + Date.now(), ...comparable } as Comparable;
+  async create(comparable: Omit<Comparable, 'id' | 'created_at'>): Promise<{ data: Comparable | null; error: any }> {
+    try {
+      const { data, error } = await supabase.rpc('create_comparable', {
+        p_kind: comparable.kind,
+        p_source: comparable.source || '',
+        p_date: comparable.date || new Date().toISOString().split('T')[0],
+        p_deal_type: comparable.deal_type || 'sale',
+        p_price_total: comparable.price_total || 0,
+        p_price_unit: comparable.price_unit,
+        p_land_area: comparable.land_area,
+        p_built_area: comparable.built_area,
+        p_quality: comparable.quality,
+        p_age: comparable.age,
+        p_condition: comparable.condition,
+        p_lat: comparable.lat,
+        p_lon: comparable.lon,
+        p_notes: comparable.notes
+      });
+      
+      if (error) throw error;
+      return { data: { id: data, ...comparable } as Comparable, error: null };
+    } catch (error) {
+      console.error('Error creating comparable:', error);
+      return { data: null, error };
+    }
   },
 
-  async update(id: string, comparable: Partial<Comparable>): Promise<Comparable> {
-    // Mock implementation for now
-    console.log('Updating comparable:', id, comparable);
-    return { id, ...comparable } as Comparable;
+  async createBatch(comparables: Omit<Comparable, 'id' | 'created_at'>[]): Promise<{ success: number; errors: any[] }> {
+    const results = { success: 0, errors: [] as any[] };
+    
+    for (let i = 0; i < comparables.length; i++) {
+      const comparable = comparables[i];
+      try {
+        const result = await this.create(comparable);
+        if (result.error) {
+          results.errors.push({ row: i + 1, error: result.error });
+        } else {
+          results.success++;
+        }
+      } catch (error) {
+        results.errors.push({ row: i + 1, error });
+      }
+    }
+    
+    return results;
   },
 
-  async delete(id: string): Promise<void> {
-    // Mock implementation for now
-    console.log('Deleting comparable:', id);
+  async update(id: string, comparable: Partial<Comparable>): Promise<{ data: Comparable | null; error: any }> {
+    try {
+      // Mock implementation for now
+      console.log('Updating comparable:', id, comparable);
+      return { data: { id, ...comparable } as Comparable, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  async delete(id: string): Promise<{ error: any }> {
+    try {
+      // Mock implementation for now
+      console.log('Deleting comparable:', id);
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
   },
 
   async getById(id: string): Promise<Comparable | null> {
-    // Mock implementation for now
-    console.log('Getting comparable by id:', id);
-    return getMockData().comparables.find(c => c.id === id) || null;
+    try {
+      // Mock implementation for now
+      console.log('Getting comparable by id:', id);
+      return null;
+    } catch (error) {
+      console.error('Error getting comparable:', error);
+      return null;
+    }
   }
 };
 
