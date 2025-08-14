@@ -95,13 +95,27 @@ export const propertiesApi = {
     }
   },
 
-  async update(id: string, property: Partial<Property>): Promise<{ data: Property | null; error: any }> {
+  async update(id: string, property: Partial<Property>): Promise<Property | null> {
     try {
-      // Mock implementation for now
-      console.log('Updating property:', id, property);
-      return { data: { id, ...property } as Property, error: null };
+      const { data, error } = await supabase.rpc('update_property', {
+        property_id: id,
+        p_kind: property.kind,
+        p_address: property.address,
+        p_lat: property.lat,
+        p_lon: property.lon,
+        p_land_area: property.land_area,
+        p_built_area: property.built_area,
+        p_quality: property.quality,
+        p_age: property.age,
+        p_condition: property.condition,
+        p_zoning: property.zoning,
+        p_constraints: property.constraints,
+      });
+      if (error) throw error;
+      return { ...data, kind: data.kind as 'urban' | 'rural' } as Property;
     } catch (error) {
-      return { data: null, error };
+      console.error('Error updating property:', error);
+      throw error;
     }
   },
 
