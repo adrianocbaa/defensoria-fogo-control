@@ -1150,21 +1150,21 @@ export type Database = {
         }
         Returns: {
           address: string
-          age: number | null
-          built_area: number | null
-          condition: string | null
-          constraints: string | null
-          created_at: string | null
+          age: number
+          built_area: number
+          condition: string
+          constraints: string
+          created_at: string
           id: string
           kind: string
-          land_area: number | null
-          lat: number | null
-          lon: number | null
-          org_id: string | null
-          quality: string | null
-          updated_at: string | null
-          zoning: string | null
-        }
+          land_area: number
+          lat: number
+          lon: number
+          org_id: string
+          quality: string
+          updated_at: string
+          zoning: string
+        }[]
       }
     }
     Enums: {

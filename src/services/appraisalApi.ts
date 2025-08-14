@@ -112,7 +112,10 @@ export const propertiesApi = {
         p_constraints: property.constraints,
       });
       if (error) throw error;
-      return { ...data, kind: data.kind as 'urban' | 'rural' } as Property;
+      
+      // A função retorna um array, então pegamos o primeiro elemento
+      const updatedProperty = Array.isArray(data) ? data[0] : data;
+      return { ...updatedProperty, kind: updatedProperty.kind as 'urban' | 'rural' } as Property;
     } catch (error) {
       console.error('Error updating property:', error);
       throw error;
