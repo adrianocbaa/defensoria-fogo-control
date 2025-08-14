@@ -964,6 +964,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_report: {
+        Args: {
+          p_pdf_url: string
+          p_project_id: string
+          p_signature_hash: string
+        }
+        Returns: string
+      }
       delete_project: {
         Args: { project_id: string }
         Returns: boolean
@@ -1006,6 +1014,16 @@ export type Database = {
           purpose: string
           status: string
           updated_at: string
+        }[]
+      }
+      get_project_reports: {
+        Args: { project_id: string }
+        Returns: {
+          id: string
+          pdf_url: string
+          published_at: string
+          signature_hash: string
+          version: number
         }[]
       }
       get_projects: {

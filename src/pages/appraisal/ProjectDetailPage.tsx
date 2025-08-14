@@ -165,6 +165,16 @@ export function ProjectDetailPage() {
             </TabsTrigger>
           </TabsList>
           
+          <div className="mb-6 flex justify-end">
+            <Button 
+              onClick={() => navigate(`/avaliacao-imoveis/projects/${id}/report`)}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Gerar Laudo
+            </Button>
+          </div>
+          
           
           <TabsContent value="comparables" className="space-y-6">
             <Card>

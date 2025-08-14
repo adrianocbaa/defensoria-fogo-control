@@ -29,6 +29,7 @@ import AvaliacaoImoveisPage from "./pages/AvaliacaoImoveisPage";
 import AppraisalDashboard from "./pages/appraisal/AppraisalDashboard";
 import ProjectsPage from "./pages/appraisal/ProjectsPage";
 import { ProjectDetailPage } from "./pages/appraisal/ProjectDetailPage";
+import { ReportPage } from "./pages/appraisal/ReportPage";
 import PropertiesPage from "./pages/appraisal/PropertiesPage";
 import MarketPage from "./pages/appraisal/MarketPage";
 
@@ -125,6 +126,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ProjectDetailPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/avaliacao-imoveis/projects/:id/report" 
+        element={
+          <ProtectedRoute>
+            <ReportPage />
           </ProtectedRoute>
         } 
       />
