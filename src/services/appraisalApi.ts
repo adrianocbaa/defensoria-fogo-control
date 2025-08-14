@@ -300,6 +300,43 @@ export const comparablesApi = {
 };
 
 // Mock data for development (when no real data exists)
+// Model runs API (temporary mock until RPC functions are available)
+export const modelRunsApi = {
+  async list(projectId: string) {
+    console.log('Mock: getting model runs for project', projectId);
+    return [];
+  },
+
+  async create(
+    projectId: string,
+    method: string,
+    featuresJson: any,
+    targetColumn: string,
+    transformConfig: any,
+    metricsJson: any,
+    diagnosticsJson: any,
+    artifacts: any[] = []
+  ) {
+    console.log('Mock: creating model run', { projectId, method });
+    return 'mock-model-run-id';
+  }
+};
+
+// Results API (temporary mock until RPC functions are available)
+export const resultsApi = {
+  async create(
+    projectId: string,
+    modelRunId: string,
+    estimatedValue: number,
+    confidenceIntervalLower: number,
+    confidenceIntervalUpper: number,
+    elasticitiesJson: any = {}
+  ) {
+    console.log('Mock: creating result', { projectId, modelRunId, estimatedValue });
+    return 'mock-result-id';
+  }
+};
+
 export const getMockData = () => ({
   projects: [
     {
