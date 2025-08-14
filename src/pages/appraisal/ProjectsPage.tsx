@@ -7,59 +7,61 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Filter, Eye, Edit, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { CreateProjectModal } from '@/components/appraisal/CreateProjectModal';
+import { projectsApi, Project } from '@/services/appraisalApi';
+import { toast } from '@/hooks/use-toast';
 
-interface Project {
-  id: string;
-  purpose: string;
-  status: 'draft' | 'in_progress' | 'completed';
-  property_address: string;
-  base_date: string;
-  approach: string;
-}
-
-const mockProjects: Project[] = [
-  {
-    id: '1',
-    purpose: 'Avaliação para garantia hipotecária',
-    status: 'in_progress',
-    property_address: 'Rua das Flores, 123 - Centro',
-    base_date: '2024-01-15',
-    approach: 'Comparativo de mercado'
-  },
-  {
-    id: '2',
-    purpose: 'Avaliação para seguro',
-    status: 'draft',
-    property_address: 'Av. Principal, 456 - Bairro Novo',
-    base_date: '2024-01-20',
-    approach: 'Custo de reposição'
-  }
-];
-
-const getStatusBadge = (status: Project['status']) => {
-  const statusConfig = {
+const getStatusBadge = (status: string) => {
+  const statusConfig: Record<string, { label: string; className: string }> = {
     draft: { label: 'Rascunho', className: 'bg-gray-100 text-gray-800' },
     in_progress: { label: 'Em Andamento', className: 'bg-yellow-100 text-yellow-800' },
     completed: { label: 'Concluído', className: 'bg-green-100 text-green-800' }
   };
   
-  const config = statusConfig[status];
+  const config = statusConfig[status] || statusConfig.draft;
   return <Badge className={config.className}>{config.label}</Badge>;
 };
 
 export function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
 
-          const filteredProjects = projects.filter(project => {
-            const matchesSearch = project.purpose?.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-            return matchesSearch && matchesStatus;
-          });
+  const fetchProjects = async () => {
+    try {
+      const data = await projectsApi.list();
+      setProjects(data);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao carregar projetos',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          const [searchTerm, setSearchTerm] = useState('');
-          const [statusFilter, setStatusFilter] = useState<string>('all');
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const handleProjectCreated = () => {
+    fetchProjects();
+    toast({
+      title: 'Sucesso',
+      description: 'Projeto criado com sucesso!',
+    });
+  };
+
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.purpose?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <SimpleHeader>
@@ -119,7 +121,7 @@ export function ProjectsPage() {
                     filteredProjects.map((project) => (
                       <TableRow key={project.id}>
                         <TableCell className="font-medium">{project.purpose}</TableCell>
-                        <TableCell>{project.property_address}</TableCell>
+                        <TableCell>{project.property_id || 'N/A'}</TableCell>
                         <TableCell>{new Date(project.base_date).toLocaleDateString('pt-BR')}</TableCell>
                         <TableCell>{project.approach}</TableCell>
                         <TableCell>{getStatusBadge(project.status)}</TableCell>
