@@ -35,37 +35,55 @@ export class PDFService {
     
     const htmlContent = this.generateHTMLTemplate(reportData, qrCodeDataUrl, projectId);
     
-    const options = {
-      margin: [15, 15, 15, 15],
-      filename: `laudo-avaliacao-${projectId}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true,
-        allowTaint: true,
-        letterRendering: true
-      },
-      jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
-        orientation: 'portrait',
-        putOnlyUsedFonts: true,
-        floatPrecision: 16
-      },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
+    // Create element and wait for fonts to load
     const element = document.createElement('div');
     element.innerHTML = htmlContent;
     element.style.position = 'absolute';
     element.style.left = '-9999px';
+    element.style.top = '0';
+    element.style.width = '210mm';
+    element.style.minHeight = '297mm';
+    element.style.backgroundColor = 'white';
+    element.style.visibility = 'hidden';
     document.body.appendChild(element);
+
+    // Wait for any fonts to load
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const options = {
+      margin: [10, 10, 10, 10],
+      filename: `laudo-avaliacao-${projectId}.pdf`,
+      image: { 
+        type: 'jpeg', 
+        quality: 0.98 
+      },
+      html2canvas: { 
+        scale: 1.5,
+        useCORS: true,
+        allowTaint: true,
+        letterRendering: true,
+        width: 794, // A4 width at 96 DPI
+        height: 1123, // A4 height at 96 DPI
+        scrollX: 0,
+        scrollY: 0
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'portrait'
+      },
+      pagebreak: { 
+        mode: ['css', 'legacy'],
+        before: '.page-break'
+      }
+    };
 
     try {
       const pdf = await html2pdf().set(options).from(element).output('blob');
       document.body.removeChild(element);
       return pdf;
     } catch (error) {
+      console.error('PDF generation error:', error);
       document.body.removeChild(element);
       throw error;
     }
