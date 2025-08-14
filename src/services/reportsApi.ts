@@ -41,13 +41,30 @@ export class ReportsService {
 
   static async downloadReport(url: string, filename: string): Promise<void> {
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+      // Extract bucket and path from Supabase storage URL
+      const urlParts = url.split('/storage/v1/object/public/');
+      if (urlParts.length !== 2) {
+        throw new Error('Invalid storage URL format');
       }
       
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const [bucket, path] = urlParts[1].split('/', 2);
+      const filePath = urlParts[1].substring(bucket.length + 1);
+      
+      // Download from Supabase storage
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .download(filePath);
+      
+      if (error) {
+        throw new Error(`Storage download error: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error('No data received from storage');
+      }
+      
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(data);
       
       const link = document.createElement('a');
       link.href = downloadUrl;
