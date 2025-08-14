@@ -910,12 +910,65 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: boolean
       }
+      create_project: {
+        Args: {
+          p_approach: string
+          p_base_date: string
+          p_property_id?: string
+          p_purpose: string
+        }
+        Returns: string
+      }
+      delete_project: {
+        Args: { project_id: string }
+        Returns: boolean
+      }
+      get_project_by_id: {
+        Args: { project_id: string }
+        Returns: {
+          approach: string
+          base_date: string
+          created_at: string
+          created_by: string
+          id: string
+          org_id: string
+          property_id: string
+          purpose: string
+          status: string
+          updated_at: string
+        }[]
+      }
+      get_projects: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          approach: string
+          base_date: string
+          created_at: string
+          created_by: string
+          id: string
+          org_id: string
+          property_id: string
+          purpose: string
+          status: string
+          updated_at: string
+        }[]
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: string
       }
       is_admin: {
         Args: { user_uuid?: string }
+        Returns: boolean
+      }
+      update_project: {
+        Args: {
+          p_approach?: string
+          p_base_date?: string
+          p_purpose?: string
+          p_status?: string
+          project_id: string
+        }
         Returns: boolean
       }
     }
