@@ -861,9 +861,30 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     const ad = aditivos.find(a => a.id === aditivoLocalId);
     if (!ad || !ad.sessionId) return;
     try {
+      // Excluir sessão do aditivo e seus itens
       await deleteAditivoSession(ad.sessionId);
+      
+      // Excluir também os itens extracontratuais importados da planilha
+      if (id) {
+        const { error: deleteItemsError } = await supabase
+          .from('orcamento_items')
+          .delete()
+          .eq('obra_id', id)
+          .eq('origem', 'extracontratual')
+          .eq('aditivo_num', aditivoLocalId);
+        
+        if (deleteItemsError) {
+          console.error('Erro ao excluir itens extracontratuais:', deleteItemsError);
+        }
+        
+        // Remover itens extracontratuais do estado local
+        setItems(prev => prev.filter(item => 
+          !(item.importado && item.nivel > 0 && item.ordem && item.ordem >= ad.id * 1000)
+        ));
+      }
+      
       setAditivos(prev => prev.filter(a => a.id !== aditivoLocalId));
-      toast.success('Aditivo excluído.');
+      toast.success('Aditivo e planilha importada excluídos.');
     } catch (e) {
       console.error(e);
       toast.error('Erro ao excluir aditivo');
@@ -1155,7 +1176,7 @@ const criarNovaMedicao = async () => {
       const novos: Item[] = [];
       const duplicados: string[] = [];
       const vistosNoArquivo = new Set<string>();
-      let seq = 0; // manter ordem sequencial contínua para os itens aceitos
+      
       body.forEach((r, i) => {
         const code = idx.item >= 0 ? String(r[idx.item] ?? '').trim() : '';
         const descricao = idx.descricao >= 0 ? String(r[idx.descricao] ?? '').trim() : '';
@@ -1168,6 +1189,11 @@ const criarNovaMedicao = async () => {
         // Ignorar linhas completamente vazias (sem código, descrição, unidade, quantidade e valores)
         const linhaVazia = !code && !descricao && !und && !codigoBanco && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0;
         if (linhaVazia) return;
+
+        // Ignorar linhas que são apenas cabeçalhos descritivos (ex: "ITENS EXTRACONTRATUAIS")
+        const ehCabecalhoDescritivo = !codigoBanco && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0 && 
+                                      descricao && (descricao.includes('EXTRACONTRATUAL') || descricao.includes('SINAPI'));
+        if (ehCabecalhoDescritivo) return;
 
         // Exigir código para identificar o item (não gerar códigos artificiais)
         if (!code) return;
@@ -1186,10 +1212,11 @@ const criarNovaMedicao = async () => {
         // Valor total importado não entra no Valor Total Original
         const valorTotalOriginal = 0;
 
-        const ordemVal = baseOrdem + (++seq);
+        // Usar ordem sequencial baseada na posição no arquivo, mantendo numeração original
+        const ordemVal = baseOrdem + i + 1;
         const novo: Item = {
           id: stableIdForRow(code, codigoBanco, ordemVal),
-          item: code,
+          item: code, // Manter código original da planilha
           codigo: codigoBanco,
           banco: '',
           descricao,
