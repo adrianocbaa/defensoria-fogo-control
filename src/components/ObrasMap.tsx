@@ -255,9 +255,8 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
         </MarkerClusterGroup>
       </MapContainer>
       
-      {/* Custom Cluster Styles */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      {/* Custom Cluster Styles - Safe CSS injection prevented */}
+      <style>{`
         .custom-cluster-icon {
           background: transparent !important;
           border: none !important;
@@ -324,8 +323,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
             transform: translateY(0);
           }
         }
-        `
-      }} />
+      `}</style>
     </div>
   );
 }

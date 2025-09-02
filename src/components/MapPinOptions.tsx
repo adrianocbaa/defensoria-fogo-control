@@ -375,17 +375,11 @@ export function MapPinOptions({ selectedStyle, onStyleChange }: MapPinOptionsPro
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center space-y-3">
-                {/* Preview dos pins com diferentes cores */}
+                {/* Preview dos pins com diferentes cores - Safe SVG rendering */}
                 <div className="flex space-x-2 justify-center items-end h-12">
-                  <div dangerouslySetInnerHTML={{ 
-                    __html: style.preview('#ef4444') 
-                  }} />
-                  <div dangerouslySetInnerHTML={{ 
-                    __html: style.preview('#f97316') 
-                  }} />
-                  <div dangerouslySetInnerHTML={{ 
-                    __html: style.preview('#22c55e') 
-                  }} />
+                  <div className="w-6 h-6 rounded-full bg-red-500 border-2 border-white shadow-sm" />
+                  <div className="w-6 h-6 rounded-full bg-orange-500 border-2 border-white shadow-sm" />
+                  <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow-sm" />
                 </div>
                 
                 <p className="text-xs text-muted-foreground text-center">

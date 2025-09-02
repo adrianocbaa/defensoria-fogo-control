@@ -30,32 +30,11 @@ export default function PublicView() {
     try {
       setLoading(true);
       
-      // Buscar nuclei públicos sem autenticação
-      const { data: nucleiData, error: nucleiError } = await supabase
-        .from('nuclei')
-        .select('*');
-
-      if (nucleiError) throw nucleiError;
-
-      // Buscar dados relacionados para cada núcleo
-      const nucleiWithDetails = await Promise.all(
-        (nucleiData || []).map(async (nucleus) => {
-          const [extinguishersRes, hydrantsRes, documentsRes] = await Promise.all([
-            supabase.from('fire_extinguishers').select('*').eq('nucleus_id', nucleus.id),
-            supabase.from('hydrants').select('*').eq('nucleus_id', nucleus.id),
-            supabase.from('documents').select('*').eq('nucleus_id', nucleus.id)
-          ]);
-
-          return {
-            ...nucleus,
-            fireExtinguishers: extinguishersRes.data || [],
-            hydrants: hydrantsRes.data || [],
-            documents: documentsRes.data || []
-          };
-        })
-      );
-
-      setNuclei(nucleiWithDetails);
+      // Show message that public access has been restricted for security
+      console.info('Public access to sensitive infrastructure data has been restricted for security reasons');
+      
+      // For now, show empty state as public access to nuclei data has been removed for security
+      setNuclei([]);
     } catch (error) {
       console.error('Erro ao carregar dados públicos:', error);
     } finally {
@@ -100,8 +79,11 @@ export default function PublicView() {
         {nuclei.length === 0 ? (
           <div className="text-center py-12">
             <Shield className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum núcleo cadastrado</h3>
-            <p className="text-gray-500">Não há informações públicas disponíveis no momento.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Acesso Restrito por Segurança</h3>
+            <p className="text-gray-500">
+              O acesso público aos dados de infraestrutura foi restringido por motivos de segurança. 
+              Para acessar essas informações, entre em contato com a administração.
+            </p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
