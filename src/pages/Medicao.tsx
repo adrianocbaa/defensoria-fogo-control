@@ -1083,14 +1083,33 @@ const criarNovaMedicao = async () => {
       // 3) Mapear cabeçalhos
       const header = rows[0].map(h => normalizeHeader(h));
       const idx = {
-        item: header.findIndex(h => h === 'item'),
-        codigoBanco: header.findIndex(h => h.includes('codigo banco') || h === 'codigo' || h === 'codigobanco'),
-        descricao: header.findIndex(h => h === 'descricao'),
-        und: header.findIndex(h => h === 'und' || h === 'unidade'),
-        quant: header.findIndex(h => h.startsWith('quant')),
-        valorUnit: header.findIndex(h => h.includes('valor unit') || h.includes('valor unitario')),
-        valorTotal: header.findIndex(h => h.includes('valor total')),
+        item: header.findIndex(h => h && h === 'item'),
+        codigoBanco: header.findIndex(h => h && (h.includes('codigo banco') || h === 'codigo' || h === 'codigobanco')),
+        descricao: header.findIndex(h => h && h === 'descricao'),
+        und: header.findIndex(h => h && (h === 'und' || h === 'unidade')),
+        quant: header.findIndex(h => h && h.startsWith('quant')),
+        valorUnit: header.findIndex(h => h && (h.includes('valor unit') || h.includes('valor unitario'))),
+        valorTotal: header.findIndex(h => h && h.includes('valor total')),
       };
+
+      // Validar cabeçalhos obrigatórios
+      const camposObrigatorios = ['item', 'codigoBanco', 'descricao', 'und', 'quant', 'valorUnit', 'valorTotal'];
+      const camposEncontrados = Object.entries(idx).filter(([_, index]) => index >= 0).map(([campo, _]) => campo);
+      const camposFaltantes = camposObrigatorios.filter(campo => idx[campo as keyof typeof idx] === -1);
+      
+      if (camposFaltantes.length > 0) {
+        const cabecalhosDetectados = header.filter(h => h && h.trim()).join(', ');
+        const faltantesTexto = camposFaltantes.map(campo => {
+          switch(campo) {
+            case 'codigoBanco': return 'Código/Código Banco';
+            case 'valorUnit': return 'Valor Unitário com BDI';
+            case 'valorTotal': return 'Valor Total com BDI';
+            default: return campo.charAt(0).toUpperCase() + campo.slice(1);
+          }
+        }).join(', ');
+        
+        throw new Error(`Cabeçalho inválido. Faltando: ${faltantesTexto}. Encontrado: ${cabecalhosDetectados || 'nenhum cabeçalho válido'}.`);
+      }
 
       const body = rows.slice(1);
       const baseOrdem = items.reduce((m, it) => Math.max(m, it.ordem || 0), 0);
