@@ -15,7 +15,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Função para criar ícones coloridos por status usando os pins customizados
+// Função para criar ícones coloridos por status usando apenas cores
 const createStatusIcon = (status: ObraStatus): L.DivIcon => {
   const styles = {
     concluida: 'completed',
@@ -31,19 +31,11 @@ const createStatusIcon = (status: ObraStatus): L.DivIcon => {
     paralisada: '#ef4444'     // Vermelho
   };
 
-  // URLs das imagens para cada status
-  const imageUrls = {
-    concluida: '/lovable-uploads/b1b86eb2-3439-4770-9572-77fb9dd247a3.png', // Check verde - obra finalizada
-    em_andamento: '/lovable-uploads/ac3f64d3-9287-488b-acc7-9b6b57a30306.png', // Trabalhador - obra em execução
-    planejada: '/lovable-uploads/1e60d86b-4ca2-4886-89a4-0622c8b88e79.png', // Planejamento - obra planejada
-    paralisada: '/lovable-uploads/2b606e12-c9d1-4e56-8a6b-2ef102b2a25d.png' // Parada/problema - obra parada
-  };
-
   const style = styles[status];
   const color = colors[status];
-  const imageUrl = imageUrls[status];
 
-  return createCustomIcon(color, style as any, imageUrl);
+  // Não passar imageUrl para evitar piscar - usar apenas cores
+  return createCustomIcon(color, style as any);
 };
 
 // Função para formatar valor em moeda brasileira
