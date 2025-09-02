@@ -286,9 +286,12 @@ const pinStyles: Record<MapPinStyle, PinStyleConfig> = {
               filter: brightness(0) invert(1);
             " />
           ` : `
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9,11 12,14 22,4"></polyline>
-            </svg>
+            <div style="
+              width: 6px;
+              height: 6px;
+              background: white;
+              border-radius: 50%;
+            "></div>
           `}
         </div>
       </div>
@@ -335,9 +338,12 @@ const pinStyles: Record<MapPinStyle, PinStyleConfig> = {
               filter: brightness(0) invert(1);
             " />
           ` : `
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-              <path d="M12 6v12l4-4m-4 4l-4-4"/>
-            </svg>
+            <div style="
+              width: 6px;
+              height: 6px;
+              background: white;
+              border-radius: 50%;
+            "></div>
           `}
         </div>
       </div>
