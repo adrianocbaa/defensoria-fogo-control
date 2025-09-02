@@ -1080,75 +1080,38 @@ const criarNovaMedicao = async () => {
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
       if (!rows || rows.length < 2) throw new Error('Planilha vazia');
 
-      // 3) Detectar se primeira linha é cabeçalho ou dados
-      const primeiraLinha = rows[0];
-      let headerRowIndex = 0;
-      let hasHeader = false;
+      // 3) Mapear cabeçalhos
+      const header = rows[0].map(h => normalizeHeader(h));
+      const idx = {
+        item: header.findIndex(h => h && h === 'item'),
+        codigoBanco: header.findIndex(h => h && (h.includes('codigo banco') || h === 'codigo' || h === 'codigobanco')),
+        descricao: header.findIndex(h => h && h === 'descricao'),
+        und: header.findIndex(h => h && (h === 'und' || h === 'unidade')),
+        quant: header.findIndex(h => h && h.startsWith('quant')),
+        valorUnit: header.findIndex(h => h && (h.includes('valor unit') || h.includes('valor unitario'))),
+        valorTotal: header.findIndex(h => h && h.includes('valor total')),
+      };
+
+      // Validar cabeçalhos obrigatórios
+      const camposObrigatorios = ['item', 'codigoBanco', 'descricao', 'und', 'quant', 'valorUnit', 'valorTotal'];
+      const camposEncontrados = Object.entries(idx).filter(([_, index]) => index >= 0).map(([campo, _]) => campo);
+      const camposFaltantes = camposObrigatorios.filter(campo => idx[campo as keyof typeof idx] === -1);
       
-      // Verificar se primeira linha parece ser cabeçalho (contém texto descritivo comum)
-      if (primeiraLinha && primeiraLinha.length > 0) {
-        const primeiroItem = String(primeiraLinha[0] || '').toLowerCase().trim();
-        const segundoItem = String(primeiraLinha[1] || '').toLowerCase().trim();
+      if (camposFaltantes.length > 0) {
+        const cabecalhosDetectados = header.filter(h => h && h.trim()).join(', ');
+        const faltantesTexto = camposFaltantes.map(campo => {
+          switch(campo) {
+            case 'codigoBanco': return 'Código/Código Banco';
+            case 'valorUnit': return 'Valor Unitário com BDI';
+            case 'valorTotal': return 'Valor Total com BDI';
+            default: return campo.charAt(0).toUpperCase() + campo.slice(1);
+          }
+        }).join(', ');
         
-        // Se primeira coluna contém palavras como "item", "código" ou segunda coluna contém "descrição"
-        hasHeader = primeiroItem.includes('item') || primeiroItem.includes('codigo') || 
-                   segundoItem.includes('descricao') || segundoItem.includes('descrição');
-      }
-      
-      let idx;
-      if (hasHeader) {
-        // Mapear cabeçalhos normalmente
-        const header = rows[0].map(h => normalizeHeader(h));
-        idx = {
-          item: header.findIndex(h => h && h === 'item'),
-          codigoBanco: header.findIndex(h => h && (h.includes('codigo banco') || h === 'codigo' || h === 'codigobanco')),
-          descricao: header.findIndex(h => h && h === 'descricao'),
-          und: header.findIndex(h => h && (h === 'und' || h === 'unidade')),
-          quant: header.findIndex(h => h && h.startsWith('quant')),
-          valorUnit: header.findIndex(h => h && (h.includes('valor unit') || h.includes('valor unitario'))),
-          valorTotal: header.findIndex(h => h && h.includes('valor total')),
-        };
-        
-        // Validar cabeçalhos obrigatórios
-        const camposObrigatorios = ['item', 'codigoBanco', 'descricao', 'und', 'quant', 'valorUnit', 'valorTotal'];
-        const camposFaltantes = camposObrigatorios.filter(campo => idx[campo as keyof typeof idx] === -1);
-        
-        if (camposFaltantes.length > 0) {
-          const cabecalhosDetectados = header.filter(h => h && h.trim()).join(', ');
-          const faltantesTexto = camposFaltantes.map(campo => {
-            switch(campo) {
-              case 'codigoBanco': return 'Código/Código Banco';
-              case 'valorUnit': return 'Valor Unitário com BDI';
-              case 'valorTotal': return 'Valor Total com BDI';
-              default: return campo.charAt(0).toUpperCase() + campo.slice(1);
-            }
-          }).join(', ');
-          
-          throw new Error(`Cabeçalho inválido. Faltando: ${faltantesTexto}. Encontrado: ${cabecalhosDetectados || 'nenhum cabeçalho válido'}.`);
-        }
-        
-        headerRowIndex = 1;
-      } else {
-        // Assumir mapeamento por posição: Código, Descrição, Unidade, Quantidade, Valor Unit, Valor Total
-        idx = {
-          item: 0,          // Coluna A - códigos
-          codigoBanco: 0,   // Mesma coluna A para código
-          descricao: 1,     // Coluna B - descrições
-          und: 2,           // Coluna C - unidades
-          quant: 3,         // Coluna D - quantidades
-          valorUnit: 4,     // Coluna E - valor unitário
-          valorTotal: 5,    // Coluna F - valor total
-        };
-        
-        // Verificar se temos pelo menos 6 colunas
-        if (!primeiraLinha || primeiraLinha.length < 6) {
-          throw new Error(`Planilha deve ter pelo menos 6 colunas: Código, Descrição, Unidade, Quantidade, Valor Unitário, Valor Total. Encontradas ${primeiraLinha ? primeiraLinha.length : 0} colunas.`);
-        }
-        
-        headerRowIndex = 0;
+        throw new Error(`Cabeçalho inválido. Faltando: ${faltantesTexto}. Encontrado: ${cabecalhosDetectados || 'nenhum cabeçalho válido'}.`);
       }
 
-      const body = rows.slice(headerRowIndex);
+      const body = rows.slice(1);
       const baseOrdem = items.reduce((m, it) => Math.max(m, it.ordem || 0), 0);
 
       const existentes = new Set(items.map(it => (it.item || '').trim()));
