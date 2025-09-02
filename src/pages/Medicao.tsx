@@ -875,12 +875,11 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         
         if (deleteItemsError) {
           console.error('Erro ao excluir itens extracontratuais:', deleteItemsError);
+          throw deleteItemsError;
         }
         
-        // Remover itens extracontratuais do estado local
-        setItems(prev => prev.filter(item => 
-          !(item.importado && item.nivel > 0 && item.ordem && item.ordem >= ad.id * 1000)
-        ));
+        // Recarregar os itens da obra do banco para garantir consistência
+        await fetchMedicoesSalvas();
       }
       
       setAditivos(prev => prev.filter(a => a.id !== aditivoLocalId));
