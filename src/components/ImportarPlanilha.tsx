@@ -70,12 +70,19 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
       // Converter para JSON
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
       
-      // Encontrar a linha de cabeçalho (procurar por "Item" na primeira coluna)
+      // Encontrar a linha de cabeçalho (procurar por "Item" em qualquer coluna)
       let headerRowIndex = -1
       for (let i = 0; i < jsonData.length; i++) {
-        if (jsonData[i][0] && jsonData[i][0].toString().toLowerCase().includes('item')) {
-          headerRowIndex = i
-          break
+        const row = jsonData[i]
+        if (row && row.length > 0) {
+          // Procurar por "Item" em qualquer coluna da linha
+          for (let j = 0; j < row.length; j++) {
+            if (row[j] && row[j].toString().toLowerCase().trim() === 'item') {
+              headerRowIndex = i
+              break
+            }
+          }
+          if (headerRowIndex !== -1) break
         }
       }
 
@@ -85,31 +92,43 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
 
       // Processar os dados a partir da linha seguinte ao cabeçalho
       const dadosProcessados: Item[] = []
+      
       for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
         const row = jsonData[i]
         
-        // Pular linhas vazias
-        if (!row || row.length === 0 || !row[0]) continue
+        // Pular linhas completamente vazias
+        if (!row || row.length === 0) continue
+        
+        // Verificar se há pelo menos um valor não vazio na linha
+        const hasContent = row.some(cell => cell !== null && cell !== undefined && cell.toString().trim() !== '')
+        if (!hasContent) continue
+        
+        // Log para debug
+        console.log(`Processando linha ${i}:`, row)
         
         const item: Item = {
           id: Date.now() + i, // ID único
-          item: row[0] ? row[0].toString() : '',
-          codigo: row[1] ? row[1].toString() : '',
-          banco: row[2] ? row[2].toString() : '',
-          descricao: row[3] ? row[3].toString() : '',
-          und: row[4] ? row[4].toString() : '',
+          item: row[0] ? row[0].toString().trim() : '',
+          codigo: row[1] ? row[1].toString().trim() : '',
+          banco: row[2] ? row[2].toString().trim() : '',
+          descricao: row[3] ? row[3].toString().trim() : '',
+          und: row[4] ? row[4].toString().trim() : '',
           quantidade: parseFloat(row[5]) || 0,
           valorUnitario: parseFloat(row[6]) || 0,
-          valorTotal: parseFloat(row[8]) || parseFloat(row[7]) || 0, // Usar coluna 9 (Total com BDI e Desconto) ou coluna 8 como fallback
+          valorTotal: parseFloat(row[7]) || 0, // Usar a coluna correta para valor total
           aditivo: { qnt: 0, percentual: 0, total: 0 },
-          totalContrato: parseFloat(row[8]) || parseFloat(row[7]) || 0,
+          totalContrato: parseFloat(row[7]) || 0,
           importado: true,
           nivel: 3,
           ehAdministracaoLocal: false,
-          ordem: i - headerRowIndex // Preservar ordem original da planilha
+          ordem: dadosProcessados.length + 1 // Sequencial baseado nos itens processados
         }
         
-        dadosProcessados.push(item)
+        // Só adicionar se tiver pelo menos o número do item
+        if (item.item) {
+          dadosProcessados.push(item)
+          console.log(`Item adicionado:`, item)
+        }
       }
 
       if (dadosProcessados.length === 0) {
