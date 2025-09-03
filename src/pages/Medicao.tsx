@@ -1389,11 +1389,24 @@ const criarNovaMedicao = async () => {
       );
 
       toast.success('Medição publicada.');
+      // Calcular valores financeiros corretos
+      const valorTotalOriginalCorreto = items
+        .filter(item => ehItemPrimeiroNivel(item.item))
+        .reduce((total, item) => total + item.valorTotal, 0);
+      
+      const totalAditivoCorreto = aditivos
+        .filter(a => a.bloqueada)
+        .reduce((adSum, a) => {
+          return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
+        }, 0);
+      
+      const totalContratoCorreto = valorTotalOriginalCorreto + totalAditivoCorreto;
+
       const resumoFinanceiro = {
         obraId: obra.id,
-        valorTotalOriginal: calcularValorTotalOriginal,
-        totalAditivo: totalAditivoBloqueado,
-        totalContrato: totalContratoFinal,
+        valorTotalOriginal: valorTotalOriginalCorreto,
+        totalAditivo: totalAditivoCorreto,
+        totalContrato: totalContratoCorreto,
         servicosExecutados: totalServicosExecutados,
         valorAcumulado: valorAcumuladoTotal,
       };
