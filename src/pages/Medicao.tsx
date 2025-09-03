@@ -1810,30 +1810,7 @@ const criarNovaMedicao = async () => {
               <div className="text-2xl font-bold text-blue-600">{formatCurrency(resumoFinanceiro.totalGeralAditivo)}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Total de Serviços Acrescidos</div>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(resumoFinanceiro.totalServicosAcrescidos)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Total de Serviços Decrescidos</div>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(resumoFinanceiro.totalServicosDecrescidos)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Total dos Serviços Extracontratuais</div>
-              <div className="text-2xl font-bold text-purple-600">{formatCurrency(resumoFinanceiro.totalServicosExtracontratuais)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Total dos Serviços Acrescidos + Extracontratuais</div>
-              <div className="text-2xl font-bold text-indigo-600">{formatCurrency(resumoFinanceiro.totalAcrescidosEExtracontratuais)}</div>
-            </CardContent>
-          </Card>
+          {/* Cards ocultos conforme solicitação do usuário */}
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Valor Contrato Pós Aditivo</div>
