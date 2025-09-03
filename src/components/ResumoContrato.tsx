@@ -47,18 +47,6 @@ export function ResumoContrato({
   ehItemPrimeiroNivel 
 }: ResumoContratoProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [expandedAditivos, setExpandedAditivos] = useState<Set<number>>(new Set());
-  const toggleAditivo = (aditivoId: number) => {
-    setExpandedAditivos(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(aditivoId)) {
-        newSet.delete(aditivoId);
-      } else {
-        newSet.add(aditivoId);
-      }
-      return newSet;
-    });
-  };
   
   // Calcular dados do resumo conforme especificação
   const calcularResumo = (): { linhas: ResumoAditivoData[]; valorFinalContrato: number } => {
@@ -183,118 +171,107 @@ export function ResumoContrato({
               </div>
             ) : (
               linhas.map((linha, index) => (
-                <Collapsible key={linha.aditivo.id} open={expandedAditivos.has(linha.aditivo.id)} onOpenChange={() => toggleAditivo(linha.aditivo.id)}>
-                  <div className="border-b border-gray-200">
-                    
-                    {/* Cabeçalho do Aditivo com botão collapse */}
-                    <CollapsibleTrigger asChild>
-                      <div className="grid grid-cols-4 bg-orange-50 border-b border-orange-200 cursor-pointer hover:bg-orange-100 transition-colors">
-                        <div className="col-span-1 p-3 font-bold text-gray-800 flex items-center gap-2">
-                          {linha.aditivo.nome}
-                          {expandedAditivos.has(linha.aditivo.id) ? 
-                            <ChevronUp className="h-3 w-3" /> : 
-                            <ChevronDown className="h-3 w-3" />
-                          }
-                        </div>
-                        <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                          PERCENTUAL DO ADITIVO
-                        </div>
-                        <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                          PERCENTUAL ACUMULADO
-                        </div>
-                        <div className="col-span-1 p-3"></div>
-                      </div>
-                    </CollapsibleTrigger>
-
-                    {/* TOTAL GERAL DO ADITIVO - sempre visível */}
-                    <div className="grid grid-cols-4 border-b border-gray-200 bg-orange-50">
-                      <div className="col-span-1 p-3 font-semibold text-orange-600">
-                        TOTAL GERAL DO ADITIVO
-                      </div>
-                      <div className="col-span-1 p-3 font-bold text-right text-orange-600">
-                        {formatCurrency(linha.totalGeral)}
-                      </div>
-                      <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                        {(linha.percAditivo * 100).toFixed(2)}%
-                      </div>
-                      <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                        {(linha.percAcumulado * 100).toFixed(2)}%
-                      </div>
+                <div key={linha.aditivo.id} className="border-b border-gray-200">
+                  
+                  {/* Cabeçalho do Aditivo */}
+                  <div className="grid grid-cols-4 bg-orange-50 border-b border-orange-200">
+                    <div className="col-span-1 p-3 font-bold text-gray-800">
+                      {linha.aditivo.nome}
                     </div>
-
-                    {/* Detalhes expansíveis */}
-                    <CollapsibleContent>
-                      {/* TOTAL DE SERVIÇOS ACRESCIDOS */}
-                      <div className="grid grid-cols-4 border-b border-gray-200">
-                        <div className="col-span-1 p-3 font-semibold text-blue-800">
-                          TOTAL DE SERVIÇOS ACRESCIDOS
-                        </div>
-                        <div className="col-span-1 p-3 font-bold text-right text-blue-800">
-                          {formatCurrency(linha.acrescidos)}
-                        </div>
-                        <div className="col-span-1 p-3 text-center text-blue-600">
-                          {valorTotalOriginal ? ((linha.acrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
-                        </div>
-                        <div className="col-span-1 p-3"></div>
-                      </div>
-
-                      {/* TOTAL DE SERVIÇOS DECRESCIDOS */}
-                      <div className="grid grid-cols-4 border-b border-gray-200">
-                        <div className="col-span-1 p-3 font-semibold text-red-600">
-                          TOTAL DE SERVIÇOS DECRESCIDOS
-                        </div>
-                        <div className="col-span-1 p-3 font-bold text-right text-red-600">
-                          {formatCurrency(linha.decrescidos)}
-                        </div>
-                        <div className="col-span-1 p-3 text-center text-red-500">
-                          {valorTotalOriginal ? ((linha.decrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
-                        </div>
-                        <div className="col-span-1 p-3"></div>
-                      </div>
-
-                      {/* TOTAL DOS SERVIÇOS EXTRACONTRATUAIS */}
-                      <div className="grid grid-cols-4 border-b border-gray-200">
-                        <div className="col-span-1 p-3 font-semibold text-green-600">
-                          TOTAL DOS SERVIÇOS EXTRACONTRATUAIS
-                        </div>
-                        <div className="col-span-1 p-3 font-bold text-right text-green-600">
-                          {formatCurrency(linha.extracontratuais)}
-                        </div>
-                        <div className="col-span-1 p-3 text-center text-green-500">
-                          {valorTotalOriginal ? ((linha.extracontratuais / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
-                        </div>
-                        <div className="col-span-1 p-3"></div>
-                      </div>
-
-                      {/* TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS */}
-                      <div className="grid grid-cols-4 border-b border-gray-200">
-                        <div className="col-span-1 p-3 font-semibold text-indigo-600">
-                          TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS
-                        </div>
-                        <div className="col-span-1 p-3 font-bold text-right text-indigo-600">
-                          {formatCurrency(linha.acrescMaisExtra)}
-                        </div>
-                        <div className="col-span-1 p-3 text-center text-indigo-500">
-                          {valorTotalOriginal ? ((linha.acrescMaisExtra / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
-                        </div>
-                        <div className="col-span-1 p-3"></div>
-                      </div>
-                    </CollapsibleContent>
-
-                    {/* VALOR CONTRATO PÓS ADITIVO - sempre visível */}
-                    <div className="grid grid-cols-4 border-b-2 border-green-300 bg-green-50">
-                      <div className="col-span-1 p-3 font-bold text-green-700">
-                        VALOR CONTRATO PÓS ADITIVO
-                      </div>
-                      <div className="col-span-1 p-3 font-bold text-right text-green-700 text-lg">
-                        {formatCurrency(linha.valorPosAditivo)}
-                      </div>
-                      <div className="col-span-1 p-3"></div>
-                      <div className="col-span-1 p-3"></div>
+                    <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
+                      PERCENTUAL DO ADITIVO
                     </div>
-
+                    <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
+                      PERCENTUAL ACUMULADO
+                    </div>
+                    <div className="col-span-1 p-3"></div>
                   </div>
-                </Collapsible>
+
+                  {/* TOTAL GERAL DO ADITIVO */}
+                  <div className="grid grid-cols-4 border-b border-gray-200 bg-orange-50">
+                    <div className="col-span-1 p-3 font-semibold text-orange-600">
+                      TOTAL GERAL DO ADITIVO
+                    </div>
+                    <div className="col-span-1 p-3 font-bold text-right text-orange-600">
+                      {formatCurrency(linha.totalGeral)}
+                    </div>
+                    <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
+                      {(linha.percAditivo * 100).toFixed(2)}%
+                    </div>
+                    <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
+                      {(linha.percAcumulado * 100).toFixed(2)}%
+                    </div>
+                  </div>
+
+                  {/* TOTAL DE SERVIÇOS ACRESCIDOS */}
+                  <div className="grid grid-cols-4 border-b border-gray-200">
+                    <div className="col-span-1 p-3 font-semibold text-blue-800">
+                      TOTAL DE SERVIÇOS ACRESCIDOS
+                    </div>
+                    <div className="col-span-1 p-3 font-bold text-right text-blue-800">
+                      {formatCurrency(linha.acrescidos)}
+                    </div>
+                    <div className="col-span-1 p-3 text-center text-blue-600">
+                      {valorTotalOriginal ? ((linha.acrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                    </div>
+                    <div className="col-span-1 p-3"></div>
+                  </div>
+
+                  {/* TOTAL DE SERVIÇOS DECRESCIDOS */}
+                  <div className="grid grid-cols-4 border-b border-gray-200">
+                    <div className="col-span-1 p-3 font-semibold text-red-600">
+                      TOTAL DE SERVIÇOS DECRESCIDOS
+                    </div>
+                    <div className="col-span-1 p-3 font-bold text-right text-red-600">
+                      {formatCurrency(linha.decrescidos)}
+                    </div>
+                    <div className="col-span-1 p-3 text-center text-red-500">
+                      {valorTotalOriginal ? ((linha.decrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                    </div>
+                    <div className="col-span-1 p-3"></div>
+                  </div>
+
+                  {/* TOTAL DOS SERVIÇOS EXTRACONTRATUAIS */}
+                  <div className="grid grid-cols-4 border-b border-gray-200">
+                    <div className="col-span-1 p-3 font-semibold text-green-600">
+                      TOTAL DOS SERVIÇOS EXTRACONTRATUAIS
+                    </div>
+                    <div className="col-span-1 p-3 font-bold text-right text-green-600">
+                      {formatCurrency(linha.extracontratuais)}
+                    </div>
+                    <div className="col-span-1 p-3 text-center text-green-500">
+                      {valorTotalOriginal ? ((linha.extracontratuais / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                    </div>
+                    <div className="col-span-1 p-3"></div>
+                  </div>
+
+                  {/* TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS */}
+                  <div className="grid grid-cols-4 border-b border-gray-200">
+                    <div className="col-span-1 p-3 font-semibold text-indigo-600">
+                      TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS
+                    </div>
+                    <div className="col-span-1 p-3 font-bold text-right text-indigo-600">
+                      {formatCurrency(linha.acrescMaisExtra)}
+                    </div>
+                    <div className="col-span-1 p-3 text-center text-indigo-500">
+                      {valorTotalOriginal ? ((linha.acrescMaisExtra / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                    </div>
+                    <div className="col-span-1 p-3"></div>
+                  </div>
+
+                  {/* VALOR CONTRATO PÓS ADITIVO */}
+                  <div className="grid grid-cols-4 border-b-2 border-green-300 bg-green-50">
+                    <div className="col-span-1 p-3 font-bold text-green-700">
+                      VALOR CONTRATO PÓS ADITIVO
+                    </div>
+                    <div className="col-span-1 p-3 font-bold text-right text-green-700 text-lg">
+                      {formatCurrency(linha.valorPosAditivo)}
+                    </div>
+                    <div className="col-span-1 p-3"></div>
+                    <div className="col-span-1 p-3"></div>
+                  </div>
+
+                </div>
               ))
             )}
 
