@@ -604,38 +604,9 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         valorAcumulado += Object.values(dados).reduce((s, d: any) => s + (d.total || 0), 0);
       }
     }
-    // Somar também os aditivos medidos até a medição atual
-    // Só soma se o aditivo foi efetivamente medido em alguma medição
-    let valorAditivosAcumulado = 0;
-    const aditivosPublicados = aditivos.filter(a => a.bloqueada);
-    
-    aditivosPublicados.forEach(a => {
-      // Verifica se o aditivo foi medido em alguma medição até a atual
-      let aditivoFoiMedido = false;
-      
-      const medicoesParaVerificar = medicoes.filter(m => m.bloqueada && m.id <= medicaoAtual);
-      
-      for (const medicao of medicoesParaVerificar) {
-        const aditivoNaMedicao = items.some(item => {
-          const dadoAditivo = a.dados[item.id];
-          const dadoMedicao = medicao.dados[item.id];
-          // Se há dados do aditivo e dados da medição para o mesmo item
-          return dadoAditivo && dadoMedicao && dadoAditivo.total !== 0 && dadoMedicao.total !== 0;
-        });
-        
-        if (aditivoNaMedicao) {
-          aditivoFoiMedido = true;
-          break;
-        }
-      }
-      
-      // Só soma se foi medido
-      if (aditivoFoiMedido) {
-        valorAditivosAcumulado += items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
-      }
-    });
-    
-    valorAcumulado += valorAditivosAcumulado;
+    // Não somar aditivos automaticamente ao valor acumulado
+    // Os aditivos só devem ser considerados quando efetivamente medidos/executados
+    // O valor acumulado representa apenas os serviços já executados
 
     const resumoFinanceiro = {
       obraId: obra.id,
@@ -1681,31 +1652,8 @@ const criarNovaMedicao = async () => {
         totalAcumulado += dadosHierarquicos[itemId].total || 0;
       }
     });
-    // Somar também aditivos medidos por item até a medição atual
-    // Só soma se o aditivo foi efetivamente medido em alguma medição
-    const aditivosPublicados = aditivos.filter(a => a.bloqueada);
-    
-    aditivosPublicados.forEach(a => {
-      // Verifica se o aditivo foi medido em alguma medição até a atual
-      let aditivoFoiMedido = false;
-      
-      const medicoesParaVerificar = medicoes.filter(m => m.bloqueada && m.id <= medicaoAtual);
-      
-      for (const medicao of medicoesParaVerificar) {
-        const dadoAditivo = a.dados[itemId];
-        const dadoMedicao = medicao.dados[itemId];
-        // Se há dados do aditivo e dados da medição para o mesmo item
-        if (dadoAditivo && dadoMedicao && dadoAditivo.total !== 0 && dadoMedicao.total !== 0) {
-          aditivoFoiMedido = true;
-          break;
-        }
-      }
-      
-      // Só soma se foi medido
-      if (aditivoFoiMedido) {
-        totalAcumulado += a.dados[itemId]?.total || 0;
-      }
-    });
+    // Não somar aditivos automaticamente ao valor acumulado por item
+    // Os aditivos só devem ser considerados quando efetivamente medidos/executados
     return totalAcumulado;
   };
 
@@ -1805,37 +1753,8 @@ const criarNovaMedicao = async () => {
       }
     }
 
-    // Somar também os aditivos medidos até a medição atual
-    // Só soma se o aditivo foi efetivamente medido em alguma medição
-    const aditivosPublicados = aditivos.filter(a => a.bloqueada);
-    
-    aditivosPublicados.forEach(a => {
-      // Verifica se o aditivo foi medido em alguma medição até a atual
-      let aditivoFoiMedido = false;
-      
-      const medicoesParaVerificar = medicoes.filter(m => m.bloqueada && m.id <= medicaoAtual);
-      
-      for (const medicao of medicoesParaVerificar) {
-        const aditivoNaMedicao = items.some(item => {
-          const dadoAditivo = a.dados[item.id];
-          const dadoMedicao = medicao.dados[item.id];
-          // Se há dados do aditivo e dados da medição para o mesmo item
-          return dadoAditivo && dadoMedicao && dadoAditivo.total !== 0 && dadoMedicao.total !== 0;
-        });
-        
-        if (aditivoNaMedicao) {
-          aditivoFoiMedido = true;
-          break;
-        }
-      }
-      
-      // Só soma se foi medido
-      if (aditivoFoiMedido) {
-        items.forEach(item => {
-          valorAcumulado += a.dados[item.id]?.total || 0;
-        });
-      }
-    });
+    // Não somar aditivos automaticamente ao valor acumulado total
+    // Os aditivos só devem ser considerados quando efetivamente medidos/executados
     
     return valorAcumulado;
   };
