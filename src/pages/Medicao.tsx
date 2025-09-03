@@ -50,6 +50,7 @@ interface Item {
   nivel: number;
   ehAdministracaoLocal: boolean;
   ordem: number;
+  origem?: string;
 }
 
 interface Medicao {
@@ -184,7 +185,8 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
             importado: true,
             nivel: item.nivel,
             ehAdministracaoLocal: item.eh_administracao_local,
-            ordem: item.ordem || 0
+            ordem: item.ordem || 0,
+            origem: item.origem || 'contratual'
           } as Item;
         });
 
@@ -378,10 +380,10 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     return (childrenByCode.get(codigo.trim())?.length ?? 0) === 0;
   };
 
-  // Função para calcular Valor Total Original (soma apenas itens de primeiro nível)
+  // Função para calcular Valor Total Original (soma apenas itens de primeiro nível contratuais)
   const calcularValorTotalOriginal = useMemo(() => {
     return items
-      .filter(item => ehItemPrimeiroNivel(item.item))
+      .filter(item => ehItemPrimeiroNivel(item.item) && item.origem !== 'extracontratual')
       .reduce((total, item) => total + item.valorTotal, 0);
   }, [items]);
 
@@ -392,13 +394,19 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       .reduce((total, item) => total + calcularTotalContratoComAditivos(item), 0);
   }, [items, aditivos, medicaoAtual]);
 
-  // Totais finais (para cards/resumo): somam somente aditivos publicados
+  // Totais finais (para cards/resumo): somam aditivos publicados + itens extracontratuais
   const totalAditivoBloqueado = useMemo(() => {
-    return aditivos
+    const totalAditivos = aditivos
       .filter(a => a.bloqueada)
       .reduce((adSum, a) => {
         return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
       }, 0);
+    
+    const totalExtracontratuais = items
+      .filter(item => ehItemPrimeiroNivel(item.item) && item.origem === 'extracontratual')
+      .reduce((total, item) => total + item.valorTotal, 0);
+      
+    return totalAditivos + totalExtracontratuais;
   }, [aditivos, items]);
 
   const totalContratoFinal = useMemo(() => calcularValorTotalOriginal + totalAditivoBloqueado, [calcularValorTotalOriginal, totalAditivoBloqueado]);
@@ -1391,14 +1399,16 @@ const criarNovaMedicao = async () => {
       toast.success('Medição publicada.');
       // Calcular valores financeiros corretos
       const valorTotalOriginalCorreto = items
-        .filter(item => ehItemPrimeiroNivel(item.item))
+        .filter(item => ehItemPrimeiroNivel(item.item) && item.origem !== 'extracontratual')
         .reduce((total, item) => total + item.valorTotal, 0);
       
       const totalAditivoCorreto = aditivos
         .filter(a => a.bloqueada)
         .reduce((adSum, a) => {
           return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
-        }, 0);
+        }, 0) + items
+        .filter(item => ehItemPrimeiroNivel(item.item) && item.origem === 'extracontratual')
+        .reduce((total, item) => total + item.valorTotal, 0);
       
       const totalContratoCorreto = valorTotalOriginalCorreto + totalAditivoCorreto;
 
@@ -1526,7 +1536,8 @@ const criarNovaMedicao = async () => {
         total_contrato: item.totalContrato,
         nivel: item.nivel,
         eh_administracao_local: item.ehAdministracaoLocal,
-        ordem: item.ordem
+        ordem: item.ordem,
+        origem: 'contratual'
       }));
 
       // Primeiro, deletar items existentes da obra (se houver)
