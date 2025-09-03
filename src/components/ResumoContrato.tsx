@@ -175,6 +175,7 @@ export function ResumoContrato({
                   
                   {/* Cabeçalho do Aditivo */}
                   <div className="grid grid-cols-4 bg-orange-50 border-b border-orange-200">
+                    <div className="col-span-1 p-3"></div>
                     <div className="col-span-1 p-3 font-bold text-gray-800">
                       {linha.aditivo.nome}
                     </div>
@@ -184,7 +185,6 @@ export function ResumoContrato({
                     <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
                       PERCENTUAL ACUMULADO
                     </div>
-                    <div className="col-span-1 p-3"></div>
                   </div>
 
                   {/* TOTAL GERAL DO ADITIVO */}
