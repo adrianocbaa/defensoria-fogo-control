@@ -1149,20 +1149,20 @@ const criarNovaMedicao = async () => {
         
         headerRowIndex = 1;
       } else {
-        // Assumir mapeamento por posição: Código, Descrição, Unidade, Quantidade, Valor Unit, Valor Total
+        // Assumir mapeamento por posição: Item, Código, Descrição, Unidade, Quantidade, Valor Unit, Valor Total
         idx = {
-          item: 0,          // Coluna A - códigos
-          codigoBanco: 0,   // Mesma coluna A para código
-          descricao: 1,     // Coluna B - descrições
-          und: 2,           // Coluna C - unidades
-          quant: 3,         // Coluna D - quantidades
-          valorUnit: 4,     // Coluna E - valor unitário
-          valorTotal: 5,    // Coluna F - valor total
+          item: 0,          // Coluna A - item
+          codigoBanco: 1,   // Coluna B - código banco
+          descricao: 2,     // Coluna C - descrições
+          und: 3,           // Coluna D - unidades
+          quant: 4,         // Coluna E - quantidades
+          valorUnit: 5,     // Coluna F - valor unitário
+          valorTotal: 6,    // Coluna G - valor total
         };
         
-        // Verificar se temos pelo menos 6 colunas
-        if (!primeiraLinha || primeiraLinha.length < 6) {
-          throw new Error(`Planilha deve ter pelo menos 6 colunas: Código, Descrição, Unidade, Quantidade, Valor Unitário, Valor Total. Encontradas ${primeiraLinha ? primeiraLinha.length : 0} colunas.`);
+        // Verificar se temos pelo menos 7 colunas
+        if (!primeiraLinha || primeiraLinha.length < 7) {
+          throw new Error(`Planilha deve ter pelo menos 7 colunas: Item, Código, Descrição, Unidade, Quantidade, Valor Unitário, Valor Total. Encontradas ${primeiraLinha ? primeiraLinha.length : 0} colunas.`);
         }
         
         headerRowIndex = 0;
@@ -1185,28 +1185,36 @@ const criarNovaMedicao = async () => {
         const valorUnit = parseNumber(idx.valorUnit >= 0 ? r[idx.valorUnit] : 0);
         const valorTotalPlanilha = parseNumber(idx.valorTotal >= 0 ? r[idx.valorTotal] : 0);
 
-        // Ignorar linhas completamente vazias (sem código, descrição, unidade, quantidade e valores)
-        const linhaVazia = !code && !descricao && !und && !codigoBanco && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0;
-        if (linhaVazia) return;
+        // Ignorar linhas completamente vazias
+        const hasAnyContent = code || descricao || und || codigoBanco || quant > 0 || valorUnit > 0 || valorTotalPlanilha > 0;
+        if (!hasAnyContent) {
+          console.log(`Linha ${i + 1} ignorada: vazia`);
+          return;
+        }
 
-        // Ignorar linhas que são apenas cabeçalhos descritivos (ex: "ITENS EXTRACONTRATUAIS")
-        const ehCabecalhoDescritivo = !codigoBanco && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0 && 
-                                      descricao && (descricao.includes('EXTRACONTRATUAL') || descricao.includes('SINAPI'));
-        if (ehCabecalhoDescritivo) return;
+        // Ignorar linhas que são apenas cabeçalhos descritivos
+        const ehCabecalhoDescritivo = !codigoBanco && !code && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0 && 
+                                      descricao && (descricao.toUpperCase().includes('EXTRACONTRATUAL') || descricao.toUpperCase().includes('SINAPI') || descricao.toUpperCase().includes('ITEM'));
+        if (ehCabecalhoDescritivo) {
+          console.log(`Linha ${i + 1} ignorada: cabeçalho descritivo`);
+          return;
+        }
 
-        // Exigir código para identificar o item (não gerar códigos artificiais)
-        if (!code) return;
+        // Para itens extracontratuais, exigir pelo menos o código do item
+        if (!code) {
+          console.log(`Linha ${i + 1} ignorada: sem código do item`);
+          return;
+        }
 
         const nivel = code.split('.').length;
-
-        // Incluir cabeçalhos de nível 1 mesmo com quantidade vazia/zero; demais níveis exigem quantidade > 0
-        if (quant <= 0 && nivel !== 1) return;
 
         if (existentes.has(code) || vistosNoArquivo.has(code)) {
           duplicados.push(code);
           return;
         }
         vistosNoArquivo.add(code);
+
+        console.log(`Linha ${i + 1} processada: item=${code}, descricao=${descricao}, quant=${quant}`);
 
         // Valor total importado não entra no Valor Total Original
         const valorTotalOriginal = 0;
@@ -2041,13 +2049,13 @@ const criarNovaMedicao = async () => {
                     <col style={{ width: '80px' }} />
                     <col style={{ width: '90px' }} />
                     <col style={{ width: '120px' }} />
-                    {mostrarAditivos && aditivos.map((ad) => (
-                      <React.Fragment key={`col-${ad.id}`}>
-                        <col style={{ width: '70px' }} />
-                        <col style={{ width: '50px' }} />
-                        <col style={{ width: '80px' }} />
-                      </React.Fragment>
-                    ))}
+                     {mostrarAditivos && aditivos.map((ad) => (
+                       <React.Fragment key={`col-${ad.id}`}>
+                         <col style={{ width: '70px' }} />
+                         <col style={{ width: '50px' }} />
+                         <col style={{ width: '80px' }} />
+                       </React.Fragment>
+                     ))}
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '70px' }} />
                     <col style={{ width: '50px' }} />
@@ -2066,13 +2074,13 @@ const criarNovaMedicao = async () => {
                       <TableHead className="w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
                       <TableHead className="w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
                       <TableHead className="w-[120px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
-                      {mostrarAditivos && aditivos.map(aditivo => (
-                        <React.Fragment key={`header-${aditivo.id}`}>
-                          <TableHead className="w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT {aditivo.nome}</TableHead>
-                          <TableHead className="w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">% {aditivo.nome}</TableHead>
-                          <TableHead className="w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL {aditivo.nome}</TableHead>
-                        </React.Fragment>
-                      ))}
+                       {mostrarAditivos && aditivos.map(aditivo => (
+                         <React.Fragment key={`header-${aditivo.id}`}>
+                           <TableHead className="w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT {aditivo.nome}</TableHead>
+                           <TableHead className="w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">% {aditivo.nome}</TableHead>
+                           <TableHead className="w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL {aditivo.nome}</TableHead>
+                         </React.Fragment>
+                       ))}
                       <TableHead className="w-[120px] bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
                       <TableHead className="w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
                       <TableHead className="w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
@@ -2150,49 +2158,49 @@ const criarNovaMedicao = async () => {
                               R$ {item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                           </TableCell>
-                          {mostrarAditivos && aditivos.map(aditivo => {
-                            const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-                            return (
-                              <React.Fragment key={`aditivo-${aditivo.id}-${item.id}`}>
-                                <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                                  <Input
-                                    key={`adit-${aditivo.id}-${item.id}`}
-                                    type="number"
-                                    defaultValue={aditivoData.qnt || ''}
-                                    onChange={(e) => onChangeAditivoDebounced(item.id, aditivo.id, 'qnt', e.target.value)}
-                                    onBlur={(e) => {
-                                      const key = `${aditivo.id}:${item.id}:qnt`;
-                                      const prev = debouncersAditivoRef.current.get(key);
-                                      if (prev) {
-                                        window.clearTimeout(prev);
-                                        debouncersAditivoRef.current.delete(key);
-                                      }
-                                      atualizarAditivo(item.id, aditivo.id, 'qnt', e.target.value);
-                                    }}
-                                    className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
-                                    step="0.01"
-                                    min="0"
-                                    disabled={aditivo.bloqueada && !isAdmin}
-                                  />
-                                </TableCell>
-                                <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                                  <div className="text-center font-mono text-xs px-1">
-                                    {aditivoData.percentual.toFixed(2)}%
-                                  </div>
-                                </TableCell>
-                                <TableCell className="bg-blue-100 border border-blue-300 p-1">
-                                  <div className="text-right font-mono text-xs px-1">
-                                    {(() => {
-                                      const totalAditivoExibido = ehItemFolha(item.item)
-                                        ? aditivoData.total
-                                        : descendantIds.reduce((sum, id) => sum + ((aditivo.dados[id]?.total) || 0), 0);
-                                      return `R$ ${totalAditivoExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                                    })()}
-                                  </div>
-                                </TableCell>
-                              </React.Fragment>
-                            );
-                          })}
+                           {mostrarAditivos && aditivos.map(aditivo => {
+                             const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+                             return (
+                               <React.Fragment key={`aditivo-${aditivo.id}-${item.id}`}>
+                                 <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                   <Input
+                                     key={`adit-${aditivo.id}-${item.id}`}
+                                     type="number"
+                                     defaultValue={aditivoData.qnt || ''}
+                                     onChange={(e) => onChangeAditivoDebounced(item.id, aditivo.id, 'qnt', e.target.value)}
+                                     onBlur={(e) => {
+                                       const key = `${aditivo.id}:${item.id}:qnt`;
+                                       const prev = debouncersAditivoRef.current.get(key);
+                                       if (prev) {
+                                         window.clearTimeout(prev);
+                                         debouncersAditivoRef.current.delete(key);
+                                       }
+                                       atualizarAditivo(item.id, aditivo.id, 'qnt', e.target.value);
+                                     }}
+                                     className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
+                                     step="0.01"
+                                     min="0"
+                                     disabled={aditivo.bloqueada && !isAdmin}
+                                   />
+                                 </TableCell>
+                                 <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                   <div className="text-center font-mono text-xs px-1">
+                                     {aditivoData.percentual.toFixed(2)}%
+                                   </div>
+                                 </TableCell>
+                                 <TableCell className="bg-blue-100 border border-blue-300 p-1">
+                                   <div className="text-right font-mono text-xs px-1">
+                                     {(() => {
+                                       const totalAditivoExibido = ehItemFolha(item.item)
+                                         ? aditivoData.total
+                                         : descendantIds.reduce((sum, id) => sum + ((aditivo.dados[id]?.total) || 0), 0);
+                                       return `R$ ${totalAditivoExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                     })()}
+                                   </div>
+                                 </TableCell>
+                               </React.Fragment>
+                             );
+                           })}
                           <TableCell className="bg-green-100 border border-green-300 p-1">
                             <div className="text-right font-mono text-xs px-1 font-bold">
                               {(() => {
