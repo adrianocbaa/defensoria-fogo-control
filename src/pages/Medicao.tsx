@@ -405,6 +405,54 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
   const totalContratoFinal = useMemo(() => calcularValorTotalOriginal + totalAditivoBloqueado, [calcularValorTotalOriginal, totalAditivoBloqueado]);
 
+  // Cálculos detalhados para o resumo financeiro
+  const resumoFinanceiro = useMemo(() => {
+    // TOTAL DE SERVIÇOS ACRESCIDOS = soma dos valores positivos de itens contratuais no aditivo
+    const totalServicosAcrescidos = aditivos
+      .filter(a => a.bloqueada)
+      .reduce((total, a) => {
+        return total + items
+          .filter(item => item.origem === 'contratual')
+          .reduce((itemSum, item) => {
+            const valorAditivo = a.dados[item.id]?.total || 0;
+            return itemSum + (valorAditivo > 0 ? valorAditivo : 0);
+          }, 0);
+      }, 0);
+
+    // TOTAL DE SERVIÇOS DECRESCIDOS = soma dos valores negativos no aditivo
+    const totalServicosDecrescidos = Math.abs(aditivos
+      .filter(a => a.bloqueada)
+      .reduce((total, a) => {
+        return total + items
+          .reduce((itemSum, item) => {
+            const valorAditivo = a.dados[item.id]?.total || 0;
+            return itemSum + (valorAditivo < 0 ? valorAditivo : 0);
+          }, 0);
+      }, 0));
+
+    // TOTAL DOS SERVIÇOS EXTRACONTRATUAIS = valor total dos itens extracontratuais
+    const totalServicosExtracontratuais = aditivos
+      .filter(a => a.bloqueada)
+      .reduce((total, a) => {
+        return total + items
+          .filter(item => item.origem === 'extracontratual')
+          .reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
+      }, 0);
+
+    // TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS
+    const totalAcrescidosEExtracontratuais = totalServicosAcrescidos + totalServicosExtracontratuais;
+
+    return {
+      valorInicialContrato: calcularValorTotalOriginal,
+      totalGeralAditivo: totalAditivoBloqueado,
+      totalServicosAcrescidos,
+      totalServicosDecrescidos,
+      totalServicosExtracontratuais,
+      totalAcrescidosEExtracontratuais,
+      valorContratoPosAditivo: totalContratoFinal
+    };
+  }, [calcularValorTotalOriginal, totalAditivoBloqueado, totalContratoFinal, aditivos, items]);
+
   // Função para determinar o nível hierárquico baseado no item
   const determinarNivel = (itemStr: string) => {
     if (!itemStr) return 3;
@@ -1729,24 +1777,48 @@ const criarNovaMedicao = async () => {
           </CardHeader>
         </Card>
 
-        {/* Resumo Financeiro */}
+        {/* Resumo Financeiro Detalhado */}
         <div className="cards-grid mb-6">
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Valor Total Original</div>
-              <div className="text-2xl font-bold">{formatCurrency(calcularValorTotalOriginal)}</div>
+              <div className="text-sm text-muted-foreground">Valor Inicial do Contrato</div>
+              <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.valorInicialContrato)}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Total Aditivo</div>
-              <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalAditivoBloqueado)}</div>
+              <div className="text-sm text-muted-foreground">Total Geral do Aditivo</div>
+              <div className="text-2xl font-bold text-blue-600">{formatCurrency(resumoFinanceiro.totalGeralAditivo)}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Total do Contrato</div>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalContratoFinal)}</div>
+              <div className="text-sm text-muted-foreground">Total de Serviços Acrescidos</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(resumoFinanceiro.totalServicosAcrescidos)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Total de Serviços Decrescidos</div>
+              <div className="text-2xl font-bold text-red-600">{formatCurrency(resumoFinanceiro.totalServicosDecrescidos)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Total dos Serviços Extracontratuais</div>
+              <div className="text-2xl font-bold text-purple-600">{formatCurrency(resumoFinanceiro.totalServicosExtracontratuais)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Total dos Serviços Acrescidos + Extracontratuais</div>
+              <div className="text-2xl font-bold text-indigo-600">{formatCurrency(resumoFinanceiro.totalAcrescidosEExtracontratuais)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Valor Contrato Pós Aditivo</div>
+              <div className="text-2xl font-bold text-green-700">{formatCurrency(resumoFinanceiro.valorContratoPosAditivo)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -1758,7 +1830,7 @@ const criarNovaMedicao = async () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Valor Acumulado</div>
-              <div className="text-2xl font-bold text-purple-600">{formatCurrency(valorAcumuladoTotal)}</div>
+              <div className="text-2xl font-bold text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
             </CardContent>
           </Card>
         </div>
