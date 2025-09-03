@@ -394,27 +394,13 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       .reduce((total, item) => total + calcularTotalContratoComAditivos(item), 0);
   }, [items, aditivos, medicaoAtual]);
 
-  // Totais finais (para cards/resumo): somam aditivos publicados + itens extracontratuais
+  // Totais finais (para cards/resumo): somam apenas aditivos publicados
   const totalAditivoBloqueado = useMemo(() => {
-    const totalAditivos = aditivos
+    return aditivos
       .filter(a => a.bloqueada)
       .reduce((adSum, a) => {
         return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
       }, 0);
-    
-    // Somar apenas itens extracontratuais que não estão em nenhum aditivo bloqueado
-    const totalExtracontratuais = items
-      .filter(item => {
-        const isExtracontratual = ehItemPrimeiroNivel(item.item) && item.origem === 'extracontratual';
-        if (!isExtracontratual) return false;
-        
-        // Verificar se este item já está sendo contado em algum aditivo bloqueado
-        const jaContadoEmAditivo = aditivos.some(a => a.bloqueada && a.dados[item.id]?.total > 0);
-        return !jaContadoEmAditivo;
-      })
-      .reduce((total, item) => total + item.valorTotal, 0);
-      
-    return totalAditivos + totalExtracontratuais;
   }, [aditivos, items]);
 
   const totalContratoFinal = useMemo(() => calcularValorTotalOriginal + totalAditivoBloqueado, [calcularValorTotalOriginal, totalAditivoBloqueado]);
@@ -1414,16 +1400,7 @@ const criarNovaMedicao = async () => {
         .filter(a => a.bloqueada)
         .reduce((adSum, a) => {
           return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
-        }, 0) + items
-        .filter(item => {
-          const isExtracontratual = ehItemPrimeiroNivel(item.item) && item.origem === 'extracontratual';
-          if (!isExtracontratual) return false;
-          
-          // Verificar se este item já está sendo contado em algum aditivo bloqueado
-          const jaContadoEmAditivo = aditivos.some(a => a.bloqueada && a.dados[item.id]?.total > 0);
-          return !jaContadoEmAditivo;
-        })
-        .reduce((total, item) => total + item.valorTotal, 0);
+        }, 0);
       
       const totalContratoCorreto = valorTotalOriginalCorreto + totalAditivoCorreto;
 
