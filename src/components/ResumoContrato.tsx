@@ -46,6 +46,7 @@ export function ResumoContrato({
   items, 
   ehItemPrimeiroNivel 
 }: ResumoContratoProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [expandedAditivos, setExpandedAditivos] = useState<Set<number>>(new Set());
   const toggleAditivo = (aditivoId: number) => {
     setExpandedAditivos(prev => {
@@ -129,24 +130,34 @@ export function ResumoContrato({
 
   return (
     <Card className="mb-6">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-bold text-gray-800">
-            RESUMO DO CONTRATO
-          </CardTitle>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportarPDF}>
-              <FileDown className="h-4 w-4 mr-2" />
-              PDF
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportarExcel}>
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Excel
-            </Button>
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center gap-2 cursor-pointer hover:text-gray-600 transition-colors">
+                <CardTitle className="text-lg font-bold text-gray-800">
+                  RESUMO DO CONTRATO
+                </CardTitle>
+                {isExpanded ? 
+                  <ChevronUp className="h-5 w-5" /> : 
+                  <ChevronDown className="h-5 w-5" />
+                }
+              </div>
+            </CollapsibleTrigger>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={exportarPDF}>
+                <FileDown className="h-4 w-4 mr-2" />
+                PDF
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportarExcel}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Excel
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="p-0">
         <div className="overflow-x-auto">
           <div className="min-w-full bg-white">
             
@@ -181,8 +192,8 @@ export function ResumoContrato({
                         <div className="col-span-1 p-3 font-bold text-gray-800 flex items-center gap-2">
                           {linha.aditivo.nome}
                           {expandedAditivos.has(linha.aditivo.id) ? 
-                            <ChevronUp className="h-4 w-4" /> : 
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronUp className="h-3 w-3" /> : 
+                            <ChevronDown className="h-3 w-3" />
                           }
                         </div>
                         <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
@@ -306,7 +317,9 @@ export function ResumoContrato({
             </p>
           </div>
         )}
-      </CardContent>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 }
