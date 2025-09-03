@@ -1067,9 +1067,27 @@ const criarNovaMedicao = async () => {
   }
 };
 
+  // Função para encontrar próximo número de aditivo disponível
+  const getProximoNumeroAditivo = () => {
+    const sequenciasExistentes = aditivos.map(a => a.sequencia || a.id).filter(s => typeof s === 'number').sort((a, b) => a - b);
+    
+    // Se não há aditivos, começa com 1
+    if (sequenciasExistentes.length === 0) return 1;
+    
+    // Procura o primeiro gap na sequência
+    for (let i = 1; i <= sequenciasExistentes.length + 1; i++) {
+      if (!sequenciasExistentes.includes(i)) {
+        return i;
+      }
+    }
+    
+    // Fallback (não deveria chegar aqui)
+    return sequenciasExistentes.length + 1;
+  };
+
   // Função para criar novo aditivo (sem anexos)
   const criarNovoAditivo = () => {
-    const numeroAditivo = aditivos.length + 1;
+    const numeroAditivo = getProximoNumeroAditivo();
     const novoAditivo: Aditivo = {
       id: Date.now(),
       nome: `ADITIVO ${numeroAditivo}`,
@@ -1100,7 +1118,7 @@ const criarNovaMedicao = async () => {
 
   // Confirmação do modal de Novo Aditivo
   const confirmarNovoAditivo = async ({ extracontratual, file, sequenciaEfetiva }: { extracontratual: boolean; file?: File | null; sequenciaEfetiva: number; }) => {
-    const numeroAditivo = aditivos.length + 1;
+    const numeroAditivo = getProximoNumeroAditivo();
 
     if (!id) {
       toast.error('Obra inválida');
