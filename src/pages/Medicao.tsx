@@ -23,6 +23,7 @@ import { useMedicaoSessions } from '@/hooks/useMedicaoSessions';
 import { useMedicaoItems } from '@/hooks/useMedicaoItems';
 import { useAditivoSessions } from '@/hooks/useAditivoSessions';
 import { useAditivoItems } from '@/hooks/useAditivoItems';
+import { ResumoContrato } from '@/components/ResumoContrato';
 import * as XLSX from 'xlsx';
 
 interface Obra {
@@ -1852,6 +1853,14 @@ const criarNovaMedicao = async () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Resumo do Contrato */}
+        <ResumoContrato 
+          valorTotalOriginal={calcularValorTotalOriginal}
+          aditivos={aditivos}
+          items={items}
+          ehItemPrimeiroNivel={ehItemPrimeiroNivel}
+        />
 
         {/* Medições */}
         <Card className="mb-6">
