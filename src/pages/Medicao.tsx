@@ -402,8 +402,16 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
       }, 0);
     
+    // Somar apenas itens extracontratuais que não estão em nenhum aditivo bloqueado
     const totalExtracontratuais = items
-      .filter(item => ehItemPrimeiroNivel(item.item) && item.origem === 'extracontratual')
+      .filter(item => {
+        const isExtracontratual = ehItemPrimeiroNivel(item.item) && item.origem === 'extracontratual';
+        if (!isExtracontratual) return false;
+        
+        // Verificar se este item já está sendo contado em algum aditivo bloqueado
+        const jaContadoEmAditivo = aditivos.some(a => a.bloqueada && a.dados[item.id]?.total > 0);
+        return !jaContadoEmAditivo;
+      })
       .reduce((total, item) => total + item.valorTotal, 0);
       
     return totalAditivos + totalExtracontratuais;
@@ -1407,7 +1415,14 @@ const criarNovaMedicao = async () => {
         .reduce((adSum, a) => {
           return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
         }, 0) + items
-        .filter(item => ehItemPrimeiroNivel(item.item) && item.origem === 'extracontratual')
+        .filter(item => {
+          const isExtracontratual = ehItemPrimeiroNivel(item.item) && item.origem === 'extracontratual';
+          if (!isExtracontratual) return false;
+          
+          // Verificar se este item já está sendo contado em algum aditivo bloqueado
+          const jaContadoEmAditivo = aditivos.some(a => a.bloqueada && a.dados[item.id]?.total > 0);
+          return !jaContadoEmAditivo;
+        })
         .reduce((total, item) => total + item.valorTotal, 0);
       
       const totalContratoCorreto = valorTotalOriginalCorreto + totalAditivoCorreto;
