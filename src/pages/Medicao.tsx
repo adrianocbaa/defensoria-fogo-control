@@ -604,11 +604,37 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         valorAcumulado += Object.values(dados).reduce((s, d: any) => s + (d.total || 0), 0);
       }
     }
-    // Somar também os aditivos acumulados até a medição atual
-    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? ((a.sequencia ?? 0) <= medicaoAtual) : true));
-    const valorAditivosAcumulado = aditivosParaSomar.reduce((adSum, a) => {
-      return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
-    }, 0);
+    // Somar também os aditivos medidos até a medição atual
+    // Só soma se o aditivo foi efetivamente medido em alguma medição
+    let valorAditivosAcumulado = 0;
+    const aditivosPublicados = aditivos.filter(a => a.bloqueada);
+    
+    aditivosPublicados.forEach(a => {
+      // Verifica se o aditivo foi medido em alguma medição até a atual
+      let aditivoFoiMedido = false;
+      
+      const medicoesParaVerificar = medicoes.filter(m => m.bloqueada && m.id <= medicaoAtual);
+      
+      for (const medicao of medicoesParaVerificar) {
+        const aditivoNaMedicao = items.some(item => {
+          const dadoAditivo = a.dados[item.id];
+          const dadoMedicao = medicao.dados[item.id];
+          // Se há dados do aditivo e dados da medição para o mesmo item
+          return dadoAditivo && dadoMedicao && dadoAditivo.total !== 0 && dadoMedicao.total !== 0;
+        });
+        
+        if (aditivoNaMedicao) {
+          aditivoFoiMedido = true;
+          break;
+        }
+      }
+      
+      // Só soma se foi medido
+      if (aditivoFoiMedido) {
+        valorAditivosAcumulado += items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
+      }
+    });
+    
     valorAcumulado += valorAditivosAcumulado;
 
     const resumoFinanceiro = {
@@ -1655,10 +1681,30 @@ const criarNovaMedicao = async () => {
         totalAcumulado += dadosHierarquicos[itemId].total || 0;
       }
     });
-    // Somar também aditivos por item até a medição atual
-    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? ((a.sequencia ?? 0) <= medicaoAtual) : true));
-    aditivosParaSomar.forEach(a => {
-      totalAcumulado += a.dados[itemId]?.total || 0;
+    // Somar também aditivos medidos por item até a medição atual
+    // Só soma se o aditivo foi efetivamente medido em alguma medição
+    const aditivosPublicados = aditivos.filter(a => a.bloqueada);
+    
+    aditivosPublicados.forEach(a => {
+      // Verifica se o aditivo foi medido em alguma medição até a atual
+      let aditivoFoiMedido = false;
+      
+      const medicoesParaVerificar = medicoes.filter(m => m.bloqueada && m.id <= medicaoAtual);
+      
+      for (const medicao of medicoesParaVerificar) {
+        const dadoAditivo = a.dados[itemId];
+        const dadoMedicao = medicao.dados[itemId];
+        // Se há dados do aditivo e dados da medição para o mesmo item
+        if (dadoAditivo && dadoMedicao && dadoAditivo.total !== 0 && dadoMedicao.total !== 0) {
+          aditivoFoiMedido = true;
+          break;
+        }
+      }
+      
+      // Só soma se foi medido
+      if (aditivoFoiMedido) {
+        totalAcumulado += a.dados[itemId]?.total || 0;
+      }
     });
     return totalAcumulado;
   };
@@ -1759,12 +1805,36 @@ const criarNovaMedicao = async () => {
       }
     }
 
-    // Somar também todos os aditivos até a medição atual
-    const aditivosParaSomar = aditivos.filter(a => a.bloqueada && (medicaoAtual ? ((a.sequencia ?? 0) <= medicaoAtual) : true));
-    aditivosParaSomar.forEach(a => {
-      items.forEach(item => {
-        valorAcumulado += a.dados[item.id]?.total || 0;
-      });
+    // Somar também os aditivos medidos até a medição atual
+    // Só soma se o aditivo foi efetivamente medido em alguma medição
+    const aditivosPublicados = aditivos.filter(a => a.bloqueada);
+    
+    aditivosPublicados.forEach(a => {
+      // Verifica se o aditivo foi medido em alguma medição até a atual
+      let aditivoFoiMedido = false;
+      
+      const medicoesParaVerificar = medicoes.filter(m => m.bloqueada && m.id <= medicaoAtual);
+      
+      for (const medicao of medicoesParaVerificar) {
+        const aditivoNaMedicao = items.some(item => {
+          const dadoAditivo = a.dados[item.id];
+          const dadoMedicao = medicao.dados[item.id];
+          // Se há dados do aditivo e dados da medição para o mesmo item
+          return dadoAditivo && dadoMedicao && dadoAditivo.total !== 0 && dadoMedicao.total !== 0;
+        });
+        
+        if (aditivoNaMedicao) {
+          aditivoFoiMedido = true;
+          break;
+        }
+      }
+      
+      // Só soma se foi medido
+      if (aditivoFoiMedido) {
+        items.forEach(item => {
+          valorAcumulado += a.dados[item.id]?.total || 0;
+        });
+      }
     });
     
     return valorAcumulado;
