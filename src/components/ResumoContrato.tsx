@@ -26,6 +26,7 @@ interface ResumoContratoProps {
   aditivos: Aditivo[];
   items: Item[];
   ehItemPrimeiroNivel: (itemCode: string) => boolean;
+  medicaoAtual?: number;
 }
 
 interface ResumoAditivoData {
@@ -44,7 +45,8 @@ export function ResumoContrato({
   valorTotalOriginal, 
   aditivos, 
   items, 
-  ehItemPrimeiroNivel 
+  ehItemPrimeiroNivel,
+  medicaoAtual
 }: ResumoContratoProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -83,7 +85,12 @@ export function ResumoContrato({
 
       // TOTAL GERAL DO ADITIVO = ACRESCIDOS - DECRESCIDOS + EXTRACONTRATUAIS
       const totalGeral = acrescidos - decrescidos + extracontratuais;
-      acumulado += totalGeral;
+      
+      // Só soma ao acumulado se o aditivo foi medido (sequência <= medição atual)
+      const foiMedido = medicaoAtual ? ((aditivo.sequencia ?? 0) <= medicaoAtual) : false;
+      if (foiMedido) {
+        acumulado += totalGeral;
+      }
 
       linhas.push({
         aditivo,

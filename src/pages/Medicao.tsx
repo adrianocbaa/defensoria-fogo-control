@@ -1837,6 +1837,7 @@ const criarNovaMedicao = async () => {
           aditivos={aditivos}
           items={items}
           ehItemPrimeiroNivel={ehItemPrimeiroNivel}
+          medicaoAtual={medicaoAtual}
         />
 
         {/* Medições */}
