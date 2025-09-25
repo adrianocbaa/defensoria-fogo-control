@@ -166,7 +166,7 @@ export const csvUtils = {
     };
   },
 
-  normalizeComparableRow(row: any): Omit<import('./appraisalApi').Comparable, 'id' | 'created_at'> {
+  normalizeComparableRow(row: any): any {
     // Convert string numbers to actual numbers
     const numberFields = ['price_total', 'price_unit', 'land_area', 'built_area', 'age', 'lat', 'lon', 'exposure_time'];
     numberFields.forEach(field => {

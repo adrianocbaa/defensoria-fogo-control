@@ -355,28 +355,13 @@ export class StatisticsService {
     results: OLSResult,
     artifacts: string[] = []
   ): Promise<string> {
-    const { modelRunsApi } = await import('./appraisalApi');
+    // Mock implementation - appraisalApi no longer available
+    const mockId = `mock-${Date.now()}-${Math.random()}`;
     
-    const modelRunId = await modelRunsApi.create(
-      projectId,
-      'OLS-client',
-      features,
-      targetColumn,
-      transformConfig,
-      {
-        r_squared: results.rSquared,
-        r_squared_adjusted: results.rSquaredAdjusted,
-        rmse: results.rmse,
-        mae: results.mae
-      },
-      {
-        vif: results.vif,
-        shapiro_wilk_p: this.shapiroWilkTest(results.residuals)
-      },
-      artifacts
-    );
+    // Mock implementation - return mock ID
+    console.log('Mock model run creation:', { projectId, features, targetColumn, transformConfig, results, artifacts });
 
-    return String(modelRunId);
+    return mockId;
   }
 
   static async saveResult(
@@ -386,18 +371,13 @@ export class StatisticsService {
     confidenceInterval: [number, number],
     elasticities: Record<string, number>
   ): Promise<string> {
-    const { resultsApi } = await import('./appraisalApi');
+    // Mock implementation - appraisalApi no longer available
+    const mockResultId = `result-${Date.now()}-${Math.random()}`;
     
-    const resultId = await resultsApi.create(
-      projectId,
-      modelRunId,
-      estimatedValue,
-      confidenceInterval[0],
-      confidenceInterval[1],
-      elasticities
-    );
+    // Mock implementation - return mock ID
+    console.log('Mock result creation:', { projectId, modelRunId, estimatedValue, confidenceInterval, elasticities });
 
-    return String(resultId);
+    return mockResultId;
   }
 
   private static shapiroWilkTest(residuals: number[]): number {

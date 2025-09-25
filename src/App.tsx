@@ -25,13 +25,6 @@ import { ObrasLista } from "./pages/ObrasLista";
 import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosPage } from "./pages/SectorPages";
 import { Medicao } from "./pages/Medicao";
 import Inventory from "./pages/Inventory";
-import AvaliacaoImoveisPage from "./pages/AvaliacaoImoveisPage";
-import AppraisalDashboard from "./pages/appraisal/AppraisalDashboard";
-import ProjectsPage from "./pages/appraisal/ProjectsPage";
-import { ProjectDetailPage } from "./pages/appraisal/ProjectDetailPage";
-import { ReportPage } from "./pages/appraisal/ReportPage";
-import PropertiesPage from "./pages/appraisal/PropertiesPage";
-import MarketPage from "./pages/appraisal/MarketPage";
 
 const queryClient = new QueryClient();
 
@@ -102,62 +95,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ProjetosPage />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/avaliacao-imoveis" 
-        element={
-          <ProtectedRoute>
-            <AppraisalDashboard />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/avaliacao-imoveis/projects" 
-        element={
-          <ProtectedRoute>
-            <ProjectsPage />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/avaliacao-imoveis/projects/:id" 
-        element={
-          <ProtectedRoute>
-            <ProjectDetailPage />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/avaliacao-imoveis/projects/:id/report" 
-        element={
-          <ProtectedRoute>
-            <ReportPage />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/avaliacao-imoveis/properties" 
-        element={
-          <ProtectedRoute>
-            <PropertiesPage />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/avaliacao-imoveis/market" 
-        element={
-          <ProtectedRoute>
-            <MarketPage />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/avaliacao-imoveis/reports" 
-        element={
-          <ProtectedRoute>
-            <AvaliacaoImoveisPage />
           </ProtectedRoute>
         } 
       />
