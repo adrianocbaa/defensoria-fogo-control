@@ -8,14 +8,13 @@ import {
   Shield, 
   Wind, 
   FolderKanban,
-  Package,
-  Calculator
+  Package
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado' | 'avaliacao_imoveis';
+type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado';
 
 interface SectorBlock {
   id: Sector | string;
@@ -74,14 +73,6 @@ const sectorBlocks: SectorBlock[] = [
     path: '/inventory',
     color: 'text-green-600',
     bgColor: 'bg-green-50 hover:bg-green-100 border-green-200'
-  },
-  {
-    id: 'avaliacao_imoveis',
-    title: 'Avaliação de Imóveis',
-    icon: Calculator,
-    path: '/avaliacao-imoveis',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50 hover:bg-red-100 border-red-200'
   }
 ];
 
