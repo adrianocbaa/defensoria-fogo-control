@@ -385,14 +385,11 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     return (childrenByCode.get(codigo.trim())?.length ?? 0) === 0;
   };
 
-  // Função para calcular Valor Total Original (soma apenas itens de primeiro nível contratuais)
+  // Função para calcular Valor Total Original (soma dos itens folha contratuais)
   const calcularValorTotalOriginal = useMemo(() => {
     return items
-      .filter(item => ehItemPrimeiroNivel(item.item) && item.origem !== 'extracontratual')
-      .reduce((total, item) => {
-        // Valor inicial do contrato = apenas valorTotal original, SEM aditivos
-        return total + item.valorTotal;
-      }, 0);
+      .filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual')
+      .reduce((total, item) => total + item.valorTotal, 0);
   }, [items]);
 
   // Função para calcular Total do Contrato para a medição corrente (nível 1), usando aditivos publicados anteriores
@@ -578,9 +575,9 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   React.useEffect(() => {
     if (!obra?.id) return;
 
-    // 1) Valor Total Original = soma dos itens de 1º nível (valorTotal importado)
+    // 1) Valor Total Original = soma dos itens folha (valorTotal importado)
     const valorTotalOriginal = items
-      .filter(item => ehItemPrimeiroNivel(item.item))
+      .filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual')
       .reduce((total, item) => total + item.valorTotal, 0);
 
     // 2) Total Aditivo = soma dos aditivos de todos os itens
@@ -1473,7 +1470,7 @@ const criarNovaMedicao = async () => {
       toast.success('Medição publicada.');
       // Calcular valores financeiros corretos
       const valorTotalOriginalCorreto = items
-        .filter(item => ehItemPrimeiroNivel(item.item) && item.origem !== 'extracontratual')
+        .filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual')
         .reduce((total, item) => total + item.valorTotal, 0);
       
       const totalAditivoCorreto = aditivos
