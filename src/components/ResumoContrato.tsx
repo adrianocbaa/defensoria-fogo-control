@@ -71,10 +71,10 @@ export function ResumoContrato({
         if (!aditivoData || aditivoData.total === 0) return;
 
         if (item.origem === 'extracontratual') {
-          // Extracontratuais (valor pode ser >= 0, negativos não esperados)
+          // Extracontratuais: itens completamente novos adicionados no aditivo
           extracontratuais += aditivoData.total;
         } else {
-          // Itens contratuais (origem = 'base' ou undefined)
+          // Itens contratuais: itens que já existiam no contrato original
           if (aditivoData.total > 0) {
             acrescidos += aditivoData.total;
           } else if (aditivoData.total < 0) {

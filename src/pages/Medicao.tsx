@@ -912,17 +912,16 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       // Excluir sessão do aditivo e seus itens
       await deleteAditivoSession(ad.sessionId);
       
-      // Excluir também os itens extracontratuais importados da planilha
+      // Excluir itens que foram importados neste aditivo (tanto extracontratuais quanto contratuais)
       if (id) {
         const { error: deleteItemsError } = await supabase
           .from('orcamento_items')
           .delete()
           .eq('obra_id', id)
-          .eq('origem', 'extracontratual')
           .eq('aditivo_num', aditivoLocalId);
         
         if (deleteItemsError) {
-          console.error('Erro ao excluir itens extracontratuais:', deleteItemsError);
+          console.error('Erro ao excluir itens do aditivo:', deleteItemsError);
           throw deleteItemsError;
         }
         
@@ -1290,6 +1289,10 @@ const criarNovaMedicao = async () => {
         // Valor total importado não entra no Valor Total Original
         const valorTotalOriginal = 0;
 
+        // Verificar se o item já existe no contrato original para definir a origem correta
+        const itemJaExiste = existentes.has(code);
+        const origemItem = itemJaExiste ? 'contratual' : 'extracontratual';
+        
         // Usar ordem sequencial baseada na posição no arquivo, mantendo numeração original
         const ordemVal = baseOrdem + i + 1;
         const novo: Item = {
@@ -1308,6 +1311,7 @@ const criarNovaMedicao = async () => {
           nivel,
           ehAdministracaoLocal: false,
           ordem: ordemVal,
+          origem: origemItem,
         };
         novos.push(novo);
       });
@@ -1338,7 +1342,7 @@ const criarNovaMedicao = async () => {
         eh_administracao_local: it.ehAdministracaoLocal,
         ordem: it.ordem,
         // Novos campos
-        origem: 'extracontratual',
+        origem: it.origem, // Usar a origem definida na lógica anterior
         aditivo_num: numeroAditivo,
       } as any));
 
