@@ -930,17 +930,18 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const excluirAditivo = async (aditivoLocalId: number) => {
     const ad = aditivos.find(a => a.id === aditivoLocalId);
     if (!ad || !ad.sessionId) return;
+    
     try {
       // Excluir sessão do aditivo e seus itens
       await deleteAditivoSession(ad.sessionId);
       
-      // Excluir itens que foram importados neste aditivo (tanto extracontratuais quanto contratuais)
+      // Excluir itens que foram importados neste aditivo usando a sequencia (não o id)
       if (id) {
         const { error: deleteItemsError } = await supabase
           .from('orcamento_items')
           .delete()
           .eq('obra_id', id)
-          .eq('aditivo_num', aditivoLocalId);
+          .eq('aditivo_num', ad.sequencia); // Usar a sequencia, não o id
         
         if (deleteItemsError) {
           console.error('Erro ao excluir itens do aditivo:', deleteItemsError);
@@ -950,6 +951,14 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         // Recarregar os itens da obra do banco para garantir consistência
         await fetchMedicoesSalvas();
       }
+      
+      // Limpar mapeamento do localStorage
+      try {
+        const mapKey = `aditivo_numbers_${id}`;
+        const current = JSON.parse(localStorage.getItem(mapKey) || '{}') || {};
+        delete current[ad.sessionId];
+        localStorage.setItem(mapKey, JSON.stringify(current));
+      } catch {}
       
       // Remover aditivo do estado local
       setAditivos(prev => prev.filter(a => a.id !== aditivoLocalId));
