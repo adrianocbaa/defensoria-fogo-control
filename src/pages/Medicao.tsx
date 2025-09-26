@@ -1736,7 +1736,14 @@ const criarNovaMedicao = async () => {
     const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual!);
     
     if (totalContratoItem === 0) return 0;
-    return (totalAcumulado / totalContratoItem) * 100;
+    
+    let pct = (totalAcumulado / totalContratoItem) * 100;
+    
+    // Limitar percentuais extremos para evitar valores absurdos
+    if (pct > 9999) pct = 9999;
+    if (pct < -9999) pct = -9999;
+    
+    return pct;
   };
 
   // Função para calcular quantidade acumulada com hierarquia
@@ -2433,20 +2440,29 @@ const criarNovaMedicao = async () => {
                               </div>
                             )}
                           </TableCell>
-                          <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
-                            <div className="text-center font-mono text-xs px-1">
-                            {(() => {
-                              const totalContratoVisual = medicaoAtual
-                                ? calcularTotalContratoComAditivos(item, medicaoAtual)
-                                : (() => {
-                                    const somaAditivosTodos = aditivos.reduce((sumA, a) => sumA + descendantIds.reduce((s, id) => s + ((a.dados[id]?.total) || 0), 0), 0);
-                                    return item.valorTotal + somaAditivosTodos;
-                                  })();
-                              const pct = totalContratoVisual > 0 ? (medicaoData.total / totalContratoVisual) * 100 : 0;
-                              return pct.toFixed(2) + '%';
-                            })()}
-                            </div>
-                          </TableCell>
+                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
+                             <div className="text-center font-mono text-xs px-1">
+                             {(() => {
+                               const totalContratoVisual = medicaoAtual
+                                 ? calcularTotalContratoComAditivos(item, medicaoAtual)
+                                 : (() => {
+                                     const somaAditivosTodos = aditivos.reduce((sumA, a) => sumA + descendantIds.reduce((s, id) => s + ((a.dados[id]?.total) || 0), 0), 0);
+                                     return item.valorTotal + somaAditivosTodos;
+                                   })();
+                               
+                               // Validação melhorada para cálculo de percentual
+                               if (totalContratoVisual === 0) return '0,00%';
+                               
+                               let pct = (medicaoData.total / totalContratoVisual) * 100;
+                               
+                               // Limitar percentuais extremos para evitar valores absurdos
+                               if (pct > 9999) pct = 9999;
+                               if (pct < -9999) pct = -9999;
+                               
+                               return pct.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+                             })()}
+                             </div>
+                           </TableCell>
                           <TableCell className="bg-yellow-100 border border-yellow-300 p-1">
                             <div className="text-right font-mono text-xs px-1">
                               R$ {medicaoData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
