@@ -106,6 +106,83 @@ export function validateFileSize(file: File, maxSizeInMB: number): boolean {
   return file.size <= maxSizeInBytes;
 }
 
+// Authentication validation schemas
+export const AuthLoginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido')
+    .max(255, 'Email muito longo'),
+  password: z
+    .string()
+    .min(1, 'Senha é obrigatória')
+    .min(8, 'Senha deve ter pelo menos 8 caracteres')
+});
+
+export const AuthSignupSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido')
+    .max(255, 'Email muito longo'),
+  password: z
+    .string()
+    .min(8, 'Senha deve ter pelo menos 8 caracteres')
+    .max(128, 'Senha muito longa')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Senha deve conter pelo menos: 1 letra minúscula, 1 maiúscula e 1 número'
+    ),
+  confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+  displayName: z
+    .string()
+    .trim()
+    .min(2, 'Nome deve ter pelo menos 2 caracteres')
+    .max(100, 'Nome muito longo')
+    .regex(
+      /^[a-zA-ZÀ-ÿ\s]+$/,
+      'Nome deve conter apenas letras e espaços'
+    )
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Senhas não coincidem',
+  path: ['confirmPassword'],
+});
+
+// Input sanitization functions
+export function sanitizeString(input: string): string {
+  return input
+    .trim()
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .substring(0, 1000); // Limit length
+}
+
+export function sanitizeEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+// Rate limiting helper (client-side tracking)
+export function createRateLimiter(maxAttempts: number, windowMs: number) {
+  const attempts = new Map<string, number[]>();
+
+  return (identifier: string): boolean => {
+    const now = Date.now();
+    const userAttempts = attempts.get(identifier) || [];
+    
+    // Remove old attempts outside the window
+    const recentAttempts = userAttempts.filter(time => now - time < windowMs);
+    
+    if (recentAttempts.length >= maxAttempts) {
+      return false; // Rate limited
+    }
+    
+    recentAttempts.push(now);
+    attempts.set(identifier, recentAttempts);
+    return true; // Allow attempt
+  };
+}
+
 // Type exports
 export type ContactData = z.infer<typeof ContactSchema>;
 export type CoordinatesData = z.infer<typeof CoordinatesSchema>;
@@ -116,3 +193,5 @@ export type NucleusData = z.infer<typeof NucleusSchema>;
 export type NucleusFormData = z.infer<typeof NucleusFormSchema>;
 export type FireExtinguisherFormData = z.infer<typeof FireExtinguisherFormSchema>;
 export type DocumentFormData = z.infer<typeof DocumentFormSchema>;
+export type AuthLoginData = z.infer<typeof AuthLoginSchema>;
+export type AuthSignupData = z.infer<typeof AuthSignupSchema>;

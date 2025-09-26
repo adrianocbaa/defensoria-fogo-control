@@ -150,9 +150,13 @@ const AuthPage = () => {
                         placeholder="seu@email.com"
                         value={loginForm.email}
                         onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
-                        className="pl-10"
+                        className={`pl-10 ${validationErrors.email ? 'border-red-500' : ''}`}
                         required
+                        autoComplete="email"
                       />
+                      {validationErrors.email && (
+                        <p className="text-sm text-red-600 mt-1">{validationErrors.email}</p>
+                      )}
                     </div>
                   </div>
                   
@@ -166,9 +170,13 @@ const AuthPage = () => {
                         placeholder="••••••••"
                         value={loginForm.password}
                         onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                        className="pl-10"
+                        className={`pl-10 ${validationErrors.password ? 'border-red-500' : ''}`}
                         required
+                        autoComplete="current-password"
                       />
+                      {validationErrors.password && (
+                        <p className="text-sm text-red-600 mt-1">{validationErrors.password}</p>
+                      )}
                     </div>
                   </div>
                   
@@ -183,6 +191,12 @@ const AuthPage = () => {
               </TabsContent>
               
               <TabsContent value="signup" className="space-y-4">
+                <Alert className="border-amber-200 bg-amber-50">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Use uma senha forte com pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas e números.
+                  </AlertDescription>
+                </Alert>
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Nome de Exibição</Label>
@@ -209,9 +223,14 @@ const AuthPage = () => {
                         placeholder="seu@email.com"
                         value={signupForm.email}
                         onChange={(e) => setSignupForm(prev => ({ ...prev, email: e.target.value }))}
-                        className="pl-10"
+                        className={`pl-10 ${validationErrors.email ? 'border-red-500' : ''}`}
                         required
+                        autoComplete="email"
+                        maxLength={255}
                       />
+                      {validationErrors.email && (
+                        <p className="text-sm text-red-600 mt-1">{validationErrors.email}</p>
+                      )}
                     </div>
                   </div>
                   
@@ -225,9 +244,15 @@ const AuthPage = () => {
                         placeholder="••••••••"
                         value={signupForm.password}
                         onChange={(e) => setSignupForm(prev => ({ ...prev, password: e.target.value }))}
-                        className="pl-10"
+                        className={`pl-10 ${validationErrors.password ? 'border-red-500' : ''}`}
                         required
+                        autoComplete="new-password"
+                        minLength={8}
+                        maxLength={128}
                       />
+                      {validationErrors.password && (
+                        <p className="text-sm text-red-600 mt-1">{validationErrors.password}</p>
+                      )}
                     </div>
                   </div>
                   
@@ -241,9 +266,13 @@ const AuthPage = () => {
                         placeholder="••••••••"
                         value={signupForm.confirmPassword}
                         onChange={(e) => setSignupForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        className="pl-10"
+                        className={`pl-10 ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
                         required
+                        autoComplete="new-password"
                       />
+                      {validationErrors.confirmPassword && (
+                        <p className="text-sm text-red-600 mt-1">{validationErrors.confirmPassword}</p>
+                      )}
                     </div>
                   </div>
                   
