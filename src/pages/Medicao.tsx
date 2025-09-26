@@ -1260,17 +1260,19 @@ const criarNovaMedicao = async () => {
           return;
         }
 
-        // Ignorar linhas que são apenas cabeçalhos descritivos
-        const ehCabecalhoDescritivo = !codigoBanco && !code && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0 && 
-                                      descricao && (descricao.toUpperCase().includes('EXTRACONTRATUAL') || descricao.toUpperCase().includes('SINAPI') || descricao.toUpperCase().includes('ITEM'));
-        if (ehCabecalhoDescritivo) {
-          console.log(`Linha ${i + 1} ignorada: cabeçalho descritivo`);
+        // Ignorar apenas linhas que são cabeçalhos genéricos (sem código de item)
+        // Mas permitir linhas de estrutura que têm código de item (ex: "4", "4.1")
+        const ehCabecalhoGenerico = !code && !codigoBanco && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0 && 
+                                   descricao && (descricao.toUpperCase().includes('SINAPI') || descricao.toUpperCase().includes('ITEM'));
+        if (ehCabecalhoGenerico) {
+          console.log(`Linha ${i + 1} ignorada: cabeçalho genérico`);
           return;
         }
 
-        // Para itens extracontratuais, exigir pelo menos o código do item
-        if (!code) {
-          console.log(`Linha ${i + 1} ignorada: sem código do item`);
+        // Para itens de estrutura/categoria (que têm código mas sem valor), permitir importação
+        // Para itens com valores, exigir código obrigatoriamente
+        if (!code && (quant > 0 || valorUnit > 0 || valorTotalPlanilha > 0)) {
+          console.log(`Linha ${i + 1} ignorada: item com valores mas sem código`);
           return;
         }
 
