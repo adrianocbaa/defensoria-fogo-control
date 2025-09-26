@@ -1168,7 +1168,7 @@ const criarNovaMedicao = async () => {
 
 
     if (!extracontratual || !file) {
-      toast.success(`Aditivo ${newSession.sequencia} criado.`);
+      toast.success(`Aditivo ${numeroAditivo} criado.`);
       return;
     }
 
@@ -1373,16 +1373,23 @@ const criarNovaMedicao = async () => {
       if (insertErr) throw insertErr;
 
       // 6) Preencher automaticamente a coluna "QNT ADITIVO 1" com os valores das quantidades dos itens importados
-      const aditivoAtual = aditivos.find(a => a.id === newSession.sequencia) || novoAditivo;
       const novosCodigosImportados = new Set(novos.map(item => item.codigo));
       
       // Criar dados do aditivo para todos os itens que foram importados
       const dadosAditivo: { [itemId: number]: { qnt: number; percentual: number; total: number } } = {};
       
-      // Para cada item existente, verificar se seu código está na planilha importada
-      [...items, ...novos].forEach(item => {
-        // Se o item está na planilha importada (seja contratual ou extracontratual)
-        if (novosCodigosImportados.has(item.codigo) || novos.some(novoItem => novoItem.id === item.id)) {
+      // Buscar todos os itens existentes e novos para preencher as quantidades
+      const todosItens = [...items, ...novos];
+      
+      todosItens.forEach(item => {
+        // Verificar se o item foi importado na planilha do aditivo
+        const foiImportado = novos.some(novoItem => 
+          novoItem.codigo === item.codigo || 
+          novoItem.id === item.id ||
+          (novoItem.codigo && item.codigo && novoItem.codigo.trim() === item.codigo.trim())
+        );
+        
+        if (foiImportado && item.quantidade > 0) {
           // Preencher com a quantidade do item
           dadosAditivo[item.id] = {
             qnt: item.quantidade,
@@ -1392,12 +1399,14 @@ const criarNovaMedicao = async () => {
         }
       });
       
-      // Atualizar o aditivo com os dados preenchidos
+      // Atualizar o aditivo com os dados preenchidos usando o numeroAditivo correto
       setAditivos(prev => prev.map(aditivo => 
-        aditivo.id === newSession.sequencia 
+        aditivo.id === numeroAditivo 
           ? { ...aditivo, dados: dadosAditivo }
           : aditivo
       ));
+
+      toast.success(`Aditivo ${numeroAditivo} criado com planilha anexada. Quantidades preenchidas automaticamente.`);
 
       } catch (e: any) {
         console.error(e);
