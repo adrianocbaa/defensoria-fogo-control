@@ -2257,7 +2257,21 @@ const criarNovaMedicao = async () => {
                           {/* Valor total com BDI e Desconto */}
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-right font-mono text-xs px-1">
-                              R$ {item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              R$ {(() => {
+                                // Para itens folha, mostrar valor próprio
+                                if (ehItemFolha(item.item)) {
+                                  return item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                }
+                                
+                                // Para itens pai, somar valores dos filhos diretos
+                                const filhosDirectos = items.filter(filho => {
+                                  const paiDoFilho = filho.item.split('.').slice(0, -1).join('.');
+                                  return paiDoFilho === item.item;
+                                });
+                                
+                                const somaFilhos = filhosDirectos.reduce((sum, filho) => sum + filho.valorTotal, 0);
+                                return somaFilhos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                              })()}
                             </div>
                           </TableCell>
                            {mostrarAditivos && aditivos.map(aditivo => {
