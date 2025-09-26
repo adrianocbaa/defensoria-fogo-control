@@ -1372,25 +1372,12 @@ const criarNovaMedicao = async () => {
       const { error: insertErr } = await supabase.from('orcamento_items').insert(rowsToInsert as any);
       if (insertErr) throw insertErr;
 
-      // 6) Preencher automaticamente a coluna "QNT ADITIVO 1" com os valores das quantidades dos itens importados
-      const novosCodigosImportados = new Set(novos.map(item => item.codigo));
-      
-      // Criar dados do aditivo para todos os itens que foram importados
+      // 6) Preencher automaticamente a coluna "QNT ADITIVO 1" apenas para os itens importados na planilha do aditivo
       const dadosAditivo: { [itemId: number]: { qnt: number; percentual: number; total: number } } = {};
       
-      // Buscar todos os itens existentes e novos para preencher as quantidades
-      const todosItens = [...items, ...novos];
-      
-      todosItens.forEach(item => {
-        // Verificar se o item foi importado na planilha do aditivo
-        const foiImportado = novos.some(novoItem => 
-          novoItem.codigo === item.codigo || 
-          novoItem.id === item.id ||
-          (novoItem.codigo && item.codigo && novoItem.codigo.trim() === item.codigo.trim())
-        );
-        
-        if (foiImportado && item.quantidade > 0) {
-          // Preencher com a quantidade do item
+      // Preencher APENAS os itens novos que foram importados na planilha do aditivo
+      novos.forEach(item => {
+        if (item.quantidade > 0) {
           dadosAditivo[item.id] = {
             qnt: item.quantidade,
             percentual: 0, // Deixar percentual em 0
@@ -1406,7 +1393,7 @@ const criarNovaMedicao = async () => {
           : aditivo
       ));
 
-      toast.success(`Aditivo ${numeroAditivo} criado com planilha anexada. Quantidades preenchidas automaticamente.`);
+      toast.success(`Aditivo ${numeroAditivo} criado com planilha anexada. Quantidades preenchidas para ${novos.length} itens importados.`);
 
       } catch (e: any) {
         console.error(e);
