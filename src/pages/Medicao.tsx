@@ -391,7 +391,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const calcularValorTotalOriginal = useMemo(() => {
     return items
       .filter(item => ehItemPrimeiroNivel(item.item) && item.origem !== 'extracontratual')
-      .reduce((total, item) => total + item.valorTotal, 0);
+      .reduce((total, item) => total + item.totalContrato, 0);
   }, [items]);
 
   // Função para calcular Total do Contrato para a medição corrente (nível 1), usando aditivos publicados anteriores
