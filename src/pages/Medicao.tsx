@@ -2315,16 +2315,29 @@ const criarNovaMedicao = async () => {
                           <TableCell className="bg-green-100 border border-green-300 p-1">
                             <div className="text-right font-mono text-xs px-1 font-bold">
                               {(() => {
-                                const somaAditivosSelecionados = aditivos
-                                  .filter(a => a.bloqueada && (a.sequencia === 1 || a.sequencia === 2))
-                                  .reduce((sumA, a) => {
-                                    if (ehItemFolha(item.item)) {
-                                      return sumA + ((a.dados[item.id]?.total) || 0);
-                                    }
-                                    return sumA + descendantIds.reduce((s, id) => s + ((a.dados[id]?.total) || 0), 0);
-                                  }, 0);
-                                const totalContratoVisual = item.valorTotal + somaAditivosSelecionados;
-                                return `R$ ${totalContratoVisual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                // Para itens folha, mostrar valor próprio
+                                if (ehItemFolha(item.item)) {
+                                  const somaAditivosSelecionados = aditivos
+                                    .filter(a => a.bloqueada && (a.sequencia === 1 || a.sequencia === 2))
+                                    .reduce((sumA, a) => sumA + ((a.dados[item.id]?.total) || 0), 0);
+                                  const totalContratoVisual = item.valorTotal + somaAditivosSelecionados;
+                                  return `R$ ${totalContratoVisual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                }
+                                
+                                // Para itens pai, somar valores dos filhos diretos
+                                const filhosDirectos = items.filter(filho => {
+                                  const paiDoFilho = filho.item.split('.').slice(0, -1).join('.');
+                                  return paiDoFilho === item.item;
+                                });
+                                
+                                const somaFilhos = filhosDirectos.reduce((sum, filho) => {
+                                  const somaAditivosFilho = aditivos
+                                    .filter(a => a.bloqueada && (a.sequencia === 1 || a.sequencia === 2))
+                                    .reduce((sumA, a) => sumA + ((a.dados[filho.id]?.total) || 0), 0);
+                                  return sum + filho.valorTotal + somaAditivosFilho;
+                                }, 0);
+                                
+                                return `R$ ${somaFilhos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                               })()}
                             </div>
                           </TableCell>
