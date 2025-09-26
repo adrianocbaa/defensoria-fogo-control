@@ -336,6 +336,33 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          attempt_time: string
+          id: string
+          ip_address: unknown | null
+          success: boolean
+          user_agent: string | null
+          user_identifier: string
+        }
+        Insert: {
+          attempt_time?: string
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean
+          user_agent?: string | null
+          user_identifier: string
+        }
+        Update: {
+          attempt_time?: string
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean
+          user_agent?: string | null
+          user_identifier?: string
+        }
+        Relationships: []
+      }
       maintenance_tickets: {
         Row: {
           assignee: string
@@ -964,6 +991,14 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: boolean
       }
+      can_view_sensitive_data: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
+      cleanup_old_login_attempts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_attachment: {
         Args: {
           p_kind: string
@@ -1122,6 +1157,15 @@ export type Database = {
       is_admin: {
         Args: { user_uuid?: string }
         Returns: boolean
+      }
+      log_login_attempt: {
+        Args: {
+          p_identifier: string
+          p_ip_address?: unknown
+          p_success: boolean
+          p_user_agent?: string
+        }
+        Returns: undefined
       }
       update_project: {
         Args: {
