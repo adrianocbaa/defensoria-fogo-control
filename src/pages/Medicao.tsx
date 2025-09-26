@@ -1384,9 +1384,15 @@ const criarNovaMedicao = async () => {
       // 6) Preencher automaticamente a coluna "QNT ADITIVO 1" apenas para os itens importados na planilha do aditivo
       const dadosAditivo: { [itemId: number]: { qnt: number; percentual: number; total: number } } = {};
       
-      // Preencher APENAS os itens novos que foram importados na planilha do aditivo
+      // Função para verificar se um item é do último nível (não tem filhos)
+      const ehUltimoNivel = (item: Item, todosItens: Item[]): boolean => {
+        const prefixo = item.item + '.';
+        return !todosItens.some(outroItem => outroItem.item.startsWith(prefixo));
+      };
+
+      // Preencher APENAS os itens novos que foram importados na planilha do aditivo E são do último nível
       novos.forEach(item => {
-        if (item.quantidade > 0) {
+        if (item.quantidade > 0 && ehUltimoNivel(item, novos)) {
           dadosAditivo[item.id] = {
             qnt: item.quantidade,
             percentual: 0, // Deixar percentual em 0
