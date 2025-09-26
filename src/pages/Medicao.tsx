@@ -390,14 +390,10 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     return items
       .filter(item => ehItemPrimeiroNivel(item.item) && item.origem !== 'extracontratual')
       .reduce((total, item) => {
-        // TOTAL CONTRATO = Valor total com BDI e Desconto + TOTAL ADITIVO 1 + TOTAL ADITIVO 2
-        const valorAditivos = aditivos
-          .filter(a => a.bloqueada && (a.sequencia === 1 || a.sequencia === 2))
-          .reduce((soma, aditivo) => soma + (aditivo.dados[item.id]?.total || 0), 0);
-        
-        return total + item.valorTotal + valorAditivos;
+        // Valor inicial do contrato = apenas valorTotal original, SEM aditivos
+        return total + item.valorTotal;
       }, 0);
-  }, [items, aditivos]);
+  }, [items]);
 
   // Função para calcular Total do Contrato para a medição corrente (nível 1), usando aditivos publicados anteriores
   const calcularTotalContrato = useMemo(() => {
