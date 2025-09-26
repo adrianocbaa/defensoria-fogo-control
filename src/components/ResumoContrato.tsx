@@ -99,8 +99,8 @@ export function ResumoContrato({
         decrescidos,
         extracontratuais,
         acrescMaisExtra: acrescidos + extracontratuais,
-        percAditivo: valorTotalOriginal ? (totalGeral / valorTotalOriginal) : 0,
-        percAcumulado: valorTotalOriginal ? (acumulado / valorTotalOriginal) : 0,
+        percAditivo: valorTotalOriginal ? (totalGeral / valorTotalOriginal) * 100 : 0,
+        percAcumulado: valorTotalOriginal ? (acumulado / valorTotalOriginal) * 100 : 0,
         valorPosAditivo: valorTotalOriginal + acumulado
       });
     }
@@ -203,10 +203,10 @@ export function ResumoContrato({
                       {formatCurrency(linha.totalGeral)}
                     </div>
                     <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                      {(linha.percAditivo * 100).toFixed(2)}%
+                      {linha.percAditivo.toFixed(2)}%
                     </div>
                     <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                      {(linha.percAcumulado * 100).toFixed(2)}%
+                      {linha.percAcumulado.toFixed(2)}%
                     </div>
                   </div>
 
