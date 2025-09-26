@@ -1072,32 +1072,17 @@ const criarNovaMedicao = async () => {
 
   // Função para encontrar próximo número de aditivo disponível
   const getProximoNumeroAditivo = () => {
-    const sequenciasExistentes = aditivos.map(a => a.sequencia || a.id).filter(s => typeof s === 'number').sort((a, b) => a - b);
+    // Usar apenas a sequencia para determinar o próximo número
+    const sequenciasExistentes = aditivos
+      .map(a => a.sequencia)
+      .filter(s => typeof s === 'number' && s > 0) // Garantir que é número válido
+      .sort((a, b) => a - b);
     
     // Se não há aditivos, começa com 1
     if (sequenciasExistentes.length === 0) return 1;
     
-    // Procura o primeiro gap na sequência
-    for (let i = 1; i <= sequenciasExistentes.length + 1; i++) {
-      if (!sequenciasExistentes.includes(i)) {
-        return i;
-      }
-    }
-    
-    // Fallback (não deveria chegar aqui)
-    return sequenciasExistentes.length + 1;
-  };
-
-  // Função para criar novo aditivo (sem anexos)
-  const criarNovoAditivo = () => {
-    const numeroAditivo = getProximoNumeroAditivo();
-    const novoAditivo: Aditivo = {
-      id: Date.now(),
-      nome: `ADITIVO ${numeroAditivo}`,
-      dados: {}
-    };
-    setAditivos([...aditivos, novoAditivo]);
-    toast.success(`Aditivo ${numeroAditivo} criado com sucesso!`);
+    // Retorna a próxima sequência (último + 1)
+    return Math.max(...sequenciasExistentes) + 1;
   };
 
   // Helpers para importação extracontratual
@@ -1121,8 +1106,6 @@ const criarNovaMedicao = async () => {
 
   // Confirmação do modal de Novo Aditivo
   const confirmarNovoAditivo = async ({ extracontratual, file, sequenciaEfetiva }: { extracontratual: boolean; file?: File | null; sequenciaEfetiva: number; }) => {
-    const numeroAditivo = getProximoNumeroAditivo();
-
     if (!id) {
       toast.error('Obra inválida');
       return;
@@ -1140,8 +1123,8 @@ const criarNovaMedicao = async () => {
 
     // Adicionar aditivo em memória com vínculo da sessão
     const novoAditivo: Aditivo = {
-      id: numeroAditivo,
-      nome: `ADITIVO ${numeroAditivo}`,
+      id: newSession.sequencia, // Usar a sequência como ID para consistência
+      nome: `ADITIVO ${newSession.sequencia}`,
       dados: {},
       sessionId: newSession.id,
       sequencia: newSession.sequencia,
@@ -1151,7 +1134,7 @@ const criarNovaMedicao = async () => {
     setAditivos(prev => [...prev, novoAditivo]);
 
     if (!extracontratual || !file) {
-      toast.success(`Aditivo ${numeroAditivo} criado.`);
+      toast.success(`Aditivo ${newSession.sequencia} criado.`);
       return;
     }
 
@@ -1349,14 +1332,14 @@ const criarNovaMedicao = async () => {
         ordem: it.ordem,
         // Novos campos
         origem: it.origem, // Usar a origem definida na lógica anterior
-        aditivo_num: numeroAditivo,
+        aditivo_num: newSession.sequencia,
       } as any));
 
       const { error: insertErr } = await supabase.from('orcamento_items').insert(rowsToInsert as any);
       if (insertErr) throw insertErr;
 
       // 6) Preencher automaticamente a coluna "QNT ADITIVO 1" com os valores das quantidades dos itens importados
-      const aditivoAtual = aditivos.find(a => a.id === numeroAditivo) || novoAditivo;
+      const aditivoAtual = aditivos.find(a => a.id === newSession.sequencia) || novoAditivo;
       const novosCodigosImportados = new Set(novos.map(item => item.codigo));
       
       // Criar dados do aditivo para todos os itens que foram importados
@@ -1377,7 +1360,7 @@ const criarNovaMedicao = async () => {
       
       // Atualizar o aditivo com os dados preenchidos
       setAditivos(prev => prev.map(aditivo => 
-        aditivo.id === numeroAditivo 
+        aditivo.id === newSession.sequencia 
           ? { ...aditivo, dados: dadosAditivo }
           : aditivo
       ));
