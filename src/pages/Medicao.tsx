@@ -331,20 +331,16 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
     const idsParaSomar = [item.id, ...coletarDescendentesIds(item.item)];
 
-    // TOTAL CONTRATO = Valor original + aditivos aplicados
+    // TOTAL CONTRATO = Valor total com BDI e Desconto + TOTAL ADITIVO 1
     const valorOriginal = item.valorTotal;
-    const totalAditivos = aditivos
-      .filter(a => a.bloqueada && (
-        seqLimit != null
-          ? ((a.sequencia ?? 0) <= seqLimit)
-          : (medicaoAtual ? ((a.sequencia ?? 0) <= medicaoAtual) : true)
-      ))
+    const totalAditivo1 = aditivos
+      .filter(a => a.bloqueada && a.sequencia === 1)
       .reduce((sum, aditivo) => {
         const subtotal = idsParaSomar.reduce((acc, id) => acc + (aditivo.dados[id]?.total || 0), 0);
         return sum + subtotal;
       }, 0);
 
-    return valorOriginal + totalAditivos;
+    return valorOriginal + totalAditivo1;
   };
 
   // Função para verificar se um item é de primeiro nível (sem pontos ou apenas números)
@@ -394,12 +390,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     return items
       .filter(item => ehItemPrimeiroNivel(item.item) && item.origem !== 'extracontratual')
       .reduce((total, item) => {
-        // TOTAL CONTRATO = Valor original + soma dos aditivos aplicados ao item
-        const valorAditivos = aditivos
-          .filter(a => a.bloqueada)
+        // TOTAL CONTRATO = Valor total com BDI e Desconto + TOTAL ADITIVO 1
+        const valorAditivo1 = aditivos
+          .filter(a => a.bloqueada && a.sequencia === 1)
           .reduce((soma, aditivo) => soma + (aditivo.dados[item.id]?.total || 0), 0);
         
-        return total + item.valorTotal + valorAditivos;
+        return total + item.valorTotal + valorAditivo1;
       }, 0);
   }, [items, aditivos]);
 
