@@ -933,7 +933,9 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         await fetchMedicoesSalvas();
       }
       
+      // Remover aditivo do estado local
       setAditivos(prev => prev.filter(a => a.id !== aditivoLocalId));
+      
       toast.success('Aditivo e planilha importada excluídos.');
     } catch (e) {
       console.error(e);
