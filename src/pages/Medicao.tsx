@@ -1215,7 +1215,7 @@ const criarNovaMedicao = async () => {
         
         headerRowIndex = 1;
       } else {
-        // Assumir mapeamento por posição: Item, Código, Descrição, Unidade, Quantidade, Valor Unit, Valor Total
+        // Sem cabeçalho: mapear por posição e encontrar a primeira linha de dados válida (>=7 colunas)
         idx = {
           item: 0,          // Coluna A - item
           codigoBanco: 1,   // Coluna B - código banco
@@ -1226,12 +1226,14 @@ const criarNovaMedicao = async () => {
           valorTotal: 6,    // Coluna G - valor total
         };
         
-        // Verificar se temos pelo menos 7 colunas
-        if (!primeiraLinha || primeiraLinha.length < 7) {
-          throw new Error(`Planilha deve ter pelo menos 7 colunas: Item, Código, Descrição, Unidade, Quantidade, Valor Unitário, Valor Total. Encontradas ${primeiraLinha ? primeiraLinha.length : 0} colunas.`);
+        // Procurar a primeira linha com ao menos 7 colunas (pula títulos como 'EXTRACONTRATUAL', se houver)
+        const candidateIndex = rows.findIndex(r => Array.isArray(r) && r.length >= 7);
+        if (candidateIndex === -1) {
+          const cols = primeiraLinha ? primeiraLinha.length : 0;
+          throw new Error(`Não foi possível localizar linhas de itens com 7 colunas. Verifique se sua planilha possui as colunas: Item, Código, Descrição, Unidade, Quantidade, Valor Unitário e Valor Total. Primeira linha possui ${cols} colunas.`);
         }
         
-        headerRowIndex = 0;
+        headerRowIndex = candidateIndex;
       }
 
       const body = rows.slice(headerRowIndex);
