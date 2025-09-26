@@ -2249,9 +2249,9 @@ const criarNovaMedicao = async () => {
                           {/* Valor unit com BDI e Desc. */}
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-right font-mono text-xs px-1">
-                              {determinarNivel(item.item) === 1
-                                ? ''
-                                : `R$ ${item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                              {ehItemFolha(item.item)
+                                ? `R$ ${item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : ''}
                             </div>
                           </TableCell>
                           {/* Valor total com BDI e Desconto */}
