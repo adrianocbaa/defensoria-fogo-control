@@ -1355,6 +1355,33 @@ const criarNovaMedicao = async () => {
       const { error: insertErr } = await supabase.from('orcamento_items').insert(rowsToInsert as any);
       if (insertErr) throw insertErr;
 
+      // 6) Preencher automaticamente a coluna "QNT ADITIVO 1" com os valores das quantidades dos itens importados
+      const aditivoAtual = aditivos.find(a => a.id === numeroAditivo) || novoAditivo;
+      const novosCodigosImportados = new Set(novos.map(item => item.codigo));
+      
+      // Criar dados do aditivo para todos os itens que foram importados
+      const dadosAditivo: { [itemId: number]: { qnt: number; percentual: number; total: number } } = {};
+      
+      // Para cada item existente, verificar se seu código está na planilha importada
+      [...items, ...novos].forEach(item => {
+        // Se o item está na planilha importada (seja contratual ou extracontratual)
+        if (novosCodigosImportados.has(item.codigo) || novos.some(novoItem => novoItem.id === item.id)) {
+          // Preencher com a quantidade do item
+          dadosAditivo[item.id] = {
+            qnt: item.quantidade,
+            percentual: 0, // Deixar percentual em 0
+            total: 0 // Deixar total em 0 por enquanto
+          };
+        }
+      });
+      
+      // Atualizar o aditivo com os dados preenchidos
+      setAditivos(prev => prev.map(aditivo => 
+        aditivo.id === numeroAditivo 
+          ? { ...aditivo, dados: dadosAditivo }
+          : aditivo
+      ));
+
       } catch (e: any) {
         console.error(e);
         if (typeof e?.message === 'string' && e.message.startsWith('COD_DUP:')) {
