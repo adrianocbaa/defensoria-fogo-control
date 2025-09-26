@@ -1,34 +1,79 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, Mail, Lock, User, AlertTriangle, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, User, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { 
+  AuthLoginSchema, 
+  AuthSignupSchema, 
+  sanitizeEmail, 
+  sanitizeString, 
+  createRateLimiter, 
+  type AuthLoginData, 
+  type AuthSignupData 
+} from '@/lib/validations';
 
 const AuthPage = () => {
   const navigate = useNavigate();
   const { signIn, signUp, loading } = useAuth();
   const { toast } = useToast();
-  
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [signupForm, setSignupForm] = useState({ 
+
+  // Rate limiters for login attempts
+  const loginRateLimiter = createRateLimiter(5, 15 * 60 * 1000); // 5 attempts per 15 minutes
+  const signupRateLimiter = createRateLimiter(3, 60 * 60 * 1000); // 3 attempts per hour
+
+  const [loginForm, setLoginForm] = useState<AuthLoginData>({ email: '', password: '' });
+  const [signupForm, setSignupForm] = useState<AuthSignupData>({ 
     email: '', 
     password: '', 
     confirmPassword: '', 
     displayName: '' 
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationErrors({});
+    
+    // Rate limiting check
+    if (!loginRateLimiter('login')) {
+      toast({
+        title: "Muitas tentativas",
+        description: "Aguarde 15 minutos antes de tentar novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate and sanitize input
+    const sanitizedData = {
+      email: sanitizeEmail(loginForm.email),
+      password: loginForm.password,
+    };
+
+    const validation = AuthLoginSchema.safeParse(sanitizedData);
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach((error) => {
+        if (error.path[0]) {
+          errors[error.path[0] as string] = error.message;
+        }
+      });
+      setValidationErrors(errors);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(loginForm.email, loginForm.password);
+      const { error } = await signIn(validation.data.email, validation.data.password);
       
       if (error) {
         toast({
@@ -56,22 +101,35 @@ const AuthPage = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationErrors({});
     
-    if (signupForm.password !== signupForm.confirmPassword) {
+    // Rate limiting check
+    if (!signupRateLimiter('signup')) {
       toast({
-        title: "Erro no cadastro",
-        description: "As senhas não coincidem.",
+        title: "Muitas tentativas",
+        description: "Aguarde 1 hora antes de tentar novamente.",
         variant: "destructive",
       });
       return;
     }
 
-    if (signupForm.password.length < 6) {
-      toast({
-        title: "Senha muito fraca",
-        description: "A senha deve ter pelo menos 6 caracteres.",
-        variant: "destructive",
+    // Validate and sanitize input
+    const sanitizedData = {
+      email: sanitizeEmail(signupForm.email),
+      password: signupForm.password,
+      confirmPassword: signupForm.confirmPassword,
+      displayName: sanitizeString(signupForm.displayName),
+    };
+
+    const validation = AuthSignupSchema.safeParse(sanitizedData);
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach((error) => {
+        if (error.path[0]) {
+          errors[error.path[0] as string] = error.message;
+        }
       });
+      setValidationErrors(errors);
       return;
     }
 
@@ -79,9 +137,9 @@ const AuthPage = () => {
 
     try {
       const { error } = await signUp(
-        signupForm.email, 
-        signupForm.password, 
-        signupForm.displayName
+        validation.data.email, 
+        validation.data.password, 
+        validation.data.displayName
       );
       
       if (error) {
@@ -208,8 +266,14 @@ const AuthPage = () => {
                         placeholder="Seu nome"
                         value={signupForm.displayName}
                         onChange={(e) => setSignupForm(prev => ({ ...prev, displayName: e.target.value }))}
-                        className="pl-10"
+                        className={`pl-10 ${validationErrors.displayName ? 'border-red-500' : ''}`}
+                        required
+                        autoComplete="name"
+                        maxLength={100}
                       />
+                      {validationErrors.displayName && (
+                        <p className="text-sm text-red-600 mt-1">{validationErrors.displayName}</p>
+                      )}
                     </div>
                   </div>
                   

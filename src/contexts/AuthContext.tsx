@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useSecurityMonitor } from '@/hooks/useSecurityMonitor';
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { logLoginAttempt, cleanupOldAttempts } = useSecurityMonitor();
 
   useEffect(() => {
     // Set up auth state listener
@@ -35,8 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
+    // Cleanup old login attempts on app start
+    cleanupOldAttempts();
+
     return () => subscription.unsubscribe();
-  }, []);
+  }, [cleanupOldAttempts]);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
@@ -52,6 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Log the signup attempt
+    await logLoginAttempt(email, !error, 'signup');
+
     return { error };
   };
 
@@ -60,6 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
     });
+
+    // Log the login attempt
+    await logLoginAttempt(email, !error, 'login');
 
     return { error };
   };
