@@ -331,6 +331,8 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
     const idsParaSomar = [item.id, ...coletarDescendentesIds(item.item)];
 
+    // TOTAL CONTRATO = Valor original + aditivos aplicados
+    const valorOriginal = item.valorTotal;
     const totalAditivos = aditivos
       .filter(a => a.bloqueada && (
         seqLimit != null
@@ -342,7 +344,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         return sum + subtotal;
       }, 0);
 
-    return item.valorTotal + totalAditivos;
+    return valorOriginal + totalAditivos;
   };
 
   // Função para verificar se um item é de primeiro nível (sem pontos ou apenas números)
@@ -391,8 +393,15 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const calcularValorTotalOriginal = useMemo(() => {
     return items
       .filter(item => ehItemPrimeiroNivel(item.item) && item.origem !== 'extracontratual')
-      .reduce((total, item) => total + item.totalContrato, 0);
-  }, [items]);
+      .reduce((total, item) => {
+        // TOTAL CONTRATO = Valor original + soma dos aditivos aplicados ao item
+        const valorAditivos = aditivos
+          .filter(a => a.bloqueada)
+          .reduce((soma, aditivo) => soma + (aditivo.dados[item.id]?.total || 0), 0);
+        
+        return total + item.valorTotal + valorAditivos;
+      }, 0);
+  }, [items, aditivos]);
 
   // Função para calcular Total do Contrato para a medição corrente (nível 1), usando aditivos publicados anteriores
   const calcularTotalContrato = useMemo(() => {
