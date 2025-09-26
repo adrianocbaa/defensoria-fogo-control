@@ -70,16 +70,16 @@ export function ResumoContrato({
         const aditivoData = aditivo.dados[item.id];
         if (!aditivoData || aditivoData.total === 0) return;
 
-        if (item.origem === 'extracontratual') {
-          // Extracontratuais: itens completamente novos adicionados no aditivo
-          extracontratuais += aditivoData.total;
-        } else {
-          // Itens contratuais: itens que já existiam no contrato original
-          if (aditivoData.total > 0) {
-            acrescidos += aditivoData.total;
-          } else if (aditivoData.total < 0) {
-            decrescidos += Math.abs(aditivoData.total);
-          }
+        const totalItem = aditivoData.total;
+        if (totalItem < 0) {
+          // Parte 2: Somar valores negativos (decrescidos)
+          decrescidos += Math.abs(totalItem);
+        } else if (item.origem === 'extracontratual') {
+          // Parte 3: Somar apenas positivos dos itens extracontratuais (planilha do aditivo)
+          extracontratuais += totalItem;
+        } else if (totalItem > 0) {
+          // Parte 1: Somar valores positivos em itens existentes do contrato
+          acrescidos += totalItem;
         }
       });
 

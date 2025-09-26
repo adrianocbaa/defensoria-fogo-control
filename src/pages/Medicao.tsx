@@ -192,7 +192,13 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         });
 
         // Criar mapa código -> ID para usar ao converter medições salvas (chave normalizada)
-        codigoToIdMap = new Map(itemsConvertidos.map(i => [String(i.codigo).trim(), i.id]));
+        codigoToIdMap = new Map<string, number>();
+        itemsConvertidos.forEach(i => {
+          const codeBanco = String(i.codigo || '').trim();
+          if (codeBanco) codigoToIdMap.set(codeBanco, i.id);
+          const codeHier = String(i.item || '').trim();
+          if (codeHier) codigoToIdMap.set(codeHier, i.id);
+        });
 
         setItems(itemsConvertidos);
       }
@@ -853,7 +859,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         if (!d) return arr;
         const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
         if (!hasData) return arr;
-        arr.push({ item_code: it.codigo, qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
+        arr.push({ item_code: (it.codigo?.trim() || it.item.trim()), qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
         return arr;
       }, [] as { item_code: string; qtd: number; pct: number; total: number }[]);
 
@@ -878,7 +884,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         if (!d) return arr;
         const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
         if (!hasData) return arr;
-        arr.push({ item_code: it.codigo, qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
+        arr.push({ item_code: (it.codigo?.trim() || it.item.trim()), qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
         return arr;
       }, [] as { item_code: string; qtd: number; pct: number; total: number }[]);
 
@@ -1239,7 +1245,7 @@ const criarNovaMedicao = async () => {
       const body = rows.slice(headerRowIndex);
       const baseOrdem = items.reduce((m, it) => Math.max(m, it.ordem || 0), 0);
 
-      const existentes = new Set(items.map(it => (it.item || '').trim()));
+      const existentes = new Set(items.filter(it => it.origem !== 'extracontratual').map(it => (it.item || '').trim()));
       const novos: Item[] = [];
       const duplicados: string[] = [];
       const vistosNoArquivo = new Set<string>();
