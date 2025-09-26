@@ -244,16 +244,34 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         .from('aditivo_sessions')
         .select('id, sequencia, status, created_at, aditivo_items ( item_code, qtd, pct, total )')
         .eq('obra_id', id)
-        .order('sequencia', { ascending: true });
+        .order('created_at', { ascending: true });
       if (adSessionsError) throw adSessionsError;
       if (adSessions && adSessions.length > 0) {
+        // Carregar/atualizar mapa de numeração persistido em localStorage
+        const mapKey = `aditivo_numbers_${id}`;
+        let numMap: Record<string, number> = {};
+        try { numMap = JSON.parse(localStorage.getItem(mapKey) || '{}') || {}; } catch {}
+
+        // Remover entradas de sessões que não existem mais
+        const sessionIds = new Set(adSessions.map((s: any) => s.id));
+        Object.keys(numMap).forEach((sid) => { if (!sessionIds.has(sid)) delete numMap[sid]; });
+
+        // Helper para pegar o menor número livre
+        const used = new Set<number>(Object.values(numMap));
+        const nextFree = () => { let n = 1; while (used.has(n)) n++; used.add(n); return n; };
+
+        // Atribuir números faltantes seguindo ordem de criação
+        adSessions.forEach((s: any) => { if (!numMap[s.id]) numMap[s.id] = nextFree(); });
+        try { localStorage.setItem(mapKey, JSON.stringify(numMap)); } catch {}
+
         const aditivosConvertidos: Aditivo[] = adSessions.map((s: any) => {
+          const numero = numMap[s.id];
           const a: Aditivo = {
-            id: s.sequencia,
-            nome: `ADITIVO ${s.sequencia}`,
+            id: numero,                 // número sequencial do aditivo
+            nome: `ADITIVO ${numero}`,
             dados: {},
             sessionId: s.id,
-            sequencia: s.sequencia,
+            sequencia: s.sequencia,     // medição a partir da qual passa a valer
             bloqueada: s.status === 'bloqueada',
             created_at: s.created_at,
           };
@@ -1070,19 +1088,23 @@ const criarNovaMedicao = async () => {
   }
 };
 
-  // Função para encontrar próximo número de aditivo disponível
+  // Função para encontrar próximo número de aditivo disponível (sequencial com reaproveitamento de lacunas)
   const getProximoNumeroAditivo = () => {
-    // Usar apenas a sequencia para determinar o próximo número
-    const sequenciasExistentes = aditivos
-      .map(a => a.sequencia)
-      .filter(s => typeof s === 'number' && s > 0) // Garantir que é número válido
+    const numerosExistentes = aditivos
+      .map(a => a.id)
+      .filter((n): n is number => typeof n === 'number' && n > 0)
       .sort((a, b) => a - b);
-    
+
     // Se não há aditivos, começa com 1
-    if (sequenciasExistentes.length === 0) return 1;
-    
-    // Retorna a próxima sequência (último + 1)
-    return Math.max(...sequenciasExistentes) + 1;
+    if (numerosExistentes.length === 0) return 1;
+
+    // Encontrar a primeira lacuna na sequência 1,2,3...
+    for (let i = 1; i <= numerosExistentes.length + 1; i++) {
+      if (!numerosExistentes.includes(i)) return i;
+    }
+
+    // Fallback
+    return numerosExistentes.length + 1;
   };
 
   // Helpers para importação extracontratual
@@ -1121,17 +1143,29 @@ const criarNovaMedicao = async () => {
       return;
     }
 
+    // Determinar número sequencial do aditivo (independente da medição)
+    const numeroAditivo = getProximoNumeroAditivo();
+
     // Adicionar aditivo em memória com vínculo da sessão
     const novoAditivo: Aditivo = {
-      id: newSession.sequencia, // Usar a sequência como ID para consistência
-      nome: `ADITIVO ${newSession.sequencia}`,
+      id: numeroAditivo, // número sequencial do aditivo
+      nome: `ADITIVO ${numeroAditivo}`,
       dados: {},
       sessionId: newSession.id,
-      sequencia: newSession.sequencia,
+      sequencia: newSession.sequencia, // medição em que passa a valer
       bloqueada: newSession.status === 'bloqueada',
       created_at: newSession.created_at,
     };
     setAditivos(prev => [...prev, novoAditivo]);
+
+    // Persistir mapeamento sessão -> número do aditivo
+    try {
+      const mapKey = `aditivo_numbers_${id}`;
+      const current = JSON.parse(localStorage.getItem(mapKey) || '{}') || {};
+      current[newSession.id] = numeroAditivo;
+      localStorage.setItem(mapKey, JSON.stringify(current));
+    } catch {}
+
 
     if (!extracontratual || !file) {
       toast.success(`Aditivo ${newSession.sequencia} criado.`);
