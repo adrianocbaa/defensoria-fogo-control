@@ -1233,7 +1233,8 @@ const criarNovaMedicao = async () => {
           throw new Error(`Não foi possível localizar linhas de itens com 7 colunas. Verifique se sua planilha possui as colunas: Item, Código, Descrição, Unidade, Quantidade, Valor Unitário e Valor Total. Primeira linha possui ${cols} colunas.`);
         }
         
-        headerRowIndex = candidateIndex;
+        // Processar desde o início para incluir linhas de estrutura (ex.: "4", "4.1") antes da 1ª linha completa
+        headerRowIndex = 0;
       }
 
       const body = rows.slice(headerRowIndex);
