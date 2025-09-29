@@ -10,6 +10,9 @@ import { ArrowLeft, Mail, Lock, User, AlertTriangle, Shield } from 'lucide-react
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ForgotPasswordForm } from '@/components/ForgotPasswordForm';
+import { VerifyCodeForm } from '@/components/VerifyCodeForm';
+import { ResetPasswordForm } from '@/components/ResetPasswordForm';
 import { 
   AuthLoginSchema, 
   AuthSignupSchema, 
@@ -39,8 +42,15 @@ const AuthPage = () => {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  
+  // New password reset flow states
+  const [resetFlow, setResetFlow] = useState<'login' | 'forgot' | 'verify' | 'reset'>('login');
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [resetUserId, setResetUserId] = useState("");
+  
+  // Old password reset states (keeping for backward compatibility)
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -221,7 +231,19 @@ const AuthPage = () => {
 
   // Check for password reset parameters and show reset form
   useEffect(() => {
-    // Check if we're in recovery mode (tokens stored by AuthContext)
+    // Check URL for verify code
+    const urlParams = new URLSearchParams(window.location.search);
+    const verify = urlParams.get('verify');
+    
+    if (verify) {
+      setResetFlow('verify');
+      setResetCode(verify);
+      // Clean URL
+      window.history.replaceState({}, '', '/auth');
+      return;
+    }
+    
+    // Check if we're in recovery mode (tokens stored by AuthContext - old flow)
     const inRecoveryMode = sessionStorage.getItem('in_recovery_mode');
     const hasRecoveryTokens = sessionStorage.getItem('recovery_access_token');
     
@@ -360,7 +382,30 @@ const AuthPage = () => {
           </CardHeader>
           
           <CardContent>
-            {showNewPassword ? (
+            {resetFlow === 'forgot' ? (
+              <ForgotPasswordForm
+                onCodeSent={(email) => {
+                  setResetEmail(email);
+                  setResetFlow('verify');
+                }}
+                onBack={() => setResetFlow('login')}
+              />
+            ) : resetFlow === 'verify' ? (
+              <VerifyCodeForm
+                email={resetEmail}
+                onCodeVerified={(code, userId) => {
+                  setResetCode(code);
+                  setResetUserId(userId);
+                  setResetFlow('reset');
+                }}
+                onBack={() => setResetFlow('forgot')}
+              />
+            ) : resetFlow === 'reset' ? (
+              <ResetPasswordForm
+                code={resetCode}
+                userId={resetUserId}
+              />
+            ) : showNewPassword ? (
               <div className="space-y-6">
                 <div className="text-center space-y-2">
                   <h3 className="text-xl font-semibold">Redefinição de senha</h3>
@@ -514,7 +559,7 @@ const AuthPage = () => {
                       type="button"
                       variant="link"
                       size="sm"
-                      onClick={() => setShowForgotPassword(true)}
+                      onClick={() => setResetFlow('forgot')}
                       className="text-muted-foreground hover:text-primary"
                     >
                       Esqueci minha senha

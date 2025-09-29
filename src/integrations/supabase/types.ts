@@ -789,6 +789,33 @@ export type Database = {
         }
         Relationships: []
       }
+      password_resets: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -994,6 +1021,10 @@ export type Database = {
       can_view_sensitive_data: {
         Args: { user_uuid?: string }
         Returns: boolean
+      }
+      cleanup_expired_reset_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       cleanup_old_login_attempts: {
         Args: Record<PropertyKey, never>
