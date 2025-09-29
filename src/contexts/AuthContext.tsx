@@ -22,24 +22,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { logLoginAttempt, cleanupOldAttempts } = useSecurityMonitor();
 
   useEffect(() => {
+    let isRecoveryFlow = false;
+
     // Check if we're in a password recovery flow
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
     const accessToken = urlParams.get('access_token');
     const refreshToken = urlParams.get('refresh_token');
-    const isRecoveryFlow = type === 'recovery' && accessToken && refreshToken;
+    
+    if (type === 'recovery' && accessToken && refreshToken) {
+      isRecoveryFlow = true;
+      
+      // Store tokens temporarily in sessionStorage for password reset
+      sessionStorage.setItem('recovery_access_token', accessToken);
+      sessionStorage.setItem('recovery_refresh_token', refreshToken);
+      
+      // Immediately sign out any existing session
+      supabase.auth.signOut();
+      
+      // Clear state to prevent auto-login
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+      
+      // The AuthPage will handle showing the password reset form
+      return;
+    }
 
-    // Set up auth state listener
+    // Set up auth state listener only for non-recovery flows
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // If we're in recovery flow, don't auto-login
-        if (isRecoveryFlow && event === 'TOKEN_REFRESHED') {
-          // Immediately sign out to prevent auto-login during recovery
-          supabase.auth.signOut();
-          return;
+        // Double check we're not in recovery mode
+        if (sessionStorage.getItem('recovery_access_token')) {
+          return; // Don't process auth changes during recovery
         }
         
-        // Normal auth state handling
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -53,11 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
       });
-    } else {
-      // In recovery flow, start with no session
-      setSession(null);
-      setUser(null);
-      setLoading(false);
     }
 
     // Cleanup old login attempts on app start

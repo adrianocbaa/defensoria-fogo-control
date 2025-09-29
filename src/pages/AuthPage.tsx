@@ -225,8 +225,12 @@ const AuthPage = () => {
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
     
-    if (type === 'recovery' && accessToken && refreshToken) {
-      // Immediately show password reset form and clear tokens from URL
+    // Check if we have recovery tokens (either from URL or sessionStorage)
+    const hasRecoveryTokens = (type === 'recovery' && accessToken && refreshToken) || 
+                              sessionStorage.getItem('recovery_access_token');
+    
+    if (hasRecoveryTokens) {
+      // Show password reset form
       setShowNewPassword(true);
       
       // Clear the URL parameters to prevent auto-login on refresh
@@ -261,10 +265,9 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      // Get tokens from the original URL parameters (stored when component mounted)
-      const urlParams = new URLSearchParams(window.location.search);
-      const accessToken = urlParams.get('access_token') || searchParams.get('access_token');
-      const refreshToken = urlParams.get('refresh_token') || searchParams.get('refresh_token');
+      // Get tokens from sessionStorage (stored by AuthContext)
+      const accessToken = sessionStorage.getItem('recovery_access_token');
+      const refreshToken = sessionStorage.getItem('recovery_refresh_token');
       
       if (!accessToken || !refreshToken) {
         toast({
@@ -289,6 +292,11 @@ const AuthPage = () => {
           description: "Token de recuperação expirado. Solicite um novo link.",
           variant: "destructive",
         });
+        
+        // Clear recovery tokens
+        sessionStorage.removeItem('recovery_access_token');
+        sessionStorage.removeItem('recovery_refresh_token');
+        
         setShowNewPassword(false);
         setIsLoading(false);
         return;
@@ -311,7 +319,11 @@ const AuthPage = () => {
           description: "Você já pode fazer login com sua nova senha.",
         });
         
-        // Sign out to prevent auto-login and redirect to login
+        // Clear recovery tokens
+        sessionStorage.removeItem('recovery_access_token');
+        sessionStorage.removeItem('recovery_refresh_token');
+        
+        // Sign out and reset form
         await supabase.auth.signOut();
         setShowNewPassword(false);
         setNewPassword('');
