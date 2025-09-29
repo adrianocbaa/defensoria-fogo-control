@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { User, LogOut, Settings, ArrowLeft, BarChart3 } from 'lucide-react';
+import { User, LogOut, Settings, ArrowLeft, BarChart3, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
@@ -98,8 +98,8 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link to="/admin">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Painel Admin
+                        <Shield className="mr-2 h-4 w-4" />
+                        Gerenciar Usuários
                       </Link>
                     </DropdownMenuItem>
                   </>

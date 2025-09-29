@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Building2, Shield, LogOut, User, Eye, Settings, Wrench } from 'lucide-react';
+import { Building2, Shield, LogOut, User, Eye, Settings, Wrench, UserCog } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
@@ -95,8 +95,8 @@ export function Layout({ children }: LayoutProps) {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <Link to="/admin">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Painel Admin
+                          <UserCog className="mr-2 h-4 w-4" />
+                          Gerenciar Usuários
                         </Link>
                       </DropdownMenuItem>
                     </>
