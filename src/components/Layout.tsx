@@ -75,17 +75,24 @@ export function Layout({ children }: LayoutProps) {
                     {user?.email}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Meu Perfil
+                    </Link>
+                  </DropdownMenuItem>
                   {isAdmin && (
                     <>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <Link to="/admin">
                           <Settings className="mr-2 h-4 w-4" />
                           Painel Admin
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
                     </>
                   )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut} className="text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
                     Sair

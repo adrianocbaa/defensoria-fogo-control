@@ -820,30 +820,45 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          department: string | null
           display_name: string | null
           id: string
+          language: string | null
+          phone: string | null
+          position: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           sectors: Database["public"]["Enums"]["sector_type"][] | null
+          theme: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          department?: string | null
           display_name?: string | null
           id?: string
+          language?: string | null
+          phone?: string | null
+          position?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           sectors?: Database["public"]["Enums"]["sector_type"][] | null
+          theme?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          department?: string | null
           display_name?: string | null
           id?: string
+          language?: string | null
+          phone?: string | null
+          position?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           sectors?: Database["public"]["Enums"]["sector_type"][] | null
+          theme?: string | null
           updated_at?: string
           user_id?: string
         }
