@@ -16,6 +16,9 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Get origin from request headers
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "http://localhost:8080";
+    
     const { email } = await req.json();
 
     if (!email) {
@@ -100,7 +103,7 @@ serve(async (req: Request) => {
                 <div class="code">${code}</div>
               </div>
               <p style="text-align: center;">
-                <a href="${supabaseUrl.replace('https://mmumfgxngzaivvyqfbed.supabase.co', window.location.origin)}/auth?verify=${code}" class="button">
+                <a href="${origin}/auth?verify=${code}" class="button">
                   Verificar Código
                 </a>
               </p>
