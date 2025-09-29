@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Mail, Lock, User, AlertTriangle, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
   AuthLoginSchema, 
@@ -21,6 +22,7 @@ import {
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn, signUp, resetPassword, loading } = useAuth();
   const { toast } = useToast();
 
@@ -39,6 +41,9 @@ const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,6 +219,98 @@ const AuthPage = () => {
     }
   };
 
+  // Check for password reset parameters
+  useEffect(() => {
+    const type = searchParams.get('type');
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+    
+    if (type === 'recovery' && accessToken && refreshToken) {
+      // Set session with the tokens from URL
+      const setSession = async () => {
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          
+          if (error) {
+            toast({
+              title: "Erro na recuperação",
+              description: "Link de recuperação inválido ou expirado.",
+              variant: "destructive",
+            });
+          } else {
+            setShowNewPassword(true);
+            toast({
+              title: "Link válido",
+              description: "Digite sua nova senha.",
+            });
+          }
+        } catch (error) {
+          toast({
+            title: "Erro inesperado",
+            description: "Tente novamente.",
+            variant: "destructive",
+          });
+        }
+      };
+      
+      setSession();
+    }
+  }, [searchParams, toast]);
+
+  const handleNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationErrors({});
+    
+    if (!newPassword.trim()) {
+      setValidationErrors({ newPassword: 'Nova senha é obrigatória' });
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      setValidationErrors({ newPassword: 'A senha deve ter pelo menos 8 caracteres' });
+      return;
+    }
+    
+    if (newPassword !== confirmNewPassword) {
+      setValidationErrors({ confirmNewPassword: 'As senhas não coincidem' });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) {
+        toast({
+          title: "Erro ao atualizar senha",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Senha atualizada!",
+          description: "Sua senha foi alterada com sucesso.",
+        });
+        setShowNewPassword(false);
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro inesperado",
+        description: "Tente novamente em alguns instantes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -239,11 +336,68 @@ const AuthPage = () => {
           </CardHeader>
           
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Cadastro</TabsTrigger>
-              </TabsList>
+            {showNewPassword ? (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-medium">Definir Nova Senha</h3>
+                  <p className="text-sm text-muted-foreground">Digite sua nova senha</p>
+                </div>
+                
+                <form onSubmit={handleNewPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password">Nova Senha</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="new-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className={`pl-10 ${validationErrors.newPassword ? 'border-red-500' : ''}`}
+                        required
+                        minLength={8}
+                      />
+                      {validationErrors.newPassword && (
+                        <p className="text-sm text-red-600 mt-1">{validationErrors.newPassword}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-new-password">Confirmar Nova Senha</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="confirm-new-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        className={`pl-10 ${validationErrors.confirmNewPassword ? 'border-red-500' : ''}`}
+                        required
+                      />
+                      {validationErrors.confirmNewPassword && (
+                        <p className="text-sm text-red-600 mt-1">{validationErrors.confirmNewPassword}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading || loading}
+                  >
+                    {isLoading ? 'Atualizando...' : 'Atualizar Senha'}
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              <Tabs defaultValue="login" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                  <TabsTrigger value="signup">Cadastro</TabsTrigger>
+                </TabsList>
               
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
@@ -457,7 +611,8 @@ const AuthPage = () => {
                   </Button>
                 </form>
               </TabsContent>
-            </Tabs>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>
