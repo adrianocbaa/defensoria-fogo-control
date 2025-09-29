@@ -21,63 +21,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { logLoginAttempt, cleanupOldAttempts } = useSecurityMonitor();
 
+  // CRITICAL: Check recovery mode BEFORE React renders anything
   useEffect(() => {
-    // CRITICAL: Check for password recovery flow IMMEDIATELY before anything else
-    const currentUrl = new URL(window.location.href);
-    const urlParams = new URLSearchParams(currentUrl.search);
-    const type = urlParams.get('type');
-    const accessToken = urlParams.get('access_token');
-    const refreshToken = urlParams.get('refresh_token');
-    
-    if (type === 'recovery' && accessToken && refreshToken) {
-      // Store tokens in sessionStorage
-      sessionStorage.setItem('recovery_access_token', accessToken);
-      sessionStorage.setItem('recovery_refresh_token', refreshToken);
-      sessionStorage.setItem('in_recovery_mode', 'true');
+    const handleRecoveryFlow = async () => {
+      const currentUrl = new URL(window.location.href);
+      const urlParams = new URLSearchParams(currentUrl.search);
+      const type = urlParams.get('type');
+      const accessToken = urlParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token');
       
-      // Clear ALL URL parameters and redirect to clean /auth page
-      window.history.replaceState({}, '', '/auth');
-      
-      // Force sign out any existing session
-      supabase.auth.signOut();
-      
-      // Set loading to false so AuthPage can show the reset form
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-      
-      // Don't set up any listeners during recovery
-      return;
-    }
+      // Recovery mode detected
+      if (type === 'recovery' && accessToken && refreshToken) {
+        console.log('Recovery mode detected, preventing auto-login');
+        
+        // IMMEDIATELY sign out to prevent auto-login
+        await supabase.auth.signOut();
+        
+        // Store tokens for password reset
+        sessionStorage.setItem('recovery_access_token', accessToken);
+        sessionStorage.setItem('recovery_refresh_token', refreshToken);
+        sessionStorage.setItem('in_recovery_mode', 'true');
+        
+        // Clear state
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        
+        // Clean URL
+        window.history.replaceState({}, '', '/auth');
+        
+        return; // Stop here, don't set up listeners
+      }
 
-    // Only set up auth listeners if NOT in recovery mode
-    if (!sessionStorage.getItem('in_recovery_mode')) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
-      );
+      // Normal auth flow
+      const isRecoveryMode = sessionStorage.getItem('in_recovery_mode') === 'true';
+      
+      if (!isRecoveryMode) {
+        // Set up auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            console.log('Auth state changed:', event);
+            setSession(session);
+            setUser(session?.user ?? null);
+            setLoading(false);
+          }
+        );
 
-      // Check for existing session
-      supabase.auth.getSession().then(({ data: { session } }) => {
+        // Check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-      });
 
-      // Cleanup old login attempts on app start
-      cleanupOldAttempts();
+        // Cleanup
+        cleanupOldAttempts();
 
-      return () => subscription.unsubscribe();
-    } else {
-      // In recovery mode, don't check for sessions
-      setLoading(false);
-      
-      // Cleanup old login attempts on app start
-      cleanupOldAttempts();
-    }
+        return () => {
+          subscription.unsubscribe();
+        };
+      } else {
+        // In recovery mode - no auth checks
+        console.log('In recovery mode, skipping auth setup');
+        setLoading(false);
+        cleanupOldAttempts();
+      }
+    };
+
+    handleRecoveryFlow();
   }, [cleanupOldAttempts]);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
