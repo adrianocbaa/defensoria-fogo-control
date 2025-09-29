@@ -226,37 +226,13 @@ const AuthPage = () => {
     const refreshToken = searchParams.get('refresh_token');
     
     if (type === 'recovery' && accessToken && refreshToken) {
-      // Set session with the tokens from URL
-      const setSession = async () => {
-        try {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          
-          if (error) {
-            toast({
-              title: "Erro na recuperação",
-              description: "Link de recuperação inválido ou expirado.",
-              variant: "destructive",
-            });
-          } else {
-            setShowNewPassword(true);
-            toast({
-              title: "Link válido",
-              description: "Digite sua nova senha.",
-            });
-          }
-        } catch (error) {
-          toast({
-            title: "Erro inesperado",
-            description: "Tente novamente.",
-            variant: "destructive",
-          });
-        }
-      };
-      
-      setSession();
+      // Just show the password form without setting session yet
+      // The session will be set after password update
+      setShowNewPassword(true);
+      toast({
+        title: "Link válido",
+        description: "Digite sua nova senha.",
+      });
     }
   }, [searchParams, toast]);
 
@@ -282,6 +258,34 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
+      // First, set the session with tokens from URL
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
+      
+      if (!accessToken || !refreshToken) {
+        toast({
+          title: "Erro na recuperação",
+          description: "Link de recuperação inválido.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      
+      if (sessionError) {
+        toast({
+          title: "Erro na recuperação",
+          description: "Link de recuperação expirado ou inválido.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Now update the password
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
