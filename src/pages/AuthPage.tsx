@@ -219,20 +219,31 @@ const AuthPage = () => {
     }
   };
 
-  // Check for password reset parameters
+  // Check for password reset parameters and prevent auto-login
   useEffect(() => {
     const type = searchParams.get('type');
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
     
     if (type === 'recovery' && accessToken && refreshToken) {
-      // Just show the password form without setting session yet
-      // The session will be set after password update
-      setShowNewPassword(true);
-      toast({
-        title: "Link válido",
-        description: "Digite sua nova senha.",
-      });
+      // Prevent automatic login by signing out first
+      const preventAutoLogin = async () => {
+        try {
+          // Sign out to prevent auto-login
+          await supabase.auth.signOut();
+          
+          // Show password reset form
+          setShowNewPassword(true);
+          toast({
+            title: "Link válido",
+            description: "Digite sua nova senha.",
+          });
+        } catch (error) {
+          console.error('Error preventing auto-login:', error);
+        }
+      };
+      
+      preventAutoLogin();
     }
   }, [searchParams, toast]);
 
