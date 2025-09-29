@@ -22,21 +22,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { logLoginAttempt, cleanupOldAttempts } = useSecurityMonitor();
 
   useEffect(() => {
+    // Check if we're in a password recovery flow
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    const isRecoveryFlow = type === 'recovery' && accessToken && refreshToken;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // If we're in recovery flow, don't auto-login
+        if (isRecoveryFlow && event === 'TOKEN_REFRESHED') {
+          // Immediately sign out to prevent auto-login during recovery
+          supabase.auth.signOut();
+          return;
+        }
+        
+        // Normal auth state handling
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing session only if not in recovery flow
+    if (!isRecoveryFlow) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      });
+    } else {
+      // In recovery flow, start with no session
+      setSession(null);
+      setUser(null);
       setLoading(false);
-    });
+    }
 
     // Cleanup old login attempts on app start
     cleanupOldAttempts();
