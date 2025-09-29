@@ -13,6 +13,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Lock, Settings, Shield, Eye, EyeOff, Upload } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { AvatarCropDialog } from '@/components/AvatarCropDialog';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -51,6 +52,8 @@ export default function Profile() {
 
   // Avatar upload state
   const [uploading, setUploading] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
+  const [showCropDialog, setShowCropDialog] = useState(false);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -68,17 +71,28 @@ export default function Profile() {
       return;
     }
 
+    // Create temporary URL for cropping
+    const imageUrl = URL.createObjectURL(file);
+    setTempImageUrl(imageUrl);
+    setShowCropDialog(true);
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    if (!user) return;
+
     setUploading(true);
     try {
       // Generate unique filename with user folder
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      const fileName = `${Date.now()}.jpg`;
       const filePath = `${user.id}/${fileName}`;
 
-      // Upload to Supabase Storage
+      // Upload cropped image to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, croppedImageBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg'
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
@@ -99,6 +113,11 @@ export default function Profile() {
       toast.error('Erro ao fazer upload da foto');
     } finally {
       setUploading(false);
+      // Clean up temp URL
+      if (tempImageUrl) {
+        URL.revokeObjectURL(tempImageUrl);
+        setTempImageUrl(null);
+      }
     }
   };
 
@@ -467,6 +486,22 @@ export default function Profile() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Avatar Crop Dialog */}
+        {tempImageUrl && (
+          <AvatarCropDialog
+            open={showCropDialog}
+            onClose={() => {
+              setShowCropDialog(false);
+              if (tempImageUrl) {
+                URL.revokeObjectURL(tempImageUrl);
+                setTempImageUrl(null);
+              }
+            }}
+            imageSrc={tempImageUrl}
+            onCropComplete={handleCropComplete}
+          />
+        )}
       </div>
     </SimpleHeader>
   );
