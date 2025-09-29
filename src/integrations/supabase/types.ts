@@ -822,6 +822,7 @@ export type Database = {
           created_at: string
           department: string | null
           display_name: string | null
+          email: string | null
           id: string
           language: string | null
           phone: string | null
@@ -837,6 +838,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           display_name?: string | null
+          email?: string | null
           id?: string
           language?: string | null
           phone?: string | null
@@ -852,6 +854,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           display_name?: string | null
+          email?: string | null
           id?: string
           language?: string | null
           phone?: string | null

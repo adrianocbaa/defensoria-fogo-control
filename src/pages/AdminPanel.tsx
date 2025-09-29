@@ -40,38 +40,18 @@ export default function AdminPanel() {
 
   const fetchProfiles = async () => {
     try {
-      // Buscar profiles com RPC para pegar email do auth.users
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
-
-      // Buscar emails do auth através de um RPC ou admin API
-      // Como não temos acesso direto ao auth.users, vamos usar o email do raw_user_meta_data
-      const profilesWithEmails = await Promise.all(
-        (profilesData || []).map(async (profile) => {
-          try {
-            // Tentar buscar o usuário através do supabase auth admin
-            const { data: { user }, error } = await supabase.auth.admin.getUserById(profile.user_id);
-            
-            return {
-              ...profile,
-              email: user?.email || 'Email não disponível',
-              role: profile.role as UserRole
-            };
-          } catch {
-            return {
-              ...profile,
-              email: 'Email não disponível',
-              role: profile.role as UserRole
-            };
-          }
-        })
-      );
-
-      setProfiles(profilesWithEmails);
+      if (error) throw error;
+      
+      setProfiles((data || []).map(profile => ({
+        ...profile,
+        email: profile.email || 'Email não disponível',
+        role: profile.role as UserRole
+      })));
     } catch (error) {
       console.error('Error fetching profiles:', error);
       toast({
