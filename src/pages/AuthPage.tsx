@@ -21,7 +21,7 @@ import {
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, resetPassword, loading } = useAuth();
   const { toast } = useToast();
 
   // Rate limiters for login attempts
@@ -37,6 +37,8 @@ const AuthPage = () => {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,6 +167,53 @@ const AuthPage = () => {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationErrors({});
+    
+    if (!resetEmail.trim()) {
+      setValidationErrors({ resetEmail: 'Email é obrigatório' });
+      return;
+    }
+
+    const sanitizedEmail = sanitizeEmail(resetEmail);
+    
+    // Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail)) {
+      setValidationErrors({ resetEmail: 'Formato de email inválido' });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await resetPassword(sanitizedEmail);
+      
+      if (error) {
+        toast({
+          title: "Erro ao enviar email",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Email enviado!",
+          description: "Verifique sua caixa de entrada para redefinir sua senha.",
+        });
+        setShowForgotPassword(false);
+        setResetEmail('');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro inesperado",
+        description: "Tente novamente em alguns instantes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -245,7 +294,66 @@ const AuthPage = () => {
                   >
                     {isLoading ? 'Entrando...' : 'Entrar'}
                   </Button>
+                  
+                  <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-muted-foreground hover:text-primary"
+                    >
+                      Esqueci minha senha
+                    </Button>
+                  </div>
                 </form>
+
+                {showForgotPassword && (
+                  <div className="mt-4 p-4 border rounded-lg bg-muted/20">
+                    <h3 className="text-sm font-medium mb-3">Recuperar Senha</h3>
+                    <form onSubmit={handleResetPassword} className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="reset-email">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            id="reset-email"
+                            type="email"
+                            placeholder="seu@email.com"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            className={`pl-10 ${validationErrors.resetEmail ? 'border-red-500' : ''}`}
+                            required
+                          />
+                          {validationErrors.resetEmail && (
+                            <p className="text-sm text-red-600 mt-1">{validationErrors.resetEmail}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="submit" 
+                          size="sm"
+                          disabled={isLoading || loading}
+                        >
+                          {isLoading ? 'Enviando...' : 'Enviar Email'}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setShowForgotPassword(false);
+                            setResetEmail('');
+                            setValidationErrors({});
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="signup" className="space-y-4">
