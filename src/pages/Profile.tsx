@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SimpleHeader } from '@/components/SimpleHeader';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -23,6 +25,14 @@ export default function Profile() {
   const [position, setPosition] = useState('');
   const [department, setDepartment] = useState('');
 
+  // Password form state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // Settings state
   const [language, setLanguage] = useState('pt-BR');
   const [theme, setTheme] = useState('system');
@@ -39,13 +49,55 @@ export default function Profile() {
     }
   }, [profile]);
 
-  // Password form state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // Avatar upload state
+  const [uploading, setUploading] = useState(false);
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem válida');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 2MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile with new avatar URL
+      updateProfile({ avatar_url: publicUrl });
+      
+      toast.success('Foto atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error('Erro ao fazer upload da foto');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleProfileUpdate = () => {
     updateProfile({
@@ -134,10 +186,29 @@ export default function Profile() {
                        user?.email?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Upload className="h-4 w-4" />
-                    Alterar foto
-                  </Button>
+                  <div>
+                    <input
+                      type="file"
+                      id="avatar-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      disabled={uploading}
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                      disabled={uploading}
+                    >
+                      <Upload className="h-4 w-4" />
+                      {uploading ? 'Enviando...' : 'Alterar foto'}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Imagem até 2MB (JPG, PNG, GIF)
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">

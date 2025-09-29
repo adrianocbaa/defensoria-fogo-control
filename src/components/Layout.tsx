@@ -2,7 +2,9 @@ import { ReactNode } from 'react';
 import { Building2, Shield, LogOut, User, Eye, Settings, Wrench } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Link } from 'react-router-dom';
 
@@ -13,6 +15,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
+  const { profile } = useProfile();
   return (
     <div className="min-h-screen bg-background">
 
@@ -63,9 +66,15 @@ export function Layout({ children }: LayoutProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
-                    <User className="h-4 w-4" />
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={profile?.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {profile?.display_name?.charAt(0).toUpperCase() || 
+                         user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
                     <span className="hidden sm:inline">
-                      {user?.email?.split('@')[0] || 'Usuário'}
+                      {profile?.display_name || user?.email?.split('@')[0] || 'Usuário'}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
