@@ -226,10 +226,18 @@ const AuthPage = () => {
     const refreshToken = searchParams.get('refresh_token');
     
     if (type === 'recovery' && accessToken && refreshToken) {
-      // Show password reset form immediately
+      // Immediately show password reset form and clear tokens from URL
       setShowNewPassword(true);
+      
+      // Clear the URL parameters to prevent auto-login on refresh
+      window.history.replaceState({}, '', '/auth');
+      
+      toast({
+        title: "Link de recuperação válido",
+        description: "Digite sua nova senha abaixo.",
+      });
     }
-  }, [searchParams]);
+  }, [searchParams, toast]);
 
   const handleNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,16 +261,18 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      // Set the session with tokens from URL first
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
+      // Get tokens from the original URL parameters (stored when component mounted)
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token') || searchParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token') || searchParams.get('refresh_token');
       
       if (!accessToken || !refreshToken) {
         toast({
           title: "Erro na recuperação",
-          description: "Link de recuperação inválido ou expirado.",
+          description: "Link de recuperação inválido ou expirado. Solicite um novo link.",
           variant: "destructive",
         });
+        setShowNewPassword(false);
         setIsLoading(false);
         return;
       }
@@ -276,9 +286,10 @@ const AuthPage = () => {
       if (sessionError) {
         toast({
           title: "Erro na recuperação",
-          description: "Link de recuperação expirado ou inválido.",
+          description: "Token de recuperação expirado. Solicite um novo link.",
           variant: "destructive",
         });
+        setShowNewPassword(false);
         setIsLoading(false);
         return;
       }
@@ -305,9 +316,6 @@ const AuthPage = () => {
         setShowNewPassword(false);
         setNewPassword('');
         setConfirmNewPassword('');
-        
-        // Clear URL parameters
-        window.history.replaceState({}, '', '/auth');
       }
     } catch (error) {
       toast({
