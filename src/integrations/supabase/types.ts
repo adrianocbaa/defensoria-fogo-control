@@ -219,6 +219,13 @@ export type Database = {
             referencedRelation: "nuclei"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "documents_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_secure"
+            referencedColumns: ["id"]
+          },
         ]
       }
       fire_extinguishers: {
@@ -278,6 +285,13 @@ export type Database = {
             referencedRelation: "nuclei"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fire_extinguishers_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_secure"
+            referencedColumns: ["id"]
+          },
         ]
       }
       hydrants: {
@@ -332,6 +346,13 @@ export type Database = {
             columns: ["nucleus_id"]
             isOneToOne: false
             referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hydrants_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -1027,6 +1048,57 @@ export type Database = {
           item_code: string | null
           medicao_sequencia: number | null
           obra_id: string | null
+        }
+        Relationships: []
+      }
+      nuclei_secure: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          coordinates_lat: number | null
+          coordinates_lng: number | null
+          created_at: string | null
+          fire_department_license_document_url: string | null
+          fire_department_license_valid_until: string | null
+          id: string | null
+          is_agent_mode: boolean | null
+          name: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact_email?: never
+          contact_phone?: never
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          created_at?: string | null
+          fire_department_license_document_url?: string | null
+          fire_department_license_valid_until?: string | null
+          id?: string | null
+          is_agent_mode?: boolean | null
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact_email?: never
+          contact_phone?: never
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          created_at?: string | null
+          fire_department_license_document_url?: string | null
+          fire_department_license_valid_until?: string | null
+          id?: string | null
+          is_agent_mode?: boolean | null
+          name?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

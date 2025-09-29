@@ -14,9 +14,9 @@ export function useNuclei() {
     try {
       setLoading(true);
       
-      // Fetch nuclei
+      // Fetch nuclei using secure view that masks contact info for unauthorized users
       const { data: nucleiData, error: nucleiError } = await supabase
-        .from('nuclei')
+        .from('nuclei_secure')
         .select('*')
         .order('created_at', { ascending: false });
 
