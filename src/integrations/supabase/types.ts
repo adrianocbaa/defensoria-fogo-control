@@ -1268,6 +1268,7 @@ export type Database = {
         | "preventivos"
         | "ar_condicionado"
         | "projetos"
+        | "almoxarifado"
       unit_type: "KG" | "M" | "LITRO" | "PC" | "CX"
       user_role: "admin" | "editor" | "viewer" | "manutencao" | "gm"
     }
@@ -1407,6 +1408,7 @@ export const Constants = {
         "preventivos",
         "ar_condicionado",
         "projetos",
+        "almoxarifado",
       ],
       unit_type: ["KG", "M", "LITRO", "PC", "CX"],
       user_role: ["admin", "editor", "viewer", "manutencao", "gm"],
