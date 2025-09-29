@@ -1,4 +1,3 @@
-import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
@@ -11,8 +10,7 @@ import {
   Package
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useUserSectors } from '@/hooks/useUserSectors';
 
 type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado';
 
@@ -77,40 +75,12 @@ const sectorBlocks: SectorBlock[] = [
 ];
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [userSectors, setUserSectors] = useState<Sector[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { sectors, loading } = useUserSectors();
 
-  useEffect(() => {
-    const fetchUserSectors = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('sectors')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user sectors:', error);
-          setUserSectors(['preventivos']); // Default fallback
-        } else {
-          setUserSectors(data?.sectors || ['preventivos']);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        setUserSectors(['preventivos']);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserSectors();
-  }, [user]);
-
-  // Show all modules instead of filtering by user sectors for now
-  const availableBlocks = sectorBlocks;
+  // Filter modules based on user's allowed sectors
+  const availableBlocks = sectorBlocks.filter(block => 
+    sectors.includes(block.id as Sector)
+  );
 
   if (loading) {
     return (
