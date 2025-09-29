@@ -18,7 +18,7 @@ export function useUserSectors() {
 
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_secure')
         .select('sectors')
         .eq('user_id', user.id)
         .single();

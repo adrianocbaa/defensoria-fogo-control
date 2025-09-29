@@ -15,7 +15,7 @@ export function useMaintenanceUsers() {
     const fetchMaintenanceUsers = async () => {
       try {
         const { data, error } = await supabase
-          .from('profiles')
+          .from('profiles_secure')
           .select('id, user_id, display_name')
           .eq('role', 'manutencao');
 

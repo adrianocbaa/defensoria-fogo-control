@@ -41,7 +41,7 @@ export default function AdminPanel() {
   const fetchProfiles = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_secure')
         .select('*')
         .order('created_at', { ascending: false });
 

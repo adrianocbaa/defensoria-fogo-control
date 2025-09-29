@@ -18,7 +18,7 @@ export function useUserRole() {
 
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_secure')
         .select('role')
         .eq('user_id', user.id)
         .single();

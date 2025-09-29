@@ -1102,6 +1102,57 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles_secure: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          department: string | null
+          display_name: string | null
+          email: string | null
+          id: string | null
+          language: string | null
+          phone: string | null
+          position: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          sectors: Database["public"]["Enums"]["sector_type"][] | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          display_name?: string | null
+          email?: never
+          id?: string | null
+          language?: string | null
+          phone?: never
+          position?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          sectors?: Database["public"]["Enums"]["sector_type"][] | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          display_name?: string | null
+          email?: never
+          id?: string | null
+          language?: string | null
+          phone?: never
+          position?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          sectors?: Database["public"]["Enums"]["sector_type"][] | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_edit: {
