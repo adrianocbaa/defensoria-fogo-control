@@ -54,17 +54,6 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
                 </Link>
               )}
               
-              
-              {/* Painel de Obras Button - visible for Editor/Admin users */}
-              {canEdit && (
-                <Link to="/admin/obras">
-                  <Button variant="outline" size="sm" className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90">
-                    <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline">Painel de Obras</span>
-                  </Button>
-                </Link>
-              )}
-              
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
