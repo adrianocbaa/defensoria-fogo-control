@@ -22,60 +22,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { logLoginAttempt, cleanupOldAttempts } = useSecurityMonitor();
 
   useEffect(() => {
-    let isRecoveryFlow = false;
-
-    // Check if we're in a password recovery flow
-    const urlParams = new URLSearchParams(window.location.search);
+    // CRITICAL: Check for password recovery flow IMMEDIATELY before anything else
+    const currentUrl = new URL(window.location.href);
+    const urlParams = new URLSearchParams(currentUrl.search);
     const type = urlParams.get('type');
     const accessToken = urlParams.get('access_token');
     const refreshToken = urlParams.get('refresh_token');
     
     if (type === 'recovery' && accessToken && refreshToken) {
-      isRecoveryFlow = true;
-      
-      // Store tokens temporarily in sessionStorage for password reset
+      // Store tokens in sessionStorage
       sessionStorage.setItem('recovery_access_token', accessToken);
       sessionStorage.setItem('recovery_refresh_token', refreshToken);
+      sessionStorage.setItem('in_recovery_mode', 'true');
       
-      // Immediately sign out any existing session
+      // Clear ALL URL parameters and redirect to clean /auth page
+      window.history.replaceState({}, '', '/auth');
+      
+      // Force sign out any existing session
       supabase.auth.signOut();
       
-      // Clear state to prevent auto-login
+      // Set loading to false so AuthPage can show the reset form
       setSession(null);
       setUser(null);
       setLoading(false);
       
-      // The AuthPage will handle showing the password reset form
+      // Don't set up any listeners during recovery
       return;
     }
 
-    // Set up auth state listener only for non-recovery flows
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Double check we're not in recovery mode
-        if (sessionStorage.getItem('recovery_access_token')) {
-          return; // Don't process auth changes during recovery
+    // Only set up auth listeners if NOT in recovery mode
+    if (!sessionStorage.getItem('in_recovery_mode')) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
         }
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+      );
 
-    // Check for existing session only if not in recovery flow
-    if (!isRecoveryFlow) {
+      // Check for existing session
       supabase.auth.getSession().then(({ data: { session } }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       });
+
+      // Cleanup old login attempts on app start
+      cleanupOldAttempts();
+
+      return () => subscription.unsubscribe();
+    } else {
+      // In recovery mode, don't check for sessions
+      setLoading(false);
+      
+      // Cleanup old login attempts on app start
+      cleanupOldAttempts();
     }
-
-    // Cleanup old login attempts on app start
-    cleanupOldAttempts();
-
-    return () => subscription.unsubscribe();
   }, [cleanupOldAttempts]);
 
   const signUp = async (email: string, password: string, displayName?: string) => {

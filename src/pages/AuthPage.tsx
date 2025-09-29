@@ -221,27 +221,20 @@ const AuthPage = () => {
 
   // Check for password reset parameters and show reset form
   useEffect(() => {
-    const type = searchParams.get('type');
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
+    // Check if we're in recovery mode (tokens stored by AuthContext)
+    const inRecoveryMode = sessionStorage.getItem('in_recovery_mode');
+    const hasRecoveryTokens = sessionStorage.getItem('recovery_access_token');
     
-    // Check if we have recovery tokens (either from URL or sessionStorage)
-    const hasRecoveryTokens = (type === 'recovery' && accessToken && refreshToken) || 
-                              sessionStorage.getItem('recovery_access_token');
-    
-    if (hasRecoveryTokens) {
+    if (inRecoveryMode && hasRecoveryTokens) {
       // Show password reset form
       setShowNewPassword(true);
       
-      // Clear the URL parameters to prevent auto-login on refresh
-      window.history.replaceState({}, '', '/auth');
-      
       toast({
-        title: "Link de recuperação válido",
-        description: "Digite sua nova senha abaixo.",
+        title: "Redefinir senha",
+        description: "Por favor, escolha uma nova senha.",
       });
     }
-  }, [searchParams, toast]);
+  }, [toast]);
 
   const handleNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,9 +286,10 @@ const AuthPage = () => {
           variant: "destructive",
         });
         
-        // Clear recovery tokens
+        // Clear ALL recovery data
         sessionStorage.removeItem('recovery_access_token');
         sessionStorage.removeItem('recovery_refresh_token');
+        sessionStorage.removeItem('in_recovery_mode');
         
         setShowNewPassword(false);
         setIsLoading(false);
@@ -319,9 +313,10 @@ const AuthPage = () => {
           description: "Você já pode fazer login com sua nova senha.",
         });
         
-        // Clear recovery tokens
+        // Clear ALL recovery data from sessionStorage
         sessionStorage.removeItem('recovery_access_token');
         sessionStorage.removeItem('recovery_refresh_token');
+        sessionStorage.removeItem('in_recovery_mode');
         
         // Sign out and reset form
         await supabase.auth.signOut();
@@ -443,6 +438,10 @@ const AuthPage = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
+                        // Clear recovery mode
+                        sessionStorage.removeItem('recovery_access_token');
+                        sessionStorage.removeItem('recovery_refresh_token');
+                        sessionStorage.removeItem('in_recovery_mode');
                         setShowNewPassword(false);
                         window.history.replaceState({}, '', '/auth');
                       }}
