@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2, Ruler } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler, Map } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Obra {
@@ -187,14 +187,22 @@ export function AdminObras() {
         title="Gerenciar Obras"
         subtitle="Visualize e gerencie todas as obras públicas"
         actions={
-          <PermissionGuard requiresEdit showMessage={false}>
-            <Button asChild>
-              <Link to="/admin/obras/nova">
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Obra
+          <>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/obras">
+                <Map className="h-4 w-4 mr-2" />
+                Mapa de Obras
               </Link>
             </Button>
-          </PermissionGuard>
+            <PermissionGuard requiresEdit showMessage={false}>
+              <Button asChild>
+                <Link to="/admin/obras/nova">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Obra
+                </Link>
+              </Button>
+            </PermissionGuard>
+          </>
         }
       />
 
