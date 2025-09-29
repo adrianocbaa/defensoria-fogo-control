@@ -219,33 +219,17 @@ const AuthPage = () => {
     }
   };
 
-  // Check for password reset parameters and prevent auto-login
+  // Check for password reset parameters and show reset form
   useEffect(() => {
     const type = searchParams.get('type');
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
     
     if (type === 'recovery' && accessToken && refreshToken) {
-      // Prevent automatic login by signing out first
-      const preventAutoLogin = async () => {
-        try {
-          // Sign out to prevent auto-login
-          await supabase.auth.signOut();
-          
-          // Show password reset form
-          setShowNewPassword(true);
-          toast({
-            title: "Link válido",
-            description: "Digite sua nova senha.",
-          });
-        } catch (error) {
-          console.error('Error preventing auto-login:', error);
-        }
-      };
-      
-      preventAutoLogin();
+      // Show password reset form immediately
+      setShowNewPassword(true);
     }
-  }, [searchParams, toast]);
+  }, [searchParams]);
 
   const handleNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,19 +253,21 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      // First, set the session with tokens from URL
+      // Set the session with tokens from URL first
       const accessToken = searchParams.get('access_token');
       const refreshToken = searchParams.get('refresh_token');
       
       if (!accessToken || !refreshToken) {
         toast({
           title: "Erro na recuperação",
-          description: "Link de recuperação inválido.",
+          description: "Link de recuperação inválido ou expirado.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
+      // Set session first
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
@@ -293,6 +279,7 @@ const AuthPage = () => {
           description: "Link de recuperação expirado ou inválido.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
@@ -309,11 +296,18 @@ const AuthPage = () => {
         });
       } else {
         toast({
-          title: "Senha atualizada!",
-          description: "Sua senha foi alterada com sucesso.",
+          title: "Senha atualizada com sucesso!",
+          description: "Você já pode fazer login com sua nova senha.",
         });
+        
+        // Sign out to prevent auto-login and redirect to login
+        await supabase.auth.signOut();
         setShowNewPassword(false);
-        navigate('/');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        
+        // Clear URL parameters
+        window.history.replaceState({}, '', '/auth');
       }
     } catch (error) {
       toast({
@@ -352,15 +346,19 @@ const AuthPage = () => {
           
           <CardContent>
             {showNewPassword ? (
-              <div className="space-y-4">
-                <div className="text-center mb-4">
-                  <h3 className="text-lg font-medium">Definir Nova Senha</h3>
-                  <p className="text-sm text-muted-foreground">Digite sua nova senha</p>
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h3 className="text-xl font-semibold">Redefinição de senha</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Crie uma nova senha para acessar sua conta.
+                  </p>
                 </div>
                 
                 <form onSubmit={handleNewPassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="new-password">Nova Senha</Label>
+                    <Label htmlFor="new-password" className="text-sm font-medium">
+                      Nova senha
+                    </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
@@ -373,14 +371,27 @@ const AuthPage = () => {
                         required
                         minLength={8}
                       />
-                      {validationErrors.newPassword && (
-                        <p className="text-sm text-red-600 mt-1">{validationErrors.newPassword}</p>
-                      )}
                     </div>
+                    <div className="space-y-1 text-xs">
+                      <p className={newPassword.length >= 8 ? 'text-green-600' : 'text-muted-foreground'}>
+                        ✓ Pelo menos 8 caracteres especial (como @ # ! $ %)
+                      </p>
+                      <p className={/[0-9]/.test(newPassword) ? 'text-green-600' : 'text-muted-foreground'}>
+                        ✓ Pelo menos 1 dígito entre 0 e 9
+                      </p>
+                      <p className={/[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword) ? 'text-green-600' : 'text-muted-foreground'}>
+                        ✓ Ao menos 1 caractere
+                      </p>
+                    </div>
+                    {validationErrors.newPassword && (
+                      <p className="text-sm text-red-600">{validationErrors.newPassword}</p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-new-password">Confirmar Nova Senha</Label>
+                    <Label htmlFor="confirm-new-password" className="text-sm font-medium">
+                      Confirmar nova senha
+                    </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
@@ -392,10 +403,10 @@ const AuthPage = () => {
                         className={`pl-10 ${validationErrors.confirmNewPassword ? 'border-red-500' : ''}`}
                         required
                       />
-                      {validationErrors.confirmNewPassword && (
-                        <p className="text-sm text-red-600 mt-1">{validationErrors.confirmNewPassword}</p>
-                      )}
                     </div>
+                    {validationErrors.confirmNewPassword && (
+                      <p className="text-sm text-red-600">{validationErrors.confirmNewPassword}</p>
+                    )}
                   </div>
                   
                   <Button 
@@ -403,8 +414,23 @@ const AuthPage = () => {
                     className="w-full" 
                     disabled={isLoading || loading}
                   >
-                    {isLoading ? 'Atualizando...' : 'Atualizar Senha'}
+                    {isLoading ? 'Salvando...' : 'Salvar'}
                   </Button>
+                  
+                  <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowNewPassword(false);
+                        window.history.replaceState({}, '', '/auth');
+                      }}
+                      className="text-muted-foreground hover:text-primary"
+                    >
+                      Voltar ao login
+                    </Button>
+                  </div>
                 </form>
               </div>
             ) : (
