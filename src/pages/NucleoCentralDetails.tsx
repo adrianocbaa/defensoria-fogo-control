@@ -196,21 +196,23 @@ const NucleoCentralDetails = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {modules.map((module) => (
-                  <div key={module.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`module-${module.key}`}
-                      checked={isVisibleIn(module.key)}
-                      onCheckedChange={() => toggleVisibility(module.key)}
-                    />
-                    <Label
-                      htmlFor={`module-${module.key}`}
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      {module.name}
-                    </Label>
-                  </div>
-                ))}
+                {modules
+                  .filter((module) => module.key !== 'obras')
+                  .map((module) => (
+                    <div key={module.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`module-${module.key}`}
+                        checked={isVisibleIn(module.key)}
+                        onCheckedChange={() => toggleVisibility(module.key)}
+                      />
+                      <Label
+                        htmlFor={`module-${module.key}`}
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        {module.name}
+                      </Label>
+                    </div>
+                  ))}
               </div>
             </CardContent>
           </Card>
