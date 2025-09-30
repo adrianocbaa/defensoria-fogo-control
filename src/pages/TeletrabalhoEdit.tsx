@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Users, Save } from 'lucide-react';
@@ -27,8 +28,10 @@ export default function TeletrabalhoEdit() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [nucleo, setNucleo] = useState<NucleoTeletrabalho | null>(null);
+  const [horaInicio, setHoraInicio] = useState('08:00');
+  const [horaFim, setHoraFim] = useState('18:00');
+  const [diasSemana, setDiasSemana] = useState<string[]>(['segunda', 'terca', 'quarta', 'quinta', 'sexta']);
   const [formData, setFormData] = useState({
-    horario_atendimento: '',
     membro_coordenador: '',
     coordenador_substituto: '',
     auxiliar_coordenador: '',
@@ -54,8 +57,30 @@ export default function TeletrabalhoEdit() {
       
       if (data) {
         setNucleo(data);
+        
+        // Parse horario_atendimento if exists
+        if (data.horario_atendimento) {
+          const horarioMatch = data.horario_atendimento.match(/das (\d{1,2}):?(\d{2})?\s*às?\s*(\d{1,2}):?(\d{2})?/i);
+          if (horarioMatch) {
+            const [, hInicio, mInicio, hFim, mFim] = horarioMatch;
+            setHoraInicio(`${hInicio.padStart(2, '0')}:${(mInicio || '00').padStart(2, '0')}`);
+            setHoraFim(`${hFim.padStart(2, '0')}:${(mFim || '00').padStart(2, '0')}`);
+          }
+          
+          // Parse dias da semana
+          const diasParsed: string[] = [];
+          if (data.horario_atendimento.toLowerCase().includes('segunda')) diasParsed.push('segunda');
+          if (data.horario_atendimento.toLowerCase().includes('terça') || data.horario_atendimento.toLowerCase().includes('terca')) diasParsed.push('terca');
+          if (data.horario_atendimento.toLowerCase().includes('quarta')) diasParsed.push('quarta');
+          if (data.horario_atendimento.toLowerCase().includes('quinta')) diasParsed.push('quinta');
+          if (data.horario_atendimento.toLowerCase().includes('sexta')) diasParsed.push('sexta');
+          if (data.horario_atendimento.toLowerCase().includes('sábado') || data.horario_atendimento.toLowerCase().includes('sabado')) diasParsed.push('sabado');
+          if (data.horario_atendimento.toLowerCase().includes('domingo')) diasParsed.push('domingo');
+          
+          if (diasParsed.length > 0) setDiasSemana(diasParsed);
+        }
+        
         setFormData({
-          horario_atendimento: data.horario_atendimento || '',
           membro_coordenador: data.membro_coordenador || '',
           coordenador_substituto: data.coordenador_substituto || '',
           auxiliar_coordenador: data.auxiliar_coordenador || '',
@@ -72,14 +97,46 @@ export default function TeletrabalhoEdit() {
     }
   };
 
+  const formatDiasSemana = () => {
+    if (diasSemana.length === 0) return '';
+    
+    const diasOrdenados = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+    const diasSelecionados = diasOrdenados.filter(d => diasSemana.includes(d));
+    
+    const nomeDias: Record<string, string> = {
+      'segunda': 'Segunda',
+      'terca': 'Terça',
+      'quarta': 'Quarta',
+      'quinta': 'Quinta',
+      'sexta': 'Sexta',
+      'sabado': 'Sábado',
+      'domingo': 'Domingo'
+    };
+    
+    if (diasSelecionados.length === 5 && 
+        diasSelecionados.includes('segunda') && 
+        diasSelecionados.includes('terca') &&
+        diasSelecionados.includes('quarta') &&
+        diasSelecionados.includes('quinta') &&
+        diasSelecionados.includes('sexta')) {
+      return 'Segunda a Sexta';
+    }
+    
+    return diasSelecionados.map(d => nomeDias[d]).join(', ');
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
 
+      const horarioAtendimento = diasSemana.length > 0 
+        ? `${formatDiasSemana()}, das ${horaInicio} às ${horaFim}`
+        : null;
+
       const { error } = await supabase
         .from('nucleos_central')
         .update({
-          horario_atendimento: formData.horario_atendimento || null,
+          horario_atendimento: horarioAtendimento,
           membro_coordenador: formData.membro_coordenador || null,
           coordenador_substituto: formData.coordenador_substituto || null,
           auxiliar_coordenador: formData.auxiliar_coordenador || null,
@@ -154,17 +211,98 @@ export default function TeletrabalhoEdit() {
               Informações de Teletrabalho
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="horario_atendimento">Horário de Atendimento ao Público</Label>
-                <Textarea
-                  id="horario_atendimento"
-                  value={formData.horario_atendimento}
-                  onChange={(e) => setFormData({ ...formData, horario_atendimento: e.target.value })}
-                  placeholder="Ex: Segunda a Sexta, das 8h às 18h"
-                  rows={3}
-                />
+              {/* Horário de Atendimento */}
+              <div className="space-y-4 border rounded-lg p-4">
+                <Label className="text-base font-semibold">Horário de Atendimento ao Público</Label>
+                
+                {/* Horários */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="hora_inicio">Horário de Início</Label>
+                    <Select value={horaInicio} onValueChange={setHoraInicio}>
+                      <SelectTrigger id="hora_inicio">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const hour = i.toString().padStart(2, '0');
+                          return (
+                            <SelectItem key={`${hour}:00`} value={`${hour}:00`}>
+                              {hour}:00
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="hora_fim">Horário de Término</Label>
+                    <Select value={horaFim} onValueChange={setHoraFim}>
+                      <SelectTrigger id="hora_fim">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const hour = i.toString().padStart(2, '0');
+                          return (
+                            <SelectItem key={`${hour}:00`} value={`${hour}:00`}>
+                              {hour}:00
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Dias da Semana */}
+                <div className="space-y-3">
+                  <Label>Dias de Atendimento</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { value: 'segunda', label: 'Segunda-feira' },
+                      { value: 'terca', label: 'Terça-feira' },
+                      { value: 'quarta', label: 'Quarta-feira' },
+                      { value: 'quinta', label: 'Quinta-feira' },
+                      { value: 'sexta', label: 'Sexta-feira' },
+                      { value: 'sabado', label: 'Sábado' },
+                      { value: 'domingo', label: 'Domingo' },
+                    ].map((dia) => (
+                      <div key={dia.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={dia.value}
+                          checked={diasSemana.includes(dia.value)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setDiasSemana([...diasSemana, dia.value]);
+                            } else {
+                              setDiasSemana(diasSemana.filter(d => d !== dia.value));
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor={dia.value}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {dia.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Preview */}
+                {diasSemana.length > 0 && (
+                  <div className="bg-muted/50 p-3 rounded-md">
+                    <p className="text-sm text-muted-foreground mb-1">Pré-visualização:</p>
+                    <p className="font-medium">
+                      {formatDiasSemana()}, das {horaInicio} às {horaFim}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div>
