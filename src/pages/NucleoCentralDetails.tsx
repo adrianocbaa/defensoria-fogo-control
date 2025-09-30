@@ -3,9 +3,9 @@ import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNucleosCentral, useModuleVisibility, useModules } from '@/hooks/useNucleosCentral';
+import { useNucleosCentral } from '@/hooks/useNucleosCentral';
 import { useUserRole } from '@/hooks/useUserRole';
-import { Pencil, Trash2, MapPin, Phone, Mail, Eye } from 'lucide-react';
+import { Pencil, Trash2, MapPin, Phone, Mail } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,18 +17,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 
 const NucleoCentralDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getNucleoById, deleteNucleo, loading } = useNucleosCentral();
-  const { canEdit, isAdmin } = useUserRole();
+  const { canEdit } = useUserRole();
   const nucleus = id ? getNucleoById(id) : null;
-  const { modules } = useModules();
-  const { isVisibleIn, toggleVisibility } = useModuleVisibility(id || '');
 
   if (loading) {
     return (
@@ -172,7 +167,7 @@ const NucleoCentralDetails = () => {
                   id="map-detail"
                   className="w-full h-64 rounded-lg border"
                   style={{
-                    backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${nucleus.lng},${nucleus.lat},14,0/400x300@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw)`,
+                    backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${nucleus.lng},${nucleus.lat},16,0/400x300@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw)`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                   }}
@@ -181,42 +176,6 @@ const NucleoCentralDetails = () => {
             </Card>
           )}
         </div>
-
-        {/* Visibilidade em Módulos (Admin apenas) */}
-        {isAdmin && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Visibilidade em Módulos
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Controle em quais módulos este núcleo aparecerá nos mapas
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {modules
-                  .filter((module) => module.key !== 'obras')
-                  .map((module) => (
-                    <div key={module.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`module-${module.key}`}
-                        checked={isVisibleIn(module.key)}
-                        onCheckedChange={() => toggleVisibility(module.key)}
-                      />
-                      <Label
-                        htmlFor={`module-${module.key}`}
-                        className="text-sm font-medium cursor-pointer"
-                      >
-                        {module.name}
-                      </Label>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </SimpleHeader>
   );
