@@ -153,61 +153,76 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
   );
 
   return (
-    <div className="relative">
-      <div className="flex gap-4">
-        {/* Map */}
-        <div className="flex-1 relative">
-          <div
-            id="map-central"
-            className="w-full h-[600px] rounded-lg border shadow-sm z-0"
-          />
-        </div>
+    <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
+      {/* Map container */}
+      <div id="map-central" className="absolute inset-0" />
 
-        {/* Desktop Sidebar */}
-        {!isMobile && selectedNucleus && (
-          <div className="w-80 bg-card border rounded-lg p-4 h-[600px] overflow-y-auto">
+      {/* Desktop Sidebar - Nucleus info panel */}
+      {!isMobile && selectedNucleus && (
+        <div className="absolute top-4 left-4 w-80 bg-white rounded-lg shadow-lg border z-[1000]">
+          <div className="p-4">
             <div className="flex items-start justify-between mb-4">
               <h3 className="font-semibold text-lg">{selectedNucleus.nome}</h3>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSelectedNucleus(null)}
+                className="h-6 w-6 p-0"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <NucleusDetailsContent nucleus={selectedNucleus} />
           </div>
-        )}
-      </div>
-
-      {/* Mobile Drawer */}
-      {isMobile && (
-        <Dialog open={showMobileModal} onOpenChange={setShowMobileModal}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{selectedNucleus?.nome}</DialogTitle>
-            </DialogHeader>
-            {selectedNucleus && <NucleusDetailsContent nucleus={selectedNucleus} />}
-          </DialogContent>
-        </Dialog>
+        </div>
       )}
 
-      {/* Nucleos List (Desktop) */}
+      {/* Desktop: Nucleus list sidebar */}
       {!isMobile && (
-        <div className="mt-4 bg-card border rounded-lg p-4 max-h-60 overflow-y-auto">
-          <h3 className="font-semibold mb-3">Lista de Núcleos ({nucleos.length})</h3>
-          <div className="space-y-2">
-            {nucleos.map((nucleus) => (
-              <button
-                key={nucleus.id}
-                onClick={() => setSelectedNucleus(nucleus)}
-                className="w-full text-left p-3 rounded-md hover:bg-accent transition-colors border"
-              >
-                <p className="font-medium text-sm">{nucleus.nome}</p>
-                <p className="text-xs text-muted-foreground">{nucleus.cidade}</p>
-              </button>
-            ))}
+        <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
+          <div className="p-4">
+            <h3 className="font-semibold text-sm mb-3">
+              Lista de Núcleos ({nucleos.length})
+            </h3>
+            <div className="space-y-2">
+              {nucleos.map((nucleus) => (
+                <button
+                  key={nucleus.id}
+                  onClick={() => setSelectedNucleus(nucleus)}
+                  className={`w-full text-left p-2 rounded text-xs hover:bg-muted transition-colors ${
+                    selectedNucleus?.id === nucleus.id ? 'bg-primary/10 border-primary/20 border' : ''
+                  }`}
+                >
+                  <div className="font-medium">{nucleus.nome}</div>
+                  <div className="text-muted-foreground">{nucleus.cidade}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile: Modal for nucleus details */}
+      {isMobile && selectedNucleus && showMobileModal && (
+        <div className="fixed inset-0 bg-black/50 z-[1001] flex items-end justify-center p-4">
+          <div className="bg-white rounded-t-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="p-4">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="font-semibold text-lg">{selectedNucleus.nome}</h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowMobileModal(false);
+                    setSelectedNucleus(null);
+                  }}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <NucleusDetailsContent nucleus={selectedNucleus} />
+            </div>
           </div>
         </div>
       )}
