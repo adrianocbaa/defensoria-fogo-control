@@ -2186,14 +2186,6 @@ const criarNovaMedicao = async () => {
             <div className="flex justify-between items-center">
               <CardTitle>Planilha Orçamentária</CardTitle>
               <div className="flex gap-2 flex-wrap">
-                <Button
-                  variant="secondary"
-                  onClick={() => calcularEDistribuirAdministracaoLocal(false)}
-                  className="flex items-center gap-2"
-                >
-                  <Zap className="h-4 w-4" />
-                  Calcular Administração Local
-                </Button>
                 <Dialog open={modalImportarAberto} onOpenChange={setModalImportarAberto}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="flex items-center gap-2">
