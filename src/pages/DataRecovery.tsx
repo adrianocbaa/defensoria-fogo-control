@@ -9,6 +9,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+import type { DateRange } from 'react-day-picker';
 import {
   Table,
   TableBody,
@@ -31,19 +33,31 @@ export default function DataRecovery() {
   const [loading, setLoading] = useState(true);
   const [deletedRecords, setDeletedRecords] = useState<AuditLog[]>([]);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   useEffect(() => {
     fetchDeletedRecords();
-  }, []);
+  }, [dateRange]);
 
   const fetchDeletedRecords = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('audit_logs')
         .select('*')
         .eq('operation', 'DELETE')
-        .in('table_name', ['nuclei', 'fire_extinguishers', 'hydrants', 'documents'])
-        .order('created_at', { ascending: false });
+        .in('table_name', ['nuclei', 'fire_extinguishers', 'hydrants', 'documents']);
+
+      // Apply date range filter if set
+      if (dateRange?.from) {
+        query = query.gte('created_at', dateRange.from.toISOString());
+      }
+      if (dateRange?.to) {
+        const endOfDay = new Date(dateRange.to);
+        endOfDay.setHours(23, 59, 59, 999);
+        query = query.lte('created_at', endOfDay.toISOString());
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setDeletedRecords(data || []);
@@ -140,6 +154,13 @@ export default function DataRecovery() {
           <CardDescription>
             Total de {deletedRecords.length} registros disponíveis para recuperação
           </CardDescription>
+          <div className="mt-4">
+            <DatePickerWithRange 
+              date={dateRange} 
+              setDate={setDateRange}
+              className="w-full max-w-sm"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[600px]">
