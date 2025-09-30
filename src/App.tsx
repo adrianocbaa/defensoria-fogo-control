@@ -36,6 +36,8 @@ import Teletrabalho from "./pages/Teletrabalho";
 import TeletrabalhoDetails from "./pages/TeletrabalhoDetails";
 import TeletrabalhoForm from "./pages/TeletrabalhoForm";
 import Preventivos from "./pages/Preventivos";
+import PreventivosEdit from "./pages/PreventivosEdit";
+import TeletrabalhoEdit from "./pages/TeletrabalhoEdit";
 
 const queryClient = new QueryClient();
 
@@ -184,6 +186,38 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <NucleusDetails />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/preventivos/:id/editar" 
+        element={
+          <ProtectedRoute>
+            <PreventivosEdit />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teletrabalho" 
+        element={
+          <ProtectedRoute>
+            <Teletrabalho />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teletrabalho/:id" 
+        element={
+          <ProtectedRoute>
+            <TeletrabalhoDetails />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teletrabalho/:id/editar" 
+        element={
+          <ProtectedRoute>
+            <TeletrabalhoEdit />
           </ProtectedRoute>
         } 
       />
