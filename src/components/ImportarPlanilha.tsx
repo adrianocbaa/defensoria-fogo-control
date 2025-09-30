@@ -110,14 +110,14 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
           id: Date.now() + i, // ID único
           item: row[0] ? row[0].toString().trim() : '',
           codigo: row[1] ? row[1].toString().trim() : '',
-          banco: row[2] ? row[2].toString().trim() : '',
-          descricao: row[3] ? row[3].toString().trim() : '',
-          und: row[4] ? row[4].toString().trim() : '',
-          quantidade: parseFloat(row[5]) || 0,
-          valorUnitario: parseFloat(row[6]) || 0,
-          valorTotal: parseFloat(row[7]) || 0, // Usar a coluna correta para valor total
+          banco: row[1] ? row[1].toString().trim() : '', // Usando código como banco
+          descricao: row[2] ? row[2].toString().trim() : '',
+          und: row[3] ? row[3].toString().trim() : '',
+          quantidade: parseFloat(row[4]) || 0,
+          valorUnitario: parseFloat(row[5]) || 0,
+          valorTotal: parseFloat(row[6]) || 0,
           aditivo: { qnt: 0, percentual: 0, total: 0 },
-          totalContrato: parseFloat(row[7]) || 0,
+          totalContrato: parseFloat(row[6]) || 0,
           importado: true,
           nivel: 3,
           ehAdministracaoLocal: false,
@@ -191,14 +191,12 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
           <p className="font-medium mb-1">Formato esperado:</p>
           <ul className="text-xs space-y-1">
             <li>• Item</li>
-            <li>• Código</li>
-            <li>• Banco</li>
+            <li>• Código Banco</li>
             <li>• Descrição</li>
             <li>• Und</li>
             <li>• Quant.</li>
             <li>• Valor unit com BDI e Desc.</li>
-            <li>• Valor total com BDI</li>
-            <li>• Total com BDI e Desconto</li>
+            <li>• Valor total com BDI e Desconto</li>
           </ul>
         </div>
 

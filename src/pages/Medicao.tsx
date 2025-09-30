@@ -651,7 +651,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   };
 
   // Função para calcular e distribuir Administração Local
-  const calcularEDistribuirAdministracaoLocal = () => {
+  const calcularEDistribuirAdministracaoLocal = (silent = false) => {
     const medicaoAtualData = medicoes.find(m => m.id === medicaoAtual);
     if (!medicaoAtualData) return;
 
@@ -676,12 +676,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       .filter(item => item.ehAdministracaoLocal && ehItemFolha(item.item))
       .reduce((sum, item) => sum + item.totalContrato, 0);
     if (totalServicosExecutados === 0) {
-      toast.error('Nenhum serviço foi medido ainda. Insira valores de medição antes de calcular a administração local.');
+      if (!silent) toast.error('Nenhum serviço foi medido ainda. Insira valores de medição antes de calcular a administração local.');
       return;
     }
 
     if (totalDoContrato - totalAdministracaoLocal <= 0) {
-      toast.error('Erro no cálculo: Total do Contrato - Total Administração Local deve ser maior que zero.');
+      if (!silent) toast.error('Erro no cálculo: Total do Contrato - Total Administração Local deve ser maior que zero.');
       return;
     }
 
@@ -722,7 +722,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       })
     );
 
-    toast.success(`Administração Local calculada! Porcentagem de execução: ${(porcentagemExecucao * 100).toFixed(2)}%`);
+    if (!silent) toast.success(`Administração Local calculada! Porcentagem de execução: ${(porcentagemExecucao * 100).toFixed(2)}%`);
   };
 
   // Debounce por célula (medição)
@@ -826,6 +826,22 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       })
     );
   };
+
+  // Efeito para calcular automaticamente Administração Local quando houver mudanças
+  useEffect(() => {
+    // Verificar se há itens marcados como Administração Local
+    const hasAdminLocal = items.some(item => item.ehAdministracaoLocal);
+    
+    // Só calcular se houver itens de Admin Local e houver uma medição ativa
+    if (hasAdminLocal && medicaoAtual && medicoes.length > 0) {
+      // Usar timeout para evitar cálculos excessivos durante edição
+      const timeoutId = setTimeout(() => {
+        calcularEDistribuirAdministracaoLocal(true); // silent=true para não mostrar toast
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [medicoes, items, medicaoAtual]);
 
   // Função para atualizar dados de aditivo
   const atualizarAditivo = (itemId: number, aditivoId: number, campo: string, valor: string) => {
@@ -1027,6 +1043,11 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       );
 
       toast.success(`Item ${novoStatus ? 'marcado como' : 'desmarcado de'} Administração Local`);
+      
+      // Calcular automaticamente após marcar/desmarcar
+      setTimeout(() => {
+        calcularEDistribuirAdministracaoLocal();
+      }, 300);
     } catch (error) {
       console.error('Erro ao atualizar administração local:', error);
       toast.error('Erro ao atualizar status de administração local');
@@ -2167,7 +2188,7 @@ const criarNovaMedicao = async () => {
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="secondary"
-                  onClick={calcularEDistribuirAdministracaoLocal}
+                  onClick={() => calcularEDistribuirAdministracaoLocal(false)}
                   className="flex items-center gap-2"
                 >
                   <Zap className="h-4 w-4" />
