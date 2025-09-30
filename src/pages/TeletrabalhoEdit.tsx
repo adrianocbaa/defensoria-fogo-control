@@ -19,6 +19,9 @@ interface NucleoTeletrabalho {
   membro_coordenador: string | null;
   coordenador_substituto: string | null;
   auxiliar_coordenador: string | null;
+  telefone_membro_coordenador: string | null;
+  telefone_coordenador_substituto: string | null;
+  telefone_auxiliar_coordenador: string | null;
 }
 
 export default function TeletrabalhoEdit() {
@@ -35,6 +38,9 @@ export default function TeletrabalhoEdit() {
     membro_coordenador: '',
     coordenador_substituto: '',
     auxiliar_coordenador: '',
+    telefone_membro_coordenador: '',
+    telefone_coordenador_substituto: '',
+    telefone_auxiliar_coordenador: '',
   });
 
   useEffect(() => {
@@ -49,7 +55,7 @@ export default function TeletrabalhoEdit() {
 
       const { data, error } = await supabase
         .from('nucleos_central')
-        .select('id, nome, horario_atendimento, membro_coordenador, coordenador_substituto, auxiliar_coordenador')
+        .select('id, nome, horario_atendimento, membro_coordenador, coordenador_substituto, auxiliar_coordenador, telefone_membro_coordenador, telefone_coordenador_substituto, telefone_auxiliar_coordenador')
         .eq('id', id)
         .maybeSingle();
 
@@ -84,6 +90,9 @@ export default function TeletrabalhoEdit() {
           membro_coordenador: data.membro_coordenador || '',
           coordenador_substituto: data.coordenador_substituto || '',
           auxiliar_coordenador: data.auxiliar_coordenador || '',
+          telefone_membro_coordenador: data.telefone_membro_coordenador || '',
+          telefone_coordenador_substituto: data.telefone_coordenador_substituto || '',
+          telefone_auxiliar_coordenador: data.telefone_auxiliar_coordenador || '',
         });
       }
     } catch (error) {
@@ -140,6 +149,9 @@ export default function TeletrabalhoEdit() {
           membro_coordenador: formData.membro_coordenador || null,
           coordenador_substituto: formData.coordenador_substituto || null,
           auxiliar_coordenador: formData.auxiliar_coordenador || null,
+          telefone_membro_coordenador: formData.telefone_membro_coordenador || null,
+          telefone_coordenador_substituto: formData.telefone_coordenador_substituto || null,
+          telefone_auxiliar_coordenador: formData.telefone_auxiliar_coordenador || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
@@ -316,6 +328,16 @@ export default function TeletrabalhoEdit() {
               </div>
 
               <div>
+                <Label htmlFor="telefone_membro_coordenador">Telefone do Membro Coordenador</Label>
+                <Input
+                  id="telefone_membro_coordenador"
+                  value={formData.telefone_membro_coordenador}
+                  onChange={(e) => setFormData({ ...formData, telefone_membro_coordenador: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="coordenador_substituto">Coordenador Substituto</Label>
                 <Input
                   id="coordenador_substituto"
@@ -326,12 +348,32 @@ export default function TeletrabalhoEdit() {
               </div>
 
               <div>
+                <Label htmlFor="telefone_coordenador_substituto">Telefone do Coordenador Substituto</Label>
+                <Input
+                  id="telefone_coordenador_substituto"
+                  value={formData.telefone_coordenador_substituto}
+                  onChange={(e) => setFormData({ ...formData, telefone_coordenador_substituto: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="auxiliar_coordenador">Auxiliar do Coordenador</Label>
                 <Input
                   id="auxiliar_coordenador"
                   value={formData.auxiliar_coordenador}
                   onChange={(e) => setFormData({ ...formData, auxiliar_coordenador: e.target.value })}
                   placeholder="Nome do auxiliar do coordenador"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="telefone_auxiliar_coordenador">Telefone do Auxiliar do Coordenador</Label>
+                <Input
+                  id="telefone_auxiliar_coordenador"
+                  value={formData.telefone_auxiliar_coordenador}
+                  onChange={(e) => setFormData({ ...formData, telefone_auxiliar_coordenador: e.target.value })}
+                  placeholder="(00) 00000-0000"
                 />
               </div>
             </div>

@@ -70,6 +70,9 @@ interface Nucleus {
   membro_coordenador: string | null;
   coordenador_substituto: string | null;
   auxiliar_coordenador: string | null;
+  telefone_membro_coordenador: string | null;
+  telefone_coordenador_substituto: string | null;
+  telefone_auxiliar_coordenador: string | null;
 }
 
 export default function TeletrabalhoDetails() {
@@ -394,6 +397,12 @@ export default function TeletrabalhoDetails() {
                     Membro Coordenador
                   </p>
                   <p className="font-medium">{nucleus.membro_coordenador}</p>
+                  {nucleus.telefone_membro_coordenador && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                      <Phone className="h-3 w-3" />
+                      {nucleus.telefone_membro_coordenador}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -404,6 +413,12 @@ export default function TeletrabalhoDetails() {
                     Coordenador Substituto
                   </p>
                   <p className="font-medium">{nucleus.coordenador_substituto}</p>
+                  {nucleus.telefone_coordenador_substituto && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                      <Phone className="h-3 w-3" />
+                      {nucleus.telefone_coordenador_substituto}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -414,6 +429,12 @@ export default function TeletrabalhoDetails() {
                     Auxiliar do Coordenador
                   </p>
                   <p className="font-medium">{nucleus.auxiliar_coordenador}</p>
+                  {nucleus.telefone_auxiliar_coordenador && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                      <Phone className="h-3 w-3" />
+                      {nucleus.telefone_auxiliar_coordenador}
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -509,7 +530,7 @@ export default function TeletrabalhoDetails() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => window.open(`https://mmumfgxngzaivvyqfbed.supabase.co/storage/v1/object/public/teletrabalho-portarias/${tele.portaria_file}`, '_blank')}
+                                  onClick={() => window.open(tele.portaria_file!, '_blank')}
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
                                   Ver

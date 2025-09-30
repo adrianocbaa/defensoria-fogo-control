@@ -831,6 +831,9 @@ export type Database = {
           lng: number | null
           membro_coordenador: string | null
           nome: string
+          telefone_auxiliar_coordenador: string | null
+          telefone_coordenador_substituto: string | null
+          telefone_membro_coordenador: string | null
           telefones: string | null
           updated_at: string
           user_id: string | null
@@ -848,6 +851,9 @@ export type Database = {
           lng?: number | null
           membro_coordenador?: string | null
           nome: string
+          telefone_auxiliar_coordenador?: string | null
+          telefone_coordenador_substituto?: string | null
+          telefone_membro_coordenador?: string | null
           telefones?: string | null
           updated_at?: string
           user_id?: string | null
@@ -865,6 +871,9 @@ export type Database = {
           lng?: number | null
           membro_coordenador?: string | null
           nome?: string
+          telefone_auxiliar_coordenador?: string | null
+          telefone_coordenador_substituto?: string | null
+          telefone_membro_coordenador?: string | null
           telefones?: string | null
           updated_at?: string
           user_id?: string | null
