@@ -17,6 +17,26 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Create custom green icon for active teletrabalho
+const greenIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Default blue icon
+const blueIcon = new L.Icon({
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 interface TeletrabalhoData {
   nucleusId: string;
   hasActiveTeletrabalho: boolean;
@@ -130,7 +150,12 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
     if (validNucleos.length === 0) return;
 
     validNucleos.forEach((nucleus) => {
-      const marker = L.marker([nucleus.lat!, nucleus.lng!])
+      // Determine icon based on teletrabalho status
+      const teletrabalhoInfo = teletrabalhoData[nucleus.id];
+      const hasActiveTeletrabalho = teletrabalhoInfo?.hasActiveTeletrabalho || false;
+      const icon = hasActiveTeletrabalho ? greenIcon : blueIcon;
+      
+      const marker = L.marker([nucleus.lat!, nucleus.lng!], { icon })
         .addTo(mapRef.current!);
 
       marker.on('click', () => {
@@ -149,7 +174,7 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
       );
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [nucleos, isMobile]);
+  }, [nucleos, isMobile, teletrabalhoData]);
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
     const data = teletrabalhoData[nucleus.id];
