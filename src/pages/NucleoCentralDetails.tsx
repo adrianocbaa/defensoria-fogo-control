@@ -221,7 +221,8 @@ const NucleoCentralDetails = () => {
               <CardContent>
                 <div
                   ref={mapContainerRef}
-                  className="w-full h-64 rounded-lg border"
+                  className="w-full h-64 min-h-[16rem] rounded-lg border overflow-hidden"
+                  aria-label="Mapa de localização do núcleo"
                 />
               </CardContent>
             </Card>
