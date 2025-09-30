@@ -36,6 +36,7 @@ import Teletrabalho from "./pages/Teletrabalho";
 import TeletrabalhoDetails from "./pages/TeletrabalhoDetails";
 import TeletrabalhoForm from "./pages/TeletrabalhoForm";
 import Preventivos from "./pages/Preventivos";
+import PreventivosDetails from "./pages/PreventivosDetails";
 import PreventivosEdit from "./pages/PreventivosEdit";
 import TeletrabalhoEdit from "./pages/TeletrabalhoEdit";
 
@@ -185,7 +186,7 @@ const AppRoutes = () => {
         path="/preventivos/:id" 
         element={
           <ProtectedRoute>
-            <NucleusDetails />
+            <PreventivosDetails />
           </ProtectedRoute>
         } 
       />
