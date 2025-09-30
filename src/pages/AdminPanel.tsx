@@ -8,11 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useUserRole, UserRole } from '@/hooks/useUserRole';
 import { Sector } from '@/hooks/useUserSectors';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Edit, Eye, Wrench, HardHat, Wind, Package, Briefcase, ChevronDown, Mail } from 'lucide-react';
+import { Shield, Edit, Eye, Wrench, HardHat, Wind, Package, Briefcase, ChevronDown, Mail, Key, UserX, UserCheck } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 interface Profile {
@@ -23,6 +24,7 @@ interface Profile {
   role: UserRole;
   sectors: Sector[];
   created_at: string;
+  is_active: boolean;
 }
 
 export default function AdminPanel() {
@@ -41,8 +43,8 @@ export default function AdminPanel() {
   const fetchProfiles = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles_secure')
-        .select('*')
+        .from('profiles')
+        .select('id, user_id, display_name, email, role, sectors, created_at, is_active')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -50,7 +52,8 @@ export default function AdminPanel() {
       setProfiles((data || []).map(profile => ({
         ...profile,
         email: profile.email || 'Email não disponível',
-        role: profile.role as UserRole
+        role: profile.role as UserRole,
+        is_active: profile.is_active ?? true
       })));
     } catch (error) {
       console.error('Error fetching profiles:', error);
@@ -158,6 +161,55 @@ export default function AdminPanel() {
     }
   };
 
+  const toggleUserActive = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !currentStatus })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setProfiles(prev => prev.map(p => 
+        p.user_id === userId ? { ...p, is_active: !currentStatus } : p
+      ));
+
+      toast({
+        title: 'Sucesso',
+        description: currentStatus ? 'Usuário desativado' : 'Usuário ativado',
+      });
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao alterar status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const resetUserPassword = async (userId: string, userName: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: { userId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: `Senha de ${userName} resetada para 12345678`,
+      });
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao resetar senha',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
       case 'admin':
@@ -243,16 +295,21 @@ export default function AdminPanel() {
                       open={isExpanded}
                       onOpenChange={() => toggleUserExpanded(profile.user_id)}
                     >
-                      <div className="border rounded-lg">
+                      <div className={`border rounded-lg ${!profile.is_active ? 'opacity-50' : ''}`}>
                         <CollapsibleTrigger className="w-full">
                           <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
                             <div className="flex items-center gap-3">
                               <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`} />
                               {getRoleIcon(pendingChanges[profile.user_id] || profile.role)}
                               <div className="text-left">
-                                <p className="font-medium">
-                                  {profile.display_name || 'Usuário sem nome'}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium">
+                                    {profile.display_name || 'Usuário sem nome'}
+                                  </p>
+                                  {!profile.is_active && (
+                                    <Badge variant="secondary" className="text-xs">Inativo</Badge>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <Mail className="h-3 w-3" />
                                   <span>{profile.email}</span>
@@ -263,7 +320,48 @@ export default function AdminPanel() {
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              {/* Ações Rápidas */}
+                              <div className="flex gap-1">
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" title="Resetar senha">
+                                      <Key className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Resetar Senha</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Resetar senha de <strong>{profile.display_name}</strong>?
+                                        <br />Nova senha: <strong>12345678</strong>
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => resetUserPassword(profile.user_id, profile.display_name)}
+                                      >
+                                        Confirmar
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleUserActive(profile.user_id, profile.is_active)}
+                                  title={profile.is_active ? 'Desativar usuário' : 'Ativar usuário'}
+                                >
+                                  {profile.is_active ? (
+                                    <UserX className="h-4 w-4 text-destructive" />
+                                  ) : (
+                                    <UserCheck className="h-4 w-4 text-green-600" />
+                                  )}
+                                </Button>
+                              </div>
+
                               <Badge variant={getRoleBadgeVariant(pendingChanges[profile.user_id] || profile.role)}>
                                 {getRoleLabel(pendingChanges[profile.user_id] || profile.role)}
                                 {hasPendingChanges && (
