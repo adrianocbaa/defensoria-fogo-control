@@ -422,10 +422,18 @@ export default function TeletrabalhoDetails() {
           {/* Teletrabalho */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Laptop className="h-5 w-5" />
-                Teletrabalho ({teletrabalhos.length})
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Laptop className="h-5 w-5" />
+                  Teletrabalho ({teletrabalhos.length})
+                </CardTitle>
+                {canEdit && (
+                  <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {teletrabalhos.length === 0 ? (
@@ -443,6 +451,8 @@ export default function TeletrabalhoDetails() {
                 <div className="space-y-4">
                   {teletrabalhos.map((tele) => {
                     const status = getTeletrabalhoStatus(tele.data_inicio, tele.data_fim);
+                    const isFinalizado = tele.data_fim && new Date(tele.data_fim) < new Date();
+                    
                     return (
                       <Card key={tele.id}>
                         <CardContent className="pt-6">
@@ -467,7 +477,7 @@ export default function TeletrabalhoDetails() {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              {canEdit && (
+                              {canEdit && !isFinalizado && (
                                 <>
                                   <Button size="sm" variant="ghost" onClick={() => openEditModal(tele)}>
                                     <Edit className="h-4 w-4" />
@@ -511,16 +521,6 @@ export default function TeletrabalhoDetails() {
                       </Card>
                     );
                   })}
-                  
-                  {/* Botão para adicionar novo teletrabalho */}
-                  {canEdit && (
-                    <div className="text-center pt-2">
-                      <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar Novo Teletrabalho
-                      </Button>
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>
