@@ -89,7 +89,10 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
 
         if (error) throw error;
 
-        const now = new Date();
+        // Normalize today's date to midnight for accurate comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         const teletrabalhoMap: Record<string, TeletrabalhoData | null> = {};
         
         nucleoIds.forEach(id => {
@@ -98,11 +101,12 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
           
           // Find one that is "Em andamento" (status: In Progress)
           const activeTeletrabalho = nucleoTeletrabalhos.find(t => {
-            const dataInicio = new Date(t.data_inicio);
-            const dataFim = t.data_fim ? new Date(t.data_fim) : null;
+            const dataInicio = new Date(t.data_inicio + 'T00:00:00');
+            const dataFim = t.data_fim ? new Date(t.data_fim + 'T23:59:59') : null;
             
             // Em andamento: já começou E (não tem fim OU ainda não terminou)
-            return dataInicio <= now && (!dataFim || dataFim >= now);
+            // dataInicio <= today AND (no end date OR dataFim >= today)
+            return dataInicio <= today && (!dataFim || dataFim >= today);
           });
           
           teletrabalhoMap[id] = activeTeletrabalho ? {
