@@ -59,7 +59,7 @@ const Nucleos = () => {
   });
 
   const handleViewDetails = (nucleusId: string) => {
-    navigate(`/nucleos/${nucleusId}`);
+    navigate(`/teletrabalho/${nucleusId}`);
   };
 
   return (

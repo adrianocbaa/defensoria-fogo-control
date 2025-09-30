@@ -316,7 +316,7 @@ export default function TeletrabalhoDetails() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => navigate(`/nucleos/${id}/editar`)}
+                    onClick={() => navigate(`/teletrabalho/${id}/editar`)}
                   >
                     <Pencil className="h-4 w-4 mr-2" />
                     Editar
