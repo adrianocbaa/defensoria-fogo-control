@@ -13,8 +13,8 @@ import { useUserRole, UserRole } from '@/hooks/useUserRole';
 import { Sector } from '@/hooks/useUserSectors';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Edit, Eye, Wrench, HardHat, Wind, Package, Briefcase, ChevronDown, Mail, Key, UserX, UserCheck } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Shield, Edit, Eye, Wrench, HardHat, Wind, Package, Briefcase, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -28,6 +28,7 @@ interface Profile {
 }
 
 export default function AdminPanel() {
+  const navigate = useNavigate();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -268,6 +269,17 @@ export default function AdminPanel() {
           title="Painel Administrativo"
           subtitle="Gerencie permissões de usuários"
         />
+
+        <div className="mb-6">
+          <Button
+            onClick={() => navigate('/data-recovery')}
+            variant="outline"
+            className="gap-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Recuperar Dados Excluídos
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>

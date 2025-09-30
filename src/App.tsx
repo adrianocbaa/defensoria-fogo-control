@@ -25,6 +25,7 @@ import { ObrasLista } from "./pages/ObrasLista";
 import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosPage } from "./pages/SectorPages";
 import { Medicao } from "./pages/Medicao";
 import Inventory from "./pages/Inventory";
+import DataRecovery from "./pages/DataRecovery";
 import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
@@ -134,6 +135,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Inventory />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/data-recovery" 
+        element={
+          <ProtectedRoute>
+            <DataRecovery />
           </ProtectedRoute>
         } 
       />
