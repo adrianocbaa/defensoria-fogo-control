@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileDown, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -153,154 +154,189 @@ export function ResumoContrato({
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <div className="min-w-full bg-white">
-            
-            {/* Valor Inicial do Contrato */}
-            <div className="grid grid-cols-4 border-b-2 border-gray-300">
-              <div className="col-span-1 p-3 bg-gray-100 font-semibold text-gray-700 border-r border-gray-300">
-                VALOR INICIAL DO CONTRATO
-              </div>
-              <div className="col-span-1 p-3 font-bold text-right border-r border-gray-300">
-                {formatCurrency(valorTotalOriginal)}
-              </div>
-              <div className="col-span-1 p-3 text-center font-semibold border-r border-gray-300">
-                100%
-              </div>
-              <div className="col-span-1 p-3 text-center font-semibold">
-                100%
-              </div>
+            <div className="overflow-x-auto">
+              {linhas.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">
+                  Nenhum aditivo publicado encontrado.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b-2 border-gray-300 bg-white hover:bg-white">
+                      <TableHead className="font-bold text-gray-700 bg-gray-100">
+                        RESUMO DO CONTRATO
+                      </TableHead>
+                      <TableHead className="text-center font-bold text-gray-700">
+                        VALOR INICIAL DO CONTRATO
+                      </TableHead>
+                      {linhas.map((linha) => (
+                        <TableHead 
+                          key={linha.aditivo.id} 
+                          colSpan={2}
+                          className="text-center font-bold text-gray-700 border-l border-gray-300"
+                        >
+                          {linha.aditivo.nome}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                    <TableRow className="border-b border-gray-300 bg-white hover:bg-white">
+                      <TableHead className="bg-gray-100"></TableHead>
+                      <TableHead className="text-center font-semibold">
+                        {formatCurrency(valorTotalOriginal)}
+                      </TableHead>
+                      {linhas.map((linha) => (
+                        <React.Fragment key={`header-${linha.aditivo.id}`}>
+                          <TableHead className="text-center font-semibold text-orange-600 bg-orange-50 border-l border-gray-300">
+                            PERCENTUAL DO ADITIVO
+                          </TableHead>
+                          <TableHead className="text-center font-semibold text-orange-600 bg-orange-50">
+                            PERCENTUAL ACUMULADO
+                          </TableHead>
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+                    <TableRow className="border-b border-gray-300 bg-white hover:bg-white">
+                      <TableHead className="bg-gray-100"></TableHead>
+                      <TableHead className="text-center font-semibold">100%</TableHead>
+                      {linhas.map((linha) => (
+                        <React.Fragment key={`perc-${linha.aditivo.id}`}>
+                          <TableHead className="text-center bg-orange-50 border-l border-gray-300"></TableHead>
+                          <TableHead className="text-center bg-orange-50"></TableHead>
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* TOTAL GERAL DO ADITIVO */}
+                    <TableRow className="bg-orange-50 hover:bg-orange-50">
+                      <TableCell className="font-semibold text-orange-600">
+                        TOTAL GERAL DO ADITIVO
+                      </TableCell>
+                      <TableCell></TableCell>
+                      {linhas.map((linha) => (
+                        <React.Fragment key={`total-${linha.aditivo.id}`}>
+                          <TableCell className="text-center font-bold text-orange-600 border-l border-orange-200">
+                            {formatCurrency(linha.totalGeral)}
+                          </TableCell>
+                          <TableCell className="text-center font-semibold text-orange-600">
+                            {linha.percAcumulado.toFixed(2)}%
+                          </TableCell>
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+
+                    {/* TOTAL DE SERVIÇOS ACRESCIDOS */}
+                    <TableRow className="hover:bg-gray-50">
+                      <TableCell className="font-semibold text-blue-800">
+                        TOTAL DE SERVIÇOS ACRESCIDOS
+                      </TableCell>
+                      <TableCell></TableCell>
+                      {linhas.map((linha) => (
+                        <React.Fragment key={`acresc-${linha.aditivo.id}`}>
+                          <TableCell className="text-center font-bold text-blue-800 border-l border-gray-200">
+                            {formatCurrency(linha.acrescidos)}
+                          </TableCell>
+                          <TableCell className="text-center text-blue-600">
+                            {valorTotalOriginal ? ((linha.acrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                          </TableCell>
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+
+                    {/* TOTAL DE SERVIÇOS DECRESCIDOS */}
+                    <TableRow className="hover:bg-gray-50">
+                      <TableCell className="font-semibold text-red-600">
+                        TOTAL DE SERVIÇOS DECRESCIDOS
+                      </TableCell>
+                      <TableCell></TableCell>
+                      {linhas.map((linha) => (
+                        <React.Fragment key={`decresc-${linha.aditivo.id}`}>
+                          <TableCell className="text-center font-bold text-red-600 border-l border-gray-200">
+                            {formatCurrency(linha.decrescidos)}
+                          </TableCell>
+                          <TableCell className="text-center text-red-500">
+                            {valorTotalOriginal ? ((linha.decrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                          </TableCell>
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+
+                    {/* TOTAL DOS SERVIÇOS EXTRACONTRATUAIS */}
+                    <TableRow className="hover:bg-gray-50">
+                      <TableCell className="font-semibold text-green-600">
+                        TOTAL DOS SERVIÇOS EXTRACONTRATUAIS
+                      </TableCell>
+                      <TableCell></TableCell>
+                      {linhas.map((linha) => (
+                        <React.Fragment key={`extra-${linha.aditivo.id}`}>
+                          <TableCell className="text-center font-bold text-green-600 border-l border-gray-200">
+                            {formatCurrency(linha.extracontratuais)}
+                          </TableCell>
+                          <TableCell className="text-center text-green-500">
+                            {valorTotalOriginal ? ((linha.extracontratuais / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                          </TableCell>
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+
+                    {/* TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS */}
+                    <TableRow className="hover:bg-gray-50">
+                      <TableCell className="font-semibold text-indigo-600">
+                        TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS
+                      </TableCell>
+                      <TableCell></TableCell>
+                      {linhas.map((linha) => (
+                        <React.Fragment key={`soma-${linha.aditivo.id}`}>
+                          <TableCell className="text-center font-bold text-indigo-600 border-l border-gray-200">
+                            {formatCurrency(linha.acrescMaisExtra)}
+                          </TableCell>
+                          <TableCell className="text-center text-indigo-500">
+                            {valorTotalOriginal ? ((linha.acrescMaisExtra / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                          </TableCell>
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+
+                    {/* VALOR CONTRATO PÓS ADITIVO */}
+                    <TableRow className="bg-green-50 hover:bg-green-50 border-t-2 border-green-300">
+                      <TableCell className="font-bold text-green-700">
+                        VALOR CONTRATO PÓS ADITIVO
+                      </TableCell>
+                      <TableCell className="text-center font-bold text-green-700">
+                        {formatCurrency(valorTotalOriginal)}
+                      </TableCell>
+                      {linhas.map((linha) => (
+                        <React.Fragment key={`pos-${linha.aditivo.id}`}>
+                          <TableCell 
+                            colSpan={2}
+                            className="text-center font-bold text-green-700 text-lg border-l border-green-300"
+                          >
+                            {formatCurrency(linha.valorPosAditivo)}
+                          </TableCell>
+                        </React.Fragment>
+                      ))}
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              )}
             </div>
 
-            {linhas.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">
-                Nenhum aditivo publicado encontrado.
+            {/* Mensagens informativas */}
+            {linhas.length === 0 && (
+              <div className="p-4 bg-blue-50 border-l-4 border-blue-400">
+                <p className="text-blue-700">
+                  Para visualizar o resumo do contrato, é necessário ter pelo menos um aditivo publicado.
+                </p>
               </div>
-            ) : (
-              linhas.map((linha, index) => (
-                <div key={linha.aditivo.id} className="border-b border-gray-200">
-                  
-                  {/* Cabeçalho do Aditivo */}
-                  <div className="grid grid-cols-4 bg-orange-50 border-b border-orange-200">
-                    <div className="col-span-1 p-3"></div>
-                    <div className="col-span-1 p-3 font-bold text-gray-800 text-right">
-                      {linha.aditivo.nome}
-                    </div>
-                    <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                      PERCENTUAL DO ADITIVO
-                    </div>
-                    <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                      PERCENTUAL ACUMULADO
-                    </div>
-                  </div>
-
-                  {/* TOTAL GERAL DO ADITIVO */}
-                  <div className="grid grid-cols-4 border-b border-gray-200 bg-orange-50">
-                    <div className="col-span-1 p-3 font-semibold text-orange-600">
-                      TOTAL GERAL DO ADITIVO
-                    </div>
-                    <div className="col-span-1 p-3 font-bold text-right text-orange-600">
-                      {formatCurrency(linha.totalGeral)}
-                    </div>
-                    <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                      {linha.percAditivo.toFixed(2)}%
-                    </div>
-                    <div className="col-span-1 p-3 text-center font-semibold text-orange-600">
-                      {linha.percAcumulado.toFixed(2)}%
-                    </div>
-                  </div>
-
-                  {/* TOTAL DE SERVIÇOS ACRESCIDOS */}
-                  <div className="grid grid-cols-4 border-b border-gray-200">
-                    <div className="col-span-1 p-3 font-semibold text-blue-800">
-                      TOTAL DE SERVIÇOS ACRESCIDOS
-                    </div>
-                    <div className="col-span-1 p-3 font-bold text-right text-blue-800">
-                      {formatCurrency(linha.acrescidos)}
-                    </div>
-                    <div className="col-span-1 p-3 text-center text-blue-600">
-                      {valorTotalOriginal ? ((linha.acrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
-                    </div>
-                    <div className="col-span-1 p-3"></div>
-                  </div>
-
-                  {/* TOTAL DE SERVIÇOS DECRESCIDOS */}
-                  <div className="grid grid-cols-4 border-b border-gray-200">
-                    <div className="col-span-1 p-3 font-semibold text-red-600">
-                      TOTAL DE SERVIÇOS DECRESCIDOS
-                    </div>
-                    <div className="col-span-1 p-3 font-bold text-right text-red-600">
-                      {formatCurrency(linha.decrescidos)}
-                    </div>
-                    <div className="col-span-1 p-3 text-center text-red-500">
-                      {valorTotalOriginal ? ((linha.decrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
-                    </div>
-                    <div className="col-span-1 p-3"></div>
-                  </div>
-
-                  {/* TOTAL DOS SERVIÇOS EXTRACONTRATUAIS */}
-                  <div className="grid grid-cols-4 border-b border-gray-200">
-                    <div className="col-span-1 p-3 font-semibold text-green-600">
-                      TOTAL DOS SERVIÇOS EXTRACONTRATUAIS
-                    </div>
-                    <div className="col-span-1 p-3 font-bold text-right text-green-600">
-                      {formatCurrency(linha.extracontratuais)}
-                    </div>
-                    <div className="col-span-1 p-3 text-center text-green-500">
-                      {valorTotalOriginal ? ((linha.extracontratuais / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
-                    </div>
-                    <div className="col-span-1 p-3"></div>
-                  </div>
-
-                  {/* TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS */}
-                  <div className="grid grid-cols-4 border-b border-gray-200">
-                    <div className="col-span-1 p-3 font-semibold text-indigo-600">
-                      TOTAL DOS SERVIÇOS ACRESCIDOS + EXTRACONTRATUAIS
-                    </div>
-                    <div className="col-span-1 p-3 font-bold text-right text-indigo-600">
-                      {formatCurrency(linha.acrescMaisExtra)}
-                    </div>
-                    <div className="col-span-1 p-3 text-center text-indigo-500">
-                      {valorTotalOriginal ? ((linha.acrescMaisExtra / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
-                    </div>
-                    <div className="col-span-1 p-3"></div>
-                  </div>
-
-                  {/* VALOR CONTRATO PÓS ADITIVO */}
-                  <div className="grid grid-cols-4 border-b-2 border-green-300 bg-green-50">
-                    <div className="col-span-1 p-3 font-bold text-green-700">
-                      VALOR CONTRATO PÓS ADITIVO
-                    </div>
-                    <div className="col-span-1 p-3 font-bold text-right text-green-700 text-lg">
-                      {formatCurrency(linha.valorPosAditivo)}
-                    </div>
-                    <div className="col-span-1 p-3"></div>
-                    <div className="col-span-1 p-3"></div>
-                  </div>
-
-                </div>
-              ))
             )}
 
-          </div>
-        </div>
-
-        {/* Mensagens informativas */}
-        {linhas.length === 0 && (
-          <div className="p-4 bg-blue-50 border-l-4 border-blue-400">
-            <p className="text-blue-700">
-              Para visualizar o resumo do contrato, é necessário ter pelo menos um aditivo publicado.
-            </p>
-          </div>
-        )}
-
-        {linhas.some(l => l.totalGeral === 0) && (
-          <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400">
-            <p className="text-yellow-700">
-              Alguns aditivos não possuem itens válidos para compor o resumo.
-            </p>
-          </div>
-        )}
+            {linhas.some(l => l.totalGeral === 0) && (
+              <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400">
+                <p className="text-yellow-700">
+                  Alguns aditivos não possuem itens válidos para compor o resumo.
+                </p>
+              </div>
+            )}
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
