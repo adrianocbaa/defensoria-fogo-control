@@ -3,7 +3,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NucleoCentral } from '@/hooks/useNucleosCentral';
 import { Button } from './ui/button';
-import { X, MapPin, Phone, Mail } from 'lucide-react';
+import { X, MapPin, Phone, Mail, Droplets, Target, AlertTriangle, Shield } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { isBefore, addDays } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +22,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+interface NucleusStatus {
+  nucleusId: string;
+  hasHydrant: boolean;
+  totalExtinguishers: number;
+  expiredExtinguishers: number;
+  licenseStatus: 'valid' | 'expired' | 'expiring-soon' | null;
+}
+
 interface MapViewCentralProps {
   nucleos: NucleoCentral[];
   onViewDetails: (nucleusId: string) => void;
@@ -30,7 +40,70 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
   const markersRef = useRef<L.Marker[]>([]);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
+  const [nucleusStatus, setNucleusStatus] = useState<Record<string, NucleusStatus>>({});
   const isMobile = useIsMobile();
+
+  // Fetch status data for all nucleos
+  useEffect(() => {
+    const fetchStatusData = async () => {
+      const statusMap: Record<string, NucleusStatus> = {};
+
+      for (const nucleus of nucleos) {
+        // Fetch hydrants
+        const { data: hydrants } = await supabase
+          .from('hydrants')
+          .select('id')
+          .eq('nucleus_id', nucleus.id);
+
+        // Fetch extinguishers
+        const { data: extinguishers } = await supabase
+          .from('fire_extinguishers')
+          .select('expiration_date')
+          .eq('nucleus_id', nucleus.id);
+
+        // Fetch license data
+        const { data: nucleiData } = await supabase
+          .from('nuclei')
+          .select('fire_department_license_valid_until')
+          .eq('id', nucleus.id)
+          .maybeSingle();
+
+        // Calculate status
+        const now = new Date();
+        const twoMonthsFromNow = addDays(now, 60);
+        
+        let licenseStatus: 'valid' | 'expired' | 'expiring-soon' | null = null;
+        if (nucleiData?.fire_department_license_valid_until) {
+          const validUntil = new Date(nucleiData.fire_department_license_valid_until);
+          if (isBefore(validUntil, now)) {
+            licenseStatus = 'expired';
+          } else if (isBefore(validUntil, twoMonthsFromNow)) {
+            licenseStatus = 'expiring-soon';
+          } else {
+            licenseStatus = 'valid';
+          }
+        }
+
+        const expiredCount = (extinguishers || []).filter(ext => 
+          isBefore(new Date(ext.expiration_date), now)
+        ).length;
+
+        statusMap[nucleus.id] = {
+          nucleusId: nucleus.id,
+          hasHydrant: (hydrants?.length || 0) > 0,
+          totalExtinguishers: extinguishers?.length || 0,
+          expiredExtinguishers: expiredCount,
+          licenseStatus,
+        };
+      }
+
+      setNucleusStatus(statusMap);
+    };
+
+    if (nucleos.length > 0) {
+      fetchStatusData();
+    }
+  }, [nucleos]);
 
   useEffect(() => {
     const initMap = () => {
@@ -104,51 +177,96 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
     }
   }, [nucleos, isMobile]);
 
-  const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => (
-    <div className="space-y-4">
-      <div>
-        <div className="flex items-start gap-2">
-          <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+  const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
+    const status = nucleusStatus[nucleus.id];
+
+    return (
+      <div className="space-y-4">
+        <div>
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+            <div>
+              <p className="text-sm font-medium">Endereço</p>
+              <p className="text-sm text-muted-foreground">{nucleus.endereco}</p>
+              <p className="text-sm text-muted-foreground">{nucleus.cidade}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Information - Highlighted Box */}
+        {status && (
+          <div className="border-2 border-danger rounded-lg p-3 space-y-2 bg-danger/5">
+            {/* Hidrante */}
+            <div className="flex items-center gap-2">
+              <Droplets className={`h-4 w-4 ${status.hasHydrant ? 'text-blue-600' : 'text-muted-foreground'}`} />
+              <span className={`text-sm ${!status.hasHydrant ? 'text-danger font-medium' : 'text-foreground'}`}>
+                {status.hasHydrant ? `Hidrante` : 'Sem hidrante'}
+              </span>
+            </div>
+
+            {/* Extintores */}
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">
+                {status.totalExtinguishers} extintor(es)
+              </span>
+            </div>
+
+            {/* Extintores Vencidos */}
+            {status.expiredExtinguishers > 0 && (
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-danger" />
+                <span className="text-sm text-danger font-medium">
+                  {status.expiredExtinguishers} extintor(es) vencido(s)
+                </span>
+              </div>
+            )}
+
+            {/* Alvará */}
+            {status.licenseStatus && (
+              <div className="flex items-center gap-2">
+                <Shield className={`h-4 w-4 ${status.licenseStatus === 'expired' ? 'text-danger' : status.licenseStatus === 'expiring-soon' ? 'text-warning' : 'text-success'}`} />
+                <span className={`text-sm font-medium ${status.licenseStatus === 'expired' ? 'text-danger' : status.licenseStatus === 'expiring-soon' ? 'text-warning' : 'text-foreground'}`}>
+                  {status.licenseStatus === 'expired' ? 'Alvará vencido' : status.licenseStatus === 'expiring-soon' ? 'Alvará vencendo em breve' : 'Alvará válido'}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {nucleus.telefones && (
           <div>
-            <p className="text-sm font-medium">Endereço</p>
-            <p className="text-sm text-muted-foreground">{nucleus.endereco}</p>
-            <p className="text-sm text-muted-foreground">{nucleus.cidade}</p>
+            <div className="flex items-start gap-2">
+              <Phone className="h-4 w-4 text-muted-foreground mt-1" />
+              <div>
+                <p className="text-sm font-medium">Telefones</p>
+                <p className="text-sm text-muted-foreground">{nucleus.telefones}</p>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {nucleus.email && (
+          <div>
+            <div className="flex items-start gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground mt-1" />
+              <div>
+                <p className="text-sm font-medium">E-mail</p>
+                <p className="text-sm text-muted-foreground">{nucleus.email}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <Button
+          onClick={() => onViewDetails(nucleus.id)}
+          className="w-full"
+        >
+          Ver Detalhes
+        </Button>
       </div>
-
-      {nucleus.telefones && (
-        <div>
-          <div className="flex items-start gap-2">
-            <Phone className="h-4 w-4 text-muted-foreground mt-1" />
-            <div>
-              <p className="text-sm font-medium">Telefones</p>
-              <p className="text-sm text-muted-foreground">{nucleus.telefones}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {nucleus.email && (
-        <div>
-          <div className="flex items-start gap-2">
-            <Mail className="h-4 w-4 text-muted-foreground mt-1" />
-            <div>
-              <p className="text-sm font-medium">E-mail</p>
-              <p className="text-sm text-muted-foreground">{nucleus.email}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Button
-        onClick={() => onViewDetails(nucleus.id)}
-        className="w-full"
-      >
-        Ver Detalhes Completos
-      </Button>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
