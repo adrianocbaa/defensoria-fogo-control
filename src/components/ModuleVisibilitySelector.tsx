@@ -14,8 +14,8 @@ export function ModuleVisibilitySelector({
 }: ModuleVisibilitySelectorProps) {
   const { modules, loading } = useModules();
 
-  // Filtrar para excluir o módulo "obra"
-  const filteredModules = modules.filter((module) => module.key !== 'obra');
+  // Filtrar para excluir o módulo "obras"
+  const filteredModules = modules.filter((module) => module.key !== 'obras');
 
   if (loading) {
     return <div className="text-sm text-muted-foreground">Carregando módulos...</div>;
