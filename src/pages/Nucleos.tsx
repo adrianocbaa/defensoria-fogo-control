@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useNucleosCentral } from '@/hooks/useNucleosCentral';
+import { useNuclei } from '@/hooks/useNuclei';
 import { normalizeText } from '@/lib/utils';
 import { 
   Plus, 
@@ -16,19 +16,19 @@ import {
   Laptop,
   Users
 } from 'lucide-react';
-import { MapViewCentral } from '@/components/MapViewCentral';
+import { MapView } from '@/components/MapView';
 
 const Nucleos = () => {
   const navigate = useNavigate();
-  const { nucleos, loading } = useNucleosCentral();
+  const { nuclei, loading } = useNuclei();
   const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  const filteredNucleos = nucleos.filter(nucleo => {
+  const filteredNuclei = nuclei.filter(nucleus => {
     const normalizedSearchTerm = normalizeText(searchTerm);
-    return normalizeText(nucleo.nome).includes(normalizedSearchTerm) ||
-           normalizeText(nucleo.cidade).includes(normalizedSearchTerm);
+    return normalizeText(nucleus.name).includes(normalizedSearchTerm) ||
+           normalizeText(nucleus.city).includes(normalizedSearchTerm);
   });
 
   const handleViewDetails = (nucleusId: string) => {
@@ -67,7 +67,7 @@ const Nucleos = () => {
               <Building2 className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">Total de Núcleos</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
+            <div className="text-2xl font-bold text-foreground">{nuclei.length}</div>
           </div>
 
           <div className="bg-card rounded-lg border p-4">
@@ -83,7 +83,7 @@ const Nucleos = () => {
               <Users className="h-5 w-5 text-green-600" />
               <span className="text-sm font-medium text-muted-foreground">Coordenadores</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
+            <div className="text-2xl font-bold text-foreground">{nuclei.length}</div>
           </div>
         </div>
 
@@ -103,15 +103,15 @@ const Nucleos = () => {
         {/* Results Count */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm text-muted-foreground">
-            Exibindo {filteredNucleos.length} de {nucleos.length} núcleos
+            Exibindo {filteredNuclei.length} de {nuclei.length} núcleos
           </span>
         </div>
 
         {/* Mapa dos Núcleos */}
-        <MapViewCentral nucleos={filteredNucleos} onViewDetails={handleViewDetails} />
+        <MapView nuclei={filteredNuclei} onViewDetails={handleViewDetails} />
 
         {/* Empty State */}
-        {filteredNucleos.length === 0 && (
+        {filteredNuclei.length === 0 && (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
