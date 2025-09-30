@@ -85,22 +85,6 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
       const marker = L.marker([nucleus.lat!, nucleus.lng!])
         .addTo(mapRef.current!);
 
-      // Popup content
-      const popupContent = `
-        <div class="p-2 min-w-[200px]">
-          <h3 class="font-semibold text-base mb-2">${nucleus.nome}</h3>
-          <p class="text-sm text-muted-foreground mb-1"><strong>Cidade:</strong> ${nucleus.cidade}</p>
-          <p class="text-sm text-muted-foreground mb-1"><strong>Endereço:</strong> ${nucleus.endereco}</p>
-          ${nucleus.telefones ? `<p class="text-sm text-muted-foreground mb-1"><strong>Telefones:</strong> ${nucleus.telefones}</p>` : ''}
-          ${nucleus.email ? `<p class="text-sm text-muted-foreground mb-3"><strong>E-mail:</strong> ${nucleus.email}</p>` : ''}
-        </div>
-      `;
-
-      marker.bindPopup(popupContent, {
-        maxWidth: 300,
-        className: 'custom-popup',
-      });
-
       marker.on('click', () => {
         setSelectedNucleus(nucleus);
         if (isMobile) {
