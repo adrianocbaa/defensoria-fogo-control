@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   Shield
 } from 'lucide-react';
-import { MapViewCentral } from '@/components/MapViewCentral';
+import { MapViewPreventivos } from '@/components/MapViewPreventivos';
 
 const Preventivos = () => {
   const navigate = useNavigate();
@@ -93,7 +93,7 @@ const Preventivos = () => {
         </div>
 
         {/* Mapa dos Núcleos */}
-        {!loading && <MapViewCentral nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
+        {!loading && <MapViewPreventivos nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
 
         {/* Empty State */}
         {filteredNucleos.length === 0 && !loading && (

@@ -14,7 +14,7 @@ import {
   Laptop,
   Users
 } from 'lucide-react';
-import { MapViewCentral } from '@/components/MapViewCentral';
+import { MapViewTeletrabalho } from '@/components/MapViewTeletrabalho';
 
 const Teletrabalho = () => {
   const navigate = useNavigate();
@@ -93,7 +93,7 @@ const Teletrabalho = () => {
         </div>
 
         {/* Mapa dos Núcleos */}
-        {!loading && <MapViewCentral nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
+        {!loading && <MapViewTeletrabalho nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
 
         {/* Empty State */}
         {filteredNucleos.length === 0 && !loading && (
