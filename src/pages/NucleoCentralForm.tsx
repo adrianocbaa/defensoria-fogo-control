@@ -30,6 +30,7 @@ const NucleoCentralForm = () => {
   });
 
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [modulesInitialized, setModulesInitialized] = useState(false);
   const { visibility, loading: visibilityLoading } = useModuleVisibility(id || '');
 
 
@@ -47,11 +48,19 @@ const NucleoCentralForm = () => {
     }
   }, [nucleus]);
 
+  // Carregar visibilidade para edição OU selecionar todos para criação
   useEffect(() => {
-    if (visibility.length > 0) {
-      setSelectedModules(visibility.map((v) => v.module_key));
+    if (!modulesInitialized) {
+      if (isEditing && visibility.length > 0) {
+        // Ao editar, usar os módulos já configurados
+        setSelectedModules(visibility.map((v) => v.module_key));
+        setModulesInitialized(true);
+      } else if (!isEditing && !visibilityLoading) {
+        // Ao criar novo, não inicializar automaticamente - usuário precisa escolher
+        setModulesInitialized(true);
+      }
     }
-  }, [visibility]);
+  }, [visibility, isEditing, visibilityLoading, modulesInitialized]);
 
 
   const handleModuleToggle = (moduleKey: string) => {

@@ -23,12 +23,12 @@ export function ModuleVisibilitySelector({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Eye className="h-5 w-5 text-muted-foreground" />
+      <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+        <Eye className="h-5 w-5 text-primary" />
         <div>
-          <h3 className="font-medium">Visibilidade em Módulos</h3>
+          <h3 className="font-medium text-foreground">Visibilidade em Módulos *</h3>
           <p className="text-sm text-muted-foreground">
-            Controle em quais módulos este núcleo aparecerá nos mapas
+            <strong>Importante:</strong> Marque os módulos onde este núcleo deve aparecer nos mapas
           </p>
         </div>
       </div>
