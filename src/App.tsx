@@ -27,6 +27,8 @@ import { Medicao } from "./pages/Medicao";
 import Inventory from "./pages/Inventory";
 import DataRecovery from "./pages/DataRecovery";
 import Profile from "./pages/Profile";
+import Nucleos from "./pages/Nucleos";
+import NucleosDetails from "./pages/NucleosDetails";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +137,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Inventory />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/nucleos" 
+        element={
+          <ProtectedRoute>
+            <Nucleos />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/nucleos/:id" 
+        element={
+          <ProtectedRoute>
+            <NucleosDetails />
           </ProtectedRoute>
         } 
       />

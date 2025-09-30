@@ -627,53 +627,128 @@ export type Database = {
       nuclei: {
         Row: {
           address: string
+          auxiliar_coordenador: string | null
           city: string
           contact_email: string | null
           contact_phone: string | null
+          coordenador_substituto: string | null
           coordinates_lat: number | null
           coordinates_lng: number | null
           created_at: string
+          email: string | null
           fire_department_license_document_url: string | null
           fire_department_license_valid_until: string | null
+          horario_atendimento: string | null
           id: string
           is_agent_mode: boolean
+          membro_coordenador: string | null
           name: string
+          telefone: string | null
+          uf: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           address: string
+          auxiliar_coordenador?: string | null
           city: string
           contact_email?: string | null
           contact_phone?: string | null
+          coordenador_substituto?: string | null
           coordinates_lat?: number | null
           coordinates_lng?: number | null
           created_at?: string
+          email?: string | null
           fire_department_license_document_url?: string | null
           fire_department_license_valid_until?: string | null
+          horario_atendimento?: string | null
           id?: string
           is_agent_mode?: boolean
+          membro_coordenador?: string | null
           name: string
+          telefone?: string | null
+          uf?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           address?: string
+          auxiliar_coordenador?: string | null
           city?: string
           contact_email?: string | null
           contact_phone?: string | null
+          coordenador_substituto?: string | null
           coordinates_lat?: number | null
           coordinates_lng?: number | null
           created_at?: string
+          email?: string | null
           fire_department_license_document_url?: string | null
           fire_department_license_valid_until?: string | null
+          horario_atendimento?: string | null
           id?: string
           is_agent_mode?: boolean
+          membro_coordenador?: string | null
           name?: string
+          telefone?: string | null
+          uf?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Relationships: []
+      }
+      nucleo_teletrabalho: {
+        Row: {
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          id: string
+          motivo: string | null
+          nucleo_id: string
+          portaria: string | null
+          portaria_file: string | null
+          procedimento: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_fim?: string | null
+          data_inicio: string
+          id?: string
+          motivo?: string | null
+          nucleo_id: string
+          portaria?: string | null
+          portaria_file?: string | null
+          procedimento: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          id?: string
+          motivo?: string | null
+          nucleo_id?: string
+          portaria?: string | null
+          portaria_file?: string | null
+          procedimento?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nucleo_teletrabalho_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nucleo_teletrabalho_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_secure"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       obras: {
         Row: {

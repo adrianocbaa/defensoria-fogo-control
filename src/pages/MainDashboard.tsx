@@ -7,7 +7,8 @@ import {
   Shield, 
   Wind, 
   FolderKanban,
-  Package
+  Package,
+  Building
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUserSectors } from '@/hooks/useUserSectors';
@@ -71,6 +72,14 @@ const sectorBlocks: SectorBlock[] = [
     path: '/inventory',
     color: 'text-green-600',
     bgColor: 'bg-green-50 hover:bg-green-100 border-green-200'
+  },
+  {
+    id: 'nucleos',
+    title: 'Núcleos',
+    icon: Building,
+    path: '/nucleos',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50 hover:bg-amber-100 border-amber-200'
   }
 ];
 
