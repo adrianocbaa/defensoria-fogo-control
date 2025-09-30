@@ -624,6 +624,30 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          created_at: string
+          has_map: boolean | null
+          id: string
+          key: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          has_map?: boolean | null
+          id?: string
+          key: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          has_map?: boolean | null
+          id?: string
+          key?: string
+          name?: string
+        }
+        Relationships: []
+      }
       nuclei: {
         Row: {
           address: string
@@ -696,6 +720,49 @@ export type Database = {
         }
         Relationships: []
       }
+      nucleo_module_visibility: {
+        Row: {
+          created_at: string
+          id: string
+          module_key: string
+          nucleo_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_key: string
+          nucleo_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_key?: string
+          nucleo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nucleo_module_visibility_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "nucleo_module_visibility_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nucleos_central"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nucleo_module_visibility_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_nucleos_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nucleo_teletrabalho: {
         Row: {
           created_at: string
@@ -749,6 +816,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nucleos_central: {
+        Row: {
+          cidade: string
+          created_at: string
+          email: string | null
+          endereco: string
+          id: string
+          lat: number | null
+          lng: number | null
+          nome: string
+          telefones: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cidade: string
+          created_at?: string
+          email?: string | null
+          endereco: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nome: string
+          telefones?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cidade?: string
+          created_at?: string
+          email?: string | null
+          endereco?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nome?: string
+          telefones?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       obras: {
         Row: {
@@ -1228,6 +1337,45 @@ export type Database = {
           theme?: string | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      vw_nucleos_public: {
+        Row: {
+          cidade: string | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          id: string | null
+          lat: number | null
+          lng: number | null
+          nome: string | null
+          telefones: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string | null
+          lat?: number | null
+          lng?: number | null
+          nome?: string | null
+          telefones?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string | null
+          lat?: number | null
+          lng?: number | null
+          nome?: string | null
+          telefones?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

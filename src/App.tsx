@@ -29,6 +29,9 @@ import DataRecovery from "./pages/DataRecovery";
 import Profile from "./pages/Profile";
 import Nucleos from "./pages/Nucleos";
 import NucleosDetails from "./pages/NucleosDetails";
+import NucleosCentral from "./pages/NucleosCentral";
+import NucleoCentralDetails from "./pages/NucleoCentralDetails";
+import NucleoCentralForm from "./pages/NucleoCentralForm";
 
 const queryClient = new QueryClient();
 
@@ -157,7 +160,39 @@ const AppRoutes = () => {
         } 
       />
       <Route 
-        path="/data-recovery" 
+        path="/nucleos-central" 
+        element={
+          <ProtectedRoute>
+            <NucleosCentral />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/nucleos-central/novo" 
+        element={
+          <ProtectedRoute>
+            <NucleoCentralForm />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/nucleos-central/:id" 
+        element={
+          <ProtectedRoute>
+            <NucleoCentralDetails />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/nucleos-central/:id/editar" 
+        element={
+          <ProtectedRoute>
+            <NucleoCentralForm />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/data-recovery"
         element={
           <ProtectedRoute>
             <DataRecovery />

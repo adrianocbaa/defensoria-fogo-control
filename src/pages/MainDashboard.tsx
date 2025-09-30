@@ -8,7 +8,9 @@ import {
   Wind, 
   FolderKanban,
   Package,
-  Building
+  Building,
+  Building2,
+  Laptop
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUserSectors } from '@/hooks/useUserSectors';
@@ -76,10 +78,18 @@ const sectorBlocks: SectorBlock[] = [
   {
     id: 'nucleos',
     title: 'Teletrabalho',
-    icon: Building,
+    icon: Laptop,
     path: '/nucleos',
     color: 'text-amber-600',
     bgColor: 'bg-amber-50 hover:bg-amber-100 border-amber-200'
+  },
+  {
+    id: 'nucleos_central',
+    title: 'Núcleos - Cadastro',
+    icon: Building2,
+    path: '/nucleos-central',
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
   }
 ];
 
