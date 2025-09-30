@@ -193,9 +193,9 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
           </div>
         </div>
 
-        {/* Status Information - Highlighted Box */}
+        {/* Status Information */}
         {status && (
-          <div className="border-2 border-danger rounded-lg p-3 space-y-2 bg-danger/5">
+          <div className="border rounded-lg p-3 space-y-2 bg-muted/30">
             {/* Hidrante */}
             <div className="flex items-center gap-2">
               <Droplets className={`h-4 w-4 ${status.hasHydrant ? 'text-blue-600' : 'text-muted-foreground'}`} />
