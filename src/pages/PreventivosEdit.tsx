@@ -6,9 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, MapPin, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus, X, MapPin, Shield, Target, Droplets, FileText } from 'lucide-react';
+import { format } from 'date-fns';
+import { DocumentUpload } from '@/components/DocumentUpload';
 
 interface NucleoBasico {
   id: string;
@@ -19,14 +23,37 @@ interface NucleoBasico {
   email: string | null;
 }
 
-interface DadosPreventivos {
-  telefone: string;
-  email: string;
-  horario_atendimento: string;
-  membro_coordenador: string;
-  coordenador_substituto: string;
-  auxiliar_coordenador: string;
-  uf: string;
+interface FireExtinguisher {
+  id?: string;
+  type: 'H2O' | 'PQS' | 'CO2' | 'ABC';
+  location: string;
+  capacity: string;
+  expiration_date: string;
+  hydrostatic_test: string | null;
+  support_type: string | null;
+  has_vertical_signage: boolean;
+}
+
+interface Hydrant {
+  id?: string;
+  location: string;
+  status: 'verified' | 'not_verified';
+  hose_expiration_date: string | null;
+  has_register: boolean;
+  has_hose: boolean;
+  has_key: boolean;
+  has_coupling: boolean;
+  has_adapter: boolean;
+  has_nozzle: boolean;
+}
+
+interface Document {
+  id?: string;
+  name: string;
+  type: string;
+  url: string;
+  uploaded_at?: string;
+  size?: number;
 }
 
 export default function PreventivosEdit() {
@@ -36,15 +63,20 @@ export default function PreventivosEdit() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [nucleoBasico, setNucleoBasico] = useState<NucleoBasico | null>(null);
-  const [formData, setFormData] = useState<DadosPreventivos>({
-    telefone: '',
-    email: '',
-    horario_atendimento: '',
-    membro_coordenador: '',
-    coordenador_substituto: '',
-    auxiliar_coordenador: '',
-    uf: ''
-  });
+  
+  // Alvará
+  const [hasAVCB, setHasAVCB] = useState(false);
+  const [avcbDate, setAvcbDate] = useState('');
+  const [avcbDocumentUrl, setAvcbDocumentUrl] = useState('');
+  
+  // Extintores
+  const [extinguishers, setExtinguishers] = useState<FireExtinguisher[]>([]);
+  
+  // Hidrantes
+  const [hydrants, setHydrants] = useState<Hydrant[]>([]);
+  
+  // Documentos
+  const [documents, setDocuments] = useState<Document[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -66,26 +98,48 @@ export default function PreventivosEdit() {
       if (basicError) throw basicError;
       setNucleoBasico(basicData);
 
-      // Buscar informações específicas de preventivos (editáveis)
-      const { data: prevData, error: prevError } = await supabase
+      // Buscar alvará
+      const { data: nucleiData } = await supabase
         .from('nuclei')
-        .select('telefone, email, horario_atendimento, membro_coordenador, coordenador_substituto, auxiliar_coordenador, uf')
+        .select('fire_department_license_valid_until, fire_department_license_document_url')
         .eq('id', id)
         .maybeSingle();
 
-      if (prevError && prevError.code !== 'PGRST116') throw prevError;
-
-      if (prevData) {
-        setFormData({
-          telefone: prevData.telefone || '',
-          email: prevData.email || '',
-          horario_atendimento: prevData.horario_atendimento || '',
-          membro_coordenador: prevData.membro_coordenador || '',
-          coordenador_substituto: prevData.coordenador_substituto || '',
-          auxiliar_coordenador: prevData.auxiliar_coordenador || '',
-          uf: prevData.uf || ''
-        });
+      if (nucleiData) {
+        setHasAVCB(!!nucleiData.fire_department_license_valid_until);
+        setAvcbDate(nucleiData.fire_department_license_valid_until || '');
+        setAvcbDocumentUrl(nucleiData.fire_department_license_document_url || '');
       }
+
+      // Buscar extintores
+      const { data: extData } = await supabase
+        .from('fire_extinguishers')
+        .select('*')
+        .eq('nucleus_id', id)
+        .order('location');
+
+      setExtinguishers(extData || []);
+
+      // Buscar hidrantes
+      const { data: hydData } = await supabase
+        .from('hydrants')
+        .select('*')
+        .eq('nucleus_id', id);
+
+      setHydrants((hydData || []).map(h => ({
+        ...h,
+        status: h.status as 'verified' | 'not_verified'
+      })));
+
+      // Buscar documentos
+      const { data: docData } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('nucleus_id', id)
+        .order('uploaded_at', { ascending: false });
+
+      setDocuments(docData || []);
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -103,7 +157,17 @@ export default function PreventivosEdit() {
     try {
       setSaving(true);
 
-      // Verificar se já existe registro em nuclei
+      // Atualizar ou criar registro em nuclei
+      const nucleiRecord = {
+        id: id,
+        name: nucleoBasico?.nome,
+        city: nucleoBasico?.cidade,
+        address: nucleoBasico?.endereco,
+        fire_department_license_valid_until: hasAVCB ? avcbDate : null,
+        fire_department_license_document_url: hasAVCB ? avcbDocumentUrl : null,
+        updated_at: new Date().toISOString(),
+      };
+
       const { data: existing } = await supabase
         .from('nuclei')
         .select('id')
@@ -111,26 +175,66 @@ export default function PreventivosEdit() {
         .maybeSingle();
 
       if (existing) {
-        // Atualizar
-        const { error } = await supabase
+        await supabase
           .from('nuclei')
-          .update(formData)
+          .update(nucleiRecord)
           .eq('id', id);
-
-        if (error) throw error;
       } else {
-        // Inserir novo registro com dados básicos do nucleos_central
-        const { error } = await supabase
-          .from('nuclei')
-          .insert({
-            id: id,
-            name: nucleoBasico?.nome,
-            city: nucleoBasico?.cidade,
-            address: nucleoBasico?.endereco,
-            ...formData
-          });
+        await supabase.from('nuclei').insert(nucleiRecord);
+      }
 
-        if (error) throw error;
+      // Salvar extintores - deletar todos e recriar
+      await supabase.from('fire_extinguishers').delete().eq('nucleus_id', id);
+      
+      if (extinguishers.length > 0) {
+        const extinguishersToInsert = extinguishers.map(ext => ({
+          nucleus_id: id,
+          type: ext.type,
+          location: ext.location,
+          capacity: ext.capacity || null,
+          expiration_date: ext.expiration_date,
+          hydrostatic_test: ext.hydrostatic_test || null,
+          support_type: ext.support_type || null,
+          has_vertical_signage: ext.has_vertical_signage || false,
+          status: getExtinguisherStatus(ext.expiration_date) as 'valid' | 'expiring-soon' | 'expired',
+        }));
+        
+        await supabase.from('fire_extinguishers').insert(extinguishersToInsert);
+      }
+
+      // Salvar hidrantes - deletar todos e recriar
+      await supabase.from('hydrants').delete().eq('nucleus_id', id);
+      
+      if (hydrants.length > 0) {
+        const hydrantsToInsert = hydrants.map(hyd => ({
+          nucleus_id: id,
+          location: hyd.location,
+          status: hyd.status,
+          hose_expiration_date: hyd.hose_expiration_date,
+          has_register: hyd.has_register,
+          has_hose: hyd.has_hose,
+          has_key: hyd.has_key,
+          has_coupling: hyd.has_coupling,
+          has_adapter: hyd.has_adapter,
+          has_nozzle: hyd.has_nozzle,
+        }));
+        
+        await supabase.from('hydrants').insert(hydrantsToInsert);
+      }
+
+      // Salvar documentos - deletar todos e recriar
+      await supabase.from('documents').delete().eq('nucleus_id', id);
+      
+      if (documents.length > 0) {
+        const documentsToInsert = documents.map(doc => ({
+          nucleus_id: id,
+          name: doc.name,
+          type: doc.type as 'project' | 'fire-license' | 'photos' | 'report',
+          url: doc.url,
+          size: doc.size || null,
+        }));
+        
+        await supabase.from('documents').insert(documentsToInsert);
       }
 
       toast({
@@ -148,6 +252,79 @@ export default function PreventivosEdit() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const getExtinguisherStatus = (expirationDate: string) => {
+    const now = new Date();
+    const expDate = new Date(expirationDate);
+    const twoMonthsFromNow = new Date(now.getTime() + (60 * 24 * 60 * 60 * 1000));
+
+    if (expDate < now) return 'expired';
+    if (expDate <= twoMonthsFromNow) return 'expiring-soon';
+    return 'valid';
+  };
+
+  // Funções para Extintores
+  const addExtinguisher = () => {
+    setExtinguishers([...extinguishers, {
+      type: 'ABC',
+      location: '',
+      capacity: '',
+      expiration_date: format(new Date(), 'yyyy-MM-dd'),
+      hydrostatic_test: null,
+      support_type: null,
+      has_vertical_signage: false,
+    }]);
+  };
+
+  const removeExtinguisher = (index: number) => {
+    setExtinguishers(extinguishers.filter((_, i) => i !== index));
+  };
+
+  const updateExtinguisher = (index: number, field: keyof FireExtinguisher, value: any) => {
+    const updated = [...extinguishers];
+    updated[index] = { ...updated[index], [field]: value };
+    
+    // Auto-set capacity for H2O
+    if (field === 'type' && value === 'H2O') {
+      updated[index].capacity = '10L';
+    }
+    
+    setExtinguishers(updated);
+  };
+
+  // Funções para Hidrantes
+  const addHydrant = () => {
+    setHydrants([...hydrants, {
+      location: '',
+      status: 'not_verified',
+      hose_expiration_date: null,
+      has_register: false,
+      has_hose: false,
+      has_key: false,
+      has_coupling: false,
+      has_adapter: false,
+      has_nozzle: false,
+    }]);
+  };
+
+  const removeHydrant = (index: number) => {
+    setHydrants(hydrants.filter((_, i) => i !== index));
+  };
+
+  const updateHydrant = (index: number, field: keyof Hydrant, value: any) => {
+    const updated = [...hydrants];
+    updated[index] = { ...updated[index], [field]: value };
+    setHydrants(updated);
+  };
+
+  // Funções para Documentos
+  const addDocumentFromUpload = (newDocument: any) => {
+    setDocuments([...documents, newDocument]);
+  };
+
+  const removeDocument = (index: number) => {
+    setDocuments(documents.filter((_, i) => i !== index));
   };
 
   if (loading) {
@@ -222,72 +399,305 @@ export default function PreventivosEdit() {
             </CardContent>
           </Card>
 
-          {/* Dados Específicos de Preventivos - Editáveis */}
+          {/* Alvará do Corpo de Bombeiros */}
           <Card>
             <CardHeader>
-              <CardTitle>Dados Específicos de Preventivos</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Alvará do Corpo de Bombeiros
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input
-                    id="telefone"
-                    value={formData.telefone}
-                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="uf">UF</Label>
-                  <Input
-                    id="uf"
-                    value={formData.uf}
-                    onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
-                    maxLength={2}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="horario_atendimento">Horário de Atendimento</Label>
-                  <Input
-                    id="horario_atendimento"
-                    value={formData.horario_atendimento}
-                    onChange={(e) => setFormData({ ...formData, horario_atendimento: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="membro_coordenador">Membro Coordenador</Label>
-                  <Input
-                    id="membro_coordenador"
-                    value={formData.membro_coordenador}
-                    onChange={(e) => setFormData({ ...formData, membro_coordenador: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="coordenador_substituto">Coordenador Substituto</Label>
-                  <Input
-                    id="coordenador_substituto"
-                    value={formData.coordenador_substituto}
-                    onChange={(e) => setFormData({ ...formData, coordenador_substituto: e.target.value })}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="auxiliar_coordenador">Auxiliar do Coordenador</Label>
-                  <Input
-                    id="auxiliar_coordenador"
-                    value={formData.auxiliar_coordenador}
-                    onChange={(e) => setFormData({ ...formData, auxiliar_coordenador: e.target.value })}
-                  />
-                </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="hasAVCB"
+                  checked={hasAVCB}
+                  onCheckedChange={(checked) => setHasAVCB(checked as boolean)}
+                />
+                <Label htmlFor="hasAVCB">Possui Alvará do Corpo de Bombeiros (AVCB)</Label>
               </div>
+
+              {hasAVCB && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
+                  <div>
+                    <Label htmlFor="avcbDate">Data de Validade</Label>
+                    <Input
+                      id="avcbDate"
+                      type="date"
+                      value={avcbDate}
+                      onChange={(e) => setAvcbDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Extintores de Incêndio */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Extintores de Incêndio ({extinguishers.length})
+                </CardTitle>
+                <Button type="button" onClick={addExtinguisher} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Extintor
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {extinguishers.map((ext, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Extintor {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeExtinguisher(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Tipo</Label>
+                      <select
+                        value={ext.type}
+                        onChange={(e) => updateExtinguisher(index, 'type', e.target.value)}
+                        className="w-full p-2 border border-border rounded-md bg-background"
+                      >
+                        <option value="ABC">ABC - Multipropósito</option>
+                        <option value="H2O">H2O - Água</option>
+                        <option value="PQS">PQS - Pó Químico Seco</option>
+                        <option value="CO2">CO2 - Gás Carbônico</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label>Capacidade</Label>
+                      {ext.type === 'H2O' ? (
+                        <Input value="10L" readOnly className="bg-muted" />
+                      ) : (
+                        <select
+                          value={ext.capacity}
+                          onChange={(e) => updateExtinguisher(index, 'capacity', e.target.value)}
+                          className="w-full p-2 border border-border rounded-md bg-background"
+                        >
+                          <option value="">Selecione a capacidade</option>
+                          <option value="4kg">4kg</option>
+                          <option value="6kg">6kg</option>
+                        </select>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label>Local de Instalação</Label>
+                      <Input
+                        value={ext.location}
+                        onChange={(e) => updateExtinguisher(index, 'location', e.target.value)}
+                        placeholder="Ex: Recepção, Sala de Informática"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Data de Vencimento</Label>
+                      <Input
+                        type="date"
+                        value={ext.expiration_date}
+                        onChange={(e) => updateExtinguisher(index, 'expiration_date', e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Teste Hidrostático</Label>
+                      <Input
+                        type="date"
+                        value={ext.hydrostatic_test || ''}
+                        onChange={(e) => updateExtinguisher(index, 'hydrostatic_test', e.target.value || null)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Tipo de Suporte</Label>
+                      <select
+                        value={ext.support_type || ''}
+                        onChange={(e) => updateExtinguisher(index, 'support_type', e.target.value || null)}
+                        className="w-full p-2 border border-border rounded-md bg-background"
+                      >
+                        <option value="">Selecionar suporte</option>
+                        <option value="wall">Parede</option>
+                        <option value="tripod">Tripé</option>
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={ext.has_vertical_signage}
+                          onCheckedChange={(checked) => updateExtinguisher(index, 'has_vertical_signage', checked)}
+                        />
+                        <Label>Possui Sinalização Vertical</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Hidrantes */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Droplets className="h-5 w-5" />
+                  Hidrantes ({hydrants.length})
+                </CardTitle>
+                <Button type="button" onClick={addHydrant} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Hidrante
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {hydrants.map((hyd, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Hidrante {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeHydrant(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Local de Instalação</Label>
+                      <Input
+                        value={hyd.location}
+                        onChange={(e) => updateHydrant(index, 'location', e.target.value)}
+                        placeholder="Ex: Entrada Principal, Corredor A"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Status</Label>
+                      <select
+                        value={hyd.status}
+                        onChange={(e) => updateHydrant(index, 'status', e.target.value)}
+                        className="w-full p-2 border border-border rounded-md bg-background"
+                      >
+                        <option value="verified">Verificado</option>
+                        <option value="not_verified">Não Verificado</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label>Validade da Mangueira (Opcional)</Label>
+                      <Input
+                        type="date"
+                        value={hyd.hose_expiration_date || ''}
+                        onChange={(e) => updateHydrant(index, 'hose_expiration_date', e.target.value || null)}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">Acessórios</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hyd.has_register}
+                          onCheckedChange={(checked) => updateHydrant(index, 'has_register', checked)}
+                        />
+                        <Label className="text-sm">Registro</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hyd.has_hose}
+                          onCheckedChange={(checked) => updateHydrant(index, 'has_hose', checked)}
+                        />
+                        <Label className="text-sm">Mangueira</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hyd.has_key}
+                          onCheckedChange={(checked) => updateHydrant(index, 'has_key', checked)}
+                        />
+                        <Label className="text-sm">Chave</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hyd.has_coupling}
+                          onCheckedChange={(checked) => updateHydrant(index, 'has_coupling', checked)}
+                        />
+                        <Label className="text-sm">Engate (Storz)</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hyd.has_adapter}
+                          onCheckedChange={(checked) => updateHydrant(index, 'has_adapter', checked)}
+                        />
+                        <Label className="text-sm">Adaptador</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={hyd.has_nozzle}
+                          onCheckedChange={(checked) => updateHydrant(index, 'has_nozzle', checked)}
+                        />
+                        <Label className="text-sm">Esguicho</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Documentos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Documentos ({documents.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <DocumentUpload onDocumentAdd={addDocumentFromUpload} />
+
+              {documents.map((doc, index) => (
+                <div key={index} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{doc.name}</p>
+                      <p className="text-xs text-muted-foreground">{doc.type}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeDocument(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
