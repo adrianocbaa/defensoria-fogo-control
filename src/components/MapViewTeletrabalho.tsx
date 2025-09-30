@@ -39,30 +39,42 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
   const [teletrabalhoData, setTeletrabalhoData] = useState<Record<string, TeletrabalhoData>>({});
   const isMobile = useIsMobile();
 
-  // Fetch teletrabalho data for all nucleos
   useEffect(() => {
     const fetchTeletrabalhoData = async () => {
       const dataMap: Record<string, TeletrabalhoData> = {};
+      const now = new Date();
 
       for (const nucleus of nucleos) {
-        // Fetch active teletrabalho records
+        // Fetch all teletrabalho records
         const { data: teletrabalhoRecords } = await supabase
           .from('nucleo_teletrabalho')
           .select('*')
           .eq('nucleo_id', nucleus.id)
-          .order('data_inicio', { ascending: false })
-          .limit(1);
+          .order('data_inicio', { ascending: false });
 
-        const hasActive = teletrabalhoRecords && teletrabalhoRecords.length > 0;
-        const record = teletrabalhoRecords?.[0];
+        // Find one that is "Em andamento" or "Agendado" (not Finalizado)
+        const activeTeletrabalho = teletrabalhoRecords?.find((t) => {
+          const dataInicio = new Date(t.data_inicio);
+          const dataFim = t.data_fim ? new Date(t.data_fim) : null;
+          
+          // Finalizado (histórico): tem data_fim e já passou
+          if (dataFim && dataFim < now) {
+            return false;
+          }
+          
+          // Em andamento ou Agendado
+          return true;
+        });
+
+        const hasActive = !!activeTeletrabalho;
 
         dataMap[nucleus.id] = {
           nucleusId: nucleus.id,
           hasActiveTeletrabalho: hasActive,
-          procedimento: record?.procedimento,
-          dataInicio: record?.data_inicio,
-          dataFim: record?.data_fim,
-          portaria: record?.portaria,
+          procedimento: activeTeletrabalho?.procedimento,
+          dataInicio: activeTeletrabalho?.data_inicio,
+          dataFim: activeTeletrabalho?.data_fim,
+          portaria: activeTeletrabalho?.portaria,
         };
       }
 
