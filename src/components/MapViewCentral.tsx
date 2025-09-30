@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 // Fix Leaflet default icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -96,22 +97,44 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
         nucleoIds.forEach((id) => {
           const nucleoTeletrabalhos = data?.filter((t) => t.nucleo_id === id) || [];
           
-          // Considera "Em andamento" exatamente como na página de detalhes:
-          // iniciado (data_inicio <= agora) e não finalizado (sem data_fim ou data_fim >= agora)
+          // Busca teletrabalho "Em andamento" ou "Agendado" (nunca Finalizado/Histórico)
           const activeTeletrabalho = nucleoTeletrabalhos.find((t) => {
             const dataInicio = new Date(t.data_inicio);
             const dataFim = t.data_fim ? new Date(t.data_fim) : null;
-            return dataInicio <= now && (!dataFim || dataFim >= now);
+            
+            // Finalizado (histórico): tem data_fim e já passou
+            if (dataFim && dataFim < now) {
+              return false;
+            }
+            
+            // Em andamento: iniciou e ainda não terminou
+            if (dataInicio <= now && (!dataFim || dataFim >= now)) {
+              return true;
+            }
+            
+            // Agendado: ainda não iniciou
+            if (dataInicio > now) {
+              return true;
+            }
+            
+            return false;
           });
           
-          teletrabalhoMap[id] = activeTeletrabalho
-            ? {
-                procedimento: activeTeletrabalho.procedimento,
-                data_inicio: activeTeletrabalho.data_inicio,
-                data_fim: activeTeletrabalho.data_fim,
-                portaria: activeTeletrabalho.portaria,
-              }
-            : null;
+          if (activeTeletrabalho) {
+            const dataInicio = new Date(activeTeletrabalho.data_inicio);
+            const dataFim = activeTeletrabalho.data_fim ? new Date(activeTeletrabalho.data_fim) : null;
+            const status = dataInicio <= now && (!dataFim || dataFim >= now) ? 'active' : 'scheduled';
+            
+            teletrabalhoMap[id] = {
+              procedimento: activeTeletrabalho.procedimento,
+              data_inicio: activeTeletrabalho.data_inicio,
+              data_fim: activeTeletrabalho.data_fim,
+              portaria: activeTeletrabalho.portaria,
+              status: status,
+            };
+          } else {
+            teletrabalhoMap[id] = null;
+          }
         });
 
         setTeletrabalhoData(teletrabalhoMap);
@@ -181,11 +204,20 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
         </div>
 
         {/* Teletrabalho Information */}
-        <div className="border rounded-lg p-3 space-y-2 bg-blue-50">
+        <div className={cn(
+          "border rounded-lg p-3 space-y-2",
+          activeTeletrabalho.status === 'active' ? "bg-blue-50" : "bg-amber-50"
+        )}>
           <div className="flex items-center gap-2">
-            <Laptop className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-600">
-              Em Teletrabalho
+            <Laptop className={cn(
+              "h-4 w-4",
+              activeTeletrabalho.status === 'active' ? "text-blue-600" : "text-amber-600"
+            )} />
+            <span className={cn(
+              "text-sm font-medium",
+              activeTeletrabalho.status === 'active' ? "text-blue-600" : "text-amber-600"
+            )}>
+              {activeTeletrabalho.status === 'active' ? 'Em Teletrabalho' : 'Teletrabalho Agendado'}
             </span>
           </div>
 

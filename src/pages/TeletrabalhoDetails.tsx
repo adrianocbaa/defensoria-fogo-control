@@ -485,13 +485,13 @@ export default function TeletrabalhoDetails() {
             </CardContent>
           </Card>
 
-          {/* Teletrabalho */}
+          {/* Teletrabalho - Em Andamento e Agendados */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Laptop className="h-5 w-5" />
-                  Teletrabalho ({teletrabalhos.length})
+                  Teletrabalho
                 </CardTitle>
                 {canEdit && (
                   <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
@@ -502,10 +502,10 @@ export default function TeletrabalhoDetails() {
               </div>
             </CardHeader>
             <CardContent>
-              {teletrabalhos.length === 0 ? (
+              {teletrabalhos.filter(t => getTeletrabalhoStatus(t.data_inicio, t.data_fim).label !== 'Finalizado').length === 0 ? (
                 <div className="text-center py-8">
                   <Laptop className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground mb-4">Nenhum registro de teletrabalho</p>
+                  <p className="text-sm text-muted-foreground mb-4">Nenhum teletrabalho ativo ou agendado</p>
                   {canEdit && (
                     <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
@@ -515,81 +515,172 @@ export default function TeletrabalhoDetails() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {teletrabalhos.map((tele) => {
-                    const status = getTeletrabalhoStatus(tele.data_inicio, tele.data_fim);
-                    
-                    return (
-                      <Card key={tele.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between gap-4 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <h4 className="font-semibold">{tele.procedimento}</h4>
-                                <Badge variant={status.variant}>{status.label}</Badge>
+                  {teletrabalhos
+                    .filter(t => getTeletrabalhoStatus(t.data_inicio, t.data_fim).label !== 'Finalizado')
+                    .map((tele) => {
+                      const status = getTeletrabalhoStatus(tele.data_inicio, tele.data_fim);
+                      
+                      return (
+                        <Card key={tele.id}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <h4 className="font-semibold">{tele.procedimento}</h4>
+                                  <Badge variant={status.variant}>{status.label}</Badge>
+                                </div>
+                                <div className="text-sm space-y-1">
+                                  <p className="text-muted-foreground">
+                                    <Clock className="h-3 w-3 inline mr-1" />
+                                    {format(new Date(tele.data_inicio), 'PPP', { locale: ptBR })}
+                                    {tele.data_fim && ` até ${format(new Date(tele.data_fim), 'PPP', { locale: ptBR })}`}
+                                  </p>
+                                  {tele.portaria && (
+                                    <p><strong>Portaria:</strong> {tele.portaria}</p>
+                                  )}
+                                  {tele.motivo && (
+                                    <p className="text-muted-foreground break-words">{tele.motivo}</p>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-sm space-y-1">
-                                <p className="text-muted-foreground">
-                                  <Clock className="h-3 w-3 inline mr-1" />
-                                  {format(new Date(tele.data_inicio), 'PPP', { locale: ptBR })}
-                                  {tele.data_fim && ` até ${format(new Date(tele.data_fim), 'PPP', { locale: ptBR })}`}
-                                </p>
-                                {tele.portaria && (
-                                  <p><strong>Portaria:</strong> {tele.portaria}</p>
+                              <div className="flex gap-2 flex-shrink-0">
+                                {canEdit && (
+                                  <>
+                                    <Button size="sm" variant="ghost" onClick={() => openEditModal(tele)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="sm" variant="ghost">
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Tem certeza que deseja excluir este registro de teletrabalho?
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleDeleteTeletrabalho(tele.id)}>
+                                            Excluir
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </>
                                 )}
-                                {tele.motivo && (
-                                  <p className="text-muted-foreground break-words">{tele.motivo}</p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex gap-2 flex-shrink-0">
-                              {canEdit && (
-                                <>
-                                  <Button size="sm" variant="ghost" onClick={() => openEditModal(tele)}>
-                                    <Edit className="h-4 w-4" />
+                                {tele.portaria_file && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => viewPortaria(tele.portaria_file!)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    Ver
                                   </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button size="sm" variant="ghost">
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Tem certeza que deseja excluir este registro de teletrabalho?
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteTeletrabalho(tele.id)}>
-                                          Excluir
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </>
-                              )}
-                              {tele.portaria_file && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => viewPortaria(tele.portaria_file!)}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Ver
-                                </Button>
-                              )}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Histórico */}
+          {teletrabalhos.filter(t => getTeletrabalhoStatus(t.data_inicio, t.data_fim).label === 'Finalizado').length > 0 && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Histórico ({teletrabalhos.filter(t => getTeletrabalhoStatus(t.data_inicio, t.data_fim).label === 'Finalizado').length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {teletrabalhos
+                    .filter(t => getTeletrabalhoStatus(t.data_inicio, t.data_fim).label === 'Finalizado')
+                    .map((tele) => {
+                      const status = getTeletrabalhoStatus(tele.data_inicio, tele.data_fim);
+                      
+                      return (
+                        <Card key={tele.id}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <h4 className="font-semibold">{tele.procedimento}</h4>
+                                  <Badge variant={status.variant}>{status.label}</Badge>
+                                </div>
+                                <div className="text-sm space-y-1">
+                                  <p className="text-muted-foreground">
+                                    <Clock className="h-3 w-3 inline mr-1" />
+                                    {format(new Date(tele.data_inicio), 'PPP', { locale: ptBR })}
+                                    {tele.data_fim && ` até ${format(new Date(tele.data_fim), 'PPP', { locale: ptBR })}`}
+                                  </p>
+                                  {tele.portaria && (
+                                    <p><strong>Portaria:</strong> {tele.portaria}</p>
+                                  )}
+                                  {tele.motivo && (
+                                    <p className="text-muted-foreground break-words">{tele.motivo}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-2 flex-shrink-0">
+                                {canEdit && (
+                                  <>
+                                    <Button size="sm" variant="ghost" onClick={() => openEditModal(tele)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="sm" variant="ghost">
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Tem certeza que deseja excluir este registro de teletrabalho?
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleDeleteTeletrabalho(tele.id)}>
+                                            Excluir
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </>
+                                )}
+                                {tele.portaria_file && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => viewPortaria(tele.portaria_file!)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    Ver
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
