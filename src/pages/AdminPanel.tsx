@@ -97,6 +97,7 @@ export default function AdminPanel() {
     { id: 'obra' as Sector, label: 'Obra', icon: HardHat },
     { id: 'projetos' as Sector, label: 'Projetos', icon: Briefcase },
     { id: 'almoxarifado' as Sector, label: 'Almoxarifado', icon: Package },
+    { id: 'nucleos' as Sector, label: 'Teletrabalho', icon: Shield },
   ];
 
   const toggleUserExpanded = (userId: string) => {

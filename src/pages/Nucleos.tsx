@@ -41,7 +41,7 @@ const Nucleos = () => {
       <div className="border-b bg-card transition-colors">
         <div className="container mx-auto px-6 lg:px-8 py-4 lg:py-6">
           <PageHeader
-            title="Núcleos DPE-MT"
+            title="Teletrabalho"
             subtitle="Sistema de Gestão de Núcleos e Teletrabalho da Defensoria Pública"
             actions={
               canEdit && (

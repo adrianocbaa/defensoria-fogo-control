@@ -75,7 +75,7 @@ const sectorBlocks: SectorBlock[] = [
   },
   {
     id: 'nucleos',
-    title: 'Núcleos',
+    title: 'Teletrabalho',
     icon: Building,
     path: '/nucleos',
     color: 'text-amber-600',
