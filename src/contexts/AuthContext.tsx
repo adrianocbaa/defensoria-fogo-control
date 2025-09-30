@@ -116,6 +116,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
 
+    // If login successful, check if user is active
+    if (!error) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (profile && !profile.is_active) {
+        // User is inactive, sign them out immediately
+        await supabase.auth.signOut();
+        await logLoginAttempt(email, false, 'login');
+        return { 
+          error: { 
+            message: 'Sua conta está bloqueada. Entre em contato com o administrador do sistema.',
+            name: 'UserInactiveError',
+            status: 403
+          } as any 
+        };
+      }
+    }
+
     // Log the login attempt
     await logLoginAttempt(email, !error, 'login');
 
