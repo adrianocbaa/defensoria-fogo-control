@@ -47,19 +47,33 @@ const NucleoCentralDetails = () => {
       mapRef.current = null;
     }
 
-    // Initialize map with high zoom
-    const map = L.map(mapContainerRef.current).setView([nucleus.lat, nucleus.lng], 17);
+    // Wait for the container to be fully rendered
+    const initMap = () => {
+      if (!mapContainerRef.current) return;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-    }).addTo(map);
+      // Initialize map with high zoom
+      const map = L.map(mapContainerRef.current).setView([nucleus.lat!, nucleus.lng!], 17);
 
-    // Add marker at nucleus location
-    L.marker([nucleus.lat, nucleus.lng]).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+      }).addTo(map);
 
-    mapRef.current = map;
+      // Add marker at nucleus location
+      L.marker([nucleus.lat!, nucleus.lng!]).addTo(map);
+
+      // Force map to recalculate size
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+
+      mapRef.current = map;
+    };
+
+    // Use timeout to ensure DOM is ready
+    const timer = setTimeout(initMap, 100);
 
     return () => {
+      clearTimeout(timer);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
