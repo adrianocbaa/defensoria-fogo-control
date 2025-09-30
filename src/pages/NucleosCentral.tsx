@@ -8,14 +8,22 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useNucleosCentral } from '@/hooks/useNucleosCentral';
 import { normalizeText } from '@/lib/utils';
-import { Plus, Search, Building2 } from 'lucide-react';
+import { Plus, Search, Building2, FileSpreadsheet } from 'lucide-react';
 import { MapViewCentral } from '@/components/MapViewCentral';
+import { ImportarNucleosCentral } from '@/components/ImportarNucleosCentral';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const NucleosCentral = () => {
   const navigate = useNavigate();
-  const { nucleos, loading } = useNucleosCentral();
+  const { nucleos, loading, addNucleo } = useNucleosCentral();
   const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredNucleos = nucleos.filter((nucleus) => {
@@ -30,6 +38,47 @@ const NucleosCentral = () => {
     navigate(`/nucleos-central/${nucleusId}`);
   };
 
+  const handleImportarNucleos = async (nucleosImportados: any[]) => {
+    try {
+      let sucessos = 0;
+      let erros = 0;
+
+      for (const nucleo of nucleosImportados) {
+        try {
+          await addNucleo(nucleo);
+          sucessos++;
+        } catch (error) {
+          console.error('Erro ao importar núcleo:', nucleo.nome, error);
+          erros++;
+        }
+      }
+
+      setImportDialogOpen(false);
+
+      if (sucessos > 0) {
+        toast({
+          title: 'Importação concluída',
+          description: `${sucessos} núcleo(s) importado(s) com sucesso${erros > 0 ? `. ${erros} erro(s).` : ''}`,
+        });
+      }
+
+      if (erros > 0) {
+        toast({
+          title: 'Alguns núcleos não foram importados',
+          description: `${erros} núcleo(s) com erro. Verifique o console para mais detalhes.`,
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro ao importar núcleos:', error);
+      toast({
+        title: 'Erro na importação',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <SimpleHeader>
       {/* Page Header */}
@@ -40,14 +89,24 @@ const NucleosCentral = () => {
             subtitle="Gestão centralizada de núcleos da DPE-MT"
             actions={
               canEdit && (
-                <Button
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90"
-                  onClick={() => navigate('/nucleos-central/novo')}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Núcleo
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setImportDialogOpen(true)}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Importar Planilha
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90"
+                    onClick={() => navigate('/nucleos-central/novo')}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Núcleo
+                  </Button>
+                </div>
               )
             }
           />
@@ -101,6 +160,19 @@ const NucleosCentral = () => {
           </div>
         )}
       </div>
+
+      {/* Dialog de Importação */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Importar Núcleos</DialogTitle>
+          </DialogHeader>
+          <ImportarNucleosCentral
+            onImportar={handleImportarNucleos}
+            onFechar={() => setImportDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </SimpleHeader>
   );
 };
