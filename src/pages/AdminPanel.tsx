@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useUserRole, UserRole } from '@/hooks/useUserRole';
 import { Sector } from '@/hooks/useUserSectors';
+import { useAvailableSectors } from '@/hooks/useAvailableSectors';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Edit, Eye, Wrench, HardHat, Wind, Package, Briefcase, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw } from 'lucide-react';
+import { Shield, Edit, Eye, Wrench, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
 interface Profile {
@@ -30,6 +31,7 @@ interface Profile {
 export default function AdminPanel() {
   const navigate = useNavigate();
   const { isAdmin, loading: roleLoading } = useUserRole();
+  const { sectors: availableSectors, loading: sectorsLoading } = useAvailableSectors();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
@@ -90,15 +92,8 @@ export default function AdminPanel() {
     }));
   };
 
-  const modules = [
-    { id: 'preventivos' as Sector, label: 'Preventivos', icon: Shield },
-    { id: 'manutencao' as Sector, label: 'Manutenção', icon: Wrench },
-    { id: 'ar_condicionado' as Sector, label: 'Ar Condicionado', icon: Wind },
-    { id: 'obra' as Sector, label: 'Obra', icon: HardHat },
-    { id: 'projetos' as Sector, label: 'Projetos', icon: Briefcase },
-    { id: 'almoxarifado' as Sector, label: 'Almoxarifado', icon: Package },
-    { id: 'nucleos' as Sector, label: 'Teletrabalho', icon: Shield },
-  ];
+  // Usar os setores dinâmicos carregados do banco de dados
+  const modules = availableSectors;
 
   const toggleUserExpanded = (userId: string) => {
     setExpandedUsers(prev => {
@@ -251,7 +246,7 @@ export default function AdminPanel() {
     }
   };
 
-  if (roleLoading) {
+  if (roleLoading || sectorsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

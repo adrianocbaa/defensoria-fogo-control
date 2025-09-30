@@ -1,24 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
-import { 
-  Wrench, 
-  HardHat, 
-  Shield, 
-  Wind, 
-  FolderKanban,
-  Package,
-  Building,
-  Building2,
-  Laptop
-} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUserSectors } from '@/hooks/useUserSectors';
-
-type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado';
+import { useAvailableSectors } from '@/hooks/useAvailableSectors';
 
 interface SectorBlock {
-  id: Sector | string;
+  id: string;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   path: string;
@@ -26,82 +14,47 @@ interface SectorBlock {
   bgColor: string;
 }
 
-const sectorBlocks: SectorBlock[] = [
-  {
-    id: 'preventivos',
-    title: 'Preventivos',
-    icon: Shield,
-    path: '/preventivos',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50 hover:bg-blue-100 border-blue-200'
-  },
-  {
-    id: 'manutencao',
-    title: 'Manutenção',
-    icon: Wrench,
-    path: '/maintenance',
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50 hover:bg-orange-100 border-orange-200'
-  },
-  {
-    id: 'ar_condicionado',
-    title: 'Ar Condicionado',
-    icon: Wind,
-    path: '#',
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50 hover:bg-cyan-100 border-cyan-200'
-  },
-  {
-    id: 'obra',
-    title: 'Obra',
-    icon: HardHat,
-    path: '/obras',
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200'
-  },
-  {
-    id: 'projetos',
-    title: 'Projetos',
-    icon: FolderKanban,
-    path: '#',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50 hover:bg-purple-100 border-purple-200'
-  },
-  {
-    id: 'almoxarifado',
-    title: 'Almoxarifado',
-    icon: Package,
-    path: '/inventory',
-    color: 'text-green-600',
-    bgColor: 'bg-green-50 hover:bg-green-100 border-green-200'
-  },
-  {
-    id: 'nucleos',
-    title: 'Teletrabalho',
-    icon: Laptop,
-    path: '/nucleos',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50 hover:bg-amber-100 border-amber-200'
-  },
-  {
-    id: 'nucleos_central',
-    title: 'Núcleos - Cadastro',
-    icon: Building2,
-    path: '/nucleos-central',
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
-  }
-];
+// Mapeamento de rotas para cada módulo
+const sectorPaths: Record<string, string> = {
+  'preventivos': '/preventivos',
+  'manutencao': '/maintenance',
+  'ar_condicionado': '#',
+  'obra': '/obras',
+  'projetos': '#',
+  'almoxarifado': '/inventory',
+  'nucleos': '/nucleos',
+  'nucleos_central': '/nucleos-central',
+};
+
+// Mapeamento de cores para cada módulo
+const sectorColors: Record<string, { text: string; bg: string }> = {
+  'preventivos': { text: 'text-blue-600', bg: 'bg-blue-50 hover:bg-blue-100 border-blue-200' },
+  'manutencao': { text: 'text-orange-600', bg: 'bg-orange-50 hover:bg-orange-100 border-orange-200' },
+  'ar_condicionado': { text: 'text-cyan-600', bg: 'bg-cyan-50 hover:bg-cyan-100 border-cyan-200' },
+  'obra': { text: 'text-yellow-600', bg: 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200' },
+  'projetos': { text: 'text-purple-600', bg: 'bg-purple-50 hover:bg-purple-100 border-purple-200' },
+  'almoxarifado': { text: 'text-green-600', bg: 'bg-green-50 hover:bg-green-100 border-green-200' },
+  'nucleos': { text: 'text-amber-600', bg: 'bg-amber-50 hover:bg-amber-100 border-amber-200' },
+  'nucleos_central': { text: 'text-indigo-600', bg: 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200' },
+};
 
 export default function Dashboard() {
   const { sectors, loading } = useUserSectors();
+  const { sectors: allSectors, loading: sectorsLoading } = useAvailableSectors();
 
-  // Filter modules based on user's allowed sectors
-  const availableBlocks = sectorBlocks.filter(block => 
-    sectors.includes(block.id as Sector)
-  );
+  // Construir blocos de setores baseado nos setores do usuário
+  const availableBlocks: SectorBlock[] = allSectors
+    .filter(sector => sectors.includes(sector.id))
+    .map(sector => ({
+      id: sector.id,
+      title: sector.label,
+      icon: sector.icon,
+      path: sectorPaths[sector.id] || '#',
+      color: sectorColors[sector.id]?.text || 'text-gray-600',
+      bgColor: sectorColors[sector.id]?.bg || 'bg-gray-50 hover:bg-gray-100 border-gray-200',
+    }));
 
-  if (loading) {
+  if (loading || sectorsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
