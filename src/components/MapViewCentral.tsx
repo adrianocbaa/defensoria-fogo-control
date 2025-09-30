@@ -3,8 +3,11 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NucleoCentral } from '@/hooks/useNucleosCentral';
 import { Button } from './ui/button';
-import { X, MapPin, Phone, Mail } from 'lucide-react';
+import { X, MapPin, Phone, Mail, Laptop, Calendar, FileText } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Fix Leaflet default icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -13,6 +16,13 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+interface TeletrabalhoData {
+  procedimento: string;
+  data_inicio: string;
+  data_fim: string | null;
+  portaria: string | null;
+}
 
 interface MapViewCentralProps {
   nucleos: NucleoCentral[];
@@ -24,6 +34,7 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
   const markersRef = useRef<L.Marker[]>([]);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
+  const [teletrabalhoData, setTeletrabalhoData] = useState<Record<string, TeletrabalhoData | null>>({});
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -62,6 +73,44 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
     };
   }, []);
 
+  // Fetch teletrabalho data for all nucleos
+  useEffect(() => {
+    const fetchTeletrabalhoData = async () => {
+      if (nucleos.length === 0) return;
+
+      const nucleoIds = nucleos.map(n => n.id);
+      const today = new Date().toISOString().split('T')[0];
+
+      try {
+        const { data, error } = await supabase
+          .from('nucleo_teletrabalho')
+          .select('nucleo_id, procedimento, data_inicio, data_fim, portaria')
+          .in('nucleo_id', nucleoIds)
+          .lte('data_inicio', today)
+          .or(`data_fim.gte.${today},data_fim.is.null`);
+
+        if (error) throw error;
+
+        const teletrabalhoMap: Record<string, TeletrabalhoData | null> = {};
+        nucleoIds.forEach(id => {
+          const activeTeletrabalho = data?.find(t => t.nucleo_id === id);
+          teletrabalhoMap[id] = activeTeletrabalho ? {
+            procedimento: activeTeletrabalho.procedimento,
+            data_inicio: activeTeletrabalho.data_inicio,
+            data_fim: activeTeletrabalho.data_fim,
+            portaria: activeTeletrabalho.portaria,
+          } : null;
+        });
+
+        setTeletrabalhoData(teletrabalhoMap);
+      } catch (error) {
+        console.error('Error fetching teletrabalho data:', error);
+      }
+    };
+
+    fetchTeletrabalhoData();
+  }, [nucleos]);
+
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -99,6 +148,13 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
   }, [nucleos, isMobile]);
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
+    const activeTeletrabalho = teletrabalhoData[nucleus.id];
+    
+    // Só mostra se houver teletrabalho ativo
+    if (!activeTeletrabalho) {
+      return null;
+    }
+
     return (
       <div className="space-y-4">
         <div>
@@ -110,6 +166,44 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
               <p className="text-sm text-muted-foreground">{nucleus.cidade}</p>
             </div>
           </div>
+        </div>
+
+        {/* Teletrabalho Information */}
+        <div className="border rounded-lg p-3 space-y-2 bg-blue-50">
+          <div className="flex items-center gap-2">
+            <Laptop className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-600">
+              Em Teletrabalho
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-foreground">{activeTeletrabalho.procedimento}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-foreground">
+              Início: {format(new Date(activeTeletrabalho.data_inicio), 'dd/MM/yyyy', { locale: ptBR })}
+            </span>
+          </div>
+
+          {activeTeletrabalho.data_fim && (
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">
+                Fim: {format(new Date(activeTeletrabalho.data_fim), 'dd/MM/yyyy', { locale: ptBR })}
+              </span>
+            </div>
+          )}
+
+          {activeTeletrabalho.portaria && (
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">Portaria: {activeTeletrabalho.portaria}</span>
+            </div>
+          )}
         </div>
 
         {nucleus.telefones && (
