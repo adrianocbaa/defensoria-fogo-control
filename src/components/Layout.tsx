@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Building2, Shield, LogOut, User, Eye, Settings, Wrench, UserCog } from 'lucide-react';
+import { Building2, Shield, LogOut, User, Eye, Settings, Wrench, UserCog, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
@@ -42,23 +42,12 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <div className="flex items-center gap-6">
               <div className="hidden md:flex gap-6 text-sm font-medium">
-                <a 
-                  href="https://painel.dif.app.br/" 
-                  className="hover:text-primary-foreground/80 transition-colors cursor-pointer"
-                >
-                  PREVENTIVOS DE INCÊNDIO
-                </a>
                 <Link 
-                  to="/maintenance" 
-                  className="hover:text-primary-foreground/80 transition-colors cursor-pointer"
+                  to="/" 
+                  className="flex items-center gap-2 hover:text-primary-foreground/80 transition-colors cursor-pointer"
                 >
-                  MANUTENÇÃO
-                </Link>
-                <Link 
-                  to="/obras" 
-                  className="hover:text-primary-foreground/80 transition-colors cursor-pointer"
-                >
-                  OBRAS
+                  <LayoutGrid className="h-4 w-4" />
+                  MÓDULOS
                 </Link>
               </div>
               
