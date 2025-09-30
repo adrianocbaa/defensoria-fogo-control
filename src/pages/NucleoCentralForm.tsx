@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNucleosCentral, NucleoCentral } from '@/hooks/useNucleosCentral';
 import { Save, X } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { MapSelector } from '@/components/MapSelector';
 
 const NucleoCentralForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,9 +27,6 @@ const NucleoCentralForm = () => {
     lng: '',
   });
 
-  const mapRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (nucleus) {
@@ -46,127 +42,6 @@ const NucleoCentralForm = () => {
     }
   }, [nucleus]);
 
-  useEffect(() => {
-    // Aguardar o DOM estar pronto
-    const timer = setTimeout(() => {
-      const mapElement = document.getElementById('map-form');
-      
-      if (!mapElement || mapRef.current) {
-        return;
-      }
-
-      const initialLat = formData.lat ? parseFloat(formData.lat) : -15.601411;
-      const initialLng = formData.lng ? parseFloat(formData.lng) : -56.097892;
-
-      try {
-        const map = L.map('map-form', {
-          center: [initialLat, initialLng],
-          zoom: formData.lat ? 15 : 7,
-        });
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map);
-
-        // Adicionar marcador se já houver coordenadas
-        if (formData.lat && formData.lng) {
-          const marker = L.marker([initialLat, initialLng], {
-            draggable: true,
-          }).addTo(map);
-
-          marker.on('dragend', (e) => {
-            const position = e.target.getLatLng();
-            setFormData((prev) => ({
-              ...prev,
-              lat: position.lat.toFixed(6),
-              lng: position.lng.toFixed(6),
-            }));
-          });
-
-          markerRef.current = marker;
-        }
-
-        // Evento de clique no mapa
-        map.on('click', (e) => {
-          const { lat, lng } = e.latlng;
-
-          setFormData((prev) => ({
-            ...prev,
-            lat: lat.toFixed(6),
-            lng: lng.toFixed(6),
-          }));
-
-          if (markerRef.current) {
-            markerRef.current.setLatLng([lat, lng]);
-          } else {
-            const marker = L.marker([lat, lng], {
-              draggable: true,
-            }).addTo(map);
-
-            marker.on('dragend', (e) => {
-              const position = e.target.getLatLng();
-              setFormData((prev) => ({
-                ...prev,
-                lat: position.lat.toFixed(6),
-                lng: position.lng.toFixed(6),
-              }));
-            });
-
-            markerRef.current = marker;
-          }
-        });
-
-        mapRef.current = map;
-
-        // Forçar redimensionamento do mapa após renderização
-        setTimeout(() => {
-          map.invalidateSize();
-        }, 100);
-      } catch (error) {
-        console.error('Erro ao inicializar mapa:', error);
-      }
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        markerRef.current = null;
-      }
-    };
-  }, []); // Executar apenas uma vez na montagem
-
-  useEffect(() => {
-    if (mapRef.current && formData.lat && formData.lng) {
-      const lat = parseFloat(formData.lat);
-      const lng = parseFloat(formData.lng);
-
-      if (!isNaN(lat) && !isNaN(lng)) {
-        mapRef.current.setView([lat, lng], 15);
-
-        if (markerRef.current) {
-          markerRef.current.setLatLng([lat, lng]);
-        } else {
-          const marker = L.marker([lat, lng], {
-            draggable: true,
-          }).addTo(mapRef.current);
-
-          marker.on('dragend', (e) => {
-            const position = e.target.getLatLng();
-            setFormData((prev) => ({
-              ...prev,
-              lat: position.lat.toFixed(6),
-              lng: position.lng.toFixed(6),
-            }));
-          });
-
-          markerRef.current = marker;
-        }
-      }
-    }
-  }, [formData.lat, formData.lng]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,7 +172,13 @@ const NucleoCentralForm = () => {
                 </p>
               </CardHeader>
               <CardContent>
-                <div id="map-form" className="w-full h-96 rounded-lg border" />
+                <MapSelector
+                  onLocationSelect={(lat, lng) =>
+                    setFormData((prev) => ({ ...prev, lat: lat.toFixed(6), lng: lng.toFixed(6) }))
+                  }
+                  initialCoordinates={formData.lat && formData.lng ? { lat: parseFloat(formData.lat), lng: parseFloat(formData.lng) } : undefined}
+                  address={`${formData.endereco} ${formData.cidade}`.trim()}
+                />
               </CardContent>
             </Card>
           </div>
