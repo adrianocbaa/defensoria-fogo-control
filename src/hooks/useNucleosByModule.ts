@@ -13,13 +13,25 @@ export function useNucleosByModule(moduleKey: string) {
       setError(null);
 
       // Buscar núcleos visíveis no módulo específico
+      const { data: visibilityData, error: visibilityError } = await supabase
+        .from('nucleo_module_visibility')
+        .select('nucleo_id')
+        .eq('module_key', moduleKey);
+
+      if (visibilityError) throw visibilityError;
+
+      const nucleoIds = visibilityData?.map(v => v.nucleo_id) || [];
+
+      if (nucleoIds.length === 0) {
+        setNucleos([]);
+        return;
+      }
+
+      // Buscar os núcleos que estão visíveis neste módulo
       const { data, error: fetchError } = await supabase
-        .from('vw_nucleos_public')
-        .select(`
-          *,
-          nucleo_module_visibility!inner(module_key)
-        `)
-        .eq('nucleo_module_visibility.module_key', moduleKey)
+        .from('nucleos_central')
+        .select('*')
+        .in('id', nucleoIds)
         .order('nome');
 
       if (fetchError) throw fetchError;
