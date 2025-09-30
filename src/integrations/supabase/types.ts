@@ -819,39 +819,51 @@ export type Database = {
       }
       nucleos_central: {
         Row: {
+          auxiliar_coordenador: string | null
           cidade: string
+          coordenador_substituto: string | null
           created_at: string
           email: string | null
           endereco: string
+          horario_atendimento: string | null
           id: string
           lat: number | null
           lng: number | null
+          membro_coordenador: string | null
           nome: string
           telefones: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          auxiliar_coordenador?: string | null
           cidade: string
+          coordenador_substituto?: string | null
           created_at?: string
           email?: string | null
           endereco: string
+          horario_atendimento?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
+          membro_coordenador?: string | null
           nome: string
           telefones?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          auxiliar_coordenador?: string | null
           cidade?: string
+          coordenador_substituto?: string | null
           created_at?: string
           email?: string | null
           endereco?: string
+          horario_atendimento?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
+          membro_coordenador?: string | null
           nome?: string
           telefones?: string | null
           updated_at?: string

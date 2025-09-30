@@ -6,17 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, MapPin, Laptop } from 'lucide-react';
+import { ArrowLeft, Users, Save } from 'lucide-react';
 
-interface NucleoBasico {
+interface NucleoTeletrabalho {
   id: string;
   nome: string;
-  endereco: string;
-  cidade: string;
-  telefones: string | null;
-  email: string | null;
+  horario_atendimento: string | null;
+  membro_coordenador: string | null;
+  coordenador_substituto: string | null;
+  auxiliar_coordenador: string | null;
 }
 
 export default function TeletrabalhoEdit() {
@@ -24,7 +25,14 @@ export default function TeletrabalhoEdit() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [nucleoBasico, setNucleoBasico] = useState<NucleoBasico | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [nucleo, setNucleo] = useState<NucleoTeletrabalho | null>(null);
+  const [formData, setFormData] = useState({
+    horario_atendimento: '',
+    membro_coordenador: '',
+    coordenador_substituto: '',
+    auxiliar_coordenador: '',
+  });
 
   useEffect(() => {
     if (id) {
@@ -36,15 +44,23 @@ export default function TeletrabalhoEdit() {
     try {
       setLoading(true);
 
-      // Buscar informações básicas (somente leitura)
-      const { data: basicData, error: basicError } = await supabase
+      const { data, error } = await supabase
         .from('nucleos_central')
-        .select('id, nome, endereco, cidade, telefones, email')
+        .select('id, nome, horario_atendimento, membro_coordenador, coordenador_substituto, auxiliar_coordenador')
         .eq('id', id)
         .maybeSingle();
 
-      if (basicError) throw basicError;
-      setNucleoBasico(basicData);
+      if (error) throw error;
+      
+      if (data) {
+        setNucleo(data);
+        setFormData({
+          horario_atendimento: data.horario_atendimento || '',
+          membro_coordenador: data.membro_coordenador || '',
+          coordenador_substituto: data.coordenador_substituto || '',
+          auxiliar_coordenador: data.auxiliar_coordenador || '',
+        });
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -53,6 +69,39 @@ export default function TeletrabalhoEdit() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+
+      const { error } = await supabase
+        .from('nucleos_central')
+        .update({
+          horario_atendimento: formData.horario_atendimento || null,
+          membro_coordenador: formData.membro_coordenador || null,
+          coordenador_substituto: formData.coordenador_substituto || null,
+          auxiliar_coordenador: formData.auxiliar_coordenador || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Dados salvos com sucesso',
+      });
+
+      navigate(`/teletrabalho/${id}`);
+    } catch (error) {
+      console.error('Error saving data:', error);
+      toast({
+        title: 'Erro ao salvar dados',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -66,7 +115,7 @@ export default function TeletrabalhoEdit() {
     );
   }
 
-  if (!nucleoBasico) {
+  if (!nucleo) {
     return (
       <SimpleHeader>
         <div className="container mx-auto px-6 lg:px-8 py-8">
@@ -81,8 +130,8 @@ export default function TeletrabalhoEdit() {
       <div className="border-b bg-card">
         <div className="container mx-auto px-6 lg:px-8 py-4 lg:py-6">
           <PageHeader
-            title="Gerenciar Teletrabalho"
-            subtitle={nucleoBasico.nome}
+            title="Editar Informações de Teletrabalho"
+            subtitle={nucleo.nome}
             actions={
               <Button
                 size="sm"
@@ -98,67 +147,68 @@ export default function TeletrabalhoEdit() {
       </div>
 
       <div className="container mx-auto px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Informações Básicas - Somente Leitura */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Informações Básicas (Somente Leitura)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Nome do Núcleo</Label>
-                  <Input value={nucleoBasico.nome} disabled className="bg-muted" />
-                </div>
-                <div>
-                  <Label>Cidade</Label>
-                  <Input value={nucleoBasico.cidade} disabled className="bg-muted" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Endereço</Label>
-                  <Input value={nucleoBasico.endereco} disabled className="bg-muted" />
-                </div>
-                {nucleoBasico.telefones && (
-                  <div>
-                    <Label>Telefones</Label>
-                    <Input value={nucleoBasico.telefones} disabled className="bg-muted" />
-                  </div>
-                )}
-                {nucleoBasico.email && (
-                  <div>
-                    <Label>E-mail</Label>
-                    <Input value={nucleoBasico.email} disabled className="bg-muted" />
-                  </div>
-                )}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Informações de Teletrabalho
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="horario_atendimento">Horário de Atendimento ao Público</Label>
+                <Textarea
+                  id="horario_atendimento"
+                  value={formData.horario_atendimento}
+                  onChange={(e) => setFormData({ ...formData, horario_atendimento: e.target.value })}
+                  placeholder="Ex: Segunda a Sexta, das 8h às 18h"
+                  rows={3}
+                />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Estas informações não podem ser editadas neste módulo. Para alterá-las, use a página de edição central do núcleo.
-              </p>
-            </CardContent>
-          </Card>
 
-          {/* Informação sobre registros de Teletrabalho */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Laptop className="h-5 w-5" />
-                Gerenciar Registros de Teletrabalho
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Os registros de teletrabalho (procedimentos, portarias, datas) são gerenciados na página de detalhes do núcleo.
-                Esta página permite visualizar as informações básicas que são compartilhadas entre todos os módulos.
-              </p>
-              <Button onClick={() => navigate(`/teletrabalho/${id}`)}>
-                Ver Registros de Teletrabalho
+              <div>
+                <Label htmlFor="membro_coordenador">Membro Coordenador</Label>
+                <Input
+                  id="membro_coordenador"
+                  value={formData.membro_coordenador}
+                  onChange={(e) => setFormData({ ...formData, membro_coordenador: e.target.value })}
+                  placeholder="Nome do membro coordenador"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="coordenador_substituto">Coordenador Substituto</Label>
+                <Input
+                  id="coordenador_substituto"
+                  value={formData.coordenador_substituto}
+                  onChange={(e) => setFormData({ ...formData, coordenador_substituto: e.target.value })}
+                  placeholder="Nome do coordenador substituto"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="auxiliar_coordenador">Auxiliar do Coordenador</Label>
+                <Input
+                  id="auxiliar_coordenador"
+                  value={formData.auxiliar_coordenador}
+                  onChange={(e) => setFormData({ ...formData, auxiliar_coordenador: e.target.value })}
+                  placeholder="Nome do auxiliar do coordenador"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button onClick={handleSave} disabled={saving}>
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? 'Salvando...' : 'Salvar'}
               </Button>
-            </CardContent>
-          </Card>
-        </div>
+              <Button variant="outline" onClick={() => navigate(`/teletrabalho/${id}`)}>
+                Cancelar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </SimpleHeader>
   );
