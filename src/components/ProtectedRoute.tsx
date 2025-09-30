@@ -17,18 +17,20 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     const checkUserActive = async () => {
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_active')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (profile && !profile.is_active) {
+        if (profileError || !profile || profile.is_active === false) {
           setIsActive(false);
           await signOut();
         } else {
           setIsActive(true);
         }
+      } else {
+        setIsActive(null);
       }
       setCheckingActive(false);
     };
