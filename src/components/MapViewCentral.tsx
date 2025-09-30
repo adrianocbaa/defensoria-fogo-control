@@ -33,9 +33,13 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (!mapRef.current) {
-      // Initialize map
-      const map = L.map('map-central', {
+    const initMap = () => {
+      if (mapRef.current) return;
+      const container = document.getElementById('map-central');
+      if (!container) return;
+
+      // Initialize map once the container is available
+      const map = L.map(container as HTMLElement, {
         center: [-15.601411, -56.097892], // Centro de MT
         zoom: 7,
         zoomControl: true,
@@ -45,10 +49,20 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
         attribution: '© OpenStreetMap contributors',
       }).addTo(map);
 
+      // Ensure Leaflet measures the container after it has a size
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 0);
+
       mapRef.current = map;
-    }
+    };
+
+    initMap();
+    // Fallback in case the DOM wasn't ready yet
+    const t = setTimeout(initMap, 150);
 
     return () => {
+      clearTimeout(t);
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
     };
