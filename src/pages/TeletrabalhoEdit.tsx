@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { maskPhoneBR, formatPhoneBR } from '@/lib/formatters';
 import { ArrowLeft, Users, Save } from 'lucide-react';
 
 interface NucleoTeletrabalho {
@@ -90,9 +91,9 @@ export default function TeletrabalhoEdit() {
           membro_coordenador: data.membro_coordenador || '',
           coordenador_substituto: data.coordenador_substituto || '',
           auxiliar_coordenador: data.auxiliar_coordenador || '',
-          telefone_membro_coordenador: data.telefone_membro_coordenador || '',
-          telefone_coordenador_substituto: data.telefone_coordenador_substituto || '',
-          telefone_auxiliar_coordenador: data.telefone_auxiliar_coordenador || '',
+          telefone_membro_coordenador: formatPhoneBR(data.telefone_membro_coordenador || ''),
+          telefone_coordenador_substituto: formatPhoneBR(data.telefone_coordenador_substituto || ''),
+          telefone_auxiliar_coordenador: formatPhoneBR(data.telefone_auxiliar_coordenador || ''),
         });
       }
     } catch (error) {
@@ -332,7 +333,7 @@ export default function TeletrabalhoEdit() {
                 <Input
                   id="telefone_membro_coordenador"
                   value={formData.telefone_membro_coordenador}
-                  onChange={(e) => setFormData({ ...formData, telefone_membro_coordenador: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, telefone_membro_coordenador: maskPhoneBR(e.target.value) })}
                   placeholder="(00) 00000-0000"
                 />
               </div>
@@ -352,7 +353,7 @@ export default function TeletrabalhoEdit() {
                 <Input
                   id="telefone_coordenador_substituto"
                   value={formData.telefone_coordenador_substituto}
-                  onChange={(e) => setFormData({ ...formData, telefone_coordenador_substituto: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, telefone_coordenador_substituto: maskPhoneBR(e.target.value) })}
                   placeholder="(00) 00000-0000"
                 />
               </div>
@@ -372,7 +373,7 @@ export default function TeletrabalhoEdit() {
                 <Input
                   id="telefone_auxiliar_coordenador"
                   value={formData.telefone_auxiliar_coordenador}
-                  onChange={(e) => setFormData({ ...formData, telefone_auxiliar_coordenador: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, telefone_auxiliar_coordenador: maskPhoneBR(e.target.value) })}
                   placeholder="(00) 00000-0000"
                 />
               </div>

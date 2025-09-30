@@ -33,6 +33,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { formatPhoneBR } from '@/lib/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import {
@@ -287,6 +288,50 @@ export default function TeletrabalhoDetails() {
     setPortariaFile(null);
   };
 
+  const viewPortaria = async (publicUrl: string) => {
+    try {
+      const match = publicUrl.match(/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+      let targetUrl = publicUrl;
+
+      if (match) {
+        const [, bucket, path] = match;
+        const { data, error } = await supabase
+          .storage
+          .from(bucket)
+          .createSignedUrl(path, 60, { download: 'portaria.pdf' });
+
+        if (!error && data?.signedUrl) {
+          targetUrl = data.signedUrl;
+        }
+      }
+
+      const win = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        const a = document.createElement('a');
+        a.href = targetUrl;
+        a.rel = 'noopener';
+        a.download = 'portaria.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    } catch (e) {
+      console.error('Error opening file:', e);
+      toast({
+        title: 'Não foi possível abrir o arquivo',
+        description: 'Tente baixar o arquivo ou desative o bloqueador para supabase.co',
+        variant: 'destructive',
+      });
+
+      const a = document.createElement('a');
+      a.href = publicUrl;
+      a.rel = 'noopener';
+      a.download = 'portaria.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  };
   if (loading) {
     return (
       <SimpleHeader>
@@ -400,7 +445,7 @@ export default function TeletrabalhoDetails() {
                   {nucleus.telefone_membro_coordenador && (
                     <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                       <Phone className="h-3 w-3" />
-                      {nucleus.telefone_membro_coordenador}
+                      {formatPhoneBR(nucleus.telefone_membro_coordenador || '')}
                     </p>
                   )}
                 </div>
@@ -416,7 +461,7 @@ export default function TeletrabalhoDetails() {
                   {nucleus.telefone_coordenador_substituto && (
                     <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                       <Phone className="h-3 w-3" />
-                      {nucleus.telefone_coordenador_substituto}
+                      {formatPhoneBR(nucleus.telefone_coordenador_substituto || '')}
                     </p>
                   )}
                 </div>
@@ -432,7 +477,7 @@ export default function TeletrabalhoDetails() {
                   {nucleus.telefone_auxiliar_coordenador && (
                     <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                       <Phone className="h-3 w-3" />
-                      {nucleus.telefone_auxiliar_coordenador}
+                      {formatPhoneBR(nucleus.telefone_auxiliar_coordenador || '')}
                     </p>
                   )}
                 </div>
@@ -530,7 +575,7 @@ export default function TeletrabalhoDetails() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => window.open(tele.portaria_file!, '_blank')}
+                                  onClick={() => viewPortaria(tele.portaria_file!)}
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
                                   Ver
