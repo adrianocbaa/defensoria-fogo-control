@@ -89,32 +89,28 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
 
         if (error) throw error;
 
-        // Normalize today's date to midnight for accurate comparison
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
+        const now = new Date();
         const teletrabalhoMap: Record<string, TeletrabalhoData | null> = {};
         
-        nucleoIds.forEach(id => {
-          // Find teletrabalho records for this nucleus
-          const nucleoTeletrabalhos = data?.filter(t => t.nucleo_id === id) || [];
+        nucleoIds.forEach((id) => {
+          const nucleoTeletrabalhos = data?.filter((t) => t.nucleo_id === id) || [];
           
-          // Find one that is "Em andamento" (status: In Progress)
-          const activeTeletrabalho = nucleoTeletrabalhos.find(t => {
-            const dataInicio = new Date(t.data_inicio + 'T00:00:00');
-            const dataFim = t.data_fim ? new Date(t.data_fim + 'T23:59:59') : null;
-            
-            // Em andamento: já começou E (não tem fim OU ainda não terminou)
-            // dataInicio <= today AND (no end date OR dataFim >= today)
-            return dataInicio <= today && (!dataFim || dataFim >= today);
+          // Considera "Em andamento" exatamente como na página de detalhes:
+          // iniciado (data_inicio <= agora) e não finalizado (sem data_fim ou data_fim >= agora)
+          const activeTeletrabalho = nucleoTeletrabalhos.find((t) => {
+            const dataInicio = new Date(t.data_inicio);
+            const dataFim = t.data_fim ? new Date(t.data_fim) : null;
+            return dataInicio <= now && (!dataFim || dataFim >= now);
           });
           
-          teletrabalhoMap[id] = activeTeletrabalho ? {
-            procedimento: activeTeletrabalho.procedimento,
-            data_inicio: activeTeletrabalho.data_inicio,
-            data_fim: activeTeletrabalho.data_fim,
-            portaria: activeTeletrabalho.portaria,
-          } : null;
+          teletrabalhoMap[id] = activeTeletrabalho
+            ? {
+                procedimento: activeTeletrabalho.procedimento,
+                data_inicio: activeTeletrabalho.data_inicio,
+                data_fim: activeTeletrabalho.data_fim,
+                portaria: activeTeletrabalho.portaria,
+              }
+            : null;
         });
 
         setTeletrabalhoData(teletrabalhoMap);
