@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNucleosCentral, NucleoCentral } from '@/hooks/useNucleosCentral';
+import { useNucleosCentral, NucleoCentral, useModuleVisibility } from '@/hooks/useNucleosCentral';
 import { Save, X } from 'lucide-react';
 import { MapSelector } from '@/components/MapSelector';
+import { ModuleVisibilitySelector } from '@/components/ModuleVisibilitySelector';
+import { supabase } from '@/integrations/supabase/client';
 
 const NucleoCentralForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +29,9 @@ const NucleoCentralForm = () => {
     lng: '',
   });
 
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const { visibility, loading: visibilityLoading } = useModuleVisibility(id || '');
+
 
   useEffect(() => {
     if (nucleus) {
@@ -42,6 +47,20 @@ const NucleoCentralForm = () => {
     }
   }, [nucleus]);
 
+  useEffect(() => {
+    if (visibility.length > 0) {
+      setSelectedModules(visibility.map((v) => v.module_key));
+    }
+  }, [visibility]);
+
+
+  const handleModuleToggle = (moduleKey: string) => {
+    setSelectedModules((prev) =>
+      prev.includes(moduleKey)
+        ? prev.filter((key) => key !== moduleKey)
+        : [...prev, moduleKey]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +76,36 @@ const NucleoCentralForm = () => {
     };
 
     try {
+      let nucleoId = id;
+      
       if (isEditing && id) {
         await updateNucleo(id, data);
       } else {
-        await addNucleo(data as Omit<NucleoCentral, 'id' | 'created_at' | 'updated_at'>);
+        const newNucleo = await addNucleo(data as Omit<NucleoCentral, 'id' | 'created_at' | 'updated_at'>);
+        nucleoId = newNucleo.id;
       }
+
+      // Atualizar visibilidade dos módulos
+      if (nucleoId) {
+        // Deletar todas as visibilidades existentes
+        await supabase
+          .from('nucleo_module_visibility')
+          .delete()
+          .eq('nucleo_id', nucleoId);
+
+        // Inserir as novas visibilidades
+        if (selectedModules.length > 0) {
+          const visibilityData = selectedModules.map((moduleKey) => ({
+            nucleo_id: nucleoId,
+            module_key: moduleKey,
+          }));
+
+          await supabase
+            .from('nucleo_module_visibility')
+            .insert(visibilityData);
+        }
+      }
+
       navigate('/nucleos-central');
     } catch (error) {
       console.error('Error saving nucleus:', error);
@@ -160,6 +204,11 @@ const NucleoCentralForm = () => {
                     />
                   </div>
                 </div>
+
+                <ModuleVisibilitySelector
+                  selectedModules={selectedModules}
+                  onModuleToggle={handleModuleToggle}
+                />
               </CardContent>
             </Card>
 
