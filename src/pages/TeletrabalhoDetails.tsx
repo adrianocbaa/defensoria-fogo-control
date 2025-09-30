@@ -517,7 +517,6 @@ export default function TeletrabalhoDetails() {
                 <div className="space-y-4">
                   {teletrabalhos.map((tele) => {
                     const status = getTeletrabalhoStatus(tele.data_inicio, tele.data_fim);
-                    const isFinalizado = tele.data_fim && new Date(tele.data_fim) < new Date();
                     
                     return (
                       <Card key={tele.id}>
@@ -543,7 +542,7 @@ export default function TeletrabalhoDetails() {
                               </div>
                             </div>
                             <div className="flex gap-2 flex-shrink-0">
-                              {canEdit && !isFinalizado && (
+                              {canEdit && (
                                 <>
                                   <Button size="sm" variant="ghost" onClick={() => openEditModal(tele)}>
                                     <Edit className="h-4 w-4" />
