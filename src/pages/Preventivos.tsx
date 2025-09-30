@@ -40,18 +40,6 @@ const Preventivos = () => {
           <PageHeader
             title="Preventivos"
             subtitle="Sistema de Controle de Prevenção de Incêndio dos Núcleos da Defensoria"
-            actions={
-              canEdit && (
-                <Button 
-                  size="sm" 
-                  className="bg-primary hover:bg-primary/90"
-                  onClick={() => navigate('/nucleos-central/novo')}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Núcleo
-                </Button>
-              )
-            }
           />
         </div>
       </div>

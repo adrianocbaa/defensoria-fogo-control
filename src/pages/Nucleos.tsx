@@ -43,18 +43,6 @@ const Nucleos = () => {
           <PageHeader
             title="Teletrabalho"
             subtitle="Sistema de Gestão de Núcleos e Teletrabalho da Defensoria Pública"
-            actions={
-              canEdit && (
-                <Button 
-                  size="sm" 
-                  className="bg-primary hover:bg-primary/90"
-                  onClick={() => navigate('/nucleos/novo')}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Núcleo
-                </Button>
-              )
-            }
           />
         </div>
       </div>
