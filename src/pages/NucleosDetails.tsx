@@ -92,8 +92,9 @@ export default function NucleosDetails() {
 
   const fetchNucleus = async () => {
     try {
+      // Buscar apenas dados básicos de nucleos_central (sem dados de preventivos)
       const { data, error } = await supabase
-        .from('nuclei')
+        .from('nucleos_central')
         .select('*')
         .eq('id', id)
         .maybeSingle();
@@ -102,16 +103,16 @@ export default function NucleosDetails() {
       if (data) {
         setNucleus({
           id: data.id,
-          nome: data.name,
-          endereco: data.address,
-          cidade: data.city,
-          uf: data.uf,
-          telefone: data.telefone,
+          nome: data.nome,
+          endereco: data.endereco,
+          cidade: data.cidade,
+          uf: null, // nucleos_central não tem UF
+          telefone: data.telefones,
           email: data.email,
-          horario_atendimento: data.horario_atendimento,
-          membro_coordenador: data.membro_coordenador,
-          coordenador_substituto: data.coordenador_substituto,
-          auxiliar_coordenador: data.auxiliar_coordenador
+          horario_atendimento: null, // nucleos_central não tem horário
+          membro_coordenador: null, // nucleos_central não tem coordenador
+          coordenador_substituto: null,
+          auxiliar_coordenador: null
         });
       }
     } catch (error) {

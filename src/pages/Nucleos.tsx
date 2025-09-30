@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useNuclei } from '@/hooks/useNuclei';
+import { supabase } from '@/integrations/supabase/client';
 import { normalizeText } from '@/lib/utils';
 import { 
   Plus, 
@@ -16,19 +16,46 @@ import {
   Laptop,
   Users
 } from 'lucide-react';
-import { MapView } from '@/components/MapView';
+import { MapViewCentral } from '@/components/MapViewCentral';
 
 const Nucleos = () => {
   const navigate = useNavigate();
-  const { nuclei, loading } = useNuclei();
   const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
+  const [nucleos, setNucleos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const filteredNuclei = nuclei.filter(nucleus => {
+  useEffect(() => {
+    fetchNucleos();
+  }, []);
+
+  const fetchNucleos = async () => {
+    try {
+      setLoading(true);
+      // Buscar apenas dados básicos de nucleos_central (sem dados de preventivos)
+      const { data, error } = await supabase
+        .from('nucleos_central')
+        .select('*')
+        .order('nome');
+
+      if (error) throw error;
+      setNucleos(data || []);
+    } catch (error) {
+      console.error('Error fetching nucleos:', error);
+      toast({
+        title: 'Erro ao carregar núcleos',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredNucleos = nucleos.filter(nucleo => {
     const normalizedSearchTerm = normalizeText(searchTerm);
-    return normalizeText(nucleus.name).includes(normalizedSearchTerm) ||
-           normalizeText(nucleus.city).includes(normalizedSearchTerm);
+    return normalizeText(nucleo.nome).includes(normalizedSearchTerm) ||
+           normalizeText(nucleo.cidade).includes(normalizedSearchTerm);
   });
 
   const handleViewDetails = (nucleusId: string) => {
@@ -55,7 +82,7 @@ const Nucleos = () => {
               <Building2 className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">Total de Núcleos</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{nuclei.length}</div>
+            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
           </div>
 
           <div className="bg-card rounded-lg border p-4">
@@ -71,7 +98,7 @@ const Nucleos = () => {
               <Users className="h-5 w-5 text-green-600" />
               <span className="text-sm font-medium text-muted-foreground">Coordenadores</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{nuclei.length}</div>
+            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
           </div>
         </div>
 
@@ -91,15 +118,15 @@ const Nucleos = () => {
         {/* Results Count */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm text-muted-foreground">
-            Exibindo {filteredNuclei.length} de {nuclei.length} núcleos
+            Exibindo {filteredNucleos.length} de {nucleos.length} núcleos
           </span>
         </div>
 
         {/* Mapa dos Núcleos */}
-        <MapView nuclei={filteredNuclei} onViewDetails={handleViewDetails} />
+        {!loading && <MapViewCentral nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
 
         {/* Empty State */}
-        {filteredNuclei.length === 0 && (
+        {filteredNucleos.length === 0 && !loading && (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
