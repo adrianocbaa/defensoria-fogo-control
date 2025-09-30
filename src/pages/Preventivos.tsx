@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useNucleiContext } from '@/contexts/NucleiContext';
+import { useNucleosByModule } from '@/hooks/useNucleosByModule';
 import { normalizeText } from '@/lib/utils';
 import { 
   Plus, 
@@ -14,18 +14,18 @@ import {
   AlertTriangle,
   Shield
 } from 'lucide-react';
-import { MapView } from '@/components/MapView';
+import { MapViewCentral } from '@/components/MapViewCentral';
 
 const Preventivos = () => {
   const navigate = useNavigate();
-  const { nuclei, loading } = useNucleiContext();
+  const { nucleos, loading } = useNucleosByModule('preventivos');
   const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredNuclei = nuclei.filter(nucleus => {
+  const filteredNucleos = nucleos.filter(nucleo => {
     const normalizedSearchTerm = normalizeText(searchTerm);
-    return normalizeText(nucleus.name).includes(normalizedSearchTerm) ||
-           normalizeText(nucleus.city).includes(normalizedSearchTerm);
+    return normalizeText(nucleo.nome).includes(normalizedSearchTerm) ||
+           normalizeText(nucleo.cidade).includes(normalizedSearchTerm);
   });
 
   const handleViewDetails = (nucleusId: string) => {
@@ -45,7 +45,7 @@ const Preventivos = () => {
                 <Button 
                   size="sm" 
                   className="bg-primary hover:bg-primary/90"
-                  onClick={() => navigate('/nucleus/new')}
+                  onClick={() => navigate('/nucleos-central/novo')}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Núcleo
@@ -64,7 +64,7 @@ const Preventivos = () => {
               <Building2 className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">Total de Núcleos</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{nuclei.length}</div>
+            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
           </div>
 
           <div className="bg-card rounded-lg border p-4">
@@ -72,7 +72,7 @@ const Preventivos = () => {
               <Shield className="h-5 w-5 text-blue-600" />
               <span className="text-sm font-medium text-muted-foreground">Com Prevenção</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{nuclei.length}</div>
+            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
           </div>
 
           <div className="bg-card rounded-lg border p-4">
@@ -100,15 +100,15 @@ const Preventivos = () => {
         {/* Results Count */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm text-muted-foreground">
-            Exibindo {filteredNuclei.length} de {nuclei.length} núcleos
+            Exibindo {filteredNucleos.length} de {nucleos.length} núcleos
           </span>
         </div>
 
         {/* Mapa dos Núcleos */}
-        {!loading && <MapView nuclei={filteredNuclei} onViewDetails={handleViewDetails} />}
+        {!loading && <MapViewCentral nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
 
         {/* Empty State */}
-        {filteredNuclei.length === 0 && !loading && (
+        {filteredNucleos.length === 0 && !loading && (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
