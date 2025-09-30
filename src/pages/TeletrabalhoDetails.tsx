@@ -134,7 +134,7 @@ export default function TeletrabalhoDetails() {
         .from('nucleo_teletrabalho')
         .select('*')
         .eq('nucleo_id', id)
-        .order('data_inicio', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setTeletrabalhos(data || []);
@@ -522,9 +522,9 @@ export default function TeletrabalhoDetails() {
                     return (
                       <Card key={tele.id}>
                         <CardContent className="pt-6">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-start justify-between gap-4 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <h4 className="font-semibold">{tele.procedimento}</h4>
                                 <Badge variant={status.variant}>{status.label}</Badge>
                               </div>
@@ -538,11 +538,11 @@ export default function TeletrabalhoDetails() {
                                   <p><strong>Portaria:</strong> {tele.portaria}</p>
                                 )}
                                 {tele.motivo && (
-                                  <p className="text-muted-foreground">{tele.motivo}</p>
+                                  <p className="text-muted-foreground break-words">{tele.motivo}</p>
                                 )}
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-shrink-0">
                               {canEdit && !isFinalizado && (
                                 <>
                                   <Button size="sm" variant="ghost" onClick={() => openEditModal(tele)}>
