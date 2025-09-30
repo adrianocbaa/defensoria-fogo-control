@@ -29,7 +29,7 @@ const Teletrabalho = () => {
   });
 
   const handleViewDetails = (nucleusId: string) => {
-    navigate(`/nucleos-central/${nucleusId}`);
+    navigate(`/nucleos/${nucleusId}`);
   };
 
   return (

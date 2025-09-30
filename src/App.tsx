@@ -33,6 +33,8 @@ import NucleosCentral from "./pages/NucleosCentral";
 import NucleoCentralDetails from "./pages/NucleoCentralDetails";
 import NucleoCentralForm from "./pages/NucleoCentralForm";
 import Teletrabalho from "./pages/Teletrabalho";
+import TeletrabalhoDetails from "./pages/TeletrabalhoDetails";
+import TeletrabalhoForm from "./pages/TeletrabalhoForm";
 import Preventivos from "./pages/Preventivos";
 
 const queryClient = new QueryClient();
@@ -154,10 +156,34 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/nucleos/novo" 
+        element={
+          <ProtectedRoute>
+            <TeletrabalhoForm />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/nucleos/:id" 
         element={
           <ProtectedRoute>
-            <NucleosDetails />
+            <TeletrabalhoDetails />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/nucleos/:id/editar" 
+        element={
+          <ProtectedRoute>
+            <TeletrabalhoForm />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/preventivos/:id" 
+        element={
+          <ProtectedRoute>
+            <NucleusDetails />
           </ProtectedRoute>
         } 
       />
