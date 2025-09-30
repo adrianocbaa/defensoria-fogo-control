@@ -32,6 +32,7 @@ import NucleosDetails from "./pages/NucleosDetails";
 import NucleosCentral from "./pages/NucleosCentral";
 import NucleoCentralDetails from "./pages/NucleoCentralDetails";
 import NucleoCentralForm from "./pages/NucleoCentralForm";
+import Preventivos from "./pages/Preventivos";
 
 const queryClient = new QueryClient();
 
@@ -85,7 +86,7 @@ const AppRoutes = () => {
         path="/preventivos" 
         element={
           <ProtectedRoute>
-            <Index />
+            <Preventivos />
           </ProtectedRoute>
         } 
       />
