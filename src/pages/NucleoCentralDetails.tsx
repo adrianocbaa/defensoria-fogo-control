@@ -1,4 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -18,12 +21,51 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+// Fix Leaflet default icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
 const NucleoCentralDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getNucleoById, deleteNucleo, loading } = useNucleosCentral();
   const { canEdit } = useUserRole();
   const nucleus = id ? getNucleoById(id) : null;
+  const mapRef = useRef<L.Map | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!nucleus?.lat || !nucleus?.lng || !mapContainerRef.current) return;
+
+    // Cleanup previous map
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+
+    // Initialize map with high zoom
+    const map = L.map(mapContainerRef.current).setView([nucleus.lat, nucleus.lng], 17);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+
+    // Add marker at nucleus location
+    L.marker([nucleus.lat, nucleus.lng]).addTo(map);
+
+    mapRef.current = map;
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [nucleus?.lat, nucleus?.lng]);
 
   if (loading) {
     return (
@@ -164,13 +206,8 @@ const NucleoCentralDetails = () => {
               </CardHeader>
               <CardContent>
                 <div
-                  id="map-detail"
+                  ref={mapContainerRef}
                   className="w-full h-64 rounded-lg border"
-                  style={{
-                    backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${nucleus.lng},${nucleus.lat},16,0/400x300@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw)`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
                 />
               </CardContent>
             </Card>
