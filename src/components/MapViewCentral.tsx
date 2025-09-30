@@ -73,27 +73,38 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
     };
   }, []);
 
-  // Fetch teletrabalho data for all nucleos
+  // Fetch teletrabalho data for all nucleos (only "Em andamento")
   useEffect(() => {
     const fetchTeletrabalhoData = async () => {
       if (nucleos.length === 0) return;
 
       const nucleoIds = nucleos.map(n => n.id);
-      const today = new Date().toISOString().split('T')[0];
 
       try {
+        // Fetch all teletrabalho records for these nucleos
         const { data, error } = await supabase
           .from('nucleo_teletrabalho')
           .select('nucleo_id, procedimento, data_inicio, data_fim, portaria')
-          .in('nucleo_id', nucleoIds)
-          .lte('data_inicio', today)
-          .or(`data_fim.gte.${today},data_fim.is.null`);
+          .in('nucleo_id', nucleoIds);
 
         if (error) throw error;
 
+        const now = new Date();
         const teletrabalhoMap: Record<string, TeletrabalhoData | null> = {};
+        
         nucleoIds.forEach(id => {
-          const activeTeletrabalho = data?.find(t => t.nucleo_id === id);
+          // Find teletrabalho records for this nucleus
+          const nucleoTeletrabalhos = data?.filter(t => t.nucleo_id === id) || [];
+          
+          // Find one that is "Em andamento" (status: In Progress)
+          const activeTeletrabalho = nucleoTeletrabalhos.find(t => {
+            const dataInicio = new Date(t.data_inicio);
+            const dataFim = t.data_fim ? new Date(t.data_fim) : null;
+            
+            // Em andamento: já começou E (não tem fim OU ainda não terminou)
+            return dataInicio <= now && (!dataFim || dataFim >= now);
+          });
+          
           teletrabalhoMap[id] = activeTeletrabalho ? {
             procedimento: activeTeletrabalho.procedimento,
             data_inicio: activeTeletrabalho.data_inicio,
