@@ -15,7 +15,6 @@ import NucleusDetails from "./pages/NucleusDetails";
 import AuthPage from "./pages/AuthPage";
 import PublicView from "./pages/PublicView";
 import AdminPanel from "./pages/AdminPanel";
-import AdminCleanup from "./pages/AdminCleanup";
 import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
 import Obras from "./pages/Obras";
@@ -129,14 +128,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <AdminPanel />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/admin/cleanup" 
-        element={
-          <ProtectedRoute>
-            <AdminCleanup />
           </ProtectedRoute>
         } 
       />
