@@ -1622,6 +1622,7 @@ export type Database = {
         | "projetos"
         | "almoxarifado"
         | "nucleos"
+        | "nucleos_central"
       unit_type: "KG" | "M" | "LITRO" | "PC" | "CX"
       user_role: "admin" | "editor" | "viewer" | "manutencao" | "gm"
     }
@@ -1763,6 +1764,7 @@ export const Constants = {
         "projetos",
         "almoxarifado",
         "nucleos",
+        "nucleos_central",
       ],
       unit_type: ["KG", "M", "LITRO", "PC", "CX"],
       user_role: ["admin", "editor", "viewer", "manutencao", "gm"],
