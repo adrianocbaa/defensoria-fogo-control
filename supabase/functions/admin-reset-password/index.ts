@@ -68,10 +68,10 @@ serve(async (req) => {
       );
     }
 
-    // Reset password to default
+    // Reset password to default (meets Supabase security requirements)
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
-      { password: '12345678' }
+      { password: 'Admin123' }
     );
 
     if (updateError) {
@@ -95,7 +95,7 @@ serve(async (req) => {
     console.log(`Password reset successfully for user ${userId} by admin ${user.id}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Senha resetada para 12345678' }),
+      JSON.stringify({ success: true, message: 'Senha resetada para Admin123' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

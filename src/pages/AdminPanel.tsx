@@ -198,7 +198,7 @@ export default function AdminPanel() {
 
       toast({
         title: 'Sucesso',
-        description: `Senha de ${userName} resetada para 12345678`,
+        description: `Senha de ${userName} resetada para Admin123`,
       });
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -334,7 +334,7 @@ export default function AdminPanel() {
                                       <AlertDialogTitle>Resetar Senha</AlertDialogTitle>
                                       <AlertDialogDescription>
                                         Resetar senha de <strong>{profile.display_name}</strong>?
-                                        <br />Nova senha: <strong>12345678</strong>
+                                        <br />Nova senha: <strong>Admin123</strong>
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>

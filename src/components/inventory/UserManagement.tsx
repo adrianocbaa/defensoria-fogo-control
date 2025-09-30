@@ -119,7 +119,7 @@ export function UserManagement() {
 
       toast({
         title: 'Sucesso',
-        description: `Senha de ${userName} resetada para 12345678`,
+        description: `Senha de ${userName} resetada para Admin123`,
       });
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -232,7 +232,7 @@ export function UserManagement() {
                             <AlertDialogDescription>
                               Tem certeza que deseja resetar a senha de <strong>{user.display_name}</strong>?
                               <br />
-                              A nova senha será: <strong>12345678</strong>
+                              A nova senha será: <strong>Admin123</strong>
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
