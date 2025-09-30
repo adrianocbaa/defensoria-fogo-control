@@ -66,6 +66,10 @@ interface Nucleus {
   email: string | null;
   lat: number | null;
   lng: number | null;
+  horario_atendimento: string | null;
+  membro_coordenador: string | null;
+  coordenador_substituto: string | null;
+  auxiliar_coordenador: string | null;
 }
 
 export default function TeletrabalhoDetails() {
@@ -370,6 +374,46 @@ export default function TeletrabalhoDetails() {
                     E-mail
                   </p>
                   <p className="font-medium">{nucleus.email}</p>
+                </div>
+              )}
+
+              {nucleus.horario_atendimento && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Horário de Atendimento
+                  </p>
+                  <p className="font-medium">{nucleus.horario_atendimento}</p>
+                </div>
+              )}
+
+              {nucleus.membro_coordenador && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                    <UserRound className="h-3 w-3" />
+                    Membro Coordenador
+                  </p>
+                  <p className="font-medium">{nucleus.membro_coordenador}</p>
+                </div>
+              )}
+
+              {nucleus.coordenador_substituto && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                    <UserRound className="h-3 w-3" />
+                    Coordenador Substituto
+                  </p>
+                  <p className="font-medium">{nucleus.coordenador_substituto}</p>
+                </div>
+              )}
+
+              {nucleus.auxiliar_coordenador && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                    <UserRound className="h-3 w-3" />
+                    Auxiliar do Coordenador
+                  </p>
+                  <p className="font-medium">{nucleus.auxiliar_coordenador}</p>
                 </div>
               )}
             </CardContent>

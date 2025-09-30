@@ -187,7 +187,7 @@ export default function TeletrabalhoEdit() {
       <div className="border-b bg-card">
         <div className="container mx-auto px-6 lg:px-8 py-4 lg:py-6">
           <PageHeader
-            title="Editar Informações de Teletrabalho"
+            title="Editar Informações Detalhadas do Núcleo"
             subtitle={nucleo.nome}
             actions={
               <Button
@@ -206,10 +206,10 @@ export default function TeletrabalhoEdit() {
       <div className="container mx-auto px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Informações de Teletrabalho
-            </CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Informações Detalhadas do Núcleo
+              </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
