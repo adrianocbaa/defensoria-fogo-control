@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Plus, Trash2, Edit, UserCheck, UserX } from 'lucide-react';
+import { Users, Plus, Trash2, Edit, UserCheck, UserX, Key } from 'lucide-react';
 import { UserRole } from '@/hooks/useUserRole';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface User {
   id: string;
@@ -17,6 +19,7 @@ interface User {
   display_name: string | null;
   role: UserRole;
   created_at: string;
+  is_active: boolean;
 }
 
 export function UserManagement() {
@@ -33,8 +36,8 @@ export function UserManagement() {
   const loadUsers = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles_secure')
-        .select('*')
+        .from('profiles')
+        .select('id, user_id, display_name, role, created_at, is_active')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -74,6 +77,55 @@ export function UserManagement() {
       toast({
         title: 'Erro',
         description: 'Erro ao atualizar perfil do usuário',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const toggleUserActive = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !currentStatus })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, is_active: !currentStatus } : user
+      ));
+
+      toast({
+        title: 'Sucesso',
+        description: currentStatus ? 'Usuário desativado com sucesso' : 'Usuário ativado com sucesso',
+      });
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao alterar status do usuário',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const resetUserPassword = async (userId: string, userName: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: { userId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: `Senha de ${userName} resetada para 12345678`,
+      });
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao resetar senha do usuário',
         variant: 'destructive',
       });
     }
@@ -127,13 +179,14 @@ export function UserManagement() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Perfil</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Data de Criação</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className={!user.is_active ? 'opacity-50' : ''}>
                     <TableCell className="font-medium">
                       {user.display_name || 'Nome não informado'}
                     </TableCell>
@@ -143,9 +196,20 @@ export function UserManagement() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={user.is_active}
+                          onCheckedChange={() => toggleUserActive(user.id, user.is_active)}
+                        />
+                        <span className="text-sm">
+                          {user.is_active ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       {new Date(user.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -156,6 +220,31 @@ export function UserManagement() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Key className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Resetar Senha</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja resetar a senha de <strong>{user.display_name}</strong>?
+                              <br />
+                              A nova senha será: <strong>12345678</strong>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => resetUserPassword(user.user_id, user.display_name || 'usuário')}
+                            >
+                              Confirmar Reset
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -845,6 +845,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          is_active: boolean
           language: string | null
           phone: string | null
           position: string | null
@@ -861,6 +862,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean
           language?: string | null
           phone?: string | null
           position?: string | null
@@ -877,6 +879,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean
           language?: string | null
           phone?: string | null
           position?: string | null
