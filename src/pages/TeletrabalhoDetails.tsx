@@ -511,6 +511,16 @@ export default function TeletrabalhoDetails() {
                       </Card>
                     );
                   })}
+                  
+                  {/* Botão para adicionar novo teletrabalho */}
+                  {canEdit && (
+                    <div className="text-center pt-2">
+                      <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Novo Teletrabalho
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
