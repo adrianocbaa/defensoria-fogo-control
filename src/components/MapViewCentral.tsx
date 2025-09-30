@@ -22,6 +22,7 @@ interface TeletrabalhoData {
   data_inicio: string;
   data_fim: string | null;
   portaria: string | null;
+  status: 'active' | 'scheduled';
 }
 
 interface MapViewCentralProps {
