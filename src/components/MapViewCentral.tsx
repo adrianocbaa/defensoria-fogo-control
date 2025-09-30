@@ -183,13 +183,6 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
   }, [nucleos, isMobile]);
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
-    const activeTeletrabalho = teletrabalhoData[nucleus.id];
-    
-    // Só mostra se houver teletrabalho ativo
-    if (!activeTeletrabalho) {
-      return null;
-    }
-
     return (
       <div className="space-y-4">
         <div>
@@ -201,53 +194,6 @@ export function MapViewCentral({ nucleos, onViewDetails }: MapViewCentralProps) 
               <p className="text-sm text-muted-foreground">{nucleus.cidade}</p>
             </div>
           </div>
-        </div>
-
-        {/* Teletrabalho Information */}
-        <div className={cn(
-          "border rounded-lg p-3 space-y-2",
-          activeTeletrabalho.status === 'active' ? "bg-blue-50" : "bg-amber-50"
-        )}>
-          <div className="flex items-center gap-2">
-            <Laptop className={cn(
-              "h-4 w-4",
-              activeTeletrabalho.status === 'active' ? "text-blue-600" : "text-amber-600"
-            )} />
-            <span className={cn(
-              "text-sm font-medium",
-              activeTeletrabalho.status === 'active' ? "text-blue-600" : "text-amber-600"
-            )}>
-              {activeTeletrabalho.status === 'active' ? 'Em Teletrabalho' : 'Teletrabalho Agendado'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-foreground">{activeTeletrabalho.procedimento}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-foreground">
-              Início: {format(new Date(activeTeletrabalho.data_inicio), 'dd/MM/yyyy', { locale: ptBR })}
-            </span>
-          </div>
-
-          {activeTeletrabalho.data_fim && (
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-foreground">
-                Fim: {format(new Date(activeTeletrabalho.data_fim), 'dd/MM/yyyy', { locale: ptBR })}
-              </span>
-            </div>
-          )}
-
-          {activeTeletrabalho.portaria && (
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-foreground">Portaria: {activeTeletrabalho.portaria}</span>
-            </div>
-          )}
         </div>
 
         {nucleus.telefones && (
