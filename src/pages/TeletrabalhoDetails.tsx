@@ -422,120 +422,10 @@ export default function TeletrabalhoDetails() {
           {/* Teletrabalho */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Laptop className="h-5 w-5" />
-                  Teletrabalho ({teletrabalhos.length})
-                </CardTitle>
-                {canEdit && (
-                  <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Adicionar Teletrabalho</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid gap-4">
-                        <div>
-                          <Label>Procedimento *</Label>
-                          <Input
-                            value={formData.procedimento}
-                            onChange={(e) => setFormData({ ...formData, procedimento: e.target.value })}
-                            placeholder="Ex: Portaria nº 123/2024"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label>Data Início *</Label>
-                            <Popover open={dataInicioOpen} onOpenChange={setDataInicioOpen}>
-                              <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full justify-start">
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {formData.data_inicio ? format(new Date(formData.data_inicio), 'PPP', { locale: ptBR }) : 'Selecione'}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={formData.data_inicio ? new Date(formData.data_inicio) : undefined}
-                                  onSelect={(date) => {
-                                    setFormData({ ...formData, data_inicio: date ? format(date, 'yyyy-MM-dd') : '' });
-                                    setDataInicioOpen(false);
-                                  }}
-                                  locale={ptBR}
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-
-                          <div>
-                            <Label>Data Fim (opcional)</Label>
-                            <Popover open={dataFimOpen} onOpenChange={setDataFimOpen}>
-                              <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full justify-start">
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {formData.data_fim ? format(new Date(formData.data_fim), 'PPP', { locale: ptBR }) : 'Selecione'}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={formData.data_fim ? new Date(formData.data_fim) : undefined}
-                                  onSelect={(date) => {
-                                    setFormData({ ...formData, data_fim: date ? format(date, 'yyyy-MM-dd') : '' });
-                                    setDataFimOpen(false);
-                                  }}
-                                  locale={ptBR}
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label>Portaria</Label>
-                          <Input
-                            value={formData.portaria}
-                            onChange={(e) => setFormData({ ...formData, portaria: e.target.value })}
-                          />
-                        </div>
-
-                        <div>
-                          <Label>Arquivo da Portaria</Label>
-                          <Input
-                            type="file"
-                            accept=".pdf"
-                            onChange={(e) => setPortariaFile(e.target.files?.[0] || null)}
-                          />
-                        </div>
-
-                        <div>
-                          <Label>Motivo</Label>
-                          <Textarea
-                            value={formData.motivo}
-                            onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
-                            rows={3}
-                          />
-                        </div>
-
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" onClick={() => { setIsAddModalOpen(false); resetForm(); }}>
-                            Cancelar
-                          </Button>
-                          <Button onClick={handleAddTeletrabalho} disabled={uploadingFile}>
-                            Salvar
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                )}
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Laptop className="h-5 w-5" />
+                Teletrabalho ({teletrabalhos.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {teletrabalhos.length === 0 ? (
@@ -716,6 +606,108 @@ export default function TeletrabalhoDetails() {
                 Cancelar
               </Button>
               <Button onClick={handleEditTeletrabalho} disabled={uploadingFile}>
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Modal */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Adicionar Teletrabalho</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div>
+              <Label>Procedimento *</Label>
+              <Input
+                value={formData.procedimento}
+                onChange={(e) => setFormData({ ...formData, procedimento: e.target.value })}
+                placeholder="Ex: Portaria nº 123/2024"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Data Início *</Label>
+                <Popover open={dataInicioOpen} onOpenChange={setDataInicioOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.data_inicio ? format(new Date(formData.data_inicio), 'PPP', { locale: ptBR }) : 'Selecione'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.data_inicio ? new Date(formData.data_inicio) : undefined}
+                      onSelect={(date) => {
+                        setFormData({ ...formData, data_inicio: date ? format(date, 'yyyy-MM-dd') : '' });
+                        setDataInicioOpen(false);
+                      }}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <Label>Data Fim (opcional)</Label>
+                <Popover open={dataFimOpen} onOpenChange={setDataFimOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.data_fim ? format(new Date(formData.data_fim), 'PPP', { locale: ptBR }) : 'Selecione'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.data_fim ? new Date(formData.data_fim) : undefined}
+                      onSelect={(date) => {
+                        setFormData({ ...formData, data_fim: date ? format(date, 'yyyy-MM-dd') : '' });
+                        setDataFimOpen(false);
+                      }}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div>
+              <Label>Portaria</Label>
+              <Input
+                value={formData.portaria}
+                onChange={(e) => setFormData({ ...formData, portaria: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label>Arquivo da Portaria</Label>
+              <Input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setPortariaFile(e.target.files?.[0] || null)}
+              />
+            </div>
+
+            <div>
+              <Label>Motivo</Label>
+              <Textarea
+                value={formData.motivo}
+                onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => { setIsAddModalOpen(false); resetForm(); }}>
+                Cancelar
+              </Button>
+              <Button onClick={handleAddTeletrabalho} disabled={uploadingFile}>
                 Salvar
               </Button>
             </div>
