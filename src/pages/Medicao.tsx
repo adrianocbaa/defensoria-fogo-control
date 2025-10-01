@@ -1174,41 +1174,11 @@ const criarNovaMedicao = async () => {
       // Preparar dados para exportação
       const exportData: any[] = [];
 
-      // Cabeçalho principal
-      const headerRow1: any = {
-        'Item': 'Item',
-        'Código Descrição': 'Código Descrição',
-        'Und': 'Und',
-        'Quant.': 'Quant.',
-        'Valor unit com BDI e Desc.': 'Valor unit com BDI e Desc.',
-        'Total com BDI e Desconto': 'Total com BDI e Desconto',
-      };
-
       // Adicionar colunas de aditivos bloqueados
       const aditivosBloqueados = aditivos.filter(a => a.bloqueada).sort((a, b) => a.id - b.id);
-      aditivosBloqueados.forEach(aditivo => {
-        headerRow1[`Aditivo${aditivo.id}_QNT`] = `QNT`;
-        headerRow1[`Aditivo${aditivo.id}_PCT`] = `%`;
-        headerRow1[`Aditivo${aditivo.id}_TOTAL`] = `TOTAL`;
-      });
 
-      // Coluna TOTAL CONTRATO
-      headerRow1['TOTAL_CONTRATO'] = 'TOTAL CONTRATO';
-
-      // Colunas da medição atual
-      headerRow1[`Medicao${medicaoAtual}_QNT`] = 'QNT.';
-      headerRow1[`Medicao${medicaoAtual}_PCT`] = '%';
-      headerRow1[`Medicao${medicaoAtual}_TOTAL`] = 'TOTAL';
-
-      // Colunas ACUMULADA
-      headerRow1['Acum_QNT'] = 'QNT.';
-      headerRow1['Acum_PCT'] = '%';
-      headerRow1['Acum_TOTAL'] = 'TOTAL';
-
-      exportData.push(headerRow1);
-
-      // Adicionar linha com título dos aditivos e medição
-      const headerRow2: any = {
+      // PRIMEIRA LINHA: Títulos dos agrupamentos
+      const headerRow1: any = {
         'Item': '',
         'Código Descrição': 'Planilha Orçamentária',
         'Und': '',
@@ -1218,18 +1188,44 @@ const criarNovaMedicao = async () => {
       };
 
       aditivosBloqueados.forEach((aditivo, idx) => {
-        headerRow2[`Aditivo${aditivo.id}_QNT`] = idx === 0 ? `${aditivo.id}º ADITIVO` : '';
-        headerRow2[`Aditivo${aditivo.id}_PCT`] = '';
-        headerRow2[`Aditivo${aditivo.id}_TOTAL`] = '';
+        headerRow1[`Aditivo${aditivo.id}_QNT`] = idx === 0 ? `${aditivo.id}º ADITIVO` : '';
+        headerRow1[`Aditivo${aditivo.id}_PCT`] = '';
+        headerRow1[`Aditivo${aditivo.id}_TOTAL`] = '';
+      });
+
+      headerRow1['TOTAL_CONTRATO'] = 'TOTAL CONTRATO';
+      headerRow1[`Medicao${medicaoAtual}_QNT`] = `${medicaoAtual}ª MEDIÇÃO`;
+      headerRow1[`Medicao${medicaoAtual}_PCT`] = '';
+      headerRow1[`Medicao${medicaoAtual}_TOTAL`] = '';
+      headerRow1['Acum_QNT'] = 'ACUMULADA';
+      headerRow1['Acum_PCT'] = '';
+      headerRow1['Acum_TOTAL'] = '';
+
+      exportData.push(headerRow1);
+
+      // SEGUNDA LINHA: Subcolunas (QNT, %, TOTAL)
+      const headerRow2: any = {
+        'Item': 'Item',
+        'Código Descrição': 'Código Descrição',
+        'Und': 'Und',
+        'Quant.': 'Quant.',
+        'Valor unit com BDI e Desc.': 'Valor unit com BDI e Desc.',
+        'Total com BDI e Desconto': 'Total com BDI e Desconto',
+      };
+
+      aditivosBloqueados.forEach(aditivo => {
+        headerRow2[`Aditivo${aditivo.id}_QNT`] = `QNT`;
+        headerRow2[`Aditivo${aditivo.id}_PCT`] = `%`;
+        headerRow2[`Aditivo${aditivo.id}_TOTAL`] = `TOTAL`;
       });
 
       headerRow2['TOTAL_CONTRATO'] = '';
-      headerRow2[`Medicao${medicaoAtual}_QNT`] = `${medicaoAtual}ª MEDIÇÃO`;
-      headerRow2[`Medicao${medicaoAtual}_PCT`] = '';
-      headerRow2[`Medicao${medicaoAtual}_TOTAL`] = '';
-      headerRow2['Acum_QNT'] = 'ACUMULADA';
-      headerRow2['Acum_PCT'] = '';
-      headerRow2['Acum_TOTAL'] = '';
+      headerRow2[`Medicao${medicaoAtual}_QNT`] = 'QNT';
+      headerRow2[`Medicao${medicaoAtual}_PCT`] = '%';
+      headerRow2[`Medicao${medicaoAtual}_TOTAL`] = 'TOTAL';
+      headerRow2['Acum_QNT'] = 'QNT';
+      headerRow2['Acum_PCT'] = '%';
+      headerRow2['Acum_TOTAL'] = 'TOTAL';
 
       exportData.push(headerRow2);
 
