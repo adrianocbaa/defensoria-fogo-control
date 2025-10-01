@@ -1181,7 +1181,8 @@ const criarNovaMedicao = async () => {
       // PRIMEIRA LINHA: Títulos dos agrupamentos
       const headerRow1: any = {
         'Item': '',
-        'Código Descrição': 'Planilha Orçamentária',
+        'Código': 'Planilha Orçamentária',
+        'Descrição': '',
         'Und': '',
         'Quant.': '',
         'Valor unit com BDI e Desc.': '',
@@ -1207,7 +1208,8 @@ const criarNovaMedicao = async () => {
       // SEGUNDA LINHA: Subcolunas (QNT, %, TOTAL)
       const headerRow2: any = {
         'Item': 'Item',
-        'Código Descrição': 'Código Descrição',
+        'Código': 'Código',
+        'Descrição': 'Descrição',
         'Und': 'Und',
         'Quant.': 'Quant.',
         'Valor unit com BDI e Desc.': 'Valor unit com BDI e Desc.',
@@ -1234,7 +1236,8 @@ const criarNovaMedicao = async () => {
       items.forEach(item => {
         const row: any = {
           'Item': item.item,
-          'Código Descrição': `${item.codigo} - ${item.descricao}`,
+          'Código': item.codigo,
+          'Descrição': item.descricao,
           'Und': item.und,
           'Quant.': item.quantidade,
           'Valor unit com BDI e Desc.': item.valorUnitario,
@@ -1272,7 +1275,7 @@ const criarNovaMedicao = async () => {
       const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
 
       // Calcular o número de colunas
-      let numCols = 6; // Planilha Orçamentária base
+      let numCols = 7; // Planilha Orçamentária base (Item, Código, Descrição, Und, Quant, Valor unit, Total)
       numCols += aditivosBloqueados.length * 3; // 3 colunas por aditivo
       numCols += 1; // Total Contrato
       numCols += 3; // Medição atual
@@ -1284,7 +1287,8 @@ const criarNovaMedicao = async () => {
       // Ajustar largura das colunas
       const colWidths = [
         { wch: 8 },  // Item
-        { wch: 50 }, // Código Descrição
+        { wch: 12 }, // Código
+        { wch: 40 }, // Descrição
         { wch: 6 },  // Und
         { wch: 10 }, // Quant.
         { wch: 12 }, // Valor unit
@@ -1366,8 +1370,8 @@ const criarNovaMedicao = async () => {
           const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[cellAddress]) continue;
 
-          // Aplicar estilo de texto para as primeiras colunas (Item, Código, Und)
-          if (C === 0 || C === 1 || C === 2) {
+          // Aplicar estilo de texto para as primeiras colunas (Item, Código, Descrição, Und)
+          if (C === 0 || C === 1 || C === 2 || C === 3) {
             ws[cellAddress].s = textStyle;
           } else {
             ws[cellAddress].s = dataStyle;
@@ -1386,10 +1390,10 @@ const criarNovaMedicao = async () => {
       // Definir merges para o cabeçalho
       const merges: any[] = [];
       
-      // Mesclar "Planilha Orçamentária" (colunas 0-5)
-      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+      // Mesclar "Planilha Orçamentária" (colunas 0-6)
+      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
       
-      let currentCol = 6;
+      let currentCol = 7;
       
       // Mesclar cada aditivo (3 colunas cada)
       aditivosBloqueados.forEach(() => {
@@ -1505,7 +1509,8 @@ const criarNovaMedicao = async () => {
               <thead>
                 <tr>
                   <th rowspan="2">Item</th>
-                  <th rowspan="2">Código Descrição</th>
+                  <th rowspan="2">Código</th>
+                  <th rowspan="2">Descrição</th>
                   <th rowspan="2">Und</th>
                   <th rowspan="2">Quant.</th>
                   <th rowspan="2">V. Unit</th>
@@ -1540,7 +1545,8 @@ const criarNovaMedicao = async () => {
         htmlContent += `
           <tr>
             <td class="text-center">${item.item}</td>
-            <td class="codigo-desc">${item.codigo} - ${item.descricao}</td>
+            <td class="text-center">${item.codigo}</td>
+            <td class="codigo-desc">${item.descricao}</td>
             <td class="text-center">${item.und}</td>
             <td class="text-right">${item.quantidade.toFixed(2)}</td>
             <td class="text-right">${item.valorUnitario.toFixed(2)}</td>
