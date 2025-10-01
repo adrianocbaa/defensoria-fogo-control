@@ -2396,6 +2396,33 @@ const criarNovaMedicao = async () => {
                     <col style={{ width: '60px' }} />
                   </colgroup>
                   <TableHeader>
+                    {/* Primeira linha: Agrupamentos */}
+                    <TableRow className="bg-slate-200 border-b">
+                      <TableHead colSpan={7} className="font-bold text-center border border-gray-300 px-1 py-2 text-xs">
+                        Planilha Orçamentária
+                      </TableHead>
+                      {mostrarAditivos && aditivos.map((aditivo, idx) => (
+                        idx === 0 ? (
+                          <TableHead key={`title-${aditivo.id}`} colSpan={aditivos.length * 3} className="bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">
+                            {aditivo.nome}
+                          </TableHead>
+                        ) : null
+                      ))}
+                      <TableHead className="bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">
+                        TOTAL CONTRATO
+                      </TableHead>
+                      <TableHead colSpan={3} className="bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">
+                        {medicaoAtual}ª MEDIÇÃO
+                      </TableHead>
+                      <TableHead colSpan={3} className="bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">
+                        ACUMULADA
+                      </TableHead>
+                      <TableHead rowSpan={2} className="font-bold text-center border border-gray-300 px-1 py-2 text-xs align-middle">
+                        Admin. Local
+                      </TableHead>
+                    </TableRow>
+                    
+                    {/* Segunda linha: Subcolunas */}
                     <TableRow className="bg-slate-100 border-b-2">
                       <TableHead className="w-[50px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Item</TableHead>
                       <TableHead className="w-[70px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Código Banco</TableHead>
@@ -2404,21 +2431,20 @@ const criarNovaMedicao = async () => {
                       <TableHead className="w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
                       <TableHead className="w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
                       <TableHead className="w-[120px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
-                       {mostrarAditivos && aditivos.map(aditivo => (
-                         <React.Fragment key={`header-${aditivo.id}`}>
-                           <TableHead className="w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT {aditivo.nome}</TableHead>
-                           <TableHead className="w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">% {aditivo.nome}</TableHead>
-                           <TableHead className="w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL {aditivo.nome}</TableHead>
-                         </React.Fragment>
-                       ))}
-                      <TableHead className="w-[120px] bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">TOTAL CONTRATO</TableHead>
+                      {mostrarAditivos && aditivos.map(aditivo => (
+                        <React.Fragment key={`subheader-${aditivo.id}`}>
+                          <TableHead className="w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT</TableHead>
+                          <TableHead className="w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">%</TableHead>
+                          <TableHead className="w-[80px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">TOTAL</TableHead>
+                        </React.Fragment>
+                      ))}
+                      <TableHead className="w-[120px] bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs"></TableHead>
                       <TableHead className="w-[70px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">QNT</TableHead>
                       <TableHead className="w-[50px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">%</TableHead>
                       <TableHead className="w-[80px] bg-yellow-100 font-bold text-center border border-yellow-300 px-1 py-2 text-xs">TOTAL</TableHead>
                       <TableHead className="w-[70px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">QNT</TableHead>
                       <TableHead className="w-[50px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">%</TableHead>
                       <TableHead className="w-[80px] bg-purple-100 font-bold text-center border border-purple-300 px-1 py-2 text-xs">TOTAL</TableHead>
-                      <TableHead className="w-[60px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Admin. Local</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
