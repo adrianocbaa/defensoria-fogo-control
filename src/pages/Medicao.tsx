@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical, Download } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -1157,6 +1157,159 @@ const criarNovaMedicao = async () => {
 
 
   // Confirmação do modal de Novo Aditivo
+  // Função para exportar planilha de medição
+  const exportarPlanilha = () => {
+    if (!obra || !medicaoAtual) {
+      toast.error('Selecione uma medição para exportar');
+      return;
+    }
+
+    const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
+    if (!medicaoAtualObj) {
+      toast.error('Medição não encontrada');
+      return;
+    }
+
+    try {
+      // Preparar dados para exportação
+      const exportData: any[] = [];
+
+      // Cabeçalho principal
+      const headerRow1: any = {
+        'Item': 'Item',
+        'Código Descrição': 'Código Descrição',
+        'Und': 'Und',
+        'Quant.': 'Quant.',
+        'Valor unit com BDI e Desc.': 'Valor unit com BDI e Desc.',
+        'Total com BDI e Desconto': 'Total com BDI e Desconto',
+      };
+
+      // Adicionar colunas de aditivos bloqueados
+      const aditivosBloqueados = aditivos.filter(a => a.bloqueada).sort((a, b) => a.id - b.id);
+      aditivosBloqueados.forEach(aditivo => {
+        headerRow1[`Aditivo${aditivo.id}_QNT`] = `QNT`;
+        headerRow1[`Aditivo${aditivo.id}_PCT`] = `%`;
+        headerRow1[`Aditivo${aditivo.id}_TOTAL`] = `TOTAL`;
+      });
+
+      // Coluna TOTAL CONTRATO
+      headerRow1['TOTAL_CONTRATO'] = 'TOTAL CONTRATO';
+
+      // Colunas da medição atual
+      headerRow1[`Medicao${medicaoAtual}_QNT`] = 'QNT.';
+      headerRow1[`Medicao${medicaoAtual}_PCT`] = '%';
+      headerRow1[`Medicao${medicaoAtual}_TOTAL`] = 'TOTAL';
+
+      // Colunas ACUMULADA
+      headerRow1['Acum_QNT'] = 'QNT.';
+      headerRow1['Acum_PCT'] = '%';
+      headerRow1['Acum_TOTAL'] = 'TOTAL';
+
+      exportData.push(headerRow1);
+
+      // Adicionar linha com título dos aditivos e medição
+      const headerRow2: any = {
+        'Item': '',
+        'Código Descrição': 'Planilha Orçamentária',
+        'Und': '',
+        'Quant.': '',
+        'Valor unit com BDI e Desc.': '',
+        'Total com BDI e Desconto': '',
+      };
+
+      aditivosBloqueados.forEach((aditivo, idx) => {
+        headerRow2[`Aditivo${aditivo.id}_QNT`] = idx === 0 ? `${aditivo.id}º ADITIVO` : '';
+        headerRow2[`Aditivo${aditivo.id}_PCT`] = '';
+        headerRow2[`Aditivo${aditivo.id}_TOTAL`] = '';
+      });
+
+      headerRow2['TOTAL_CONTRATO'] = '';
+      headerRow2[`Medicao${medicaoAtual}_QNT`] = `${medicaoAtual}ª MEDIÇÃO`;
+      headerRow2[`Medicao${medicaoAtual}_PCT`] = '';
+      headerRow2[`Medicao${medicaoAtual}_TOTAL`] = '';
+      headerRow2['Acum_QNT'] = 'ACUMULADA';
+      headerRow2['Acum_PCT'] = '';
+      headerRow2['Acum_TOTAL'] = '';
+
+      exportData.push(headerRow2);
+
+      // Adicionar dados dos itens
+      items.forEach(item => {
+        const row: any = {
+          'Item': item.item,
+          'Código Descrição': `${item.codigo} - ${item.descricao}`,
+          'Und': item.und,
+          'Quant.': item.quantidade,
+          'Valor unit com BDI e Desc.': item.valorUnitario,
+          'Total com BDI e Desconto': item.valorTotal,
+        };
+
+        // Dados de aditivos bloqueados
+        aditivosBloqueados.forEach(aditivo => {
+          const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+          row[`Aditivo${aditivo.id}_QNT`] = aditivoData.qnt;
+          row[`Aditivo${aditivo.id}_PCT`] = aditivoData.percentual;
+          row[`Aditivo${aditivo.id}_TOTAL`] = aditivoData.total;
+        });
+
+        // Total contrato com aditivos
+        const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
+        row['TOTAL_CONTRATO'] = totalContrato;
+
+        // Dados da medição atual
+        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+        row[`Medicao${medicaoAtual}_QNT`] = medicaoData.qnt;
+        row[`Medicao${medicaoAtual}_PCT`] = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
+        row[`Medicao${medicaoAtual}_TOTAL`] = medicaoData.total;
+
+        // Dados acumulados
+        row['Acum_QNT'] = calcularQuantidadeAcumulada(item.id);
+        row['Acum_PCT'] = calcularPercentualAcumulado(item.id);
+        row['Acum_TOTAL'] = calcularValorAcumuladoItem(item.id);
+
+        exportData.push(row);
+      });
+
+      // Criar workbook e worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
+
+      // Ajustar largura das colunas
+      const colWidths = [
+        { wch: 8 },  // Item
+        { wch: 50 }, // Código Descrição
+        { wch: 6 },  // Und
+        { wch: 10 }, // Quant.
+        { wch: 12 }, // Valor unit
+        { wch: 12 }, // Total
+      ];
+
+      // Adicionar larguras para aditivos
+      aditivosBloqueados.forEach(() => {
+        colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 });
+      });
+
+      // Larguras para TOTAL CONTRATO, MEDIÇÃO e ACUMULADA
+      colWidths.push({ wch: 14 }); // Total Contrato
+      colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 }); // Medição
+      colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 }); // Acumulada
+
+      ws['!cols'] = colWidths;
+
+      // Adicionar worksheet ao workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Medição');
+
+      // Gerar e fazer download do arquivo
+      const fileName = `Medicao_${medicaoAtual}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      toast.success('Planilha exportada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar planilha:', error);
+      toast.error('Erro ao exportar planilha');
+    }
+  };
+
   const confirmarNovoAditivo = async ({ extracontratual, file, sequenciaEfetiva }: { extracontratual: boolean; file?: File | null; sequenciaEfetiva: number; }) => {
     if (!id) {
       toast.error('Obra inválida');
@@ -2186,6 +2339,15 @@ const criarNovaMedicao = async () => {
             <div className="flex justify-between items-center">
               <CardTitle>Planilha Orçamentária</CardTitle>
               <div className="flex gap-2 flex-wrap">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  onClick={exportarPlanilha}
+                  disabled={!medicaoAtual}
+                >
+                  <Download className="h-4 w-4" />
+                  Exportar Planilha
+                </Button>
                 <Dialog open={modalImportarAberto} onOpenChange={setModalImportarAberto}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="flex items-center gap-2">
