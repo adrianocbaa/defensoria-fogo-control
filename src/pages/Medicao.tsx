@@ -1438,22 +1438,62 @@ const criarNovaMedicao = async () => {
     }
 
     try {
-      // Criar elemento HTML temporário com a tabela
       const aditivosBloqueados = aditivos.filter(a => a.bloqueada).sort((a, b) => a.id - b.id);
       
+      // Criar conteúdo HTML com fonte menor
       let htmlContent = `
+        <!DOCTYPE html>
         <html>
           <head>
+            <meta charset="UTF-8">
             <style>
-              body { font-family: Arial, sans-serif; font-size: 10px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
-              th { background-color: #4472C4; color: white; font-weight: bold; text-align: center; }
-              .sub-header { background-color: #B4C7E7; font-weight: bold; text-align: center; }
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { 
+                font-family: Arial, sans-serif; 
+                font-size: 7px; 
+                padding: 10px;
+                background: white;
+              }
+              h2 { 
+                text-align: center; 
+                margin-bottom: 3px; 
+                font-size: 12px;
+              }
+              .info { 
+                text-align: center; 
+                margin-bottom: 8px; 
+                font-size: 8px; 
+              }
+              table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                font-size: 7px;
+              }
+              th, td { 
+                border: 1px solid #333; 
+                padding: 2px 3px; 
+                text-align: left; 
+                white-space: nowrap;
+              }
+              th { 
+                background-color: #4472C4; 
+                color: white; 
+                font-weight: bold; 
+                text-align: center; 
+                font-size: 7px;
+              }
+              .sub-header { 
+                background-color: #B4C7E7; 
+                font-weight: bold; 
+                text-align: center; 
+              }
               .text-right { text-align: right; }
               .text-center { text-align: center; }
-              h2 { text-align: center; margin-bottom: 5px; }
-              .info { text-align: center; margin-bottom: 15px; font-size: 11px; }
+              .codigo-desc { 
+                max-width: 150px; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+              }
             </style>
           </head>
           <body>
@@ -1468,24 +1508,22 @@ const criarNovaMedicao = async () => {
                   <th rowspan="2">Código Descrição</th>
                   <th rowspan="2">Und</th>
                   <th rowspan="2">Quant.</th>
-                  <th rowspan="2">Valor unit com BDI e Desc.</th>
-                  <th rowspan="2">Total com BDI e Desconto</th>
+                  <th rowspan="2">V. Unit</th>
+                  <th rowspan="2">V. Total</th>
       `;
 
-      // Adicionar colunas de aditivos
       aditivosBloqueados.forEach(aditivo => {
         htmlContent += `<th colspan="3">${aditivo.nome}</th>`;
       });
 
       htmlContent += `
-                  <th rowspan="2">TOTAL CONTRATO</th>
-                  <th colspan="3">${medicaoAtual}ª MEDIÇÃO</th>
-                  <th colspan="3">ACUMULADA</th>
+                  <th rowspan="2">TOTAL CTR</th>
+                  <th colspan="3">${medicaoAtual}ª MED</th>
+                  <th colspan="3">ACUM</th>
                 </tr>
                 <tr class="sub-header">
       `;
 
-      // Sub-colunas dos aditivos
       aditivosBloqueados.forEach(() => {
         htmlContent += `<th>QNT</th><th>%</th><th>TOTAL</th>`;
       });
@@ -1498,49 +1536,44 @@ const criarNovaMedicao = async () => {
               <tbody>
       `;
 
-      // Adicionar dados dos itens
       items.forEach(item => {
         htmlContent += `
           <tr>
             <td class="text-center">${item.item}</td>
-            <td>${item.codigo} - ${item.descricao}</td>
+            <td class="codigo-desc">${item.codigo} - ${item.descricao}</td>
             <td class="text-center">${item.und}</td>
             <td class="text-right">${item.quantidade.toFixed(2)}</td>
-            <td class="text-right">R$ ${item.valorUnitario.toFixed(2)}</td>
-            <td class="text-right">R$ ${item.valorTotal.toFixed(2)}</td>
+            <td class="text-right">${item.valorUnitario.toFixed(2)}</td>
+            <td class="text-right">${item.valorTotal.toFixed(2)}</td>
         `;
 
-        // Dados de aditivos bloqueados
         aditivosBloqueados.forEach(aditivo => {
           const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
           htmlContent += `
             <td class="text-right">${aditivoData.qnt.toFixed(2)}</td>
-            <td class="text-right">${aditivoData.percentual.toFixed(2)}%</td>
-            <td class="text-right">R$ ${aditivoData.total.toFixed(2)}</td>
+            <td class="text-right">${aditivoData.percentual.toFixed(2)}</td>
+            <td class="text-right">${aditivoData.total.toFixed(2)}</td>
           `;
         });
 
-        // Total contrato
         const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
-        htmlContent += `<td class="text-right">R$ ${totalContrato.toFixed(2)}</td>`;
+        htmlContent += `<td class="text-right">${totalContrato.toFixed(2)}</td>`;
 
-        // Dados da medição atual
         const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
         const pctMedicao = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
         htmlContent += `
             <td class="text-right">${medicaoData.qnt.toFixed(2)}</td>
-            <td class="text-right">${pctMedicao.toFixed(2)}%</td>
-            <td class="text-right">R$ ${medicaoData.total.toFixed(2)}</td>
+            <td class="text-right">${pctMedicao.toFixed(2)}</td>
+            <td class="text-right">${medicaoData.total.toFixed(2)}</td>
         `;
 
-        // Dados acumulados
         const acumQnt = calcularQuantidadeAcumulada(item.id);
         const acumPct = calcularPercentualAcumulado(item.id);
         const acumTotal = calcularValorAcumuladoItem(item.id);
         htmlContent += `
             <td class="text-right">${acumQnt.toFixed(2)}</td>
-            <td class="text-right">${acumPct.toFixed(2)}%</td>
-            <td class="text-right">R$ ${acumTotal.toFixed(2)}</td>
+            <td class="text-right">${acumPct.toFixed(2)}</td>
+            <td class="text-right">${acumTotal.toFixed(2)}</td>
           </tr>
         `;
       });
@@ -1552,29 +1585,41 @@ const criarNovaMedicao = async () => {
         </html>
       `;
 
-      // Criar elemento temporário
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = htmlContent;
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
+      tempDiv.style.width = '297mm';
+      tempDiv.style.padding = '10mm';
+      tempDiv.style.background = 'white';
       document.body.appendChild(tempDiv);
 
-      // Configuração do PDF
       const opt = {
-        margin: [10, 10, 10, 10],
+        margin: [5, 5, 5, 5],
         filename: `Medicao_${medicaoAtual}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { 
+          scale: 1.5,
+          useCORS: true,
+          logging: true,
+          letterRendering: true,
+          allowTaint: true
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'landscape',
+          compress: true
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      // Gerar PDF
       html2pdf().set(opt).from(tempDiv).save().then(() => {
         document.body.removeChild(tempDiv);
         toast.success('PDF exportado com sucesso!');
       }).catch((error: any) => {
         console.error('Erro ao exportar PDF:', error);
-        document.body.removeChild(tempDiv);
+        if (tempDiv && tempDiv.parentNode) {
+          document.body.removeChild(tempDiv);
+        }
         toast.error('Erro ao exportar PDF');
       });
 
