@@ -1270,6 +1270,16 @@ const criarNovaMedicao = async () => {
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
 
+      // Calcular o número de colunas
+      let numCols = 6; // Planilha Orçamentária base
+      numCols += aditivosBloqueados.length * 3; // 3 colunas por aditivo
+      numCols += 1; // Total Contrato
+      numCols += 3; // Medição atual
+      numCols += 3; // Acumulada
+
+      // Definir o range da planilha
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      
       // Ajustar largura das colunas
       const colWidths = [
         { wch: 8 },  // Item
@@ -1291,6 +1301,113 @@ const criarNovaMedicao = async () => {
       colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 }); // Acumulada
 
       ws['!cols'] = colWidths;
+
+      // Estilos para as células
+      const headerStyle = {
+        fill: { fgColor: { rgb: "4472C4" } },
+        font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } }
+        }
+      };
+
+      const subHeaderStyle = {
+        fill: { fgColor: { rgb: "B4C7E7" } },
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } }
+        }
+      };
+
+      const dataStyle = {
+        alignment: { horizontal: "right", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "D3D3D3" } },
+          bottom: { style: "thin", color: { rgb: "D3D3D3" } },
+          left: { style: "thin", color: { rgb: "D3D3D3" } },
+          right: { style: "thin", color: { rgb: "D3D3D3" } }
+        }
+      };
+
+      const textStyle = {
+        alignment: { horizontal: "left", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "D3D3D3" } },
+          bottom: { style: "thin", color: { rgb: "D3D3D3" } },
+          left: { style: "thin", color: { rgb: "D3D3D3" } },
+          right: { style: "thin", color: { rgb: "D3D3D3" } }
+        }
+      };
+
+      // Aplicar estilos às células do cabeçalho (linhas 0 e 1)
+      for (let C = 0; C <= range.e.c; ++C) {
+        const cellAddress1 = XLSX.utils.encode_cell({ r: 0, c: C });
+        const cellAddress2 = XLSX.utils.encode_cell({ r: 1, c: C });
+        
+        if (!ws[cellAddress1]) ws[cellAddress1] = { t: 's', v: '' };
+        if (!ws[cellAddress2]) ws[cellAddress2] = { t: 's', v: '' };
+        
+        ws[cellAddress1].s = headerStyle;
+        ws[cellAddress2].s = subHeaderStyle;
+      }
+
+      // Aplicar estilos às células de dados
+      for (let R = 2; R <= range.e.r; ++R) {
+        for (let C = 0; C <= range.e.c; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellAddress]) continue;
+
+          // Aplicar estilo de texto para as primeiras colunas (Item, Código, Und)
+          if (C === 0 || C === 1 || C === 2) {
+            ws[cellAddress].s = textStyle;
+          } else {
+            ws[cellAddress].s = dataStyle;
+            
+            // Formatar números como moeda ou percentual
+            const colName = Object.keys(exportData[0])[C];
+            if (colName?.includes('PCT') || colName?.includes('%')) {
+              ws[cellAddress].z = '0.00"%"';
+            } else if (typeof ws[cellAddress].v === 'number' && C > 2) {
+              ws[cellAddress].z = 'R$ #,##0.00';
+            }
+          }
+        }
+      }
+
+      // Definir merges para o cabeçalho
+      const merges: any[] = [];
+      
+      // Mesclar "Planilha Orçamentária" (colunas 0-5)
+      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } });
+      
+      let currentCol = 6;
+      
+      // Mesclar cada aditivo (3 colunas cada)
+      aditivosBloqueados.forEach(() => {
+        merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
+        currentCol += 3;
+      });
+      
+      // "TOTAL CONTRATO" não precisa mesclar (1 coluna, mas precisa mesclar linha 0-1)
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 1, c: currentCol } });
+      currentCol += 1;
+      
+      // Mesclar "Xª MEDIÇÃO" (3 colunas)
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
+      currentCol += 3;
+      
+      // Mesclar "ACUMULADA" (3 colunas)
+      merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
+
+      ws['!merges'] = merges;
 
       // Adicionar worksheet ao workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Medição');
