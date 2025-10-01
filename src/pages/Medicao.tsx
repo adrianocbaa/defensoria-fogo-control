@@ -1270,6 +1270,47 @@ const criarNovaMedicao = async () => {
         exportData.push(row);
       });
 
+      // Calcular totais
+      const totalTotalContrato = items.reduce((sum, item) => 
+        sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0
+      );
+      const totalMedicaoAtual = items.reduce((sum, item) => {
+        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+        return sum + medicaoData.total;
+      }, 0);
+      const totalAcumulado = items.reduce((sum, item) => 
+        sum + calcularValorAcumuladoItem(item.id), 0
+      );
+
+      // Adicionar linha de totais
+      const totalRow: any = {
+        'Item': '',
+        'Código': '',
+        'Descrição': '',
+        'Und': '',
+        'Quant.': '',
+        'Valor unit com BDI e Desc.': '',
+        'Total com BDI e Desconto': '',
+      };
+
+      // Preencher colunas de aditivos com vazio
+      aditivosBloqueados.forEach(aditivo => {
+        totalRow[`Aditivo${aditivo.id}_QNT`] = '';
+        totalRow[`Aditivo${aditivo.id}_PCT`] = '';
+        totalRow[`Aditivo${aditivo.id}_TOTAL`] = '';
+      });
+
+      // Adicionar totais nas colunas pertinentes
+      totalRow['TOTAL_CONTRATO'] = totalTotalContrato;
+      totalRow[`Medicao${medicaoAtual}_QNT`] = '';
+      totalRow[`Medicao${medicaoAtual}_PCT`] = '';
+      totalRow[`Medicao${medicaoAtual}_TOTAL`] = totalMedicaoAtual;
+      totalRow['Acum_QNT'] = '';
+      totalRow['Acum_PCT'] = '';
+      totalRow['Acum_TOTAL'] = totalAcumulado;
+
+      exportData.push(totalRow);
+
       // Criar workbook e worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
@@ -1550,11 +1591,37 @@ const criarNovaMedicao = async () => {
         }
       }
 
+      // Estilo para linha de totais
+      const totalRowStyle = {
+        fill: { fgColor: { rgb: "FFD966" } }, // amarelo claro
+        font: { bold: true, sz: 11 },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: {
+          top: { style: "medium", color: { rgb: "000000" } },
+          bottom: { style: "medium", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "CBD5E0" } },
+          right: { style: "thin", color: { rgb: "CBD5E0" } }
+        }
+      };
+
       // Aplicar estilos às células de dados
       for (let R = 2; R <= range.e.r; ++R) {
+        const isLastRow = R === range.e.r; // Linha de totais
+        
         for (let C = 0; C <= range.e.c; ++C) {
           const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[cellAddress]) continue;
+
+          // Se for linha de totais, aplicar estilo especial
+          if (isLastRow) {
+            ws[cellAddress].s = totalRowStyle;
+            
+            // Formatar números como moeda nas colunas de total
+            if (typeof ws[cellAddress].v === 'number') {
+              ws[cellAddress].z = 'R$ #,##0.00';
+            }
+            continue;
+          }
 
           // Item (coluna 0) - centro
           if (C === 0) {
@@ -1797,6 +1864,40 @@ const criarNovaMedicao = async () => {
           </tr>
         `;
       });
+
+      // Calcular totais
+      const totalTotalContratoPDF = items.reduce((sum, item) => 
+        sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0
+      );
+      const totalMedicaoAtualPDF = items.reduce((sum, item) => {
+        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+        return sum + medicaoData.total;
+      }, 0);
+      const totalAcumuladoPDF = items.reduce((sum, item) => 
+        sum + calcularValorAcumuladoItem(item.id), 0
+      );
+
+      // Adicionar linha de totais
+      htmlContent += `
+          <tr style="background-color: #FFD966; font-weight: bold; border-top: 2px solid #000;">
+            <td colspan="7" style="text-align: right; padding-right: 10px;"></td>
+      `;
+      
+      // Colunas vazias para aditivos
+      aditivosBloqueados.forEach(() => {
+        htmlContent += `<td></td><td></td><td></td>`;
+      });
+      
+      htmlContent += `
+            <td class="text-right" style="font-weight: bold;">R$ ${totalTotalContratoPDF.toFixed(2)}</td>
+            <td></td>
+            <td></td>
+            <td class="text-right" style="font-weight: bold;">R$ ${totalMedicaoAtualPDF.toFixed(2)}</td>
+            <td></td>
+            <td></td>
+            <td class="text-right" style="font-weight: bold;">R$ ${totalAcumuladoPDF.toFixed(2)}</td>
+          </tr>
+      `;
 
       htmlContent += `
               </tbody>
