@@ -1308,47 +1308,200 @@ const criarNovaMedicao = async () => {
       ws['!cols'] = colWidths;
 
       // Estilos para as células
-      const headerStyle = {
-        fill: { fgColor: { rgb: "4472C4" } },
-        font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+      // Primeira linha - cabeçalhos de agrupamento
+      const headerPlanilhaStyle = {
+        fill: { fgColor: { rgb: "E2E8F0" } }, // bg-slate-200
+        font: { bold: true, sz: 11 },
         alignment: { horizontal: "center", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } }
+          top: { style: "thin", color: { rgb: "CBD5E0" } },
+          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
+          left: { style: "thin", color: { rgb: "CBD5E0" } },
+          right: { style: "thin", color: { rgb: "CBD5E0" } }
         }
       };
 
-      const subHeaderStyle = {
-        fill: { fgColor: { rgb: "B4C7E7" } },
+      const headerAditivoStyle = {
+        fill: { fgColor: { rgb: "DBEAFE" } }, // bg-blue-100
+        font: { bold: true, sz: 11 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "93C5FD" } },
+          bottom: { style: "thin", color: { rgb: "93C5FD" } },
+          left: { style: "thin", color: { rgb: "93C5FD" } },
+          right: { style: "thin", color: { rgb: "93C5FD" } }
+        }
+      };
+
+      const headerTotalContratoStyle = {
+        fill: { fgColor: { rgb: "DCFCE7" } }, // bg-green-100
+        font: { bold: true, sz: 11 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "86EFAC" } },
+          bottom: { style: "thin", color: { rgb: "86EFAC" } },
+          left: { style: "thin", color: { rgb: "86EFAC" } },
+          right: { style: "thin", color: { rgb: "86EFAC" } }
+        }
+      };
+
+      const headerMedicaoStyle = {
+        fill: { fgColor: { rgb: "FEF3C7" } }, // bg-yellow-100
+        font: { bold: true, sz: 11 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "FDE047" } },
+          bottom: { style: "thin", color: { rgb: "FDE047" } },
+          left: { style: "thin", color: { rgb: "FDE047" } },
+          right: { style: "thin", color: { rgb: "FDE047" } }
+        }
+      };
+
+      const headerAcumuladaStyle = {
+        fill: { fgColor: { rgb: "F3E8FF" } }, // bg-purple-100
+        font: { bold: true, sz: 11 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "DDD6FE" } },
+          bottom: { style: "thin", color: { rgb: "DDD6FE" } },
+          left: { style: "thin", color: { rgb: "DDD6FE" } },
+          right: { style: "thin", color: { rgb: "DDD6FE" } }
+        }
+      };
+
+      // Segunda linha - subcolunas
+      const subHeaderPlanilhaStyle = {
+        fill: { fgColor: { rgb: "F1F5F9" } }, // bg-slate-100
         font: { bold: true, sz: 10 },
         alignment: { horizontal: "center", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } }
+          top: { style: "thin", color: { rgb: "CBD5E0" } },
+          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
+          left: { style: "thin", color: { rgb: "CBD5E0" } },
+          right: { style: "thin", color: { rgb: "CBD5E0" } }
+        }
+      };
+
+      const subHeaderAditivoStyle = {
+        fill: { fgColor: { rgb: "DBEAFE" } }, // bg-blue-100
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "93C5FD" } },
+          bottom: { style: "thin", color: { rgb: "93C5FD" } },
+          left: { style: "thin", color: { rgb: "93C5FD" } },
+          right: { style: "thin", color: { rgb: "93C5FD" } }
+        }
+      };
+
+      const subHeaderTotalContratoStyle = {
+        fill: { fgColor: { rgb: "DCFCE7" } }, // bg-green-100
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "86EFAC" } },
+          bottom: { style: "thin", color: { rgb: "86EFAC" } },
+          left: { style: "thin", color: { rgb: "86EFAC" } },
+          right: { style: "thin", color: { rgb: "86EFAC" } }
+        }
+      };
+
+      const subHeaderMedicaoStyle = {
+        fill: { fgColor: { rgb: "FEF3C7" } }, // bg-yellow-100
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "FDE047" } },
+          bottom: { style: "thin", color: { rgb: "FDE047" } },
+          left: { style: "thin", color: { rgb: "FDE047" } },
+          right: { style: "thin", color: { rgb: "FDE047" } }
+        }
+      };
+
+      const subHeaderAcumuladaStyle = {
+        fill: { fgColor: { rgb: "F3E8FF" } }, // bg-purple-100
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "DDD6FE" } },
+          bottom: { style: "thin", color: { rgb: "DDD6FE" } },
+          left: { style: "thin", color: { rgb: "DDD6FE" } },
+          right: { style: "thin", color: { rgb: "DDD6FE" } }
+        }
+      };
+
+      // Estilos de dados com background
+      const dataAditivoStyle = {
+        fill: { fgColor: { rgb: "DBEAFE" } }, // bg-blue-100
+        alignment: { horizontal: "right", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "93C5FD" } },
+          bottom: { style: "thin", color: { rgb: "93C5FD" } },
+          left: { style: "thin", color: { rgb: "93C5FD" } },
+          right: { style: "thin", color: { rgb: "93C5FD" } }
+        }
+      };
+
+      const dataTotalContratoStyle = {
+        fill: { fgColor: { rgb: "DCFCE7" } }, // bg-green-100
+        alignment: { horizontal: "right", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "86EFAC" } },
+          bottom: { style: "thin", color: { rgb: "86EFAC" } },
+          left: { style: "thin", color: { rgb: "86EFAC" } },
+          right: { style: "thin", color: { rgb: "86EFAC" } }
+        }
+      };
+
+      const dataMedicaoStyle = {
+        fill: { fgColor: { rgb: "FEF3C7" } }, // bg-yellow-100
+        alignment: { horizontal: "right", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "FDE047" } },
+          bottom: { style: "thin", color: { rgb: "FDE047" } },
+          left: { style: "thin", color: { rgb: "FDE047" } },
+          right: { style: "thin", color: { rgb: "FDE047" } }
+        }
+      };
+
+      const dataAcumuladaStyle = {
+        fill: { fgColor: { rgb: "F3E8FF" } }, // bg-purple-100
+        alignment: { horizontal: "right", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "DDD6FE" } },
+          bottom: { style: "thin", color: { rgb: "DDD6FE" } },
+          left: { style: "thin", color: { rgb: "DDD6FE" } },
+          right: { style: "thin", color: { rgb: "DDD6FE" } }
         }
       };
 
       const dataStyle = {
         alignment: { horizontal: "right", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "D3D3D3" } },
-          bottom: { style: "thin", color: { rgb: "D3D3D3" } },
-          left: { style: "thin", color: { rgb: "D3D3D3" } },
-          right: { style: "thin", color: { rgb: "D3D3D3" } }
+          top: { style: "thin", color: { rgb: "CBD5E0" } },
+          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
+          left: { style: "thin", color: { rgb: "CBD5E0" } },
+          right: { style: "thin", color: { rgb: "CBD5E0" } }
         }
       };
 
       const textStyle = {
         alignment: { horizontal: "left", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "D3D3D3" } },
-          bottom: { style: "thin", color: { rgb: "D3D3D3" } },
-          left: { style: "thin", color: { rgb: "D3D3D3" } },
-          right: { style: "thin", color: { rgb: "D3D3D3" } }
+          top: { style: "thin", color: { rgb: "CBD5E0" } },
+          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
+          left: { style: "thin", color: { rgb: "CBD5E0" } },
+          right: { style: "thin", color: { rgb: "CBD5E0" } }
+        }
+      };
+
+      const textCenterStyle = {
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "CBD5E0" } },
+          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
+          left: { style: "thin", color: { rgb: "CBD5E0" } },
+          right: { style: "thin", color: { rgb: "CBD5E0" } }
         }
       };
 
@@ -1360,8 +1513,41 @@ const criarNovaMedicao = async () => {
         if (!ws[cellAddress1]) ws[cellAddress1] = { t: 's', v: '' };
         if (!ws[cellAddress2]) ws[cellAddress2] = { t: 's', v: '' };
         
-        ws[cellAddress1].s = headerStyle;
-        ws[cellAddress2].s = subHeaderStyle;
+        // Determinar estilo da primeira linha baseado na coluna
+        if (C <= 6) {
+          ws[cellAddress1].s = headerPlanilhaStyle;
+        } else {
+          const colAfterPlanilha = C - 7;
+          const totalAditivoCols = aditivosBloqueados.length * 3;
+          
+          if (colAfterPlanilha < totalAditivoCols) {
+            ws[cellAddress1].s = headerAditivoStyle;
+          } else if (colAfterPlanilha === totalAditivoCols) {
+            ws[cellAddress1].s = headerTotalContratoStyle;
+          } else if (colAfterPlanilha > totalAditivoCols && colAfterPlanilha <= totalAditivoCols + 3) {
+            ws[cellAddress1].s = headerMedicaoStyle;
+          } else {
+            ws[cellAddress1].s = headerAcumuladaStyle;
+          }
+        }
+        
+        // Determinar estilo da segunda linha baseado na coluna
+        if (C <= 6) {
+          ws[cellAddress2].s = subHeaderPlanilhaStyle;
+        } else {
+          const colAfterPlanilha = C - 7;
+          const totalAditivoCols = aditivosBloqueados.length * 3;
+          
+          if (colAfterPlanilha < totalAditivoCols) {
+            ws[cellAddress2].s = subHeaderAditivoStyle;
+          } else if (colAfterPlanilha === totalAditivoCols) {
+            ws[cellAddress2].s = subHeaderTotalContratoStyle;
+          } else if (colAfterPlanilha > totalAditivoCols && colAfterPlanilha <= totalAditivoCols + 3) {
+            ws[cellAddress2].s = subHeaderMedicaoStyle;
+          } else {
+            ws[cellAddress2].s = subHeaderAcumuladaStyle;
+          }
+        }
       }
 
       // Aplicar estilos às células de dados
@@ -1370,19 +1556,47 @@ const criarNovaMedicao = async () => {
           const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[cellAddress]) continue;
 
-          // Aplicar estilo de texto para as primeiras colunas (Item, Código, Descrição, Und)
-          if (C === 0 || C === 1 || C === 2 || C === 3) {
+          // Item (coluna 0) - centro
+          if (C === 0) {
+            ws[cellAddress].s = textCenterStyle;
+          }
+          // Código (coluna 1) - centro  
+          else if (C === 1) {
+            ws[cellAddress].s = textCenterStyle;
+          }
+          // Descrição (coluna 2) - esquerda
+          else if (C === 2) {
             ws[cellAddress].s = textStyle;
-          } else {
+          }
+          // Und (coluna 3) - centro
+          else if (C === 3) {
+            ws[cellAddress].s = textCenterStyle;
+          }
+          // Quant, Valor unit, Valor total (colunas 4-6) - direita
+          else if (C <= 6) {
             ws[cellAddress].s = dataStyle;
+          } else {
+            // Determinar estilo baseado na seção
+            const colAfterPlanilha = C - 7;
+            const totalAditivoCols = aditivosBloqueados.length * 3;
             
-            // Formatar números como moeda ou percentual
-            const colName = Object.keys(exportData[0])[C];
-            if (colName?.includes('PCT') || colName?.includes('%')) {
-              ws[cellAddress].z = '0.00"%"';
-            } else if (typeof ws[cellAddress].v === 'number' && C > 2) {
-              ws[cellAddress].z = 'R$ #,##0.00';
+            if (colAfterPlanilha < totalAditivoCols) {
+              ws[cellAddress].s = dataAditivoStyle;
+            } else if (colAfterPlanilha === totalAditivoCols) {
+              ws[cellAddress].s = dataTotalContratoStyle;
+            } else if (colAfterPlanilha > totalAditivoCols && colAfterPlanilha <= totalAditivoCols + 3) {
+              ws[cellAddress].s = dataMedicaoStyle;
+            } else {
+              ws[cellAddress].s = dataAcumuladaStyle;
             }
+          }
+          
+          // Formatar números como moeda ou percentual
+          const colName = Object.keys(exportData[0])[C];
+          if (colName?.includes('PCT') || colName?.includes('%')) {
+            ws[cellAddress].z = '0.00"%"';
+          } else if (typeof ws[cellAddress].v === 'number' && C > 3) {
+            ws[cellAddress].z = 'R$ #,##0.00';
           }
         }
       }
