@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NucleoCentral } from '@/hooks/useNucleosCentral';
@@ -69,18 +69,23 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const hasFitBounds = useRef(false);
-  const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
+  const [selectedNucleusId, setSelectedNucleusId] = useState<string | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [teletrabalhoData, setTeletrabalhoData] = useState<Record<string, TeletrabalhoData>>({});
   const [isLoadingData, setIsLoadingData] = useState(true);
   const isMobile = useIsMobile();
 
+  // Derive selected nucleus from id to avoid stale object refs
+  const selectedNucleus = useMemo(() => {
+    return selectedNucleusId ? nucleos.find((n) => n.id === selectedNucleusId) ?? null : null;
+  }, [selectedNucleusId, nucleos]);
+
   // Stable callback for marker click
   const handleMarkerClick = useCallback((nucleus: NucleoCentral) => {
     console.log('handleMarkerClick called for:', nucleus.nome);
     console.log('isMobile:', isMobile);
-    setSelectedNucleus(nucleus);
-    console.log('selectedNucleus set to:', nucleus.nome);
+    setSelectedNucleusId(nucleus.id);
+    console.log('selectedNucleusId set to:', nucleus.id);
     if (isMobile) {
       setShowMobileModal(true);
     } else {
@@ -398,7 +403,7 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setSelectedNucleus(null)}
+                onClick={() => setSelectedNucleusId(null)}
                 className="h-6 w-6 p-0"
               >
                 <X className="h-4 w-4" />
@@ -420,9 +425,9 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
               {nucleos.map((nucleus) => (
                 <button
                   key={nucleus.id}
-                  onClick={() => setSelectedNucleus(nucleus)}
+                  onClick={() => setSelectedNucleusId(nucleus.id)}
                   className={`w-full text-left p-2 rounded text-xs hover:bg-muted transition-colors ${
-                    selectedNucleus?.id === nucleus.id ? 'bg-primary/10 border-primary/20 border' : ''
+                    selectedNucleusId === nucleus.id ? 'bg-primary/10 border-primary/20 border' : ''
                   }`}
                 >
                   <div className="font-medium text-foreground">{nucleus.nome}</div>
@@ -444,10 +449,10 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => {
-                    setShowMobileModal(false);
-                    setSelectedNucleus(null);
-                  }}
+                onClick={() => {
+                  setShowMobileModal(false);
+                  setSelectedNucleusId(null);
+                }}
                   className="h-6 w-6 p-0"
                 >
                   <X className="h-4 w-4" />
