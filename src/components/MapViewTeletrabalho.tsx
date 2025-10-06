@@ -79,10 +79,9 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
   const handleMarkerClick = useCallback((nucleus: NucleoCentral) => {
     console.log('handleMarkerClick called for:', nucleus.nome);
     setSelectedNucleus(nucleus);
-    if (isMobile) {
-      setShowMobileModal(true);
-    }
-  }, [isMobile]);
+    // Always open mobile modal flag; it only renders when isMobile is true
+    setShowMobileModal(true);
+  }, []);
 
   // Fetch teletrabalho data first, before rendering markers
   useEffect(() => {
