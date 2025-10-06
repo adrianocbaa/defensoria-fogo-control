@@ -68,7 +68,7 @@ serve(async (req: Request) => {
       try {
         const emailResponse = await resend.emails.send({
           from: "Sistema de Gestão <onboarding@resend.dev>",
-          to: ["luizfrota@dp.mt.gov.br"],
+          to: ["luizfrota@dp.mt.gov.br", "adrianomelo@dp.mt.gov.br"],
           subject: "Encerramento do período de teletrabalho",
           html: `
             <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5;">
