@@ -18,16 +18,16 @@ export function useUserSectors() {
 
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_secure')
         .select('sectors')
         .eq('user_id', user.id)
         .single();
 
       if (error) {
         console.error('Error fetching user sectors:', error);
-        setSectors(['nucleos']); // Default fallback
+        setSectors(['preventivos']); // Default fallback
       } else {
-        setSectors(data?.sectors || ['nucleos']);
+        setSectors(data?.sectors || ['preventivos']);
       }
     } catch (error) {
       console.error('Error:', error);

@@ -13,6 +13,7 @@ export interface Profile {
   department: string | null;
   language: string;
   theme: string;
+  role: 'admin' | 'editor' | 'gm' | 'manutencao' | 'viewer';
 }
 
 export function useProfile() {

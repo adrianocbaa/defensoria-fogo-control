@@ -6,31 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Generate cryptographically secure random password
-function generateSecurePassword(length = 16): string {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
-  const randomValues = new Uint8Array(length);
-  crypto.getRandomValues(randomValues);
-  
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    password += charset[randomValues[i] % charset.length];
-  }
-  
-  // Ensure it meets minimum requirements
-  const hasUpper = /[A-Z]/.test(password);
-  const hasLower = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password);
-  
-  if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-    // Regenerate if it doesn't meet requirements
-    return generateSecurePassword(length);
-  }
-  
-  return password;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -61,16 +36,15 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is admin using new user_roles table
-    const { data: userRoles, error: roleError } = await supabaseAdmin
-      .from('user_roles')
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
       .select('role')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .single();
 
-    const isAdmin = userRoles?.some(ur => ur.role === 'admin');
-
-    if (roleError || !isAdmin) {
-      console.error('Admin check failed:', roleError);
+    if (profileError || profile?.role !== 'admin') {
+      console.error('Admin check failed:', profileError);
       return new Response(
         JSON.stringify({ error: 'Apenas administradores podem resetar senhas' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -94,13 +68,10 @@ serve(async (req) => {
       );
     }
 
-    // Generate secure random password
-    const newPassword = generateSecurePassword(16);
-
-    // Reset password
+    // Reset password to default (meets Supabase security requirements)
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
-      { password: newPassword }
+      { password: 'Admin123' }
     );
 
     if (updateError) {
@@ -111,18 +82,12 @@ serve(async (req) => {
       );
     }
 
-    // Get user email for notification
-    const { data: targetUser } = await supabaseAdmin.auth.admin.getUserById(userId);
-
     // Log the action
     await supabaseAdmin.from('audit_logs').insert({
       table_name: 'auth.users',
       record_id: userId,
       operation: 'UPDATE',
-      new_values: { 
-        password_reset: true,
-        reset_by_admin: user.id
-      },
+      new_values: { password_reset: true },
       user_id: user.id,
       user_email: user.email || 'unknown'
     });
@@ -130,12 +95,7 @@ serve(async (req) => {
     console.log(`Password reset successfully for user ${userId} by admin ${user.id}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Senha resetada com sucesso',
-        newPassword: newPassword,
-        userEmail: targetUser?.email
-      }),
+      JSON.stringify({ success: true, message: 'Senha resetada para Admin123' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

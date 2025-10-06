@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NucleoCentral } from '@/hooks/useNucleosCentral';
@@ -60,38 +60,16 @@ interface TeletrabalhoData {
 interface MapViewTeletrabalhoProps {
   nucleos: NucleoCentral[];
   onViewDetails: (nucleusId: string) => void;
-  filters?: {
-    status: ('all' | 'active' | 'scheduled')[];
-  };
 }
 
-export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapViewTeletrabalhoProps) {
+export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletrabalhoProps) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
-  const hasFitBounds = useRef(false);
-  const [selectedNucleusId, setSelectedNucleusId] = useState<string | null>(null);
+  const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [teletrabalhoData, setTeletrabalhoData] = useState<Record<string, TeletrabalhoData>>({});
   const [isLoadingData, setIsLoadingData] = useState(true);
   const isMobile = useIsMobile();
-
-  // Derive selected nucleus from id to avoid stale object refs
-  const selectedNucleus = useMemo(() => {
-    return selectedNucleusId ? nucleos.find((n) => n.id === selectedNucleusId) ?? null : null;
-  }, [selectedNucleusId, nucleos]);
-
-  // Stable callback for marker click
-  const handleMarkerClick = useCallback((nucleus: NucleoCentral) => {
-    console.log('handleMarkerClick called for:', nucleus.nome);
-    console.log('isMobile:', isMobile);
-    setSelectedNucleusId(nucleus.id);
-    console.log('selectedNucleusId set to:', nucleus.id);
-    if (isMobile) {
-      setShowMobileModal(true);
-    } else {
-      setShowMobileModal(false);
-    }
-  }, [isMobile]);
 
   // Fetch teletrabalho data first, before rendering markers
   useEffect(() => {
@@ -197,11 +175,6 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       }, 0);
 
       mapRef.current = map;
-
-      // Debug: map click
-      map.on('click', (ev) => {
-        console.log('Map clicked at:', ev.latlng);
-      });
     };
 
     initMap();
@@ -221,20 +194,7 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    let validNucleos = nucleos.filter((n) => n.lat && n.lng);
-
-    // Apply filters if provided
-    if (filters && !filters.status.includes('all')) {
-      validNucleos = validNucleos.filter((nucleus) => {
-        const teletrabalhoInfo = teletrabalhoData[nucleus.id];
-        const status = teletrabalhoInfo?.status || 'none';
-        
-        if (filters.status.includes('active') && status === 'active') return true;
-        if (filters.status.includes('scheduled') && status === 'scheduled') return true;
-        
-        return false;
-      });
-    }
+    const validNucleos = nucleos.filter((n) => n.lat && n.lng);
 
     if (validNucleos.length === 0) return;
 
@@ -253,30 +213,23 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       const marker = L.marker([nucleus.lat!, nucleus.lng!], { icon })
         .addTo(mapRef.current!);
 
-      marker.on('click', (e: any) => {
-        try {
-          // Fully stop Leaflet and DOM propagation to avoid map-level handlers interfering
-          (L as any).DomEvent?.stop(e);
-        } catch {
-          e.originalEvent?.stopPropagation?.();
-          e.originalEvent?.preventDefault?.();
+      marker.on('click', () => {
+        setSelectedNucleus(nucleus);
+        if (isMobile) {
+          setShowMobileModal(true);
         }
-        console.log('Marker clicked:', nucleus.nome);
-        // Defer state update to next tick for reliability in Chrome
-        setTimeout(() => handleMarkerClick(nucleus), 0);
       });
 
       markersRef.current.push(marker);
     });
 
-    if (validNucleos.length > 0 && !hasFitBounds.current) {
+    if (validNucleos.length > 0) {
       const bounds = L.latLngBounds(
         validNucleos.map((n) => [n.lat!, n.lng!])
       );
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
-      hasFitBounds.current = true;
     }
-  }, [nucleos, isMobile, teletrabalhoData, isLoadingData, filters, handleMarkerClick]);
+  }, [nucleos, isMobile, teletrabalhoData, isLoadingData]);
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
     const data = teletrabalhoData[nucleus.id];
@@ -396,14 +349,14 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
 
       {/* Desktop Sidebar */}
       {!isMobile && selectedNucleus && (
-        <div className="absolute top-4 left-4 w-80 bg-card rounded-lg shadow-lg border z-[1000]">
+        <div className="absolute top-4 left-4 w-80 bg-white rounded-lg shadow-lg border z-[1000]">
           <div className="p-4">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="font-semibold text-lg text-foreground">{selectedNucleus.nome}</h3>
+              <h3 className="font-semibold text-lg">{selectedNucleus.nome}</h3>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setSelectedNucleusId(null)}
+                onClick={() => setSelectedNucleus(null)}
                 className="h-6 w-6 p-0"
               >
                 <X className="h-4 w-4" />
@@ -416,21 +369,21 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
 
       {/* Desktop: Nucleus list sidebar */}
       {!isMobile && (
-        <div className="absolute top-4 right-4 w-64 bg-card rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
+        <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
           <div className="p-4">
-            <h3 className="font-semibold text-sm mb-3 text-foreground">
+            <h3 className="font-semibold text-sm mb-3">
               Lista de Núcleos ({nucleos.length})
             </h3>
             <div className="space-y-2">
               {nucleos.map((nucleus) => (
                 <button
                   key={nucleus.id}
-                  onClick={() => setSelectedNucleusId(nucleus.id)}
+                  onClick={() => setSelectedNucleus(nucleus)}
                   className={`w-full text-left p-2 rounded text-xs hover:bg-muted transition-colors ${
-                    selectedNucleusId === nucleus.id ? 'bg-primary/10 border-primary/20 border' : ''
+                    selectedNucleus?.id === nucleus.id ? 'bg-primary/10 border-primary/20 border' : ''
                   }`}
                 >
-                  <div className="font-medium text-foreground">{nucleus.nome}</div>
+                  <div className="font-medium">{nucleus.nome}</div>
                   <div className="text-muted-foreground">{nucleus.cidade}</div>
                 </button>
               ))}
@@ -442,17 +395,17 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       {/* Mobile Modal */}
       {isMobile && selectedNucleus && showMobileModal && (
         <div className="fixed inset-0 bg-black/50 z-[1001] flex items-end justify-center p-4">
-          <div className="bg-card rounded-t-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-t-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-4">
               <div className="flex items-start justify-between mb-4">
-                <h3 className="font-semibold text-lg text-foreground">{selectedNucleus.nome}</h3>
+                <h3 className="font-semibold text-lg">{selectedNucleus.nome}</h3>
                 <Button
                   variant="ghost"
                   size="icon"
-                onClick={() => {
-                  setShowMobileModal(false);
-                  setSelectedNucleusId(null);
-                }}
+                  onClick={() => {
+                    setShowMobileModal(false);
+                    setSelectedNucleus(null);
+                  }}
                   className="h-6 w-6 p-0"
                 >
                   <X className="h-4 w-4" />

@@ -18,7 +18,7 @@ import { AvatarCropDialog } from '@/components/AvatarCropDialog';
 export default function Profile() {
   const { user } = useAuth();
   const { profile, updateProfile, isUpdating, changePassword, isChangingPassword } = useProfile();
-  const { isAdmin, role } = useUserRole();
+  const { isAdmin } = useUserRole();
 
   // Profile form state
   const [displayName, setDisplayName] = useState('');
@@ -288,7 +288,7 @@ export default function Profile() {
                     <Label htmlFor="role">Perfil de Acesso</Label>
                     <Input
                       id="role"
-                      value={getRoleLabel(role)}
+                      value={getRoleLabel(profile?.role || 'viewer')}
                       disabled
                       className="bg-muted"
                     />

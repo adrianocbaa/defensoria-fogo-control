@@ -1,22 +1,23 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Users, Edit2, Key } from 'lucide-react';
+import { Users, Plus, Trash2, Edit, UserCheck, UserX, Key } from 'lucide-react';
 import { UserRole } from '@/hooks/useUserRole';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface User {
   id: string;
   user_id: string;
-  display_name: string;
-  roles: UserRole[];
+  display_name: string | null;
+  role: UserRole;
   created_at: string;
   is_active: boolean;
 }
@@ -24,7 +25,9 @@ interface User {
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingUser, setEditingUser] = useState<{ user: User; role: UserRole } | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [newRole, setNewRole] = useState<UserRole>('viewer');
+  const { toast } = useToast();
 
   useEffect(() => {
     loadUsers();
@@ -32,77 +35,50 @@ export function UserManagement() {
 
   const loadUsers = async () => {
     try {
-      setLoading(true);
-      
-      // Get all profiles
-      const { data: profiles, error: profilesError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, display_name, created_at, is_active')
+        .select('id, user_id, display_name, role, created_at, is_active')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
-
-      // Get all user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) throw rolesError;
-
-      // Combine profiles with their roles
-      const usersWithRoles = (profiles || []).map(profile => {
-        const roles = (userRoles || [])
-          .filter(ur => ur.user_id === profile.user_id)
-          .map(ur => ur.role as UserRole);
-        
-        return {
-          ...profile,
-          roles: roles.length > 0 ? roles : ['viewer' as UserRole]
-        };
-      });
-      
-      setUsers(usersWithRoles);
+      if (error) throw error;
+      setUsers(data || []);
     } catch (error) {
       console.error('Error loading users:', error);
-      toast.error('Erro ao carregar usuários');
+      toast({
+        title: 'Erro',
+        description: 'Erro ao carregar usuários',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: UserRole) => {
+  const updateUserRole = async (userId: string, role: UserRole) => {
     try {
-      // First, get current roles for this user
-      const { data: currentRoles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role })
+        .eq('id', userId);
 
-      const existingRoles = (currentRoles || []).map(r => r.role);
+      if (error) throw error;
 
-      // Remove all existing roles first
-      if (existingRoles.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', userId);
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, role } : user
+      ));
 
-        if (deleteError) throw deleteError;
-      }
-
-      // Add the new role
-      const { error: insertError } = await supabase
-        .from('user_roles')
-        .insert({ user_id: userId, role: newRole });
-
-      if (insertError) throw insertError;
-
-      toast.success('Role atualizado com sucesso');
-      loadUsers();
+      toast({
+        title: 'Sucesso',
+        description: 'Perfil do usuário atualizado com sucesso',
+      });
       setEditingUser(null);
     } catch (error) {
-      console.error('Error updating role:', error);
-      toast.error('Erro ao atualizar role');
+      console.error('Error updating user role:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atualizar perfil do usuário',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -111,15 +87,25 @@ export function UserManagement() {
       const { error } = await supabase
         .from('profiles')
         .update({ is_active: !currentStatus })
-        .eq('user_id', userId);
+        .eq('id', userId);
 
       if (error) throw error;
 
-      toast.success(currentStatus ? 'Usuário desativado com sucesso' : 'Usuário ativado com sucesso');
-      loadUsers();
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, is_active: !currentStatus } : user
+      ));
+
+      toast({
+        title: 'Sucesso',
+        description: currentStatus ? 'Usuário desativado com sucesso' : 'Usuário ativado com sucesso',
+      });
     } catch (error) {
       console.error('Error toggling user status:', error);
-      toast.error('Erro ao alterar status do usuário');
+      toast({
+        title: 'Erro',
+        description: 'Erro ao alterar status do usuário',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -131,16 +117,17 @@ export function UserManagement() {
 
       if (error) throw error;
 
-      if (data?.newPassword) {
-        toast.success(`Senha de ${userName} resetada. Nova senha: ${data.newPassword}`, {
-          duration: 10000,
-        });
-      } else {
-        toast.success(`Senha de ${userName} resetada com sucesso`);
-      }
+      toast({
+        title: 'Sucesso',
+        description: `Senha de ${userName} resetada para Admin123`,
+      });
     } catch (error) {
       console.error('Error resetting password:', error);
-      toast.error('Erro ao resetar senha do usuário');
+      toast({
+        title: 'Erro',
+        description: 'Erro ao resetar senha do usuário',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -204,19 +191,15 @@ export function UserManagement() {
                       {user.display_name || 'Nome não informado'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.roles.map(role => (
-                          <Badge key={role} variant={getRoleBadgeVariant(role)}>
-                            {getRoleLabel(role)}
-                          </Badge>
-                        ))}
-                      </div>
+                      <Badge variant={getRoleBadgeVariant(user.role)}>
+                        {getRoleLabel(user.role)}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={user.is_active}
-                          onCheckedChange={() => toggleUserActive(user.user_id, user.is_active)}
+                          onCheckedChange={() => toggleUserActive(user.id, user.is_active)}
                         />
                         <span className="text-sm">
                           {user.is_active ? 'Ativo' : 'Inativo'}
@@ -228,15 +211,18 @@ export function UserManagement() {
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => setEditingUser({ user, role: user.roles[0] || 'viewer' })}
+                        onClick={() => {
+                          setEditingUser(user);
+                          setNewRole(user.role);
+                        }}
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="outline" size="sm">
                             <Key className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -246,7 +232,7 @@ export function UserManagement() {
                             <AlertDialogDescription>
                               Tem certeza que deseja resetar a senha de <strong>{user.display_name}</strong>?
                               <br />
-                              Uma nova senha segura será gerada automaticamente.
+                              A nova senha será: <strong>Admin123</strong>
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -269,19 +255,16 @@ export function UserManagement() {
       </Card>
 
       {/* Edit User Role Dialog */}
-      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Alterar Perfil do Usuário</DialogTitle>
-            <DialogDescription>
-              Altere o perfil de {editingUser?.user.display_name || 'usuário'}
-            </DialogDescription>
-          </DialogHeader>
+      <AlertDialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar Perfil do Usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Altere o perfil de {editingUser?.display_name || 'usuário'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
           <div className="py-4">
-            <Select 
-              value={editingUser?.role} 
-              onValueChange={(value) => editingUser && setEditingUser({ ...editingUser, role: value as UserRole })}
-            >
+            <Select value={newRole} onValueChange={(value) => setNewRole(value as UserRole)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o perfil" />
               </SelectTrigger>
@@ -294,18 +277,16 @@ export function UserManagement() {
               </SelectContent>
             </Select>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingUser(null)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => editingUser && updateUserRole(editingUser.user.user_id, editingUser.role)}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => editingUser && updateUserRole(editingUser.id, newRole)}
             >
               Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Permissions Info Card */}
       <Card>

@@ -1,12 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,13 +14,9 @@ import {
   Search, 
   Building2,
   Laptop,
-  Users,
-  Menu,
-  X
+  Users
 } from 'lucide-react';
-import { MapViewTeletrabalho } from '@/components/MapViewTeletrabalho';
-import { TeletrabalhoFilters, type TeletrabalhoFiltersData } from '@/components/TeletrabalhoFilters';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { MapViewCentral } from '@/components/MapViewCentral';
 
 const Nucleos = () => {
   const navigate = useNavigate();
@@ -30,12 +24,7 @@ const Nucleos = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [nucleos, setNucleos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [filters, setFilters] = useState<TeletrabalhoFiltersData>({
-    status: ['all']
-  });
   const { toast } = useToast();
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchNucleos();
@@ -63,17 +52,11 @@ const Nucleos = () => {
     }
   };
 
-  const filteredNucleos = useMemo(() => {
-    return nucleos.filter(nucleo => {
-      const normalizedSearchTerm = normalizeText(searchTerm);
-      return normalizeText(nucleo.nome).includes(normalizedSearchTerm) ||
-             normalizeText(nucleo.cidade).includes(normalizedSearchTerm);
-    });
-  }, [nucleos, searchTerm]);
-
-  const handleFiltersChange = (newFilters: TeletrabalhoFiltersData) => {
-    setFilters(newFilters);
-  };
+  const filteredNucleos = nucleos.filter(nucleo => {
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    return normalizeText(nucleo.nome).includes(normalizedSearchTerm) ||
+           normalizeText(nucleo.cidade).includes(normalizedSearchTerm);
+  });
 
   const handleViewDetails = (nucleusId: string) => {
     navigate(`/teletrabalho/${nucleusId}`);
@@ -81,137 +64,82 @@ const Nucleos = () => {
 
   return (
     <SimpleHeader>
-      <div className="min-h-screen bg-background">
-        {/* Page Header */}
-        <PageHeader
-          title="Mapa de Teletrabalho"
-          subtitle="Visualize e acompanhe o status de teletrabalho dos núcleos"
-        />
+      {/* Page Header */}
+      <div className="border-b bg-card transition-colors">
+        <div className="container mx-auto px-6 lg:px-8 py-4 lg:py-6">
+          <PageHeader
+            title="Teletrabalho"
+            subtitle="Sistema de Gestão de Núcleos e Teletrabalho da Defensoria Pública"
+          />
+        </div>
+      </div>
 
-        {/* Top Filters (visible on all viewports) */}
-        <div className="px-3 lg:px-4 mt-2">
-          <Card className="border shadow-sm">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm">Filtros de Teletrabalho</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className="flex flex-wrap items-center gap-6">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox
-                    checked={filters.status.includes('all')}
-                    onCheckedChange={(checked) => {
-                      if (checked) setFilters({ status: ['all'] });
-                    }}
-                  />
-                  <span>Todos</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                  <Checkbox
-                    checked={filters.status.includes('active')}
-                    onCheckedChange={(checked) => {
-                      const current = filters.status.filter(s => s !== 'all');
-                      let next = checked ? [...current, 'active'] : current.filter(s => s !== 'active');
-                      if (next.length === 0) next = ['all'];
-                      setFilters({ status: next as any });
-                    }}
-                  />
-                  <span>Em Teletrabalho</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                  <Checkbox
-                    checked={filters.status.includes('scheduled')}
-                    onCheckedChange={(checked) => {
-                      const current = filters.status.filter(s => s !== 'all');
-                      let next = checked ? [...current, 'scheduled'] : current.filter(s => s !== 'scheduled');
-                      if (next.length === 0) next = ['all'];
-                      setFilters({ status: next as any });
-                    }}
-                  />
-                  <span>Agendados</span>
-                </label>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="container mx-auto px-6 lg:px-8">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium text-muted-foreground">Total de Núcleos</span>
+            </div>
+            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
+          </div>
+
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Laptop className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium text-muted-foreground">Em Teletrabalho</span>
+            </div>
+            <div className="text-2xl font-bold text-foreground">0</div>
+          </div>
+
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-5 w-5 text-green-600" />
+              <span className="text-sm font-medium text-muted-foreground">Coordenadores</span>
+            </div>
+            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
+          </div>
         </div>
 
-        {/* Mobile sidebar toggle */}
-        <div className="md:hidden px-3 lg:px-4 py-2 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex items-center gap-2 transition-all"
-            >
-              {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-              {sidebarOpen ? 'Fechar Filtros' : 'Filtros'}
+        {/* Search Bar */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar núcleo por nome ou cidade..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* Results Count */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-sm text-muted-foreground">
+            Exibindo {filteredNucleos.length} de {nucleos.length} núcleos
+          </span>
+        </div>
+
+        {/* Mapa dos Núcleos */}
+        {!loading && <MapViewCentral nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
+
+        {/* Empty State */}
+        {filteredNucleos.length === 0 && !loading && (
+          <div className="text-center py-12">
+            <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Nenhum núcleo encontrado
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Tente ajustar os termos de busca
+            </p>
+            <Button variant="outline" onClick={() => setSearchTerm('')}>
+              Limpar Busca
             </Button>
-            
-            {/* Mobile results counter */}
-            <div className="text-xs text-muted-foreground">
-              {loading ? 'Carregando...' : `${filteredNucleos.length} núcleo${filteredNucleos.length !== 1 ? 's' : ''}`}
-            </div>
           </div>
-        </div>
-
-        {/* Main content */}
-        <div className="flex h-[calc(100vh-140px)] lg:h-[calc(100vh-160px)]">
-          {/* Sidebar */}
-        <div className="hidden md:block w-72 lg:w-80 xl:w-96 bg-card border-r border-border h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-            <div className="p-4 lg:p-6">
-              <TeletrabalhoFilters
-                onFiltersChange={handleFiltersChange}
-                loading={loading}
-              />
-            </div>
-          </div>
-
-          {/* Map area */}
-          <div className="flex-1 relative">
-            {!loading && (
-              <MapViewTeletrabalho 
-                nucleos={filteredNucleos} 
-                onViewDetails={handleViewDetails}
-                filters={filters}
-              />
-            )}
-            
-            {/* Enhanced results counter */}
-            <div className="absolute top-3 lg:top-4 right-3 lg:right-4 z-10">
-              <div className="bg-background/95 backdrop-blur-sm px-3 lg:px-4 py-2 rounded-lg border shadow-sm transition-all duration-200 hover:shadow-md">
-                <div className="flex items-center gap-2">
-                  {loading && (
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                  )}
-                  <span className="text-xs lg:text-sm font-medium">
-                    {loading ? 'Carregando núcleos...' : 
-                     `${filteredNucleos.length} núcleo${filteredNucleos.length !== 1 ? 's' : ''} encontrado${filteredNucleos.length !== 1 ? 's' : ''}`}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Empty State */}
-            {filteredNucleos.length === 0 && !loading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center py-12">
-                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Nenhum núcleo encontrado
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    Tente ajustar os termos de busca
-                  </p>
-                  <Button variant="outline" onClick={() => setSearchTerm('')}>
-                    Limpar Busca
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </SimpleHeader>
   );
