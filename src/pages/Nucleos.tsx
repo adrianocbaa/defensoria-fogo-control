@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,6 +87,54 @@ const Nucleos = () => {
           title="Mapa de Teletrabalho"
           subtitle="Visualize e acompanhe o status de teletrabalho dos núcleos"
         />
+
+        {/* Top Filters (visible on all viewports) */}
+        <div className="px-3 lg:px-4 mt-2">
+          <Card className="border shadow-sm">
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm">Filtros de Teletrabalho</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div className="flex flex-wrap items-center gap-6">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={filters.status.includes('all')}
+                    onCheckedChange={(checked) => {
+                      if (checked) setFilters({ status: ['all'] });
+                    }}
+                  />
+                  <span>Todos</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                  <Checkbox
+                    checked={filters.status.includes('active')}
+                    onCheckedChange={(checked) => {
+                      const current = filters.status.filter(s => s !== 'all');
+                      let next = checked ? [...current, 'active'] : current.filter(s => s !== 'active');
+                      if (next.length === 0) next = ['all'];
+                      setFilters({ status: next as any });
+                    }}
+                  />
+                  <span>Em Teletrabalho</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                  <Checkbox
+                    checked={filters.status.includes('scheduled')}
+                    onCheckedChange={(checked) => {
+                      const current = filters.status.filter(s => s !== 'all');
+                      let next = checked ? [...current, 'scheduled'] : current.filter(s => s !== 'scheduled');
+                      if (next.length === 0) next = ['all'];
+                      setFilters({ status: next as any });
+                    }}
+                  />
+                  <span>Agendados</span>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Mobile sidebar toggle */}
         <div className="md:hidden px-3 lg:px-4 py-2 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
