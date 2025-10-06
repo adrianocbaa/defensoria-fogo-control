@@ -15,12 +15,14 @@ import {
   Users
 } from 'lucide-react';
 import { MapViewTeletrabalho } from '@/components/MapViewTeletrabalho';
+import { TeletrabalhoFilters, type TeletrabalhoFiltersData } from '@/components/TeletrabalhoFilters';
 
 const Teletrabalho = () => {
   const navigate = useNavigate();
   const { nucleos, loading } = useNucleosByModule('teletrabalho');
   const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<TeletrabalhoFiltersData>({ status: ['all'] });
 
   const filteredNucleos = nucleos.filter(nucleo => {
     const normalizedSearchTerm = normalizeText(searchTerm);
@@ -92,8 +94,19 @@ const Teletrabalho = () => {
           </span>
         </div>
 
+        {/* Filtros de Teletrabalho */}
+        <div className="mb-4">
+          <TeletrabalhoFilters onFiltersChange={setFilters} />
+        </div>
+
         {/* Mapa dos Núcleos */}
-        {!loading && <MapViewTeletrabalho nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
+        {!loading && (
+          <MapViewTeletrabalho 
+            nucleos={filteredNucleos} 
+            onViewDetails={handleViewDetails}
+            filters={filters}
+          />
+        )}
 
         {/* Empty State */}
         {filteredNucleos.length === 0 && !loading && (
