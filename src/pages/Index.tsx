@@ -33,7 +33,6 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHydrant, setFilterHydrant] = useState<'all' | 'with' | 'without'>('all');
   const [filterExpired, setFilterExpired] = useState<'all' | 'expired'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'valid' | 'expiring-soon' | 'expired'>('all');
   const [showNucleusForm, setShowNucleusForm] = useState(false);
   const { toast } = useToast();
 
@@ -53,10 +52,7 @@ const Index = () => {
                               new Date(nucleus.fireDepartmentLicense.validUntil) < new Date())
                            ));
 
-    const matchesStatus = filterStatus === 'all' ||
-                         nucleus.fireExtinguishers.some(ext => ext.status === filterStatus);
-
-    return matchesSearch && matchesHydrant && hasExpiredItems && matchesStatus;
+    return matchesSearch && matchesHydrant && hasExpiredItems;
   });
 
   const totalExtinguishers = nuclei.reduce((total, nucleus) => 
@@ -214,7 +210,7 @@ const Index = () => {
             />
           </div>
           
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
             <Button
               variant={filterHydrant === 'all' ? 'default' : 'outline'}
               size="sm"
@@ -247,41 +243,6 @@ const Index = () => {
               Vencidos
             </Button>
           </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium text-muted-foreground self-center">Status:</span>
-            <Button
-              variant={filterStatus === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterStatus('all')}
-            >
-              Todos
-            </Button>
-            <Button
-              variant={filterStatus === 'valid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterStatus('valid')}
-              className="border-success text-success hover:bg-success hover:text-success-foreground data-[state=active]:bg-success data-[state=active]:text-success-foreground"
-            >
-              Válidos
-            </Button>
-            <Button
-              variant={filterStatus === 'expiring-soon' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterStatus('expiring-soon')}
-              className="border-warning text-warning hover:bg-warning hover:text-warning-foreground data-[state=active]:bg-warning data-[state=active]:text-warning-foreground"
-            >
-              Vencendo
-            </Button>
-            <Button
-              variant={filterStatus === 'expired' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterStatus('expired')}
-              className="border-danger text-danger hover:bg-danger hover:text-danger-foreground data-[state=active]:bg-danger data-[state=active]:text-danger-foreground"
-            >
-              Vencidos
-            </Button>
-          </div>
         </div>
 
         {/* Results Count */}
@@ -297,11 +258,6 @@ const Index = () => {
           {filterExpired === 'expired' && (
             <Badge variant="destructive" className="text-xs">
               Vencidos
-            </Badge>
-          )}
-          {filterStatus !== 'all' && (
-            <Badge variant="secondary" className="text-xs">
-              Status: {filterStatus === 'valid' ? 'Válidos' : filterStatus === 'expiring-soon' ? 'Vencendo' : 'Vencidos'}
             </Badge>
           )}
         </div>
@@ -322,8 +278,6 @@ const Index = () => {
             <Button variant="outline" onClick={() => {
               setSearchTerm('');
               setFilterHydrant('all');
-              setFilterExpired('all');
-              setFilterStatus('all');
             }}>
               Limpar Filtros
             </Button>
