@@ -81,8 +81,11 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
     console.log('isMobile:', isMobile);
     setSelectedNucleus(nucleus);
     console.log('selectedNucleus set to:', nucleus.nome);
-    // Always open mobile modal flag; it only renders when isMobile is true
-    setShowMobileModal(true);
+    if (isMobile) {
+      setShowMobileModal(true);
+    } else {
+      setShowMobileModal(false);
+    }
   }, [isMobile]);
 
   // Fetch teletrabalho data first, before rendering markers
@@ -189,6 +192,11 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       }, 0);
 
       mapRef.current = map;
+
+      // Debug: map click
+      map.on('click', (ev) => {
+        console.log('Map clicked at:', ev.latlng);
+      });
     };
 
     initMap();
@@ -240,9 +248,17 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       const marker = L.marker([nucleus.lat!, nucleus.lng!], { icon })
         .addTo(mapRef.current!);
 
-      marker.on('click', (e) => {
-        e.originalEvent?.stopPropagation();
-        handleMarkerClick(nucleus);
+      marker.on('click', (e: any) => {
+        try {
+          // Fully stop Leaflet and DOM propagation to avoid map-level handlers interfering
+          (L as any).DomEvent?.stop(e);
+        } catch {
+          e.originalEvent?.stopPropagation?.();
+          e.originalEvent?.preventDefault?.();
+        }
+        console.log('Marker clicked:', nucleus.nome);
+        // Defer state update to next tick for reliability in Chrome
+        setTimeout(() => handleMarkerClick(nucleus), 0);
       });
 
       markersRef.current.push(marker);
