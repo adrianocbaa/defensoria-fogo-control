@@ -42,9 +42,17 @@ export default function Dashboard() {
   const { sectors, loading } = useUserSectors();
   const { sectors: allSectors, loading: sectorsLoading } = useAvailableSectors();
 
+  // Debug: Log para verificar os setores
+  console.log('User sectors:', sectors);
+  console.log('All available sectors:', allSectors);
+
   // Construir blocos de setores baseado nos setores do usuário
   const availableBlocks: SectorBlock[] = allSectors
-    .filter(sector => sectors.includes(sector.id))
+    .filter(sector => {
+      const hasAccess = sectors.includes(sector.id);
+      console.log(`Sector ${sector.id} (${sector.label}): ${hasAccess ? 'ALLOWED' : 'BLOCKED'}`);
+      return hasAccess;
+    })
     .map(sector => ({
       id: sector.id,
       title: sector.label,
@@ -53,6 +61,8 @@ export default function Dashboard() {
       color: sectorColors[sector.id]?.text || 'text-gray-600',
       bgColor: sectorColors[sector.id]?.bg || 'bg-gray-50 hover:bg-gray-100 border-gray-200',
     }));
+
+  console.log('Available blocks:', availableBlocks);
 
   if (loading || sectorsLoading) {
     return (
