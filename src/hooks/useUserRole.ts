@@ -18,17 +18,16 @@ export function useUserRole() {
 
     try {
       const { data, error } = await supabase
-        .from('profiles_secure')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
+        .rpc('get_user_role', { user_uuid: user.id });
 
       if (error) {
+        console.error('Error fetching user role:', error);
         setRole('viewer');
       } else {
-        setRole((data?.role as UserRole) || 'viewer');
+        setRole((data as UserRole) || 'viewer');
       }
     } catch (error) {
+      console.error('Error in fetchUserRole:', error);
       setRole('viewer');
     } finally {
       setLoading(false);
