@@ -68,6 +68,7 @@ interface MapViewTeletrabalhoProps {
 export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapViewTeletrabalhoProps) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const hasFitBounds = useRef(false);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [teletrabalhoData, setTeletrabalhoData] = useState<Record<string, TeletrabalhoData>>({});
@@ -246,11 +247,12 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       markersRef.current.push(marker);
     });
 
-    if (validNucleos.length > 0) {
+    if (validNucleos.length > 0 && !hasFitBounds.current) {
       const bounds = L.latLngBounds(
         validNucleos.map((n) => [n.lat!, n.lng!])
       );
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      hasFitBounds.current = true;
     }
   }, [nucleos, isMobile, teletrabalhoData, isLoadingData, filters, handleMarkerClick]);
 
