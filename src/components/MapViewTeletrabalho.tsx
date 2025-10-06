@@ -60,9 +60,12 @@ interface TeletrabalhoData {
 interface MapViewTeletrabalhoProps {
   nucleos: NucleoCentral[];
   onViewDetails: (nucleusId: string) => void;
+  filters?: {
+    status: ('all' | 'active' | 'scheduled')[];
+  };
 }
 
-export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletrabalhoProps) {
+export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapViewTeletrabalhoProps) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
@@ -194,7 +197,20 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    const validNucleos = nucleos.filter((n) => n.lat && n.lng);
+    let validNucleos = nucleos.filter((n) => n.lat && n.lng);
+
+    // Apply filters if provided
+    if (filters && !filters.status.includes('all')) {
+      validNucleos = validNucleos.filter((nucleus) => {
+        const teletrabalhoInfo = teletrabalhoData[nucleus.id];
+        const status = teletrabalhoInfo?.status || 'none';
+        
+        if (filters.status.includes('active') && status === 'active') return true;
+        if (filters.status.includes('scheduled') && status === 'scheduled') return true;
+        
+        return false;
+      });
+    }
 
     if (validNucleos.length === 0) return;
 
@@ -229,7 +245,7 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
       );
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [nucleos, isMobile, teletrabalhoData, isLoadingData]);
+  }, [nucleos, isMobile, teletrabalhoData, isLoadingData, filters]);
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
     const data = teletrabalhoData[nucleus.id];
