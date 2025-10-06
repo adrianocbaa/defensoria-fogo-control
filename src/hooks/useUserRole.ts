@@ -17,18 +17,29 @@ export function useUserRole() {
     }
 
     try {
+      // Query user_roles table to get the highest priority role
       const { data, error } = await supabase
-        .from('profiles_secure')
+        .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .order('role', { ascending: true });
 
       if (error) {
+        console.error('Error fetching user role:', error);
         setRole('viewer');
+      } else if (data && data.length > 0) {
+        // Get the highest priority role (admin > gm > editor > manutencao > viewer)
+        const roles = data.map(r => r.role);
+        if (roles.includes('admin')) setRole('admin');
+        else if (roles.includes('gm')) setRole('gm');
+        else if (roles.includes('editor')) setRole('editor');
+        else if (roles.includes('manutencao')) setRole('manutencao');
+        else setRole('viewer');
       } else {
-        setRole((data?.role as UserRole) || 'viewer');
+        setRole('viewer');
       }
     } catch (error) {
+      console.error('Exception fetching user role:', error);
       setRole('viewer');
     } finally {
       setLoading(false);
