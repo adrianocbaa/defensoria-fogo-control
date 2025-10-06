@@ -101,13 +101,18 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
       for (const nucleus of nucleos) {
         const nucleusRecords = recordsByNucleus[nucleus.id] || [];
         
+        // Normalize current date to start of day for comparison
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
         // Find one that is not "Finalizado"
         const activeTeletrabalho = nucleusRecords.find((t) => {
           const dataInicio = new Date(t.data_inicio);
+          const dataInicioDay = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), dataInicio.getDate());
           const dataFim = t.data_fim ? new Date(t.data_fim) : null;
+          const dataFimDay = dataFim ? new Date(dataFim.getFullYear(), dataFim.getMonth(), dataFim.getDate()) : null;
           
-          // Finalizado (histórico): tem data_fim e já passou
-          if (dataFim && dataFim < now) {
+          // Finalizado (histórico): tem data_fim e já passou (antes de hoje)
+          if (dataFimDay && dataFimDay < today) {
             return false;
           }
           
@@ -120,12 +125,13 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
 
         if (activeTeletrabalho) {
           const dataInicio = new Date(activeTeletrabalho.data_inicio);
+          const dataInicioDay = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), dataInicio.getDate());
           
-          // Agendado: data_inicio no futuro
-          if (dataInicio > now) {
+          // Agendado: data_inicio no futuro (depois de hoje)
+          if (dataInicioDay > today) {
             status = 'scheduled';
           } else {
-            // Em andamento: data_inicio já passou
+            // Em andamento: data_inicio é hoje ou já passou
             status = 'active';
           }
         }
