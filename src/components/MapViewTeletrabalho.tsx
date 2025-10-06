@@ -27,6 +27,16 @@ const greenIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+// Yellow icon for scheduled teletrabalho
+const yellowIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 // Default blue icon
 const blueIcon = new L.Icon({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -40,6 +50,7 @@ const blueIcon = new L.Icon({
 interface TeletrabalhoData {
   nucleusId: string;
   hasActiveTeletrabalho: boolean;
+  status: 'none' | 'scheduled' | 'active'; // none=blue, scheduled=yellow, active=green
   procedimento?: string;
   dataInicio?: string;
   dataFim?: string;
@@ -90,7 +101,7 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
       for (const nucleus of nucleos) {
         const nucleusRecords = recordsByNucleus[nucleus.id] || [];
         
-        // Find one that is "Em andamento" or "Agendado" (not Finalizado)
+        // Find one that is not "Finalizado"
         const activeTeletrabalho = nucleusRecords.find((t) => {
           const dataInicio = new Date(t.data_inicio);
           const dataFim = t.data_fim ? new Date(t.data_fim) : null;
@@ -105,10 +116,24 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
         });
 
         const hasActive = !!activeTeletrabalho;
+        let status: 'none' | 'scheduled' | 'active' = 'none';
+
+        if (activeTeletrabalho) {
+          const dataInicio = new Date(activeTeletrabalho.data_inicio);
+          
+          // Agendado: data_inicio no futuro
+          if (dataInicio > now) {
+            status = 'scheduled';
+          } else {
+            // Em andamento: data_inicio já passou
+            status = 'active';
+          }
+        }
 
         dataMap[nucleus.id] = {
           nucleusId: nucleus.id,
           hasActiveTeletrabalho: hasActive,
+          status,
           procedimento: activeTeletrabalho?.procedimento,
           dataInicio: activeTeletrabalho?.data_inicio,
           dataFim: activeTeletrabalho?.data_fim,
@@ -170,8 +195,14 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
     validNucleos.forEach((nucleus) => {
       // Determine icon based on teletrabalho status
       const teletrabalhoInfo = teletrabalhoData[nucleus.id];
-      const hasActiveTeletrabalho = teletrabalhoInfo?.hasActiveTeletrabalho || false;
-      const icon = hasActiveTeletrabalho ? greenIcon : blueIcon;
+      const status = teletrabalhoInfo?.status || 'none';
+      
+      let icon = blueIcon; // default: sem teletrabalho
+      if (status === 'scheduled') {
+        icon = yellowIcon; // agendado
+      } else if (status === 'active') {
+        icon = greenIcon; // em andamento
+      }
       
       const marker = L.marker([nucleus.lat!, nucleus.lng!], { icon })
         .addTo(mapRef.current!);
@@ -214,9 +245,19 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
         {data && (
           <div className="border rounded-lg p-3 space-y-2 bg-muted/30">
             <div className="flex items-center gap-2">
-              <Laptop className={`h-4 w-4 ${data.hasActiveTeletrabalho ? 'text-blue-600' : 'text-muted-foreground'}`} />
-              <span className={`text-sm font-medium ${data.hasActiveTeletrabalho ? 'text-blue-600' : 'text-muted-foreground'}`}>
-                {data.hasActiveTeletrabalho ? 'Em Teletrabalho' : 'Sem Teletrabalho Ativo'}
+              <Laptop className={`h-4 w-4 ${
+                data.status === 'active' ? 'text-green-600' : 
+                data.status === 'scheduled' ? 'text-yellow-600' : 
+                'text-muted-foreground'
+              }`} />
+              <span className={`text-sm font-medium ${
+                data.status === 'active' ? 'text-green-600' : 
+                data.status === 'scheduled' ? 'text-yellow-600' : 
+                'text-muted-foreground'
+              }`}>
+                {data.status === 'active' ? 'Em Teletrabalho' : 
+                 data.status === 'scheduled' ? 'Teletrabalho Agendado' : 
+                 'Sem Teletrabalho Ativo'}
               </span>
             </div>
 
