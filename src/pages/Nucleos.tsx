@@ -109,13 +109,7 @@ const Nucleos = () => {
         {/* Main content */}
         <div className="flex h-[calc(100vh-140px)] lg:h-[calc(100vh-160px)]">
           {/* Sidebar */}
-          <div className={`
-            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-            md:translate-x-0 transition-transform duration-300 ease-in-out
-            w-72 lg:w-80 xl:w-96 bg-card border-r border-border
-            fixed md:relative z-40 h-full
-            overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent
-          `}>
+        <div className="hidden md:block w-72 lg:w-80 xl:w-96 bg-card border-r border-border h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <div className="p-4 lg:p-6">
               <TeletrabalhoFilters
                 onFiltersChange={handleFiltersChange}
