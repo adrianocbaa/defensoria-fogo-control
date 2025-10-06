@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NucleoCentral } from '@/hooks/useNucleosCentral';
@@ -73,6 +73,15 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
   const [teletrabalhoData, setTeletrabalhoData] = useState<Record<string, TeletrabalhoData>>({});
   const [isLoadingData, setIsLoadingData] = useState(true);
   const isMobile = useIsMobile();
+
+  // Stable callback for marker click
+  const handleMarkerClick = useCallback((nucleus: NucleoCentral) => {
+    console.log('handleMarkerClick called for:', nucleus.nome);
+    setSelectedNucleus(nucleus);
+    if (isMobile) {
+      setShowMobileModal(true);
+    }
+  }, [isMobile]);
 
   // Fetch teletrabalho data first, before rendering markers
   useEffect(() => {
@@ -229,11 +238,9 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       const marker = L.marker([nucleus.lat!, nucleus.lng!], { icon })
         .addTo(mapRef.current!);
 
-      marker.on('click', () => {
-        setSelectedNucleus(nucleus);
-        if (isMobile) {
-          setShowMobileModal(true);
-        }
+      marker.on('click', (e) => {
+        e.originalEvent?.stopPropagation();
+        handleMarkerClick(nucleus);
       });
 
       markersRef.current.push(marker);
@@ -245,7 +252,7 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       );
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [nucleos, isMobile, teletrabalhoData, isLoadingData, filters]);
+  }, [nucleos, isMobile, teletrabalhoData, isLoadingData, filters, handleMarkerClick]);
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
     const data = teletrabalhoData[nucleus.id];
