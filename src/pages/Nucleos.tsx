@@ -79,96 +79,94 @@ const Nucleos = () => {
 
   return (
     <SimpleHeader>
-      {/* Page Header */}
-      <div className="border-b bg-card transition-colors">
-        <div className="container mx-auto px-6 lg:px-8 py-4 lg:py-6">
-          <PageHeader
-            title="Teletrabalho"
-            subtitle="Sistema de Gestão de Núcleos e Teletrabalho da Defensoria Pública"
-          />
-        </div>
-      </div>
+      <div className="min-h-screen bg-background">
+        {/* Page Header */}
+        <PageHeader
+          title="Mapa de Teletrabalho"
+          subtitle="Visualize e acompanhe o status de teletrabalho dos núcleos"
+        />
 
-      {/* Mobile sidebar toggle */}
-      <div className="md:hidden px-6 py-2 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex items-center gap-2 transition-all"
-          >
-            {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            {sidebarOpen ? 'Fechar Filtros' : 'Filtros'}
-          </Button>
-          
-          {/* Mobile results counter */}
-          <div className="text-xs text-muted-foreground">
-            {loading ? 'Carregando...' : `${filteredNucleos.length} núcleo${filteredNucleos.length !== 1 ? 's' : ''}`}
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex h-[calc(100vh-280px)] lg:h-[calc(100vh-300px)]">
-        {/* Sidebar */}
-        <div className={`
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-          md:translate-x-0 transition-transform duration-300 ease-in-out
-          w-72 lg:w-80 xl:w-96 bg-card border-r border-border
-          fixed md:relative z-40 h-full
-          overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent
-        `}>
-          <div className="p-4 lg:p-6">
-            <TeletrabalhoFilters
-              onFiltersChange={handleFiltersChange}
-              loading={loading}
-            />
+        {/* Mobile sidebar toggle */}
+        <div className="md:hidden px-3 lg:px-4 py-2 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="flex items-center gap-2 transition-all"
+            >
+              {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              {sidebarOpen ? 'Fechar Filtros' : 'Filtros'}
+            </Button>
+            
+            {/* Mobile results counter */}
+            <div className="text-xs text-muted-foreground">
+              {loading ? 'Carregando...' : `${filteredNucleos.length} núcleo${filteredNucleos.length !== 1 ? 's' : ''}`}
+            </div>
           </div>
         </div>
 
-        {/* Map area */}
-        <div className="flex-1 relative">
-          {!loading && (
-            <MapViewTeletrabalho 
-              nucleos={filteredNucleos} 
-              onViewDetails={handleViewDetails}
-              filters={filters}
-            />
-          )}
-          
-          {/* Enhanced results counter */}
-          <div className="absolute top-3 lg:top-4 right-3 lg:right-4 z-10">
-            <div className="bg-background/95 backdrop-blur-sm px-3 lg:px-4 py-2 rounded-lg border shadow-sm transition-all duration-200 hover:shadow-md">
-              <div className="flex items-center gap-2">
-                {loading && (
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                )}
-                <span className="text-xs lg:text-sm font-medium">
-                  {loading ? 'Carregando núcleos...' : 
-                   `${filteredNucleos.length} núcleo${filteredNucleos.length !== 1 ? 's' : ''} encontrado${filteredNucleos.length !== 1 ? 's' : ''}`}
-                </span>
-              </div>
+        {/* Main content */}
+        <div className="flex h-[calc(100vh-140px)] lg:h-[calc(100vh-160px)]">
+          {/* Sidebar */}
+          <div className={`
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+            md:translate-x-0 transition-transform duration-300 ease-in-out
+            w-72 lg:w-80 xl:w-96 bg-card border-r border-border
+            fixed md:relative z-40 h-full
+            overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent
+          `}>
+            <div className="p-4 lg:p-6">
+              <TeletrabalhoFilters
+                onFiltersChange={handleFiltersChange}
+                loading={loading}
+              />
             </div>
           </div>
 
-          {/* Empty State */}
-          {filteredNucleos.length === 0 && !loading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center py-12">
-                <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  Nenhum núcleo encontrado
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Tente ajustar os termos de busca
-                </p>
-                <Button variant="outline" onClick={() => setSearchTerm('')}>
-                  Limpar Busca
-                </Button>
+          {/* Map area */}
+          <div className="flex-1 relative">
+            {!loading && (
+              <MapViewTeletrabalho 
+                nucleos={filteredNucleos} 
+                onViewDetails={handleViewDetails}
+                filters={filters}
+              />
+            )}
+            
+            {/* Enhanced results counter */}
+            <div className="absolute top-3 lg:top-4 right-3 lg:right-4 z-10">
+              <div className="bg-background/95 backdrop-blur-sm px-3 lg:px-4 py-2 rounded-lg border shadow-sm transition-all duration-200 hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  {loading && (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  )}
+                  <span className="text-xs lg:text-sm font-medium">
+                    {loading ? 'Carregando núcleos...' : 
+                     `${filteredNucleos.length} núcleo${filteredNucleos.length !== 1 ? 's' : ''} encontrado${filteredNucleos.length !== 1 ? 's' : ''}`}
+                  </span>
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Empty State */}
+            {filteredNucleos.length === 0 && !loading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center py-12">
+                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Nenhum núcleo encontrado
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Tente ajustar os termos de busca
+                  </p>
+                  <Button variant="outline" onClick={() => setSearchTerm('')}>
+                    Limpar Busca
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </SimpleHeader>
