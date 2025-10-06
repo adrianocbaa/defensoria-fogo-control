@@ -57,23 +57,41 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [teletrabalhoData, setTeletrabalhoData] = useState<Record<string, TeletrabalhoData>>({});
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const isMobile = useIsMobile();
 
+  // Fetch teletrabalho data first, before rendering markers
   useEffect(() => {
     const fetchTeletrabalhoData = async () => {
+      if (nucleos.length === 0) {
+        setIsLoadingData(false);
+        return;
+      }
+
+      setIsLoadingData(true);
       const dataMap: Record<string, TeletrabalhoData> = {};
       const now = new Date();
 
-      for (const nucleus of nucleos) {
-        // Fetch all teletrabalho records
-        const { data: teletrabalhoRecords } = await supabase
-          .from('nucleo_teletrabalho')
-          .select('*')
-          .eq('nucleo_id', nucleus.id)
-          .order('data_inicio', { ascending: false });
+      // Fetch all at once for better performance
+      const nucleoIds = nucleos.map(n => n.id);
+      const { data: allTeletrabalhoRecords } = await supabase
+        .from('nucleo_teletrabalho')
+        .select('*')
+        .in('nucleo_id', nucleoIds)
+        .order('data_inicio', { ascending: false });
 
+      // Group by nucleus_id
+      const recordsByNucleus = allTeletrabalhoRecords?.reduce((acc, record) => {
+        if (!acc[record.nucleo_id]) acc[record.nucleo_id] = [];
+        acc[record.nucleo_id].push(record);
+        return acc;
+      }, {} as Record<string, any[]>) || {};
+
+      for (const nucleus of nucleos) {
+        const nucleusRecords = recordsByNucleus[nucleus.id] || [];
+        
         // Find one that is "Em andamento" or "Agendado" (not Finalizado)
-        const activeTeletrabalho = teletrabalhoRecords?.find((t) => {
+        const activeTeletrabalho = nucleusRecords.find((t) => {
           const dataInicio = new Date(t.data_inicio);
           const dataFim = t.data_fim ? new Date(t.data_fim) : null;
           
@@ -99,11 +117,10 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
       }
 
       setTeletrabalhoData(dataMap);
+      setIsLoadingData(false);
     };
 
-    if (nucleos.length > 0) {
-      fetchTeletrabalhoData();
-    }
+    fetchTeletrabalhoData();
   }, [nucleos]);
 
   useEffect(() => {
@@ -139,8 +156,9 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
     };
   }, []);
 
+  // Render markers only after teletrabalho data is loaded
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || isLoadingData) return;
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
@@ -174,7 +192,7 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails }: MapViewTeletraba
       );
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [nucleos, isMobile, teletrabalhoData]);
+  }, [nucleos, isMobile, teletrabalhoData, isLoadingData]);
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
     const data = teletrabalhoData[nucleus.id];
