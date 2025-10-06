@@ -365,10 +365,10 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
 
       {/* Desktop Sidebar */}
       {!isMobile && selectedNucleus && (
-        <div className="absolute top-4 left-4 w-80 bg-white rounded-lg shadow-lg border z-[1000]">
+        <div className="absolute top-4 left-4 w-80 bg-card rounded-lg shadow-lg border z-[1000]">
           <div className="p-4">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="font-semibold text-lg">{selectedNucleus.nome}</h3>
+              <h3 className="font-semibold text-lg text-foreground">{selectedNucleus.nome}</h3>
               <Button
                 variant="ghost"
                 size="icon"
@@ -385,9 +385,9 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
 
       {/* Desktop: Nucleus list sidebar */}
       {!isMobile && (
-        <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
+        <div className="absolute top-4 right-4 w-64 bg-card rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
           <div className="p-4">
-            <h3 className="font-semibold text-sm mb-3">
+            <h3 className="font-semibold text-sm mb-3 text-foreground">
               Lista de Núcleos ({nucleos.length})
             </h3>
             <div className="space-y-2">
@@ -399,7 +399,7 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
                     selectedNucleus?.id === nucleus.id ? 'bg-primary/10 border-primary/20 border' : ''
                   }`}
                 >
-                  <div className="font-medium">{nucleus.nome}</div>
+                  <div className="font-medium text-foreground">{nucleus.nome}</div>
                   <div className="text-muted-foreground">{nucleus.cidade}</div>
                 </button>
               ))}
@@ -411,10 +411,10 @@ export function MapViewTeletrabalho({ nucleos, onViewDetails, filters }: MapView
       {/* Mobile Modal */}
       {isMobile && selectedNucleus && showMobileModal && (
         <div className="fixed inset-0 bg-black/50 z-[1001] flex items-end justify-center p-4">
-          <div className="bg-white rounded-t-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-card rounded-t-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-4">
               <div className="flex items-start justify-between mb-4">
-                <h3 className="font-semibold text-lg">{selectedNucleus.nome}</h3>
+                <h3 className="font-semibold text-lg text-foreground">{selectedNucleus.nome}</h3>
                 <Button
                   variant="ghost"
                   size="icon"
