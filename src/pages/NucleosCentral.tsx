@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
@@ -6,9 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useNucleosCentral } from '@/hooks/useNucleosCentral';
+import { useNucleosCentral, useModules } from '@/hooks/useNucleosCentral';
 import { normalizeText } from '@/lib/utils';
-import { Plus, Search, Building2, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Building2, FileSpreadsheet, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { MapViewCentral } from '@/components/MapViewCentral';
 import { ImportarNucleosCentral } from '@/components/ImportarNucleosCentral';
 import {
@@ -21,17 +29,59 @@ import {
 const NucleosCentral = () => {
   const navigate = useNavigate();
   const { nucleos, loading, addNucleo } = useNucleosCentral();
+  const { modules } = useModules();
   const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
+  const [moduleFilter, setModuleFilter] = useState<string>('all');
+  const [visibilityData, setVisibilityData] = useState<Record<string, string[]>>({});
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  // Buscar dados de visibilidade dos núcleos
+  useEffect(() => {
+    const fetchVisibilityData = async () => {
+      const { data, error } = await supabase
+        .from('nucleo_module_visibility')
+        .select('nucleo_id, module_key');
+      
+      if (error) {
+        console.error('Erro ao buscar visibilidade:', error);
+        return;
+      }
+
+      // Organizar os dados por nucleo_id
+      const organized: Record<string, string[]> = {};
+      data?.forEach((item) => {
+        if (!organized[item.nucleo_id]) {
+          organized[item.nucleo_id] = [];
+        }
+        organized[item.nucleo_id].push(item.module_key);
+      });
+      
+      setVisibilityData(organized);
+    };
+
+    fetchVisibilityData();
+  }, []);
+
   const filteredNucleos = nucleos.filter((nucleus) => {
     const normalizedSearchTerm = normalizeText(searchTerm);
-    return (
+    const matchesSearch = 
       normalizeText(nucleus.nome).includes(normalizedSearchTerm) ||
-      normalizeText(nucleus.cidade).includes(normalizedSearchTerm)
-    );
+      normalizeText(nucleus.cidade).includes(normalizedSearchTerm);
+    
+    // Filtro de módulo
+    if (moduleFilter === 'all') {
+      return matchesSearch;
+    }
+    
+    if (moduleFilter === 'none') {
+      // Núcleos sem visibilidade configurada
+      return matchesSearch && (!visibilityData[nucleus.id] || visibilityData[nucleus.id].length === 0);
+    }
+    
+    // Núcleos visíveis no módulo selecionado
+    return matchesSearch && visibilityData[nucleus.id]?.includes(moduleFilter);
   });
 
   const handleViewDetails = (nucleusId: string) => {
@@ -136,6 +186,25 @@ const NucleosCentral = () => {
               className="pl-10"
             />
           </div>
+          <div className="w-full sm:w-[280px]">
+            <Select value={moduleFilter} onValueChange={setModuleFilter}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <SelectValue placeholder="Filtrar por módulo" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os módulos</SelectItem>
+                <SelectItem value="none">Sem visibilidade configurada</SelectItem>
+                {modules.map((module) => (
+                  <SelectItem key={module.id} value={module.key}>
+                    {module.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Results Count */}
@@ -154,8 +223,14 @@ const NucleosCentral = () => {
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum núcleo encontrado</h3>
             <p className="text-muted-foreground mb-4">Tente ajustar os termos de busca</p>
-            <Button variant="outline" onClick={() => setSearchTerm('')}>
-              Limpar Busca
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchTerm('');
+                setModuleFilter('all');
+              }}
+            >
+              Limpar Filtros
             </Button>
           </div>
         )}
