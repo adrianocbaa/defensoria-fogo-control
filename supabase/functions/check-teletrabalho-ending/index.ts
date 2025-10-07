@@ -21,8 +21,15 @@ serve(async (req: Request) => {
 
     console.log("Checking for teletrabalho ending today...");
 
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split("T")[0];
+    // Get today's date in Brazil timezone (America/Cuiaba - MT) in YYYY-MM-DD format
+    const brazilDate = new Date().toLocaleString("en-CA", { 
+      timeZone: "America/Cuiaba",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).split(",")[0]; // Format: YYYY-MM-DD
+    
+    console.log(`Current date in Brazil (MT): ${brazilDate}`);
 
     // Find all teletrabalho records ending today
     const { data: endingTeletrabalhos, error: fetchError } = await supabase
@@ -36,7 +43,7 @@ serve(async (req: Request) => {
           cidade
         )
       `)
-      .eq("data_fim", today);
+      .eq("data_fim", brazilDate);
 
     if (fetchError) {
       console.error("Error fetching teletrabalho records:", fetchError);
