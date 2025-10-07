@@ -240,14 +240,6 @@ function RDOResumo() {
   );
 }
 
-function RDODiario() {
-  return <PlaceholderSection 
-    title="Diário de Obra" 
-    description="Registro diário de atividades executadas"
-    icon={FileText}
-  />;
-}
-
 function RDOEquipe() {
   return <PlaceholderSection 
     title="Equipe" 
@@ -497,7 +489,6 @@ export function RDO() {
           <Routes>
             <Route index element={<Navigate to="resumo" replace />} />
             <Route path="resumo" element={<RDOResumo />} />
-            <Route path="diario" element={<RDODiario />} />
             <Route path="equipe" element={<RDOEquipe />} />
             <Route path="equipamentos" element={<RDOEquipamentos />} />
             <Route path="materiais" element={<RDOMateriais />} />
