@@ -313,6 +313,10 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/obras/:obraId/rdo" 
+        element={<Navigate to="resumo" replace />}
+      />
+      <Route 
         path="/obras/:obraId/rdo/resumo" 
         element={
           <ProtectedRoute>

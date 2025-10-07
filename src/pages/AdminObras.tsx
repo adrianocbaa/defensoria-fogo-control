@@ -281,7 +281,7 @@ export function AdminObras() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/obras/${obra.id}/rdo`)}
+                          onClick={() => navigate(`/obras/${obra.id}/rdo/resumo`)}
                           title="RDO - Relatório Diário de Obra"
                           className="min-h-[44px] min-w-[44px]"
                         >

@@ -349,12 +349,6 @@ export function RDO() {
 
         if (error) throw error;
         setObra(data);
-
-        // Load last visited section
-        const lastSection = localStorage.getItem(`rdo_last_section_${obraId}`);
-        if (lastSection && window.location.pathname === `/obras/${obraId}/rdo`) {
-          navigate(`/obras/${obraId}/rdo/${lastSection}`, { replace: true });
-        }
       } catch (error) {
         console.error('Erro ao carregar obra:', error);
         toast.error('Erro ao carregar dados da obra');
