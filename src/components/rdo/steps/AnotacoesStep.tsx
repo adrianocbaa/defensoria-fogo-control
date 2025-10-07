@@ -44,7 +44,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
               {/* Manhã */}
               <div className="space-y-3">
                 <Label className="text-sm">Manhã:</Label>
-                <RadioGroup value={formData.clima_manha} onValueChange={(v) => updateField('clima_manha', v)}>
+                <RadioGroup value={formData.clima_manha} onValueChange={(v) => v && updateField('clima_manha', v)}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="claro" id="clima-manha-claro" />
@@ -74,7 +74,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
               {/* Tarde */}
               <div className="space-y-3">
                 <Label className="text-sm">Tarde:</Label>
-                <RadioGroup value={formData.clima_tarde} onValueChange={(v) => updateField('clima_tarde', v)}>
+                <RadioGroup value={formData.clima_tarde} onValueChange={(v) => v && updateField('clima_tarde', v)}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="claro" id="clima-tarde-claro" />
@@ -104,7 +104,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
               {/* Noite */}
               <div className="space-y-3">
                 <Label className="text-sm">Noite:</Label>
-                <RadioGroup value={formData.clima_noite} onValueChange={(v) => updateField('clima_noite', v)}>
+                <RadioGroup value={formData.clima_noite} onValueChange={(v) => v && updateField('clima_noite', v)}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="claro" id="clima-noite-claro" />
@@ -139,7 +139,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
               {/* Manhã */}
               <div className="space-y-3">
                 <Label className="text-sm">Manhã:</Label>
-                <RadioGroup value={formData.cond_manha} onValueChange={(v) => updateField('cond_manha', v)}>
+                <RadioGroup value={formData.cond_manha} onValueChange={(v) => v && updateField('cond_manha', v)}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="praticavel" id="cond-manha-praticavel" />
@@ -162,7 +162,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
               {/* Tarde */}
               <div className="space-y-3">
                 <Label className="text-sm">Tarde:</Label>
-                <RadioGroup value={formData.cond_tarde} onValueChange={(v) => updateField('cond_tarde', v)}>
+                <RadioGroup value={formData.cond_tarde} onValueChange={(v) => v && updateField('cond_tarde', v)}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="praticavel" id="cond-tarde-praticavel" />
@@ -185,7 +185,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
               {/* Noite */}
               <div className="space-y-3">
                 <Label className="text-sm">Noite:</Label>
-                <RadioGroup value={formData.cond_noite} onValueChange={(v) => updateField('cond_noite', v)}>
+                <RadioGroup value={formData.cond_noite} onValueChange={(v) => v && updateField('cond_noite', v)}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="praticavel" id="cond-noite-praticavel" />
