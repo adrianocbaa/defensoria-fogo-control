@@ -2,9 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Copy, Sun, Cloud, CloudRain, Check, X } from "lucide-react";
 import { RdoFormData } from "@/hooks/useRdoForm";
 
 interface AnotacoesStepProps {
@@ -33,93 +33,177 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
         </div>
 
         {/* Condições Climáticas */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <h3 className="text-lg font-semibold">Condições Climáticas</h3>
           
-          {/* Manhã */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Clima - Manhã</Label>
-              <Select value={formData.clima_manha} onValueChange={(v) => updateField('clima_manha', v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="claro">☀️ Claro</SelectItem>
-                  <SelectItem value="nublado">☁️ Nublado</SelectItem>
-                  <SelectItem value="chuvoso">🌧️ Chuvoso</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Condição - Manhã</Label>
-              <Select value={formData.cond_manha} onValueChange={(v) => updateField('cond_manha', v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="praticavel">✓ Praticável</SelectItem>
-                  <SelectItem value="impraticavel">✗ Impraticável</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Coluna Clima */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-muted-foreground">Clima</h4>
+              
+              {/* Manhã */}
+              <div className="space-y-3">
+                <Label className="text-sm">Manhã:</Label>
+                <RadioGroup value={formData.clima_manha} onValueChange={(v) => updateField('clima_manha', v)}>
+                  <div className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="claro" id="clima-manha-claro" />
+                      <Label htmlFor="clima-manha-claro" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Sun className="h-4 w-4 text-yellow-500" />
+                        Claro
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="nublado" id="clima-manha-nublado" />
+                      <Label htmlFor="clima-manha-nublado" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Cloud className="h-4 w-4 text-gray-500" />
+                        Nublado
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="chuvoso" id="clima-manha-chuvoso" />
+                      <Label htmlFor="clima-manha-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
+                        <CloudRain className="h-4 w-4 text-blue-500" />
+                        Chuvoso
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
 
-          {/* Tarde */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Clima - Tarde</Label>
-              <Select value={formData.clima_tarde} onValueChange={(v) => updateField('clima_tarde', v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="claro">☀️ Claro</SelectItem>
-                  <SelectItem value="nublado">☁️ Nublado</SelectItem>
-                  <SelectItem value="chuvoso">🌧️ Chuvoso</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Condição - Tarde</Label>
-              <Select value={formData.cond_tarde} onValueChange={(v) => updateField('cond_tarde', v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="praticavel">✓ Praticável</SelectItem>
-                  <SelectItem value="impraticavel">✗ Impraticável</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              {/* Tarde */}
+              <div className="space-y-3">
+                <Label className="text-sm">Tarde:</Label>
+                <RadioGroup value={formData.clima_tarde} onValueChange={(v) => updateField('clima_tarde', v)}>
+                  <div className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="claro" id="clima-tarde-claro" />
+                      <Label htmlFor="clima-tarde-claro" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Sun className="h-4 w-4 text-yellow-500" />
+                        Claro
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="nublado" id="clima-tarde-nublado" />
+                      <Label htmlFor="clima-tarde-nublado" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Cloud className="h-4 w-4 text-gray-500" />
+                        Nublado
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="chuvoso" id="clima-tarde-chuvoso" />
+                      <Label htmlFor="clima-tarde-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
+                        <CloudRain className="h-4 w-4 text-blue-500" />
+                        Chuvoso
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
 
-          {/* Noite */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Clima - Noite</Label>
-              <Select value={formData.clima_noite} onValueChange={(v) => updateField('clima_noite', v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="claro">☀️ Claro</SelectItem>
-                  <SelectItem value="nublado">☁️ Nublado</SelectItem>
-                  <SelectItem value="chuvoso">🌧️ Chuvoso</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Noite */}
+              <div className="space-y-3">
+                <Label className="text-sm">Noite:</Label>
+                <RadioGroup value={formData.clima_noite} onValueChange={(v) => updateField('clima_noite', v)}>
+                  <div className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="claro" id="clima-noite-claro" />
+                      <Label htmlFor="clima-noite-claro" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Sun className="h-4 w-4 text-yellow-500" />
+                        Claro
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="nublado" id="clima-noite-nublado" />
+                      <Label htmlFor="clima-noite-nublado" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Cloud className="h-4 w-4 text-gray-500" />
+                        Nublado
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="chuvoso" id="clima-noite-chuvoso" />
+                      <Label htmlFor="clima-noite-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
+                        <CloudRain className="h-4 w-4 text-blue-500" />
+                        Chuvoso
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Condição - Noite</Label>
-              <Select value={formData.cond_noite} onValueChange={(v) => updateField('cond_noite', v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="praticavel">✓ Praticável</SelectItem>
-                  <SelectItem value="impraticavel">✗ Impraticável</SelectItem>
-                </SelectContent>
-              </Select>
+
+            {/* Coluna Condições */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm text-muted-foreground">Condições</h4>
+              
+              {/* Manhã */}
+              <div className="space-y-3">
+                <Label className="text-sm">Manhã:</Label>
+                <RadioGroup value={formData.cond_manha} onValueChange={(v) => updateField('cond_manha', v)}>
+                  <div className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="praticavel" id="cond-manha-praticavel" />
+                      <Label htmlFor="cond-manha-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Praticável
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="impraticavel" id="cond-manha-impraticavel" />
+                      <Label htmlFor="cond-manha-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
+                        <X className="h-4 w-4 text-red-500" />
+                        Impraticável
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Tarde */}
+              <div className="space-y-3">
+                <Label className="text-sm">Tarde:</Label>
+                <RadioGroup value={formData.cond_tarde} onValueChange={(v) => updateField('cond_tarde', v)}>
+                  <div className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="praticavel" id="cond-tarde-praticavel" />
+                      <Label htmlFor="cond-tarde-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Praticável
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="impraticavel" id="cond-tarde-impraticavel" />
+                      <Label htmlFor="cond-tarde-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
+                        <X className="h-4 w-4 text-red-500" />
+                        Impraticável
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Noite */}
+              <div className="space-y-3">
+                <Label className="text-sm">Noite:</Label>
+                <RadioGroup value={formData.cond_noite} onValueChange={(v) => updateField('cond_noite', v)}>
+                  <div className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="praticavel" id="cond-noite-praticavel" />
+                      <Label htmlFor="cond-noite-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Praticável
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="impraticavel" id="cond-noite-impraticavel" />
+                      <Label htmlFor="cond-noite-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
+                        <X className="h-4 w-4 text-red-500" />
+                        Impraticável
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
             </div>
           </div>
 
