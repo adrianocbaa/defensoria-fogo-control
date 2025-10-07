@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Save, Plus, X, MapPin, Shield, Target, Droplets, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Plus, X, MapPin, Shield, Target, Droplets, FileText, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { DocumentUpload } from '@/components/DocumentUpload';
 
@@ -293,6 +293,20 @@ export default function PreventivosEdit() {
     setExtinguishers(updated);
   };
 
+  const copyExtinguisher = (index: number) => {
+    const extToCopy = extinguishers[index];
+    const newExtinguisher: FireExtinguisher = {
+      type: extToCopy.type,
+      location: '', // Deixar vazio para preenchimento
+      capacity: extToCopy.capacity,
+      expiration_date: extToCopy.expiration_date,
+      hydrostatic_test: extToCopy.hydrostatic_test,
+      support_type: extToCopy.support_type,
+      has_vertical_signage: extToCopy.has_vertical_signage,
+    };
+    setExtinguishers([...extinguishers, newExtinguisher]);
+  };
+
   // Funções para Hidrantes
   const addHydrant = () => {
     setHydrants([...hydrants, {
@@ -452,14 +466,26 @@ export default function PreventivosEdit() {
                 <div key={index} className="p-4 border rounded-lg space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium">Extintor {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeExtinguisher(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyExtinguisher(index)}
+                        title="Copiar extintor"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeExtinguisher(index)}
+                        title="Remover extintor"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
