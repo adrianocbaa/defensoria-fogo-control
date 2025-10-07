@@ -49,13 +49,13 @@ export function useRdoForm(obraId: string, data: string) {
     },
   });
 
-  // Atualizar formData quando carregar o RDO existente
+  // Atualizar formData quando carregar o RDO existente (apenas na primeira carga)
   useEffect(() => {
-    if (rdoReport) {
+    if (rdoReport && !formData.id) {
       setFormData(rdoReport as RdoFormData);
       setHasChanges(false);
     }
-  }, [rdoReport]);
+  }, [rdoReport?.id]);
 
   // Mutation para salvar/atualizar
   const saveMutation = useMutation({
