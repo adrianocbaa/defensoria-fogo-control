@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RDOSidebar } from '@/components/RDOSidebar';
+import { RdoCalendar } from '@/components/rdo/RdoCalendar';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,9 +17,23 @@ import {
   BreadcrumbPage, 
   BreadcrumbSeparator 
 } from '@/components/ui/breadcrumb';
-import { ArrowLeft, Lock, FileText } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Lock, 
+  FileText,
+  ClipboardCheck,
+  ActivitySquare,
+  AlertTriangle,
+  MessageSquareText,
+  Camera,
+  Video
+} from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
+import { useRdoCounts, useRdoCalendar, useRdoRecentes, useFotosRecentes } from '@/hooks/useRdoData';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface Obra {
   id: string;
@@ -64,11 +79,165 @@ function PlaceholderSection({
 }
 
 function RDOResumo() {
-  return <PlaceholderSection 
-    title="Resumo da Obra" 
-    description="Visão geral do RDO e indicadores principais"
-    icon={FileText}
-  />;
+  const { obraId } = useParams();
+  const navigate = useNavigate();
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const { data: counts, isLoading: countsLoading } = useRdoCounts(obraId!, currentMonth);
+  const { data: calendarData, isLoading: calendarLoading } = useRdoCalendar(obraId!, currentMonth);
+  const { data: recentReports, isLoading: reportsLoading } = useRdoRecentes(obraId!);
+  const { data: recentPhotos, isLoading: photosLoading } = useFotosRecentes(obraId!);
+
+  const counterCards = [
+    { title: 'Relatórios', value: counts?.relatorios || 0, icon: ClipboardCheck, color: 'text-blue-500' },
+    { title: 'Atividades', value: counts?.atividades || 0, icon: ActivitySquare, color: 'text-green-500' },
+    { title: 'Ocorrências', value: counts?.ocorrencias || 0, icon: AlertTriangle, color: 'text-red-500' },
+    { title: 'Comentários', value: counts?.comentarios || 0, icon: MessageSquareText, color: 'text-purple-500' },
+    { title: 'Fotos', value: counts?.fotos || 0, icon: Camera, color: 'text-orange-500' },
+    { title: 'Vídeos', value: counts?.videos || 0, icon: Video, color: 'text-pink-500' },
+  ];
+
+  const statusConfig = {
+    rascunho: { label: 'Rascunho', color: 'bg-gray-100 text-gray-800' },
+    preenchendo: { label: 'Preenchendo', color: 'bg-orange-100 text-orange-800' },
+    concluido: { label: 'Concluído', color: 'bg-green-100 text-green-800' },
+    aprovado: { label: 'Aprovado', color: 'bg-blue-100 text-blue-800' },
+    reprovado: { label: 'Reprovado', color: 'bg-red-100 text-red-800' },
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Counter Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {counterCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Card key={card.title}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Icon className={cn("h-5 w-5", card.color)} />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold">
+                    {countsLoading ? '-' : card.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{card.title}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Calendar */}
+      <RdoCalendar
+        obraId={obraId!}
+        rdoData={calendarData || []}
+        isLoading={calendarLoading}
+        currentMonth={currentMonth}
+        onMonthChange={setCurrentMonth}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Reports */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Relatórios Recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {reportsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : recentReports && recentReports.length > 0 ? (
+              <div className="space-y-2">
+                {recentReports.map((report) => (
+                  <button
+                    key={report.id}
+                    onClick={() => navigate(`/obras/${obraId}/rdo/diario?data=${report.data}&id=${report.id}`)}
+                    className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="font-mono">
+                        #{report.numero_seq}
+                      </Badge>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {format(new Date(report.data), "dd 'de' MMMM", { locale: ptBR })}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className={statusConfig[report.status as keyof typeof statusConfig]?.color}>
+                            {statusConfig[report.status as keyof typeof statusConfig]?.label}
+                          </Badge>
+                          {report.activity_count > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              {report.activity_count} atividades
+                            </span>
+                          )}
+                          {report.photo_count > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              {report.photo_count} fotos
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <Alert>
+                <FileText className="h-4 w-4" />
+                <AlertDescription>
+                  Nenhum relatório encontrado. Clique no botão "+" no calendário para criar seu primeiro RDO.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Photos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Fotos Recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {photosLoading ? (
+              <div className="grid grid-cols-3 gap-2">
+                <Skeleton className="aspect-square w-full" />
+                <Skeleton className="aspect-square w-full" />
+                <Skeleton className="aspect-square w-full" />
+              </div>
+            ) : recentPhotos && recentPhotos.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {recentPhotos.slice(0, 9).map((photo) => (
+                  <div
+                    key={photo.id}
+                    className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity"
+                  >
+                    <img
+                      src={photo.thumb_url || photo.file_url}
+                      alt="Foto do RDO"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Alert>
+                <Camera className="h-4 w-4" />
+                <AlertDescription>
+                  Nenhuma foto registrada ainda. As fotos aparecem aqui após serem adicionadas aos RDOs.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
 function RDODiario() {

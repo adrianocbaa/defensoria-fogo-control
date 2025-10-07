@@ -1150,6 +1150,224 @@ export type Database = {
         }
         Relationships: []
       }
+      rdo_activities: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          obra_id: string
+          qtd: number | null
+          report_id: string
+          unidade: string | null
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          obra_id: string
+          qtd?: number | null
+          report_id: string
+          unidade?: string | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          obra_id?: string
+          qtd?: number | null
+          report_id?: string
+          unidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_activities_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_activities_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_comments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          obra_id: string
+          report_id: string
+          texto: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          obra_id: string
+          report_id: string
+          texto: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          obra_id?: string
+          report_id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_comments_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_comments_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_media: {
+        Row: {
+          created_at: string
+          file_url: string
+          id: string
+          obra_id: string
+          report_id: string
+          thumb_url: string | null
+          tipo: Database["public"]["Enums"]["rdo_media_type"]
+        }
+        Insert: {
+          created_at?: string
+          file_url: string
+          id?: string
+          obra_id: string
+          report_id: string
+          thumb_url?: string | null
+          tipo: Database["public"]["Enums"]["rdo_media_type"]
+        }
+        Update: {
+          created_at?: string
+          file_url?: string
+          id?: string
+          obra_id?: string
+          report_id?: string
+          thumb_url?: string | null
+          tipo?: Database["public"]["Enums"]["rdo_media_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_media_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_media_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_occurrences: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          gravidade: number | null
+          id: string
+          obra_id: string
+          report_id: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          gravidade?: number | null
+          id?: string
+          obra_id: string
+          report_id: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          gravidade?: number | null
+          id?: string
+          obra_id?: string
+          report_id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_occurrences_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_occurrences_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          id: string
+          numero_seq: number
+          obra_id: string
+          status: Database["public"]["Enums"]["rdo_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data: string
+          id?: string
+          numero_seq: number
+          obra_id: string
+          status?: Database["public"]["Enums"]["rdo_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          id?: string
+          numero_seq?: number
+          obra_id?: string
+          status?: Database["public"]["Enums"]["rdo_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_reports_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rdo_ui_prefs: {
         Row: {
           created_at: string | null
@@ -1713,6 +1931,13 @@ export type Database = {
       extinguisher_status: "valid" | "expired" | "expiring-soon"
       extinguisher_type: "H2O" | "PQS" | "CO2" | "ABC"
       movement_type: "ENTRADA" | "SAIDA" | "DESCARTE"
+      rdo_media_type: "foto" | "video"
+      rdo_status:
+        | "rascunho"
+        | "preenchendo"
+        | "concluido"
+        | "aprovado"
+        | "reprovado"
       sector_type:
         | "manutencao"
         | "obra"
@@ -1855,6 +2080,14 @@ export const Constants = {
       extinguisher_status: ["valid", "expired", "expiring-soon"],
       extinguisher_type: ["H2O", "PQS", "CO2", "ABC"],
       movement_type: ["ENTRADA", "SAIDA", "DESCARTE"],
+      rdo_media_type: ["foto", "video"],
+      rdo_status: [
+        "rascunho",
+        "preenchendo",
+        "concluido",
+        "aprovado",
+        "reprovado",
+      ],
       sector_type: [
         "manutencao",
         "obra",
