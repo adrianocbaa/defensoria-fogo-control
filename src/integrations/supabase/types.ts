@@ -1156,8 +1156,11 @@ export type Database = {
           descricao: string
           id: string
           obra_id: string
+          observacao: string | null
+          progresso: number | null
           qtd: number | null
           report_id: string
+          status: string | null
           unidade: string | null
         }
         Insert: {
@@ -1165,8 +1168,11 @@ export type Database = {
           descricao: string
           id?: string
           obra_id: string
+          observacao?: string | null
+          progresso?: number | null
           qtd?: number | null
           report_id: string
+          status?: string | null
           unidade?: string | null
         }
         Update: {
@@ -1174,8 +1180,11 @@ export type Database = {
           descricao?: string
           id?: string
           obra_id?: string
+          observacao?: string | null
+          progresso?: number | null
           qtd?: number | null
           report_id?: string
+          status?: string | null
           unidade?: string | null
         }
         Relationships: [
@@ -1237,9 +1246,61 @@ export type Database = {
           },
         ]
       }
+      rdo_equipment: {
+        Row: {
+          created_at: string
+          equipamento: string
+          horas_trabalhadas: number | null
+          id: string
+          obra_id: string
+          observacao: string | null
+          proprio_ou_terceiro: string | null
+          report_id: string
+          situacao: string | null
+        }
+        Insert: {
+          created_at?: string
+          equipamento: string
+          horas_trabalhadas?: number | null
+          id?: string
+          obra_id: string
+          observacao?: string | null
+          proprio_ou_terceiro?: string | null
+          report_id: string
+          situacao?: string | null
+        }
+        Update: {
+          created_at?: string
+          equipamento?: string
+          horas_trabalhadas?: number | null
+          id?: string
+          obra_id?: string
+          observacao?: string | null
+          proprio_ou_terceiro?: string | null
+          report_id?: string
+          situacao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_equipment_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_equipment_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rdo_media: {
         Row: {
           created_at: string
+          descricao: string | null
           file_url: string
           id: string
           obra_id: string
@@ -1249,6 +1310,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          descricao?: string | null
           file_url: string
           id?: string
           obra_id: string
@@ -1258,6 +1320,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          descricao?: string | null
           file_url?: string
           id?: string
           obra_id?: string
@@ -1284,28 +1347,34 @@ export type Database = {
       }
       rdo_occurrences: {
         Row: {
+          acao_imediata: string | null
           created_at: string
           descricao: string | null
           gravidade: number | null
           id: string
+          impacto_cronograma: boolean | null
           obra_id: string
           report_id: string
           titulo: string
         }
         Insert: {
+          acao_imediata?: string | null
           created_at?: string
           descricao?: string | null
           gravidade?: number | null
           id?: string
+          impacto_cronograma?: boolean | null
           obra_id: string
           report_id: string
           titulo: string
         }
         Update: {
+          acao_imediata?: string | null
           created_at?: string
           descricao?: string | null
           gravidade?: number | null
           id?: string
+          impacto_cronograma?: boolean | null
           obra_id?: string
           report_id?: string
           titulo?: string
@@ -1329,32 +1398,62 @@ export type Database = {
       }
       rdo_reports: {
         Row: {
+          assinatura_empresa_url: string | null
+          assinatura_fiscal_url: string | null
+          clima_manha: string | null
+          clima_noite: string | null
+          clima_tarde: string | null
+          cond_manha: string | null
+          cond_noite: string | null
+          cond_tarde: string | null
           created_at: string
           created_by: string | null
           data: string
           id: string
           numero_seq: number
           obra_id: string
+          observacoes: string | null
+          pluviometria_mm: number | null
           status: Database["public"]["Enums"]["rdo_status"]
           updated_at: string
         }
         Insert: {
+          assinatura_empresa_url?: string | null
+          assinatura_fiscal_url?: string | null
+          clima_manha?: string | null
+          clima_noite?: string | null
+          clima_tarde?: string | null
+          cond_manha?: string | null
+          cond_noite?: string | null
+          cond_tarde?: string | null
           created_at?: string
           created_by?: string | null
           data: string
           id?: string
           numero_seq: number
           obra_id: string
+          observacoes?: string | null
+          pluviometria_mm?: number | null
           status?: Database["public"]["Enums"]["rdo_status"]
           updated_at?: string
         }
         Update: {
+          assinatura_empresa_url?: string | null
+          assinatura_fiscal_url?: string | null
+          clima_manha?: string | null
+          clima_noite?: string | null
+          clima_tarde?: string | null
+          cond_manha?: string | null
+          cond_noite?: string | null
+          cond_tarde?: string | null
           created_at?: string
           created_by?: string | null
           data?: string
           id?: string
           numero_seq?: number
           obra_id?: string
+          observacoes?: string | null
+          pluviometria_mm?: number | null
           status?: Database["public"]["Enums"]["rdo_status"]
           updated_at?: string
         }
@@ -1396,6 +1495,108 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: true
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_visits: {
+        Row: {
+          assunto: string | null
+          cargo: string | null
+          created_at: string
+          hora: string | null
+          id: string
+          instituicao: string | null
+          obra_id: string
+          report_id: string
+          visitante: string
+        }
+        Insert: {
+          assunto?: string | null
+          cargo?: string | null
+          created_at?: string
+          hora?: string | null
+          id?: string
+          instituicao?: string | null
+          obra_id: string
+          report_id: string
+          visitante: string
+        }
+        Update: {
+          assunto?: string | null
+          cargo?: string | null
+          created_at?: string
+          hora?: string | null
+          id?: string
+          instituicao?: string | null
+          obra_id?: string
+          report_id?: string
+          visitante?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_visits_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_visits_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_workforce: {
+        Row: {
+          created_at: string
+          funcao: string
+          horas: number
+          id: string
+          obra_id: string
+          observacao: string | null
+          origem: string | null
+          quantidade: number
+          report_id: string
+        }
+        Insert: {
+          created_at?: string
+          funcao: string
+          horas?: number
+          id?: string
+          obra_id: string
+          observacao?: string | null
+          origem?: string | null
+          quantidade?: number
+          report_id: string
+        }
+        Update: {
+          created_at?: string
+          funcao?: string
+          horas?: number
+          id?: string
+          obra_id?: string
+          observacao?: string | null
+          origem?: string | null
+          quantidade?: number
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_workforce_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_workforce_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
             referencedColumns: ["id"]
           },
         ]
