@@ -76,6 +76,9 @@ export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
       
       if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
+    },
   });
 
   const deleteMutation = useMutation({
