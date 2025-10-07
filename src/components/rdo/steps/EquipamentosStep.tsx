@@ -77,6 +77,9 @@ export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepPro
       
       if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-equipment', reportId] });
+    },
   });
 
   useEffect(() => {

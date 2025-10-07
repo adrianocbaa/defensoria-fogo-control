@@ -72,6 +72,9 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
       
       if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-media', reportId] });
+    },
   });
 
   useEffect(() => {

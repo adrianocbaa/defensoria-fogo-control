@@ -91,6 +91,9 @@ export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
       
       if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-workforce', reportId] });
+    },
   });
 
   useEffect(() => {

@@ -74,6 +74,9 @@ export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
       
       if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-visits', reportId] });
+    },
   });
 
   useEffect(() => {

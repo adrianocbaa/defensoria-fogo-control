@@ -79,6 +79,9 @@ export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
       
       if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-occurrences', reportId] });
+    },
   });
 
   useEffect(() => {
