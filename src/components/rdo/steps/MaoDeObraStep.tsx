@@ -91,7 +91,19 @@ export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
       
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const { id, field } = variables as { id: string; field: keyof Workforce; value: any };
+      setLocalValues((prev) => {
+        const next = { ...prev };
+        const obj = { ...(next[id] || {}) } as Partial<Workforce>;
+        delete (obj as any)[field];
+        if (Object.keys(obj).length === 0) {
+          delete next[id];
+        } else {
+          next[id] = obj;
+        }
+        return next;
+      });
       queryClient.invalidateQueries({ queryKey: ['rdo-workforce', reportId] });
     },
   });
@@ -102,7 +114,6 @@ export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
         updateMutation.mutate({ id, field: field as keyof Workforce, value });
       });
     });
-    setLocalValues({});
   }, [debouncedValues]);
 
   const deleteMutation = useMutation({

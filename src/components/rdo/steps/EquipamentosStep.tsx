@@ -77,7 +77,19 @@ export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepPro
       
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const { id, field } = variables as { id: string; field: keyof Equipment; value: any };
+      setLocalValues((prev) => {
+        const next = { ...prev };
+        const obj = { ...(next[id] || {}) } as Partial<Equipment>;
+        delete (obj as any)[field];
+        if (Object.keys(obj).length === 0) {
+          delete next[id];
+        } else {
+          next[id] = obj;
+        }
+        return next;
+      });
       queryClient.invalidateQueries({ queryKey: ['rdo-equipment', reportId] });
     },
   });
@@ -88,7 +100,6 @@ export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepPro
         updateMutation.mutate({ id, field: field as keyof Equipment, value });
       });
     });
-    setLocalValues({});
   }, [debouncedValues]);
 
   const deleteMutation = useMutation({
