@@ -5,7 +5,7 @@ import { NucleoCentral } from '@/hooks/useNucleosCentral';
 import { Button } from './ui/button';
 import { X, MapPin, Phone, Mail, Droplets, Target, AlertTriangle, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { isBefore, addDays } from 'date-fns';
+import { isBefore, addDays, startOfDay, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Fix Leaflet default icon
@@ -63,13 +63,13 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
           .maybeSingle();
 
         // Calculate status
-        const now = new Date();
-        const twoMonthsFromNow = addDays(now, 60);
+        const today = startOfDay(new Date());
+        const twoMonthsFromNow = addDays(today, 60);
         
         let licenseStatus: 'valid' | 'expired' | 'expiring-soon' | null = null;
         if (nucleiData?.fire_department_license_valid_until) {
-          const validUntil = new Date(nucleiData.fire_department_license_valid_until);
-          if (isBefore(validUntil, now)) {
+          const validUntil = startOfDay(parseISO(nucleiData.fire_department_license_valid_until));
+          if (isBefore(validUntil, today)) {
             licenseStatus = 'expired';
           } else if (isBefore(validUntil, twoMonthsFromNow)) {
             licenseStatus = 'expiring-soon';
@@ -79,7 +79,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
         }
 
         const expiredCount = (extinguishers || []).filter(ext => 
-          isBefore(new Date(ext.expiration_date), now)
+          isBefore(startOfDay(parseISO(ext.expiration_date)), today)
         ).length;
 
         statusMap[nucleus.id] = {

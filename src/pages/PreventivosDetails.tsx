@@ -23,7 +23,7 @@ import {
   Download,
   Eye
 } from 'lucide-react';
-import { format, isBefore, isAfter, addDays } from 'date-fns';
+import { format, isBefore, isAfter, addDays, startOfDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface NucleoBasico {
@@ -184,11 +184,11 @@ export default function PreventivosDetails() {
   };
 
   const getExtinguisherStatus = (expirationDate: string) => {
-    const now = new Date();
-    const expDate = new Date(expirationDate);
-    const twoMonthsFromNow = addDays(now, 60);
+    const today = startOfDay(new Date());
+    const expDate = startOfDay(parseISO(expirationDate));
+    const twoMonthsFromNow = addDays(today, 60);
 
-    if (isBefore(expDate, now)) {
+    if (isBefore(expDate, today)) {
       return 'expired';
     } else if (isBefore(expDate, twoMonthsFromNow)) {
       return 'expiring-soon';
@@ -199,11 +199,11 @@ export default function PreventivosDetails() {
   const getLicenseStatus = () => {
     if (!dadosPreventivos?.fire_department_license_valid_until) return null;
     
-    const now = new Date();
-    const validUntil = new Date(dadosPreventivos.fire_department_license_valid_until);
-    const twoMonthsFromNow = addDays(now, 60);
+    const today = startOfDay(new Date());
+    const validUntil = startOfDay(parseISO(dadosPreventivos.fire_department_license_valid_until));
+    const twoMonthsFromNow = addDays(today, 60);
 
-    if (isBefore(validUntil, now)) {
+    if (isBefore(validUntil, today)) {
       return 'expired';
     } else if (isBefore(validUntil, twoMonthsFromNow)) {
       return 'expiring-soon';
