@@ -14,13 +14,29 @@ export function useMaintenanceUsers() {
   useEffect(() => {
     const fetchMaintenanceUsers = async () => {
       try {
-        const { data, error } = await supabase
-          .from('profiles_secure')
-          .select('id, user_id, display_name')
+        // Get user_ids with manutencao role
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('user_id')
           .eq('role', 'manutencao');
 
-        if (error) throw error;
-        setUsers(data || []);
+        if (roleError) throw roleError;
+        
+        if (!roleData || roleData.length === 0) {
+          setUsers([]);
+          return;
+        }
+
+        const userIds = roleData.map(r => r.user_id);
+
+        // Get profiles for those users
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, user_id, display_name')
+          .in('user_id', userIds);
+
+        if (profilesError) throw profilesError;
+        setUsers((profilesData || []) as MaintenanceUser[]);
       } catch (error) {
         console.error('Error fetching maintenance users:', error);
         setUsers([]);

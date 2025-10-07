@@ -1150,6 +1150,38 @@ export type Database = {
         }
         Relationships: []
       }
+      rdo_ui_prefs: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_section: string | null
+          obra_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_section?: string | null
+          obra_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_section?: string | null
+          obra_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_ui_prefs_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: true
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -1238,6 +1270,30 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       medicao_acumulado_por_item: {
@@ -1262,49 +1318,70 @@ export type Database = {
       nuclei_secure: {
         Row: {
           address: string | null
+          auxiliar_coordenador: string | null
           city: string | null
           contact_email: string | null
           contact_phone: string | null
+          coordenador_substituto: string | null
           coordinates_lat: number | null
           coordinates_lng: number | null
           created_at: string | null
+          email: string | null
           fire_department_license_document_url: string | null
           fire_department_license_valid_until: string | null
+          horario_atendimento: string | null
           id: string | null
           is_agent_mode: boolean | null
+          membro_coordenador: string | null
           name: string | null
+          telefone: string | null
+          uf: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           address?: string | null
+          auxiliar_coordenador?: string | null
           city?: string | null
           contact_email?: never
           contact_phone?: never
+          coordenador_substituto?: string | null
           coordinates_lat?: number | null
           coordinates_lng?: number | null
           created_at?: string | null
+          email?: never
           fire_department_license_document_url?: string | null
           fire_department_license_valid_until?: string | null
+          horario_atendimento?: string | null
           id?: string | null
           is_agent_mode?: boolean | null
+          membro_coordenador?: string | null
           name?: string | null
+          telefone?: never
+          uf?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           address?: string | null
+          auxiliar_coordenador?: string | null
           city?: string | null
           contact_email?: never
           contact_phone?: never
+          coordenador_substituto?: string | null
           coordinates_lat?: number | null
           coordinates_lng?: number | null
           created_at?: string | null
+          email?: never
           fire_department_license_document_url?: string | null
           fire_department_license_valid_until?: string | null
+          horario_atendimento?: string | null
           id?: string | null
           is_agent_mode?: boolean | null
+          membro_coordenador?: string | null
           name?: string | null
+          telefone?: never
+          uf?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -1321,8 +1398,6 @@ export type Database = {
           language: string | null
           phone: string | null
           position: string | null
-          role: Database["public"]["Enums"]["user_role"] | null
-          sectors: Database["public"]["Enums"]["sector_type"][] | null
           theme: string | null
           updated_at: string | null
           user_id: string | null
@@ -1332,13 +1407,11 @@ export type Database = {
           created_at?: string | null
           department?: string | null
           display_name?: string | null
-          email?: never
+          email?: string | null
           id?: string | null
           language?: string | null
-          phone?: never
+          phone?: string | null
           position?: string | null
-          role?: Database["public"]["Enums"]["user_role"] | null
-          sectors?: Database["public"]["Enums"]["sector_type"][] | null
           theme?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -1348,13 +1421,11 @@ export type Database = {
           created_at?: string | null
           department?: string | null
           display_name?: string | null
-          email?: never
+          email?: string | null
           id?: string | null
           language?: string | null
-          phone?: never
+          phone?: string | null
           position?: string | null
-          role?: Database["public"]["Enums"]["user_role"] | null
-          sectors?: Database["public"]["Enums"]["sector_type"][] | null
           theme?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -1572,6 +1643,13 @@ export type Database = {
       get_user_role: {
         Args: { user_uuid: string }
         Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       is_admin: {
         Args: { user_uuid?: string }

@@ -39,6 +39,7 @@ import Preventivos from "./pages/Preventivos";
 import PreventivosDetails from "./pages/PreventivosDetails";
 import PreventivosEdit from "./pages/PreventivosEdit";
 import TeletrabalhoEdit from "./pages/TeletrabalhoEdit";
+import { RDO } from "./pages/RDO";
 
 const queryClient = new QueryClient();
 
@@ -307,6 +308,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ObrasLista />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/obras/:obraId/rdo/*" 
+        element={
+          <ProtectedRoute>
+            <RDO />
           </ProtectedRoute>
         } 
       />

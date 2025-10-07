@@ -29,10 +29,19 @@ export function useProfile() {
         .from('profiles_secure')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data as Profile;
+      if (!data) return null;
+      
+      // Fetch role from user_roles table
+      const { data: roleData } = await supabase
+        .rpc('get_user_role', { user_uuid: user.id });
+      
+      return {
+        ...data,
+        role: (roleData as string || 'viewer') as Profile['role']
+      } as Profile;
     },
     enabled: !!user,
   });

@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2, Ruler, Map } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Obra {
@@ -277,6 +277,15 @@ export function AdminObras() {
                           title="Medição"
                         >
                           <Ruler className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/obras/${obra.id}/rdo`)}
+                          title="RDO - Relatório Diário de Obra"
+                          className="min-h-[44px] min-w-[44px]"
+                        >
+                          <ClipboardList className="h-4 w-4" />
                         </Button>
                         
                         <PermissionGuard requiresEdit showMessage={false}>
