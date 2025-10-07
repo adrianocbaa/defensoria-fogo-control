@@ -7,8 +7,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Media {
   id: string;
@@ -28,6 +29,8 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
   const queryClient = useQueryClient();
   const { uploadFile, uploading } = useFileUpload();
   const [activeTab, setActiveTab] = useState<'foto' | 'video' | 'anexo'>('foto');
+  const [localDescriptions, setLocalDescriptions] = useState<Record<string, string>>({});
+  const debouncedDescriptions = useDebounce(localDescriptions, 500);
 
   const { data: media = [], isLoading } = useQuery({
     queryKey: ['rdo-media', reportId],
@@ -70,6 +73,13 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
       if (error) throw error;
     },
   });
+
+  useEffect(() => {
+    Object.entries(debouncedDescriptions).forEach(([id, descricao]) => {
+      updateDescMutation.mutate({ id, descricao });
+    });
+    setLocalDescriptions({});
+  }, [debouncedDescriptions]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, tipo: 'foto' | 'video' | 'anexo') => {
     if (!reportId) {
@@ -208,12 +218,9 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
                     </div>
                     <Input
                       placeholder="Descrição..."
-                      value={foto.descricao || ''}
+                      value={(localDescriptions[foto.id] ?? foto.descricao) || ''}
                       onChange={(e) =>
-                        updateDescMutation.mutate({
-                          id: foto.id,
-                          descricao: e.target.value,
-                        })
+                        setLocalDescriptions(prev => ({ ...prev, [foto.id]: e.target.value }))
                       }
                     />
                   </div>
@@ -270,12 +277,9 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
                     </div>
                     <Input
                       placeholder="Descrição..."
-                      value={video.descricao || ''}
+                      value={(localDescriptions[video.id] ?? video.descricao) || ''}
                       onChange={(e) =>
-                        updateDescMutation.mutate({
-                          id: video.id,
-                          descricao: e.target.value,
-                        })
+                        setLocalDescriptions(prev => ({ ...prev, [video.id]: e.target.value }))
                       }
                     />
                   </div>
@@ -332,12 +336,9 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
                     </div>
                     <Input
                       placeholder="Descrição..."
-                      value={anexo.descricao || ''}
+                      value={(localDescriptions[anexo.id] ?? anexo.descricao) || ''}
                       onChange={(e) =>
-                        updateDescMutation.mutate({
-                          id: anexo.id,
-                          descricao: e.target.value,
-                        })
+                        setLocalDescriptions(prev => ({ ...prev, [anexo.id]: e.target.value }))
                       }
                     />
                   </div>

@@ -8,6 +8,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useState, useEffect } from "react";
 
 interface Activity {
   id?: string;
@@ -26,6 +28,8 @@ interface AtividadesStepProps {
 
 export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
   const queryClient = useQueryClient();
+  const [localValues, setLocalValues] = useState<Record<string, Partial<Activity>>>({});
+  const debouncedValues = useDebounce(localValues, 500);
 
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ['rdo-activities', reportId],
@@ -76,10 +80,16 @@ export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
       
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
-    },
   });
+
+  useEffect(() => {
+    Object.entries(debouncedValues).forEach(([id, fields]) => {
+      Object.entries(fields).forEach(([field, value]) => {
+        updateMutation.mutate({ id, field: field as keyof Activity, value });
+      });
+    });
+    setLocalValues({});
+  }, [debouncedValues]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -129,13 +139,12 @@ export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
               <div className="flex items-start justify-between gap-2">
                 <Input
                   placeholder="Descrição da atividade"
-                  value={activity.descricao}
+                  value={localValues[activity.id!]?.descricao ?? activity.descricao}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: activity.id!,
-                      field: 'descricao',
-                      value: e.target.value,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [activity.id!]: { ...prev[activity.id!], descricao: e.target.value }
+                    }))
                   }
                   className="flex-1"
                 />
@@ -152,24 +161,22 @@ export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
                 <Input
                   type="number"
                   placeholder="Qtd"
-                  value={activity.qtd}
+                  value={localValues[activity.id!]?.qtd ?? activity.qtd}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: activity.id!,
-                      field: 'qtd',
-                      value: parseFloat(e.target.value) || 0,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [activity.id!]: { ...prev[activity.id!], qtd: parseFloat(e.target.value) || 0 }
+                    }))
                   }
                 />
                 <Input
                   placeholder="Unidade"
-                  value={activity.unidade}
+                  value={localValues[activity.id!]?.unidade ?? activity.unidade}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: activity.id!,
-                      field: 'unidade',
-                      value: e.target.value,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [activity.id!]: { ...prev[activity.id!], unidade: e.target.value }
+                    }))
                   }
                 />
                 <Input
@@ -177,13 +184,12 @@ export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
                   min="0"
                   max="100"
                   placeholder="Progresso %"
-                  value={activity.progresso}
+                  value={localValues[activity.id!]?.progresso ?? activity.progresso}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: activity.id!,
-                      field: 'progresso',
-                      value: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)),
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [activity.id!]: { ...prev[activity.id!], progresso: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) }
+                    }))
                   }
                 />
                 <Select
@@ -209,13 +215,12 @@ export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
               <Textarea
                 placeholder="Observações sobre esta atividade..."
                 rows={2}
-                value={activity.observacao || ''}
+                value={(localValues[activity.id!]?.observacao ?? activity.observacao) || ''}
                 onChange={(e) =>
-                  updateMutation.mutate({
-                    id: activity.id!,
-                    field: 'observacao',
-                    value: e.target.value,
-                  })
+                  setLocalValues(prev => ({
+                    ...prev,
+                    [activity.id!]: { ...prev[activity.id!], observacao: e.target.value }
+                  }))
                 }
               />
             </div>

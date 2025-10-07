@@ -10,6 +10,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useState, useEffect } from "react";
 
 interface Occurrence {
   id?: string;
@@ -27,6 +29,8 @@ interface OcorrenciasStepProps {
 
 export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
   const queryClient = useQueryClient();
+  const [localValues, setLocalValues] = useState<Record<string, Partial<Occurrence>>>({});
+  const debouncedValues = useDebounce(localValues, 500);
 
   const { data: occurrences = [], isLoading } = useQuery({
     queryKey: ['rdo-occurrences', reportId],
@@ -76,6 +80,15 @@ export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
       if (error) throw error;
     },
   });
+
+  useEffect(() => {
+    Object.entries(debouncedValues).forEach(([id, fields]) => {
+      Object.entries(fields).forEach(([field, value]) => {
+        updateMutation.mutate({ id, field: field as keyof Occurrence, value });
+      });
+    });
+    setLocalValues({});
+  }, [debouncedValues]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -140,13 +153,12 @@ export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
                   )}
                   <Input
                     placeholder="Título da ocorrência"
-                    value={occurrence.titulo}
+                    value={localValues[occurrence.id!]?.titulo ?? occurrence.titulo}
                     onChange={(e) =>
-                      updateMutation.mutate({
-                        id: occurrence.id!,
-                        field: 'titulo',
-                        value: e.target.value,
-                      })
+                      setLocalValues(prev => ({
+                        ...prev,
+                        [occurrence.id!]: { ...prev[occurrence.id!], titulo: e.target.value }
+                      }))
                     }
                     className="flex-1"
                   />
@@ -195,13 +207,12 @@ export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
               <Textarea
                 placeholder="Descrição da ocorrência..."
                 rows={2}
-                value={occurrence.descricao || ''}
+                value={(localValues[occurrence.id!]?.descricao ?? occurrence.descricao) || ''}
                 onChange={(e) =>
-                  updateMutation.mutate({
-                    id: occurrence.id!,
-                    field: 'descricao',
-                    value: e.target.value,
-                  })
+                  setLocalValues(prev => ({
+                    ...prev,
+                    [occurrence.id!]: { ...prev[occurrence.id!], descricao: e.target.value }
+                  }))
                 }
               />
 
@@ -223,13 +234,12 @@ export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
                 <Textarea
                   placeholder="Ação imediata necessária..."
                   rows={2}
-                  value={occurrence.acao_imediata || ''}
+                  value={(localValues[occurrence.id!]?.acao_imediata ?? occurrence.acao_imediata) || ''}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: occurrence.id!,
-                      field: 'acao_imediata',
-                      value: e.target.value,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [occurrence.id!]: { ...prev[occurrence.id!], acao_imediata: e.target.value }
+                    }))
                   }
                 />
               )}

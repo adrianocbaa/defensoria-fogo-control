@@ -9,6 +9,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useState, useEffect } from "react";
 
 interface Workforce {
   id?: string;
@@ -39,6 +41,8 @@ const FUNCOES_COMUNS = [
 
 export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
   const queryClient = useQueryClient();
+  const [localValues, setLocalValues] = useState<Record<string, Partial<Workforce>>>({});
+  const debouncedValues = useDebounce(localValues, 500);
 
   const { data: workforce = [], isLoading } = useQuery({
     queryKey: ['rdo-workforce', reportId],
@@ -88,6 +92,15 @@ export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
       if (error) throw error;
     },
   });
+
+  useEffect(() => {
+    Object.entries(debouncedValues).forEach(([id, fields]) => {
+      Object.entries(fields).forEach(([field, value]) => {
+        updateMutation.mutate({ id, field: field as keyof Workforce, value });
+      });
+    });
+    setLocalValues({});
+  }, [debouncedValues]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -164,13 +177,12 @@ export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
                 <div className="flex items-start justify-between gap-2">
                   <Input
                     placeholder="Função"
-                    value={worker.funcao}
+                    value={localValues[worker.id!]?.funcao ?? worker.funcao}
                     onChange={(e) =>
-                      updateMutation.mutate({
-                        id: worker.id!,
-                        field: 'funcao',
-                        value: e.target.value,
-                      })
+                      setLocalValues(prev => ({
+                        ...prev,
+                        [worker.id!]: { ...prev[worker.id!], funcao: e.target.value }
+                      }))
                     }
                     className="flex-1"
                   />
@@ -236,13 +248,12 @@ export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
                 <Textarea
                   placeholder="Observações sobre esta equipe..."
                   rows={2}
-                  value={worker.observacao || ''}
+                  value={(localValues[worker.id!]?.observacao ?? worker.observacao) || ''}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: worker.id!,
-                      field: 'observacao',
-                      value: e.target.value,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [worker.id!]: { ...prev[worker.id!], observacao: e.target.value }
+                    }))
                   }
                 />
               </div>

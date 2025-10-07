@@ -7,6 +7,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useState, useEffect } from "react";
 
 interface Visit {
   id?: string;
@@ -24,6 +26,8 @@ interface VisitasStepProps {
 
 export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
   const queryClient = useQueryClient();
+  const [localValues, setLocalValues] = useState<Record<string, Partial<Visit>>>({});
+  const debouncedValues = useDebounce(localValues, 500);
 
   const { data: visits = [], isLoading } = useQuery({
     queryKey: ['rdo-visits', reportId],
@@ -71,6 +75,15 @@ export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
       if (error) throw error;
     },
   });
+
+  useEffect(() => {
+    Object.entries(debouncedValues).forEach(([id, fields]) => {
+      Object.entries(fields).forEach(([field, value]) => {
+        updateMutation.mutate({ id, field: field as keyof Visit, value });
+      });
+    });
+    setLocalValues({});
+  }, [debouncedValues]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -120,13 +133,12 @@ export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
               <div className="flex items-start justify-between gap-2">
                 <Input
                   placeholder="Nome do visitante"
-                  value={visit.visitante}
+                  value={localValues[visit.id!]?.visitante ?? visit.visitante}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: visit.id!,
-                      field: 'visitante',
-                      value: e.target.value,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [visit.id!]: { ...prev[visit.id!], visitante: e.target.value }
+                    }))
                   }
                   className="flex-1"
                 />
@@ -142,24 +154,22 @@ export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Input
                   placeholder="Cargo"
-                  value={visit.cargo || ''}
+                  value={(localValues[visit.id!]?.cargo ?? visit.cargo) || ''}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: visit.id!,
-                      field: 'cargo',
-                      value: e.target.value,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [visit.id!]: { ...prev[visit.id!], cargo: e.target.value }
+                    }))
                   }
                 />
                 <Input
                   placeholder="Instituição"
-                  value={visit.instituicao || ''}
+                  value={(localValues[visit.id!]?.instituicao ?? visit.instituicao) || ''}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: visit.id!,
-                      field: 'instituicao',
-                      value: e.target.value,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [visit.id!]: { ...prev[visit.id!], instituicao: e.target.value }
+                    }))
                   }
                 />
                 <Input
@@ -179,13 +189,12 @@ export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
               <Textarea
                 placeholder="Assunto da visita..."
                 rows={2}
-                value={visit.assunto || ''}
+                value={(localValues[visit.id!]?.assunto ?? visit.assunto) || ''}
                 onChange={(e) =>
-                  updateMutation.mutate({
-                    id: visit.id!,
-                    field: 'assunto',
-                    value: e.target.value,
-                  })
+                  setLocalValues(prev => ({
+                    ...prev,
+                    [visit.id!]: { ...prev[visit.id!], assunto: e.target.value }
+                  }))
                 }
               />
             </div>

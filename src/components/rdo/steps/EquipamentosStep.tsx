@@ -8,6 +8,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useState, useEffect } from "react";
 
 interface Equipment {
   id?: string;
@@ -26,6 +28,8 @@ interface EquipamentosStepProps {
 
 export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepProps) {
   const queryClient = useQueryClient();
+  const [localValues, setLocalValues] = useState<Record<string, Partial<Equipment>>>({});
+  const debouncedValues = useDebounce(localValues, 500);
 
   const { data: equipment = [], isLoading } = useQuery({
     queryKey: ['rdo-equipment', reportId],
@@ -74,6 +78,15 @@ export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepPro
       if (error) throw error;
     },
   });
+
+  useEffect(() => {
+    Object.entries(debouncedValues).forEach(([id, fields]) => {
+      Object.entries(fields).forEach(([field, value]) => {
+        updateMutation.mutate({ id, field: field as keyof Equipment, value });
+      });
+    });
+    setLocalValues({});
+  }, [debouncedValues]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -134,13 +147,12 @@ export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepPro
               <div className="flex items-start justify-between gap-2">
                 <Input
                   placeholder="Nome do equipamento"
-                  value={equip.equipamento}
+                  value={localValues[equip.id!]?.equipamento ?? equip.equipamento}
                   onChange={(e) =>
-                    updateMutation.mutate({
-                      id: equip.id!,
-                      field: 'equipamento',
-                      value: e.target.value,
-                    })
+                    setLocalValues(prev => ({
+                      ...prev,
+                      [equip.id!]: { ...prev[equip.id!], equipamento: e.target.value }
+                    }))
                   }
                   className="flex-1"
                 />
@@ -210,13 +222,12 @@ export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepPro
               <Textarea
                 placeholder="Observações sobre o equipamento..."
                 rows={2}
-                value={equip.observacao || ''}
+                value={(localValues[equip.id!]?.observacao ?? equip.observacao) || ''}
                 onChange={(e) =>
-                  updateMutation.mutate({
-                    id: equip.id!,
-                    field: 'observacao',
-                    value: e.target.value,
-                  })
+                  setLocalValues(prev => ({
+                    ...prev,
+                    [equip.id!]: { ...prev[equip.id!], observacao: e.target.value }
+                  }))
                 }
               />
             </div>
