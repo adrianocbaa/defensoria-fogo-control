@@ -175,10 +175,10 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute bottom-1 right-1 h-6 w-6"
+                        className="absolute bottom-1 right-1 h-6 w-6 hover:bg-green-100"
                         onClick={() => handleCreateRdo(day)}
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-3 w-3 text-green-600" />
                       </Button>
                     )}
                   </div>
