@@ -210,14 +210,23 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
             )}
 
             {/* Alvará */}
-            {status.licenseStatus && (
-              <div className="flex items-center gap-2">
-                <Shield className={`h-4 w-4 ${status.licenseStatus === 'expired' ? 'text-danger' : status.licenseStatus === 'expiring-soon' ? 'text-warning' : 'text-success'}`} />
-                <span className={`text-sm font-medium ${status.licenseStatus === 'expired' ? 'text-danger' : status.licenseStatus === 'expiring-soon' ? 'text-warning' : 'text-foreground'}`}>
-                  {status.licenseStatus === 'expired' ? 'Alvará vencido' : status.licenseStatus === 'expiring-soon' ? 'Alvará vencendo em breve' : 'Alvará válido'}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {status.licenseStatus ? (
+                <>
+                  <Shield className={`h-4 w-4 ${status.licenseStatus === 'expired' ? 'text-danger' : status.licenseStatus === 'expiring-soon' ? 'text-warning' : 'text-success'}`} />
+                  <span className={`text-sm font-medium ${status.licenseStatus === 'expired' ? 'text-danger' : status.licenseStatus === 'expiring-soon' ? 'text-warning' : 'text-foreground'}`}>
+                    {status.licenseStatus === 'expired' ? 'Alvará vencido' : status.licenseStatus === 'expiring-soon' ? 'Alvará vencendo em breve' : 'Alvará válido'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-danger font-medium">
+                    Sem Alvará
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         )}
 
