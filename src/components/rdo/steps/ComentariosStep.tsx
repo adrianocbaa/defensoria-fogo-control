@@ -37,20 +37,34 @@ export function ComentariosStep({ reportId, obraId }: ComentariosStepProps) {
     queryKey: ['rdo-comments', reportId],
     queryFn: async () => {
       if (!reportId) return [];
-      const { data, error } = await supabase
+      
+      // Buscar comentários
+      const { data: commentsData, error: commentsError } = await supabase
         .from('rdo_comments')
-        .select(`
-          *,
-          profiles:created_by (
-            display_name,
-            email
-          )
-        `)
+        .select('*')
         .eq('report_id', reportId)
         .order('created_at', { ascending: true });
       
-      if (error) throw error;
-      return data as Comment[];
+      if (commentsError) throw commentsError;
+      if (!commentsData || commentsData.length === 0) return [];
+      
+      // Buscar perfis dos criadores
+      const creatorIds = [...new Set(commentsData.map(c => c.created_by).filter(Boolean))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, email')
+        .in('user_id', creatorIds);
+      
+      // Mapear profiles por user_id
+      const profilesMap = new Map(
+        profilesData?.map(p => [p.user_id, p]) || []
+      );
+      
+      // Combinar dados
+      return commentsData.map(comment => ({
+        ...comment,
+        profiles: comment.created_by ? profilesMap.get(comment.created_by) : undefined
+      })) as Comment[];
     },
     enabled: !!reportId,
   });
