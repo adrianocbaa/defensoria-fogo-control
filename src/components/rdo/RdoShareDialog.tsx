@@ -47,30 +47,7 @@ export function RdoShareDialog({
   };
 
   const handleDownload = async () => {
-    try {
-      const response = await fetch(pdfUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `RDO-${hashVerificacao}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      await createAuditLog({
-        obraId,
-        reportId,
-        acao: 'DOWNLOAD_PDF',
-        detalhes: { url: pdfUrl },
-      });
-
-      toast.success('Download iniciado');
-    } catch (error) {
-      console.error('Erro ao baixar PDF:', error);
-      toast.error('Erro ao baixar PDF');
-    }
+    toast.info('A geração de PDF está em desenvolvimento. Por enquanto, você pode compartilhar o link de verificação.');
   };
 
   const handleShare = async () => {
@@ -145,24 +122,19 @@ export function RdoShareDialog({
           </div>
 
           {/* Botões de ação */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              onClick={handleDownload}
-              className="w-full"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Baixar PDF
-            </Button>
-            
+          <div className="flex flex-col gap-2">
             <Button
               variant="outline"
               onClick={handleShare}
               className="w-full"
             >
               <Share2 className="h-4 w-4 mr-2" />
-              Compartilhar
+              Compartilhar Link
             </Button>
+            
+            <div className="text-xs text-muted-foreground text-center">
+              Download de PDF em desenvolvimento
+            </div>
           </div>
 
           {/* Enviar por e-mail */}

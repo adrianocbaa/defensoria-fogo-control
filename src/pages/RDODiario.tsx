@@ -82,35 +82,28 @@ export default function RDODiario() {
       // Generate hash for verification
       const hash = btoa(`${formData.id}-${Date.now()}`).substring(0, 16);
 
-      // Update report with hash
+      // Update report with hash (PDF real será gerado por edge function futuramente)
       const { error: updateError } = await supabase
         .from('rdo_reports')
-        .update({ hash_verificacao: hash })
+        .update({ 
+          hash_verificacao: hash,
+          pdf_url: 'pending' // Marcador para indicar que o PDF está pendente
+        })
         .eq('id', formData.id);
 
       if (updateError) throw updateError;
 
-      // TODO: Implementar edge function para gerar PDF real
-      // Por enquanto, apenas simula
-      const mockPdfUrl = `https://mmumfgxngzaivvyqfbed.supabase.co/storage/v1/object/public/rdo-pdf/${obraId}/${formData.id}/RDO-${formData.numero_seq}-${data}.pdf`;
-
-      const { error: pdfError } = await supabase
-        .from('rdo_reports')
-        .update({ pdf_url: mockPdfUrl })
-        .eq('id', formData.id);
-
-      if (pdfError) throw pdfError;
 
       await createAuditLog({
         obraId: obraId!,
         reportId: formData.id,
         acao: 'GERAR_PDF',
-        detalhes: { url: mockPdfUrl, hash },
+        detalhes: { hash },
         actorId: user?.id,
       });
 
       queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
-      toast.success('PDF gerado com sucesso');
+      toast.success('Link de verificação gerado. O PDF estará disponível em breve.');
       setShareDialog(true);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
