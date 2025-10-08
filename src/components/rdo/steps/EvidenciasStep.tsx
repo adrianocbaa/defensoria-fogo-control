@@ -154,6 +154,7 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
       // Salvar no banco
       const { error } = await supabase.from('rdo_media').insert([{
         report_id: reportId,
+        obra_id: obraId,
         tipo,
         file_url: result.url!,
         thumb_url: tipo === 'foto' ? result.url : undefined,
