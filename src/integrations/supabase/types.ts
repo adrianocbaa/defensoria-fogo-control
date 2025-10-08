@@ -2239,7 +2239,13 @@ export type Database = {
         | "nucleos"
         | "nucleos_central"
       unit_type: "KG" | "M" | "LITRO" | "PC" | "CX"
-      user_role: "admin" | "editor" | "viewer" | "manutencao" | "gm"
+      user_role:
+        | "admin"
+        | "editor"
+        | "viewer"
+        | "manutencao"
+        | "gm"
+        | "prestadora"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2390,7 +2396,14 @@ export const Constants = {
         "nucleos_central",
       ],
       unit_type: ["KG", "M", "LITRO", "PC", "CX"],
-      user_role: ["admin", "editor", "viewer", "manutencao", "gm"],
+      user_role: [
+        "admin",
+        "editor",
+        "viewer",
+        "manutencao",
+        "gm",
+        "prestadora",
+      ],
     },
   },
 } as const
