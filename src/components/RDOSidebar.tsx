@@ -31,16 +31,6 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { id: 'resumo', label: 'Resumo', icon: LayoutDashboard, path: '/resumo' },
-  { id: 'diario', label: 'Diário', icon: Calendar, path: '/diario' },
-  { id: 'equipe', label: 'Equipe', icon: Users, path: '/equipe' },
-  { id: 'equipamentos', label: 'Equipamentos', icon: Truck, path: '/equipamentos' },
-  { id: 'materiais', label: 'Materiais', icon: Package, path: '/materiais' },
-  { id: 'clima', label: 'Clima', icon: Cloud, path: '/clima' },
-  { id: 'fotos', label: 'Fotos', icon: Camera, path: '/fotos' },
-  { id: 'ocorrencias', label: 'Ocorrências', icon: AlertTriangle, path: '/ocorrencias' },
-  { id: 'seguranca', label: 'Segurança', icon: Shield, path: '/seguranca' },
-  { id: 'medicoes', label: 'Medições', icon: Ruler, path: '/medicoes' },
-  { id: 'assinaturas', label: 'Assinaturas', icon: FileSignature, path: '/assinaturas' },
   { id: 'config', label: 'Configurações', icon: Settings, path: '/config' }
 ];
 
