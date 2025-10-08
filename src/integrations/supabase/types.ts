@@ -2168,6 +2168,10 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: boolean
       }
+      is_contratada: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
       log_login_attempt: {
         Args: {
           p_identifier: string

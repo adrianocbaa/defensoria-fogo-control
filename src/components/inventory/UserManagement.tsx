@@ -146,6 +146,8 @@ export function UserManagement() {
       case 'editor': return 'Editor';
       case 'gm': return 'Gerente';
       case 'manutencao': return 'Manutenção';
+      case 'contratada': return 'Contratada';
+      case 'prestadora': return 'Contratada'; // Remap para novo termo
       default: return 'Visualizador';
     }
   };
@@ -273,6 +275,7 @@ export function UserManagement() {
                 <SelectItem value="editor">Editor</SelectItem>
                 <SelectItem value="gm">Gerente</SelectItem>
                 <SelectItem value="manutencao">Manutenção</SelectItem>
+                <SelectItem value="contratada">Contratada</SelectItem>
                 <SelectItem value="admin">Administrador</SelectItem>
               </SelectContent>
             </Select>

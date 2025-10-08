@@ -25,11 +25,11 @@ export function AssinaturasStep({
   onUpdate,
 }: AssinaturasStepProps) {
   const { user } = useAuth();
-  const { canEdit, isAdmin, isPrestadora, canEditRDO } = useUserRole();
+  const { canEdit, isAdmin, isContratada } = useUserRole();
   const [isSaving, setIsSaving] = useState(false);
   
   const canValidateFiscal = canEdit || isAdmin;
-  const canValidateContratada = canEditRDO; // Inclui prestadora
+  const canValidateContratada = isContratada; // Apenas usuários com role "contratada"
   
   const [fiscalNome, setFiscalNome] = useState(reportData?.assinatura_fiscal_nome || "");
   const [fiscalCargo, setFiscalCargo] = useState(reportData?.assinatura_fiscal_cargo || "");
@@ -239,7 +239,7 @@ export function AssinaturasStep({
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Apenas usuários com permissão adequada podem validar esta assinatura.
+                  Apenas usuários com permissão de "Contratada" podem validar esta assinatura.
                 </AlertDescription>
               </Alert>
             )}
