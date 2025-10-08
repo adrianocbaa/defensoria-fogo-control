@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
 import { createAuditLog } from "@/hooks/useRdoAuditLog";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AssinaturasStepProps {
   reportId: string;
@@ -23,7 +25,10 @@ export function AssinaturasStep({
   onUpdate,
 }: AssinaturasStepProps) {
   const { user } = useAuth();
+  const { canEdit, isAdmin } = useUserRole();
   const [isSaving, setIsSaving] = useState(false);
+  
+  const canValidateFiscal = canEdit || isAdmin;
   
   const [fiscalNome, setFiscalNome] = useState(reportData?.assinatura_fiscal_nome || "");
   const [fiscalCargo, setFiscalCargo] = useState(reportData?.assinatura_fiscal_cargo || "");
@@ -34,6 +39,11 @@ export function AssinaturasStep({
   const [contratadaDocumento, setContratadaDocumento] = useState(reportData?.assinatura_contratada_documento || "");
 
   const handleValidateFiscal = async () => {
+    if (!canValidateFiscal) {
+      toast.error("Você não tem permissão para validar esta assinatura");
+      return;
+    }
+    
     if (!fiscalNome || !fiscalCargo || !fiscalDocumento) {
       toast.error("Preencha todos os campos do Fiscal/Gestor");
       return;
@@ -142,7 +152,7 @@ export function AssinaturasStep({
                 value={fiscalNome}
                 onChange={(e) => setFiscalNome(e.target.value)}
                 placeholder="Nome completo"
-                disabled={!!fiscalValidado || isApproved}
+                disabled={!!fiscalValidado || isApproved || !canValidateFiscal}
               />
             </div>
             <div>
@@ -152,7 +162,7 @@ export function AssinaturasStep({
                 value={fiscalCargo}
                 onChange={(e) => setFiscalCargo(e.target.value)}
                 placeholder="Cargo/Função"
-                disabled={!!fiscalValidado || isApproved}
+                disabled={!!fiscalValidado || isApproved || !canValidateFiscal}
               />
             </div>
             <div>
@@ -162,15 +172,23 @@ export function AssinaturasStep({
                 value={fiscalDocumento}
                 onChange={(e) => setFiscalDocumento(e.target.value)}
                 placeholder="Documento"
-                disabled={!!fiscalValidado || isApproved}
+                disabled={!!fiscalValidado || isApproved || !canValidateFiscal}
               />
             </div>
+            {!canValidateFiscal && !fiscalValidado && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Apenas usuários com permissão de Editor ou Administrador podem validar esta assinatura.
+                </AlertDescription>
+              </Alert>
+            )}
             {fiscalValidado ? (
               <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-3 rounded-md">
                 <Check className="h-4 w-4" />
                 <span>Validado em {new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
               </div>
-            ) : (
+            ) : canValidateFiscal ? (
               <Button
                 onClick={handleValidateFiscal}
                 disabled={isSaving || isApproved}
@@ -178,7 +196,7 @@ export function AssinaturasStep({
               >
                 Validar Assinatura
               </Button>
-            )}
+            ) : null}
           </div>
         </Card>
 
