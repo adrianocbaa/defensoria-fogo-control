@@ -63,129 +63,206 @@ Deno.serve(async (req) => {
     // Generate PDF
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
-    let yPos = 20;
+    const pageHeight = doc.internal.pageSize.height;
+    let yPos = 15;
 
-    // Header
-    doc.setFontSize(18);
+    // Header with logo placeholder and info table
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('RELATÓRIO DIÁRIO DE OBRA (RDO)', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
+    doc.text('DPMT', 14, yPos);
+    
+    // Info table on the right
+    (doc as any).autoTable({
+      startY: 10,
+      margin: { left: pageWidth - 70 },
+      head: [],
+      body: [
+        ['Relatório nº', rdoData.report.numero_seq],
+        ['Data do relatório', new Date(rdoData.report.data).toLocaleDateString('pt-BR')],
+        ['Dia da semana', new Date(rdoData.report.data).toLocaleDateString('pt-BR', { weekday: 'long' })],
+      ],
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 1 },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 35 },
+        1: { cellWidth: 35 }
+      },
+    });
 
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`RDO Nº ${rdoData.report.numero_seq}`, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 7;
-    doc.text(`Data: ${new Date(rdoData.report.data).toLocaleDateString('pt-BR')}`, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
+    yPos = (doc as any).lastAutoTable.finalY + 10;
 
-    // Obra Info
+    // Title
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('1. IDENTIFICAÇÃO DA OBRA', 14, yPos);
-    yPos += 8;
+    doc.text('Relatório Diário de Obra (RDO)', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
 
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Obra: ${rdoData.obra.nome}`, 14, yPos);
-    yPos += 5;
-    doc.text(`Município: ${rdoData.obra.municipio}`, 14, yPos);
-    yPos += 5;
-    if (rdoData.obra.n_contrato) {
-      doc.text(`Contrato: ${rdoData.obra.n_contrato}`, 14, yPos);
-      yPos += 5;
-    }
-    yPos += 5;
+    // Obra Info Table
+    (doc as any).autoTable({
+      startY: yPos,
+      head: [],
+      body: [
+        ['Obra', rdoData.obra.nome],
+        ['Local', rdoData.obra.municipio],
+        ['Contratada', rdoData.obra.empresa_responsavel || '-'],
+      ],
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 2 },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 35, fillColor: [240, 240, 240] },
+        1: { cellWidth: pageWidth - 70 }
+      },
+    });
 
-    // Weather conditions
-    if (rdoData.report.clima_manha || rdoData.report.clima_tarde || rdoData.report.clima_noite) {
-      doc.setFontSize(14);
+    yPos = (doc as any).lastAutoTable.finalY + 8;
+
+    // Weather conditions table
+    if (rdoData.report.clima_manha || rdoData.report.clima_tarde) {
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('2. CONDIÇÕES CLIMÁTICAS', 14, yPos);
-      yPos += 8;
-
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      if (rdoData.report.clima_manha) doc.text(`Manhã: ${rdoData.report.clima_manha}`, 14, yPos); yPos += 5;
-      if (rdoData.report.clima_tarde) doc.text(`Tarde: ${rdoData.report.clima_tarde}`, 14, yPos); yPos += 5;
-      if (rdoData.report.clima_noite) doc.text(`Noite: ${rdoData.report.clima_noite}`, 14, yPos); yPos += 5;
-      if (rdoData.report.cond_manha) doc.text(`Condição Manhã: ${rdoData.report.cond_manha}`, 14, yPos); yPos += 5;
-      if (rdoData.report.cond_tarde) doc.text(`Condição Tarde: ${rdoData.report.cond_tarde}`, 14, yPos); yPos += 5;
-      if (rdoData.report.cond_noite) doc.text(`Condição Noite: ${rdoData.report.cond_noite}`, 14, yPos); yPos += 5;
+      doc.text('Condição climática', 14, yPos);
       yPos += 5;
+
+      const weatherData = [];
+      if (rdoData.report.clima_manha) {
+        weatherData.push(['Manhã', rdoData.report.clima_manha, rdoData.report.cond_manha || 'Praticável']);
+      }
+      if (rdoData.report.clima_tarde) {
+        weatherData.push(['Tarde', rdoData.report.clima_tarde, rdoData.report.cond_tarde || 'Praticável']);
+      }
+
+      (doc as any).autoTable({
+        startY: yPos,
+        head: [['', 'Tempo', 'Condição']],
+        body: weatherData,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 30, fontStyle: 'bold' },
+          1: { cellWidth: 60 },
+          2: { cellWidth: 60 }
+        },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 8;
+    }
+
+    // Labor (Mão de obra) - horizontal table
+    if (rdoData.labor.length > 0) {
+      if (yPos > 240) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Mão de obra (${rdoData.labor.length})`, 14, yPos);
+      yPos += 5;
+
+      // Create horizontal layout
+      const laborHead = rdoData.labor.map(l => l.funcao);
+      const laborBody = [rdoData.labor.map(l => l.quantidade || '0')];
+
+      (doc as any).autoTable({
+        startY: yPos,
+        head: [laborHead],
+        body: laborBody,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 2, halign: 'center' },
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
     // Activities
     if (rdoData.activities.length > 0) {
-      if (yPos > 250) {
+      if (yPos > 240) {
         doc.addPage();
         yPos = 20;
       }
       
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('3. ATIVIDADES EXECUTADAS', 14, yPos);
-      yPos += 8;
+      doc.text(`Atividades (${rdoData.activities.length})`, 14, yPos);
+      yPos += 5;
 
       (doc as any).autoTable({
         startY: yPos,
-        head: [['Descrição', 'Qtd', 'Un.', 'Status']],
-        body: rdoData.activities.map(a => [
+        head: [['Código', 'Descrição', 'Qtd', 'Un.', 'Progresso']],
+        body: rdoData.activities.map((a, i) => [
+          `4.${i + 1}`,
           a.descricao,
           a.qtd || '-',
           a.unidade || '-',
-          a.status || '-'
+          `${a.progresso || 0}%`
         ]),
         theme: 'grid',
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 15 },
+          1: { cellWidth: 100 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 15 },
+          4: { cellWidth: 25 }
+        },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 10;
+      yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
     // Occurrences
     if (rdoData.occurrences.length > 0) {
-      if (yPos > 250) {
+      if (yPos > 240) {
         doc.addPage();
         yPos = 20;
       }
 
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('4. OCORRÊNCIAS', 14, yPos);
-      yPos += 8;
+      doc.text(`Ocorrências (${rdoData.occurrences.length})`, 14, yPos);
+      yPos += 5;
 
       (doc as any).autoTable({
         startY: yPos,
-        head: [['Título', 'Descrição', 'Gravidade']],
+        head: [['Título', 'Descrição', 'Gravidade', 'Impacto']],
         body: rdoData.occurrences.map(o => [
           o.titulo,
           o.descricao || '-',
-          o.gravidade || '-'
+          o.gravidade || '-',
+          o.impacto_cronograma ? 'Sim' : 'Não'
         ]),
         theme: 'grid',
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [231, 76, 60] },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 25 }
+        },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 10;
+      yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
     // Visits
     if (rdoData.visits.length > 0) {
-      if (yPos > 250) {
+      if (yPos > 240) {
         doc.addPage();
         yPos = 20;
       }
 
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('5. VISITAS', 14, yPos);
-      yPos += 8;
+      doc.text(`Visitas (${rdoData.visits.length})`, 14, yPos);
+      yPos += 5;
 
       (doc as any).autoTable({
         startY: yPos,
-        head: [['Visitante', 'Cargo', 'Instituição', 'Hora']],
+        head: [['Visitante', 'Cargo', 'Instituição', 'Entrada']],
         body: rdoData.visits.map(v => [
           v.visitante || '-',
           v.cargo || '-',
@@ -193,24 +270,24 @@ Deno.serve(async (req) => {
           v.hora_entrada || '-'
         ]),
         theme: 'grid',
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [46, 204, 113] },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 10;
+      yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
     // Equipment
     if (rdoData.equipment.length > 0) {
-      if (yPos > 250) {
+      if (yPos > 240) {
         doc.addPage();
         yPos = 20;
       }
 
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('6. EQUIPAMENTOS', 14, yPos);
-      yPos += 8;
+      doc.text(`Equipamentos (${rdoData.equipment.length})`, 14, yPos);
+      yPos += 5;
 
       (doc as any).autoTable({
         startY: yPos,
@@ -222,77 +299,62 @@ Deno.serve(async (req) => {
           e.situacao || '-'
         ]),
         theme: 'grid',
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [243, 156, 18] },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 10;
+      yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
-    // Labor
-    if (rdoData.labor.length > 0) {
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('7. MÃO DE OBRA', 14, yPos);
-      yPos += 8;
-
-      (doc as any).autoTable({
-        startY: yPos,
-        head: [['Função', 'Origem', 'Quantidade']],
-        body: rdoData.labor.map(l => [
-          l.funcao,
-          l.origem || '-',
-          l.quantidade || '-'
-        ]),
-        theme: 'grid',
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [155, 89, 182] },
-      });
-
-      yPos = (doc as any).lastAutoTable.finalY + 10;
-    }
 
     // Signatures
     if (rdoData.report.assinatura_fiscal_nome || rdoData.report.assinatura_contratada_nome) {
-      if (yPos > 220) {
+      if (yPos > 200) {
         doc.addPage();
         yPos = 20;
       }
 
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('8. ASSINATURAS', 14, yPos);
-      yPos += 10;
+      doc.text('Assinaturas', 14, yPos);
+      yPos += 5;
 
-      const signatureWidth = (pageWidth - 40) / 2;
-
+      const signaturesData = [];
+      
       if (rdoData.report.assinatura_fiscal_nome) {
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Fiscal/Gestor (DPE-MT):', 14, yPos);
-        yPos += 5;
-        doc.text(`Nome: ${rdoData.report.assinatura_fiscal_nome}`, 14, yPos);
-        yPos += 5;
-        doc.text(`Cargo: ${rdoData.report.assinatura_fiscal_cargo || '-'}`, 14, yPos);
-        yPos += 5;
-        doc.text(`Doc: ${rdoData.report.assinatura_fiscal_documento || '-'}`, 14, yPos);
-        yPos += 10;
+        signaturesData.push([
+          'Fiscal/Gestor (DPE-MT)',
+          rdoData.report.assinatura_fiscal_nome,
+          rdoData.report.assinatura_fiscal_cargo || '-',
+          rdoData.report.assinatura_fiscal_documento || '-'
+        ]);
       }
 
       if (rdoData.report.assinatura_contratada_nome) {
-        doc.text('Responsável Técnico (Contratada):', 14, yPos);
-        yPos += 5;
-        doc.text(`Nome: ${rdoData.report.assinatura_contratada_nome}`, 14, yPos);
-        yPos += 5;
-        doc.text(`Cargo: ${rdoData.report.assinatura_contratada_cargo || '-'}`, 14, yPos);
-        yPos += 5;
-        doc.text(`Doc: ${rdoData.report.assinatura_contratada_documento || '-'}`, 14, yPos);
+        signaturesData.push([
+          'Responsável Técnico',
+          rdoData.report.assinatura_contratada_nome,
+          rdoData.report.assinatura_contratada_cargo || '-',
+          rdoData.report.assinatura_contratada_documento || '-'
+        ]);
       }
+
+      (doc as any).autoTable({
+        startY: yPos,
+        head: [['Tipo', 'Nome', 'Cargo', 'Documento']],
+        body: signaturesData,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 45 },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 40 }
+        },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
     // Footer
