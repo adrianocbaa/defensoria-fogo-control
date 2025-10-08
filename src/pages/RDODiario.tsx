@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, Save, Loader2, CheckCircle2, Send, ThumbsUp, ThumbsDown, FileText, Share2, Unlock } from 'lucide-react';
+import { ChevronLeft, Save, Loader2, CheckCircle2, Send, ThumbsUp, ThumbsDown, FileText, Unlock } from 'lucide-react';
 import { RdoStepper, STEPS } from '@/components/rdo/RdoStepper';
 import { useRdoForm } from '@/hooks/useRdoForm';
 import { AnotacoesStep } from '@/components/rdo/steps/AnotacoesStep';
@@ -15,7 +15,6 @@ import { EvidenciasStep } from '@/components/rdo/steps/EvidenciasStep';
 import { ComentariosStep } from '@/components/rdo/steps/ComentariosStep';
 import { AssinaturasStep } from '@/components/rdo/steps/AssinaturasStep';
 import { RdoApprovalDialog } from '@/components/rdo/RdoApprovalDialog';
-import { RdoShareDialog } from '@/components/rdo/RdoShareDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useQueryClient } from '@tanstack/react-query';
@@ -45,7 +44,6 @@ export default function RDODiario() {
     open: false,
     action: null,
   });
-  const [shareDialog, setShareDialog] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const {
@@ -79,35 +77,37 @@ export default function RDODiario() {
 
     setIsGeneratingPdf(true);
     try {
-      // Generate hash for verification
-      const hash = btoa(`${formData.id}-${Date.now()}`).substring(0, 16);
+      toast.info('Gerando PDF... Aguarde.');
 
-      // Update report with hash (PDF real será gerado por edge function futuramente)
-      const { error: updateError } = await supabase
-        .from('rdo_reports')
-        .update({ 
-          hash_verificacao: hash,
-          pdf_url: 'pending' // Marcador para indicar que o PDF está pendente
-        })
-        .eq('id', formData.id);
+      // Call edge function to generate PDF
+      const { data: pdfData, error: functionError } = await supabase.functions.invoke('generate-rdo-pdf', {
+        body: { reportId: formData.id, obraId: obraId },
+      });
 
-      if (updateError) throw updateError;
-
+      if (functionError) throw functionError;
 
       await createAuditLog({
         obraId: obraId!,
         reportId: formData.id,
         acao: 'GERAR_PDF',
-        detalhes: { hash },
+        detalhes: { url: pdfData.pdfUrl },
         actorId: user?.id,
       });
 
+      // Download PDF automatically
+      const link = document.createElement('a');
+      link.href = pdfData.pdfUrl;
+      link.download = `RDO-${formData.numero_seq}-${data}.pdf`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
       queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
-      toast.success('Link de verificação gerado. O PDF estará disponível em breve.');
-      setShareDialog(true);
+      toast.success('PDF gerado e download iniciado!');
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      toast.error('Erro ao gerar PDF');
+      toast.error('Erro ao gerar PDF. Verifique os logs.');
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -236,13 +236,7 @@ export default function RDODiario() {
                   {(isConcluded || isApproved) && (
                     <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
                       <FileText className="h-4 w-4 mr-2" />
-                      {isGeneratingPdf ? 'Gerando...' : 'Gerar PDF'}
-                    </Button>
-                  )}
-                  {formData.pdf_url && (
-                    <Button variant="outline" size="sm" onClick={() => setShareDialog(true)}>
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Compartilhar
+                      {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
                     </Button>
                   )}
                   {canEdit && isApproved && (
@@ -265,16 +259,6 @@ export default function RDODiario() {
         action={approvalDialog.action}
         onConfirm={handleApprovalConfirm}
       />
-      {formData.pdf_url && formData.hash_verificacao && (
-        <RdoShareDialog
-          open={shareDialog}
-          onOpenChange={setShareDialog}
-          pdfUrl={formData.pdf_url}
-          hashVerificacao={formData.hash_verificacao}
-          reportId={formData.id!}
-          obraId={obraId!}
-        />
-      )}
 
       {/* Stepper */}
       <RdoStepper currentStep={currentStep} onStepChange={setCurrentStep} steps={STEPS} />
