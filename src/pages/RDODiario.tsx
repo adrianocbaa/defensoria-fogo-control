@@ -240,7 +240,7 @@ export default function RDODiario() {
                       </Button>
                     </>
                   )}
-                  {(isConcluded || isApproved) && hasSignatures && (
+                  {(isConcluded || isApproved) && (
                     <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
                       <FileText className="h-4 w-4 mr-2" />
                       {isGeneratingPdf ? 'Gerando...' : 'Gerar PDF'}
@@ -252,7 +252,7 @@ export default function RDODiario() {
                       Compartilhar
                     </Button>
                   )}
-                  {isAdmin && isApproved && (
+                  {canEdit && isApproved && (
                     <Button variant="outline" size="sm" onClick={handleReopen}>
                       <Unlock className="h-4 w-4 mr-2" />
                       Reabrir
