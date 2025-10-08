@@ -16,6 +16,7 @@ interface RDOData {
   labor: any[];
   comments: any[];
   obra: any;
+  media: any[];
 }
 
 Deno.serve(async (req) => {
@@ -33,7 +34,7 @@ Deno.serve(async (req) => {
     console.log('Generating PDF for report:', reportId, 'obra:', obraId);
 
     // Fetch all RDO data
-    const [reportRes, activitiesRes, occurrencesRes, visitsRes, equipmentRes, laborRes, commentsRes, obraRes] = await Promise.all([
+    const [reportRes, activitiesRes, occurrencesRes, visitsRes, equipmentRes, laborRes, commentsRes, obraRes, mediaRes] = await Promise.all([
       supabase.from('rdo_reports').select('*').eq('id', reportId).single(),
       supabase.from('rdo_activities').select('*').eq('report_id', reportId),
       supabase.from('rdo_occurrences').select('*').eq('report_id', reportId),
@@ -42,6 +43,7 @@ Deno.serve(async (req) => {
       supabase.from('rdo_labor').select('*').eq('report_id', reportId),
       supabase.from('rdo_comments').select('*').eq('report_id', reportId),
       supabase.from('obras').select('*').eq('id', obraId).single(),
+      supabase.from('rdo_media').select('*').eq('report_id', reportId).eq('tipo', 'foto').order('created_at'),
     ]);
 
     if (reportRes.error) throw reportRes.error;
@@ -56,6 +58,7 @@ Deno.serve(async (req) => {
       labor: laborRes.data || [],
       comments: commentsRes.data || [],
       obra: obraRes.data,
+      media: mediaRes.data || [],
     };
 
     console.log('Fetched RDO data:', rdoData);
@@ -306,6 +309,70 @@ Deno.serve(async (req) => {
       yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
+    // Photos/Media
+    if (rdoData.media.length > 0) {
+      if (yPos > 220) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Evidências Fotográficas (${rdoData.media.length})`, 14, yPos);
+      yPos += 8;
+
+      for (const media of rdoData.media) {
+        try {
+          // Fetch image
+          const imgResponse = await fetch(media.file_url);
+          if (imgResponse.ok) {
+            const imgBlob = await imgResponse.arrayBuffer();
+            const imgBase64 = btoa(
+              new Uint8Array(imgBlob).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+            
+            // Determine image format from URL
+            const imgFormat = media.file_url.toLowerCase().includes('.png') ? 'PNG' : 'JPEG';
+            
+            // Calculate dimensions to fit within page
+            const maxWidth = pageWidth - 28;
+            const maxHeight = 100;
+            
+            // Check if we need a new page
+            if (yPos + maxHeight + 20 > pageHeight - 20) {
+              doc.addPage();
+              yPos = 20;
+            }
+            
+            // Add image
+            doc.addImage(
+              `data:image/${imgFormat.toLowerCase()};base64,${imgBase64}`,
+              imgFormat,
+              14,
+              yPos,
+              maxWidth,
+              maxHeight
+            );
+            
+            yPos += maxHeight + 3;
+            
+            // Add caption if exists
+            if (media.descricao) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'italic');
+              const lines = doc.splitTextToSize(media.descricao, maxWidth);
+              doc.text(lines, 14, yPos);
+              yPos += (lines.length * 4) + 5;
+              doc.setFont('helvetica', 'normal');
+            } else {
+              yPos += 5;
+            }
+          }
+        } catch (error) {
+          console.error('Error adding image to PDF:', error);
+        }
+      }
+    }
 
     // Signatures
     if (rdoData.report.assinatura_fiscal_nome || rdoData.report.assinatura_contratada_nome) {
@@ -357,14 +424,24 @@ Deno.serve(async (req) => {
       yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
-    // Footer
+    // Footer with Cuiabá timezone
     const pageCount = doc.getNumberOfPages();
+    const cuiabaTime = new Date().toLocaleString('pt-BR', { 
+      timeZone: 'America/Cuiaba',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text(
-        `Página ${i} de ${pageCount} - Gerado em ${new Date().toLocaleString('pt-BR')}`,
+        `Página ${i} de ${pageCount} - Gerado em ${cuiabaTime}`,
         pageWidth / 2,
         doc.internal.pageSize.height - 10,
         { align: 'center' }
