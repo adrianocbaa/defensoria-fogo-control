@@ -309,7 +309,7 @@ Deno.serve(async (req) => {
       yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
-    // Photos/Media
+    // Photos/Media - 2 per row
     if (rdoData.media.length > 0) {
       if (yPos > 220) {
         doc.addPage();
@@ -321,8 +321,23 @@ Deno.serve(async (req) => {
       doc.text(`Evidências Fotográficas (${rdoData.media.length})`, 14, yPos);
       yPos += 8;
 
-      for (const media of rdoData.media) {
+      const imgWidth = (pageWidth - 28 - 5) / 2; // 2 images per row with 5mm gap
+      const imgHeight = 60; // Fixed height for consistency
+      let currentX = 14;
+      let rowMaxHeight = 0;
+
+      for (let i = 0; i < rdoData.media.length; i++) {
+        const media = rdoData.media[i];
+        const isFirstInRow = i % 2 === 0;
+        const isLastInRow = i % 2 === 1 || i === rdoData.media.length - 1;
+
         try {
+          // Check if we need a new page before starting a new row
+          if (isFirstInRow && yPos + imgHeight + 30 > pageHeight - 20) {
+            doc.addPage();
+            yPos = 20;
+          }
+
           // Fetch image
           const imgResponse = await fetch(media.file_url);
           if (imgResponse.ok) {
@@ -334,42 +349,50 @@ Deno.serve(async (req) => {
             // Determine image format from URL
             const imgFormat = media.file_url.toLowerCase().includes('.png') ? 'PNG' : 'JPEG';
             
-            // Calculate dimensions to fit within page
-            const maxWidth = pageWidth - 28;
-            const maxHeight = 100;
-            
-            // Check if we need a new page
-            if (yPos + maxHeight + 20 > pageHeight - 20) {
-              doc.addPage();
-              yPos = 20;
-            }
+            // Set X position based on column
+            currentX = isFirstInRow ? 14 : 14 + imgWidth + 5;
             
             // Add image
             doc.addImage(
               `data:image/${imgFormat.toLowerCase()};base64,${imgBase64}`,
               imgFormat,
-              14,
+              currentX,
               yPos,
-              maxWidth,
-              maxHeight
+              imgWidth,
+              imgHeight
             );
             
-            yPos += maxHeight + 3;
+            let captionHeight = 0;
             
             // Add caption if exists
             if (media.descricao) {
-              doc.setFontSize(9);
+              doc.setFontSize(8);
               doc.setFont('helvetica', 'italic');
-              const lines = doc.splitTextToSize(media.descricao, maxWidth);
-              doc.text(lines, 14, yPos);
-              yPos += (lines.length * 4) + 5;
+              const lines = doc.splitTextToSize(media.descricao, imgWidth);
+              doc.text(lines, currentX, yPos + imgHeight + 3);
+              captionHeight = (lines.length * 3) + 3;
               doc.setFont('helvetica', 'normal');
-            } else {
-              yPos += 5;
+            }
+            
+            // Track max height for this row
+            const totalHeight = imgHeight + captionHeight;
+            if (totalHeight > rowMaxHeight) {
+              rowMaxHeight = totalHeight;
+            }
+            
+            // Move to next row if this was the last image in the row
+            if (isLastInRow) {
+              yPos += rowMaxHeight + 8;
+              rowMaxHeight = 0;
             }
           }
         } catch (error) {
           console.error('Error adding image to PDF:', error);
+          // Move to next position even on error
+          if (isLastInRow) {
+            yPos += imgHeight + 8;
+            rowMaxHeight = 0;
+          }
         }
       }
     }
