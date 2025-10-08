@@ -424,7 +424,7 @@ Deno.serve(async (req) => {
 
       (doc as any).autoTable({
         startY: yPos,
-        head: [['Nome', 'Cargo', 'Documento', 'Validado em']],
+        head: [['Nome', 'Cargo', 'CREA/CAU', 'Validado em']],
         body: signaturesData,
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
