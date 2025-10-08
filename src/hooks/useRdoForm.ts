@@ -19,6 +19,19 @@ export interface RdoFormData {
   cond_tarde?: 'praticavel' | 'impraticavel';
   cond_noite?: 'praticavel' | 'impraticavel';
   pluviometria_mm?: number;
+  assinatura_fiscal_url?: string;
+  assinatura_fiscal_nome?: string;
+  assinatura_fiscal_cargo?: string;
+  assinatura_fiscal_documento?: string;
+  assinatura_fiscal_datetime?: string;
+  assinatura_contratada_url?: string;
+  assinatura_contratada_nome?: string;
+  assinatura_contratada_cargo?: string;
+  assinatura_contratada_documento?: string;
+  assinatura_contratada_datetime?: string;
+  aprovacao_observacao?: string;
+  pdf_url?: string;
+  hash_verificacao?: string;
 }
 
 export function useRdoForm(obraId: string, data: string) {
@@ -148,11 +161,75 @@ export function useRdoForm(obraId: string, data: string) {
     toast.success('RDO concluído com sucesso');
   }, [formData, validateMinimum, saveMutation]);
 
+  const sendForApproval = useCallback(async () => {
+    if (!formData.id) {
+      toast.error('Salve o RDO antes de enviar para aprovação');
+      return;
+    }
+
+    if (formData.status !== 'concluido' && formData.status !== 'preenchendo') {
+      toast.error('RDO precisa estar concluído para enviar para aprovação');
+      return;
+    }
+
+    const updatedData = { ...formData, status: 'concluido' as const };
+    await saveMutation.mutateAsync(updatedData);
+    setFormData(updatedData);
+    toast.success('RDO enviado para aprovação');
+  }, [formData, saveMutation]);
+
+  const approve = useCallback(async (observacao?: string) => {
+    if (!formData.id) return;
+
+    const updatedData = { 
+      ...formData, 
+      status: 'aprovado' as const,
+      aprovacao_observacao: observacao || null,
+    };
+    await saveMutation.mutateAsync(updatedData);
+    setFormData(updatedData);
+    toast.success('RDO aprovado com sucesso');
+  }, [formData, saveMutation]);
+
+  const reject = useCallback(async (observacao: string) => {
+    if (!formData.id) return;
+    if (!observacao) {
+      toast.error('Informe o motivo da reprovação');
+      return;
+    }
+
+    const updatedData = { 
+      ...formData, 
+      status: 'reprovado' as const,
+      aprovacao_observacao: observacao,
+    };
+    await saveMutation.mutateAsync(updatedData);
+    setFormData(updatedData);
+    toast.success('RDO reprovado');
+  }, [formData, saveMutation]);
+
+  const reopen = useCallback(async () => {
+    if (!formData.id) return;
+
+    const updatedData = { 
+      ...formData, 
+      status: 'preenchendo' as const,
+      aprovacao_observacao: null,
+    };
+    await saveMutation.mutateAsync(updatedData);
+    setFormData(updatedData);
+    toast.success('RDO reaberto para edição');
+  }, [formData, saveMutation]);
+
   return {
     formData,
     updateField,
     saveNow,
     conclude,
+    sendForApproval,
+    approve,
+    reject,
+    reopen,
     isLoading,
     isSaving: saveMutation.isPending,
     hasChanges,

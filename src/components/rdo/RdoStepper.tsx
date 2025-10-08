@@ -10,6 +10,7 @@ import {
   Users,
   Camera,
   MessageSquareText,
+  FileSignature,
 } from "lucide-react";
 
 export interface Step {
@@ -138,4 +139,5 @@ export const STEPS: Step[] = [
   { id: 'mao-de-obra', label: 'Mão de Obra', icon: Users, isComplete: false },
   { id: 'evidencias', label: 'Evidências', icon: Camera, isComplete: false },
   { id: 'comentarios', label: 'Comentários', icon: MessageSquareText, isComplete: false },
+  { id: 'assinaturas', label: 'Assinaturas', icon: FileSignature, isComplete: false },
 ];

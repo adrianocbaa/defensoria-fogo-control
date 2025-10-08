@@ -1204,6 +1204,54 @@ export type Database = {
           },
         ]
       }
+      rdo_audit_log: {
+        Row: {
+          acao: string
+          actor_id: string | null
+          actor_nome: string | null
+          created_at: string
+          detalhes: Json | null
+          id: string
+          obra_id: string
+          report_id: string
+        }
+        Insert: {
+          acao: string
+          actor_id?: string | null
+          actor_nome?: string | null
+          created_at?: string
+          detalhes?: Json | null
+          id?: string
+          obra_id: string
+          report_id: string
+        }
+        Update: {
+          acao?: string
+          actor_id?: string | null
+          actor_nome?: string | null
+          created_at?: string
+          detalhes?: Json | null
+          id?: string
+          obra_id?: string
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_audit_log_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_audit_log_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rdo_comments: {
         Row: {
           created_at: string
@@ -1398,7 +1446,17 @@ export type Database = {
       }
       rdo_reports: {
         Row: {
+          aprovacao_observacao: string | null
+          assinatura_contratada_cargo: string | null
+          assinatura_contratada_datetime: string | null
+          assinatura_contratada_documento: string | null
+          assinatura_contratada_nome: string | null
+          assinatura_contratada_url: string | null
           assinatura_empresa_url: string | null
+          assinatura_fiscal_cargo: string | null
+          assinatura_fiscal_datetime: string | null
+          assinatura_fiscal_documento: string | null
+          assinatura_fiscal_nome: string | null
           assinatura_fiscal_url: string | null
           clima_manha: string | null
           clima_noite: string | null
@@ -1409,16 +1467,28 @@ export type Database = {
           created_at: string
           created_by: string | null
           data: string
+          hash_verificacao: string | null
           id: string
           numero_seq: number
           obra_id: string
           observacoes: string | null
+          pdf_url: string | null
           pluviometria_mm: number | null
           status: Database["public"]["Enums"]["rdo_status"]
           updated_at: string
         }
         Insert: {
+          aprovacao_observacao?: string | null
+          assinatura_contratada_cargo?: string | null
+          assinatura_contratada_datetime?: string | null
+          assinatura_contratada_documento?: string | null
+          assinatura_contratada_nome?: string | null
+          assinatura_contratada_url?: string | null
           assinatura_empresa_url?: string | null
+          assinatura_fiscal_cargo?: string | null
+          assinatura_fiscal_datetime?: string | null
+          assinatura_fiscal_documento?: string | null
+          assinatura_fiscal_nome?: string | null
           assinatura_fiscal_url?: string | null
           clima_manha?: string | null
           clima_noite?: string | null
@@ -1429,16 +1499,28 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data: string
+          hash_verificacao?: string | null
           id?: string
           numero_seq: number
           obra_id: string
           observacoes?: string | null
+          pdf_url?: string | null
           pluviometria_mm?: number | null
           status?: Database["public"]["Enums"]["rdo_status"]
           updated_at?: string
         }
         Update: {
+          aprovacao_observacao?: string | null
+          assinatura_contratada_cargo?: string | null
+          assinatura_contratada_datetime?: string | null
+          assinatura_contratada_documento?: string | null
+          assinatura_contratada_nome?: string | null
+          assinatura_contratada_url?: string | null
           assinatura_empresa_url?: string | null
+          assinatura_fiscal_cargo?: string | null
+          assinatura_fiscal_datetime?: string | null
+          assinatura_fiscal_documento?: string | null
+          assinatura_fiscal_nome?: string | null
           assinatura_fiscal_url?: string | null
           clima_manha?: string | null
           clima_noite?: string | null
@@ -1449,10 +1531,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data?: string
+          hash_verificacao?: string | null
           id?: string
           numero_seq?: number
           obra_id?: string
           observacoes?: string | null
+          pdf_url?: string | null
           pluviometria_mm?: number | null
           status?: Database["public"]["Enums"]["rdo_status"]
           updated_at?: string

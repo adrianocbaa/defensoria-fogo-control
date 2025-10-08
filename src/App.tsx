@@ -41,6 +41,7 @@ import PreventivosEdit from "./pages/PreventivosEdit";
 import TeletrabalhoEdit from "./pages/TeletrabalhoEdit";
 import { RDO } from "./pages/RDO";
 import RDODiario from "./pages/RDODiario";
+import RdoVerify from "./pages/RdoVerify";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/public" element={<PublicView />} />
       <Route path="/public/obras" element={<Obras />} />
+      <Route path="/rdo/verify/:hash" element={<RdoVerify />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/medicao/:id" element={<ProtectedRoute><Medicao /></ProtectedRoute>} />
       <Route path="/dashboard" element={<Dashboard />} />
