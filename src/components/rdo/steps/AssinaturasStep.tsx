@@ -1,8 +1,13 @@
-import { SignatureCanvas } from '../SignatureCanvas';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
-import { createAuditLog } from '@/hooks/useRdoAuditLog';
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Check } from "lucide-react";
+import { createAuditLog } from "@/hooks/useRdoAuditLog";
 
 interface AssinaturasStepProps {
   reportId: string;
@@ -11,180 +16,222 @@ interface AssinaturasStepProps {
   onUpdate: () => void;
 }
 
-export function AssinaturasStep({ reportId, obraId, reportData, onUpdate }: AssinaturasStepProps) {
+export function AssinaturasStep({
+  reportId,
+  obraId,
+  reportData,
+  onUpdate,
+}: AssinaturasStepProps) {
   const { user } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [fiscalNome, setFiscalNome] = useState(reportData?.assinatura_fiscal_nome || "");
+  const [fiscalCargo, setFiscalCargo] = useState(reportData?.assinatura_fiscal_cargo || "");
+  const [fiscalDocumento, setFiscalDocumento] = useState(reportData?.assinatura_fiscal_documento || "");
+  
+  const [contratadaNome, setContratadaNome] = useState(reportData?.assinatura_contratada_nome || "");
+  const [contratadaCargo, setContratadaCargo] = useState(reportData?.assinatura_contratada_cargo || "");
+  const [contratadaDocumento, setContratadaDocumento] = useState(reportData?.assinatura_contratada_documento || "");
 
-  const handleSaveFiscalSignature = async (signatureData: {
-    dataUrl: string;
-    nome: string;
-    cargo: string;
-    documento: string;
-  }) => {
+  const handleValidateFiscal = async () => {
+    if (!fiscalNome || !fiscalCargo || !fiscalDocumento) {
+      toast.error("Preencha todos os campos do Fiscal/Gestor");
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      // Convert dataURL to blob
-      const response = await fetch(signatureData.dataUrl);
-      const blob = await response.blob();
+      const validatedAt = new Date().toISOString();
       
-      // Upload to storage
-      const fileName = `${obraId}/${reportId}/fiscal.png`;
-      const { error: uploadError, data } = await supabase.storage
-        .from('rdo-signatures')
-        .upload(fileName, blob, {
-          upsert: true,
-          contentType: 'image/png',
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('rdo-signatures')
-        .getPublicUrl(fileName);
-
-      // Update report with signature data
       const { error: updateError } = await supabase
-        .from('rdo_reports')
+        .from("rdo_reports")
         .update({
-          assinatura_fiscal_url: publicUrl,
-          assinatura_fiscal_nome: signatureData.nome,
-          assinatura_fiscal_cargo: signatureData.cargo,
-          assinatura_fiscal_documento: signatureData.documento,
-          assinatura_fiscal_datetime: new Date().toISOString(),
+          assinatura_fiscal_nome: fiscalNome,
+          assinatura_fiscal_cargo: fiscalCargo,
+          assinatura_fiscal_documento: fiscalDocumento,
+          assinatura_fiscal_validado_em: validatedAt,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', reportId);
+        .eq("id", reportId);
 
       if (updateError) throw updateError;
 
-      // Create audit log
       await createAuditLog({
         obraId,
         reportId,
-        acao: 'ASSINAR_FISCAL',
-        detalhes: {
-          nome: signatureData.nome,
-          cargo: signatureData.cargo,
-          documento: signatureData.documento,
-        },
+        acao: "ASSINAR_FISCAL",
+        detalhes: { nome: fiscalNome, cargo: fiscalCargo, documento: fiscalDocumento },
         actorId: user?.id,
-        actorNome: signatureData.nome,
+        actorNome: fiscalNome,
       });
 
-      toast.success('Assinatura do fiscal salva com sucesso');
+      toast.success("Validação do Fiscal/Gestor registrada");
       onUpdate();
-    } catch (error) {
-      console.error('Erro ao salvar assinatura do fiscal:', error);
-      toast.error('Erro ao salvar assinatura');
-      throw error;
+    } catch (error: any) {
+      console.error("Error validating fiscal signature:", error);
+      toast.error("Erro ao validar assinatura");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleSaveContratadaSignature = async (signatureData: {
-    dataUrl: string;
-    nome: string;
-    cargo: string;
-    documento: string;
-  }) => {
+  const handleValidateContratada = async () => {
+    if (!contratadaNome || !contratadaCargo || !contratadaDocumento) {
+      toast.error("Preencha todos os campos do Responsável Técnico");
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      // Convert dataURL to blob
-      const response = await fetch(signatureData.dataUrl);
-      const blob = await response.blob();
+      const validatedAt = new Date().toISOString();
       
-      // Upload to storage
-      const fileName = `${obraId}/${reportId}/contratada.png`;
-      const { error: uploadError } = await supabase.storage
-        .from('rdo-signatures')
-        .upload(fileName, blob, {
-          upsert: true,
-          contentType: 'image/png',
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('rdo-signatures')
-        .getPublicUrl(fileName);
-
-      // Update report with signature data
       const { error: updateError } = await supabase
-        .from('rdo_reports')
+        .from("rdo_reports")
         .update({
-          assinatura_contratada_url: publicUrl,
-          assinatura_contratada_nome: signatureData.nome,
-          assinatura_contratada_cargo: signatureData.cargo,
-          assinatura_contratada_documento: signatureData.documento,
-          assinatura_contratada_datetime: new Date().toISOString(),
+          assinatura_contratada_nome: contratadaNome,
+          assinatura_contratada_cargo: contratadaCargo,
+          assinatura_contratada_documento: contratadaDocumento,
+          assinatura_contratada_validado_em: validatedAt,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', reportId);
+        .eq("id", reportId);
 
       if (updateError) throw updateError;
 
-      // Create audit log
       await createAuditLog({
         obraId,
         reportId,
-        acao: 'ASSINAR_CONTRATADA',
-        detalhes: {
-          nome: signatureData.nome,
-          cargo: signatureData.cargo,
-          documento: signatureData.documento,
-        },
+        acao: "ASSINAR_CONTRATADA",
+        detalhes: { nome: contratadaNome, cargo: contratadaCargo, documento: contratadaDocumento },
         actorId: user?.id,
-        actorNome: signatureData.nome,
+        actorNome: contratadaNome,
       });
 
-      toast.success('Assinatura da contratada salva com sucesso');
+      toast.success("Validação do Responsável Técnico registrada");
       onUpdate();
-    } catch (error) {
-      console.error('Erro ao salvar assinatura da contratada:', error);
-      toast.error('Erro ao salvar assinatura');
-      throw error;
+    } catch (error: any) {
+      console.error("Error validating contratada signature:", error);
+      toast.error("Erro ao validar assinatura");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const fiscalSignature = reportData?.assinatura_fiscal_url ? {
-    url: reportData.assinatura_fiscal_url,
-    nome: reportData.assinatura_fiscal_nome,
-    cargo: reportData.assinatura_fiscal_cargo,
-    documento: reportData.assinatura_fiscal_documento,
-    datetime: reportData.assinatura_fiscal_datetime,
-  } : null;
-
-  const contratadaSignature = reportData?.assinatura_contratada_url ? {
-    url: reportData.assinatura_contratada_url,
-    nome: reportData.assinatura_contratada_nome,
-    cargo: reportData.assinatura_contratada_cargo,
-    documento: reportData.assinatura_contratada_documento,
-    datetime: reportData.assinatura_contratada_datetime,
-  } : null;
-
-  const isApproved = reportData?.status === 'aprovado';
+  const fiscalValidado = reportData?.assinatura_fiscal_validado_em;
+  const contratadaValidado = reportData?.assinatura_contratada_validado_em;
+  const isApproved = reportData?.status === "aprovado";
 
   return (
     <div className="space-y-6 pb-20">
       <div>
-        <h2 className="text-xl font-semibold mb-2">Assinaturas</h2>
+        <h2 className="text-xl font-semibold mb-2">Validação de Assinaturas</h2>
         <p className="text-sm text-muted-foreground">
-          Colete as assinaturas digitais do fiscal/gestor e do responsável da contratada
+          Preencha os dados e valide para registrar sua assinatura no relatório
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SignatureCanvas
-          title="Assinatura do Fiscal/Gestor (DPE-MT)"
-          onSave={handleSaveFiscalSignature}
-          existingSignature={fiscalSignature}
-          disabled={isApproved}
-        />
+        {/* Fiscal/Gestor */}
+        <Card className="p-6">
+          <h3 className="font-semibold mb-4">Assinatura do Fiscal/Gestor (DPE-MT)</h3>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="fiscal-nome">Nome *</Label>
+              <Input
+                id="fiscal-nome"
+                value={fiscalNome}
+                onChange={(e) => setFiscalNome(e.target.value)}
+                placeholder="Nome completo"
+                disabled={!!fiscalValidado || isApproved}
+              />
+            </div>
+            <div>
+              <Label htmlFor="fiscal-cargo">Cargo *</Label>
+              <Input
+                id="fiscal-cargo"
+                value={fiscalCargo}
+                onChange={(e) => setFiscalCargo(e.target.value)}
+                placeholder="Cargo/Função"
+                disabled={!!fiscalValidado || isApproved}
+              />
+            </div>
+            <div>
+              <Label htmlFor="fiscal-documento">CREA/CPF/ID *</Label>
+              <Input
+                id="fiscal-documento"
+                value={fiscalDocumento}
+                onChange={(e) => setFiscalDocumento(e.target.value)}
+                placeholder="Documento"
+                disabled={!!fiscalValidado || isApproved}
+              />
+            </div>
+            {fiscalValidado ? (
+              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-3 rounded-md">
+                <Check className="h-4 w-4" />
+                <span>Validado em {new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
+              </div>
+            ) : (
+              <Button
+                onClick={handleValidateFiscal}
+                disabled={isSaving || isApproved}
+                className="w-full"
+              >
+                Validar Assinatura
+              </Button>
+            )}
+          </div>
+        </Card>
 
-        <SignatureCanvas
-          title="Assinatura do Responsável Técnico (Contratada)"
-          onSave={handleSaveContratadaSignature}
-          existingSignature={contratadaSignature}
-          disabled={isApproved}
-        />
+        {/* Contratada */}
+        <Card className="p-6">
+          <h3 className="font-semibold mb-4">Assinatura do Responsável Técnico (Contratada)</h3>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="contratada-nome">Nome *</Label>
+              <Input
+                id="contratada-nome"
+                value={contratadaNome}
+                onChange={(e) => setContratadaNome(e.target.value)}
+                placeholder="Nome completo"
+                disabled={!!contratadaValidado || isApproved}
+              />
+            </div>
+            <div>
+              <Label htmlFor="contratada-cargo">Cargo *</Label>
+              <Input
+                id="contratada-cargo"
+                value={contratadaCargo}
+                onChange={(e) => setContratadaCargo(e.target.value)}
+                placeholder="Cargo/Função"
+                disabled={!!contratadaValidado || isApproved}
+              />
+            </div>
+            <div>
+              <Label htmlFor="contratada-documento">CREA/CPF/ID *</Label>
+              <Input
+                id="contratada-documento"
+                value={contratadaDocumento}
+                onChange={(e) => setContratadaDocumento(e.target.value)}
+                placeholder="Documento"
+                disabled={!!contratadaValidado || isApproved}
+              />
+            </div>
+            {contratadaValidado ? (
+              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-3 rounded-md">
+                <Check className="h-4 w-4" />
+                <span>Validado em {new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
+              </div>
+            ) : (
+              <Button
+                onClick={handleValidateContratada}
+                disabled={isSaving || isApproved}
+                className="w-full"
+              >
+                Validar Assinatura
+              </Button>
+            )}
+          </div>
+        </Card>
       </div>
 
       {isApproved && (

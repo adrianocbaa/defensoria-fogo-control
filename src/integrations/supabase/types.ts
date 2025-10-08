@@ -1452,12 +1452,14 @@ export type Database = {
           assinatura_contratada_documento: string | null
           assinatura_contratada_nome: string | null
           assinatura_contratada_url: string | null
+          assinatura_contratada_validado_em: string | null
           assinatura_empresa_url: string | null
           assinatura_fiscal_cargo: string | null
           assinatura_fiscal_datetime: string | null
           assinatura_fiscal_documento: string | null
           assinatura_fiscal_nome: string | null
           assinatura_fiscal_url: string | null
+          assinatura_fiscal_validado_em: string | null
           clima_manha: string | null
           clima_noite: string | null
           clima_tarde: string | null
@@ -1484,12 +1486,14 @@ export type Database = {
           assinatura_contratada_documento?: string | null
           assinatura_contratada_nome?: string | null
           assinatura_contratada_url?: string | null
+          assinatura_contratada_validado_em?: string | null
           assinatura_empresa_url?: string | null
           assinatura_fiscal_cargo?: string | null
           assinatura_fiscal_datetime?: string | null
           assinatura_fiscal_documento?: string | null
           assinatura_fiscal_nome?: string | null
           assinatura_fiscal_url?: string | null
+          assinatura_fiscal_validado_em?: string | null
           clima_manha?: string | null
           clima_noite?: string | null
           clima_tarde?: string | null
@@ -1516,12 +1520,14 @@ export type Database = {
           assinatura_contratada_documento?: string | null
           assinatura_contratada_nome?: string | null
           assinatura_contratada_url?: string | null
+          assinatura_contratada_validado_em?: string | null
           assinatura_empresa_url?: string | null
           assinatura_fiscal_cargo?: string | null
           assinatura_fiscal_datetime?: string | null
           assinatura_fiscal_documento?: string | null
           assinatura_fiscal_nome?: string | null
           assinatura_fiscal_url?: string | null
+          assinatura_fiscal_validado_em?: string | null
           clima_manha?: string | null
           clima_noite?: string | null
           clima_tarde?: string | null
