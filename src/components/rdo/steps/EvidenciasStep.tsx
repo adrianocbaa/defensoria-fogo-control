@@ -117,48 +117,68 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
+    const filesArray = Array.from(files);
+    let successCount = 0;
+    let errorCount = 0;
 
-    // Validações
-    if (tipo === 'video') {
-      if (!file.type.includes('video')) {
-        toast.error('Apenas arquivos de vídeo são permitidos');
-        return;
+    for (const file of filesArray) {
+      // Validações
+      if (tipo === 'video') {
+        if (!file.type.includes('video')) {
+          toast.error(`${file.name}: Apenas arquivos de vídeo são permitidos`);
+          errorCount++;
+          continue;
+        }
+        if (file.size > 100 * 1024 * 1024) {
+          toast.error(`${file.name}: Vídeo deve ter no máximo 100MB`);
+          errorCount++;
+          continue;
+        }
+      } else if (tipo === 'foto') {
+        if (!file.type.includes('image')) {
+          toast.error(`${file.name}: Apenas arquivos de imagem são permitidos`);
+          errorCount++;
+          continue;
+        }
       }
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error('Vídeo deve ter no máximo 100MB');
-        return;
+
+      const folder = `rdo-media/${obraId}/${reportId}/${data}`;
+      const result = await uploadFile(file, 'service-photos', folder);
+
+      if (result.error) {
+        toast.error(`${file.name}: ${result.error}`);
+        errorCount++;
+        continue;
       }
-    } else if (tipo === 'foto') {
-      if (!file.type.includes('image')) {
-        toast.error('Apenas arquivos de imagem são permitidos');
-        return;
+
+      // Salvar no banco
+      const { error } = await supabase.from('rdo_media').insert([{
+        report_id: reportId,
+        tipo,
+        file_url: result.url!,
+        thumb_url: tipo === 'foto' ? result.url : undefined,
+      }] as any);
+
+      if (error) {
+        toast.error(`${file.name}: Erro ao salvar evidência`);
+        errorCount++;
+        continue;
       }
-    }
 
-    const folder = `rdo-media/${obraId}/${reportId}/${data}`;
-    const result = await uploadFile(file, 'service-photos', folder);
-
-    if (result.error) {
-      toast.error(result.error);
-      return;
-    }
-
-    // Salvar no banco
-    const { error } = await supabase.from('rdo_media').insert([{
-      report_id: reportId,
-      tipo,
-      file_url: result.url!,
-      thumb_url: tipo === 'foto' ? result.url : undefined,
-    }] as any);
-
-    if (error) {
-      toast.error('Erro ao salvar evidência');
-      return;
+      successCount++;
     }
 
     queryClient.invalidateQueries({ queryKey: ['rdo-media', reportId] });
-    toast.success('Arquivo enviado com sucesso');
+    
+    if (successCount > 0) {
+      toast.success(`${successCount} arquivo(s) enviado(s) com sucesso`);
+    }
+    if (errorCount > 0) {
+      toast.error(`${errorCount} arquivo(s) com erro`);
+    }
+
+    // Reset input
+    e.target.value = '';
   };
 
   const fotos = media.filter((m) => m.tipo === 'foto');
@@ -205,6 +225,7 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={(e) => handleFileUpload(e, 'foto')}
                 className="hidden"
                 id="upload-foto"
@@ -214,7 +235,7 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
                 <Button asChild disabled={uploading}>
                   <span>
                     <Camera className="h-4 w-4 mr-2" />
-                    {uploading ? 'Enviando...' : 'Adicionar Foto'}
+                    {uploading ? 'Enviando...' : 'Adicionar Fotos'}
                   </span>
                 </Button>
               </label>
@@ -261,6 +282,7 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
               <input
                 type="file"
                 accept="video/*"
+                multiple
                 onChange={(e) => handleFileUpload(e, 'video')}
                 className="hidden"
                 id="upload-video"
@@ -270,7 +292,7 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
                 <Button asChild disabled={uploading}>
                   <span>
                     <Video className="h-4 w-4 mr-2" />
-                    {uploading ? 'Enviando...' : 'Adicionar Vídeo (max 100MB)'}
+                    {uploading ? 'Enviando...' : 'Adicionar Vídeos (max 100MB cada)'}
                   </span>
                 </Button>
               </label>
@@ -320,6 +342,7 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
               <input
                 type="file"
                 accept=".pdf,.doc,.docx,.xls,.xlsx"
+                multiple
                 onChange={(e) => handleFileUpload(e, 'anexo')}
                 className="hidden"
                 id="upload-anexo"
@@ -329,7 +352,7 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
                 <Button asChild disabled={uploading}>
                   <span>
                     <FileUp className="h-4 w-4 mr-2" />
-                    {uploading ? 'Enviando...' : 'Adicionar Anexo'}
+                    {uploading ? 'Enviando...' : 'Adicionar Anexos'}
                   </span>
                 </Button>
               </label>
