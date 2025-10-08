@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type UserRole = 'admin' | 'editor' | 'viewer' | 'gm' | 'manutencao';
+export type UserRole = 'admin' | 'editor' | 'viewer' | 'gm' | 'manutencao' | 'prestadora';
 
 export function useUserRole() {
   const { user } = useAuth();
@@ -46,6 +46,8 @@ export function useUserRole() {
   const isAdmin = role === 'admin';
   const canEdit = role === 'admin' || role === 'editor' || role === 'gm';
   const isGM = role === 'gm';
+  const isPrestadora = role === 'prestadora';
+  const canEditRDO = role === 'admin' || role === 'editor' || role === 'gm' || role === 'prestadora';
 
   const refreshRole = () => {
     fetchUserRole();
@@ -56,6 +58,8 @@ export function useUserRole() {
     isAdmin,
     canEdit,
     isGM,
+    isPrestadora,
+    canEditRDO,
     loading,
     refreshRole
   };

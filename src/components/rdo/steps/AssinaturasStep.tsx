@@ -25,10 +25,11 @@ export function AssinaturasStep({
   onUpdate,
 }: AssinaturasStepProps) {
   const { user } = useAuth();
-  const { canEdit, isAdmin } = useUserRole();
+  const { canEdit, isAdmin, isPrestadora, canEditRDO } = useUserRole();
   const [isSaving, setIsSaving] = useState(false);
   
   const canValidateFiscal = canEdit || isAdmin;
+  const canValidateContratada = canEditRDO; // Inclui prestadora
   
   const [fiscalNome, setFiscalNome] = useState(reportData?.assinatura_fiscal_nome || "");
   const [fiscalCargo, setFiscalCargo] = useState(reportData?.assinatura_fiscal_cargo || "");
@@ -211,7 +212,7 @@ export function AssinaturasStep({
                 value={contratadaNome}
                 onChange={(e) => setContratadaNome(e.target.value)}
                 placeholder="Nome completo"
-                disabled={!!contratadaValidado || isApproved}
+                disabled={!!contratadaValidado || isApproved || !canValidateContratada}
               />
             </div>
             <div>
@@ -221,7 +222,7 @@ export function AssinaturasStep({
                 value={contratadaCargo}
                 onChange={(e) => setContratadaCargo(e.target.value)}
                 placeholder="Cargo/Função"
-                disabled={!!contratadaValidado || isApproved}
+                disabled={!!contratadaValidado || isApproved || !canValidateContratada}
               />
             </div>
             <div>
@@ -231,15 +232,23 @@ export function AssinaturasStep({
                 value={contratadaDocumento}
                 onChange={(e) => setContratadaDocumento(e.target.value)}
                 placeholder="Documento"
-                disabled={!!contratadaValidado || isApproved}
+                disabled={!!contratadaValidado || isApproved || !canValidateContratada}
               />
             </div>
+            {!canValidateContratada && !contratadaValidado && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Apenas usuários com permissão adequada podem validar esta assinatura.
+                </AlertDescription>
+              </Alert>
+            )}
             {contratadaValidado ? (
               <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-3 rounded-md">
                 <Check className="h-4 w-4" />
                 <span>Validado em {new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
               </div>
-            ) : (
+            ) : canValidateContratada ? (
               <Button
                 onClick={handleValidateContratada}
                 disabled={isSaving || isApproved}
@@ -247,7 +256,7 @@ export function AssinaturasStep({
               >
                 Validar Assinatura
               </Button>
-            )}
+            ) : null}
           </div>
         </Card>
       </div>
