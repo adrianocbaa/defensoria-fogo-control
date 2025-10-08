@@ -77,6 +77,23 @@ export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepPro
       
       if (error) throw error;
     },
+    onMutate: async (variables: { id: string; field: keyof Equipment; value: any }) => {
+      await queryClient.cancelQueries({ queryKey: ['rdo-equipment', reportId] });
+      const previous = queryClient.getQueryData<Equipment[]>(['rdo-equipment', reportId]);
+      if (previous) {
+        const next = previous.map((e) =>
+          e.id === variables.id ? { ...e, [variables.field]: variables.value } as Equipment : e
+        );
+        queryClient.setQueryData(['rdo-equipment', reportId], next);
+      }
+      return { previous };
+    },
+    onError: (_err, _variables, context) => {
+      if ((context as any)?.previous) {
+        queryClient.setQueryData(['rdo-equipment', reportId], (context as any).previous);
+      }
+      toast.error('Não foi possível salvar. Tente novamente.');
+    },
     onSuccess: (_data, variables) => {
       const { id, field } = variables as { id: string; field: keyof Equipment; value: any };
       setLocalValues((prev) => {
@@ -90,6 +107,8 @@ export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepPro
         }
         return next;
       });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-equipment', reportId] });
     },
   });

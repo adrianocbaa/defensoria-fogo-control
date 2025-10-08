@@ -74,6 +74,23 @@ export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
       
       if (error) throw error;
     },
+    onMutate: async (variables: { id: string; field: keyof Visit; value: any }) => {
+      await queryClient.cancelQueries({ queryKey: ['rdo-visits', reportId] });
+      const previous = queryClient.getQueryData<Visit[]>(['rdo-visits', reportId]);
+      if (previous) {
+        const next = previous.map((v) =>
+          v.id === variables.id ? { ...v, [variables.field]: variables.value } as Visit : v
+        );
+        queryClient.setQueryData(['rdo-visits', reportId], next);
+      }
+      return { previous };
+    },
+    onError: (_err, _variables, context) => {
+      if ((context as any)?.previous) {
+        queryClient.setQueryData(['rdo-visits', reportId], (context as any).previous);
+      }
+      toast.error('Não foi possível salvar. Tente novamente.');
+    },
     onSuccess: (_data, variables) => {
       const { id, field } = variables as { id: string; field: keyof Visit; value: any };
       setLocalValues((prev) => {
@@ -87,6 +104,8 @@ export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
         }
         return next;
       });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-visits', reportId] });
     },
   });

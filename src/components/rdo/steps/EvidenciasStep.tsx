@@ -72,7 +72,32 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
       
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (variables: { id: string; descricao: string }) => {
+      await queryClient.cancelQueries({ queryKey: ['rdo-media', reportId] });
+      const previous = queryClient.getQueryData<Media[]>(['rdo-media', reportId]);
+      if (previous) {
+        const next = previous.map((m) =>
+          m.id === variables.id ? { ...m, descricao: variables.descricao } : m
+        );
+        queryClient.setQueryData(['rdo-media', reportId], next);
+      }
+      return { previous, id: variables.id };
+    },
+    onError: (_err, _variables, context) => {
+      if ((context as any)?.previous) {
+        queryClient.setQueryData(['rdo-media', reportId], (context as any).previous);
+      }
+      toast.error('Não foi possível salvar a descrição.');
+    },
+    onSuccess: (_data, variables) => {
+      const { id } = variables as { id: string; descricao: string };
+      setLocalDescriptions((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-media', reportId] });
     },
   });
@@ -81,7 +106,6 @@ export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) 
     Object.entries(debouncedDescriptions).forEach(([id, descricao]) => {
       updateDescMutation.mutate({ id, descricao });
     });
-    setLocalDescriptions({});
   }, [debouncedDescriptions]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, tipo: 'foto' | 'video' | 'anexo') => {

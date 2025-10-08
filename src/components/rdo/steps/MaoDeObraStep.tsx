@@ -91,6 +91,23 @@ export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
       
       if (error) throw error;
     },
+    onMutate: async (variables: { id: string; field: keyof Workforce; value: any }) => {
+      await queryClient.cancelQueries({ queryKey: ['rdo-workforce', reportId] });
+      const previous = queryClient.getQueryData<Workforce[]>(['rdo-workforce', reportId]);
+      if (previous) {
+        const next = previous.map((w) =>
+          w.id === variables.id ? { ...w, [variables.field]: variables.value } as Workforce : w
+        );
+        queryClient.setQueryData(['rdo-workforce', reportId], next);
+      }
+      return { previous };
+    },
+    onError: (_err, _variables, context) => {
+      if ((context as any)?.previous) {
+        queryClient.setQueryData(['rdo-workforce', reportId], (context as any).previous);
+      }
+      toast.error('Não foi possível salvar. Tente novamente.');
+    },
     onSuccess: (_data, variables) => {
       const { id, field } = variables as { id: string; field: keyof Workforce; value: any };
       setLocalValues((prev) => {
@@ -104,6 +121,8 @@ export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
         }
         return next;
       });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-workforce', reportId] });
     },
   });

@@ -79,6 +79,23 @@ export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
       
       if (error) throw error;
     },
+    onMutate: async (variables: { id: string; field: keyof Occurrence; value: any }) => {
+      await queryClient.cancelQueries({ queryKey: ['rdo-occurrences', reportId] });
+      const previous = queryClient.getQueryData<Occurrence[]>(['rdo-occurrences', reportId]);
+      if (previous) {
+        const next = previous.map((o) =>
+          o.id === variables.id ? { ...o, [variables.field]: variables.value } as Occurrence : o
+        );
+        queryClient.setQueryData(['rdo-occurrences', reportId], next);
+      }
+      return { previous };
+    },
+    onError: (_err, _variables, context) => {
+      if ((context as any)?.previous) {
+        queryClient.setQueryData(['rdo-occurrences', reportId], (context as any).previous);
+      }
+      toast.error('Não foi possível salvar. Tente novamente.');
+    },
     onSuccess: (_data, variables) => {
       const { id, field } = variables as { id: string; field: keyof Occurrence; value: any };
       setLocalValues((prev) => {
@@ -92,6 +109,8 @@ export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
         }
         return next;
       });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-occurrences', reportId] });
     },
   });
