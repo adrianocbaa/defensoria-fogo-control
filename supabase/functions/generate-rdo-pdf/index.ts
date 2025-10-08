@@ -397,8 +397,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Signatures with validation timestamps
-    if (rdoData.report.assinatura_fiscal_nome || rdoData.report.assinatura_contratada_nome) {
+    // Signatures with validation timestamps - Fiscal only
+    if (rdoData.report.assinatura_fiscal_nome) {
       if (yPos > 200) {
         doc.addPage();
         yPos = 20;
@@ -406,52 +406,34 @@ Deno.serve(async (req) => {
 
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text('Validações de Assinaturas', 14, yPos);
+      doc.text('Fiscal (DPE-MT)', 14, yPos);
       yPos += 5;
 
       const signaturesData = [];
       
-      if (rdoData.report.assinatura_fiscal_nome) {
-        const validadoEm = rdoData.report.assinatura_fiscal_validado_em 
-          ? new Date(rdoData.report.assinatura_fiscal_validado_em).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })
-          : 'Pendente';
-        
-        signaturesData.push([
-          'Fiscal/Gestor (DPE-MT)',
-          rdoData.report.assinatura_fiscal_nome,
-          rdoData.report.assinatura_fiscal_cargo || '-',
-          rdoData.report.assinatura_fiscal_documento || '-',
-          validadoEm
-        ]);
-      }
-
-      if (rdoData.report.assinatura_contratada_nome) {
-        const validadoEm = rdoData.report.assinatura_contratada_validado_em 
-          ? new Date(rdoData.report.assinatura_contratada_validado_em).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })
-          : 'Pendente';
-        
-        signaturesData.push([
-          'Responsável Técnico',
-          rdoData.report.assinatura_contratada_nome,
-          rdoData.report.assinatura_contratada_cargo || '-',
-          rdoData.report.assinatura_contratada_documento || '-',
-          validadoEm
-        ]);
-      }
+      const validadoEm = rdoData.report.assinatura_fiscal_validado_em 
+        ? new Date(rdoData.report.assinatura_fiscal_validado_em).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })
+        : 'Pendente';
+      
+      signaturesData.push([
+        rdoData.report.assinatura_fiscal_nome,
+        rdoData.report.assinatura_fiscal_cargo || '-',
+        rdoData.report.assinatura_fiscal_documento || '-',
+        validadoEm
+      ]);
 
       (doc as any).autoTable({
         startY: yPos,
-        head: [['Tipo', 'Nome', 'Cargo', 'Documento', 'Validado em']],
+        head: [['Nome', 'Cargo', 'Documento', 'Validado em']],
         body: signaturesData,
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
         columnStyles: {
-          0: { cellWidth: 35 },
+          0: { cellWidth: 50 },
           1: { cellWidth: 40 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 30 },
-          4: { cellWidth: 40 }
+          2: { cellWidth: 40 },
+          3: { cellWidth: 45 }
         },
       });
 
