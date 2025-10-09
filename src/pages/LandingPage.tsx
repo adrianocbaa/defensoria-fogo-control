@@ -219,7 +219,7 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-6xl">
           <motion.div className="text-center mb-12" variants={fadeInUp}>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Por que escolher o Sistema DIF?
+              O que o Sistema DIF Proporciona?
             </h2>
           </motion.div>
 
