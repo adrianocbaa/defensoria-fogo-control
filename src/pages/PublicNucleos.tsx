@@ -15,9 +15,11 @@ interface Nucleus {
   id: string;
   nome: string;
   cidade: string;
-  latitude: number | null;
-  longitude: number | null;
+  lat: number | null;
+  lng: number | null;
   endereco: string;
+  telefones?: string;
+  email?: string;
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +51,7 @@ const PublicNucleos = () => {
         // Buscar dados dos núcleos
         const { data, error } = await supabase
           .from('nucleos_central')
-          .select('id, nome, cidade, lat, lng, endereco, created_at, updated_at')
+          .select('id, nome, cidade, lat, lng, endereco, telefones, email, created_at, updated_at')
           .in('id', nucleoIds);
 
         if (error) throw error;
@@ -58,9 +60,11 @@ const PublicNucleos = () => {
           id: item.id,
           nome: item.nome,
           cidade: item.cidade,
-          latitude: item.lat,
-          longitude: item.lng,
+          lat: item.lat,
+          lng: item.lng,
           endereco: item.endereco || '',
+          telefones: item.telefones,
+          email: item.email,
           created_at: item.created_at,
           updated_at: item.updated_at
         }));

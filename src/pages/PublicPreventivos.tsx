@@ -15,9 +15,11 @@ interface Nucleus {
   id: string;
   nome: string;
   cidade: string;
-  latitude: number | null;
-  longitude: number | null;
+  lat: number | null;
+  lng: number | null;
   endereco: string;
+  telefones?: string;
+  email?: string;
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +51,7 @@ const PublicPreventivos = () => {
         // Buscar dados dos núcleos
         const { data, error } = await supabase
           .from('nuclei')
-          .select('id, name, city, address, coordinates_lat, coordinates_lng, created_at, updated_at')
+          .select('id, name, city, address, coordinates_lat, coordinates_lng, contact_phone, contact_email, created_at, updated_at')
           .in('id', nucleoIds);
 
         if (error) throw error;
@@ -58,9 +60,11 @@ const PublicPreventivos = () => {
           id: item.id,
           nome: item.name,
           cidade: item.city,
-          latitude: item.coordinates_lat,
-          longitude: item.coordinates_lng,
+          lat: item.coordinates_lat,
+          lng: item.coordinates_lng,
           endereco: item.address || '',
+          telefones: item.contact_phone,
+          email: item.contact_email,
           created_at: item.created_at,
           updated_at: item.updated_at
         }));
