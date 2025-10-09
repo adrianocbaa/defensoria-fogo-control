@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Menu, X, RotateCcw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Menu, X, RotateCcw, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PublicHeader } from '@/components/PublicHeader';
 import { PageHeader } from '@/components/PageHeader';
@@ -132,6 +133,14 @@ export default function PublicObras() {
         <PageHeader
           title="Mapa de Obras Públicas"
           subtitle="Visualize e acompanhe o andamento das obras públicas no estado (Visualização Pública)"
+          actions={
+            <Button asChild variant="outline">
+              <Link to="/public/obras/lista">
+                <List className="h-4 w-4 mr-2" />
+                Ver como Lista
+              </Link>
+            </Button>
+          }
         />
 
         {/* Mobile sidebar toggle */}
