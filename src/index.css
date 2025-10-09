@@ -308,4 +308,11 @@ All colors MUST be HSL.
   .row-lv1 { background-color: hsl(var(--row-lv1-bg)); }
   .row-lv2 { background-color: hsl(var(--row-lv2-bg)); }
   .row-lv3 { background-color: hsl(var(--row-lv3-bg)); }
+
+  /* Grid pattern for hero sections */
+  .bg-grid-pattern {
+    background-image: linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px),
+                      linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
 }
