@@ -58,12 +58,14 @@ export default function LandingPage() {
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Button size="lg" className="gap-2" asChild>
-                <Link to="/dashboard">
+                <Link to="/public">
                   Ver Demonstração <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="gap-2">
-                Contato <Users className="h-4 w-4" />
+              <Button size="lg" variant="outline" className="gap-2" asChild>
+                <Link to="/auth">
+                  Acessar Sistema <Users className="h-4 w-4" />
+                </Link>
               </Button>
             </div>
           </motion.div>
@@ -121,7 +123,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <Button className="w-full" variant="outline" asChild>
-                    <Link to="/preventivos">Explorar módulo</Link>
+                    <Link to="/public">Visualizar (Público)</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -159,7 +161,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <Button className="w-full" variant="outline" asChild>
-                    <Link to="/obras">Explorar módulo</Link>
+                    <Link to="/public/obras">Visualizar (Público)</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -197,7 +199,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <Button className="w-full" variant="outline" asChild>
-                    <Link to="/nucleos">Explorar módulo</Link>
+                    <Link to="/public">Visualizar (Público)</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -358,9 +360,9 @@ export default function LandingPage() {
             <div>
               <h3 className="font-semibold mb-3">Módulos</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/preventivos" className="hover:text-primary transition-colors">Preventivo</Link></li>
-                <li><Link to="/obras" className="hover:text-primary transition-colors">Obras</Link></li>
-                <li><Link to="/nucleos" className="hover:text-primary transition-colors">Núcleos</Link></li>
+                <li><Link to="/public" className="hover:text-primary transition-colors">Visualização Pública</Link></li>
+                <li><Link to="/public/obras" className="hover:text-primary transition-colors">Obras (Público)</Link></li>
+                <li><Link to="/auth" className="hover:text-primary transition-colors">Acessar Sistema</Link></li>
               </ul>
             </div>
             <div>
