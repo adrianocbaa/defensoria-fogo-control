@@ -15,6 +15,9 @@ import NucleusDetails from "./pages/NucleusDetails";
 import AuthPage from "./pages/AuthPage";
 import PublicView from "./pages/PublicView";
 import LandingPage from "./pages/LandingPage";
+import PublicObras from "./pages/PublicObras";
+import PublicPreventivos from "./pages/PublicPreventivos";
+import PublicNucleos from "./pages/PublicNucleos";
 import AdminPanel from "./pages/AdminPanel";
 import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
@@ -60,7 +63,9 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/public" element={<PublicView />} />
-      <Route path="/public/obras" element={<Obras />} />
+      <Route path="/public/obras" element={<PublicObras />} />
+      <Route path="/public/preventivos" element={<PublicPreventivos />} />
+      <Route path="/public/nucleos" element={<PublicNucleos />} />
       <Route path="/rdo/verify/:hash" element={<RdoVerify />} />
       <Route path="/apresentacao" element={<LandingPage />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
