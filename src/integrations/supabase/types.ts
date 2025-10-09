@@ -152,7 +152,7 @@ export type Database = {
           record_id: string
           table_name: string
           user_email: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           changed_fields?: string[] | null
@@ -164,7 +164,7 @@ export type Database = {
           record_id: string
           table_name: string
           user_email?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           changed_fields?: string[] | null
@@ -176,7 +176,7 @@ export type Database = {
           record_id?: string
           table_name?: string
           user_email?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -891,6 +891,7 @@ export type Database = {
           empresa_responsavel: string | null
           fotos: Json | null
           id: string
+          is_public: boolean
           municipio: string
           n_contrato: string | null
           nome: string
@@ -914,6 +915,7 @@ export type Database = {
           empresa_responsavel?: string | null
           fotos?: Json | null
           id?: string
+          is_public?: boolean
           municipio: string
           n_contrato?: string | null
           nome: string
@@ -937,6 +939,7 @@ export type Database = {
           empresa_responsavel?: string | null
           fotos?: Json | null
           id?: string
+          is_public?: boolean
           municipio?: string
           n_contrato?: string | null
           nome?: string
