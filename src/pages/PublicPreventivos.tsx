@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicHeader } from '@/components/PublicHeader';
 import { PageHeader } from '@/components/PageHeader';
@@ -25,6 +26,7 @@ interface Nucleus {
 }
 
 const PublicPreventivos = () => {
+  const navigate = useNavigate();
   const [nucleos, setNucleos] = useState<Nucleus[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -147,7 +149,7 @@ const PublicPreventivos = () => {
         </div>
 
         {/* Mapa dos Núcleos */}
-        {!loading && <MapViewPreventivos nucleos={filteredNucleos} onViewDetails={() => {}} />}
+        {!loading && <MapViewPreventivos nucleos={filteredNucleos} onViewDetails={(id) => navigate(`/public/preventivos/${id}`)} />}
 
         {/* Loading State */}
         {loading && (

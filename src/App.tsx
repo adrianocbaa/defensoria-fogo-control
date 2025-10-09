@@ -17,6 +17,7 @@ import PublicView from "./pages/PublicView";
 import LandingPage from "./pages/LandingPage";
 import PublicObras from "./pages/PublicObras";
 import PublicPreventivos from "./pages/PublicPreventivos";
+import PublicPreventivosDetails from "./pages/PublicPreventivosDetails";
 import PublicNucleos from "./pages/PublicNucleos";
 import PublicObrasLista from "./pages/PublicObrasLista";
 import PublicMedicao from "./pages/PublicMedicao";
@@ -73,8 +74,9 @@ const AppRoutes = () => {
           <Route path="/public/obras/:id" element={<PublicObraDetalhes />} />
           <Route path="/public/obras/:id/medicao" element={<PublicMedicao />} />
           <Route path="/public/obras/:id/rdo" element={<PublicRDO />} />
-          <Route path="/public/obras/:id/rdo/diario" element={<PublicRDODiario />} />
+      <Route path="/public/obras/:id/rdo/diario" element={<PublicRDODiario />} />
       <Route path="/public/preventivos" element={<PublicPreventivos />} />
+      <Route path="/public/preventivos/:id" element={<PublicPreventivosDetails />} />
       <Route path="/public/nucleos" element={<PublicNucleos />} />
       <Route path="/rdo/verify/:hash" element={<RdoVerify />} />
       <Route path="/apresentacao" element={<LandingPage />} />
