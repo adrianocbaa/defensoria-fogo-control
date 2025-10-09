@@ -19,6 +19,8 @@ import PublicObras from "./pages/PublicObras";
 import PublicPreventivos from "./pages/PublicPreventivos";
 import PublicNucleos from "./pages/PublicNucleos";
 import PublicObrasLista from "./pages/PublicObrasLista";
+import PublicMedicao from "./pages/PublicMedicao";
+import PublicObraDetalhes from "./pages/PublicObraDetalhes";
 import AdminPanel from "./pages/AdminPanel";
 import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
@@ -66,6 +68,8 @@ const AppRoutes = () => {
       <Route path="/public" element={<PublicView />} />
       <Route path="/public/obras" element={<PublicObras />} />
       <Route path="/public/obras/lista" element={<PublicObrasLista />} />
+      <Route path="/public/obras/:id" element={<PublicObraDetalhes />} />
+      <Route path="/public/obras/:id/medicao" element={<PublicMedicao />} />
       <Route path="/public/preventivos" element={<PublicPreventivos />} />
       <Route path="/public/nucleos" element={<PublicNucleos />} />
       <Route path="/rdo/verify/:hash" element={<RdoVerify />} />

@@ -8,10 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import * as LoadingStates from '@/components/LoadingStates';
-import { Map, List, Search, Eye } from 'lucide-react';
+import { Map, List, Search, Eye, FileText, Link as LinkIcon } from 'lucide-react';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { type Obra } from '@/data/mockObras';
+import { toast } from 'sonner';
 
 const statusColors: Record<string, string> = {
   planejamento: 'bg-blue-100 text-blue-800',
@@ -206,9 +207,34 @@ export default function PublicObrasLista() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                title="Visualizar detalhes"
+                                title="Compartilhar link"
+                                onClick={() => {
+                                  const url = `${window.location.origin}/public/obras/${obra.id}`;
+                                  navigator.clipboard.writeText(url);
+                                  toast.success('Link copiado para a área de transferência!');
+                                }}
                               >
-                                <Eye className="h-4 w-4" />
+                                <LinkIcon className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Painel Financeiro"
+                                asChild
+                              >
+                                <Link to={`/public/obras/${obra.id}/medicao`}>
+                                  <FileText className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Visualizar detalhes"
+                                asChild
+                              >
+                                <Link to={`/public/obras/${obra.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
                               </Button>
                             </div>
                           </TableCell>
