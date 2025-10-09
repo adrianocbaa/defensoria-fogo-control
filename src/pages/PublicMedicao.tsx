@@ -22,6 +22,32 @@ export function PublicMedicao() {
   const [error, setError] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
+  // Calcular totais de aditivos - DEVE vir ANTES dos early returns
+  const totalAditivo = useMemo(() => {
+    if (!aditivos.length) return 0;
+    return aditivos
+      .filter((a: any) => a.status === 'bloqueada')
+      .reduce((sum: number, aditivo: any) => {
+        const aditivoTotal = (aditivo.aditivo_items || []).reduce((itemSum: number, item: any) => 
+          itemSum + (Number(item.total) || 0), 0
+        );
+        return sum + aditivoTotal;
+      }, 0);
+  }, [aditivos]);
+
+  // Criar mapa de totais acumulados por item - DEVE vir ANTES dos early returns
+  const acumuladoPorItem = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!medicoes.length) return map;
+    medicoes.forEach((medicao: any) => {
+      (medicao.medicao_items || []).forEach((item: any) => {
+        const current = map.get(item.item_code) || 0;
+        map.set(item.item_code, current + (Number(item.total) || 0));
+      });
+    });
+    return map;
+  }, [medicoes]);
+
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
@@ -105,30 +131,6 @@ export function PublicMedicao() {
 
   const valorTotal = obra.valor_total + (obra.valor_aditivado || 0);
   const porcentagemExecucao = valorTotal > 0 ? ((obra.valor_executado || 0) / valorTotal) * 100 : 0;
-
-  // Calcular totais de aditivos
-  const totalAditivo = useMemo(() => {
-    return aditivos
-      .filter((a: any) => a.status === 'bloqueada')
-      .reduce((sum: number, aditivo: any) => {
-        const aditivoTotal = (aditivo.aditivo_items || []).reduce((itemSum: number, item: any) => 
-          itemSum + (Number(item.total) || 0), 0
-        );
-        return sum + aditivoTotal;
-      }, 0);
-  }, [aditivos]);
-
-  // Criar mapa de totais acumulados por item
-  const acumuladoPorItem = useMemo(() => {
-    const map = new Map<string, number>();
-    medicoes.forEach((medicao: any) => {
-      (medicao.medicao_items || []).forEach((item: any) => {
-        const current = map.get(item.item_code) || 0;
-        map.set(item.item_code, current + (Number(item.total) || 0));
-      });
-    });
-    return map;
-  }, [medicoes]);
 
   // Agrupar itens por nível
   const itensPrimeiroNivel = orcamentoItems.filter(item => item.nivel === 1);
