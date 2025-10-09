@@ -30,10 +30,27 @@ const PublicNucleos = () => {
   useEffect(() => {
     const fetchNucleos = async () => {
       try {
+        // Buscar núcleos visíveis no módulo teletrabalho
+        const { data: visibilityData, error: visError } = await supabase
+          .from('nucleo_module_visibility')
+          .select('nucleo_id')
+          .eq('module_key', 'teletrabalho');
+
+        if (visError) throw visError;
+
+        const nucleoIds = visibilityData?.map(v => v.nucleo_id) || [];
+
+        if (nucleoIds.length === 0) {
+          setNucleos([]);
+          setLoading(false);
+          return;
+        }
+
+        // Buscar dados dos núcleos
         const { data, error } = await supabase
-          .from('vw_nucleos_public')
-          .select('id, nome, cidade, latitude, longitude')
-          .contains('modulos_visiveis', ['teletrabalho']);
+          .from('nucleos_central')
+          .select('id, nome, cidade, lat, lng, endereco, created_at, updated_at')
+          .in('id', nucleoIds);
 
         if (error) throw error;
         
@@ -41,11 +58,11 @@ const PublicNucleos = () => {
           id: item.id,
           nome: item.nome,
           cidade: item.cidade,
-          latitude: item.latitude,
-          longitude: item.longitude,
-          endereco: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          latitude: item.lat,
+          longitude: item.lng,
+          endereco: item.endereco || '',
+          created_at: item.created_at,
+          updated_at: item.updated_at
         }));
         
         setNucleos(mappedData);

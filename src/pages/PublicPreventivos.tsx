@@ -30,22 +30,39 @@ const PublicPreventivos = () => {
   useEffect(() => {
     const fetchNucleos = async () => {
       try {
+        // Buscar núcleos visíveis no módulo preventivos
+        const { data: visibilityData, error: visError } = await supabase
+          .from('nucleo_module_visibility')
+          .select('nucleo_id')
+          .eq('module_key', 'preventivos');
+
+        if (visError) throw visError;
+
+        const nucleoIds = visibilityData?.map(v => v.nucleo_id) || [];
+
+        if (nucleoIds.length === 0) {
+          setNucleos([]);
+          setLoading(false);
+          return;
+        }
+
+        // Buscar dados dos núcleos
         const { data, error } = await supabase
-          .from('vw_nucleos_public')
-          .select('id, nome, cidade, latitude, longitude')
-          .contains('modulos_visiveis', ['preventivos']);
+          .from('nuclei')
+          .select('id, name, city, address, coordinates_lat, coordinates_lng, created_at, updated_at')
+          .in('id', nucleoIds);
 
         if (error) throw error;
         
         const mappedData: Nucleus[] = (data || []).map((item: any) => ({
           id: item.id,
-          nome: item.nome,
-          cidade: item.cidade,
-          latitude: item.latitude,
-          longitude: item.longitude,
-          endereco: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          nome: item.name,
+          cidade: item.city,
+          latitude: item.coordinates_lat,
+          longitude: item.coordinates_lng,
+          endereco: item.address || '',
+          created_at: item.created_at,
+          updated_at: item.updated_at
         }));
         
         setNucleos(mappedData);
