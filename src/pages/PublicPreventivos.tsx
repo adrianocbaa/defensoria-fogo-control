@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 import { MapViewPreventivos } from '@/components/MapViewPreventivos';
 
-interface Nucleus {
+interface NucleusPreventivos {
   id: string;
   nome: string;
   cidade: string;
-  lat: number | null;
-  lng: number | null;
+  lat?: number;
+  lng?: number;
   endereco: string;
   telefones?: string;
   email?: string;
@@ -27,7 +27,7 @@ interface Nucleus {
 
 const PublicPreventivos = () => {
   const navigate = useNavigate();
-  const [nucleos, setNucleos] = useState<Nucleus[]>([]);
+  const [nucleos, setNucleos] = useState<NucleusPreventivos[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -58,12 +58,12 @@ const PublicPreventivos = () => {
 
         if (error) throw error;
         
-        const mappedData: Nucleus[] = (data || []).map((item: any) => ({
+        const mappedData: NucleusPreventivos[] = (data || []).map((item: any) => ({
           id: item.id,
           nome: item.name,
           cidade: item.city,
-          lat: item.coordinates_lat,
-          lng: item.coordinates_lng,
+          lat: item.coordinates_lat ? Number(item.coordinates_lat) : undefined,
+          lng: item.coordinates_lng ? Number(item.coordinates_lng) : undefined,
           endereco: item.address || '',
           telefones: item.contact_phone,
           email: item.contact_email,
@@ -71,6 +71,7 @@ const PublicPreventivos = () => {
           updated_at: item.updated_at
         }));
         
+        console.log('Nucleos carregados:', mappedData.length, 'com coordenadas:', mappedData.filter(n => n.lat && n.lng).length);
         setNucleos(mappedData);
       } catch (error) {
         console.error('Erro ao carregar núcleos:', error);
