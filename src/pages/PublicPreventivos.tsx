@@ -52,21 +52,21 @@ const PublicPreventivos = () => {
 
         // Buscar dados dos núcleos
         const { data, error } = await supabase
-          .from('nuclei')
-          .select('id, name, city, address, coordinates_lat, coordinates_lng, contact_phone, contact_email, created_at, updated_at')
+          .from('nucleos_central')
+          .select('id, nome, cidade, endereco, lat, lng, telefones, email, created_at, updated_at')
           .in('id', nucleoIds);
 
         if (error) throw error;
         
         const mappedData: NucleusPreventivos[] = (data || []).map((item: any) => ({
           id: item.id,
-          nome: item.name,
-          cidade: item.city,
-          lat: item.coordinates_lat ? Number(item.coordinates_lat) : undefined,
-          lng: item.coordinates_lng ? Number(item.coordinates_lng) : undefined,
-          endereco: item.address || '',
-          telefones: item.contact_phone,
-          email: item.contact_email,
+          nome: item.nome,
+          cidade: item.cidade,
+          lat: item.lat ? Number(item.lat) : undefined,
+          lng: item.lng ? Number(item.lng) : undefined,
+          endereco: item.endereco || '',
+          telefones: item.telefones,
+          email: item.email,
           created_at: item.created_at,
           updated_at: item.updated_at
         }));
