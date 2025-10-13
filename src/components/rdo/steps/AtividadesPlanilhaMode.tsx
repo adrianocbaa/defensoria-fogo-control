@@ -4,7 +4,7 @@ import { FileSpreadsheet, RefreshCw } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOrcamentoItems } from "@/hooks/useOrcamentoItems";
 import { useRdoActivitiesAcumulado } from "@/hooks/useRdoActivitiesAcumulado";
 import { ActivityNoteDialog } from "@/components/rdo/ActivityNoteDialog";
@@ -142,8 +142,8 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
   };
 
-  // Salvar pendências quando o usuário clicar em "Salvar" na página
-  const savePending = () => {
+  // Salvar pendências programaticamente (chamado pelo botão "Salvar")
+  const savePending = useCallback(async () => {
     if (!reportId) return;
     const updates: { activityId: string; value: number; orcamentoItemId: string }[] = [];
 
@@ -159,14 +159,17 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
       }
     });
 
-    updates.forEach((u) => updateExecutadoMutation.mutate(u));
-  };
+    // Executa e aguarda todas as atualizações antes de retornar
+    await Promise.all(
+      updates.map((u) => updateExecutadoMutation.mutateAsync(u))
+    );
+  }, [reportId, orcamentoItems, rdoActivities, localExecutado, updateExecutadoMutation]);
 
+  // Expor função global para o botão Salvar aguardar
   useEffect(() => {
-    const handler = () => savePending();
-    window.addEventListener('rdo-save', handler);
-    return () => window.removeEventListener('rdo-save', handler);
-  }, [localExecutado, rdoActivities, orcamentoItems, reportId]);
+    (window as any).rdoSavePending = savePending;
+    return () => { delete (window as any).rdoSavePending; };
+  }, [savePending]);
 
   // Sincronizar automaticamente na primeira vez
   useEffect(() => {
