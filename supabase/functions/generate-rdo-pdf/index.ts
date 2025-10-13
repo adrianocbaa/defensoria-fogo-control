@@ -190,11 +190,28 @@ Deno.serve(async (req) => {
         yPos = 20;
       }
       
-      // Sort activities by ordem field to maintain hierarchy
+      // Robust sort: ordem asc, fallback to natural sort of item_code (1, 1.2, 1.10, 2 ...)
+      const naturalCompare = (a: string, b: string) => {
+        const as = a.split('.').map(Number);
+        const bs = b.split('.').map(Number);
+        const len = Math.max(as.length, bs.length);
+        for (let i = 0; i < len; i++) {
+          const av = as[i] ?? 0;
+          const bv = bs[i] ?? 0;
+          if (av !== bv) return av - bv;
+        }
+        return 0;
+      };
+
       const sortedActivities = [...rdoData.activities].sort((a, b) => {
-        const ordemA = a.orcamento_item?.ordem || 0;
-        const ordemB = b.orcamento_item?.ordem || 0;
-        return ordemA - ordemB;
+        const ordemA = a.orcamento_item?.ordem;
+        const ordemB = b.orcamento_item?.ordem;
+        if (typeof ordemA === 'number' && typeof ordemB === 'number') {
+          return ordemA - ordemB;
+        }
+        const codeA = a.item_code || a.orcamento_item?.item || '';
+        const codeB = b.item_code || b.orcamento_item?.item || '';
+        return naturalCompare(codeA, codeB);
       });
 
       doc.setFontSize(11);
@@ -208,7 +225,6 @@ Deno.serve(async (req) => {
         body: sortedActivities.map(a => {
           const isMacro = a.orcamento_item?.is_macro || false;
           const itemCode = a.item_code || a.orcamento_item?.item || '-';
-          
           return [
             itemCode,
             a.descricao,
@@ -228,11 +244,9 @@ Deno.serve(async (req) => {
           4: { cellWidth: 25 }
         },
         didParseCell: function(data: any) {
-          // Make MACRO items bold
           if (data.section === 'body') {
             const activity = sortedActivities[data.row.index];
             const isMacro = activity.orcamento_item?.is_macro || false;
-            
             if (isMacro) {
               data.cell.styles.fontStyle = 'bold';
               data.cell.styles.fillColor = [250, 250, 250];

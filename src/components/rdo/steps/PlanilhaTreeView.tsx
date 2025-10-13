@@ -200,7 +200,7 @@ export function PlanilhaTreeView({
 
           {/* Quantidade Total */}
           <div className="w-24 flex-shrink-0 text-sm text-right">
-            {node.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {isMacro ? '—' : node.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </div>
 
           {/* Executado (RDO) - apenas para MICRO */}
