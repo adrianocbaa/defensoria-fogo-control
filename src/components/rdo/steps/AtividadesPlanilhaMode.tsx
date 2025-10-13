@@ -4,7 +4,7 @@ import { FileSpreadsheet, RefreshCw } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useOrcamentoItems } from "@/hooks/useOrcamentoItems";
 import { useRdoActivitiesAcumulado } from "@/hooks/useRdoActivitiesAcumulado";
 import { ActivityNoteDialog } from "@/components/rdo/ActivityNoteDialog";
@@ -48,19 +48,34 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     enabled: !!reportId,
   });
 
+  // Garantir que usamos a atividade correta por item (evitar duplicados), priorizando maior executado_dia
+  const activitiesByItem = useMemo(() => {
+    const map = new Map<string, any>();
+    rdoActivities.forEach((a: any) => {
+      if (!a.orcamento_item_id) return;
+      const existing = map.get(a.orcamento_item_id);
+      if (!existing) {
+        map.set(a.orcamento_item_id, a);
+      } else {
+        const exVal = Number(existing.executado_dia || 0);
+        const newVal = Number(a.executado_dia || 0);
+        if (newVal > exVal) map.set(a.orcamento_item_id, a);
+      }
+    });
+    return map;
+  }, [rdoActivities]);
+
   // Inicializar valores locais apenas uma vez quando as atividades carregarem
   useEffect(() => {
-    if (!isInitialized && rdoActivities.length > 0) {
+    if (!isInitialized && !loadingActivities && rdoActivities.length > 0) {
       const initialValues: Record<string, number> = {};
-      rdoActivities.forEach((act) => {
-        if (act.orcamento_item_id) {
-          initialValues[act.orcamento_item_id] = act.executado_dia || 0;
-        }
+      activitiesByItem.forEach((act, key) => {
+        initialValues[key] = Number(act.executado_dia || 0);
       });
       setLocalExecutado(initialValues);
       setIsInitialized(true);
     }
-  }, [rdoActivities, isInitialized]);
+  }, [activitiesByItem, isInitialized, loadingActivities, rdoActivities.length]);
 
   const syncMutation = useMutation({
     mutationFn: async () => {
@@ -71,7 +86,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
 
       // Para cada item da planilha, criar ou atualizar registro de atividade
       const promises = orcamentoItems.map(async (item) => {
-        const existing = rdoActivities.find(a => a.orcamento_item_id === item.id);
+        const existing = activitiesByItem.get(item.id as string);
         
         if (existing) {
           // Atualizar quantidade_total se mudou
@@ -148,7 +163,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     const updates: { activityId: string; value: number; orcamentoItemId: string }[] = [];
 
     orcamentoItems.forEach((item) => {
-      const activity = rdoActivities.find((a) => a.orcamento_item_id === item.id);
+      const activity = activitiesByItem.get(item.id);
       if (!activity) return;
 
       const localValue = localExecutado[item.id];
@@ -163,7 +178,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     await Promise.all(
       updates.map((u) => updateExecutadoMutation.mutateAsync(u))
     );
-  }, [reportId, orcamentoItems, rdoActivities, localExecutado, updateExecutadoMutation]);
+  }, [reportId, orcamentoItems, activitiesByItem, localExecutado, updateExecutadoMutation]);
 
   // Expor função global para o botão Salvar aguardar
   useEffect(() => {
@@ -173,10 +188,10 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
 
   // Sincronizar automaticamente na primeira vez
   useEffect(() => {
-    if (reportId && orcamentoItems.length > 0 && rdoActivities.length === 0) {
+    if (reportId && !loadingActivities && orcamentoItems.length > 0 && rdoActivities.length === 0) {
       syncMutation.mutate();
     }
-  }, [reportId, orcamentoItems.length, rdoActivities.length]);
+  }, [reportId, loadingActivities, orcamentoItems.length, rdoActivities.length]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities) {
     return (
@@ -192,7 +207,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
   }
 
   const itemsComDados = orcamentoItems.map((item) => {
-    const activity = rdoActivities.find(a => a.orcamento_item_id === item.id);
+    const activity = activitiesByItem.get(item.id);
     const acumulado = acumulados.find(a => a.orcamento_item_id === item.id);
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
     const executadoDia = localExecutado[item.id] ?? (activity?.executado_dia || 0);

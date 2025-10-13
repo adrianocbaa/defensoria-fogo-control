@@ -39,8 +39,7 @@ Deno.serve(async (req) => {
       supabase.from('rdo_activities')
         .select('*, orcamento_item:orcamento_items_hierarquia!orcamento_item_id(*)')
         .eq('report_id', reportId)
-        .eq('tipo', 'planilha')
-        .gt('executado_dia', 0),
+        .eq('tipo', 'planilha'),
       supabase.from('rdo_occurrences').select('*').eq('report_id', reportId),
       supabase.from('rdo_visits').select('*').eq('report_id', reportId),
       supabase.from('rdo_equipment').select('*').eq('report_id', reportId),
@@ -203,7 +202,13 @@ Deno.serve(async (req) => {
         return 0;
       };
 
-      const sortedActivities = [...rdoData.activities].sort((a, b) => {
+      const filteredActivities = rdoData.activities.filter((a: any) => {
+        const isMacro = a.orcamento_item?.is_macro || false;
+        const executed = Number(a.executado_dia || 0) > 0;
+        return isMacro || executed;
+      });
+
+      const sortedActivities = [...filteredActivities].sort((a, b) => {
         const ordemA = a.orcamento_item?.ordem;
         const ordemB = b.orcamento_item?.ordem;
         if (typeof ordemA === 'number' && typeof ordemB === 'number') {
