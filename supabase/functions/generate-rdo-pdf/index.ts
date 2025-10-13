@@ -36,7 +36,11 @@ Deno.serve(async (req) => {
     // Fetch all RDO data
     const [reportRes, activitiesRes, occurrencesRes, visitsRes, equipmentRes, laborRes, commentsRes, obraRes, mediaRes] = await Promise.all([
       supabase.from('rdo_reports').select('*').eq('id', reportId).single(),
-      supabase.from('rdo_activities').select('*').eq('report_id', reportId),
+      supabase.from('rdo_activities')
+        .select('*, orcamento_item:orcamento_items_hierarquia!orcamento_item_id(*)')
+        .eq('report_id', reportId)
+        .eq('tipo', 'planilha')
+        .gt('executado_dia', 0),
       supabase.from('rdo_occurrences').select('*').eq('report_id', reportId),
       supabase.from('rdo_visits').select('*').eq('report_id', reportId),
       supabase.from('rdo_equipment').select('*').eq('report_id', reportId),
@@ -179,38 +183,62 @@ Deno.serve(async (req) => {
       yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
-    // Activities
+    // Activities - Only items with executado_dia > 0, respecting hierarchy
     if (rdoData.activities.length > 0) {
       if (yPos > 240) {
         doc.addPage();
         yPos = 20;
       }
       
+      // Sort activities by ordem field to maintain hierarchy
+      const sortedActivities = [...rdoData.activities].sort((a, b) => {
+        const ordemA = a.orcamento_item?.ordem || 0;
+        const ordemB = b.orcamento_item?.ordem || 0;
+        return ordemA - ordemB;
+      });
+
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Atividades (${rdoData.activities.length})`, 14, yPos);
+      doc.text(`Atividades Executadas (${sortedActivities.length})`, 14, yPos);
       yPos += 5;
 
       (doc as any).autoTable({
         startY: yPos,
-        head: [['Código', 'Descrição', 'Qtd', 'Un.', 'Progresso']],
-        body: rdoData.activities.map((a, i) => [
-          `4.${i + 1}`,
-          a.descricao,
-          a.qtd || '-',
-          a.unidade || '-',
-          `${a.progresso || 0}%`
-        ]),
+        head: [['Item', 'Descrição', 'Executado', 'Un.', 'Progresso']],
+        body: sortedActivities.map(a => {
+          const isMacro = a.orcamento_item?.is_macro || false;
+          const itemCode = a.item_code || a.orcamento_item?.item || '-';
+          
+          return [
+            itemCode,
+            a.descricao,
+            a.executado_dia?.toFixed(2) || '0',
+            a.unidade || '-',
+            `${a.progresso || 0}%`
+          ];
+        }),
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
         columnStyles: {
-          0: { cellWidth: 15 },
-          1: { cellWidth: 100 },
-          2: { cellWidth: 20 },
+          0: { cellWidth: 18 },
+          1: { cellWidth: 95 },
+          2: { cellWidth: 22 },
           3: { cellWidth: 15 },
           4: { cellWidth: 25 }
         },
+        didParseCell: function(data: any) {
+          // Make MACRO items bold
+          if (data.section === 'body') {
+            const activity = sortedActivities[data.row.index];
+            const isMacro = activity.orcamento_item?.is_macro || false;
+            
+            if (isMacro) {
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.fillColor = [250, 250, 250];
+            }
+          }
+        }
       });
 
       yPos = (doc as any).lastAutoTable.finalY + 8;
