@@ -212,9 +212,9 @@ Deno.serve(async (req) => {
           return [
             itemCode,
             a.descricao,
-            a.executado_dia?.toFixed(2) || '0',
-            a.unidade || '-',
-            `${a.progresso || 0}%`
+            isMacro ? '-' : (a.executado_dia?.toFixed(2) || '0'),
+            isMacro ? '-' : (a.unidade || '-'),
+            isMacro ? '-' : `${a.progresso || 0}%`
           ];
         }),
         theme: 'grid',
