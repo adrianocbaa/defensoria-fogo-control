@@ -33,13 +33,25 @@ Deno.serve(async (req) => {
 
     console.log('Generating PDF for report:', reportId, 'obra:', obraId);
 
-    // Fetch all RDO data
-    const [reportRes, activitiesRes, occurrencesRes, visitsRes, equipmentRes, laborRes, commentsRes, obraRes, mediaRes] = await Promise.all([
-      supabase.from('rdo_reports').select('*').eq('id', reportId).single(),
-      supabase.from('rdo_activities')
-        .select('*, orcamento_item:orcamento_items_hierarquia!orcamento_item_id(*)')
-        .eq('report_id', reportId)
-        .eq('tipo', 'planilha'),
+    // Fetch RDO report first to get modo_atividades
+    const reportRes = await supabase.from('rdo_reports').select('*').eq('id', reportId).single();
+    
+    if (reportRes.error) throw reportRes.error;
+    
+    const modoAtividades = reportRes.data.modo_atividades || 'manual';
+    
+    console.log('Modo de atividades:', modoAtividades);
+    
+    // Fetch activities based on modo_atividades
+    let activitiesQuery = supabase
+      .from('rdo_activities')
+      .select('*, orcamento_item:orcamento_items_hierarquia!orcamento_item_id(*)')
+      .eq('report_id', reportId)
+      .eq('tipo', modoAtividades);
+    
+    // Fetch all other RDO data
+    const [activitiesRes, occurrencesRes, visitsRes, equipmentRes, laborRes, commentsRes, obraRes, mediaRes] = await Promise.all([
+      activitiesQuery,
       supabase.from('rdo_occurrences').select('*').eq('report_id', reportId),
       supabase.from('rdo_visits').select('*').eq('report_id', reportId),
       supabase.from('rdo_equipment').select('*').eq('report_id', reportId),
@@ -49,7 +61,6 @@ Deno.serve(async (req) => {
       supabase.from('rdo_media').select('*').eq('report_id', reportId).eq('tipo', 'foto').order('created_at'),
     ]);
 
-    if (reportRes.error) throw reportRes.error;
     if (obraRes.error) throw obraRes.error;
 
     const rdoData: RDOData = {
@@ -64,7 +75,7 @@ Deno.serve(async (req) => {
       media: mediaRes.data || [],
     };
 
-    console.log('Fetched RDO data:', rdoData);
+    console.log('Fetched RDO data - Modo:', modoAtividades, 'Activities:', rdoData.activities.length);
 
     // Generate PDF
     const doc = new jsPDF();
@@ -182,14 +193,14 @@ Deno.serve(async (req) => {
       yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
-    // Activities - Only items with executado_dia > 0, respecting hierarchy
+    // Activities - Filtered and formatted by modo_atividades
     if (rdoData.activities.length > 0) {
       if (yPos > 240) {
         doc.addPage();
         yPos = 20;
       }
       
-      // Robust sort: ordem asc, fallback to natural sort of item_code (1, 1.2, 1.10, 2 ...)
+      // Helper for natural sort
       const naturalCompare = (a: string, b: string) => {
         const as = a.split('.').map(Number);
         const bs = b.split('.').map(Number);
@@ -202,65 +213,134 @@ Deno.serve(async (req) => {
         return 0;
       };
 
-      const filteredActivities = rdoData.activities.filter((a: any) => {
-        const isMacro = a.orcamento_item?.is_macro || false;
-        const executed = Number(a.executado_dia || 0) > 0;
-        return isMacro || executed;
-      });
+      let filteredActivities: any[] = [];
+      let tableHead: string[] = [];
+      let columnStyles: any = {};
 
-      const sortedActivities = [...filteredActivities].sort((a, b) => {
-        const ordemA = a.orcamento_item?.ordem;
-        const ordemB = b.orcamento_item?.ordem;
-        if (typeof ordemA === 'number' && typeof ordemB === 'number') {
-          return ordemA - ordemB;
-        }
-        const codeA = a.item_code || a.orcamento_item?.item || '';
-        const codeB = b.item_code || b.orcamento_item?.item || '';
-        return naturalCompare(codeA, codeB);
-      });
+      // Apply filters based on modo_atividades
+      switch (modoAtividades) {
+        case 'manual':
+          // Manual: progresso > 0 ou status = 'Concluído'
+          filteredActivities = rdoData.activities.filter((a: any) => {
+            const progresso = Number(a.progresso || 0);
+            const status = (a.status || '').toLowerCase();
+            return progresso > 0 || status === 'concluído' || status === 'concluido';
+          });
+          tableHead = ['Descrição', '% Executado', 'Status', 'Observação'];
+          columnStyles = {
+            0: { cellWidth: 85 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 35 }
+          };
+          break;
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Atividades Executadas (${sortedActivities.length})`, 14, yPos);
-      yPos += 5;
+        case 'planilha':
+          // Planilha: MICROS com executado_dia > 0 + MACROs para hierarquia
+          filteredActivities = rdoData.activities.filter((a: any) => {
+            const isMacro = a.orcamento_item?.is_macro || false;
+            const executed = Number(a.executado_dia || 0) > 0;
+            return isMacro || executed;
+          }).sort((a, b) => {
+            const ordemA = a.orcamento_item?.ordem;
+            const ordemB = b.orcamento_item?.ordem;
+            if (typeof ordemA === 'number' && typeof ordemB === 'number') {
+              return ordemA - ordemB;
+            }
+            const codeA = a.item_code || a.orcamento_item?.item || '';
+            const codeB = b.item_code || b.orcamento_item?.item || '';
+            return naturalCompare(codeA, codeB);
+          });
+          tableHead = ['Item', 'Descrição', 'Executado', 'Un.', 'Progresso'];
+          columnStyles = {
+            0: { cellWidth: 18 },
+            1: { cellWidth: 95 },
+            2: { cellWidth: 22 },
+            3: { cellWidth: 15 },
+            4: { cellWidth: 25 }
+          };
+          break;
 
-      (doc as any).autoTable({
-        startY: yPos,
-        head: [['Item', 'Descrição', 'Executado', 'Un.', 'Progresso']],
-        body: sortedActivities.map(a => {
-          const isMacro = a.orcamento_item?.is_macro || false;
-          const itemCode = a.item_code || a.orcamento_item?.item || '-';
-          return [
-            itemCode,
+        case 'template':
+          // Template: progresso > 0
+          filteredActivities = rdoData.activities.filter((a: any) => {
+            const progresso = Number(a.progresso || 0);
+            return progresso > 0;
+          });
+          tableHead = ['Descrição', '% Executado', 'Status', 'Observação'];
+          columnStyles = {
+            0: { cellWidth: 85 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 35 }
+          };
+          break;
+
+        default:
+          console.warn('Modo de atividades desconhecido:', modoAtividades);
+          filteredActivities = [];
+      }
+
+      if (filteredActivities.length === 0) {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Sem registros executados neste modo', 14, yPos);
+        yPos += 8;
+      } else {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        const modoLabel = modoAtividades === 'manual' ? 'Manual' : 
+                         modoAtividades === 'planilha' ? 'Planilha' : 'Template';
+        doc.text(`Atividades Executadas (${modoLabel}) - ${filteredActivities.length}`, 14, yPos);
+        yPos += 5;
+
+        // Build table body based on mode
+        let tableBody: any[] = [];
+        
+        if (modoAtividades === 'planilha') {
+          tableBody = filteredActivities.map(a => {
+            const isMacro = a.orcamento_item?.is_macro || false;
+            const itemCode = a.item_code || a.orcamento_item?.item || '-';
+            return [
+              itemCode,
+              a.descricao,
+              isMacro ? '-' : (a.executado_dia?.toFixed(2) || '0'),
+              isMacro ? '-' : (a.unidade || '-'),
+              isMacro ? '-' : `${a.progresso || 0}%`
+            ];
+          });
+        } else {
+          // manual ou template
+          tableBody = filteredActivities.map(a => [
             a.descricao,
-            isMacro ? '-' : (a.executado_dia?.toFixed(2) || '0'),
-            isMacro ? '-' : (a.unidade || '-'),
-            isMacro ? '-' : `${a.progresso || 0}%`
-          ];
-        }),
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-        columnStyles: {
-          0: { cellWidth: 18 },
-          1: { cellWidth: 95 },
-          2: { cellWidth: 22 },
-          3: { cellWidth: 15 },
-          4: { cellWidth: 25 }
-        },
-        didParseCell: function(data: any) {
-          if (data.section === 'body') {
-            const activity = sortedActivities[data.row.index];
-            const isMacro = activity.orcamento_item?.is_macro || false;
-            if (isMacro) {
-              data.cell.styles.fontStyle = 'bold';
-              data.cell.styles.fillColor = [250, 250, 250];
+            `${a.progresso || 0}%`,
+            a.status || '-',
+            a.observacao || '-'
+          ]);
+        }
+
+        (doc as any).autoTable({
+          startY: yPos,
+          head: [tableHead],
+          body: tableBody,
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          columnStyles: columnStyles,
+          didParseCell: function(data: any) {
+            if (data.section === 'body' && modoAtividades === 'planilha') {
+              const activity = filteredActivities[data.row.index];
+              const isMacro = activity.orcamento_item?.is_macro || false;
+              if (isMacro) {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fillColor = [250, 250, 250];
+              }
             }
           }
-        }
-      });
+        });
 
-      yPos = (doc as any).lastAutoTable.finalY + 8;
+        yPos = (doc as any).lastAutoTable.finalY + 8;
+      }
     }
 
     // Occurrences
@@ -545,7 +625,7 @@ Deno.serve(async (req) => {
       .update({ pdf_url: publicUrl })
       .eq('id', reportId);
 
-    console.log('PDF generated successfully:', publicUrl);
+    console.log('PDF generated successfully:', publicUrl, '- Modo:', modoAtividades);
 
     return new Response(
       JSON.stringify({ pdfUrl: publicUrl }),
