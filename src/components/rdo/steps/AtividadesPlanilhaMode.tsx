@@ -137,6 +137,13 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     updateExecutadoMutation.mutate({ activityId, value });
   };
 
+  // Sincronizar automaticamente na primeira vez
+  useEffect(() => {
+    if (reportId && orcamentoItems.length > 0 && rdoActivities.length === 0) {
+      syncMutation.mutate();
+    }
+  }, [reportId, orcamentoItems.length, rdoActivities.length]);
+
   if (loadingOrcamento || loadingAcumulados || loadingActivities) {
     return (
       <Card className="rounded-2xl shadow-sm">
@@ -149,13 +156,6 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
       </Card>
     );
   }
-
-  // Sincronizar automaticamente na primeira vez
-  useEffect(() => {
-    if (reportId && orcamentoItems.length > 0 && rdoActivities.length === 0) {
-      syncMutation.mutate();
-    }
-  }, [reportId, orcamentoItems.length, rdoActivities.length]);
 
   const itemsComDados = orcamentoItems.map((item) => {
     const activity = rdoActivities.find(a => a.orcamento_item_id === item.id);
