@@ -216,6 +216,7 @@ Deno.serve(async (req) => {
       let filteredActivities: any[] = [];
       let tableHead: string[] = [];
       let columnStyles: any = {};
+      let rowIsHeader: boolean[] = [];
 
       // Apply filters based on modo_atividades
       switch (modoAtividades) {
@@ -235,27 +236,21 @@ Deno.serve(async (req) => {
           };
           break;
 
-        case 'planilha':
-          // Planilha: MICROS com executado_dia > 0 + MACROs para hierarquia
-          // Remove duplicates by item_code/orcamento_item_id
-          const seenItems = new Set();
-          filteredActivities = rdoData.activities.filter((a: any) => {
+        case 'planilha': {
+          // Somente MICROS com execução > 0; MACROs entram apenas como cabeçalhos (sem duplicar)
+          const macros = rdoData.activities.filter((a: any) => a.orcamento_item?.is_macro);
+          const macrosByCode = new Map<string, any>();
+          for (const m of macros) {
+            const code = m.item_code || m.orcamento_item?.item || '';
+            if (code && !macrosByCode.has(code)) macrosByCode.set(code, m);
+          }
+          const micros = rdoData.activities.filter((a: any) => {
             const isMacro = a.orcamento_item?.is_macro || false;
             const executed = Number(a.executado_dia || 0) > 0;
-            const itemKey = a.orcamento_item_id || a.item_code || a.id;
-            
-            // Skip if already seen (prevents duplicates)
-            if (seenItems.has(itemKey)) {
-              return false;
-            }
-            
-            // Include if MACRO or has execution
-            if (isMacro || executed) {
-              seenItems.add(itemKey);
-              return true;
-            }
-            return false;
-          }).sort((a, b) => {
+            return !isMacro && executed;
+          });
+
+          const sortedMicros = [...micros].sort((a, b) => {
             const ordemA = a.orcamento_item?.ordem;
             const ordemB = b.orcamento_item?.ordem;
             if (typeof ordemA === 'number' && typeof ordemB === 'number') {
@@ -265,6 +260,42 @@ Deno.serve(async (req) => {
             const codeB = b.item_code || b.orcamento_item?.item || '';
             return naturalCompare(codeA, codeB);
           });
+
+          const combined: any[] = [];
+          rowIsHeader = [];
+          const shownHeaders = new Set<string>();
+
+          const ensureHeader = (code: string) => {
+            if (!code || shownHeaders.has(code)) return;
+            const macro = macrosByCode.get(code);
+            const desc = macro?.descricao || macro?.orcamento_item?.descricao || '-';
+            combined.push({
+              item_code: code,
+              descricao: desc,
+              unidade: null,
+              executado_dia: null,
+              progresso: null,
+              _is_header: true,
+            });
+            rowIsHeader.push(true);
+            shownHeaders.add(code);
+          };
+
+          for (const a of sortedMicros) {
+            const rawCode = a.item_code || a.orcamento_item?.item || '';
+            if (rawCode) {
+              const parts = rawCode.split('.');
+              // level 1
+              ensureHeader(parts[0]);
+              // level 2 (opcional)
+              if (parts.length >= 2) ensureHeader(`${parts[0]}.${parts[1]}`);
+            }
+            combined.push(a);
+            rowIsHeader.push(false);
+          }
+
+          filteredActivities = combined;
+
           tableHead = ['Item', 'Descrição', 'Executado', 'Un.', 'Progresso'];
           columnStyles = {
             0: { cellWidth: 18 },
@@ -274,6 +305,7 @@ Deno.serve(async (req) => {
             4: { cellWidth: 25 }
           };
           break;
+        }
 
         case 'template':
           // Template: progresso > 0
@@ -312,15 +344,15 @@ Deno.serve(async (req) => {
         let tableBody: any[] = [];
         
         if (modoAtividades === 'planilha') {
-          tableBody = filteredActivities.map(a => {
-            const isMacro = a.orcamento_item?.is_macro || false;
+          tableBody = filteredActivities.map((a, idx) => {
+            const isHeader = rowIsHeader[idx] === true;
             const itemCode = a.item_code || a.orcamento_item?.item || '-';
             return [
               itemCode,
               a.descricao,
-              isMacro ? '-' : (a.executado_dia?.toFixed(2) || '0'),
-              isMacro ? '-' : (a.unidade || '-'),
-              isMacro ? '-' : `${a.progresso || 0}%`
+              isHeader ? '-' : (a.executado_dia?.toFixed(2) || '0'),
+              isHeader ? '-' : (a.unidade || '-'),
+              isHeader ? '-' : `${a.progresso || 0}%`
             ];
           });
         } else {
@@ -343,9 +375,8 @@ Deno.serve(async (req) => {
           columnStyles: columnStyles,
           didParseCell: function(data: any) {
             if (data.section === 'body' && modoAtividades === 'planilha') {
-              const activity = filteredActivities[data.row.index];
-              const isMacro = activity.orcamento_item?.is_macro || false;
-              if (isMacro) {
+              const isHeader = rowIsHeader[data.row.index] === true;
+              if (isHeader) {
                 data.cell.styles.fontStyle = 'bold';
                 data.cell.styles.fillColor = [250, 250, 250];
               }
@@ -585,23 +616,21 @@ Deno.serve(async (req) => {
     const pageCount = doc.getNumberOfPages();
     const now = new Date();
     
-    // Converter para timezone de Cuiabá (UTC-4)
-    const cuiabaOffset = -4 * 60; // -4 horas em minutos
-    const localOffset = now.getTimezoneOffset(); // offset local em minutos
-    const cuiabaTime = new Date(now.getTime() + (localOffset - cuiabaOffset) * 60 * 1000);
-    
-    const formattedDate = cuiabaTime.toLocaleDateString('pt-BR', {
+    // Horário com timezone de Cuiabá usando Intl
+    const formatterDate = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Cuiaba',
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
     });
-    
-    const formattedTime = cuiabaTime.toLocaleTimeString('pt-BR', {
+    const formatterTime = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Cuiaba',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
-    
+    const formattedDate = formatterDate.format(now);
+    const formattedTime = formatterTime.format(now);
     const cuiabaDateTime = `${formattedDate}, ${formattedTime}`;
     
     for (let i = 1; i <= pageCount; i++) {
