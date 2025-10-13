@@ -76,10 +76,10 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
         
         if (existing) {
           // Atualizar quantidade_total se mudou
-          if (existing.quantidade_total !== item.total_contrato) {
+          if (existing.quantidade_total !== item.quantidade) {
             await supabase
               .from('rdo_activities')
-              .update({ quantidade_total: item.total_contrato })
+              .update({ quantidade_total: item.quantidade })
               .eq('id', existing.id);
           }
         } else {
@@ -92,7 +92,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
             item_code: item.item,
             descricao: item.descricao,
             unidade: item.unidade,
-            quantidade_total: item.total_contrato,
+            quantidade_total: item.quantidade,
             executado_dia: 0,
             progresso: 0,
             status: 'em_andamento',
@@ -163,9 +163,9 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
     const executadoDia = localExecutado[item.id] ?? (activity?.executado_dia || 0);
     const totalExecutado = executadoAcumulado + executadoDia;
-    const percentualExecutado = item.total_contrato > 0 ? (totalExecutado / item.total_contrato * 100) : 0;
-    const disponivel = Math.max(0, item.total_contrato - executadoAcumulado);
-    const excedeuLimite = totalExecutado > item.total_contrato;
+    const percentualExecutado = item.quantidade > 0 ? (totalExecutado / item.quantidade * 100) : 0;
+    const disponivel = Math.max(0, item.quantidade - executadoAcumulado);
+    const excedeuLimite = totalExecutado > item.quantidade;
 
     return {
       ...item,
@@ -231,7 +231,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
                       </div>
                       <p className="text-sm font-medium mt-1 line-clamp-2">{item.descricao}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Quantidade total: {item.total_contrato.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
+                        Quantidade total: {item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
                       </p>
                     </div>
                     {item.activity && (
