@@ -1221,6 +1221,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rdo_activities_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items_hierarquia"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "rdo_activities_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
@@ -1276,6 +1283,13 @@ export type Database = {
             columns: ["orcamento_item_id"]
             isOneToOne: false
             referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_activity_notes_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items_hierarquia"
             referencedColumns: ["id"]
           },
           {
@@ -2025,6 +2039,32 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_items_hierarquia: {
+        Row: {
+          aditivo_num: number | null
+          banco: string | null
+          calculated_level: number | null
+          codigo: string | null
+          created_at: string | null
+          descricao: string | null
+          eh_administracao_local: boolean | null
+          id: string | null
+          is_macro: boolean | null
+          item: string | null
+          nivel: number | null
+          obra_id: string | null
+          ordem: number | null
+          origem: string | null
+          parent_code: string | null
+          quantidade: number | null
+          total_contrato: number | null
+          unidade: string | null
+          updated_at: string | null
+          valor_total: number | null
+          valor_unitario: number | null
+        }
+        Relationships: []
+      }
       profiles_secure: {
         Row: {
           avatar_url: string | null
@@ -2092,6 +2132,13 @@ export type Database = {
             columns: ["orcamento_item_id"]
             isOneToOne: false
             referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_activities_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items_hierarquia"
             referencedColumns: ["id"]
           },
         ]

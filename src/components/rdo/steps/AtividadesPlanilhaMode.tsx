@@ -1,10 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, MessageSquare, AlertTriangle, RefreshCw } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { FileSpreadsheet, RefreshCw } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +10,7 @@ import { useRdoActivitiesAcumulado } from "@/hooks/useRdoActivitiesAcumulado";
 import { ActivityNoteDialog } from "@/components/rdo/ActivityNoteDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaveIndicator } from "@/components/ui/save-indicator";
+import { PlanilhaTreeView } from "./PlanilhaTreeView";
 
 interface AtividadesPlanilhaModeProps {
   reportId?: string;
@@ -199,130 +196,35 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Atualizar</span>
+              <span className="hidden sm:inline">Sincronizar</span>
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Itens da planilha orçamentária vinculada à obra
+            Visualização hierárquica da planilha orçamentária (MACRO/MICRO)
           </p>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent>
           {itemsComDados.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>Nenhum item encontrado na planilha orçamentária.</p>
               <p className="text-sm mt-1">Adicione itens à planilha da obra primeiro.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {itemsComDados.map((item) => (
-                <div key={item.id} className="p-4 border rounded-xl space-y-3 bg-card">
-                  {/* Header do Item */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="font-mono text-xs shrink-0">
-                          {item.item}
-                        </Badge>
-                        {item.origem === 'aditivo' && (
-                          <Badge variant="secondary" className="text-xs shrink-0">
-                            Aditivo {item.aditivo_num}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm font-medium mt-1 line-clamp-2">{item.descricao}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Quantidade total: {item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
-                      </p>
-                    </div>
-                    {item.activity && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setNoteDialog({
-                          open: true,
-                          activityId: item.activity!.id,
-                          orcamentoItemId: item.id,
-                          itemDescricao: `${item.item} - ${item.descricao}`,
-                        })}
-                        className="shrink-0"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Informações de Execução */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                      <div>
-                        <label className="text-muted-foreground text-xs">Acumulado Anterior</label>
-                        <p className="font-medium">
-                          {item.executadoAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-muted-foreground text-xs">Disponível</label>
-                        <p className="font-medium">
-                          {item.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-muted-foreground text-xs block mb-1">
-                          Executado Hoje
-                          {item.excedeuLimite && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <AlertTriangle className="inline-block h-3 w-3 ml-1 text-destructive" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Excede o total disponível</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.executadoDia}
-                          onChange={(e) => item.activity && handleExecutadoChange(
-                            item.id,
-                            item.activity.id,
-                            parseFloat(e.target.value) || 0
-                          )}
-                          onBlur={(e) => item.activity && handleExecutadoBlur(
-                            item.activity.id,
-                            parseFloat(e.target.value) || 0
-                          )}
-                          className={item.excedeuLimite ? 'border-destructive focus-visible:ring-destructive' : ''}
-                          disabled={!item.activity}
-                        />
-                      </div>
-                    </div>
-
-                  {/* Barra de Progresso */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Progresso Total</span>
-                      <span className={`font-semibold ${item.excedeuLimite ? 'text-destructive' : 'text-primary'}`}>
-                        {item.percentualExecutado.toFixed(1)}%
-                      </span>
-                    </div>
-                    <Progress 
-                      value={Math.min(100, item.percentualExecutado)} 
-                      className="h-2"
-                    />
-                    {item.excedeuLimite && (
-                      <p className="text-xs text-destructive flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        Execução excede a quantidade total contratada
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <PlanilhaTreeView
+              items={itemsComDados}
+              localExecutado={localExecutado}
+              onExecutadoChange={handleExecutadoChange}
+              onExecutadoBlur={handleExecutadoBlur}
+              onOpenNote={(activityId, orcamentoItemId, itemDescricao) => {
+                setNoteDialog({
+                  open: true,
+                  activityId,
+                  orcamentoItemId,
+                  itemDescricao,
+                });
+              }}
+              isUpdating={updateExecutadoMutation.isPending}
+            />
           )}
         </CardContent>
       </Card>
