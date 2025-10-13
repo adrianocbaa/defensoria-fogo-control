@@ -92,7 +92,7 @@ export default function PublicRDODiario() {
       case 0:
         return <AnotacoesStep formData={formData} updateField={readOnlyUpdate} />;
       case 1:
-        return <AtividadesStep reportId={formData.id} obraId={id!} />;
+        return <AtividadesStep reportId={formData.id} obraId={id!} data={formData.data || new Date().toISOString().split('T')[0]} />;
       case 2:
         return <OcorrenciasStep reportId={formData.id} obraId={id!} />;
       case 3:

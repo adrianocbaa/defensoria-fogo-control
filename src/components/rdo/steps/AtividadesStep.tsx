@@ -1,15 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Edit, FileSpreadsheet } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDebounce } from "@/hooks/useDebounce";
-import { useState, useEffect } from "react";
+import { AtividadesManualMode } from "./AtividadesManualMode";
+import { AtividadesPlanilhaMode } from "./AtividadesPlanilhaMode";
+import { toast } from "sonner";
 
 interface Activity {
   id?: string;
@@ -24,12 +23,37 @@ interface Activity {
 interface AtividadesStepProps {
   reportId?: string;
   obraId: string;
+  data: string;
 }
 
-export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
+export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) {
   const queryClient = useQueryClient();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Activity>>>({});
-  const debouncedValues = useDebounce(localValues, 500);
+  const [selectedMode, setSelectedMode] = useState<'manual' | 'planilha'>('manual');
+
+  // Buscar modo salvo no RDO
+  const { data: rdoReport } = useQuery({
+    queryKey: ['rdo-report-mode', reportId],
+    queryFn: async () => {
+      if (!reportId) return null;
+      const { data, error } = await supabase
+        .from('rdo_reports')
+        .select('modo_atividades')
+        .eq('id', reportId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!reportId,
+  });
+
+  // Atualizar modo selecionado quando carregar do banco
+  useEffect(() => {
+    if (rdoReport?.modo_atividades) {
+      setSelectedMode(rdoReport.modo_atividades as 'manual' | 'planilha');
+    }
+  }, [rdoReport]);
 
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ['rdo-activities', reportId],
@@ -39,6 +63,7 @@ export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
         .from('rdo_activities')
         .select('*')
         .eq('report_id', reportId)
+        .eq('tipo', selectedMode)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
@@ -47,200 +72,97 @@ export function AtividadesStep({ reportId, obraId }: AtividadesStepProps) {
     enabled: !!reportId,
   });
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
+  const updateModeMutation = useMutation({
+    mutationFn: async (mode: 'manual' | 'planilha') => {
       if (!reportId) {
-        toast.error('Salve o RDO antes de adicionar atividades');
+        toast.error('Salve o RDO antes de alterar o modo');
         return;
       }
 
-      const { error } = await supabase.from('rdo_activities').insert({
-        obra_id: obraId,
-        report_id: reportId,
-        descricao: '',
-        qtd: 0,
-        unidade: '',
-        progresso: 0,
-        status: 'em_andamento',
-      });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, field, value }: { id: string; field: keyof Activity; value: any }) => {
       const { error } = await supabase
-        .from('rdo_activities')
-        .update({ [field]: value })
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: (_data, variables) => {
-      const { id, field } = variables as { id: string; field: keyof Activity; value: any };
-      setLocalValues((prev) => {
-        const next = { ...prev };
-        const obj = { ...(next[id] || {}) } as Partial<Activity>;
-        delete (obj as any)[field];
-        if (Object.keys(obj).length === 0) {
-          delete next[id];
-        } else {
-          next[id] = obj;
-        }
-        return next;
-      });
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
-    },
-  });
-
-  useEffect(() => {
-    Object.entries(debouncedValues).forEach(([id, fields]) => {
-      Object.entries(fields).forEach(([field, value]) => {
-        updateMutation.mutate({ id, field: field as keyof Activity, value });
-      });
-    });
-  }, [debouncedValues]);
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('rdo_activities')
-        .delete()
-        .eq('id', id);
+        .from('rdo_reports')
+        .update({ modo_atividades: mode })
+        .eq('id', reportId);
       
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-report-mode', reportId] });
       queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
-      toast.success('Atividade removida');
+      toast.success('Modo de preenchimento alterado');
     },
   });
+
+  const handleModeChange = (mode: 'manual' | 'planilha') => {
+    setSelectedMode(mode);
+    updateModeMutation.mutate(mode);
+  };
 
   if (isLoading) {
     return (
-      <Card className="rounded-2xl shadow-sm">
-        <CardHeader>
-          <CardTitle>Atividades Executadas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-32" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Skeleton className="h-12" />
+        <Skeleton className="h-64" />
+      </div>
     );
   }
 
   return (
-    <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Atividades Executadas</CardTitle>
-        <Button onClick={() => addMutation.mutate()} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {activities.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Nenhuma atividade registrada. Clique em "Adicionar" para começar.
+    <div className="space-y-4">
+      {/* Seletor de Modo */}
+      <Card className="rounded-2xl shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Modo de Preenchimento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant={selectedMode === 'manual' ? 'default' : 'outline'}
+              className="flex-1 justify-start gap-2"
+              onClick={() => handleModeChange('manual')}
+            >
+              <Edit className="h-4 w-4" />
+              Preenchimento Manual
+              {selectedMode === 'manual' && (
+                <Badge variant="secondary" className="ml-auto">Ativo</Badge>
+              )}
+            </Button>
+            <Button
+              variant={selectedMode === 'planilha' ? 'default' : 'outline'}
+              className="flex-1 justify-start gap-2"
+              onClick={() => handleModeChange('planilha')}
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Lista de Serviços (Planilha)
+              {selectedMode === 'planilha' && (
+                <Badge variant="secondary" className="ml-auto">Ativo</Badge>
+              )}
+            </Button>
           </div>
-        ) : (
-          activities.map((activity) => (
-            <div key={activity.id} className="p-4 border rounded-lg space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <Input
-                  placeholder="Descrição da atividade"
-                  value={localValues[activity.id!]?.descricao ?? activity.descricao}
-                  onChange={(e) =>
-                    setLocalValues(prev => ({
-                      ...prev,
-                      [activity.id!]: { ...prev[activity.id!], descricao: e.target.value }
-                    }))
-                  }
-                  className="flex-1"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMutation.mutate(activity.id!)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {selectedMode === 'manual' 
+              ? 'Registre manualmente as atividades executadas no dia'
+              : 'Preencha os serviços da planilha orçamentária vinculada à obra'}
+          </p>
+        </CardContent>
+      </Card>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Input
-                  type="number"
-                  placeholder="Qtd"
-                  value={localValues[activity.id!]?.qtd ?? activity.qtd}
-                  onChange={(e) =>
-                    setLocalValues(prev => ({
-                      ...prev,
-                      [activity.id!]: { ...prev[activity.id!], qtd: parseFloat(e.target.value) || 0 }
-                    }))
-                  }
-                />
-                <Input
-                  placeholder="Unidade"
-                  value={localValues[activity.id!]?.unidade ?? activity.unidade}
-                  onChange={(e) =>
-                    setLocalValues(prev => ({
-                      ...prev,
-                      [activity.id!]: { ...prev[activity.id!], unidade: e.target.value }
-                    }))
-                  }
-                />
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="Progresso %"
-                  value={localValues[activity.id!]?.progresso ?? activity.progresso}
-                  onChange={(e) =>
-                    setLocalValues(prev => ({
-                      ...prev,
-                      [activity.id!]: { ...prev[activity.id!], progresso: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) }
-                    }))
-                  }
-                />
-                <Select
-                  value={activity.status}
-                  onValueChange={(v) =>
-                    updateMutation.mutate({
-                      id: activity.id!,
-                      field: 'status',
-                      value: v,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="concluida">Concluída</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Textarea
-                placeholder="Observações sobre esta atividade..."
-                rows={2}
-                value={(localValues[activity.id!]?.observacao ?? activity.observacao) || ''}
-                onChange={(e) =>
-                  setLocalValues(prev => ({
-                    ...prev,
-                    [activity.id!]: { ...prev[activity.id!], observacao: e.target.value }
-                  }))
-                }
-              />
-            </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
+      {/* Conteúdo do Modo Selecionado */}
+      {selectedMode === 'manual' ? (
+        <AtividadesManualMode
+          reportId={reportId}
+          obraId={obraId}
+          activities={activities}
+          localValues={localValues}
+          setLocalValues={setLocalValues}
+        />
+      ) : (
+        <AtividadesPlanilhaMode
+          reportId={reportId}
+          obraId={obraId}
+          dataRdo={data}
+        />
+      )}
+    </div>
   );
 }

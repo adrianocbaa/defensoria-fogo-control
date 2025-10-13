@@ -167,7 +167,7 @@ export default function RDODiario() {
       case 0:
         return <AnotacoesStep formData={formData} updateField={updateField} />;
       case 1:
-        return <AtividadesStep reportId={formData.id} obraId={obraId!} />;
+        return <AtividadesStep reportId={formData.id} obraId={obraId!} data={data} />;
       case 2:
         return <OcorrenciasStep reportId={formData.id} obraId={obraId!} />;
       case 3:

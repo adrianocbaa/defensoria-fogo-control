@@ -1157,37 +1157,52 @@ export type Database = {
         Row: {
           created_at: string
           descricao: string
+          executado_dia: number | null
           id: string
+          item_code: string | null
           obra_id: string
           observacao: string | null
+          orcamento_item_id: string | null
           progresso: number | null
           qtd: number | null
+          quantidade_total: number | null
           report_id: string
           status: string | null
+          tipo: string | null
           unidade: string | null
         }
         Insert: {
           created_at?: string
           descricao: string
+          executado_dia?: number | null
           id?: string
+          item_code?: string | null
           obra_id: string
           observacao?: string | null
+          orcamento_item_id?: string | null
           progresso?: number | null
           qtd?: number | null
+          quantidade_total?: number | null
           report_id: string
           status?: string | null
+          tipo?: string | null
           unidade?: string | null
         }
         Update: {
           created_at?: string
           descricao?: string
+          executado_dia?: number | null
           id?: string
+          item_code?: string | null
           obra_id?: string
           observacao?: string | null
+          orcamento_item_id?: string | null
           progresso?: number | null
           qtd?: number | null
+          quantidade_total?: number | null
           report_id?: string
           status?: string | null
+          tipo?: string | null
           unidade?: string | null
         }
         Relationships: [
@@ -1199,7 +1214,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rdo_activities_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "rdo_activities_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_activity_notes: {
+        Row: {
+          activity_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          orcamento_item_id: string | null
+          report_id: string
+          texto: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          orcamento_item_id?: string | null
+          report_id: string
+          texto: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          orcamento_item_id?: string | null
+          report_id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_activity_notes_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_activity_notes_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_activity_notes_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "rdo_reports"
@@ -1474,6 +1548,7 @@ export type Database = {
           data: string
           hash_verificacao: string | null
           id: string
+          modo_atividades: string | null
           numero_seq: number
           obra_id: string
           observacoes: string | null
@@ -1508,6 +1583,7 @@ export type Database = {
           data: string
           hash_verificacao?: string | null
           id?: string
+          modo_atividades?: string | null
           numero_seq: number
           obra_id: string
           observacoes?: string | null
@@ -1542,6 +1618,7 @@ export type Database = {
           data?: string
           hash_verificacao?: string | null
           id?: string
+          modo_atividades?: string | null
           numero_seq?: number
           obra_id?: string
           observacoes?: string | null
@@ -1943,6 +2020,32 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      rdo_activities_acumulado: {
+        Row: {
+          data: string | null
+          executado_acumulado: number | null
+          obra_id: string | null
+          orcamento_item_id: string | null
+          percentual_acumulado: number | null
+          quantidade_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_activities_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_activities_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vw_nucleos_public: {
         Row: {
