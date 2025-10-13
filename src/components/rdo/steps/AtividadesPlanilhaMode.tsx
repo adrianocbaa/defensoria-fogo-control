@@ -21,6 +21,7 @@ interface AtividadesPlanilhaModeProps {
 export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: AtividadesPlanilhaModeProps) {
   const queryClient = useQueryClient();
   const [localExecutado, setLocalExecutado] = useState<Record<string, number>>({});
+  const [isInitialized, setIsInitialized] = useState(false);
   const [noteDialog, setNoteDialog] = useState<{
     open: boolean;
     activityId?: string;
@@ -47,9 +48,9 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     enabled: !!reportId,
   });
 
-  // Inicializar valores locais quando as atividades carregarem
+  // Inicializar valores locais apenas uma vez quando as atividades carregarem
   useEffect(() => {
-    if (rdoActivities.length > 0) {
+    if (!isInitialized && rdoActivities.length > 0) {
       const initialValues: Record<string, number> = {};
       rdoActivities.forEach((act) => {
         if (act.orcamento_item_id) {
@@ -57,8 +58,9 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
         }
       });
       setLocalExecutado(initialValues);
+      setIsInitialized(true);
     }
-  }, [rdoActivities]);
+  }, [rdoActivities, isInitialized]);
 
   const syncMutation = useMutation({
     mutationFn: async () => {
@@ -109,7 +111,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
   });
 
   const updateExecutadoMutation = useMutation({
-    mutationFn: async ({ activityId, value }: { activityId: string; value: number }) => {
+    mutationFn: async ({ activityId, value, orcamentoItemId }: { activityId: string; value: number; orcamentoItemId: string }) => {
       const { error } = await supabase
         .from('rdo_activities')
         .update({ 
@@ -119,8 +121,14 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
         .eq('id', activityId);
       
       if (error) throw error;
+      
+      return { orcamentoItemId, value };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Atualizar o estado local com o valor salvo
+      if (data) {
+        setLocalExecutado(prev => ({ ...prev, [data.orcamentoItemId]: data.value }));
+      }
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
     },
@@ -130,8 +138,8 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: value }));
   };
 
-  const handleExecutadoBlur = (activityId: string, value: number) => {
-    updateExecutadoMutation.mutate({ activityId, value });
+  const handleExecutadoBlur = (orcamentoItemId: string, activityId: string, value: number) => {
+    updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
   };
 
   // Sincronizar automaticamente na primeira vez

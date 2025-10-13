@@ -24,7 +24,7 @@ interface PlanilhaTreeViewProps {
   items: any[];
   localExecutado: Record<string, number>;
   onExecutadoChange: (orcamentoItemId: string, activityId: string, value: number) => void;
-  onExecutadoBlur: (activityId: string, value: number) => void;
+  onExecutadoBlur: (orcamentoItemId: string, activityId: string, value: number) => void;
   onOpenNote: (activityId: string, orcamentoItemId: string, itemDescricao: string) => void;
   isUpdating: boolean;
 }
@@ -217,6 +217,7 @@ export function PlanilhaTreeView({
                   parseFloat(e.target.value) || 0
                 )}
                 onBlur={(e) => onExecutadoBlur(
+                  node.id,
                   node.activity.id,
                   parseFloat(e.target.value) || 0
                 )}
