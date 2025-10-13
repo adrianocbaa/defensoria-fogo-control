@@ -237,10 +237,24 @@ Deno.serve(async (req) => {
 
         case 'planilha':
           // Planilha: MICROS com executado_dia > 0 + MACROs para hierarquia
+          // Remove duplicates by item_code/orcamento_item_id
+          const seenItems = new Set();
           filteredActivities = rdoData.activities.filter((a: any) => {
             const isMacro = a.orcamento_item?.is_macro || false;
             const executed = Number(a.executado_dia || 0) > 0;
-            return isMacro || executed;
+            const itemKey = a.orcamento_item_id || a.item_code || a.id;
+            
+            // Skip if already seen (prevents duplicates)
+            if (seenItems.has(itemKey)) {
+              return false;
+            }
+            
+            // Include if MACRO or has execution
+            if (isMacro || executed) {
+              seenItems.add(itemKey);
+              return true;
+            }
+            return false;
           }).sort((a, b) => {
             const ordemA = a.orcamento_item?.ordem;
             const ordemB = b.orcamento_item?.ordem;
