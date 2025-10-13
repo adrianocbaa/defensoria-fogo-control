@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { SaveIndicator } from "@/components/ui/save-indicator";
 
 interface Activity {
   id?: string;
@@ -98,9 +98,12 @@ export function AtividadesManualMode({
   return (
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <div className="flex items-center gap-2">
-          <Edit className="h-5 w-5 text-primary" />
-          <CardTitle className="text-lg">Preenchimento Manual</CardTitle>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Edit className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg">Preenchimento Manual</CardTitle>
+          </div>
+          <SaveIndicator isSaving={updateMutation.isPending} />
         </div>
         <Button onClick={() => addMutation.mutate()} size="sm" className="gap-2">
           <Plus className="h-4 w-4" />

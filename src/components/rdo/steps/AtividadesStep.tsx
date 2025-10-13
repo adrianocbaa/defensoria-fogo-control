@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, FileSpreadsheet } from "lucide-react";
+import { Edit, FileSpreadsheet, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AtividadesManualMode } from "./AtividadesManualMode";
 import { AtividadesPlanilhaMode } from "./AtividadesPlanilhaMode";
+import { AtividadesTemplateMode } from "./AtividadesTemplateMode";
 import { toast } from "sonner";
 
 interface Activity {
@@ -29,7 +30,7 @@ interface AtividadesStepProps {
 export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) {
   const queryClient = useQueryClient();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Activity>>>({});
-  const [selectedMode, setSelectedMode] = useState<'manual' | 'planilha'>('manual');
+  const [selectedMode, setSelectedMode] = useState<'manual' | 'planilha' | 'template'>('manual');
 
   // Buscar modo salvo no RDO
   const { data: rdoReport } = useQuery({
@@ -51,7 +52,7 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
   // Atualizar modo selecionado quando carregar do banco
   useEffect(() => {
     if (rdoReport?.modo_atividades) {
-      setSelectedMode(rdoReport.modo_atividades as 'manual' | 'planilha');
+      setSelectedMode(rdoReport.modo_atividades as 'manual' | 'planilha' | 'template');
     }
   }, [rdoReport]);
 
@@ -73,7 +74,7 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
   });
 
   const updateModeMutation = useMutation({
-    mutationFn: async (mode: 'manual' | 'planilha') => {
+    mutationFn: async (mode: 'manual' | 'planilha' | 'template') => {
       if (!reportId) {
         toast.error('Salve o RDO antes de alterar o modo');
         return;
@@ -93,7 +94,7 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
     },
   });
 
-  const handleModeChange = (mode: 'manual' | 'planilha') => {
+  const handleModeChange = (mode: 'manual' | 'planilha' | 'template') => {
     setSelectedMode(mode);
     updateModeMutation.mutate(mode);
   };
@@ -115,10 +116,10 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
           <CardTitle className="text-base">Modo de Preenchimento</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <Button
               variant={selectedMode === 'manual' ? 'default' : 'outline'}
-              className="flex-1 justify-start gap-2"
+              className="justify-start gap-2"
               onClick={() => handleModeChange('manual')}
             >
               <Edit className="h-4 w-4" />
@@ -129,12 +130,23 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
             </Button>
             <Button
               variant={selectedMode === 'planilha' ? 'default' : 'outline'}
-              className="flex-1 justify-start gap-2"
+              className="justify-start gap-2"
               onClick={() => handleModeChange('planilha')}
             >
               <FileSpreadsheet className="h-4 w-4" />
-              Lista de Serviços (Planilha)
+              Lista de Serviços
               {selectedMode === 'planilha' && (
+                <Badge variant="secondary" className="ml-auto">Ativo</Badge>
+              )}
+            </Button>
+            <Button
+              variant={selectedMode === 'template' ? 'default' : 'outline'}
+              className="justify-start gap-2"
+              onClick={() => handleModeChange('template')}
+            >
+              <Sparkles className="h-4 w-4" />
+              Modelo Padrão
+              {selectedMode === 'template' && (
                 <Badge variant="secondary" className="ml-auto">Ativo</Badge>
               )}
             </Button>
@@ -142,7 +154,9 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
           <p className="text-xs text-muted-foreground mt-2">
             {selectedMode === 'manual' 
               ? 'Registre manualmente as atividades executadas no dia'
-              : 'Preencha os serviços da planilha orçamentária vinculada à obra'}
+              : selectedMode === 'planilha'
+              ? 'Preencha os serviços da planilha orçamentária vinculada à obra'
+              : 'Carregue um template pré-definido e personalize conforme necessário'}
           </p>
         </CardContent>
       </Card>
@@ -156,11 +170,18 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
           localValues={localValues}
           setLocalValues={setLocalValues}
         />
-      ) : (
+      ) : selectedMode === 'planilha' ? (
         <AtividadesPlanilhaMode
           reportId={reportId}
           obraId={obraId}
           dataRdo={data}
+        />
+      ) : (
+        <AtividadesTemplateMode
+          reportId={reportId}
+          obraId={obraId}
+          localValues={localValues}
+          setLocalValues={setLocalValues}
         />
       )}
     </div>

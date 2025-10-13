@@ -14,6 +14,8 @@ interface ActivityNoteDialogProps {
   activityId: string;
   orcamentoItemId?: string;
   itemDescricao: string;
+  source?: 'manual' | 'planilha' | 'template';
+  itemRef?: string;
 }
 
 export function ActivityNoteDialog({
@@ -23,6 +25,8 @@ export function ActivityNoteDialog({
   activityId,
   orcamentoItemId,
   itemDescricao,
+  source = 'manual',
+  itemRef,
 }: ActivityNoteDialogProps) {
   const queryClient = useQueryClient();
   const [texto, setTexto] = useState('');
@@ -54,6 +58,8 @@ export function ActivityNoteDialog({
         activity_id: activityId,
         orcamento_item_id: orcamentoItemId,
         texto: texto.trim(),
+        source: source,
+        item_ref: itemRef,
       });
 
       if (error) throw error;

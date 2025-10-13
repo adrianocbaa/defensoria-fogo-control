@@ -1235,8 +1235,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          item_ref: string | null
           orcamento_item_id: string | null
           report_id: string
+          source: string | null
           texto: string
         }
         Insert: {
@@ -1244,8 +1246,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          item_ref?: string | null
           orcamento_item_id?: string | null
           report_id: string
+          source?: string | null
           texto: string
         }
         Update: {
@@ -1253,8 +1257,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          item_ref?: string | null
           orcamento_item_id?: string | null
           report_id?: string
+          source?: string | null
           texto?: string
         }
         Relationships: [
@@ -1555,6 +1561,7 @@ export type Database = {
           pdf_url: string | null
           pluviometria_mm: number | null
           status: Database["public"]["Enums"]["rdo_status"]
+          template_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1590,6 +1597,7 @@ export type Database = {
           pdf_url?: string | null
           pluviometria_mm?: number | null
           status?: Database["public"]["Enums"]["rdo_status"]
+          template_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1625,6 +1633,7 @@ export type Database = {
           pdf_url?: string | null
           pluviometria_mm?: number | null
           status?: Database["public"]["Enums"]["rdo_status"]
+          template_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1635,7 +1644,47 @@ export type Database = {
             referencedRelation: "obras"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "rdo_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "rdo_templates_atividades"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      rdo_templates_atividades: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          itens: Json
+          tipo_obra: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          itens?: Json
+          tipo_obra?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          itens?: Json
+          tipo_obra?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       rdo_ui_prefs: {
         Row: {

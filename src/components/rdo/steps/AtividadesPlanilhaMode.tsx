@@ -4,6 +4,7 @@ import { FileSpreadsheet, MessageSquare, AlertTriangle, RefreshCw } from "lucide
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ import { useOrcamentoItems } from "@/hooks/useOrcamentoItems";
 import { useRdoActivitiesAcumulado } from "@/hooks/useRdoActivitiesAcumulado";
 import { ActivityNoteDialog } from "@/components/rdo/ActivityNoteDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SaveIndicator } from "@/components/ui/save-indicator";
 
 interface AtividadesPlanilhaModeProps {
   reportId?: string;
@@ -182,9 +184,12 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Lista de Serviços (Planilha)</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Lista de Serviços (Planilha)</CardTitle>
+              </div>
+              <SaveIndicator isSaving={updateExecutadoMutation.isPending} />
             </div>
             <Button 
               variant="outline" 
@@ -247,45 +252,54 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
                   </div>
 
                   {/* Informações de Execução */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                    <div>
-                      <label className="text-muted-foreground text-xs">Acumulado Anterior</label>
-                      <p className="font-medium">
-                        {item.executadoAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
-                      </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <label className="text-muted-foreground text-xs">Acumulado Anterior</label>
+                        <p className="font-medium">
+                          {item.executadoAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-muted-foreground text-xs">Disponível</label>
+                        <p className="font-medium">
+                          {item.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-muted-foreground text-xs block mb-1">
+                          Executado Hoje
+                          {item.excedeuLimite && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertTriangle className="inline-block h-3 w-3 ml-1 text-destructive" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Excede o total disponível</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.executadoDia}
+                          onChange={(e) => item.activity && handleExecutadoChange(
+                            item.id,
+                            item.activity.id,
+                            parseFloat(e.target.value) || 0
+                          )}
+                          onBlur={(e) => item.activity && handleExecutadoBlur(
+                            item.activity.id,
+                            parseFloat(e.target.value) || 0
+                          )}
+                          className={item.excedeuLimite ? 'border-destructive focus-visible:ring-destructive' : ''}
+                          disabled={!item.activity}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-muted-foreground text-xs">Disponível</label>
-                      <p className="font-medium">
-                        {item.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {item.unidade}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-muted-foreground text-xs block mb-1">
-                        Executado Hoje
-                        {item.excedeuLimite && (
-                          <AlertTriangle className="inline-block h-3 w-3 ml-1 text-destructive" />
-                        )}
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.executadoDia}
-                        onChange={(e) => item.activity && handleExecutadoChange(
-                          item.id,
-                          item.activity.id,
-                          parseFloat(e.target.value) || 0
-                        )}
-                        onBlur={(e) => item.activity && handleExecutadoBlur(
-                          item.activity.id,
-                          parseFloat(e.target.value) || 0
-                        )}
-                        className={item.excedeuLimite ? 'border-destructive' : ''}
-                        disabled={!item.activity}
-                      />
-                    </div>
-                  </div>
 
                   {/* Barra de Progresso */}
                   <div className="space-y-1">
@@ -321,6 +335,8 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
           activityId={noteDialog.activityId}
           orcamentoItemId={noteDialog.orcamentoItemId}
           itemDescricao={noteDialog.itemDescricao || ''}
+          source="planilha"
+          itemRef={noteDialog.orcamentoItemId}
         />
       )}
     </>

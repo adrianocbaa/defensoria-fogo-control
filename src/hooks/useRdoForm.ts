@@ -32,7 +32,8 @@ export interface RdoFormData {
   aprovacao_observacao?: string;
   pdf_url?: string;
   hash_verificacao?: string;
-  modo_atividades?: 'manual' | 'planilha';
+  modo_atividades?: 'manual' | 'planilha' | 'template';
+  template_id?: string;
 }
 
 export function useRdoForm(obraId: string, data: string) {
