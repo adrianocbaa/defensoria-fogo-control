@@ -133,7 +133,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
     },
   });
-
+  
   const handleExecutadoChange = (orcamentoItemId: string, activityId: string, value: number) => {
     setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: value }));
   };
@@ -141,6 +141,32 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
   const handleExecutadoBlur = (orcamentoItemId: string, activityId: string, value: number) => {
     updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
   };
+
+  // Salvar pendências quando o usuário clicar em "Salvar" na página
+  const savePending = () => {
+    if (!reportId) return;
+    const updates: { activityId: string; value: number; orcamentoItemId: string }[] = [];
+
+    orcamentoItems.forEach((item) => {
+      const activity = rdoActivities.find((a) => a.orcamento_item_id === item.id);
+      if (!activity) return;
+
+      const localValue = localExecutado[item.id];
+      const currentValue = activity.executado_dia || 0;
+
+      if (typeof localValue === 'number' && localValue !== currentValue) {
+        updates.push({ activityId: activity.id, value: localValue, orcamentoItemId: item.id });
+      }
+    });
+
+    updates.forEach((u) => updateExecutadoMutation.mutate(u));
+  };
+
+  useEffect(() => {
+    const handler = () => savePending();
+    window.addEventListener('rdo-save', handler);
+    return () => window.removeEventListener('rdo-save', handler);
+  }, [localExecutado, rdoActivities, orcamentoItems, reportId]);
 
   // Sincronizar automaticamente na primeira vez
   useEffect(() => {

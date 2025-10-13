@@ -281,7 +281,7 @@ export default function RDODiario() {
           </Button>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={saveNow} disabled={isSaving}>
+            <Button variant="outline" onClick={() => { window.dispatchEvent(new Event('rdo-save')); saveNow(); }} disabled={isSaving}>
               <Save className="h-4 w-4 mr-2" />
               Salvar
             </Button>
