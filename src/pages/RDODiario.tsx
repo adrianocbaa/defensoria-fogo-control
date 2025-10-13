@@ -79,6 +79,14 @@ export default function RDODiario() {
     try {
       toast.info('Gerando PDF... Aguarde.');
 
+      // Invalidar todas as queries relacionadas para garantir dados frescos
+      await queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
+      await queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', formData.id] });
+      await queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
+      
+      // Aguardar um momento para garantir que o Supabase tenha os dados atualizados
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Call edge function to generate PDF
       const { data: pdfData, error: functionError } = await supabase.functions.invoke('generate-rdo-pdf', {
         body: { reportId: formData.id, obraId: obraId },

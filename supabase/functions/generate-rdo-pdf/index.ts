@@ -487,24 +487,35 @@ Deno.serve(async (req) => {
       yPos = (doc as any).lastAutoTable.finalY + 8;
     }
 
-    // Footer with Cuiabá timezone
+    // Footer with Cuiabá timezone - formato corrigido
     const pageCount = doc.getNumberOfPages();
-    const cuiabaTime = new Date().toLocaleString('pt-BR', { 
-      timeZone: 'America/Cuiaba',
-      year: 'numeric',
-      month: '2-digit',
+    const now = new Date();
+    
+    // Converter para timezone de Cuiabá (UTC-4)
+    const cuiabaOffset = -4 * 60; // -4 horas em minutos
+    const localOffset = now.getTimezoneOffset(); // offset local em minutos
+    const cuiabaTime = new Date(now.getTime() + (localOffset - cuiabaOffset) * 60 * 1000);
+    
+    const formattedDate = cuiabaTime.toLocaleDateString('pt-BR', {
       day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    
+    const formattedTime = cuiabaTime.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
     });
+    
+    const cuiabaDateTime = `${formattedDate}, ${formattedTime}`;
     
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text(
-        `Página ${i} de ${pageCount} - Gerado em ${cuiabaTime}`,
+        `Página ${i} de ${pageCount} - Gerado em ${cuiabaDateTime}`,
         pageWidth / 2,
         doc.internal.pageSize.height - 10,
         { align: 'center' }
