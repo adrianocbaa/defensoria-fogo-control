@@ -16,41 +16,28 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Create custom pin icons based on status
-const createPinIcon = (color: 'green' | 'orange' | 'red'): L.DivIcon => {
+// Create custom pin icons based on status (SVG data URL for reliability)
+const createPinIcon = (color: 'green' | 'orange' | 'red'): L.Icon => {
   const colorMap = {
     green: '#22c55e',
-    orange: '#f97316', 
-    red: '#ef4444'
-  };
+    orange: '#f59e0b',
+    red: '#ef4444',
+  } as const;
 
-  return L.divIcon({
-    html: `
-      <div style="
-        width: 32px;
-        height: 32px;
-        background: ${colorMap[color]};
-        border: 3px solid white;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <div style="
-          width: 8px;
-          height: 8px;
-          background: white;
-          border-radius: 50%;
-          transform: rotate(45deg);
-        "></div>
-      </div>
-    `,
-    className: 'custom-pin-icon',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
+  const hex = colorMap[color];
+  const svg = encodeURIComponent(`
+    <svg xmlns='http://www.w3.org/2000/svg' width='32' height='48' viewBox='0 0 24 36'>
+      <path d='M12 36s9-11.09 9-18A9 9 0 0 0 3 18c0 6.91 9 18 9 18z' fill='${hex}' stroke='white' stroke-width='2'/>
+      <circle cx='12' cy='18' r='3.5' fill='white'/>
+    </svg>
+  `);
+
+  return L.icon({
+    iconUrl: `data:image/svg+xml;charset=UTF-8,${svg}`,
+    iconSize: [32, 48],
+    iconAnchor: [16, 44],
+    popupAnchor: [0, -40],
+    shadowUrl: undefined,
   });
 };
 
