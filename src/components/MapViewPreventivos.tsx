@@ -16,12 +16,52 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Create custom pin icons based on status
+const createPinIcon = (color: 'green' | 'orange' | 'red'): L.DivIcon => {
+  const colorMap = {
+    green: '#22c55e',
+    orange: '#f97316', 
+    red: '#ef4444'
+  };
+
+  return L.divIcon({
+    html: `
+      <div style="
+        width: 32px;
+        height: 32px;
+        background: ${colorMap[color]};
+        border: 3px solid white;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          width: 8px;
+          height: 8px;
+          background: white;
+          border-radius: 50%;
+          transform: rotate(45deg);
+        "></div>
+      </div>
+    `,
+    className: 'custom-pin-icon',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+  });
+};
+
 interface NucleusStatus {
   nucleusId: string;
   hasHydrant: boolean;
   totalExtinguishers: number;
   expiredExtinguishers: number;
+  expiringSoonExtinguishers: number;
   licenseStatus: 'valid' | 'expired' | 'expiring-soon' | null;
+  pinColor: 'green' | 'orange' | 'red';
 }
 
 interface MapViewPreventivosProps {
@@ -82,12 +122,27 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
           isBefore(startOfDay(parseISO(ext.expiration_date)), today)
         ).length;
 
+        const expiringSoonCount = (extinguishers || []).filter(ext => {
+          const expDate = startOfDay(parseISO(ext.expiration_date));
+          return !isBefore(expDate, today) && isBefore(expDate, twoMonthsFromNow);
+        }).length;
+
+        // Determine pin color
+        let pinColor: 'green' | 'orange' | 'red' = 'green';
+        if (expiredCount > 0 || licenseStatus === 'expired') {
+          pinColor = 'red';
+        } else if (expiringSoonCount > 0 || licenseStatus === 'expiring-soon') {
+          pinColor = 'orange';
+        }
+
         statusMap[nucleus.id] = {
           nucleusId: nucleus.id,
           hasHydrant: (hydrants?.length || 0) > 0,
           totalExtinguishers: extinguishers?.length || 0,
           expiredExtinguishers: expiredCount,
+          expiringSoonExtinguishers: expiringSoonCount,
           licenseStatus,
+          pinColor,
         };
       }
 
@@ -143,7 +198,11 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
     if (validNucleos.length === 0) return;
 
     validNucleos.forEach((nucleus) => {
-      const marker = L.marker([nucleus.lat!, nucleus.lng!])
+      const status = nucleusStatus[nucleus.id];
+      const pinColor = status?.pinColor || 'green';
+      const icon = createPinIcon(pinColor);
+
+      const marker = L.marker([nucleus.lat!, nucleus.lng!], { icon })
         .addTo(mapRef.current!);
 
       marker.on('click', () => {
@@ -162,7 +221,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
       );
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [nucleos, isMobile]);
+  }, [nucleos, isMobile, nucleusStatus]);
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
     const status = nucleusStatus[nucleus.id];
@@ -205,6 +264,16 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
                 <AlertTriangle className="h-4 w-4 text-danger" />
                 <span className="text-sm text-danger font-medium">
                   {status.expiredExtinguishers} extintor(es) vencido(s)
+                </span>
+              </div>
+            )}
+
+            {/* Extintores Vencendo */}
+            {status.expiringSoonExtinguishers > 0 && (
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                <span className="text-sm text-warning font-medium">
+                  {status.expiringSoonExtinguishers} extintor(es) vencendo em 60 dias
                 </span>
               </div>
             )}
