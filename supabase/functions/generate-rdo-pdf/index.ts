@@ -33,16 +33,24 @@ Deno.serve(async (req) => {
 
     console.log('Generating PDF for report:', reportId, 'obra:', obraId);
 
-    // Fetch RDO report first to get modo_atividades
+    // Fetch RDO report
     const reportRes = await supabase.from('rdo_reports').select('*').eq('id', reportId).single();
     
     if (reportRes.error) throw reportRes.error;
     
-    const modoAtividades = reportRes.data.modo_atividades || 'manual';
+    // Fetch obra config to determine the correct mode
+    const { data: obraConfig } = await supabase
+      .from('rdo_config')
+      .select('modo_atividades')
+      .eq('obra_id', obraId)
+      .maybeSingle();
+
+    // Use config mode if available, otherwise fall back to report mode
+    const modoAtividades = obraConfig?.modo_atividades || reportRes.data.modo_atividades || 'manual';
     
-    console.log('Modo de atividades:', modoAtividades);
+    console.log('Modo de atividades (from config):', modoAtividades);
     
-    // Fetch activities based on modo_atividades
+    // Fetch activities based on obra config mode
     let activitiesQuery = supabase
       .from('rdo_activities')
       .select('*, orcamento_item:orcamento_items_hierarquia!orcamento_item_id(*)')

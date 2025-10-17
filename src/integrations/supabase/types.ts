@@ -1391,6 +1391,41 @@ export type Database = {
           },
         ]
       }
+      rdo_config: {
+        Row: {
+          chosen_by: string | null
+          created_at: string
+          locked_at: string
+          modo_atividades: string
+          obra_id: string
+          updated_at: string
+        }
+        Insert: {
+          chosen_by?: string | null
+          created_at?: string
+          locked_at?: string
+          modo_atividades: string
+          obra_id: string
+          updated_at?: string
+        }
+        Update: {
+          chosen_by?: string | null
+          created_at?: string
+          locked_at?: string
+          modo_atividades?: string
+          obra_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_config_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: true
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rdo_equipment: {
         Row: {
           created_at: string

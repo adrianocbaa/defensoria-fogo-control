@@ -75,12 +75,22 @@ export function useRdoForm(obraId: string, data: string) {
   // Mutation para salvar/atualizar
   const saveMutation = useMutation({
     mutationFn: async (data: RdoFormData) => {
+      // Buscar config da obra para preencher modo_atividades automaticamente
+      const { data: config } = await supabase
+        .from('rdo_config')
+        .select('modo_atividades')
+        .eq('obra_id', obraId)
+        .maybeSingle();
+
+      const modoAtividades = config?.modo_atividades || data.modo_atividades || 'manual';
+
       if (data.id) {
         // Update
         const { error } = await supabase
           .from('rdo_reports')
           .update({
             ...data,
+            modo_atividades: modoAtividades,
             updated_at: new Date().toISOString(),
           })
           .eq('id', data.id);
@@ -104,6 +114,7 @@ export function useRdoForm(obraId: string, data: string) {
           .insert({
             ...data,
             numero_seq,
+            modo_atividades: modoAtividades,
             created_by: user?.id,
           })
           .select()

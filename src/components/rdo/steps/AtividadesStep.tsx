@@ -4,12 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, FileSpreadsheet, Sparkles } from "lucide-react";
+import { Edit, FileSpreadsheet, Sparkles, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AtividadesManualMode } from "./AtividadesManualMode";
 import { AtividadesPlanilhaMode } from "./AtividadesPlanilhaMode";
 import { AtividadesTemplateMode } from "./AtividadesTemplateMode";
+import { ChooseModeDialog } from "../ChooseModeDialog";
+import { useRdoConfig, ModoAtividades } from "@/hooks/useRdoConfig";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Activity {
   id?: string;
@@ -29,35 +43,26 @@ interface AtividadesStepProps {
 
 export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Activity>>>({});
-  const [selectedMode, setSelectedMode] = useState<'manual' | 'planilha' | 'template'>('manual');
+  const [showChooseDialog, setShowChooseDialog] = useState(false);
+  const [showChangeDialog, setShowChangeDialog] = useState(false);
+  
+  // Buscar configuração da obra
+  const { config, isLoading: isLoadingConfig, createConfig, updateConfig, isCreating } = useRdoConfig(obraId);
 
-  // Buscar modo salvo no RDO
-  const { data: rdoReport } = useQuery({
-    queryKey: ['rdo-report-mode', reportId],
-    queryFn: async () => {
-      if (!reportId) return null;
-      const { data, error } = await supabase
-        .from('rdo_reports')
-        .select('modo_atividades')
-        .eq('id', reportId)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!reportId,
-  });
-
-  // Atualizar modo selecionado quando carregar do banco
+  // Abrir dialog se não existe config
   useEffect(() => {
-    if (rdoReport?.modo_atividades) {
-      setSelectedMode(rdoReport.modo_atividades as 'manual' | 'planilha' | 'template');
+    if (!isLoadingConfig && !config) {
+      setShowChooseDialog(true);
     }
-  }, [rdoReport]);
+  }, [isLoadingConfig, config]);
+
+  const selectedMode = config?.modo_atividades || 'manual';
 
   const { data: activities = [], isLoading } = useQuery({
-    queryKey: ['rdo-activities', reportId],
+    queryKey: ['rdo-activities', reportId, selectedMode],
     queryFn: async () => {
       if (!reportId) return [];
       const { data, error } = await supabase
@@ -70,36 +75,49 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
       if (error) throw error;
       return data as Activity[];
     },
-    enabled: !!reportId,
+    enabled: !!reportId && !!config,
   });
 
-  const updateModeMutation = useMutation({
-    mutationFn: async (mode: 'manual' | 'planilha' | 'template') => {
-      if (!reportId) {
-        toast.error('Salve o RDO antes de alterar o modo');
-        return;
-      }
+  const handleConfirmMode = async (mode: ModoAtividades) => {
+    createConfig({
+      obra_id: obraId,
+      modo_atividades: mode,
+      chosen_by: user?.id,
+    });
 
-      const { error } = await supabase
+    // Atualizar também o RDO atual para consistência
+    if (reportId) {
+      await supabase
         .from('rdo_reports')
         .update({ modo_atividades: mode })
         .eq('id', reportId);
       
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rdo-report-mode', reportId] });
       queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
-      toast.success('Modo de preenchimento alterado');
-    },
-  });
+    }
 
-  const handleModeChange = (mode: 'manual' | 'planilha' | 'template') => {
-    setSelectedMode(mode);
-    updateModeMutation.mutate(mode);
+    setShowChooseDialog(false);
   };
 
-  if (isLoading) {
+  const handleChangeMode = async (mode: ModoAtividades) => {
+    updateConfig({
+      obra_id: obraId,
+      modo_atividades: mode,
+    });
+
+    // Atualizar também o RDO atual
+    if (reportId) {
+      await supabase
+        .from('rdo_reports')
+        .update({ modo_atividades: mode })
+        .eq('id', reportId);
+      
+      queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
+    }
+
+    setShowChangeDialog(false);
+  };
+
+  if (isLoadingConfig || isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-12" />
@@ -108,82 +126,118 @@ export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) 
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Seletor de Modo */}
-      <Card className="rounded-2xl shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Modo de Preenchimento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <Button
-              variant={selectedMode === 'manual' ? 'default' : 'outline'}
-              className="justify-start gap-2"
-              onClick={() => handleModeChange('manual')}
-            >
-              <Edit className="h-4 w-4" />
-              Preenchimento Manual
-              {selectedMode === 'manual' && (
-                <Badge variant="secondary" className="ml-auto">Ativo</Badge>
-              )}
-            </Button>
-            <Button
-              variant={selectedMode === 'planilha' ? 'default' : 'outline'}
-              className="justify-start gap-2"
-              onClick={() => handleModeChange('planilha')}
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Lista de Serviços
-              {selectedMode === 'planilha' && (
-                <Badge variant="secondary" className="ml-auto">Ativo</Badge>
-              )}
-            </Button>
-            <Button
-              variant={selectedMode === 'template' ? 'default' : 'outline'}
-              className="justify-start gap-2"
-              onClick={() => handleModeChange('template')}
-            >
-              <Sparkles className="h-4 w-4" />
-              Modelo Padrão
-              {selectedMode === 'template' && (
-                <Badge variant="secondary" className="ml-auto">Ativo</Badge>
-              )}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {selectedMode === 'manual' 
-              ? 'Registre manualmente as atividades executadas no dia'
-              : selectedMode === 'planilha'
-              ? 'Preencha os serviços da planilha orçamentária vinculada à obra'
-              : 'Carregue um template pré-definido e personalize conforme necessário'}
-          </p>
-        </CardContent>
-      </Card>
+  const getModeLabel = (mode: ModoAtividades) => {
+    switch (mode) {
+      case 'manual':
+        return 'Preenchimento Manual';
+      case 'planilha':
+        return 'Lista de Serviços (Planilha)';
+      case 'template':
+        return 'Modelo Padrão';
+    }
+  };
 
-      {/* Conteúdo do Modo Selecionado */}
-      {selectedMode === 'manual' ? (
-        <AtividadesManualMode
-          reportId={reportId}
-          obraId={obraId}
-          activities={activities}
-          localValues={localValues}
-          setLocalValues={setLocalValues}
-        />
-      ) : selectedMode === 'planilha' ? (
-        <AtividadesPlanilhaMode
-          reportId={reportId}
-          obraId={obraId}
-          dataRdo={data}
-        />
-      ) : (
-        <AtividadesTemplateMode
-          reportId={reportId}
-          obraId={obraId}
-          localValues={localValues}
-          setLocalValues={setLocalValues}
-        />
-      )}
-    </div>
+  return (
+    <>
+      <ChooseModeDialog
+        open={showChooseDialog}
+        onConfirm={handleConfirmMode}
+        isLoading={isCreating}
+      />
+
+      <AlertDialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Alterar Modo de Preenchimento
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Esta ação alterará o modo de preenchimento para <strong>todos os RDOs futuros</strong> desta obra.
+              </p>
+              <p className="text-destructive font-medium">
+                ⚠️ Atenção: Esta mudança pode invalidar dados já lançados nos RDOs anteriores.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                // Re-open choose dialog to select new mode
+                setShowChangeDialog(false);
+                setShowChooseDialog(true);
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="space-y-4">
+        {/* Info do Modo Atual */}
+        {config && (
+          <Card className="rounded-2xl shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {selectedMode === 'manual' && <Edit className="h-5 w-5 text-primary" />}
+                  {selectedMode === 'planilha' && <FileSpreadsheet className="h-5 w-5 text-primary" />}
+                  {selectedMode === 'template' && <Sparkles className="h-5 w-5 text-primary" />}
+                  <div>
+                    <p className="text-sm font-medium">Modo da obra:</p>
+                    <p className="text-lg font-semibold">{getModeLabel(selectedMode)}</p>
+                  </div>
+                  <Badge variant="secondary" className="ml-2">Fixado</Badge>
+                </div>
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowChangeDialog(true)}
+                  >
+                    Alterar Modo
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                {selectedMode === 'manual' 
+                  ? 'Registre manualmente as atividades executadas no dia'
+                  : selectedMode === 'planilha'
+                  ? 'Preencha os serviços da planilha orçamentária vinculada à obra'
+                  : 'Carregue um template pré-definido e personalize conforme necessário'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Conteúdo do Modo Selecionado */}
+        {selectedMode === 'manual' ? (
+          <AtividadesManualMode
+            reportId={reportId}
+            obraId={obraId}
+            activities={activities}
+            localValues={localValues}
+            setLocalValues={setLocalValues}
+          />
+        ) : selectedMode === 'planilha' ? (
+          <AtividadesPlanilhaMode
+            reportId={reportId}
+            obraId={obraId}
+            dataRdo={data}
+          />
+        ) : (
+          <AtividadesTemplateMode
+            reportId={reportId}
+            obraId={obraId}
+            localValues={localValues}
+            setLocalValues={setLocalValues}
+          />
+        )}
+      </div>
+    </>
   );
 }
