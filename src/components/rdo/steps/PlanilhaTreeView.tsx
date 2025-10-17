@@ -130,11 +130,43 @@ export function PlanilhaTreeView({
     setExpandedNodes(new Set());
   };
 
+  // Função recursiva para verificar se algum ancestral é "ADMINISTRAÇÃO"
+  const hasAdministracaoAncestor = (currentNode: TreeNode, allNodes: TreeNode[]): boolean => {
+    if (!currentNode.parent_code) return false;
+    
+    const parent = allNodes.find(n => n.item === currentNode.parent_code);
+    if (!parent) return false;
+    
+    if (parent.is_macro && parent.descricao.toLowerCase().includes('administração')) {
+      return true;
+    }
+    
+    return hasAdministracaoAncestor(parent, allNodes);
+  };
+
+  // Função para coletar todos os nós em uma lista plana
+  const flattenNodes = (nodes: TreeNode[]): TreeNode[] => {
+    const result: TreeNode[] = [];
+    const traverse = (nodeList: TreeNode[]) => {
+      nodeList.forEach(n => {
+        result.push(n);
+        if (n.children.length > 0) {
+          traverse(n.children);
+        }
+      });
+    };
+    traverse(nodes);
+    return result;
+  };
+
+  const allFlatNodes = useMemo(() => flattenNodes(tree), [tree]);
+
   const renderNode = (node: TreeNode, level: number = 0): JSX.Element[] => {
     const isExpanded = expandedNodes.has(node.item);
     const hasChildren = node.children.length > 0;
     const isMacro = node.is_macro;
     const isAdministracaoMacro = isMacro && node.descricao.toLowerCase().includes('administração');
+    const isBlockedByAdministracao = !isMacro && hasAdministracaoAncestor(node, allFlatNodes);
 
     const elements: JSX.Element[] = [];
 
@@ -144,7 +176,8 @@ export function PlanilhaTreeView({
         key={node.id}
         className={cn(
           "border-b last:border-b-0",
-          isMacro && "bg-muted/30"
+          isMacro && "bg-muted/30",
+          isBlockedByAdministracao && "opacity-60"
         )}
         style={{ paddingLeft: `${level * 1.5}rem` }}
       >
@@ -206,7 +239,7 @@ export function PlanilhaTreeView({
 
           {/* Executado (RDO) - apenas para MICRO */}
           <div className="w-32 flex-shrink-0">
-            {!isMacro && node.activity ? (
+            {!isMacro && node.activity && !isBlockedByAdministracao ? (
               <Input
                 type="number"
                 min="0"
@@ -228,7 +261,7 @@ export function PlanilhaTreeView({
                 )}
                 disabled={isUpdating}
               />
-            ) : isAdministracaoMacro ? (
+            ) : (isAdministracaoMacro || isBlockedByAdministracao) ? (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -238,7 +271,7 @@ export function PlanilhaTreeView({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Itens MACRO com "ADMINISTRAÇÃO" não recebem valores no RDO</p>
+                    <p>Itens sob o MACRO "ADMINISTRAÇÃO" não recebem valores no RDO</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
