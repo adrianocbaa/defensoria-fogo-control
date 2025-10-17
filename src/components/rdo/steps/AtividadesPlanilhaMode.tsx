@@ -159,15 +159,6 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
     },
-    onError: (error: any) => {
-      // Verificar se é o erro de item sob ADMINISTRAÇÃO
-      if (error?.message?.includes('ADMINISTRAÇÃO')) {
-        toast.error('Itens sob o macro ADMINISTRAÇÃO não podem receber execução no RDO.');
-      } else {
-        toast.error('Erro ao atualizar executado');
-      }
-      console.error('Erro ao atualizar executado:', error);
-    },
   });
   
   const handleExecutadoChange = (orcamentoItemId: string, activityId: string, value: number) => {
@@ -175,12 +166,6 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
   };
 
   const handleExecutadoBlur = (orcamentoItemId: string, activityId: string, value: number) => {
-    // Verificar se o item está bloqueado antes de salvar
-    const item = orcamentoItems.find(i => i.id === orcamentoItemId);
-    if (item?.is_under_administracao) {
-      toast.error('Itens sob ADMINISTRAÇÃO não podem receber execução no RDO');
-      return;
-    }
     updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
   };
 

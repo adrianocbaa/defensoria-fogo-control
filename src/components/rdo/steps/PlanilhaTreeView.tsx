@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronRight, ChevronDown, MessageSquare, AlertTriangle, Search, Filter, Lock } from "lucide-react";
+import { ChevronRight, ChevronDown, MessageSquare, AlertTriangle, Search, Filter } from "lucide-react";
 import { OrcamentoItem } from "@/hooks/useOrcamentoItems";
 import { cn } from "@/lib/utils";
 
@@ -143,15 +143,11 @@ export function PlanilhaTreeView({
         key={node.id}
         className={cn(
           "border-b last:border-b-0",
-          isMacro && "bg-muted/30",
-          node.is_under_administracao && !isMacro && "opacity-60"
+          isMacro && "bg-muted/30"
         )}
         style={{ paddingLeft: `${level * 1.5}rem` }}
       >
-        <div className={cn(
-          "flex items-center gap-2 py-3 px-3",
-          node.is_under_administracao && !isMacro && "opacity-60"
-        )}>
+        <div className="flex items-center gap-2 py-3 px-3">
           {/* Ícone de expansão */}
           <div className="w-6 flex-shrink-0">
             {hasChildren && (
@@ -210,45 +206,27 @@ export function PlanilhaTreeView({
           {/* Executado (RDO) - apenas para MICRO */}
           <div className="w-32 flex-shrink-0">
             {!isMacro && node.activity ? (
-              node.is_under_administracao ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="h-8 flex items-center justify-center gap-1 text-muted-foreground opacity-60 cursor-not-allowed">
-                        <Lock className="h-3 w-3" />
-                        <span className="text-xs">Bloqueado</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs max-w-[200px]">
-                        Itens sob o macro 'ADMINISTRAÇÃO' não são medidos no RDO.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={node.executadoDia}
-                  onChange={(e) => onExecutadoChange(
-                    node.id,
-                    node.activity.id,
-                    parseFloat(e.target.value) || 0
-                  )}
-                  onBlur={(e) => onExecutadoBlur(
-                    node.id,
-                    node.activity.id,
-                    parseFloat(e.target.value) || 0
-                  )}
-                  className={cn(
-                    "h-8 text-sm",
-                    node.excedeuLimite && 'border-destructive focus-visible:ring-destructive'
-                  )}
-                  disabled={isUpdating}
-                />
-              )
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={node.executadoDia}
+                onChange={(e) => onExecutadoChange(
+                  node.id,
+                  node.activity.id,
+                  parseFloat(e.target.value) || 0
+                )}
+                onBlur={(e) => onExecutadoBlur(
+                  node.id,
+                  node.activity.id,
+                  parseFloat(e.target.value) || 0
+                )}
+                className={cn(
+                  "h-8 text-sm",
+                  node.excedeuLimite && 'border-destructive focus-visible:ring-destructive'
+                )}
+                disabled={isUpdating}
+              />
             ) : (
               <div className="h-8 flex items-center justify-center text-muted-foreground">
                 —
