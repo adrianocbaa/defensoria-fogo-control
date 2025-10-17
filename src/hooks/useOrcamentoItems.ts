@@ -15,6 +15,7 @@ export interface OrcamentoItem {
   calculated_level?: number;
   parent_code?: string | null;
   is_macro?: boolean;
+  is_under_administracao?: boolean;
 }
 
 export function useOrcamentoItems(obraId: string) {
@@ -22,13 +23,17 @@ export function useOrcamentoItems(obraId: string) {
     queryKey: ['orcamento-items-hierarquia', obraId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('orcamento_items_hierarquia')
-        .select('id, item, codigo, descricao, unidade, quantidade, total_contrato, nivel, origem, aditivo_num, calculated_level, parent_code, is_macro')
+        .from('vw_planilha_hierarquia')
+        .select('id, item, codigo, descricao, unidade, quantidade_total, total_contrato, nivel, origem, aditivo_num, calculated_level, parent_code, is_macro, is_under_administracao')
         .eq('obra_id', obraId)
         .order('ordem', { ascending: true });
       
       if (error) throw error;
-      return (data || []) as OrcamentoItem[];
+      // Mapear quantidade_total para quantidade para manter compatibilidade
+      return (data || []).map(d => ({
+        ...d,
+        quantidade: d.quantidade_total
+      })) as OrcamentoItem[];
     },
     enabled: !!obraId,
   });

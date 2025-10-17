@@ -366,12 +366,28 @@ Deno.serve(async (req) => {
         let tableBody: any[] = [];
         
         if (modoAtividades === 'planilha') {
+          // Buscar metadados da view para verificar is_under_administracao
+          const { data: hierarquiaData } = await supabaseAdmin
+            .from('vw_planilha_hierarquia')
+            .select('id, is_under_administracao')
+            .eq('obra_id', obraId)
+            .in('id', filteredActivities.map(a => a.orcamento_item_id).filter(Boolean));
+          
+          const administracaoMap = new Map<string, boolean>();
+          (hierarquiaData || []).forEach((h: any) => {
+            administracaoMap.set(h.id, h.is_under_administracao);
+          });
+
           tableBody = filteredActivities
             .filter((a, idx) => {
               const isHeader = rowIsHeader[idx] === true;
               const executadoDia = Number(a.executado_dia || 0);
+              const isUnderAdministracao = a.orcamento_item_id ? 
+                administracaoMap.get(a.orcamento_item_id) : false;
+              
               // Mostrar apenas MICROS (não headers) com valores preenchidos no dia
-              return !isHeader && executadoDia > 0;
+              // E que NÃO estejam sob ADMINISTRAÇÃO
+              return !isHeader && executadoDia > 0 && !isUnderAdministracao;
             })
             .map((a, idx) => {
               const itemCode = a.item_code || a.orcamento_item?.item || '-';

@@ -2217,6 +2217,29 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_planilha_hierarquia: {
+        Row: {
+          aditivo_num: number | null
+          ancestors: string[] | null
+          ancestors_desc: string[] | null
+          calculated_level: number | null
+          codigo: string | null
+          descricao: string | null
+          id: string | null
+          is_macro: boolean | null
+          is_under_administracao: boolean | null
+          item: string | null
+          nivel: number | null
+          obra_id: string | null
+          ordem: number | null
+          origem: string | null
+          parent_code: string | null
+          quantidade_total: number | null
+          total_contrato: number | null
+          unidade: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_edit: {
@@ -2417,6 +2440,14 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: undefined
+      }
+      unaccent: {
+        Args: { "": string }
+        Returns: string
+      }
+      unaccent_init: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       update_project: {
         Args: {

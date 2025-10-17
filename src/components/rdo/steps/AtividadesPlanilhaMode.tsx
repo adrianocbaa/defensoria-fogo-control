@@ -159,6 +159,15 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
     },
+    onError: (error: any) => {
+      // Verificar se é o erro de item sob ADMINISTRAÇÃO
+      if (error?.message?.includes('ADMINISTRAÇÃO')) {
+        toast.error('Itens sob o macro ADMINISTRAÇÃO não podem receber execução no RDO.');
+      } else {
+        toast.error('Erro ao atualizar executado');
+      }
+      console.error('Erro ao atualizar executado:', error);
+    },
   });
   
   const handleExecutadoChange = (orcamentoItemId: string, activityId: string, value: number) => {
