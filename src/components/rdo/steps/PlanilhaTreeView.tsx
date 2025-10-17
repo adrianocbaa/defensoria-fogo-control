@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronRight, ChevronDown, MessageSquare, AlertTriangle, Search, Filter } from "lucide-react";
+import { ChevronRight, ChevronDown, MessageSquare, AlertTriangle, Search, Filter, Lock } from "lucide-react";
 import { OrcamentoItem } from "@/hooks/useOrcamentoItems";
 import { cn } from "@/lib/utils";
 
@@ -134,6 +134,7 @@ export function PlanilhaTreeView({
     const isExpanded = expandedNodes.has(node.item);
     const hasChildren = node.children.length > 0;
     const isMacro = node.is_macro;
+    const isAdministracaoMacro = isMacro && node.descricao.toLowerCase().includes('administração');
 
     const elements: JSX.Element[] = [];
 
@@ -227,6 +228,20 @@ export function PlanilhaTreeView({
                 )}
                 disabled={isUpdating}
               />
+            ) : isAdministracaoMacro ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="h-8 flex items-center justify-center gap-1 text-muted-foreground">
+                      <Lock className="h-3 w-3" />
+                      <span className="text-xs">Bloqueado</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Itens MACRO com "ADMINISTRAÇÃO" não recebem valores no RDO</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             ) : (
               <div className="h-8 flex items-center justify-center text-muted-foreground">
                 —
