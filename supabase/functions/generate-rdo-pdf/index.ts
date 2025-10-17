@@ -50,6 +50,20 @@ Deno.serve(async (req) => {
     
     console.log('Modo de atividades (from config):', modoAtividades);
     
+    // Fetch accumulated data for progress calculation
+    const { data: acumuladoData } = await supabase
+      .from('rdo_activities_acumulado')
+      .select('*')
+      .eq('obra_id', obraId)
+      .lt('data', reportRes.data.data);
+    
+    const acumuladoMap = new Map<string, number>();
+    (acumuladoData || []).forEach((item: any) => {
+      if (item.orcamento_item_id) {
+        acumuladoMap.set(item.orcamento_item_id, Number(item.executado_acumulado || 0));
+      }
+    });
+    
     // Fetch activities based on obra config mode
     let activitiesQuery = supabase
       .from('rdo_activities')
@@ -355,12 +369,26 @@ Deno.serve(async (req) => {
           tableBody = filteredActivities.map((a, idx) => {
             const isHeader = rowIsHeader[idx] === true;
             const itemCode = a.item_code || a.orcamento_item?.item || '-';
+            
+            // Calculate real progress dynamically
+            let progressoReal = 0;
+            if (!isHeader && a.orcamento_item_id) {
+              const executadoDia = Number(a.executado_dia || 0);
+              const executadoAcumulado = acumuladoMap.get(a.orcamento_item_id) || 0;
+              const quantidadeTotal = Number(a.quantidade_total || a.orcamento_item?.quantidade || 0);
+              
+              if (quantidadeTotal > 0) {
+                const totalExecutado = executadoAcumulado + executadoDia;
+                progressoReal = Math.min(100, Math.round((totalExecutado / quantidadeTotal) * 100));
+              }
+            }
+            
             return [
               itemCode,
               a.descricao,
               isHeader ? '-' : (a.executado_dia?.toFixed(2) || '0'),
               isHeader ? '-' : (a.unidade || '-'),
-              isHeader ? '-' : `${a.progresso || 0}%`
+              isHeader ? '-' : `${progressoReal}%`
             ];
           });
         } else {
