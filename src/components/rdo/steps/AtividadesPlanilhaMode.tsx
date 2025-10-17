@@ -127,11 +127,23 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
 
   const updateExecutadoMutation = useMutation({
     mutationFn: async ({ activityId, value, orcamentoItemId }: { activityId: string; value: number; orcamentoItemId: string }) => {
+      // Buscar dados necessários para calcular o progresso corretamente
+      const item = orcamentoItems.find(i => i.id === orcamentoItemId);
+      const acumulado = acumulados.find(a => a.orcamento_item_id === orcamentoItemId);
+      const executadoAcumulado = acumulado?.executado_acumulado || 0;
+      const quantidadeTotal = item?.quantidade || 0;
+      
+      // Calcular progresso real: (acumulado + dia) / total * 100
+      const totalExecutado = executadoAcumulado + value;
+      const progresso = quantidadeTotal > 0 
+        ? Math.min(100, Math.round((totalExecutado / quantidadeTotal) * 100))
+        : 0;
+      
       const { error } = await supabase
         .from('rdo_activities')
         .update({ 
           executado_dia: value,
-          progresso: value > 0 ? 100 : 0, // Se executou algo, marca como 100%, senão 0
+          progresso: progresso,
         })
         .eq('id', activityId);
       
