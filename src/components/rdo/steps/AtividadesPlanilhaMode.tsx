@@ -175,6 +175,12 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
   };
 
   const handleExecutadoBlur = (orcamentoItemId: string, activityId: string, value: number) => {
+    // Verificar se o item está bloqueado antes de salvar
+    const item = orcamentoItems.find(i => i.id === orcamentoItemId);
+    if (item?.is_under_administracao) {
+      toast.error('Itens sob ADMINISTRAÇÃO não podem receber execução no RDO');
+      return;
+    }
     updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
   };
 

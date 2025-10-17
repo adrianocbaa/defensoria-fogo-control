@@ -148,7 +148,10 @@ export function PlanilhaTreeView({
         )}
         style={{ paddingLeft: `${level * 1.5}rem` }}
       >
-        <div className="flex items-center gap-2 py-3 px-3">
+        <div className={cn(
+          "flex items-center gap-2 py-3 px-3",
+          node.is_under_administracao && !isMacro && "opacity-60"
+        )}>
           {/* Ícone de expansão */}
           <div className="w-6 flex-shrink-0">
             {hasChildren && (
