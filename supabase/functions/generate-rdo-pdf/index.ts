@@ -366,42 +366,37 @@ Deno.serve(async (req) => {
         let tableBody: any[] = [];
         
         if (modoAtividades === 'planilha') {
-          tableBody = filteredActivities.map((a, idx) => {
-            const isHeader = rowIsHeader[idx] === true;
-            const itemCode = a.item_code || a.orcamento_item?.item || '-';
-            
-            // Se for header MACRO, retornar linha de cabeçalho
-            if (isHeader) {
+          tableBody = filteredActivities
+            .filter((a, idx) => {
+              const isHeader = rowIsHeader[idx] === true;
+              const executadoDia = Number(a.executado_dia || 0);
+              // Mostrar apenas MICROs (não headers) com valores preenchidos no dia
+              return !isHeader && executadoDia > 0;
+            })
+            .map((a) => {
+              const itemCode = a.item_code || a.orcamento_item?.item || '-';
+              
+              // Calculate real progress dynamically
+              let progressoReal = 0;
+              if (a.orcamento_item_id) {
+                const executadoDia = Number(a.executado_dia || 0);
+                const executadoAcumulado = acumuladoMap.get(a.orcamento_item_id) || 0;
+                const quantidadeTotal = Number(a.quantidade_total || a.orcamento_item?.quantidade || 0);
+                
+                if (quantidadeTotal > 0) {
+                  const totalExecutado = executadoAcumulado + executadoDia;
+                  progressoReal = Math.min(100, Math.round((totalExecutado / quantidadeTotal) * 100));
+                }
+              }
+              
               return [
                 itemCode,
                 a.descricao,
-                '—',
-                '—',
-                '—'
+                a.executado_dia?.toFixed(2) || '0',
+                a.unidade || '-',
+                `${progressoReal}%`
               ];
-            }
-            
-            // Para MICROs, calcular progresso real
-            let progressoReal = 0;
-            if (a.orcamento_item_id) {
-              const executadoDia = Number(a.executado_dia || 0);
-              const executadoAcumulado = acumuladoMap.get(a.orcamento_item_id) || 0;
-              const quantidadeTotal = Number(a.quantidade_total || a.orcamento_item?.quantidade || 0);
-              
-              if (quantidadeTotal > 0) {
-                const totalExecutado = executadoAcumulado + executadoDia;
-                progressoReal = Math.min(100, Math.round((totalExecutado / quantidadeTotal) * 100));
-              }
-            }
-            
-            return [
-              itemCode,
-              a.descricao,
-              a.executado_dia?.toFixed(2) || '0',
-              a.unidade || '-',
-              `${progressoReal}%`
-            ];
-          });
+            });
         } else {
           // manual ou template
           tableBody = filteredActivities.map(a => [
