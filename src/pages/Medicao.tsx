@@ -16,6 +16,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
+import { ImportarDoRDO } from '@/components/ImportarDoRDO';
 import NovoAditivoModal from '@/components/NovoAditivoModal';
 import * as LoadingStates from '@/components/LoadingStates';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -113,6 +114,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
   const [medicaoAtual, setMedicaoAtual] = useState<number | null>(null);
   const [modalImportarAberto, setModalImportarAberto] = useState(false);
+  const [modalImportarRDOAberto, setModalImportarRDOAberto] = useState(false);
   const [mostrarAditivos, setMostrarAditivos] = useState(true);
   const [novoAditivoAberto, setNovoAditivoAberto] = useState(false);
   const [confirm, setConfirm] = useState<{ open: boolean; type?: 'reabrir-medicao' | 'excluir-medicao' | 'excluir-aditivo'; medicaoId?: number; aditivoId?: number }>({ open: false });
@@ -2502,6 +2504,83 @@ const criarNovaMedicao = async () => {
     }
   };
 
+  const importarDadosDoRDO = async (dadosImportados: { [itemCode: string]: number }) => {
+    if (!id || !medicaoAtual) {
+      toast.error('Selecione uma medição antes de importar do RDO');
+      return;
+    }
+
+    const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
+    if (!medicaoAtualObj) {
+      toast.error('Medição atual não encontrada');
+      return;
+    }
+
+    if (medicaoAtualObj.bloqueada) {
+      toast.error('Não é possível importar para uma medição bloqueada');
+      return;
+    }
+
+    try {
+      // Para cada código importado, encontrar o item correspondente e preencher a qtd
+      const novoDados = { ...medicaoAtualObj.dados };
+      let itensAtualizados = 0;
+
+      Object.entries(dadosImportados).forEach(([itemCode, qtdExecutada]) => {
+        // Encontrar item pelo código (tentando tanto codigo quanto item)
+        const item = items.find(i => 
+          i.codigo.trim() === itemCode.trim() || 
+          i.item.trim() === itemCode.trim()
+        );
+
+        if (item && ehItemFolha(item.item)) {
+          const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual);
+          const valorTotal = qtdExecutada * item.valorUnitario;
+          const percentual = totalContratoItem > 0 ? (valorTotal / totalContratoItem) * 100 : 0;
+
+          novoDados[item.id] = {
+            qnt: qtdExecutada,
+            percentual: Math.min(100, percentual),
+            total: valorTotal
+          };
+          itensAtualizados++;
+        }
+      });
+
+      // Atualizar estado local
+      const medicoesAtualizadas = medicoes.map(m => 
+        m.id === medicaoAtual 
+          ? { ...m, dados: novoDados }
+          : m
+      );
+      setMedicoes(medicoesAtualizadas);
+
+      // Salvar no banco de dados
+      if (medicaoAtualObj.sessionId) {
+        const itemsParaSalvar = Object.entries(novoDados).map(([itemIdStr, valores]) => {
+          const itemId = parseInt(itemIdStr);
+          const item = items.find(i => i.id === itemId);
+          if (!item) return null;
+
+          return {
+            medicao_id: medicaoAtualObj.sessionId,
+            item_code: item.codigo.trim(),
+            qtd: valores.qnt,
+            pct: valores.percentual,
+            total: valores.total
+          };
+        }).filter(Boolean);
+
+        await upsertItems(medicaoAtualObj.sessionId, itemsParaSalvar as any[]);
+      }
+
+      toast.success(`${itensAtualizados} itens importados do RDO com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao importar dados do RDO:', error);
+      toast.error('Erro ao importar dados do RDO');
+    }
+  };
+
   // Função para obter estilo da linha baseado no nível
   const obterEstiloLinha = (item: Item) => {
     const n = determinarNivel(item.item);
@@ -3015,6 +3094,21 @@ const criarNovaMedicao = async () => {
                     <ImportarPlanilha 
                       onImportar={importarDados}
                       onFechar={() => setModalImportarAberto(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+                <Dialog open={modalImportarRDOAberto} onOpenChange={setModalImportarRDOAberto}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      Importar do RDO
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <ImportarDoRDO 
+                      obraId={id!}
+                      onImportar={importarDadosDoRDO}
+                      onFechar={() => setModalImportarRDOAberto(false)}
                     />
                   </DialogContent>
                 </Dialog>
