@@ -7,10 +7,12 @@ export function useRdoProgressByObra(obraId: string) {
     queryFn: async () => {
       // 1. Buscar todos os itens do orçamento desta obra (excluindo administração)
       const { data: orcamentoItems, error: orcError } = await supabase
-        .from('orcamento_items')
-        .select('id, quantidade, eh_administracao_local')
+        .from('orcamento_items_hierarquia')
+        .select('id, quantidade, eh_administracao_local, is_macro, origem')
         .eq('obra_id', obraId)
-        .eq('eh_administracao_local', false);
+        .eq('eh_administracao_local', false)
+        .or('is_macro.is.null,is_macro.eq.false')
+        .neq('origem', 'extracontratual');
       
       if (orcError) throw orcError;
       if (!orcamentoItems || orcamentoItems.length === 0) return 0;
@@ -20,7 +22,6 @@ export function useRdoProgressByObra(obraId: string) {
         .from('rdo_activities')
         .select('orcamento_item_id, executado_dia')
         .eq('obra_id', obraId)
-        .eq('tipo', 'planilha')
         .not('orcamento_item_id', 'is', null);
       
       if (rdoError) throw rdoError;
