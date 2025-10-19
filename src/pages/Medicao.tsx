@@ -621,11 +621,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       ? Object.values(medicaoAtualData.dados).reduce((sum, d: any) => sum + (d.total || 0), 0)
       : 0;
 
-    // 5) Valor Acumulado (até a medição atual)
+    // 5) Valor Acumulado (SEMPRE até a ÚLTIMA medição, não a atual visualizada)
+    // Isso garante que o progresso mostrado em "Valor Pago" sempre reflita a última medição
     let valorAcumulado = 0;
-    if (medicaoAtual) {
-      const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
-      for (let i = 0; i <= medicaoAtualIndex; i++) {
+    if (medicoes.length > 0) {
+      // Somar TODAS as medições para obter o valor acumulado real (última medição)
+      for (let i = 0; i < medicoes.length; i++) {
         const dados = medicoes[i].dados;
         valorAcumulado += Object.values(dados).reduce((s, d: any) => s + (d.total || 0), 0);
       }
