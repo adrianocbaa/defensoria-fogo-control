@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, Save, Loader2, CheckCircle2, Send, ThumbsUp, ThumbsDown, FileText, Unlock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, Send, ThumbsUp, ThumbsDown, FileText, Unlock } from 'lucide-react';
 import { RdoStepper, STEPS } from '@/components/rdo/RdoStepper';
 import { useRdoForm } from '@/hooks/useRdoForm';
 import { AnotacoesStep } from '@/components/rdo/steps/AnotacoesStep';
@@ -200,6 +200,18 @@ export default function RDODiario() {
   const isConcluded = formData.status === 'concluido';
   const hasSignatures = formData.assinatura_fiscal_url || formData.assinatura_contratada_url;
 
+  // Navegação entre dias
+  const currentDate = new Date(data);
+  const previousDate = new Date(currentDate);
+  previousDate.setDate(previousDate.getDate() - 1);
+  const nextDate = new Date(currentDate);
+  nextDate.setDate(nextDate.getDate() + 1);
+
+  const navigateToDate = (newDate: Date) => {
+    const dateStr = newDate.toISOString().split('T')[0];
+    navigate(`/obras/${obraId}/rdo/diario?data=${dateStr}`);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
@@ -218,9 +230,29 @@ export default function RDODiario() {
           </div>
           <div className="mt-3">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">RDO {formData.numero_seq ? `Nº ${formData.numero_seq}` : ''}</h1>
-                <p className="text-sm text-muted-foreground">Data: {new Date(data).toLocaleDateString('pt-BR')}</p>
+              <div className="flex items-center gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold">RDO {formData.numero_seq ? `Nº ${formData.numero_seq}` : ''}</h1>
+                  <p className="text-sm text-muted-foreground">Data: {new Date(data).toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigateToDate(previousDate)}
+                    title="Dia anterior"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigateToDate(nextDate)}
+                    title="Próximo dia"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               {/* Action buttons */}
               {canEdit && (
