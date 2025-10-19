@@ -5,45 +5,55 @@ export function useRdoProgressByObra(obraId: string) {
   return useQuery({
     queryKey: ['rdo-progress', obraId],
     queryFn: async () => {
-      // Buscar todas as atividades do tipo planilha desta obra
-      // com join para verificar se o item é de administração
-      const { data, error } = await supabase
+      // 1. Buscar todos os itens do orçamento desta obra (excluindo administração)
+      const { data: orcamentoItems, error: orcError } = await supabase
+        .from('orcamento_items')
+        .select('id, quantidade, eh_administracao_local')
+        .eq('obra_id', obraId)
+        .eq('eh_administracao_local', false);
+      
+      if (orcError) throw orcError;
+      if (!orcamentoItems || orcamentoItems.length === 0) return 0;
+
+      // 2. Buscar todas as atividades do RDO para esta obra
+      const { data: rdoActivities, error: rdoError } = await supabase
         .from('rdo_activities')
-        .select(`
-          orcamento_item_id, 
-          executado_dia, 
-          quantidade_total,
-          orcamento_items!inner(eh_administracao_local)
-        `)
+        .select('orcamento_item_id, executado_dia')
         .eq('obra_id', obraId)
         .eq('tipo', 'planilha')
         .not('orcamento_item_id', 'is', null);
       
-      if (error) throw error;
-      if (!data || data.length === 0) return 0;
+      if (rdoError) throw rdoError;
+      if (!rdoActivities || rdoActivities.length === 0) return 0;
 
-      // Agrupar por item para calcular totais (excluindo administração)
-      const itemMap = new Map<string, { executado: number; total: number }>();
-      
-      data.forEach((activity: any) => {
-        // Pular itens de Administração Local
-        if (activity.orcamento_items?.eh_administracao_local) return;
-        
-        const itemId = activity.orcamento_item_id;
-        const current = itemMap.get(itemId) || { executado: 0, total: activity.quantidade_total || 0 };
-        current.executado += activity.executado_dia || 0;
-        itemMap.set(itemId, current);
+      // 3. Criar mapa de quantidade por item do orçamento
+      const orcamentoMap = new Map<string, number>();
+      orcamentoItems.forEach(item => {
+        orcamentoMap.set(item.id, item.quantidade);
       });
 
-      // Calcular percentual médio ponderado
+      // 4. Agrupar execução por item (acumular executado_dia de todos os RDOs)
+      const executadoMap = new Map<string, number>();
+      rdoActivities.forEach(activity => {
+        const itemId = activity.orcamento_item_id;
+        // Só considerar se o item existe no orçamento (não foi excluído)
+        if (orcamentoMap.has(itemId)) {
+          const current = executadoMap.get(itemId) || 0;
+          executadoMap.set(itemId, current + (activity.executado_dia || 0));
+        }
+      });
+
+      // 5. Calcular percentual médio ponderado
       let somaPercentuais = 0;
       let somaQuantidades = 0;
 
-      itemMap.forEach(({ executado, total }) => {
-        if (total > 0) {
-          const percentual = (executado / total) * 100;
-          somaPercentuais += percentual * total; // Ponderado pela quantidade total
-          somaQuantidades += total;
+      orcamentoMap.forEach((quantidadeOrcamento, itemId) => {
+        const executadoAcumulado = executadoMap.get(itemId) || 0;
+        
+        if (quantidadeOrcamento > 0) {
+          const percentual = Math.min((executadoAcumulado / quantidadeOrcamento) * 100, 100);
+          somaPercentuais += percentual * quantidadeOrcamento;
+          somaQuantidades += quantidadeOrcamento;
         }
       });
 
