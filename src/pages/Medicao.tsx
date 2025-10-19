@@ -609,9 +609,10 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       }, 0);
     }, 0);
 
-    // 3) Total do Contrato (final) = soma dos itens de 1º nível com aditivos hierárquicos
+    // 3) Total do Contrato (final) = soma dos itens FOLHA (MICROs) com aditivos
+    // IMPORTANTE: Somar apenas itens folha para evitar dupla contagem
     const totalContrato = items
-      .filter(item => ehItemPrimeiroNivel(item.item))
+      .filter(item => ehItemFolha(item.item))
       .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0);
 
     // 4) Serviços Executados (medição atual)
