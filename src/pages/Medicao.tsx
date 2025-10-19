@@ -2737,13 +2737,19 @@ const criarNovaMedicao = async () => {
     if (medicaoAtualIndex === -1) return 0;
 
     // Somar todas as medições até a atual (inclusive)
+    // IMPORTANTE: Somar apenas itens FOLHA (MICROs) para evitar dupla contagem com MACROs
     let valorAcumulado = 0;
     
     for (let i = 0; i <= medicaoAtualIndex; i++) {
       const medicao = medicoes[i];
       if (medicao.dados) {
-        Object.entries(medicao.dados).forEach(([itemId, dados]) => {
-          valorAcumulado += dados.total || 0;
+        Object.entries(medicao.dados).forEach(([itemIdStr, dados]) => {
+          // Verificar se o item é folha (não tem filhos = é MICRO)
+          const itemId = parseInt(itemIdStr);
+          const item = items.find(it => it.id === itemId);
+          if (item && ehItemFolha(item.item)) {
+            valorAcumulado += dados.total || 0;
+          }
         });
       }
     }
