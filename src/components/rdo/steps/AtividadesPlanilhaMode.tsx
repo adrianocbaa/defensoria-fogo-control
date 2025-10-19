@@ -198,12 +198,16 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     return () => { delete (window as any).rdoSavePending; };
   }, [savePending]);
 
-  // Sincronizar automaticamente na primeira vez
+  // Sincronizar automaticamente quando houver itens sem atividades
   useEffect(() => {
-    if (reportId && !loadingActivities && orcamentoItems.length > 0 && rdoActivities.length === 0) {
-      syncMutation.mutate();
+    if (reportId && !loadingActivities && orcamentoItems.length > 0) {
+      // Verificar se há itens sem atividade criada
+      const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id));
+      if (itemsSemAtividade.length > 0) {
+        syncMutation.mutate();
+      }
     }
-  }, [reportId, loadingActivities, orcamentoItems.length, rdoActivities.length]);
+  }, [reportId, loadingActivities, orcamentoItems.length, activitiesByItem]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities) {
     return (
