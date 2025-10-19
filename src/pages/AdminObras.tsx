@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
+import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 
 interface Obra {
   id: string;
@@ -139,12 +141,6 @@ export function AdminObras() {
     return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
   }, []);
 
-  const getFormattedExec = (o: Obra): string => {
-    const p = execPercents[o.id];
-    const value = typeof p === 'number' ? p : Number(o.porcentagem_execucao || 0);
-    return value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '%';
-  };
-
   const getFormattedTotalContrato = (o: Obra): string => {
     const fromMedicao = contractTotals[o.id];
     const fallback = Number(o.valor_total || 0) + Number((o as any).valor_aditivado || 0);
@@ -246,7 +242,7 @@ export function AdminObras() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Valor Total</TableHead>
-                  <TableHead>Execução</TableHead>
+                  <TableHead className="min-w-[250px]">Progresso</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -262,7 +258,9 @@ export function AdminObras() {
                       </Badge>
                     </TableCell>
                     <TableCell>{getFormattedTotalContrato(obra)}</TableCell>
-                    <TableCell>{getFormattedExec(obra)}</TableCell>
+                    <TableCell>
+                      <ProgressCell obraId={obra.id} execPercents={execPercents} obra={obra} />
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button
@@ -327,6 +325,36 @@ export function AdminObras() {
           Para criar, editar ou excluir obras, é necessário ter permissão de Editor ou Administrador.
         </div>
       </PermissionGuard>
+    </div>
+  );
+}
+
+// Componente separado para renderizar as duas barras de progresso
+function ProgressCell({ obraId, execPercents, obra }: { obraId: string; execPercents: Record<string, number>; obra: any }) {
+  const { data: rdoProgress = 0 } = useRdoProgressByObra(obraId);
+  
+  // Valor Pago (Medições)
+  const valorPagoPercent = execPercents[obraId] ?? Number(obra.porcentagem_execucao || 0);
+  
+  return (
+    <div className="space-y-3">
+      {/* Andamento da Obra (RDO) */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Andamento da Obra:</span>
+          <span className="font-medium">{rdoProgress.toFixed(2)}%</span>
+        </div>
+        <Progress value={Math.min(rdoProgress, 100)} className="h-2" />
+      </div>
+      
+      {/* Valor Pago (Medições) */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Valor Pago:</span>
+          <span className="font-medium">{valorPagoPercent.toFixed(2)}%</span>
+        </div>
+        <Progress value={Math.min(valorPagoPercent, 100)} className="h-2" />
+      </div>
     </div>
   );
 }
