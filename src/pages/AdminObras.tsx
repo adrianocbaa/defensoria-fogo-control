@@ -110,11 +110,13 @@ export function AdminObras() {
         const raw = localStorage.getItem(`resumo_financeiro_${o.id}`);
         if (raw) {
           const data = JSON.parse(raw);
-          const total = Number(data?.totalContrato) || 0;
-          const acumulado = Number(data?.valorAcumulado) || 0;
-          const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
+          // Usar Valor Contrato Pós Aditivo (valor inicial + aditivos)
+          const valorContratoPosAditivo = Number(data?.totalContrato) || 0;
+          const valorAcumulado = Number(data?.valorAcumulado) || 0;
+          // Cálculo: Valor Acumulado / Valor Contrato Pós Aditivo * 100
+          const pct = valorContratoPosAditivo > 0 ? (valorAcumulado / valorContratoPosAditivo) * 100 : 0;
           pctMap[o.id] = pct;
-          if (total > 0) totalMap[o.id] = total;
+          if (valorContratoPosAditivo > 0) totalMap[o.id] = valorContratoPosAditivo;
         }
       });
     } catch {}
@@ -126,11 +128,12 @@ export function AdminObras() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<any>).detail;
       if (!detail?.obraId) return;
-      const total = Number(detail?.totalContrato) || 0;
-      const acumulado = Number(detail?.valorAcumulado) || 0;
-      const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
+      const valorContratoPosAditivo = Number(detail?.totalContrato) || 0;
+      const valorAcumulado = Number(detail?.valorAcumulado) || 0;
+      // Cálculo: Valor Acumulado / Valor Contrato Pós Aditivo * 100
+      const pct = valorContratoPosAditivo > 0 ? (valorAcumulado / valorContratoPosAditivo) * 100 : 0;
       setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
-      if (total > 0) setContractTotals((prev) => ({ ...prev, [detail.obraId]: total }));
+      if (valorContratoPosAditivo > 0) setContractTotals((prev) => ({ ...prev, [detail.obraId]: valorContratoPosAditivo }));
     };
     window.addEventListener('medicaoAtualizada', handler as EventListener);
     return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
