@@ -68,10 +68,14 @@ serve(async (req) => {
       );
     }
 
-    // Reset password to default (meets Supabase security requirements)
+    // Generate secure random temporary password
+    const crypto = await import('node:crypto');
+    const tempPassword = crypto.randomBytes(16).toString('base64url').slice(0, 22);
+    
+    // Reset password with secure random value
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
-      { password: 'Admin123' }
+      { password: tempPassword }
     );
 
     if (updateError) {
@@ -82,12 +86,12 @@ serve(async (req) => {
       );
     }
 
-    // Log the action
+    // Log the action without exposing the password
     await supabaseAdmin.from('audit_logs').insert({
       table_name: 'auth.users',
       record_id: userId,
       operation: 'UPDATE',
-      new_values: { password_reset: true },
+      new_values: { password_reset: true, reset_method: 'admin_action' },
       user_id: user.id,
       user_email: user.email || 'unknown'
     });
@@ -95,7 +99,12 @@ serve(async (req) => {
     console.log(`Password reset successfully for user ${userId} by admin ${user.id}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Senha resetada para Admin123' }),
+      JSON.stringify({ 
+        success: true, 
+        message: `Senha temporária gerada: ${tempPassword}`,
+        tempPassword: tempPassword,
+        note: 'Informe esta senha ao usuário de forma segura. Ela deve ser alterada no primeiro login.'
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
