@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
+import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/components/LoadingStates';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
@@ -52,13 +53,18 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   // Buscar dados financeiros das medições
   const { dados: dadosFinanceiros, loading: loadingFinanceiro } = useMedicoesFinanceiro(obra.id);
   
+  // Buscar andamento do RDO
+  const { data: rdoProgress = 0 } = useRdoProgressByObra(obra.id);
+  
   // Usar dados das medições se disponíveis, senão usar dados da obra
   const valorInicial = dadosFinanceiros.valorTotalOriginal || (obra?.valor || 0);
   const valorAditivado = dadosFinanceiros.totalAditivo || ((obra as any)?.valor_aditivado || 0);
   const valorFinal = dadosFinanceiros.totalContrato || (valorInicial + valorAditivado); // Valor Final = Total do Contrato
   const valorExecutado = dadosFinanceiros.valorAcumulado || (obra?.valorExecutado || 0); // Valor Executado = Valor Acumulado
   const valorPago = dadosFinanceiros.valorPago > 0 ? dadosFinanceiros.valorPago : (obra?.valorExecutado || 0);
-  const percentualAndamento = valorFinal > 0 ? Math.min((valorExecutado / valorFinal) * 100, 100) : 0;
+  
+  // Valor Pago: Valor Acumulado / Valor Contrato Pós Aditivo * 100
+  const percentualValorPago = valorFinal > 0 ? (valorExecutado / valorFinal) * 100 : 0;
   
   // Simulate photo loading delay
   React.useEffect(() => {
@@ -255,20 +261,32 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
               
               <Separator />
               
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Andamento da Obra:</span>
-                  <span className="text-lg font-semibold text-blue-600">{formatPercentageValue(percentualAndamento)}</span>
-                </div>
-                <Progress value={percentualAndamento} className="h-3" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <div>
-                    <span className="font-medium">Valor Executado: </span>
-                    <span>{formatCurrency(valorExecutado)}</span>
+              <div className="space-y-4">
+                {/* Andamento da Obra (RDO) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Andamento da Obra:</span>
+                    <span className="text-lg font-semibold text-blue-600">{rdoProgress.toFixed(2)}%</span>
                   </div>
-                  <div>
-                    <span className="font-medium">Valor Final: </span>
-                    <span>{formatCurrency(valorFinal)}</span>
+                  <Progress value={Math.min(rdoProgress, 100)} className="h-2" />
+                </div>
+                
+                {/* Valor Pago (Medições) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Valor Pago:</span>
+                    <span className="text-lg font-semibold text-green-600">{percentualValorPago.toFixed(2)}%</span>
+                  </div>
+                  <Progress value={Math.min(percentualValorPago, 100)} className="h-2" />
+                  <div className="flex justify-between text-xs text-muted-foreground pt-1">
+                    <div>
+                      <span className="font-medium">Valor Executado: </span>
+                      <span>{formatCurrency(valorExecutado)}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Valor Final: </span>
+                      <span>{formatCurrency(valorFinal)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
