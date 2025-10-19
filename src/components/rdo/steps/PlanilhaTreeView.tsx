@@ -27,6 +27,7 @@ interface PlanilhaTreeViewProps {
   onExecutadoBlur: (orcamentoItemId: string, activityId: string, value: number) => void;
   onOpenNote: (activityId: string, orcamentoItemId: string, itemDescricao: string) => void;
   isUpdating: boolean;
+  isRdoApproved?: boolean;
 }
 
 export function PlanilhaTreeView({
@@ -35,7 +36,8 @@ export function PlanilhaTreeView({
   onExecutadoChange,
   onExecutadoBlur,
   onOpenNote,
-  isUpdating
+  isUpdating,
+  isRdoApproved = false
 }: PlanilhaTreeViewProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
@@ -240,27 +242,43 @@ export function PlanilhaTreeView({
           {/* Executado (RDO) - apenas para MICRO */}
           <div className="w-32 flex-shrink-0">
             {!isMacro && node.activity && !isBlockedByAdministracao ? (
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={node.executadoDia}
-                onChange={(e) => onExecutadoChange(
-                  node.id,
-                  node.activity.id,
-                  parseFloat(e.target.value) || 0
-                )}
-                onBlur={(e) => onExecutadoBlur(
-                  node.id,
-                  node.activity.id,
-                  parseFloat(e.target.value) || 0
-                )}
-                className={cn(
-                  "h-8 text-sm",
-                  node.excedeuLimite && 'border-destructive focus-visible:ring-destructive'
-                )}
-                disabled={isUpdating}
-              />
+              isRdoApproved ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="h-8 flex items-center justify-center gap-1 px-2 border rounded-md bg-muted">
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-sm">{node.executadoDia.toFixed(2)}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>RDO aprovado - edição bloqueada</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={node.executadoDia}
+                  onChange={(e) => onExecutadoChange(
+                    node.id,
+                    node.activity.id,
+                    parseFloat(e.target.value) || 0
+                  )}
+                  onBlur={(e) => onExecutadoBlur(
+                    node.id,
+                    node.activity.id,
+                    parseFloat(e.target.value) || 0
+                  )}
+                  className={cn(
+                    "h-8 text-sm",
+                    node.excedeuLimite && 'border-destructive focus-visible:ring-destructive'
+                  )}
+                  disabled={isUpdating}
+                />
+              )
             ) : (isAdministracaoMacro || isBlockedByAdministracao) ? (
               <TooltipProvider>
                 <Tooltip>

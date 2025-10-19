@@ -48,6 +48,25 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     enabled: !!reportId,
   });
 
+  // Buscar status do RDO
+  const { data: rdoReport } = useQuery({
+    queryKey: ['rdo-report-status', reportId],
+    queryFn: async () => {
+      if (!reportId) return null;
+      const { data, error } = await supabase
+        .from('rdo_reports')
+        .select('status')
+        .eq('id', reportId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!reportId,
+  });
+
+  const isRdoApproved = rdoReport?.status === 'aprovado';
+
   // Garantir que usamos a atividade correta por item (evitar duplicados), priorizando maior executado_dia
   const activitiesByItem = useMemo(() => {
     const map = new Map<string, any>();
@@ -292,6 +311,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
                 });
               }}
               isUpdating={updateExecutadoMutation.isPending}
+              isRdoApproved={isRdoApproved}
             />
           )}
         </CardContent>
