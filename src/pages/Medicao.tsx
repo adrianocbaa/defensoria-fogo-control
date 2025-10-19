@@ -35,6 +35,8 @@ interface Obra {
   valor_total: number;
   valor_aditivado?: number;
   valor_executado?: number;
+  n_contrato?: string;
+  empresa_responsavel?: string;
 }
 
 interface Item {
@@ -1728,146 +1730,15 @@ const criarNovaMedicao = async () => {
 
     try {
       const aditivosBloqueados = aditivos.filter(a => a.bloqueada).sort((a, b) => a.id - b.id);
+      const dataAtual = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
       
-      // Criar conteúdo HTML com fonte menor
-      let htmlContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            <style>
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body { 
-                font-family: Arial, sans-serif; 
-                font-size: 7px; 
-                padding: 10px;
-                background: white;
-              }
-              h2 { 
-                text-align: center; 
-                margin-bottom: 3px; 
-                font-size: 12px;
-              }
-              .info { 
-                text-align: center; 
-                margin-bottom: 8px; 
-                font-size: 8px; 
-              }
-              table { 
-                width: 100%; 
-                border-collapse: collapse; 
-                font-size: 7px;
-              }
-              th, td { 
-                border: 1px solid #333; 
-                padding: 2px 3px; 
-                text-align: left; 
-                white-space: nowrap;
-              }
-              th { 
-                background-color: #4472C4; 
-                color: white; 
-                font-weight: bold; 
-                text-align: center; 
-                font-size: 7px;
-              }
-              .sub-header { 
-                background-color: #B4C7E7; 
-                font-weight: bold; 
-                text-align: center; 
-              }
-              .text-right { text-align: right; }
-              .text-center { text-align: center; }
-              .codigo-desc { 
-                max-width: 150px; 
-                overflow: hidden; 
-                text-overflow: ellipsis; 
-              }
-            </style>
-          </head>
-          <body>
-            <h2>Planilha de Medição ${medicaoAtual}ª</h2>
-            <div class="info">
-              <strong>Obra:</strong> ${obra.nome} | <strong>Município:</strong> ${obra.municipio}
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th rowspan="2">Item</th>
-                  <th rowspan="2">Código</th>
-                  <th rowspan="2">Descrição</th>
-                  <th rowspan="2">Und</th>
-                  <th rowspan="2">Quant.</th>
-                  <th rowspan="2">V. Unit</th>
-                  <th rowspan="2">V. Total</th>
-      `;
-
-      aditivosBloqueados.forEach(aditivo => {
-        htmlContent += `<th colspan="3">${aditivo.nome}</th>`;
-      });
-
-      htmlContent += `
-                  <th rowspan="2">TOTAL CTR</th>
-                  <th colspan="3">${medicaoAtual}ª MED</th>
-                  <th colspan="3">ACUM</th>
-                </tr>
-                <tr class="sub-header">
-      `;
-
-      aditivosBloqueados.forEach(() => {
-        htmlContent += `<th>QNT</th><th>%</th><th>TOTAL</th>`;
-      });
-
-      htmlContent += `
-                  <th>QNT</th><th>%</th><th>TOTAL</th>
-                  <th>QNT</th><th>%</th><th>TOTAL</th>
-                </tr>
-              </thead>
-              <tbody>
-      `;
-
-      items.forEach(item => {
-        htmlContent += `
-          <tr>
-            <td class="text-center">${item.item}</td>
-            <td class="text-center">${item.codigo}</td>
-            <td class="codigo-desc">${item.descricao}</td>
-            <td class="text-center">${item.und}</td>
-            <td class="text-right">${item.quantidade.toFixed(2)}</td>
-            <td class="text-right">${item.valorUnitario.toFixed(2)}</td>
-            <td class="text-right">${item.valorTotal.toFixed(2)}</td>
-        `;
-
-        aditivosBloqueados.forEach(aditivo => {
-          const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-          htmlContent += `
-            <td class="text-right">${aditivoData.qnt.toFixed(2)}</td>
-            <td class="text-right">${aditivoData.percentual.toFixed(2)}</td>
-            <td class="text-right">${aditivoData.total.toFixed(2)}</td>
-          `;
-        });
-
-        const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
-        htmlContent += `<td class="text-right">${totalContrato.toFixed(2)}</td>`;
-
-        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-        const pctMedicao = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
-        htmlContent += `
-            <td class="text-right">${medicaoData.qnt.toFixed(2)}</td>
-            <td class="text-right">${pctMedicao.toFixed(2)}</td>
-            <td class="text-right">${medicaoData.total.toFixed(2)}</td>
-        `;
-
-        const acumQnt = calcularQuantidadeAcumulada(item.id);
-        const acumPct = calcularPercentualAcumulado(item.id);
-        const acumTotal = calcularValorAcumuladoItem(item.id);
-        htmlContent += `
-            <td class="text-right">${acumQnt.toFixed(2)}</td>
-            <td class="text-right">${acumPct.toFixed(2)}</td>
-            <td class="text-right">${acumTotal.toFixed(2)}</td>
-          </tr>
-        `;
-      });
+      // Formatador de moeda
+      const formatMoney = (valor: number) => {
+        return new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(valor);
+      };
 
       // Calcular totais
       const totalTotalContratoPDF = items.reduce((sum, item) => 
@@ -1880,11 +1751,278 @@ const criarNovaMedicao = async () => {
       const totalAcumuladoPDF = items.reduce((sum, item) => 
         sum + calcularValorAcumuladoItem(item.id), 0
       );
+      const percentualExecucao = totalTotalContratoPDF > 0 ? (totalAcumuladoPDF / totalTotalContratoPDF) * 100 : 0;
+      
+      // Criar conteúdo HTML profissional
+      let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { 
+                font-family: 'Arial', sans-serif; 
+                font-size: 8px; 
+                padding: 15mm;
+                background: white;
+                color: #000;
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 15px;
+                border-bottom: 3px solid #2c3e50;
+                padding-bottom: 10px;
+              }
+              .header h1 { 
+                font-size: 16px;
+                color: #2c3e50;
+                margin-bottom: 5px;
+                text-transform: uppercase;
+                font-weight: bold;
+              }
+              .header h2 { 
+                font-size: 14px;
+                color: #34495e;
+                margin-bottom: 3px;
+              }
+              .info-section {
+                margin: 15px 0;
+                background: #f8f9fa;
+                padding: 10px;
+                border-radius: 4px;
+                border-left: 4px solid #3498db;
+              }
+              .info-row {
+                display: flex;
+                justify-content: space-between;
+                margin: 4px 0;
+                font-size: 9px;
+              }
+              .info-label {
+                font-weight: bold;
+                color: #2c3e50;
+              }
+              .info-value {
+                color: #34495e;
+              }
+              .summary-section {
+                margin: 15px 0;
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+              }
+              .summary-card {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 10px;
+                border-radius: 6px;
+                color: white;
+                text-align: center;
+              }
+              .summary-card.green {
+                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+              }
+              .summary-card.blue {
+                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+              }
+              .summary-card.orange {
+                background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+              }
+              .summary-label {
+                font-size: 7px;
+                text-transform: uppercase;
+                margin-bottom: 4px;
+                opacity: 0.9;
+              }
+              .summary-value {
+                font-size: 11px;
+                font-weight: bold;
+              }
+              table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                font-size: 7px;
+                margin-top: 10px;
+              }
+              th, td { 
+                border: 1px solid #bdc3c7; 
+                padding: 3px 4px; 
+                text-align: left;
+              }
+              th { 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white; 
+                font-weight: bold; 
+                text-align: center; 
+                font-size: 7px;
+                padding: 5px 4px;
+              }
+              .sub-header { 
+                background: #b8b6d8;
+                color: #2c3e50;
+                font-weight: bold; 
+                text-align: center;
+              }
+              .nivel-1 {
+                background: #ecf0f1;
+                font-weight: bold;
+              }
+              .nivel-2 {
+                background: #f8f9fa;
+              }
+              .text-right { text-align: right; }
+              .text-center { text-align: center; }
+              .descricao-col { 
+                max-width: 200px; 
+                overflow: hidden; 
+                text-overflow: ellipsis;
+                white-space: normal;
+                line-height: 1.3;
+              }
+              .totals-row {
+                background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+                font-weight: bold;
+                border-top: 3px solid #2c3e50;
+                font-size: 8px;
+              }
+              .footer {
+                margin-top: 20px;
+                padding-top: 10px;
+                border-top: 2px solid #bdc3c7;
+                font-size: 7px;
+                color: #7f8c8d;
+                text-align: center;
+              }
+              @page {
+                size: A4 landscape;
+                margin: 10mm;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>${medicaoAtual}ª Planilha de Medição</h1>
+              <h2>${obra.nome}</h2>
+            </div>
+            
+            <div class="info-section">
+              <div class="info-row">
+                <span><span class="info-label">Município:</span> <span class="info-value">${obra.municipio}</span></span>
+                <span><span class="info-label">Data da Medição:</span> <span class="info-value">${dataAtual}</span></span>
+              </div>
+              ${obra.n_contrato ? `
+              <div class="info-row">
+                <span><span class="info-label">Nº do Contrato:</span> <span class="info-value">${obra.n_contrato}</span></span>
+                <span><span class="info-label">Empresa:</span> <span class="info-value">${obra.empresa_responsavel || '-'}</span></span>
+              </div>
+              ` : ''}
+            </div>
+
+            <div class="summary-section">
+              <div class="summary-card green">
+                <div class="summary-label">Valor do Contrato</div>
+                <div class="summary-value">${formatMoney(totalTotalContratoPDF)}</div>
+              </div>
+              <div class="summary-card blue">
+                <div class="summary-label">Medição Atual</div>
+                <div class="summary-value">${formatMoney(totalMedicaoAtualPDF)}</div>
+              </div>
+              <div class="summary-card orange">
+                <div class="summary-label">Valor Acumulado</div>
+                <div class="summary-value">${formatMoney(totalAcumuladoPDF)}</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">% Executado</div>
+                <div class="summary-value">${percentualExecucao.toFixed(2)}%</div>
+              </div>
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th rowspan="2" style="width: 40px;">Item</th>
+                  <th rowspan="2" style="width: 60px;">Código</th>
+                  <th rowspan="2" style="width: 200px;">Descrição do Serviço</th>
+                  <th rowspan="2" style="width: 30px;">Und</th>
+                  <th rowspan="2" style="width: 50px;">Quantidade</th>
+                  <th rowspan="2" style="width: 60px;">Valor Unitário</th>
+                  <th rowspan="2" style="width: 70px;">Valor Total</th>
+      `;
+
+      aditivosBloqueados.forEach(aditivo => {
+        htmlContent += `<th colspan="3" style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);">${aditivo.nome}</th>`;
+      });
+
+      htmlContent += `
+                  <th rowspan="2" style="width: 80px; background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);">TOTAL CONTRATO</th>
+                  <th colspan="3" style="background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);">${medicaoAtual}ª MEDIÇÃO</th>
+                  <th colspan="3" style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);">ACUMULADO</th>
+                </tr>
+                <tr class="sub-header">
+      `;
+
+      aditivosBloqueados.forEach(() => {
+        htmlContent += `<th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>`;
+      });
+
+      htmlContent += `
+                  <th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>
+                  <th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      items.forEach(item => {
+        const nivelClass = item.nivel === 1 ? 'nivel-1' : item.nivel === 2 ? 'nivel-2' : '';
+        const indent = '&nbsp;'.repeat((item.nivel - 1) * 3);
+        
+        htmlContent += `
+          <tr class="${nivelClass}">
+            <td class="text-center">${item.item}</td>
+            <td class="text-center">${item.codigo}</td>
+            <td class="descricao-col">${indent}${item.descricao}</td>
+            <td class="text-center">${item.und}</td>
+            <td class="text-right">${item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${formatMoney(item.valorUnitario)}</td>
+            <td class="text-right">${formatMoney(item.valorTotal)}</td>
+        `;
+
+        aditivosBloqueados.forEach(aditivo => {
+          const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+          htmlContent += `
+            <td class="text-right">${aditivoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${aditivoData.percentual.toFixed(2)}%</td>
+            <td class="text-right">${formatMoney(aditivoData.total)}</td>
+          `;
+        });
+
+        const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
+        htmlContent += `<td class="text-right" style="background: #d5f4e6;">${formatMoney(totalContrato)}</td>`;
+
+        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+        const pctMedicao = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
+        htmlContent += `
+            <td class="text-right">${medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${pctMedicao.toFixed(2)}%</td>
+            <td class="text-right">${formatMoney(medicaoData.total)}</td>
+        `;
+
+        const acumQnt = calcularQuantidadeAcumulada(item.id);
+        const acumPct = calcularPercentualAcumulado(item.id);
+        const acumTotal = calcularValorAcumuladoItem(item.id);
+        htmlContent += `
+            <td class="text-right">${acumQnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${acumPct.toFixed(2)}%</td>
+            <td class="text-right">${formatMoney(acumTotal)}</td>
+          </tr>
+        `;
+      });
 
       // Adicionar linha de totais
       htmlContent += `
-          <tr style="background-color: #FFD966; font-weight: bold; border-top: 2px solid #000;">
-            <td colspan="7" style="text-align: right; padding-right: 10px;"></td>
+          <tr class="totals-row">
+            <td colspan="7" style="text-align: right; padding-right: 10px;">TOTAL GERAL:</td>
       `;
       
       // Colunas vazias para aditivos
@@ -1893,19 +2031,22 @@ const criarNovaMedicao = async () => {
       });
       
       htmlContent += `
-            <td class="text-right" style="font-weight: bold;">R$ ${totalTotalContratoPDF.toFixed(2)}</td>
+            <td class="text-right" style="font-weight: bold;">${formatMoney(totalTotalContratoPDF)}</td>
             <td></td>
             <td></td>
-            <td class="text-right" style="font-weight: bold;">R$ ${totalMedicaoAtualPDF.toFixed(2)}</td>
+            <td class="text-right" style="font-weight: bold;">${formatMoney(totalMedicaoAtualPDF)}</td>
             <td></td>
             <td></td>
-            <td class="text-right" style="font-weight: bold;">R$ ${totalAcumuladoPDF.toFixed(2)}</td>
+            <td class="text-right" style="font-weight: bold;">${formatMoney(totalAcumuladoPDF)}</td>
           </tr>
       `;
 
       htmlContent += `
               </tbody>
             </table>
+            <div class="footer">
+              <p>Documento gerado em ${dataAtual}</p>
+            </div>
           </body>
         </html>
       `;
