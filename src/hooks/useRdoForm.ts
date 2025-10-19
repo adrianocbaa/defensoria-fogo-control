@@ -64,9 +64,19 @@ export function useRdoForm(obraId: string, data: string) {
     },
   });
 
-  // Atualizar formData quando carregar o RDO existente (apenas na primeira carga)
+  // Resetar formData quando a data mudar
   useEffect(() => {
-    if (rdoReport && !formData.id) {
+    setFormData({
+      obra_id: obraId,
+      data,
+      status: 'rascunho',
+    });
+    setHasChanges(false);
+  }, [obraId, data]);
+
+  // Atualizar formData quando carregar o RDO existente
+  useEffect(() => {
+    if (rdoReport) {
       setFormData(rdoReport as RdoFormData);
       setHasChanges(false);
     }
