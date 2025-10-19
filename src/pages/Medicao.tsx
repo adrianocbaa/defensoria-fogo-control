@@ -2625,6 +2625,31 @@ const criarNovaMedicao = async () => {
     const item = items.find(i => i.id === itemId);
     if (!item) return 0;
     
+    // Para itens MACRO (que têm filhos), calcular o percentual baseado nos filhos
+    const filhos = childrenByCode.get(item.item.trim()) || [];
+    if (filhos.length > 0) {
+      // Somar o total acumulado dos filhos
+      const totalAcumuladoFilhos = filhos.reduce((sum, filho) => {
+        return sum + calcularValorAcumuladoItem(filho.id);
+      }, 0);
+      
+      // Somar o total do contrato dos filhos (incluindo aditivos)
+      const totalContratoFilhos = filhos.reduce((sum, filho) => {
+        return sum + calcularTotalContratoComAditivos(filho, medicaoAtual!);
+      }, 0);
+      
+      if (totalContratoFilhos === 0) return 0;
+      
+      let pct = (totalAcumuladoFilhos / totalContratoFilhos) * 100;
+      
+      // Limitar percentuais extremos para evitar valores absurdos
+      if (pct > 9999) pct = 9999;
+      if (pct < -9999) pct = -9999;
+      
+      return pct;
+    }
+    
+    // Para itens MICRO (folhas), usar o cálculo direto
     const totalAcumulado = calcularValorAcumuladoItem(itemId);
     const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual!);
     
