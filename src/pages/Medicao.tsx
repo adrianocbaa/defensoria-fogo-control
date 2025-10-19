@@ -1771,27 +1771,27 @@ const criarNovaMedicao = async () => {
               .header {
                 text-align: center;
                 margin-bottom: 15px;
-                border-bottom: 3px solid #2c3e50;
+                border-bottom: 2px solid #94a3b8;
                 padding-bottom: 10px;
               }
               .header h1 { 
                 font-size: 16px;
-                color: #2c3e50;
+                color: #1e293b;
                 margin-bottom: 5px;
                 text-transform: uppercase;
                 font-weight: bold;
               }
               .header h2 { 
                 font-size: 14px;
-                color: #34495e;
+                color: #475569;
                 margin-bottom: 3px;
               }
               .info-section {
                 margin: 15px 0;
-                background: #f8f9fa;
+                background: #f1f5f9;
                 padding: 10px;
                 border-radius: 4px;
-                border-left: 4px solid #3498db;
+                border-left: 4px solid #3b82f6;
               }
               .info-row {
                 display: flex;
@@ -1801,10 +1801,10 @@ const criarNovaMedicao = async () => {
               }
               .info-label {
                 font-weight: bold;
-                color: #2c3e50;
+                color: #1e293b;
               }
               .info-value {
-                color: #34495e;
+                color: #475569;
               }
               .summary-section {
                 margin: 15px 0;
@@ -1813,26 +1813,30 @@ const criarNovaMedicao = async () => {
                 gap: 10px;
               }
               .summary-card {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: #a5b4fc;
                 padding: 10px;
                 border-radius: 6px;
-                color: white;
+                color: #1e293b;
                 text-align: center;
+                border: 1px solid #818cf8;
               }
               .summary-card.green {
-                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                background: #86efac;
+                border-color: #4ade80;
               }
               .summary-card.blue {
-                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                background: #7dd3fc;
+                border-color: #38bdf8;
               }
               .summary-card.orange {
-                background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+                background: #fde047;
+                border-color: #facc15;
               }
               .summary-label {
                 font-size: 7px;
                 text-transform: uppercase;
                 margin-bottom: 4px;
-                opacity: 0.9;
+                font-weight: 600;
               }
               .summary-value {
                 font-size: 11px;
@@ -1850,7 +1854,7 @@ const criarNovaMedicao = async () => {
                 text-align: left;
               }
               th { 
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: #818cf8;
                 color: white; 
                 font-weight: bold; 
                 text-align: center; 
@@ -1858,17 +1862,17 @@ const criarNovaMedicao = async () => {
                 padding: 5px 4px;
               }
               .sub-header { 
-                background: #b8b6d8;
-                color: #2c3e50;
+                background: #c7d2fe;
+                color: #1e293b;
                 font-weight: bold; 
                 text-align: center;
               }
               .nivel-1 {
-                background: #ecf0f1;
+                background: #f1f5f9;
                 font-weight: bold;
               }
               .nivel-2 {
-                background: #f8f9fa;
+                background: #f8fafc;
               }
               .text-right { text-align: right; }
               .text-center { text-align: center; }
@@ -1880,9 +1884,9 @@ const criarNovaMedicao = async () => {
                 line-height: 1.3;
               }
               .totals-row {
-                background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+                background: #fef08a;
                 font-weight: bold;
-                border-top: 3px solid #2c3e50;
+                border-top: 3px solid #1e293b;
                 font-size: 8px;
               }
               .footer {
@@ -1950,13 +1954,13 @@ const criarNovaMedicao = async () => {
       `;
 
       aditivosBloqueados.forEach(aditivo => {
-        htmlContent += `<th colspan="3" style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);">${aditivo.nome}</th>`;
+        htmlContent += `<th colspan="3" style="background: #7dd3fc;">${aditivo.nome}</th>`;
       });
 
       htmlContent += `
-                  <th rowspan="2" style="width: 80px; background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);">TOTAL CONTRATO</th>
-                  <th colspan="3" style="background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);">${medicaoAtual}ª MEDIÇÃO</th>
-                  <th colspan="3" style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);">ACUMULADO</th>
+                  <th rowspan="2" style="width: 80px; background: #86efac;">TOTAL CONTRATO</th>
+                  <th colspan="3" style="background: #fde047;">${medicaoAtual}ª MEDIÇÃO</th>
+                  <th colspan="3" style="background: #c7d2fe;">ACUMULADO</th>
                 </tr>
                 <tr class="sub-header">
       `;
@@ -1998,7 +2002,7 @@ const criarNovaMedicao = async () => {
         });
 
         const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
-        htmlContent += `<td class="text-right" style="background: #d5f4e6;">${formatMoney(totalContrato)}</td>`;
+        htmlContent += `<td class="text-right" style="background: #dcfce7;">${formatMoney(totalContrato)}</td>`;
 
         const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
         const pctMedicao = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
