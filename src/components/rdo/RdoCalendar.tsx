@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { RdoCalendarDay } from '@/hooks/useRdoData';
 import { cn } from '@/lib/utils';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -30,7 +43,13 @@ interface RdoCalendarProps {
 
 export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange }: RdoCalendarProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const today = new Date();
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; reportId: string | null; date: string | null }>({
+    open: false,
+    reportId: null,
+    date: null,
+  });
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -66,6 +85,46 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   const getRdoForDay = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return rdoData.find(r => r.data === dateStr);
+  };
+
+  const handleDeleteRdo = async () => {
+    if (!deleteDialog.reportId) return;
+
+    try {
+      // Deletar atividades
+      await supabase
+        .from('rdo_activities')
+        .delete()
+        .eq('report_id', deleteDialog.reportId);
+
+      // Deletar notas de atividades
+      await supabase
+        .from('rdo_activity_notes')
+        .delete()
+        .eq('report_id', deleteDialog.reportId);
+
+      // Deletar audit logs
+      await supabase
+        .from('rdo_audit_log')
+        .delete()
+        .eq('report_id', deleteDialog.reportId);
+
+      // Deletar o RDO
+      const { error: deleteError } = await supabase
+        .from('rdo_reports')
+        .delete()
+        .eq('id', deleteDialog.reportId);
+
+      if (deleteError) throw deleteError;
+
+      queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['rdo-report'] });
+      toast.success('RDO excluído com sucesso');
+      setDeleteDialog({ open: false, reportId: null, date: null });
+    } catch (error) {
+      console.error('Erro ao excluir RDO:', error);
+      toast.error('Erro ao excluir RDO');
+    }
   };
 
   return (
@@ -140,17 +199,30 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                     {/* Conteúdo do RDO */}
                     {rdo ? (
                       <div className="space-y-1">
-                        <button
-                          onClick={() => handleCreateRdo(day)}
-                          className="w-full text-left"
-                        >
-                          <Badge
-                            variant="outline"
-                            className={cn("text-[10px] px-1 py-0 h-auto", statusConfig?.color)}
+                        <div className="flex items-center justify-between gap-1">
+                          <button
+                            onClick={() => handleCreateRdo(day)}
+                            className="flex-1 text-left"
                           >
-                            #{rdo.numero_seq}
-                          </Badge>
-                        </button>
+                            <Badge
+                              variant="outline"
+                              className={cn("text-[10px] px-1 py-0 h-auto", statusConfig?.color)}
+                            >
+                              #{rdo.numero_seq}
+                            </Badge>
+                          </button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 hover:bg-red-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteDialog({ open: true, reportId: rdo.report_id, date: rdo.data });
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        </div>
                         
                         {/* Indicadores */}
                         <div className="flex gap-0.5 flex-wrap">
@@ -188,6 +260,26 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este RDO? Esta ação não pode ser desfeita e todas as informações cadastradas no RDO serão excluídas permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteRdo}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

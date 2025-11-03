@@ -244,6 +244,47 @@ export function useRdoForm(obraId: string, data: string) {
     toast.success('RDO reaberto para edição');
   }, [formData, saveMutation]);
 
+  const deleteRdo = useCallback(async () => {
+    if (!formData.id) return;
+
+    try {
+      // Deletar atividades
+      await supabase
+        .from('rdo_activities')
+        .delete()
+        .eq('report_id', formData.id);
+
+      // Deletar notas de atividades
+      await supabase
+        .from('rdo_activity_notes')
+        .delete()
+        .eq('report_id', formData.id);
+
+      // Deletar audit logs
+      await supabase
+        .from('rdo_audit_log')
+        .delete()
+        .eq('report_id', formData.id);
+
+      // Deletar o RDO
+      const { error: deleteError } = await supabase
+        .from('rdo_reports')
+        .delete()
+        .eq('id', formData.id);
+
+      if (deleteError) throw deleteError;
+
+      queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
+      queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
+      toast.success('RDO excluído com sucesso');
+      return true;
+    } catch (error) {
+      console.error('Erro ao excluir RDO:', error);
+      toast.error('Erro ao excluir RDO');
+      return false;
+    }
+  }, [formData.id, queryClient, obraId, data]);
+
   return {
     formData,
     updateField,
@@ -253,6 +294,7 @@ export function useRdoForm(obraId: string, data: string) {
     approve,
     reject,
     reopen,
+    deleteRdo,
     isLoading,
     isSaving: saveMutation.isPending,
     hasChanges,

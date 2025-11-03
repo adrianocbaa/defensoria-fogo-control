@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, Send, ThumbsUp, ThumbsDown, FileText, Unlock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, Send, ThumbsUp, ThumbsDown, FileText, Unlock, Trash2 } from 'lucide-react';
 import { RdoStepper, STEPS } from '@/components/rdo/RdoStepper';
 import { useRdoForm } from '@/hooks/useRdoForm';
 import { AnotacoesStep } from '@/components/rdo/steps/AnotacoesStep';
@@ -22,6 +22,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { createAuditLog } from '@/hooks/useRdoAuditLog';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 
 const STATUS_BADGES: Record<string, { label: string; variant: any }> = {
   rascunho: { label: 'Rascunho', variant: 'secondary' },
@@ -44,6 +54,7 @@ export default function RDODiario() {
     open: false,
     action: null,
   });
+  const [deleteDialog, setDeleteDialog] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const {
@@ -55,6 +66,7 @@ export default function RDODiario() {
     approve,
     reject,
     reopen,
+    deleteRdo,
     isLoading,
     isSaving,
     hasChanges,
@@ -168,6 +180,14 @@ export default function RDODiario() {
       actorId: user?.id,
     });
     queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
+  };
+
+  const handleDeleteRdo = async () => {
+    const success = await deleteRdo();
+    if (success) {
+      setDeleteDialog(false);
+      navigate(`/obras/${obraId}/rdo/resumo`);
+    }
   };
 
   const renderStep = () => {
@@ -285,6 +305,12 @@ export default function RDODiario() {
                       Reabrir
                     </Button>
                   )}
+                  {canEdit && formData.id && (
+                    <Button variant="destructive" size="sm" onClick={() => setDeleteDialog(true)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir RDO
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -299,6 +325,26 @@ export default function RDODiario() {
         action={approvalDialog.action}
         onConfirm={handleApprovalConfirm}
       />
+
+      <AlertDialog open={deleteDialog} onOpenChange={setDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este RDO? Esta ação não pode ser desfeita e todas as informações cadastradas no RDO (atividades, fotos, comentários, etc.) serão excluídas permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteRdo}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Stepper */}
       <RdoStepper currentStep={currentStep} onStepChange={setCurrentStep} steps={STEPS} />
