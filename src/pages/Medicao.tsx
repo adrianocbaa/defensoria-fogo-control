@@ -1856,6 +1856,7 @@ const criarNovaMedicao = async () => {
                 border: 1px solid #bdc3c7; 
                 padding: 3px 4px; 
                 text-align: left;
+                vertical-align: middle;
               }
               th { 
                 background: #818cf8;
@@ -1877,6 +1878,10 @@ const criarNovaMedicao = async () => {
               }
               .nivel-2 {
                 background: #f8fafc;
+              }
+              .macro-item {
+                background: rgb(200, 200, 200);
+                font-weight: bold;
               }
               .text-right { text-align: right; }
               .text-center { text-align: center; }
@@ -1948,13 +1953,7 @@ const criarNovaMedicao = async () => {
             <table>
               <thead>
                 <tr>
-                  <th rowspan="2" style="width: 40px;">Item</th>
-                  <th rowspan="2" style="width: 60px;">Código</th>
-                  <th rowspan="2" style="width: 200px;">Descrição do Serviço</th>
-                  <th rowspan="2" style="width: 30px;">Und</th>
-                  <th rowspan="2" style="width: 50px;">Quantidade</th>
-                  <th rowspan="2" style="width: 60px;">Valor Unitário</th>
-                  <th rowspan="2" style="width: 70px;">Valor Total</th>
+                  <th colspan="7" style="background: #818cf8; text-align: left; padding-left: 10px;">Planilha Orçamentária</th>
       `;
 
       aditivosBloqueados.forEach(aditivo => {
@@ -1962,11 +1961,18 @@ const criarNovaMedicao = async () => {
       });
 
       htmlContent += `
-                  <th rowspan="2" style="width: 80px; background: #86efac;">TOTAL CONTRATO</th>
+                  <th rowspan="3" style="width: 80px; background: #86efac;">TOTAL CONTRATO</th>
                   <th colspan="3" style="background: #fde047;">${medicaoAtual}ª MEDIÇÃO</th>
                   <th colspan="3" style="background: #c7d2fe;">ACUMULADO</th>
                 </tr>
-                <tr class="sub-header">
+                <tr>
+                  <th style="width: 40px;">Item</th>
+                  <th style="width: 60px;">Código Banco</th>
+                  <th style="width: 200px;">Descrição</th>
+                  <th style="width: 30px;">Und</th>
+                  <th style="width: 50px;">Quant.</th>
+                  <th style="width: 60px;">Valor unit com BDI e Desc.</th>
+                  <th style="width: 70px;">Valor total com BDI e Desconto</th>
       `;
 
       aditivosBloqueados.forEach(() => {
@@ -1977,12 +1983,25 @@ const criarNovaMedicao = async () => {
                   <th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>
                   <th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>
                 </tr>
+                <tr class="sub-header">
+                  <th colspan="7"></th>
+      `;
+
+      aditivosBloqueados.forEach(() => {
+        htmlContent += `<th></th><th></th><th></th>`;
+      });
+
+      htmlContent += `
+                  <th></th><th></th><th></th>
+                  <th></th><th></th><th></th>
+                </tr>
               </thead>
               <tbody>
       `;
 
       items.forEach(item => {
-        const nivelClass = item.nivel === 1 ? 'nivel-1' : item.nivel === 2 ? 'nivel-2' : '';
+        const ehMacro = !ehItemFolha(item.item);
+        const nivelClass = ehMacro ? 'macro-item' : (item.nivel === 1 ? 'nivel-1' : item.nivel === 2 ? 'nivel-2' : '');
         const indent = '&nbsp;'.repeat((item.nivel - 1) * 3);
         
         htmlContent += `
