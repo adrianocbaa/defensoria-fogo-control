@@ -2015,10 +2015,12 @@ const criarNovaMedicao = async () => {
         const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
         htmlContent += `<td class="text-right" style="background: #e8f5e9;">${formatMoney(totalContrato)}</td>`;
 
-        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+        // Usar dados hierárquicos que já calculam valores para MACROs e MICROs
+        const medicaoData = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 };
         const pctMedicao = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
+        
         htmlContent += `
-            <td class="text-right">${medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${ehMacro ? '' : medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="text-right">${pctMedicao.toFixed(2)}%</td>
             <td class="text-right">${formatMoney(medicaoData.total)}</td>
         `;
@@ -2027,7 +2029,7 @@ const criarNovaMedicao = async () => {
         const acumPct = calcularPercentualAcumulado(item.id);
         const acumTotal = calcularValorAcumuladoItem(item.id);
         htmlContent += `
-            <td class="text-right">${acumQnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${ehMacro ? '' : acumQnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="text-right">${acumPct.toFixed(2)}%</td>
             <td class="text-right">${formatMoney(acumTotal)}</td>
           </tr>
