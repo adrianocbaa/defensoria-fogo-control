@@ -1276,17 +1276,19 @@ const criarNovaMedicao = async () => {
         exportData.push(row);
       });
 
-      // Calcular totais
-      const totalTotalContrato = items.reduce((sum, item) => 
-        sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0
-      );
-      const totalMedicaoAtual = items.reduce((sum, item) => {
-        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-        return sum + medicaoData.total;
-      }, 0);
-      const totalAcumulado = items.reduce((sum, item) => 
-        sum + calcularValorAcumuladoItem(item.id), 0
-      );
+      // Calcular totais (apenas itens folha/MICRO, excluindo MACROS)
+      const totalTotalContrato = items
+        .filter(item => ehItemFolha(item.item))
+        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0);
+      const totalMedicaoAtual = items
+        .filter(item => ehItemFolha(item.item))
+        .reduce((sum, item) => {
+          const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+          return sum + medicaoData.total;
+        }, 0);
+      const totalAcumulado = items
+        .filter(item => ehItemFolha(item.item))
+        .reduce((sum, item) => sum + calcularValorAcumuladoItem(item.id), 0);
 
       // Adicionar linha de totais
       const totalRow: any = {
@@ -1740,17 +1742,19 @@ const criarNovaMedicao = async () => {
         }).format(valor);
       };
 
-      // Calcular totais
-      const totalTotalContratoPDF = items.reduce((sum, item) => 
-        sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0
-      );
-      const totalMedicaoAtualPDF = items.reduce((sum, item) => {
-        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-        return sum + medicaoData.total;
-      }, 0);
-      const totalAcumuladoPDF = items.reduce((sum, item) => 
-        sum + calcularValorAcumuladoItem(item.id), 0
-      );
+      // Calcular totais (apenas itens folha/MICRO, excluindo MACROS)
+      const totalTotalContratoPDF = items
+        .filter(item => ehItemFolha(item.item))
+        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0);
+      const totalMedicaoAtualPDF = items
+        .filter(item => ehItemFolha(item.item))
+        .reduce((sum, item) => {
+          const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+          return sum + medicaoData.total;
+        }, 0);
+      const totalAcumuladoPDF = items
+        .filter(item => ehItemFolha(item.item))
+        .reduce((sum, item) => sum + calcularValorAcumuladoItem(item.id), 0);
       const percentualExecucao = totalTotalContratoPDF > 0 ? (totalAcumuladoPDF / totalTotalContratoPDF) * 100 : 0;
       
       // Criar conteúdo HTML profissional
@@ -2853,18 +2857,18 @@ const criarNovaMedicao = async () => {
     );
   }
 
-  // Calcular totais gerais
+  // Calcular totais gerais (apenas itens folha/MICRO, excluindo MACROS)
   const totaisGerais = {
-    valorTotal: items.reduce((sum, item) => sum + item.valorTotal, 0),
+    valorTotal: items.filter(item => ehItemFolha(item.item)).reduce((sum, item) => sum + item.valorTotal, 0),
     aditivoTotal: aditivos.reduce((aditivoSum, aditivo) => {
-      return aditivoSum + items.reduce((itemSum, item) => {
+      return aditivoSum + items.filter(item => ehItemFolha(item.item)).reduce((itemSum, item) => {
         const aditivoData = aditivo.dados[item.id];
         return itemSum + (aditivoData?.total || 0);
       }, 0);
     }, 0),
-    totalContrato: items.reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0),
+    totalContrato: items.filter(item => ehItemFolha(item.item)).reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0),
     administracaoLocalTotal: items
-      .filter(item => item.ehAdministracaoLocal)
+      .filter(item => item.ehAdministracaoLocal && ehItemFolha(item.item))
       .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0)
   };
 
