@@ -1853,7 +1853,7 @@ const criarNovaMedicao = async () => {
                 margin-top: 10px;
               }
               th, td { 
-                border: 0.5px solid #bdc3c7; 
+                border: 0.3px solid #bdc3c7; 
                 padding: 4px 5px; 
                 text-align: left;
                 vertical-align: middle;
@@ -1982,18 +1982,6 @@ const criarNovaMedicao = async () => {
       htmlContent += `
                   <th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>
                   <th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>
-                </tr>
-                <tr class="sub-header">
-                  <th colspan="7"></th>
-      `;
-
-      aditivosBloqueados.forEach(() => {
-        htmlContent += `<th></th><th></th><th></th>`;
-      });
-
-      htmlContent += `
-                  <th></th><th></th><th></th>
-                  <th></th><th></th><th></th>
                 </tr>
               </thead>
               <tbody>
