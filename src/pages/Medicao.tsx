@@ -1853,22 +1853,22 @@ const criarNovaMedicao = async () => {
                 margin-top: 10px;
               }
               th, td { 
-                border: 1px solid #bdc3c7; 
-                padding: 3px 4px; 
+                border: 0.5px solid #bdc3c7; 
+                padding: 4px 5px; 
                 text-align: left;
                 vertical-align: middle;
               }
               th { 
-                background: #818cf8;
-                color: white; 
+                background: #d4d9fc;
+                color: #000; 
                 font-weight: bold; 
                 text-align: center; 
                 font-size: 7px;
                 padding: 5px 4px;
               }
               .sub-header { 
-                background: #c7d2fe;
-                color: #1e293b;
+                background: #e8ebfe;
+                color: #000;
                 font-weight: bold; 
                 text-align: center;
               }
@@ -1887,10 +1887,10 @@ const criarNovaMedicao = async () => {
               .text-center { text-align: center; }
               .descricao-col { 
                 max-width: 200px; 
-                overflow: hidden; 
-                text-overflow: ellipsis;
                 white-space: normal;
-                line-height: 1.3;
+                line-height: 1.4;
+                word-wrap: break-word;
+                padding: 5px 4px;
               }
               .totals-row {
                 background: #fef08a;
@@ -1953,17 +1953,17 @@ const criarNovaMedicao = async () => {
             <table>
               <thead>
                 <tr>
-                  <th colspan="7" style="background: #818cf8; text-align: left; padding-left: 10px;">Planilha Orçamentária</th>
+                  <th colspan="7" style="background: #d4d9fc; text-align: center; color: #000;">Planilha Orçamentária</th>
       `;
 
       aditivosBloqueados.forEach(aditivo => {
-        htmlContent += `<th colspan="3" style="background: #7dd3fc;">${aditivo.nome}</th>`;
+        htmlContent += `<th colspan="3" style="background: #b3e5fc; color: #000;">${aditivo.nome}</th>`;
       });
 
       htmlContent += `
-                  <th rowspan="3" style="width: 80px; background: #86efac;">TOTAL CONTRATO</th>
-                  <th colspan="3" style="background: #fde047;">${medicaoAtual}ª MEDIÇÃO</th>
-                  <th colspan="3" style="background: #c7d2fe;">ACUMULADO</th>
+                  <th rowspan="3" style="width: 80px; background: #c8e6c9; color: #000;">TOTAL CONTRATO</th>
+                  <th colspan="3" style="background: #fff9c4; color: #000;">${medicaoAtual}ª MEDIÇÃO</th>
+                  <th colspan="3" style="background: #e8ebfe; color: #000;">ACUMULADO</th>
                 </tr>
                 <tr>
                   <th style="width: 40px;">Item</th>
@@ -2025,7 +2025,7 @@ const criarNovaMedicao = async () => {
         });
 
         const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
-        htmlContent += `<td class="text-right" style="background: #dcfce7;">${formatMoney(totalContrato)}</td>`;
+        htmlContent += `<td class="text-right" style="background: #e8f5e9;">${formatMoney(totalContrato)}</td>`;
 
         const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
         const pctMedicao = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
