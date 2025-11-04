@@ -338,14 +338,16 @@ function ProgressCell({ obraId, execPercents, obra }: { obraId: string; execPerc
   
   return (
     <div className="space-y-3">
-      {/* Andamento da Obra (RDO) */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Andamento da Obra:</span>
-          <span className="font-medium">{rdoProgress.toFixed(2)}%</span>
+      {/* Andamento da Obra (RDO) - Ocultar se 0% */}
+      {rdoProgress > 0 && (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Andamento da Obra:</span>
+            <span className="font-medium">{rdoProgress.toFixed(2)}%</span>
+          </div>
+          <Progress value={Math.min(rdoProgress, 100)} className="h-2" />
         </div>
-        <Progress value={Math.min(rdoProgress, 100)} className="h-2" />
-      </div>
+      )}
       
       {/* Valor Pago (Medições) */}
       <div className="space-y-1">
