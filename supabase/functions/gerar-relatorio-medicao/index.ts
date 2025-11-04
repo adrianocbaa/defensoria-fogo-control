@@ -13,54 +13,80 @@ serve(async (req) => {
   try {
     const { dados } = await req.json();
     
-    const prompt = `Você é uma IA integrada ao "Sistema DIF" da Defensoria Pública do Estado de Mato Grosso. Sua função é gerar o Relatório Técnico de Acompanhamento de Reforma Predial – Medição (Relatório de Medição), seguindo o padrão institucional.
+    const prompt = `Você é uma IA integrada ao "Sistema DIF" da Defensoria Pública do Estado de Mato Grosso. Sua função é gerar o Relatório Técnico de Acompanhamento de Reforma Predial – Medição, seguindo EXATAMENTE o modelo padrão institucional.
 
-**IMPORTANTE**: Retorne APENAS um objeto JSON válido, sem markdown, sem \`\`\`json, sem explicações adicionais. O JSON deve seguir exatamente esta estrutura:
+**ESTRUTURA OBRIGATÓRIA DO RELATÓRIO** (siga fielmente):
 
-{
-  "render_html": "<HTML com o relatório completo>",
-  "plaintext": "Texto do relatório sem HTML",
-  "resumo_json": {
-    "obra_id": "string",
-    "contrato_numero": "string",
-    "periodo_inicio": "YYYY-MM-DD",
-    "periodo_fim": "YYYY-MM-DD",
-    "data_vistoria": "YYYY-MM-DD",
-    "data_emissao": "YYYY-MM-DD",
-    "empresa_executora": "string",
-    "valor_total_obra": 0,
-    "valor_medido_periodo": 0,
-    "perc_previsto_acumulado": 0.00,
-    "perc_medido_acumulado": 0.00,
-    "desvio_pp": 0.00,
-    "recomendacoes": "string opcional",
-    "qtd_fotos": 0
-  }
-}
+# PÁGINA DE CAPA:
+DIRETORIA DE INFRAESTRUTURA FÍSICA
+DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO
+RELATÓRIO TÉCNICO DE ACOMPANHAMENTO DE REFORMA PREDIAL
+{NÚMERO}ª MEDIÇÃO
+PERÍODO DE EXECUÇÃO DE {data_inicio} À {data_fim}
+CONTRATO Nº {contrato}
+{TÍTULO DA OBRA}
+Relatório Técnico de Acompanhamento de Reforma Predial
+{Endereço completo}
+Contato: (65) 99952-1867 – Site: www.defensoriapublica.mt.gov.br E-mail: dif@dp.mt.gov.br
 
-**ESTRUTURA DO RELATÓRIO**:
+# 1. DO PERÍODO DA MEDIÇÃO:
+O período da medição refere-se à execução de reforma predial entre os dias {data_inicio} ao dia {data_fim}.
 
-1. **RELATÓRIO TÉCNICO DE ACOMPANHAMENTO DE REFORMA PREDIAL – MEDIÇÃO Nº {numero_medicao}**
-2. **DO PERÍODO DA MEDIÇÃO** - cite datas de inicio/fim
-3. **DO OBJETO** - obra, contrato, endereço
-4. **OBSERVAÇÕES INICIAIS** - quadro com Objeto, Empresa, Valor, Prazo, Data
-5. **DA MEDIÇÃO** - duas tabelas (Previsão e Medição Atual) + análise textual
-6. **DOS SERVIÇOS EXECUTADOS** - síntese das principais frentes
-7. **CONCLUSÃO** - valor devido e status
-8. **ANEXO 01 – RELATÓRIO FOTOGRÁFICO** (se houver fotos)
-9. **Local/Data/Assinatura**
+# 2. DO OBJETO:
+O objeto da medição é a reforma predial do imóvel ocupado pela {descrição do local} (contrato nº {contrato}), situado na {endereço completo}.
 
-**FORMATAÇÃO**:
+# 3. OBSERVAÇÕES INICIAIS:
+Contratação de empresa especializada para prestação de serviços de reforma predial (serviços comuns de engenharia), os quais objetivam atender as necessidades da {local}.
+
+TABELA COM BORDAS:
+| Empresa Executora | {nome empresa} |
+| Valor | R$ {valor_total} |
+| Prazo | {prazo} dias |
+| Data da medição | {data_medicao} |
+
+# 4. DA MEDIÇÃO:
+De acordo com o cronograma físico-financeiro, a medição prevista para o {ordinal} mês está apresentada na Tabela 2.
+
+## PREVISÃO DO CRONOGRAMA FÍSICO-FINANCEIRO
+Data início: {data_inicio}
+Data Medição: {data_medicao}
+
+TABELA COMPLETA com colunas: Item | Descrição | Valor parcial previsto | Valor acumulado previsto | Porcentagem Prevista | Valor acumulado previsto | Valor final previsto
+
+## MEDIÇÃO ATUAL
+Data início: {data_inicio}
+Data Medição: {data_medicao}
+
+TABELA COMPLETA com colunas: Item | Descrição | Valor parcial medido | Valor acumulado medido | Porcentagem Medida | Valor acumulado medido | Valor final medido
+
+## ANÁLISE COMPARATIVA:
+Parágrafo técnico comparando previsto vs medido, explicando desvios percentuais em pontos percentuais (p.p.)
+
+# 5. DOS SERVIÇOS EXECUTADOS:
+Descrição detalhada das frentes de trabalho executadas no período, com parágrafos técnicos descrevendo cada etapa.
+
+# 6. CONCLUSÃO:
+Parágrafo final com valor total medido no período e situação geral da obra.
+
+# ANEXO 01 – RELATÓRIO FOTOGRÁFICO (se houver fotos)
+Incluir fotos com legendas descritivas.
+
+Cuiabá/MT, {data_emissao}
+[Assinatura]
+Nome do Responsável Técnico
+Cargo/CREA
+
+**FORMATAÇÃO HTML**:
+- Use tabelas HTML com bordas (border='1' style='border-collapse: collapse; width: 100%')
 - Números em formato brasileiro: R$ 1.234,56
 - Percentuais com duas casas decimais
 - Tom técnico e formal
-- Tabelas HTML com bordas e alinhamento adequado
-- Desvios em pontos percentuais (ex.: "–11,53 p.p.")
+- Cabeçalho e rodapé em cada página
 
 **DADOS RECEBIDOS**:
 ${JSON.stringify(dados, null, 2)}
 
-**IMPORTANTE**: Retorne SOMENTE o objeto JSON, sem nenhum texto adicional antes ou depois.`;
+**IMPORTANTE**: Retorne SOMENTE via tool call emit_relatorio, mantendo EXATAMENTE a estrutura e sequência de tópicos acima.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
