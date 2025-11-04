@@ -171,10 +171,26 @@ ${JSON.stringify(dados, null, 2)}
     let resultado: any;
     const toolCalls = choice?.message?.tool_calls;
 
+    let parsedFromTool = false;
     if (toolCalls && toolCalls.length > 0) {
-      const argsRaw = toolCalls[0]?.function?.arguments ?? '{}';
-      resultado = JSON.parse(argsRaw);
-    } else {
+      const argsRaw: any = toolCalls[0]?.function?.arguments ?? '{}';
+      try {
+        resultado = typeof argsRaw === 'string' ? JSON.parse(argsRaw) : argsRaw;
+        parsedFromTool = true;
+      } catch {
+        if (typeof argsRaw === 'string') {
+          const s = argsRaw.indexOf('{');
+          const e = argsRaw.lastIndexOf('}') + 1;
+          if (s !== -1 && e > s) {
+            try {
+              resultado = JSON.parse(argsRaw.slice(s, e));
+              parsedFromTool = true;
+            } catch {}
+          }
+        }
+      }
+    }
+    if (!parsedFromTool) {
       let content = choice?.message?.content ?? '';
 
       // Limpar markdown se presente
