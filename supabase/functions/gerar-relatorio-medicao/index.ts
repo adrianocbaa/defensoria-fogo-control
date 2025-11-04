@@ -183,16 +183,64 @@ ${JSON.stringify(dados, null, 2)}
       // Limpar caracteres de controle que podem quebrar o JSON
       content = content.replace(/[\x00-\x1F\x7F]/g, '');
 
-      // Tentar extrair apenas o JSON válido
-      const jsonStart = content.indexOf('{');
-      const jsonEnd = content.lastIndexOf('}') + 1;
+      // 1) Tentar parsear como JSON diretamente
+      try {
+        resultado = JSON.parse(content);
+      } catch {
+        // 2) Se houver um bloco JSON dentro do texto, tentar extrair
+        const jsonStart = content.indexOf('{');
+        const jsonEnd = content.lastIndexOf('}') + 1;
+        if (jsonStart !== -1 && jsonEnd > jsonStart) {
+          const jsonContent = content.substring(jsonStart, jsonEnd);
+          try {
+            resultado = JSON.parse(jsonContent);
+          } catch {
+            // seguirá para o fallback
+          }
+        }
 
-      if (jsonStart === -1 || jsonEnd === 0) {
-        throw new Error('Nenhum JSON válido encontrado na resposta da IA');
+        // 3) Fallback robusto: construir o objeto esperado a partir do conteúdo e dos dados recebidos
+        if (!resultado) {
+          const d: any = dados ?? {};
+          const getStr = (v: any) => (v === undefined || v === null ? '' : String(v));
+          const toNum = (v: any) => {
+            const n = Number(
+              typeof v === 'string' ? v.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.') : v
+            );
+            return Number.isFinite(n) ? n : 0;
+          };
+
+          const resumo_json = {
+            obra_id: getStr(d.obra_id ?? d.obraId ?? ''),
+            contrato_numero: getStr(d.contrato_numero ?? d.contratoNumero ?? d.contrato ?? ''),
+            periodo_inicio: getStr(d.periodo_inicio ?? d.periodoInicio ?? d.data_inicio ?? d.dataInicio ?? ''),
+            periodo_fim: getStr(d.periodo_fim ?? d.periodoFim ?? d.data_fim ?? d.dataFim ?? ''),
+            data_vistoria: getStr(d.data_vistoria ?? d.dataVistoria ?? d.data_medicao ?? d.dataMedicao ?? ''),
+            data_emissao: getStr(d.data_emissao ?? d.dataEmissao ?? new Date().toISOString().slice(0,10)),
+            empresa_executora: getStr(d.empresa_executora ?? d.empresa ?? ''),
+            valor_total_obra: toNum(d.valor_total_obra ?? d.valorTotalObra ?? 0),
+            valor_medido_periodo: toNum(d.valor_medido_periodo ?? d.valorMedidoPeriodo ?? 0),
+            perc_previsto_acumulado: toNum(d.perc_previsto_acumulado ?? d.percPrevistoAcumulado ?? 0),
+            perc_medido_acumulado: toNum(d.perc_medido_acumulado ?? d.percMedidoAcumulado ?? 0),
+            desvio_pp: toNum(
+              d.desvio_pp ?? d.desvioPp ?? ((d.perc_medido_acumulado ?? d.percMedidoAcumulado ?? 0) - (d.perc_previsto_acumulado ?? d.percPrevistoAcumulado ?? 0))
+            ),
+            recomendacoes: getStr(d.recomendacoes ?? ''),
+            qtd_fotos: Array.isArray(d.fotos) ? d.fotos.length : (Number(d.qtd_fotos) || 0)
+          };
+
+          const hasHtml = /<[^>]+>/.test(content);
+          const htmlBody = hasHtml ? content : `<article><pre style="white-space:pre-wrap">${content}</pre></article>`;
+          const render_html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório de Medição</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font-family:Arial,Helvetica,sans-serif;line-height:1.5;margin:32px} table{border-collapse:collapse;width:100%;margin:16px 0} td,th{border:1px solid #444;padding:6px;text-align:left}</style></head><body>${htmlBody}</body></html>`;
+          const plaintext = render_html
+            .replace(/<style[^>]*>[^]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          resultado = { render_html, plaintext, resumo_json };
+        }
       }
-
-      const jsonContent = content.substring(jsonStart, jsonEnd);
-      resultado = JSON.parse(jsonContent);
     }
 
 
