@@ -25,6 +25,7 @@ import { useMedicaoItems } from '@/hooks/useMedicaoItems';
 import { useAditivoSessions } from '@/hooks/useAditivoSessions';
 import { useAditivoItems } from '@/hooks/useAditivoItems';
 import { ResumoContrato } from '@/components/ResumoContrato';
+import { GerarRelatorioMedicaoDialog } from '@/components/GerarRelatorioMedicaoDialog';
 import * as XLSX from 'xlsx';
 import html2pdf from 'html2pdf.js';
 
@@ -3249,6 +3250,50 @@ const criarNovaMedicao = async () => {
             <div className="flex justify-between items-center">
               <CardTitle>Planilha Orçamentária</CardTitle>
               <div className="flex gap-2 flex-wrap">
+                {medicaoAtual && obra && (
+                  <GerarRelatorioMedicaoDialog
+                    obraId={id!}
+                    medicaoAtual={medicaoAtual}
+                    dadosObra={{
+                      id: obra.id,
+                      nome: obra.nome,
+                      municipio: obra.municipio,
+                      valor_total: obra.valor_total,
+                      contrato_numero: obra.n_contrato,
+                      empresa_executora: obra.empresa_responsavel,
+                    }}
+                    dadosMedicao={{
+                      cronograma_previsto: items
+                        .filter(item => ehItemFolha(item.item) && !item.ehAdministracaoLocal)
+                        .map((item, idx) => ({
+                          item: idx + 1,
+                          descricao: item.descricao,
+                          valor_parcial_previsto: 0,
+                          valor_acumulado_previsto: 0,
+                          perc_previsto_periodo: 0,
+                          perc_previsto_acumulado: 0,
+                          valor_final_previsto: calcularTotalContratoComAditivos(item, medicaoAtual)
+                        })),
+                      medicao_atual: items
+                        .filter(item => ehItemFolha(item.item) && !item.ehAdministracaoLocal)
+                        .map((item, idx) => {
+                          const medicaoData = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 };
+                          const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
+                          const acumTotal = calcularValorAcumuladoItem(item.id);
+                          const acumPct = calcularPercentualAcumulado(item.id);
+                          
+                          return {
+                            item: idx + 1,
+                            descricao: item.descricao,
+                            valor_parcial_medido: medicaoData.total,
+                            valor_acumulado_medido: acumTotal,
+                            perc_medido_periodo: totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0,
+                            perc_medido_acumulado: acumPct
+                          };
+                        })
+                    }}
+                  />
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
