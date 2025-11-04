@@ -82,20 +82,93 @@ ${JSON.stringify(dados, null, 2)}
         ],
         temperature: 0.3,
         max_tokens: 16000,
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'emit_relatorio',
+              description: 'Emite o relatório final no formato exigido pelo Sistema DIF',
+              parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  render_html: { type: 'string' },
+                  plaintext: { type: 'string' },
+                  resumo_json: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      obra_id: { type: 'string' },
+                      contrato_numero: { type: 'string' },
+                      periodo_inicio: { type: 'string' },
+                      periodo_fim: { type: 'string' },
+                      data_vistoria: { type: 'string' },
+                      data_emissao: { type: 'string' },
+                      empresa_executora: { type: 'string' },
+                      valor_total_obra: { type: 'number' },
+                      valor_medido_periodo: { type: 'number' },
+                      perc_previsto_acumulado: { type: 'number' },
+                      perc_medido_acumulado: { type: 'number' },
+                      desvio_pp: { type: 'number' },
+                      recomendacoes: { type: 'string' },
+                      qtd_fotos: { type: 'integer' }
+                    },
+                    required: [
+                      'obra_id','contrato_numero','periodo_inicio','periodo_fim','data_vistoria','data_emissao','empresa_executora','valor_total_obra','valor_medido_periodo','perc_previsto_acumulado','perc_medido_acumulado','desvio_pp','qtd_fotos'
+                    ]
+                  }
+                },
+                required: ['render_html','plaintext','resumo_json']
+              }
+            }
+          }
+        ],
+        tool_choice: { type: 'function', function: { name: 'emit_relatorio' } }
       }),
     });
 
     if (!aiResponse.ok) {
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Tente novamente em instantes.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: 'Créditos de Lovable AI insuficientes (402).' }), { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const txt = await aiResponse.text();
+      console.error('AI Gateway error:', aiResponse.status, txt);
       throw new Error(`AI Gateway error: ${aiResponse.statusText}`);
     }
 
     const aiData = await aiResponse.json();
-    let content = aiData.choices[0].message.content;
-    
-    // Limpar markdown se presente
-    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    
-    const resultado = JSON.parse(content);
+    const choice = aiData.choices?.[0];
+
+    let resultado: any;
+    const toolCalls = choice?.message?.tool_calls;
+
+    if (toolCalls && toolCalls.length > 0) {
+      const argsRaw = toolCalls[0]?.function?.arguments ?? '{}';
+      resultado = JSON.parse(argsRaw);
+    } else {
+      let content = choice?.message?.content ?? '';
+
+      // Limpar markdown se presente
+      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+      // Limpar caracteres de controle que podem quebrar o JSON
+      content = content.replace(/[\x00-\x1F\x7F]/g, '');
+
+      // Tentar extrair apenas o JSON válido
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}') + 1;
+
+      if (jsonStart === -1 || jsonEnd === 0) {
+        throw new Error('Nenhum JSON válido encontrado na resposta da IA');
+      }
+
+      const jsonContent = content.substring(jsonStart, jsonEnd);
+      resultado = JSON.parse(jsonContent);
+    }
+
 
     return new Response(
       JSON.stringify(resultado),
