@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.5';
-import { jsPDF } from 'https://cdn.skypack.dev/jspdf@2.5.2';
-import 'https://cdn.skypack.dev/jspdf-autotable@3.8.4';
+import { jsPDF } from 'https://esm.sh/jspdf@2.5.2';
+import 'https://esm.sh/jspdf-autotable@3.8.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
