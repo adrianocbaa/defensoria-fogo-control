@@ -262,14 +262,16 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
               <Separator />
               
               <div className="space-y-4">
-                {/* Andamento da Obra (RDO) */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Andamento da Obra:</span>
-                    <span className="text-lg font-semibold text-blue-600">{rdoProgress.toFixed(2)}%</span>
+                {/* Andamento da Obra (RDO) - Ocultar se 0% */}
+                {rdoProgress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Andamento da Obra:</span>
+                      <span className="text-lg font-semibold text-blue-600">{rdoProgress.toFixed(2)}%</span>
+                    </div>
+                    <Progress value={Math.min(rdoProgress, 100)} className="h-2" />
                   </div>
-                  <Progress value={Math.min(rdoProgress, 100)} className="h-2" />
-                </div>
+                )}
                 
                 {/* Valor Pago (Medições) */}
                 <div className="space-y-2">
