@@ -125,18 +125,13 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         const comparacoes: MacroExecutado[] = cronograma.items.map(itemCronograma => {
           const executado = executadoPorMacro.get(itemCronograma.item_numero) || 0;
           
-          // Buscar o valor previsto para este período específico
-          // O índice do período é baseado na sequência da medição (1-indexed)
-          const periodoIndex = session.sequencia - 1;
-          const previsto = itemCronograma.periodos[periodoIndex]?.valor || 0;
+          // Calcular os dias do período baseado na sequência da medição
+          // Sequência 1 = 30 dias, Sequência 2 = 60 dias, etc.
+          const periodoDias = session.sequencia * 30;
           
-          console.log(`[Comparativo] Medição ${session.sequencia}, MACRO ${itemCronograma.item_numero}:`, {
-            executado,
-            previsto,
-            periodoIndex,
-            totalPeriodos: itemCronograma.periodos.length,
-            periodos: itemCronograma.periodos
-          });
+          // Buscar o período correspondente aos dias calculados
+          const periodo = itemCronograma.periodos.find(p => p.periodo === periodoDias);
+          const previsto = periodo?.valor || 0;
           
           const desvio = executado - previsto;
           const desvioPercentual = previsto > 0 ? (desvio / previsto) * 100 : 0;
