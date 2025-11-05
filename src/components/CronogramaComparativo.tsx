@@ -48,12 +48,12 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
   const carregarDadosExecutados = async () => {
     setLoading(true);
     try {
-      // Buscar todas as medições da obra
+      // Buscar todas as medições da obra (status = bloqueada)
       const { data: medicaoSessions, error: sessionsError } = await supabase
         .from('medicao_sessions')
         .select('id')
         .eq('obra_id', obraId)
-        .eq('status', 'fechada');
+        .eq('status', 'bloqueada');
 
       if (sessionsError) throw sessionsError;
 
@@ -165,7 +165,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         <CardContent>
           <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg text-center">
             <p className="text-sm text-muted-foreground">
-              Nenhuma medição fechada encontrada. O comparativo será exibido após fechar a primeira medição.
+              Nenhuma medição bloqueada encontrada. O comparativo será exibido após bloquear a primeira medição.
             </p>
           </div>
         </CardContent>
@@ -243,7 +243,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           Comparativo Previsto x Executado
         </CardTitle>
         <p className="text-sm text-muted-foreground mt-1">
-          Análise por MACRO do cronograma financeiro vs medições fechadas
+          Análise por MACRO do cronograma financeiro vs medições bloqueadas
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
