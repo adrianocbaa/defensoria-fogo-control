@@ -7,12 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MedicaoSidebar } from '@/components/MedicaoSidebar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical, Download } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -2927,70 +2926,74 @@ const criarNovaMedicao = async () => {
   const valorAcumuladoTotal = calcularValorAcumuladoTotal();
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full medicao-page bg-gray-50">
-        <div className="flex-1 py-3">
-          <div className="content-root w-full px-6 space-y-6">
-            {/* Cabeçalho */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <SidebarTrigger />
-                    <div>
-                      <CardTitle className="flex items-center gap-2 text-2xl">
-                        <FileText className="h-6 w-6" />
-                        Sistema de Medição - {obra.nome}
-                      </CardTitle>
-                      <p className="text-muted-foreground">
-                        {obra.municipio}
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline" onClick={() => navigate('/admin/obras')}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Voltar
-                  </Button>
-                </div>
-              </CardHeader>
-            </Card>
+    <div className="medicao-page min-h-screen bg-gray-50 py-3">
+      <div className="content-root w-full">
+        {/* Cabeçalho */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <FileText className="h-6 w-6" />
+                  Sistema de Medição - {obra.nome}
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  {obra.municipio}
+                </p>
+              </div>
+              <Button variant="outline" onClick={() => navigate('/admin/obras')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
 
-            {/* Resumo Financeiro Compacto */}
+        {/* Sistema de Abas */}
+        <Tabs defaultValue="medicao-atual" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="medicao-atual">Medição Atual</TabsTrigger>
+            <TabsTrigger value="analise-financeira">Análise Financeira</TabsTrigger>
+            <TabsTrigger value="gestao">Gestão</TabsTrigger>
+          </TabsList>
+
+          {/* ABA 1: MEDIÇÃO ATUAL */}
+          <TabsContent value="medicao-atual" className="space-y-6">
+            {/* Resumo Financeiro Detalhado */}
             <div className="cards-grid">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Valor Inicial do Contrato</div>
-                <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.valorInicialContrato)}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Total Geral do Aditivo</div>
-                <div className="text-2xl font-bold text-blue-600">{formatCurrency(resumoFinanceiro.totalGeralAditivo)}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Valor Contrato Pós Aditivo</div>
-                <div className="text-2xl font-bold text-green-700">{formatCurrency(resumoFinanceiro.valorContratoPosAditivo)}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Serviços Executados</div>
-                <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalServicosExecutados)}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-sm text-muted-foreground">Valor Acumulado</div>
-                <div className="text-2xl font-bold text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Tabela Principal */}
-          <Card className="shadow-lg">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm text-muted-foreground">Valor Inicial do Contrato</div>
+                  <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.valorInicialContrato)}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm text-muted-foreground">Total Geral do Aditivo</div>
+                  <div className="text-2xl font-bold text-blue-600">{formatCurrency(resumoFinanceiro.totalGeralAditivo)}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm text-muted-foreground">Valor Contrato Pós Aditivo</div>
+                  <div className="text-2xl font-bold text-green-700">{formatCurrency(resumoFinanceiro.valorContratoPosAditivo)}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm text-muted-foreground">Serviços Executados</div>
+                  <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalServicosExecutados)}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="text-sm text-muted-foreground">Valor Acumulado</div>
+                  <div className="text-2xl font-bold text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
+                </CardContent>
+              </Card>
+            </div>
+            {/* Tabela Principal */}
+            <Card className="shadow-lg">
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Planilha Orçamentária</CardTitle>
@@ -3388,70 +3391,292 @@ const criarNovaMedicao = async () => {
                       );
                     })}
                   </TableBody>
-              </Table>
+                </Table>
             </div>
           </CardContent>
         </Card>
-        </div>
+      </TabsContent>
 
-          {/* Confirmações */}
-          <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {confirm.type === 'reabrir-medicao' && 'Reabrir medição?'}
-                  {confirm.type === 'excluir-medicao' && 'Excluir medição?'}
-                  {confirm.type === 'excluir-aditivo' && 'Excluir aditivo?'}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {confirm.type === 'reabrir-medicao' && 'A medição voltará para edição.'}
-                  {confirm.type?.startsWith('excluir') && 'Esta ação não pode ser desfeita.'}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (confirm.type === 'reabrir-medicao' && confirm.medicaoId != null) {
-                      reabrirMedicao(confirm.medicaoId);
-                    }
-                    if (confirm.type === 'excluir-medicao' && confirm.medicaoId != null) {
-                      excluirMedicao(confirm.medicaoId);
-                    }
-                    if (confirm.type === 'excluir-aditivo' && confirm.aditivoId != null) {
-                      excluirAditivo(confirm.aditivoId);
-                    }
-                    setConfirm({ open: false });
-                  }}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Confirmar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-
-        {/* Sidebar com Análises e Gestão */}
-        <MedicaoSidebar
-          obraId={obra.id}
+      {/* ABA 2: ANÁLISE FINANCEIRA */}
+      <TabsContent value="analise-financeira" className="space-y-6">
+        {/* Resumo do Contrato */}
+        <ResumoContrato 
           valorTotalOriginal={calcularValorTotalOriginal}
           aditivos={aditivos}
           items={items}
           ehItemPrimeiroNivel={ehItemPrimeiroNivel}
           medicaoAtual={medicaoAtual}
-          medicoes={medicoes}
-          isAdmin={isAdmin}
-          setMedicaoAtual={setMedicaoAtual}
-          criarNovaMedicao={criarNovaMedicao}
-          salvarEBloquearMedicao={salvarEBloquearMedicao}
-          setConfirm={setConfirm}
-          setNovoAditivoAberto={setNovoAditivoAberto}
-          salvarAditivo={salvarAditivo}
-          publicarAditivo={publicarAditivo}
-          editarAditivo={editarAditivo}
         />
+
+        {/* Cronograma Financeiro */}
+        <CronogramaView obraId={obra.id} />
+      </TabsContent>
+
+      {/* ABA 3: GESTÃO */}
+      <TabsContent value="gestao" className="space-y-6">
+        {/* Medições */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="h-5 w-5" />
+                Medições
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <ImportarCronograma 
+                  obraId={obra.id} 
+                  onSuccess={() => {
+                    toast.success('Cronograma importado com sucesso!');
+                  }}
+                />
+                <Button onClick={criarNovaMedicao} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nova Medição
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <TooltipProvider>
+              <div className="flex flex-wrap items-center gap-2">
+                {medicoes.map((m) => {
+                  const isActive = medicaoAtual === m.id;
+                  const label = `${m.bloqueada ? '🔒' : '✏️'} ${m.id}ª Medição`;
+                  const iso = m.dataBloqueio ? new Date(m.dataBloqueio).toISOString() : '';
+                  return (
+                    <div key={m.id} className="flex items-center gap-2">
+                      <Button
+                        variant={isActive ? 'secondary' : 'outline'}
+                        size="sm"
+                        className="h-8 rounded-full px-3"
+                        onClick={() => setMedicaoAtual(m.id)}
+                        disabled={m.bloqueada && !isAdmin}
+                        title={m.bloqueada && m.dataBloqueio ? relativeTimePTBR(m.dataBloqueio) : ''}
+                      >
+                        {label}
+                      </Button>
+
+                      {isActive && (
+                        <>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Ações da medição">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="min-w-[200px]">
+                              {m.bloqueada ? (
+                                <>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setConfirm({ open: true, type: 'reabrir-medicao', medicaoId: m.id });
+                                    }}
+                                  >
+                                    🔓 Reabrir
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
+                                    }}
+                                  >
+                                    🗑️ Excluir
+                                  </DropdownMenuItem>
+                                </>
+                              ) : (
+                                <>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      salvarEBloquearMedicao(m.id);
+                                    }}
+                                  >
+                                    ✅ Salvar e Bloquear
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
+                                    }}
+                                  >
+                                    🗑️ Excluir
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+
+                          {m.bloqueada && m.dataBloqueio && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="text-xs text-muted-foreground">
+                                  Concluída · {formatDateTimePTBR(m.dataBloqueio)}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <span>{iso}</span>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
+          </CardContent>
+        </Card>
+
+        {/* Aditivos */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Aditivos
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={mostrarAditivos ? 'secondary' : 'outline'}
+                  onClick={() => setMostrarAditivos(!mostrarAditivos)}
+                  className="flex items-center gap-2"
+                >
+                  {mostrarAditivos ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {mostrarAditivos ? 'Ocultar' : 'Mostrar'} Aditivos
+                </Button>
+                <Button onClick={() => setNovoAditivoAberto(true)} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Novo Aditivo
+                </Button>
+                <NovoAditivoModal
+                  open={novoAditivoAberto}
+                  onOpenChange={setNovoAditivoAberto}
+                  onConfirm={confirmarNovoAditivo}
+                  sequenciasDisponiveis={(() => { const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; return Array.from({ length: maxSeq + 1 }, (_, i) => i + 1); })()}
+                  defaultSequencia={(() => { const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; return maxSeq + 1; })()}
+                />
+              </div>
+            </div>
+          </CardHeader>
+          {mostrarAditivos && (
+            <CardContent>
+              <div className="flex flex-wrap items-center gap-3">
+                {aditivos.map((a) => (
+                  <div key={a.id} className="flex items-center gap-2">
+                    <Badge variant="outline" className="h-8 rounded-full px-3 text-sm">
+                      {a.nome}
+                    </Badge>
+                    <Badge variant={a.bloqueada ? 'default' : 'secondary'} className="text-xs">
+                      {a.bloqueada ? 'Publicado' : 'Rascunho'}
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Ações do aditivo">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="min-w-[200px]">
+                        {a.bloqueada ? (
+                          <>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                editarAditivo(a.id);
+                              }}
+                            >
+                              ✏️ Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                              }}
+                            >
+                              🗑️ Excluir
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                salvarAditivo(a.id);
+                              }}
+                            >
+                              💾 Salvar rascunho
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                publicarAditivo(a.id);
+                              }}
+                            >
+                              ✅ Salvar e Publicar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                              }}
+                            >
+                              🗑️ Excluir
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Confirmações */}
+        <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {confirm.type === 'reabrir-medicao' && 'Reabrir medição?'}
+                {confirm.type === 'excluir-medicao' && 'Excluir medição?'}
+                {confirm.type === 'excluir-aditivo' && 'Excluir aditivo?'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirm.type === 'reabrir-medicao' && 'A medição voltará para edição.'}
+                {confirm.type?.startsWith('excluir') && 'Esta ação não pode ser desfeita.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (confirm.type === 'reabrir-medicao' && confirm.medicaoId != null) {
+                    reabrirMedicao(confirm.medicaoId);
+                  }
+                  if (confirm.type === 'excluir-medicao' && confirm.medicaoId != null) {
+                    excluirMedicao(confirm.medicaoId);
+                  }
+                  if (confirm.type === 'excluir-aditivo' && confirm.aditivoId != null) {
+                    excluirAditivo(confirm.aditivoId);
+                  }
+                  setConfirm({ open: false });
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Confirmar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </TabsContent>
+    </Tabs>
       </div>
-    </SidebarProvider>
+    </div>
   );
 }
