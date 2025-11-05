@@ -2959,6 +2959,21 @@ const criarNovaMedicao = async () => {
 
           {/* ABA 1: MEDIÇÃO ATUAL */}
           <TabsContent value="medicao-atual" className="space-y-6">
+            {/* Indicador da Medição Selecionada */}
+            {medicaoAtual && (
+              <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <Badge variant="default" className="text-sm">
+                  Visualizando: {medicoes.find(m => m.id === medicaoAtual)?.nome || `${medicaoAtual}ª MEDIÇÃO`}
+                </Badge>
+                {medicoes.find(m => m.id === medicaoAtual)?.bloqueada && (
+                  <Badge variant="secondary" className="text-xs">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Bloqueada
+                  </Badge>
+                )}
+              </div>
+            )}
+            
             {/* Resumo Financeiro Detalhado */}
             <div className="cards-grid">
               <Card>
