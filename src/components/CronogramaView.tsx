@@ -155,78 +155,104 @@ export function CronogramaView({ obraId }: CronogramaViewProps) {
           </Card>
         </div>
 
-        {/* Tabela de Distribuição por Período */}
-        <div>
-          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Distribuição por Período
-          </h3>
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Período (Dias)</TableHead>
-                  <TableHead className="text-right">Valor Previsto</TableHead>
-                  <TableHead className="text-right">Percentual</TableHead>
-                  <TableHead className="text-right">Acumulado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {totaisPorPeriodo.map((item, index) => {
-                  const valorAcumulado = totaisPorPeriodo
-                    .slice(0, index + 1)
-                    .reduce((sum, p) => sum + p.valor, 0);
-                  const percentualAcumulado = (valorAcumulado / valorTotal) * 100;
-                  
-                  return (
-                    <TableRow key={item.periodo}>
-                      <TableCell className="font-medium">{item.periodo} dias</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatCurrency(item.valor)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {item.percentual.toFixed(2)}%
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-green-600">
-                        {formatCurrency(valorAcumulado)} ({percentualAcumulado.toFixed(2)}%)
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
 
         {/* Tabela de Itens MACRO */}
         <div>
           <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
-            Itens MACRO do Cronograma
+            Cronograma Financeiro - Distribuição por Período
           </h3>
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">% do Total</TableHead>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-16 font-semibold">Item</TableHead>
+                  <TableHead className="font-semibold min-w-[200px]">Descrição</TableHead>
+                  <TableHead className="text-right font-semibold whitespace-nowrap">Total Por Etapa</TableHead>
+                  {totaisPorPeriodo.map(item => (
+                    <TableHead key={item.periodo} className="text-right whitespace-nowrap font-semibold">
+                      {item.periodo} DIAS
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {/* Items MACRO */}
                 {cronograma.items.map((item) => (
-                  <TableRow key={item.item_numero}>
-                    <TableCell className="font-medium">{item.item_numero}</TableCell>
-                    <TableCell>{item.descricao}</TableCell>
-                    <TableCell className="text-right font-mono">
+                  <TableRow key={item.item_numero} className="bg-blue-50/50 dark:bg-blue-950/20">
+                    <TableCell className="font-semibold">{item.item_numero}</TableCell>
+                    <TableCell className="font-semibold">{item.descricao}</TableCell>
+                    <TableCell className="text-right font-mono font-semibold">
                       {formatCurrency(item.total_etapa)}
                     </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {((item.total_etapa / valorTotal) * 100).toFixed(2)}%
-                    </TableCell>
+                    {totaisPorPeriodo.map(periodoItem => {
+                      const periodoData = item.periodos.find(p => p.periodo === periodoItem.periodo);
+                      return (
+                        <TableCell key={periodoItem.periodo} className="text-right font-mono">
+                          {periodoData ? formatCurrency(periodoData.valor) : '-'}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))}
+                
+                {/* Linha de Porcentagem */}
+                <TableRow className="border-t-2">
+                  <TableCell colSpan={2} className="font-semibold">Porcentagem</TableCell>
+                  <TableCell></TableCell>
+                  {totaisPorPeriodo.map(periodoItem => {
+                    const percentual = (periodoItem.valor / valorTotal) * 100;
+                    return (
+                      <TableCell key={periodoItem.periodo} className="text-right font-mono font-semibold">
+                        {percentual.toFixed(2)}%
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+                
+                {/* Linha de Custo */}
+                <TableRow>
+                  <TableCell colSpan={2} className="font-semibold">Custo</TableCell>
+                  <TableCell></TableCell>
+                  {totaisPorPeriodo.map(periodoItem => (
+                    <TableCell key={periodoItem.periodo} className="text-right font-mono">
+                      {formatCurrency(periodoItem.valor)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+                
+                {/* Linha de Porcentagem Acumulado */}
+                <TableRow className="bg-muted/30">
+                  <TableCell colSpan={2} className="font-semibold">Porcentagem Acumulado</TableCell>
+                  <TableCell></TableCell>
+                  {totaisPorPeriodo.map((periodoItem, index) => {
+                    const acumulado = totaisPorPeriodo
+                      .slice(0, index + 1)
+                      .reduce((sum, p) => sum + p.valor, 0);
+                    const percentualAcumulado = (acumulado / valorTotal) * 100;
+                    return (
+                      <TableCell key={periodoItem.periodo} className="text-right font-mono font-semibold">
+                        {percentualAcumulado.toFixed(2)}%
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+                
+                {/* Linha de Custo Acumulado */}
+                <TableRow className="bg-muted/30">
+                  <TableCell colSpan={2} className="font-semibold">Custo Acumulado</TableCell>
+                  <TableCell></TableCell>
+                  {totaisPorPeriodo.map((periodoItem, index) => {
+                    const acumulado = totaisPorPeriodo
+                      .slice(0, index + 1)
+                      .reduce((sum, p) => sum + p.valor, 0);
+                    return (
+                      <TableCell key={periodoItem.periodo} className="text-right font-mono font-semibold">
+                        {formatCurrency(acumulado)}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
               </TableBody>
             </Table>
           </div>
