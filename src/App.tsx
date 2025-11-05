@@ -52,6 +52,11 @@ import TeletrabalhoEdit from "./pages/TeletrabalhoEdit";
 import { RDO } from "./pages/RDO";
 import RDODiario from "./pages/RDODiario";
 import RdoVerify from "./pages/RdoVerify";
+import { PrototypesIndex } from "./pages/prototypes/PrototypesIndex";
+import { MedicaoComAbas } from "./pages/prototypes/MedicaoComAbas";
+import { MedicaoComSidebar } from "./pages/prototypes/MedicaoComSidebar";
+import { MedicaoComAccordion } from "./pages/prototypes/MedicaoComAccordion";
+import { MedicaoComModal } from "./pages/prototypes/MedicaoComModal";
 
 const queryClient = new QueryClient();
 
@@ -333,7 +338,50 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+      
+      {/* Prototype Routes */}
       <Route 
+        path="/prototypes" 
+        element={
+          <ProtectedRoute>
+            <PrototypesIndex />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/prototypes/abas" 
+        element={
+          <ProtectedRoute>
+            <MedicaoComAbas />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/prototypes/sidebar" 
+        element={
+          <ProtectedRoute>
+            <MedicaoComSidebar />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/prototypes/accordion" 
+        element={
+          <ProtectedRoute>
+            <MedicaoComAccordion />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/prototypes/modal" 
+        element={
+          <ProtectedRoute>
+            <MedicaoComModal />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route
         path="/obras/:obraId/rdo/diario" 
         element={
           <ProtectedRoute>
