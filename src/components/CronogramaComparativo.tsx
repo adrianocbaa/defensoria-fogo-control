@@ -225,23 +225,22 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         let chartData;
         
         if (isAcumulado) {
-          // Modo Acumulado: mostrar evolução ao longo do tempo (todas as medições até a atual)
-          const medicoesAteAtual = medicoesComparativo.filter(m => m.sequencia <= medicaoComp.sequencia);
+          // Modo Acumulado: mostrar evolução ao longo de todos os períodos do cronograma
+          
+          // Descobrir todos os períodos do cronograma
+          const periodosUnicos = new Set<number>();
+          cronograma.items.forEach(item => {
+            item.periodos.forEach(p => periodosUnicos.add(p.periodo));
+          });
+          const todosPeriodos = Array.from(periodosUnicos).sort((a, b) => a - b);
           
           const dadosExecutado: number[] = [0]; // Começar do zero
           const dadosPrevisto: number[] = [0]; // Começar do zero
           const labels: string[] = ['0 dias']; // Ponto inicial
           
-          medicoesAteAtual.forEach((med) => {
-            const dias = med.sequencia * 30;
+          // Para cada período do cronograma
+          todosPeriodos.forEach((dias) => {
             labels.push(`${dias} dias`);
-            
-            // Calcular executado acumulado até esta medição
-            const execAcumulado = medicoesComparativo
-              .filter(m => m.sequencia <= med.sequencia)
-              .reduce((acc, m) => {
-                return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
-              }, 0);
             
             // Calcular previsto acumulado até este período
             const prevAcumulado = cronograma.items.reduce((sum, item) => {
@@ -250,6 +249,25 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 .reduce((s, p) => s + p.valor, 0);
               return sum + acumulado;
             }, 0);
+            
+            // Calcular executado acumulado até este período (se houver medição)
+            const sequenciaPeriodo = dias / 30;
+            const temMedicao = medicoesComparativo.some(m => m.sequencia === sequenciaPeriodo);
+            
+            let execAcumulado = 0;
+            if (temMedicao || sequenciaPeriodo < medicaoComp.sequencia) {
+              // Se tem medição para este período ou é anterior à medição atual
+              execAcumulado = medicoesComparativo
+                .filter(m => m.sequencia <= sequenciaPeriodo)
+                .reduce((acc, m) => {
+                  return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
+                }, 0);
+            } else {
+              // Se é período futuro sem medição, usar null para não desenhar
+              dadosExecutado.push(null as any);
+              dadosPrevisto.push(totalObra > 0 ? (prevAcumulado / totalObra) * 100 : 0);
+              return;
+            }
             
             dadosExecutado.push(totalObra > 0 ? (execAcumulado / totalObra) * 100 : 0);
             dadosPrevisto.push(totalObra > 0 ? (prevAcumulado / totalObra) * 100 : 0);
@@ -266,6 +284,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 borderWidth: chartType === 'line' ? 2 : 1,
                 fill: chartType === 'line' ? false : true,
                 tension: 0.4,
+                spanGaps: false, // Não conectar gaps
               },
               {
                 label: 'Previsto (%)',
