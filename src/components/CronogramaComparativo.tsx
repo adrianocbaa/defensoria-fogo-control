@@ -203,20 +203,20 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
       {medicoesComparativo.map((medicaoComp) => {
         const macrosExecutados = medicaoComp.macros;
 
-        // Preparar dados para o gráfico
+        // Preparar dados para o gráfico (em porcentagem)
         const chartData = {
           labels: macrosExecutados.map(m => `${m.itemNumero} - ${m.descricao}`),
           datasets: [
             {
-              label: 'Previsto (Cronograma)',
-              data: macrosExecutados.map(m => m.totalPrevisto),
+              label: 'Previsto (%)',
+              data: macrosExecutados.map(m => 100), // Previsto é sempre 100%
               backgroundColor: 'rgba(59, 130, 246, 0.7)',
               borderColor: 'rgba(59, 130, 246, 1)',
               borderWidth: 1,
             },
             {
-              label: 'Executado (Medição)',
-              data: macrosExecutados.map(m => m.totalExecutado),
+              label: 'Executado (%)',
+              data: macrosExecutados.map(m => m.totalPrevisto > 0 ? (m.totalExecutado / m.totalPrevisto) * 100 : 0),
               backgroundColor: 'rgba(34, 197, 94, 0.7)',
               borderColor: 'rgba(34, 197, 94, 1)',
               borderWidth: 1,
@@ -240,10 +240,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                   if (label) {
                     label += ': ';
                   }
-                  label += new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  }).format(context.parsed.y);
+                  label += context.parsed.y.toFixed(2) + '%';
                   return label;
                 }
               }
@@ -252,13 +249,10 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           scales: {
             y: {
               beginAtZero: true,
+              max: 120, // Limite de 120% para visualizar melhor
               ticks: {
                 callback: function(value: any) {
-                  return new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                    notation: 'compact',
-                  }).format(value);
+                  return value + '%';
                 }
               }
             }
