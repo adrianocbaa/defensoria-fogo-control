@@ -51,6 +51,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
   const [medicoesComparativo, setMedicoesComparativo] = useState<MedicaoComparativo[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'macros' | 'acumulado'>('macros');
+  const [medicaoSelecionada, setMedicaoSelecionada] = useState<number>(1);
 
   useEffect(() => {
     carregarDadosExecutados();
@@ -204,9 +205,44 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
     );
   }
 
+  // Atualizar medição selecionada quando os dados forem carregados
+  useEffect(() => {
+    if (medicoesComparativo.length > 0 && !medicoesComparativo.find(m => m.sequencia === medicaoSelecionada)) {
+      setMedicaoSelecionada(medicoesComparativo[0].sequencia);
+    }
+  }, [medicoesComparativo]);
+
+  // Filtrar apenas a medição selecionada
+  const medicaoComp = medicoesComparativo.find(m => m.sequencia === medicaoSelecionada);
+
+  if (!medicaoComp) return null;
+
   return (
     <div className="space-y-6 mb-6">
-      {medicoesComparativo.map((medicaoComp) => {
+      {/* Seletor de Medição */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-medium text-muted-foreground">Selecionar Medição:</span>
+            <div className="flex gap-2 flex-wrap">
+              {medicoesComparativo.map((med) => (
+                <Button
+                  key={med.sequencia}
+                  variant={medicaoSelecionada === med.sequencia ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMedicaoSelecionada(med.sequencia)}
+                  className="transition-all duration-200"
+                >
+                  Medição {med.sequencia}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Card da Medição Selecionada */}
+      {(() => {
         const macrosExecutados = medicaoComp.macros;
 
         // Calcular o total da obra para cada MACRO
@@ -502,7 +538,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             </CardContent>
           </Card>
         );
-      })}
+      })()}
     </div>
   );
 }
