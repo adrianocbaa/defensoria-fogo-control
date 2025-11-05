@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical, Download } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -2949,51 +2948,290 @@ const criarNovaMedicao = async () => {
           </CardHeader>
         </Card>
 
-        {/* Sistema de Abas */}
-        <Tabs defaultValue="medicao-atual" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="medicao-atual">Medição Atual</TabsTrigger>
-            <TabsTrigger value="analise-financeira">Análise Financeira</TabsTrigger>
-            <TabsTrigger value="gestao">Gestão</TabsTrigger>
-          </TabsList>
+        {/* Resumo Financeiro Detalhado */}
+        <div className="space-y-6">
+          <div className="cards-grid">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm text-muted-foreground">Valor Inicial do Contrato</div>
+                <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.valorInicialContrato)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm text-muted-foreground">Total Geral do Aditivo</div>
+                <div className="text-2xl font-bold text-blue-600">{formatCurrency(resumoFinanceiro.totalGeralAditivo)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm text-muted-foreground">Valor Contrato Pós Aditivo</div>
+                <div className="text-2xl font-bold text-green-700">{formatCurrency(resumoFinanceiro.valorContratoPosAditivo)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm text-muted-foreground">Serviços Executados</div>
+                <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalServicosExecutados)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm text-muted-foreground">Valor Acumulado</div>
+                <div className="text-2xl font-bold text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* ABA 1: MEDIÇÃO ATUAL */}
-          <TabsContent value="medicao-atual" className="space-y-6">
-            {/* Resumo Financeiro Detalhado */}
-            <div className="cards-grid">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Valor Inicial do Contrato</div>
-                  <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.valorInicialContrato)}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Total Geral do Aditivo</div>
-                  <div className="text-2xl font-bold text-blue-600">{formatCurrency(resumoFinanceiro.totalGeralAditivo)}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Valor Contrato Pós Aditivo</div>
-                  <div className="text-2xl font-bold text-green-700">{formatCurrency(resumoFinanceiro.valorContratoPosAditivo)}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Serviços Executados</div>
-                  <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalServicosExecutados)}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Valor Acumulado</div>
-                  <div className="text-2xl font-bold text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
-                </CardContent>
-              </Card>
-            </div>
-            {/* Tabela Principal */}
-            <Card className="shadow-lg">
+          {/* Botão para abrir modal de análises */}
+          <div className="flex justify-center">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="lg" className="gap-2">
+                  <FileText className="h-5 w-5" />
+                  Ver Análises Completas
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Análises Financeiras e Gestão</DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-6 mt-4">
+                  {/* Seção: Análise Financeira */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Análise Financeira</h3>
+                    <ResumoContrato 
+                      valorTotalOriginal={calcularValorTotalOriginal}
+                      aditivos={aditivos}
+                      items={items}
+                      ehItemPrimeiroNivel={ehItemPrimeiroNivel}
+                      medicaoAtual={medicaoAtual}
+                    />
+                    <CronogramaView obraId={obra.id} />
+                  </div>
+
+                  {/* Seção: Gestão */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Gestão de Medições e Aditivos</h3>
+                    
+                    {/* Medições */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="flex items-center gap-2">
+                            <Calculator className="h-5 w-5" />
+                            Medições
+                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            <Button onClick={criarNovaMedicao} disabled={!isAdmin} size="sm">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Nova Medição
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {medicoes.length === 0 ? (
+                          <p className="text-muted-foreground text-sm">Nenhuma medição criada ainda.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {medicoes.map((m) => (
+                              <div
+                                key={m.id}
+                                className={`flex items-center justify-between p-3 rounded-lg border ${
+                                  medicaoAtual === m.id ? 'border-primary bg-primary/5' : 'border-border'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant={medicaoAtual === m.id ? 'default' : 'outline'}
+                                      size="sm"
+                                      onClick={() => setMedicaoAtual(m.id)}
+                                    >
+                                      {m.nome}
+                                    </Button>
+                                    {m.bloqueada && (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Lock className="h-4 w-4 text-yellow-600" />
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Medição bloqueada {m.dataBloqueio ? relativeTimePTBR(m.dataBloqueio) : ''}</p>
+                                            {m.usuarioBloqueio && <p>por {m.usuarioBloqueio}</p>}
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
+                                  </div>
+                                </div>
+                                {isAdmin && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      {m.bloqueada ? (
+                                        <DropdownMenuItem
+                                          onSelect={(e) => {
+                                            e.preventDefault();
+                                            setConfirm({ open: true, type: 'reabrir-medicao', medicaoId: m.id });
+                                          }}
+                                        >
+                                          🔓 Reabrir
+                                        </DropdownMenuItem>
+                                      ) : (
+                                        <>
+                                          <DropdownMenuItem
+                                            onSelect={(e) => {
+                                              e.preventDefault();
+                                              salvarEBloquearMedicao(m.id);
+                                            }}
+                                          >
+                                            🔒 Bloquear
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="text-destructive"
+                                            onSelect={(e) => {
+                                              e.preventDefault();
+                                              setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
+                                            }}
+                                          >
+                                            🗑️ Excluir
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Aditivos */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="flex items-center gap-2">
+                            <Zap className="h-5 w-5" />
+                            Aditivos
+                          </CardTitle>
+                          <Button onClick={() => setNovoAditivoAberto(true)} disabled={!isAdmin} size="sm">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Novo Aditivo
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      {aditivos.length > 0 && (
+                        <CardContent>
+                          <div className="space-y-3">
+                            {aditivos.map((a) => (
+                              <div
+                                key={a.id}
+                                className="flex items-center justify-between p-3 rounded-lg border border-border"
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <Badge variant={a.bloqueada ? 'default' : 'secondary'}>
+                                    {a.nome}
+                                  </Badge>
+                                  {a.bloqueada && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Check className="h-4 w-4 text-green-600" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Aditivo publicado {a.created_at ? relativeTimePTBR(a.created_at) : ''}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                  {a.sequencia && (
+                                    <span className="text-sm text-muted-foreground">
+                                      (A partir da {a.sequencia}ª medição)
+                                    </span>
+                                  )}
+                                </div>
+                                {isAdmin && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      {a.bloqueada ? (
+                                        <>
+                                          <DropdownMenuItem
+                                            onSelect={(e) => {
+                                              e.preventDefault();
+                                              editarAditivo(a.id);
+                                            }}
+                                          >
+                                            🔓 Reabrir
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="text-destructive"
+                                            onSelect={(e) => {
+                                              e.preventDefault();
+                                              setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                                            }}
+                                          >
+                                            🗑️ Excluir
+                                          </DropdownMenuItem>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <DropdownMenuItem
+                                            onSelect={(e) => {
+                                              e.preventDefault();
+                                              salvarAditivo(a.id);
+                                            }}
+                                          >
+                                            💾 Salvar rascunho
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onSelect={(e) => {
+                                              e.preventDefault();
+                                              publicarAditivo(a.id);
+                                            }}
+                                          >
+                                            ✅ Salvar e Publicar
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="text-destructive"
+                                            onSelect={(e) => {
+                                              e.preventDefault();
+                                              setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                                            }}
+                                          >
+                                            🗑️ Excluir
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          {/* Tabela Principal */}
+          <Card className="shadow-lg">
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Planilha Orçamentária</CardTitle>
@@ -3391,252 +3629,11 @@ const criarNovaMedicao = async () => {
                       );
                     })}
                   </TableBody>
-                </Table>
+              </Table>
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
-
-      {/* ABA 2: ANÁLISE FINANCEIRA */}
-      <TabsContent value="analise-financeira" className="space-y-6">
-        {/* Resumo do Contrato */}
-        <ResumoContrato 
-          valorTotalOriginal={calcularValorTotalOriginal}
-          aditivos={aditivos}
-          items={items}
-          ehItemPrimeiroNivel={ehItemPrimeiroNivel}
-          medicaoAtual={medicaoAtual}
-        />
-
-        {/* Cronograma Financeiro */}
-        <CronogramaView obraId={obra.id} />
-      </TabsContent>
-
-      {/* ABA 3: GESTÃO */}
-      <TabsContent value="gestao" className="space-y-6">
-        {/* Medições */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                Medições
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <ImportarCronograma 
-                  obraId={obra.id} 
-                  onSuccess={() => {
-                    toast.success('Cronograma importado com sucesso!');
-                  }}
-                />
-                <Button onClick={criarNovaMedicao} className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Nova Medição
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <TooltipProvider>
-              <div className="flex flex-wrap items-center gap-2">
-                {medicoes.map((m) => {
-                  const isActive = medicaoAtual === m.id;
-                  const label = `${m.bloqueada ? '🔒' : '✏️'} ${m.id}ª Medição`;
-                  const iso = m.dataBloqueio ? new Date(m.dataBloqueio).toISOString() : '';
-                  return (
-                    <div key={m.id} className="flex items-center gap-2">
-                      <Button
-                        variant={isActive ? 'secondary' : 'outline'}
-                        size="sm"
-                        className="h-8 rounded-full px-3"
-                        onClick={() => setMedicaoAtual(m.id)}
-                        disabled={m.bloqueada && !isAdmin}
-                        title={m.bloqueada && m.dataBloqueio ? relativeTimePTBR(m.dataBloqueio) : ''}
-                      >
-                        {label}
-                      </Button>
-
-                      {isActive && (
-                        <>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Ações da medição">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="min-w-[200px]">
-                              {m.bloqueada ? (
-                                <>
-                                  <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      setConfirm({ open: true, type: 'reabrir-medicao', medicaoId: m.id });
-                                    }}
-                                  >
-                                    🔓 Reabrir
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
-                                    }}
-                                  >
-                                    🗑️ Excluir
-                                  </DropdownMenuItem>
-                                </>
-                              ) : (
-                                <>
-                                  <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      salvarEBloquearMedicao(m.id);
-                                    }}
-                                  >
-                                    ✅ Salvar e Bloquear
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
-                                    }}
-                                  >
-                                    🗑️ Excluir
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-
-                          {m.bloqueada && m.dataBloqueio && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="secondary" className="text-xs text-muted-foreground">
-                                  Concluída · {formatDateTimePTBR(m.dataBloqueio)}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <span>{iso}</span>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </TooltipProvider>
-          </CardContent>
-        </Card>
-
-        {/* Aditivos */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Aditivos
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant={mostrarAditivos ? 'secondary' : 'outline'}
-                  onClick={() => setMostrarAditivos(!mostrarAditivos)}
-                  className="flex items-center gap-2"
-                >
-                  {mostrarAditivos ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  {mostrarAditivos ? 'Ocultar' : 'Mostrar'} Aditivos
-                </Button>
-                <Button onClick={() => setNovoAditivoAberto(true)} className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Novo Aditivo
-                </Button>
-                <NovoAditivoModal
-                  open={novoAditivoAberto}
-                  onOpenChange={setNovoAditivoAberto}
-                  onConfirm={confirmarNovoAditivo}
-                  sequenciasDisponiveis={(() => { const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; return Array.from({ length: maxSeq + 1 }, (_, i) => i + 1); })()}
-                  defaultSequencia={(() => { const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; return maxSeq + 1; })()}
-                />
-              </div>
-            </div>
-          </CardHeader>
-          {mostrarAditivos && (
-            <CardContent>
-              <div className="flex flex-wrap items-center gap-3">
-                {aditivos.map((a) => (
-                  <div key={a.id} className="flex items-center gap-2">
-                    <Badge variant="outline" className="h-8 rounded-full px-3 text-sm">
-                      {a.nome}
-                    </Badge>
-                    <Badge variant={a.bloqueada ? 'default' : 'secondary'} className="text-xs">
-                      {a.bloqueada ? 'Publicado' : 'Rascunho'}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Ações do aditivo">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="min-w-[200px]">
-                        {a.bloqueada ? (
-                          <>
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                editarAditivo(a.id);
-                              }}
-                            >
-                              ✏️ Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
-                              }}
-                            >
-                              🗑️ Excluir
-                            </DropdownMenuItem>
-                          </>
-                        ) : (
-                          <>
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                salvarAditivo(a.id);
-                              }}
-                            >
-                              💾 Salvar rascunho
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                publicarAditivo(a.id);
-                              }}
-                            >
-                              ✅ Salvar e Publicar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
-                              }}
-                            >
-                              🗑️ Excluir
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          )}
-        </Card>
+        </div>
 
         {/* Confirmações */}
         <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
@@ -3674,8 +3671,6 @@ const criarNovaMedicao = async () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </TabsContent>
-    </Tabs>
       </div>
     </div>
   );
