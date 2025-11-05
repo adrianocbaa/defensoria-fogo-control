@@ -37,8 +37,13 @@ interface MacroExecutado {
   desvioPercentual: number;
 }
 
+interface MedicaoComparativo {
+  sequencia: number;
+  macros: MacroExecutado[];
+}
+
 export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparativoProps) {
-  const [macrosExecutados, setMacrosExecutados] = useState<MacroExecutado[]>([]);
+  const [medicoesComparativo, setMedicoesComparativo] = useState<MedicaoComparativo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,30 +53,21 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
   const carregarDadosExecutados = async () => {
     setLoading(true);
     try {
-      // Buscar todas as medições da obra (status = bloqueada)
+      // Buscar todas as medições da obra (status = bloqueada), ordenadas por sequência
       const { data: medicaoSessions, error: sessionsError } = await supabase
         .from('medicao_sessions')
-        .select('id')
+        .select('id, sequencia')
         .eq('obra_id', obraId)
-        .eq('status', 'bloqueada');
+        .eq('status', 'bloqueada')
+        .order('sequencia', { ascending: true });
 
       if (sessionsError) throw sessionsError;
 
       if (!medicaoSessions || medicaoSessions.length === 0) {
-        setMacrosExecutados([]);
+        setMedicoesComparativo([]);
         setLoading(false);
         return;
       }
-
-      const sessionIds = medicaoSessions.map(s => s.id);
-
-      // Buscar todos os itens medidos
-      const { data: medicaoItems, error: itemsError } = await supabase
-        .from('medicao_items')
-        .select('item_code, total')
-        .in('medicao_id', sessionIds);
-
-      if (itemsError) throw itemsError;
 
       // Buscar itens do orçamento para mapear códigos para MACROs
       const { data: orcamentoItems, error: orcError } = await supabase
@@ -97,37 +93,62 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         codigoParaMacro.set(item.codigo, { macro, descricao: item.descricao });
       });
 
-      // Agregar valores executados por MACRO
-      const executadoPorMacro = new Map<number, number>();
-      medicaoItems?.forEach(item => {
-        const macroInfo = codigoParaMacro.get(item.item_code);
-        if (macroInfo) {
-          const macroNum = parseInt(macroInfo.macro);
-          if (!isNaN(macroNum)) {
-            const current = executadoPorMacro.get(macroNum) || 0;
-            executadoPorMacro.set(macroNum, current + (item.total || 0));
+      // Processar cada medição individualmente
+      const comparativos: MedicaoComparativo[] = [];
+
+      for (const session of medicaoSessions) {
+        // Buscar itens desta medição específica
+        const { data: medicaoItems, error: itemsError } = await supabase
+          .from('medicao_items')
+          .select('item_code, total')
+          .eq('medicao_id', session.id);
+
+        if (itemsError) throw itemsError;
+
+        // Agregar valores executados por MACRO para esta medição
+        const executadoPorMacro = new Map<number, number>();
+        medicaoItems?.forEach(item => {
+          const macroInfo = codigoParaMacro.get(item.item_code);
+          if (macroInfo) {
+            const macroNum = parseInt(macroInfo.macro);
+            if (!isNaN(macroNum)) {
+              const current = executadoPorMacro.get(macroNum) || 0;
+              executadoPorMacro.set(macroNum, current + (item.total || 0));
+            }
           }
-        }
-      });
+        });
 
-      // Comparar com o cronograma
-      const comparacoes: MacroExecutado[] = cronograma.items.map(itemCronograma => {
-        const executado = executadoPorMacro.get(itemCronograma.item_numero) || 0;
-        const previsto = itemCronograma.total_etapa;
-        const desvio = executado - previsto;
-        const desvioPercentual = previsto > 0 ? (desvio / previsto) * 100 : 0;
+        // Comparar com o período correspondente do cronograma
+        // Medição 1 -> Período 1, Medição 2 -> Período 2, etc.
+        const periodoIndex = session.sequencia - 1;
 
-        return {
-          itemNumero: itemCronograma.item_numero,
-          descricao: itemCronograma.descricao,
-          totalExecutado: executado,
-          totalPrevisto: previsto,
-          desvio,
-          desvioPercentual,
-        };
-      });
+        const comparacoes: MacroExecutado[] = cronograma.items.map(itemCronograma => {
+          const executado = executadoPorMacro.get(itemCronograma.item_numero) || 0;
+          
+          // Buscar o valor previsto para este período específico
+          const periodo = itemCronograma.periodos.find(p => p.periodo === session.sequencia);
+          const previsto = periodo?.valor || 0;
+          
+          const desvio = executado - previsto;
+          const desvioPercentual = previsto > 0 ? (desvio / previsto) * 100 : 0;
 
-      setMacrosExecutados(comparacoes);
+          return {
+            itemNumero: itemCronograma.item_numero,
+            descricao: itemCronograma.descricao,
+            totalExecutado: executado,
+            totalPrevisto: previsto,
+            desvio,
+            desvioPercentual,
+          };
+        });
+
+        comparativos.push({
+          sequencia: session.sequencia,
+          macros: comparacoes,
+        });
+      }
+
+      setMedicoesComparativo(comparativos);
     } catch (error) {
       console.error('Erro ao carregar dados executados:', error);
     } finally {
@@ -153,7 +174,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
     );
   }
 
-  if (macrosExecutados.length === 0) {
+  if (medicoesComparativo.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -173,139 +194,147 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
     );
   }
 
-  // Preparar dados para o gráfico
-  const chartData = {
-    labels: macrosExecutados.map(m => `${m.itemNumero} - ${m.descricao}`),
-    datasets: [
-      {
-        label: 'Previsto (Cronograma)',
-        data: macrosExecutados.map(m => m.totalPrevisto),
-        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-        borderColor: 'rgba(59, 130, 246, 1)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Executado (Medições)',
-        data: macrosExecutados.map(m => m.totalExecutado),
-        backgroundColor: 'rgba(34, 197, 94, 0.7)',
-        borderColor: 'rgba(34, 197, 94, 1)',
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context: any) {
-            let label = context.dataset.label || '';
-            if (label) {
-              label += ': ';
-            }
-            label += new Intl.NumberFormat('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            }).format(context.parsed.y);
-            return label;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function(value: any) {
-            return new Intl.NumberFormat('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-              notation: 'compact',
-            }).format(value);
-          }
-        }
-      }
-    }
-  };
-
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Comparativo Previsto x Executado
-        </CardTitle>
-        <p className="text-sm text-muted-foreground mt-1">
-          Análise por MACRO do cronograma financeiro vs medições bloqueadas
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Gráfico */}
-        <div className="h-[400px]">
-          <Bar data={chartData} options={chartOptions} />
-        </div>
+    <div className="space-y-6 mb-6">
+      {medicoesComparativo.map((medicaoComp) => {
+        const macrosExecutados = medicaoComp.macros;
 
-        {/* Tabela de Desvios */}
-        <div>
-          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Análise de Desvios
-          </h3>
-          <div className="border rounded-lg overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted sticky top-0">
-                <tr>
-                  <th className="text-left p-3 font-semibold">Item</th>
-                  <th className="text-left p-3 font-semibold">Descrição</th>
-                  <th className="text-right p-3 font-semibold">Previsto</th>
-                  <th className="text-right p-3 font-semibold">Executado</th>
-                  <th className="text-right p-3 font-semibold">Desvio (R$)</th>
-                  <th className="text-right p-3 font-semibold">Desvio (%)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {macrosExecutados.map((macro) => (
-                  <tr key={macro.itemNumero} className="hover:bg-muted/50">
-                    <td className="p-3 font-medium">{macro.itemNumero}</td>
-                    <td className="p-3">{macro.descricao}</td>
-                    <td className="p-3 text-right font-mono text-blue-600">
-                      {formatCurrency(macro.totalPrevisto)}
-                    </td>
-                    <td className="p-3 text-right font-mono text-green-600">
-                      {formatCurrency(macro.totalExecutado)}
-                    </td>
-                    <td className={`p-3 text-right font-mono font-semibold ${
-                      macro.desvio > 0 ? 'text-red-600' : macro.desvio < 0 ? 'text-green-600' : 'text-muted-foreground'
-                    }`}>
-                      {macro.desvio > 0 ? '+' : ''}{formatCurrency(macro.desvio)}
-                    </td>
-                    <td className={`p-3 text-right font-mono font-semibold ${
-                      macro.desvioPercentual > 0 ? 'text-red-600' : macro.desvioPercentual < 0 ? 'text-green-600' : 'text-muted-foreground'
-                    }`}>
-                      {macro.desvioPercentual > 0 ? '+' : ''}{macro.desvioPercentual.toFixed(2)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        // Preparar dados para o gráfico
+        const chartData = {
+          labels: macrosExecutados.map(m => `${m.itemNumero} - ${m.descricao}`),
+          datasets: [
+            {
+              label: 'Previsto (Cronograma)',
+              data: macrosExecutados.map(m => m.totalPrevisto),
+              backgroundColor: 'rgba(59, 130, 246, 0.7)',
+              borderColor: 'rgba(59, 130, 246, 1)',
+              borderWidth: 1,
+            },
+            {
+              label: 'Executado (Medição)',
+              data: macrosExecutados.map(m => m.totalExecutado),
+              backgroundColor: 'rgba(34, 197, 94, 0.7)',
+              borderColor: 'rgba(34, 197, 94, 1)',
+              borderWidth: 1,
+            },
+          ],
+        };
 
-        {/* Legenda */}
-        <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-          <p className="text-xs text-muted-foreground">
-            <strong>Legenda:</strong> Valores positivos no desvio indicam que o executado superou o previsto. 
-            Valores negativos indicam que o executado está abaixo do previsto no cronograma financeiro.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        const chartOptions = {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top' as const,
+            },
+            title: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context: any) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(context.parsed.y);
+                  return label;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value: any) {
+                  return new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    notation: 'compact',
+                  }).format(value);
+                }
+              }
+            }
+          }
+        };
+
+        return (
+          <Card key={medicaoComp.sequencia}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Medição {medicaoComp.sequencia} - Comparativo Previsto x Executado
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Análise por MACRO do período {medicaoComp.sequencia} do cronograma financeiro
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Gráfico */}
+              <div className="h-[400px]">
+                <Bar data={chartData} options={chartOptions} />
+              </div>
+
+              {/* Tabela de Desvios */}
+              <div>
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Análise de Desvios
+                </h3>
+                <div className="border rounded-lg overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        <th className="text-left p-3 font-semibold">Item</th>
+                        <th className="text-left p-3 font-semibold">Descrição</th>
+                        <th className="text-right p-3 font-semibold">Previsto</th>
+                        <th className="text-right p-3 font-semibold">Executado</th>
+                        <th className="text-right p-3 font-semibold">Desvio (R$)</th>
+                        <th className="text-right p-3 font-semibold">Desvio (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {macrosExecutados.map((macro) => (
+                        <tr key={macro.itemNumero} className="hover:bg-muted/50">
+                          <td className="p-3 font-medium">{macro.itemNumero}</td>
+                          <td className="p-3">{macro.descricao}</td>
+                          <td className="p-3 text-right font-mono text-blue-600">
+                            {formatCurrency(macro.totalPrevisto)}
+                          </td>
+                          <td className="p-3 text-right font-mono text-green-600">
+                            {formatCurrency(macro.totalExecutado)}
+                          </td>
+                          <td className={`p-3 text-right font-mono font-semibold ${
+                            macro.desvio > 0 ? 'text-red-600' : macro.desvio < 0 ? 'text-green-600' : 'text-muted-foreground'
+                          }`}>
+                            {macro.desvio > 0 ? '+' : ''}{formatCurrency(macro.desvio)}
+                          </td>
+                          <td className={`p-3 text-right font-mono font-semibold ${
+                            macro.desvioPercentual > 0 ? 'text-red-600' : macro.desvioPercentual < 0 ? 'text-green-600' : 'text-muted-foreground'
+                          }`}>
+                            {macro.desvioPercentual > 0 ? '+' : ''}{macro.desvioPercentual.toFixed(2)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Legenda */}
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+                <p className="text-xs text-muted-foreground">
+                  <strong>Legenda:</strong> Valores positivos no desvio indicam que o executado superou o previsto. 
+                  Valores negativos indicam que o executado está abaixo do previsto no cronograma financeiro.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
