@@ -216,63 +216,89 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           totaisPorMacro.set(item.item_numero, item.total_etapa);
         });
 
+        // Calcular o total geral da obra
+        const totalObra = cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
+
         // Calcular acumulados até este período
-        const acumuladoExecutado = medicoesComparativo
+        const totalExecutadoAcumulado = medicoesComparativo
           .filter(m => m.sequencia <= medicaoComp.sequencia)
           .reduce((acc, m) => {
-            m.macros.forEach(macro => {
-              acc.set(macro.itemNumero, (acc.get(macro.itemNumero) || 0) + macro.totalExecutado);
-            });
-            return acc;
-          }, new Map<number, number>());
+            return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
+          }, 0);
 
-        const acumuladoPrevisto = cronograma.items.map(item => {
-          // Somar todos os períodos até o período atual
-          const periodoDias = medicaoComp.sequencia * 30;
+        const periodoDias = medicaoComp.sequencia * 30;
+        const totalPrevistoAcumulado = cronograma.items.reduce((sum, item) => {
           const acumulado = item.periodos
             .filter(p => p.periodo <= periodoDias)
-            .reduce((sum, p) => sum + p.valor, 0);
-          return { itemNumero: item.item_numero, valor: acumulado };
-        });
+            .reduce((s, p) => s + p.valor, 0);
+          return sum + acumulado;
+        }, 0);
 
         // Preparar dados para o gráfico baseado no modo de visualização
         const isAcumulado = viewMode === 'acumulado';
         
-        const chartData = {
-          labels: macrosExecutados.map(m => `${m.itemNumero} - ${m.descricao}`),
-          datasets: [
-            {
-              label: 'Executado (%)',
-              data: macrosExecutados.map(m => {
-                const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
-                const valor = isAcumulado 
-                  ? (acumuladoExecutado.get(m.itemNumero) || 0)
-                  : m.totalExecutado;
-                return totalMacro > 0 ? (valor / totalMacro) * 100 : 0;
-              }),
-              backgroundColor: 'rgba(34, 197, 94, 0.7)',
-              borderColor: 'rgba(34, 197, 94, 1)',
-              borderWidth: chartType === 'line' ? 2 : 1,
-              fill: chartType === 'line' ? false : true,
-              tension: 0.4,
-            },
-            {
-              label: 'Previsto (%)',
-              data: macrosExecutados.map(m => {
-                const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
-                const previsto = isAcumulado
-                  ? (acumuladoPrevisto.find(p => p.itemNumero === m.itemNumero)?.valor || 0)
-                  : m.totalPrevisto;
-                return totalMacro > 0 ? (previsto / totalMacro) * 100 : 0;
-              }),
-              backgroundColor: 'rgba(59, 130, 246, 0.7)',
-              borderColor: 'rgba(59, 130, 246, 1)',
-              borderWidth: chartType === 'line' ? 2 : 1,
-              fill: chartType === 'line' ? false : true,
-              tension: 0.4,
-            },
-          ],
-        };
+        let chartData;
+        
+        if (isAcumulado) {
+          // Modo Acumulado: mostrar apenas 2 barras com totais
+          const percentualPrevisto = totalObra > 0 ? (totalPrevistoAcumulado / totalObra) * 100 : 0;
+          const percentualExecutado = totalObra > 0 ? (totalExecutadoAcumulado / totalObra) * 100 : 0;
+          
+          chartData = {
+            labels: ['Comparativo Acumulado'],
+            datasets: [
+              {
+                label: 'Executado (%)',
+                data: [percentualExecutado],
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                borderColor: 'rgba(239, 68, 68, 1)',
+                borderWidth: chartType === 'line' ? 2 : 1,
+                fill: chartType === 'line' ? false : true,
+                tension: 0.4,
+              },
+              {
+                label: 'Previsto (%)',
+                data: [percentualPrevisto],
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: chartType === 'line' ? 2 : 1,
+                fill: chartType === 'line' ? false : true,
+                tension: 0.4,
+              },
+            ],
+          };
+        } else {
+          // Modo MACROs: mostrar por MACRO
+          chartData = {
+            labels: macrosExecutados.map(m => `${m.itemNumero} - ${m.descricao}`),
+            datasets: [
+              {
+                label: 'Executado (%)',
+                data: macrosExecutados.map(m => {
+                  const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
+                  return totalMacro > 0 ? (m.totalExecutado / totalMacro) * 100 : 0;
+                }),
+                backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                borderColor: 'rgba(34, 197, 94, 1)',
+                borderWidth: chartType === 'line' ? 2 : 1,
+                fill: chartType === 'line' ? false : true,
+                tension: 0.4,
+              },
+              {
+                label: 'Previsto (%)',
+                data: macrosExecutados.map(m => {
+                  const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
+                  return totalMacro > 0 ? (m.totalPrevisto / totalMacro) * 100 : 0;
+                }),
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: chartType === 'line' ? 2 : 1,
+                fill: chartType === 'line' ? false : true,
+                tension: 0.4,
+              },
+            ],
+          };
+        }
 
         const chartOptions = {
           responsive: true,
