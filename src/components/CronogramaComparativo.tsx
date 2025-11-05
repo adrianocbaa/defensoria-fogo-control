@@ -414,14 +414,12 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                       <tr>
                         <th className="text-left p-3 font-semibold">Item</th>
                         <th className="text-left p-3 font-semibold">Descrição</th>
-                        <th className="text-right p-3 font-semibold">Previsto</th>
-                        <th className="text-right p-3 font-semibold">Executado</th>
-                        <th className="text-right p-3 font-semibold">Desvio (R$)</th>
-                        <th className="text-right p-3 font-semibold">Desvio (%)</th>
+                        <th className="text-right p-3 font-semibold bg-blue-50 dark:bg-blue-950/20">Previsto</th>
                         <th className="text-right p-3 font-semibold bg-blue-50 dark:bg-blue-950/20">Previsto Acum.</th>
+                        <th className="text-right p-3 font-semibold bg-green-50 dark:bg-green-950/20">Executado</th>
                         <th className="text-right p-3 font-semibold bg-green-50 dark:bg-green-950/20">Executado Acum.</th>
-                        <th className="text-right p-3 font-semibold bg-muted">Desvio Acum. (R$)</th>
-                        <th className="text-right p-3 font-semibold bg-muted">Desvio Acum. (%)</th>
+                        <th className="text-right p-3 font-semibold">Desvio (%)</th>
+                        <th className="text-right p-3 font-semibold">Desvio Acum. (%)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -448,34 +446,24 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                           <tr key={macro.itemNumero} className="hover:bg-muted/50">
                             <td className="p-3 font-medium">{macro.itemNumero}</td>
                             <td className="p-3">{macro.descricao}</td>
-                            <td className="p-3 text-right font-mono text-blue-600">
+                            <td className="p-3 text-right font-mono text-blue-600 bg-blue-50 dark:bg-blue-950/20">
                               {formatCurrency(macro.totalPrevisto)}
                             </td>
-                            <td className="p-3 text-right font-mono text-green-600">
+                            <td className="p-3 text-right font-mono text-blue-700 font-semibold bg-blue-50 dark:bg-blue-950/20">
+                              {formatCurrency(acumuladoPrevisto)}
+                            </td>
+                            <td className="p-3 text-right font-mono text-green-600 bg-green-50 dark:bg-green-950/20">
                               {formatCurrency(macro.totalExecutado)}
                             </td>
-                            <td className={`p-3 text-right font-mono font-semibold ${
-                              macro.desvio > 0 ? 'text-red-600' : macro.desvio < 0 ? 'text-green-600' : 'text-muted-foreground'
-                            }`}>
-                              {macro.desvio > 0 ? '+' : ''}{formatCurrency(macro.desvio)}
+                            <td className="p-3 text-right font-mono text-green-700 font-semibold bg-green-50 dark:bg-green-950/20">
+                              {formatCurrency(acumuladoExecutado)}
                             </td>
                             <td className={`p-3 text-right font-mono font-semibold ${
                               macro.desvioPercentual > 0 ? 'text-red-600' : macro.desvioPercentual < 0 ? 'text-green-600' : 'text-muted-foreground'
                             }`}>
                               {macro.desvioPercentual > 0 ? '+' : ''}{macro.desvioPercentual.toFixed(2)}%
                             </td>
-                            <td className="p-3 text-right font-mono text-blue-700 bg-blue-50 dark:bg-blue-950/20">
-                              {formatCurrency(acumuladoPrevisto)}
-                            </td>
-                            <td className="p-3 text-right font-mono text-green-700 bg-green-50 dark:bg-green-950/20">
-                              {formatCurrency(acumuladoExecutado)}
-                            </td>
-                            <td className={`p-3 text-right font-mono font-semibold bg-muted ${
-                              desvioAcumulado > 0 ? 'text-red-600' : desvioAcumulado < 0 ? 'text-green-600' : 'text-muted-foreground'
-                            }`}>
-                              {desvioAcumulado > 0 ? '+' : ''}{formatCurrency(desvioAcumulado)}
-                            </td>
-                            <td className={`p-3 text-right font-mono font-semibold bg-muted ${
+                            <td className={`p-3 text-right font-mono font-semibold ${
                               desvioAcumuladoPct > 0 ? 'text-red-600' : desvioAcumuladoPct < 0 ? 'text-green-600' : 'text-muted-foreground'
                             }`}>
                               {desvioAcumuladoPct > 0 ? '+' : ''}{desvioAcumuladoPct.toFixed(2)}%
