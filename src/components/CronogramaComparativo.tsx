@@ -51,7 +51,6 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
   const [medicoesComparativo, setMedicoesComparativo] = useState<MedicaoComparativo[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'macros' | 'acumulado'>('macros');
-  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
 
   useEffect(() => {
     carregarDadosExecutados();
@@ -221,6 +220,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
         // Preparar dados para o gráfico baseado no modo de visualização
         const isAcumulado = viewMode === 'acumulado';
+        const chartType = isAcumulado ? 'line' : 'bar'; // Acumulado = Linhas, Macros = Colunas
         
         let chartData;
         
@@ -378,39 +378,23 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Controles */}
-              <div className="flex flex-wrap gap-3 p-4 bg-muted/50 rounded-lg">
-                <div className="flex gap-2">
-                  <Button
-                    variant={viewMode === 'macros' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewMode('macros')}
-                  >
-                    Por MACROs
-                  </Button>
-                  <Button
-                    variant={viewMode === 'acumulado' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewMode('acumulado')}
-                  >
-                    Acumulado
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={chartType === 'bar' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setChartType('bar')}
-                  >
-                    Colunas
-                  </Button>
-                  <Button
-                    variant={chartType === 'line' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setChartType('line')}
-                  >
-                    Linhas
-                  </Button>
-                </div>
+              <div className="flex gap-2 p-4 bg-muted/50 rounded-lg">
+                <Button
+                  variant={viewMode === 'macros' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('macros')}
+                  className="transition-all duration-200"
+                >
+                  Por MACROs (Colunas)
+                </Button>
+                <Button
+                  variant={viewMode === 'acumulado' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('acumulado')}
+                  className="transition-all duration-200"
+                >
+                  Acumulado (Linhas)
+                </Button>
               </div>
 
               {/* Gráfico */}
