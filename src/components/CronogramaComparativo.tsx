@@ -219,37 +219,48 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         // Calcular o total geral da obra
         const totalObra = cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
 
-        // Calcular acumulados até este período
-        const totalExecutadoAcumulado = medicoesComparativo
-          .filter(m => m.sequencia <= medicaoComp.sequencia)
-          .reduce((acc, m) => {
-            return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
-          }, 0);
-
-        const periodoDias = medicaoComp.sequencia * 30;
-        const totalPrevistoAcumulado = cronograma.items.reduce((sum, item) => {
-          const acumulado = item.periodos
-            .filter(p => p.periodo <= periodoDias)
-            .reduce((s, p) => s + p.valor, 0);
-          return sum + acumulado;
-        }, 0);
-
         // Preparar dados para o gráfico baseado no modo de visualização
         const isAcumulado = viewMode === 'acumulado';
         
         let chartData;
         
         if (isAcumulado) {
-          // Modo Acumulado: mostrar apenas 2 barras com totais
-          const percentualPrevisto = totalObra > 0 ? (totalPrevistoAcumulado / totalObra) * 100 : 0;
-          const percentualExecutado = totalObra > 0 ? (totalExecutadoAcumulado / totalObra) * 100 : 0;
+          // Modo Acumulado: mostrar evolução ao longo do tempo (todas as medições até a atual)
+          const medicoesAteAtual = medicoesComparativo.filter(m => m.sequencia <= medicaoComp.sequencia);
+          
+          const dadosExecutado: number[] = [];
+          const dadosPrevisto: number[] = [];
+          const labels: string[] = [];
+          
+          medicoesAteAtual.forEach((med) => {
+            const dias = med.sequencia * 30;
+            labels.push(`${dias} dias`);
+            
+            // Calcular executado acumulado até esta medição
+            const execAcumulado = medicoesComparativo
+              .filter(m => m.sequencia <= med.sequencia)
+              .reduce((acc, m) => {
+                return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
+              }, 0);
+            
+            // Calcular previsto acumulado até este período
+            const prevAcumulado = cronograma.items.reduce((sum, item) => {
+              const acumulado = item.periodos
+                .filter(p => p.periodo <= dias)
+                .reduce((s, p) => s + p.valor, 0);
+              return sum + acumulado;
+            }, 0);
+            
+            dadosExecutado.push(totalObra > 0 ? (execAcumulado / totalObra) * 100 : 0);
+            dadosPrevisto.push(totalObra > 0 ? (prevAcumulado / totalObra) * 100 : 0);
+          });
           
           chartData = {
-            labels: ['Comparativo Acumulado'],
+            labels,
             datasets: [
               {
                 label: 'Executado (%)',
-                data: [percentualExecutado],
+                data: dadosExecutado,
                 backgroundColor: 'rgba(239, 68, 68, 0.7)',
                 borderColor: 'rgba(239, 68, 68, 1)',
                 borderWidth: chartType === 'line' ? 2 : 1,
@@ -258,7 +269,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
               },
               {
                 label: 'Previsto (%)',
-                data: [percentualPrevisto],
+                data: dadosPrevisto,
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                 borderColor: 'rgba(59, 130, 246, 1)',
                 borderWidth: chartType === 'line' ? 2 : 1,
