@@ -296,15 +296,23 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             ],
           };
         } else {
-          // Modo MACROs: mostrar por MACRO
+          // Modo MACROs: mostrar por MACRO (valores acumulados)
           chartData = {
             labels: macrosExecutados.map(m => `${m.itemNumero} - ${m.descricao}`),
             datasets: [
               {
-                label: 'Executado (%)',
+                label: 'Executado Acumulado (%)',
                 data: macrosExecutados.map(m => {
+                  // Calcular acumulado até esta medição
+                  const acumuladoExecutado = medicoesComparativo
+                    .filter(med => med.sequencia <= medicaoComp.sequencia)
+                    .reduce((sum, med) => {
+                      const macroNaMedicao = med.macros.find(ma => ma.itemNumero === m.itemNumero);
+                      return sum + (macroNaMedicao?.totalExecutado || 0);
+                    }, 0);
+                  
                   const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
-                  return totalMacro > 0 ? (m.totalExecutado / totalMacro) * 100 : 0;
+                  return totalMacro > 0 ? (acumuladoExecutado / totalMacro) * 100 : 0;
                 }),
                 backgroundColor: 'rgba(34, 197, 94, 0.7)',
                 borderColor: 'rgba(34, 197, 94, 1)',
@@ -313,10 +321,18 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 tension: 0.4,
               },
               {
-                label: 'Previsto (%)',
+                label: 'Previsto Acumulado (%)',
                 data: macrosExecutados.map(m => {
+                  // Calcular acumulado até esta medição
+                  const acumuladoPrevisto = medicoesComparativo
+                    .filter(med => med.sequencia <= medicaoComp.sequencia)
+                    .reduce((sum, med) => {
+                      const macroNaMedicao = med.macros.find(ma => ma.itemNumero === m.itemNumero);
+                      return sum + (macroNaMedicao?.totalPrevisto || 0);
+                    }, 0);
+                  
                   const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
-                  return totalMacro > 0 ? (m.totalPrevisto / totalMacro) * 100 : 0;
+                  return totalMacro > 0 ? (acumuladoPrevisto / totalMacro) * 100 : 0;
                 }),
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                 borderColor: 'rgba(59, 130, 246, 1)',
