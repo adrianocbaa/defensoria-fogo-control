@@ -418,31 +418,71 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                         <th className="text-right p-3 font-semibold">Executado</th>
                         <th className="text-right p-3 font-semibold">Desvio (R$)</th>
                         <th className="text-right p-3 font-semibold">Desvio (%)</th>
+                        <th className="text-right p-3 font-semibold bg-blue-50 dark:bg-blue-950/20">Previsto Acum.</th>
+                        <th className="text-right p-3 font-semibold bg-green-50 dark:bg-green-950/20">Executado Acum.</th>
+                        <th className="text-right p-3 font-semibold bg-muted">Desvio Acum. (R$)</th>
+                        <th className="text-right p-3 font-semibold bg-muted">Desvio Acum. (%)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {macrosExecutados.map((macro) => (
-                        <tr key={macro.itemNumero} className="hover:bg-muted/50">
-                          <td className="p-3 font-medium">{macro.itemNumero}</td>
-                          <td className="p-3">{macro.descricao}</td>
-                          <td className="p-3 text-right font-mono text-blue-600">
-                            {formatCurrency(macro.totalPrevisto)}
-                          </td>
-                          <td className="p-3 text-right font-mono text-green-600">
-                            {formatCurrency(macro.totalExecutado)}
-                          </td>
-                          <td className={`p-3 text-right font-mono font-semibold ${
-                            macro.desvio > 0 ? 'text-red-600' : macro.desvio < 0 ? 'text-green-600' : 'text-muted-foreground'
-                          }`}>
-                            {macro.desvio > 0 ? '+' : ''}{formatCurrency(macro.desvio)}
-                          </td>
-                          <td className={`p-3 text-right font-mono font-semibold ${
-                            macro.desvioPercentual > 0 ? 'text-red-600' : macro.desvioPercentual < 0 ? 'text-green-600' : 'text-muted-foreground'
-                          }`}>
-                            {macro.desvioPercentual > 0 ? '+' : ''}{macro.desvioPercentual.toFixed(2)}%
-                          </td>
-                        </tr>
-                      ))}
+                      {macrosExecutados.map((macro) => {
+                        // Calcular acumulado até esta medição
+                        const acumuladoPrevisto = medicoesComparativo
+                          .filter(m => m.sequencia <= medicaoComp.sequencia)
+                          .reduce((sum, m) => {
+                            const macroNaMedicao = m.macros.find(ma => ma.itemNumero === macro.itemNumero);
+                            return sum + (macroNaMedicao?.totalPrevisto || 0);
+                          }, 0);
+                        
+                        const acumuladoExecutado = medicoesComparativo
+                          .filter(m => m.sequencia <= medicaoComp.sequencia)
+                          .reduce((sum, m) => {
+                            const macroNaMedicao = m.macros.find(ma => ma.itemNumero === macro.itemNumero);
+                            return sum + (macroNaMedicao?.totalExecutado || 0);
+                          }, 0);
+                        
+                        const desvioAcumulado = acumuladoExecutado - acumuladoPrevisto;
+                        const desvioAcumuladoPct = acumuladoPrevisto > 0 ? (desvioAcumulado / acumuladoPrevisto) * 100 : 0;
+                        
+                        return (
+                          <tr key={macro.itemNumero} className="hover:bg-muted/50">
+                            <td className="p-3 font-medium">{macro.itemNumero}</td>
+                            <td className="p-3">{macro.descricao}</td>
+                            <td className="p-3 text-right font-mono text-blue-600">
+                              {formatCurrency(macro.totalPrevisto)}
+                            </td>
+                            <td className="p-3 text-right font-mono text-green-600">
+                              {formatCurrency(macro.totalExecutado)}
+                            </td>
+                            <td className={`p-3 text-right font-mono font-semibold ${
+                              macro.desvio > 0 ? 'text-red-600' : macro.desvio < 0 ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {macro.desvio > 0 ? '+' : ''}{formatCurrency(macro.desvio)}
+                            </td>
+                            <td className={`p-3 text-right font-mono font-semibold ${
+                              macro.desvioPercentual > 0 ? 'text-red-600' : macro.desvioPercentual < 0 ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {macro.desvioPercentual > 0 ? '+' : ''}{macro.desvioPercentual.toFixed(2)}%
+                            </td>
+                            <td className="p-3 text-right font-mono text-blue-700 bg-blue-50 dark:bg-blue-950/20">
+                              {formatCurrency(acumuladoPrevisto)}
+                            </td>
+                            <td className="p-3 text-right font-mono text-green-700 bg-green-50 dark:bg-green-950/20">
+                              {formatCurrency(acumuladoExecutado)}
+                            </td>
+                            <td className={`p-3 text-right font-mono font-semibold bg-muted ${
+                              desvioAcumulado > 0 ? 'text-red-600' : desvioAcumulado < 0 ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {desvioAcumulado > 0 ? '+' : ''}{formatCurrency(desvioAcumulado)}
+                            </td>
+                            <td className={`p-3 text-right font-mono font-semibold bg-muted ${
+                              desvioAcumuladoPct > 0 ? 'text-red-600' : desvioAcumuladoPct < 0 ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {desvioAcumuladoPct > 0 ? '+' : ''}{desvioAcumuladoPct.toFixed(2)}%
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
