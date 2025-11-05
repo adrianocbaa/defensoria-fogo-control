@@ -57,6 +57,13 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
     carregarDadosExecutados();
   }, [obraId, cronograma]);
 
+  // Atualizar medição selecionada quando os dados forem carregados
+  useEffect(() => {
+    if (medicoesComparativo.length > 0 && !medicoesComparativo.find(m => m.sequencia === medicaoSelecionada)) {
+      setMedicaoSelecionada(medicoesComparativo[0].sequencia);
+    }
+  }, [medicoesComparativo, medicaoSelecionada]);
+
   const carregarDadosExecutados = async () => {
     setLoading(true);
     try {
@@ -205,17 +212,12 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
     );
   }
 
-  // Atualizar medição selecionada quando os dados forem carregados
-  useEffect(() => {
-    if (medicoesComparativo.length > 0 && !medicoesComparativo.find(m => m.sequencia === medicaoSelecionada)) {
-      setMedicaoSelecionada(medicoesComparativo[0].sequencia);
-    }
-  }, [medicoesComparativo]);
-
   // Filtrar apenas a medição selecionada
   const medicaoComp = medicoesComparativo.find(m => m.sequencia === medicaoSelecionada);
 
-  if (!medicaoComp) return null;
+  if (!medicaoComp) {
+    return null;
+  }
 
   return (
     <div className="space-y-6 mb-6">
