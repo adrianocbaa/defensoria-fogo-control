@@ -180,6 +180,111 @@ export type Database = {
         }
         Relationships: []
       }
+      cronograma_financeiro: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          obra_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome?: string
+          obra_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          obra_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_financeiro_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cronograma_items: {
+        Row: {
+          created_at: string
+          cronograma_id: string
+          descricao: string
+          id: string
+          item_numero: number
+          total_etapa: number
+        }
+        Insert: {
+          created_at?: string
+          cronograma_id: string
+          descricao: string
+          id?: string
+          item_numero: number
+          total_etapa?: number
+        }
+        Update: {
+          created_at?: string
+          cronograma_id?: string
+          descricao?: string
+          id?: string
+          item_numero?: number
+          total_etapa?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_items_cronograma_id_fkey"
+            columns: ["cronograma_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_financeiro"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cronograma_periodos: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          percentual: number
+          periodo: number
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          percentual?: number
+          periodo: number
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          percentual?: number
+          periodo?: number
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_periodos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           id: string
@@ -361,7 +466,7 @@ export type Database = {
         Row: {
           attempt_time: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           success: boolean
           user_agent: string | null
           user_identifier: string
@@ -369,7 +474,7 @@ export type Database = {
         Insert: {
           attempt_time?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           success?: boolean
           user_agent?: string | null
           user_identifier: string
@@ -377,7 +482,7 @@ export type Database = {
         Update: {
           attempt_time?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           success?: boolean
           user_agent?: string | null
           user_identifier?: string
@@ -2292,26 +2397,14 @@ export type Database = {
       }
     }
     Functions: {
-      can_edit: {
-        Args: { user_uuid?: string }
-        Returns: boolean
-      }
-      can_edit_rdo: {
-        Args: { user_uuid?: string }
-        Returns: boolean
-      }
+      can_edit: { Args: { user_uuid?: string }; Returns: boolean }
+      can_edit_rdo: { Args: { user_uuid?: string }; Returns: boolean }
       can_view_sensitive_data: {
         Args: { user_uuid?: string }
         Returns: boolean
       }
-      cleanup_expired_reset_codes: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_login_attempts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_reset_codes: { Args: never; Returns: undefined }
+      cleanup_old_login_attempts: { Args: never; Returns: undefined }
       create_attachment: {
         Args: {
           p_kind: string
@@ -2374,12 +2467,9 @@ export type Database = {
         }
         Returns: string
       }
-      delete_project: {
-        Args: { project_id: string }
-        Returns: boolean
-      }
+      delete_project: { Args: { project_id: string }; Returns: boolean }
       get_comparables: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           age: number
           attachments: Json
@@ -2429,7 +2519,7 @@ export type Database = {
         }[]
       }
       get_projects: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           approach: string
           base_date: string
@@ -2444,7 +2534,7 @@ export type Database = {
         }[]
       }
       get_properties: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           address: string
           age: number
@@ -2463,10 +2553,7 @@ export type Database = {
           zoning: string
         }[]
       }
-      get_user_role: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
+      get_user_role: { Args: { user_uuid: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -2474,14 +2561,8 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: { user_uuid?: string }
-        Returns: boolean
-      }
-      is_contratada: {
-        Args: { user_uuid?: string }
-        Returns: boolean
-      }
+      is_admin: { Args: { user_uuid?: string }; Returns: boolean }
+      is_contratada: { Args: { user_uuid?: string }; Returns: boolean }
       log_login_attempt: {
         Args: {
           p_identifier: string
@@ -2491,14 +2572,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
-      unaccent_init: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
+      unaccent: { Args: { "": string }; Returns: string }
       update_project: {
         Args: {
           p_approach?: string

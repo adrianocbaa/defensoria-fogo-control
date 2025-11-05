@@ -18,6 +18,8 @@ import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
 import { ImportarDoRDO } from '@/components/ImportarDoRDO';
 import NovoAditivoModal from '@/components/NovoAditivoModal';
+import { ImportarCronograma } from '@/components/ImportarCronograma';
+import { CronogramaView } from '@/components/CronogramaView';
 import * as LoadingStates from '@/components/LoadingStates';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useMedicaoSessions } from '@/hooks/useMedicaoSessions';
@@ -2990,6 +2992,9 @@ const criarNovaMedicao = async () => {
           medicaoAtual={medicaoAtual}
         />
 
+        {/* Cronograma Financeiro */}
+        <CronogramaView obraId={obra.id} />
+
         {/* Medições */}
         <Card className="mb-6">
           <CardHeader>
@@ -2998,10 +3003,18 @@ const criarNovaMedicao = async () => {
                 <Calculator className="h-5 w-5" />
                 Medições
               </CardTitle>
-              <Button onClick={criarNovaMedicao} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Nova Medição
-              </Button>
+              <div className="flex items-center gap-2">
+                <ImportarCronograma 
+                  obraId={obra.id} 
+                  onSuccess={() => {
+                    toast.success('Cronograma importado com sucesso!');
+                  }}
+                />
+                <Button onClick={criarNovaMedicao} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nova Medição
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
