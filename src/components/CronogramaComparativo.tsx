@@ -203,22 +203,34 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
       {medicoesComparativo.map((medicaoComp) => {
         const macrosExecutados = medicaoComp.macros;
 
-        // Preparar dados para o gráfico (em porcentagem)
+        // Calcular o total da obra para cada MACRO
+        const totaisPorMacro = new Map<number, number>();
+        cronograma.items.forEach(item => {
+          totaisPorMacro.set(item.item_numero, item.total_etapa);
+        });
+
+        // Preparar dados para o gráfico (em porcentagem em relação ao total)
         const chartData = {
           labels: macrosExecutados.map(m => `${m.itemNumero} - ${m.descricao}`),
           datasets: [
             {
-              label: 'Previsto (%)',
-              data: macrosExecutados.map(m => 100), // Previsto é sempre 100%
-              backgroundColor: 'rgba(59, 130, 246, 0.7)',
-              borderColor: 'rgba(59, 130, 246, 1)',
+              label: 'Executado (%)',
+              data: macrosExecutados.map(m => {
+                const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
+                return totalMacro > 0 ? (m.totalExecutado / totalMacro) * 100 : 0;
+              }),
+              backgroundColor: 'rgba(34, 197, 94, 0.7)',
+              borderColor: 'rgba(34, 197, 94, 1)',
               borderWidth: 1,
             },
             {
-              label: 'Executado (%)',
-              data: macrosExecutados.map(m => m.totalPrevisto > 0 ? (m.totalExecutado / m.totalPrevisto) * 100 : 0),
-              backgroundColor: 'rgba(34, 197, 94, 0.7)',
-              borderColor: 'rgba(34, 197, 94, 1)',
+              label: 'Previsto (%)',
+              data: macrosExecutados.map(m => {
+                const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
+                return totalMacro > 0 ? (m.totalPrevisto / totalMacro) * 100 : 0;
+              }),
+              backgroundColor: 'rgba(59, 130, 246, 0.7)',
+              borderColor: 'rgba(59, 130, 246, 1)',
               borderWidth: 1,
             },
           ],
