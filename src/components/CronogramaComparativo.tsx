@@ -228,9 +228,9 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           // Modo Acumulado: mostrar evolução ao longo do tempo (todas as medições até a atual)
           const medicoesAteAtual = medicoesComparativo.filter(m => m.sequencia <= medicaoComp.sequencia);
           
-          const dadosExecutado: number[] = [];
-          const dadosPrevisto: number[] = [];
-          const labels: string[] = [];
+          const dadosExecutado: number[] = [0]; // Começar do zero
+          const dadosPrevisto: number[] = [0]; // Começar do zero
+          const labels: string[] = ['0 dias']; // Ponto inicial
           
           medicoesAteAtual.forEach((med) => {
             const dias = med.sequencia * 30;
