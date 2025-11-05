@@ -242,35 +242,32 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           todosPeriodos.forEach((dias) => {
             labels.push(`${dias} dias`);
             
-            // Calcular previsto acumulado até este período
-            const prevAcumulado = cronograma.items.reduce((sum, item) => {
-              const acumulado = item.periodos
-                .filter(p => p.periodo <= dias)
-                .reduce((s, p) => s + p.valor, 0);
-              return sum + acumulado;
-            }, 0);
-            
-            // Calcular executado acumulado até este período (se houver medição)
+            // Verificar se há medição para este período
             const sequenciaPeriodo = dias / 30;
             const temMedicao = medicoesComparativo.some(m => m.sequencia === sequenciaPeriodo);
             
-            let execAcumulado = 0;
             if (temMedicao || sequenciaPeriodo < medicaoComp.sequencia) {
               // Se tem medição para este período ou é anterior à medição atual
-              execAcumulado = medicoesComparativo
+              const execAcumulado = medicoesComparativo
                 .filter(m => m.sequencia <= sequenciaPeriodo)
                 .reduce((acc, m) => {
                   return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
                 }, 0);
-            } else {
-              // Se é período futuro sem medição, usar null para não desenhar
-              dadosExecutado.push(null as any);
+              
+              const prevAcumulado = cronograma.items.reduce((sum, item) => {
+                const acumulado = item.periodos
+                  .filter(p => p.periodo <= dias)
+                  .reduce((s, p) => s + p.valor, 0);
+                return sum + acumulado;
+              }, 0);
+              
+              dadosExecutado.push(totalObra > 0 ? (execAcumulado / totalObra) * 100 : 0);
               dadosPrevisto.push(totalObra > 0 ? (prevAcumulado / totalObra) * 100 : 0);
-              return;
+            } else {
+              // Período futuro sem medição - não mostrar nada
+              dadosExecutado.push(null as any);
+              dadosPrevisto.push(null as any);
             }
-            
-            dadosExecutado.push(totalObra > 0 ? (execAcumulado / totalObra) * 100 : 0);
-            dadosPrevisto.push(totalObra > 0 ? (prevAcumulado / totalObra) * 100 : 0);
           });
           
           chartData = {
@@ -284,7 +281,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 borderWidth: chartType === 'line' ? 2 : 1,
                 fill: chartType === 'line' ? false : true,
                 tension: 0.4,
-                spanGaps: false, // Não conectar gaps
+                spanGaps: false,
               },
               {
                 label: 'Previsto (%)',
@@ -294,6 +291,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 borderWidth: chartType === 'line' ? 2 : 1,
                 fill: chartType === 'line' ? false : true,
                 tension: 0.4,
+                spanGaps: false,
               },
             ],
           };
