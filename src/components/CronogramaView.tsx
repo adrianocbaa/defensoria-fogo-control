@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Trash2, TrendingUp, BarChart3 } from 'lucide-react';
+import { Calendar, Trash2, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 import { useCronogramaFinanceiro, CronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { CronogramaComparativo } from './CronogramaComparativo';
 
 interface CronogramaViewProps {
   obraId: string;
@@ -13,6 +15,7 @@ interface CronogramaViewProps {
 
 export function CronogramaView({ obraId }: CronogramaViewProps) {
   const [cronograma, setCronograma] = useState<CronogramaFinanceiro | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { fetchCronograma, deleteCronograma, loading } = useCronogramaFinanceiro();
 
   useEffect(() => {
@@ -87,52 +90,65 @@ export function CronogramaView({ obraId }: CronogramaViewProps) {
   const valorTotal = calcularValorTotal();
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Cronograma Financeiro
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Importado em: {new Date(cronograma.created_at!).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="gap-2">
-                  <Trash2 className="w-4 h-4" />
-                  Excluir
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Tem certeza que deseja excluir o cronograma financeiro? Esta ação não pode ser desfeita.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>
-                    Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
+    <>
+      {/* Gráfico Comparativo Previsto x Executado */}
+      <CronogramaComparativo obraId={obraId} cronograma={cronograma} />
+
+      {/* Cronograma Financeiro (Collapsible) */}
+      <Card className="mb-6">
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center gap-2 cursor-pointer hover:text-gray-600 transition-colors">
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Cronograma Financeiro
+                  </CardTitle>
+                  {isExpanded ? 
+                    <ChevronUp className="h-5 w-5" /> : 
+                    <ChevronDown className="h-5 w-5" />
+                  }
+                </div>
+              </CollapsibleTrigger>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground mr-4">
+                  Importado em: {new Date(cronograma.created_at!).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-2">
+                      <Trash2 className="w-4 h-4" />
+                      Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja excluir o cronograma financeiro? Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CollapsibleContent>
+            <CardContent className="space-y-6">
         {/* Resumo do Cronograma */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -258,15 +274,10 @@ export function CronogramaView({ obraId }: CronogramaViewProps) {
           </div>
         </div>
 
-        {/* Nota sobre comparações futuras */}
-        <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-          <p className="text-sm font-medium mb-2">📊 Comparativos Previsto x Executado</p>
-          <p className="text-xs text-muted-foreground">
-            Em breve: Gráficos comparativos entre o cronograma previsto e os valores executados nas medições mensais.
-            O sistema calculará automaticamente os desvios e permitirá análise de desempenho da obra.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+    </>
   );
 }
