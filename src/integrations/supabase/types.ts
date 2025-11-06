@@ -999,6 +999,69 @@ export type Database = {
         }
         Relationships: []
       }
+      obra_checklist_items: {
+        Row: {
+          created_at: string | null
+          data_atualizacao: string | null
+          descricao_atividade: string
+          has_subtasks: boolean | null
+          id: string
+          is_custom: boolean | null
+          obra_id: string
+          observacoes: string | null
+          ordem: number
+          parent_id: string | null
+          situacao: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_atualizacao?: string | null
+          descricao_atividade: string
+          has_subtasks?: boolean | null
+          id?: string
+          is_custom?: boolean | null
+          obra_id: string
+          observacoes?: string | null
+          ordem?: number
+          parent_id?: string | null
+          situacao?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_atualizacao?: string | null
+          descricao_atividade?: string
+          has_subtasks?: boolean | null
+          id?: string
+          is_custom?: boolean | null
+          obra_id?: string
+          observacoes?: string | null
+          ordem?: number
+          parent_id?: string | null
+          situacao?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_checklist_items_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_checklist_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "obra_checklist_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obras: {
         Row: {
           coordinates_lat: number | null
@@ -1006,6 +1069,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           data_inicio: string | null
+          data_prevista_inauguracao: string | null
           documentos: Json | null
           empresa_responsavel: string | null
           fotos: Json | null
@@ -1014,10 +1078,14 @@ export type Database = {
           municipio: string
           n_contrato: string | null
           nome: string
+          obra_bloqueada: boolean | null
           porcentagem_execucao: number | null
           previsao_termino: string | null
           secretaria_responsavel: string | null
+          sem_previsao_inauguracao: boolean | null
           status: string
+          status_inauguracao: string | null
+          tem_placa_inauguracao: boolean | null
           tempo_obra: number | null
           tipo: string
           updated_at: string
@@ -1031,6 +1099,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_inicio?: string | null
+          data_prevista_inauguracao?: string | null
           documentos?: Json | null
           empresa_responsavel?: string | null
           fotos?: Json | null
@@ -1039,10 +1108,14 @@ export type Database = {
           municipio: string
           n_contrato?: string | null
           nome: string
+          obra_bloqueada?: boolean | null
           porcentagem_execucao?: number | null
           previsao_termino?: string | null
           secretaria_responsavel?: string | null
+          sem_previsao_inauguracao?: boolean | null
           status: string
+          status_inauguracao?: string | null
+          tem_placa_inauguracao?: boolean | null
           tempo_obra?: number | null
           tipo: string
           updated_at?: string
@@ -1056,6 +1129,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_inicio?: string | null
+          data_prevista_inauguracao?: string | null
           documentos?: Json | null
           empresa_responsavel?: string | null
           fotos?: Json | null
@@ -1064,10 +1138,14 @@ export type Database = {
           municipio?: string
           n_contrato?: string | null
           nome?: string
+          obra_bloqueada?: boolean | null
           porcentagem_execucao?: number | null
           previsao_termino?: string | null
           secretaria_responsavel?: string | null
+          sem_previsao_inauguracao?: boolean | null
           status?: string
+          status_inauguracao?: string | null
+          tem_placa_inauguracao?: boolean | null
           tempo_obra?: number | null
           tipo?: string
           updated_at?: string
