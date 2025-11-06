@@ -30,9 +30,9 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ViewObraChecklistModal } from './ViewObraChecklistModal';
 
 interface ObraChecklist {
   id: string;
@@ -94,7 +94,7 @@ const columns: KanbanColumn[] = [
 interface DroppableColumnProps {
   column: KanbanColumn;
   obras: ObraChecklist[];
-  onViewObra: (obraId: string) => void;
+  onViewObra: (obra: ObraChecklist) => void;
 }
 
 function DroppableColumn({ column, obras, onViewObra }: DroppableColumnProps) {
@@ -146,7 +146,7 @@ function DroppableColumn({ column, obras, onViewObra }: DroppableColumnProps) {
 
 interface DraggableObraCardProps {
   obra: ObraChecklist;
-  onViewObra: (obraId: string) => void;
+  onViewObra: (obra: ObraChecklist) => void;
 }
 
 function DraggableObraCard({ obra, onViewObra }: DraggableObraCardProps) {
@@ -204,7 +204,7 @@ function DraggableObraCard({ obra, onViewObra }: DraggableObraCardProps) {
             className="h-6 w-6 p-0 hover:bg-primary/10 shrink-0"
             onClick={(e) => {
               e.stopPropagation();
-              onViewObra(obra.id);
+              onViewObra(obra);
             }}
           >
             <Eye className="h-3 w-3" />
@@ -266,8 +266,9 @@ interface ObrasKanbanBoardProps {
 }
 
 export function ObrasKanbanBoard({ obras, onObrasUpdate }: ObrasKanbanBoardProps) {
-  const navigate = useNavigate();
   const [activeObra, setActiveObra] = useState<ObraChecklist | null>(null);
+  const [selectedObra, setSelectedObra] = useState<ObraChecklist | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -400,8 +401,9 @@ export function ObrasKanbanBoard({ obras, onObrasUpdate }: ObrasKanbanBoardProps
     }
   };
 
-  const handleViewObra = (obraId: string) => {
-    navigate(`/admin/obras/checklist/${obraId}`);
+  const handleViewObra = (obra: ObraChecklist) => {
+    setSelectedObra(obra);
+    setViewModalOpen(true);
   };
 
   return (
@@ -445,6 +447,13 @@ export function ObrasKanbanBoard({ obras, onObrasUpdate }: ObrasKanbanBoardProps
           </Card>
         ) : null}
       </DragOverlay>
+
+      <ViewObraChecklistModal
+        obra={selectedObra}
+        open={viewModalOpen}
+        onOpenChange={setViewModalOpen}
+        onUpdate={onObrasUpdate}
+      />
     </DndContext>
   );
 }
