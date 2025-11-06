@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Building2, Filter } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Building2, Filter, TrendingUp, CalendarCheck, CalendarX } from 'lucide-react';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -282,6 +282,27 @@ export default function ObrasChecklist() {
     setFiltroAnoInauguracaoAte('none');
   };
 
+  // Calcular estatísticas do dashboard
+  const stats = useMemo(() => {
+    const total = obrasChecklist.length;
+    const comDataInauguracao = obrasChecklist.filter(o => o.data_prevista_inauguracao).length;
+    const semDataInauguracao = total - comDataInauguracao;
+    const inauguradas = obrasChecklist.filter(o => o.status_inauguracao === 'inaugurada').length;
+    const atrasadas = obrasChecklist.filter(o => o.diasRestantes < 0 && o.status_inauguracao !== 'inaugurada').length;
+    const progressoMedio = total > 0 
+      ? obrasChecklist.reduce((acc, o) => acc + o.checklistProgress, 0) / total 
+      : 0;
+
+    return {
+      total,
+      comDataInauguracao,
+      semDataInauguracao,
+      inauguradas,
+      atrasadas,
+      progressoMedio
+    };
+  }, [obrasChecklist]);
+
   return (
     <SimpleHeader>
       <div className="min-h-screen bg-background">
@@ -297,6 +318,92 @@ export default function ObrasChecklist() {
         />
 
         <div className="container mx-auto px-4 py-6 space-y-6">
+          {/* Dashboard de Estatísticas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total de Obras
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <div className="text-2xl font-bold">{stats.total}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Com Data de Inauguração
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <CalendarCheck className="h-4 w-4 text-green-600" />
+                  <div className="text-2xl font-bold">{stats.comDataInauguracao}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Sem Data de Inauguração
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <CalendarX className="h-4 w-4 text-orange-600" />
+                  <div className="text-2xl font-bold">{stats.semDataInauguracao}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Inauguradas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                  <div className="text-2xl font-bold">{stats.inauguradas}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Atrasadas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <div className="text-2xl font-bold">{stats.atrasadas}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Progresso Médio
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <div className="text-2xl font-bold">{stats.progressoMedio.toFixed(0)}%</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
           {/* Filtros */}
           <Card>
             <CardHeader>
