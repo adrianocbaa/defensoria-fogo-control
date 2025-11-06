@@ -58,12 +58,31 @@ export default function ObrasChecklist() {
       try {
         setLoadingChecklist(true);
         
-        // Filtrar obras que estão dentro do prazo de 15 dias ou já finalizadas (até 90 dias após término)
+        // Buscar todas as obras que têm checklist criado
+        const { data: obrasComChecklist, error: checklistError } = await (supabase as any)
+          .from('obra_checklist_items')
+          .select('obra_id');
+        
+        if (checklistError) {
+          console.error('Erro ao buscar obras com checklist:', checklistError);
+        }
+
+        const obrasIdsComChecklist = new Set(
+          (obrasComChecklist || []).map((item: any) => item.obra_id)
+        );
+
+        // Filtrar obras: aquelas com checklist OU dentro do prazo de 15 dias
         const obrasEmChecklist = obras.filter(obra => {
           if (!obra.previsaoTermino) return false;
+          
+          // Se já tem checklist, sempre mostrar
+          if (obrasIdsComChecklist.has(obra.id)) {
+            return true;
+          }
+          
+          // Senão, verificar se está dentro dos 15 dias antes do término
           const diasRestantes = calcularDiasRestantes(obra.previsaoTermino);
-          // Incluir obras com até 15 dias antes do término E obras já finalizadas (até 90 dias depois)
-          return diasRestantes <= 15 && diasRestantes >= -90;
+          return diasRestantes <= 15 && diasRestantes >= 0;
         });
 
         // Para cada obra, buscar o checklist e calcular progresso
@@ -82,8 +101,8 @@ export default function ObrasChecklist() {
               console.error('Erro ao buscar checklist:', error);
             }
 
-            // Se não existir checklist, criar automaticamente
-            if (!checklistItems || checklistItems.length === 0) {
+            // Se não existir checklist E está dentro dos 15 dias, criar automaticamente
+            if ((!checklistItems || checklistItems.length === 0) && diasRestantes <= 15 && diasRestantes >= 0) {
               await criarChecklistPadrao(obra.id);
               const { data: novoChecklist } = await (supabase as any)
                 .from('obra_checklist_items')
