@@ -71,7 +71,7 @@ export default function ObrasChecklist() {
           (obrasComChecklist || []).map((item: any) => item.obra_id)
         );
 
-        // Filtrar obras: aquelas com checklist OU dentro do prazo de 15 dias
+        // Filtrar obras: aquelas com checklist OU dentro do prazo (15 dias antes até 90 dias depois)
         const obrasEmChecklist = obras.filter(obra => {
           if (!obra.previsaoTermino) return false;
           
@@ -80,9 +80,9 @@ export default function ObrasChecklist() {
             return true;
           }
           
-          // Senão, verificar se está dentro dos 15 dias antes do término
+          // Senão, verificar se está dentro dos 15 dias antes do término OU até 90 dias depois
           const diasRestantes = calcularDiasRestantes(obra.previsaoTermino);
-          return diasRestantes <= 15 && diasRestantes >= 0;
+          return diasRestantes <= 15 && diasRestantes >= -90;
         });
 
         // Para cada obra, buscar o checklist e calcular progresso
@@ -101,8 +101,8 @@ export default function ObrasChecklist() {
               console.error('Erro ao buscar checklist:', error);
             }
 
-            // Se não existir checklist E está dentro dos 15 dias, criar automaticamente
-            if ((!checklistItems || checklistItems.length === 0) && diasRestantes <= 15 && diasRestantes >= 0) {
+            // Se não existir checklist E está dentro do período (15 dias antes até 90 dias depois), criar automaticamente
+            if ((!checklistItems || checklistItems.length === 0) && diasRestantes <= 15 && diasRestantes >= -90) {
               await criarChecklistPadrao(obra.id);
               const { data: novoChecklist } = await (supabase as any)
                 .from('obra_checklist_items')
