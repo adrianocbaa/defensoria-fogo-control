@@ -156,6 +156,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         valor_aditivado: data.valor_aditivado || 0,
         valor_executado: data.valor_executado || 0,
         data_inicio: data.data_inicio || null,
+        tempo_obra: data.tempo_obra || null,
         previsao_termino: data.previsao_termino || null,
         empresa_responsavel: data.empresa_responsavel || null,
         secretaria_responsavel: data.secretaria_responsavel || null,

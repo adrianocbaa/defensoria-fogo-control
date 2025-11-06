@@ -1018,6 +1018,7 @@ export type Database = {
           previsao_termino: string | null
           secretaria_responsavel: string | null
           status: string
+          tempo_obra: number | null
           tipo: string
           updated_at: string
           valor_aditivado: number | null
@@ -1042,6 +1043,7 @@ export type Database = {
           previsao_termino?: string | null
           secretaria_responsavel?: string | null
           status: string
+          tempo_obra?: number | null
           tipo: string
           updated_at?: string
           valor_aditivado?: number | null
@@ -1066,6 +1068,7 @@ export type Database = {
           previsao_termino?: string | null
           secretaria_responsavel?: string | null
           status?: string
+          tempo_obra?: number | null
           tipo?: string
           updated_at?: string
           valor_aditivado?: number | null
