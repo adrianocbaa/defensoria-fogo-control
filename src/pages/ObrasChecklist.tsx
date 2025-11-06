@@ -292,12 +292,20 @@ export default function ObrasChecklist() {
 
   // Filtrar obras para o dashboard baseado em período e status
   const obrasDashboard = useMemo(() => {
-    let resultado = obrasChecklist.filter(obra => {
-      if (!obra.data_prevista_inauguracao) return false;
-      
-      const anoInauguracao = new Date(obra.data_prevista_inauguracao).getFullYear();
-      return anoInauguracao >= dashboardAnoInicio && anoInauguracao <= dashboardAnoFim;
-    });
+    let resultado = [...obrasChecklist];
+
+    // Se o status não for "sem_data_inauguracao", filtrar por período de anos
+    if (dashboardStatus !== 'sem_data_inauguracao') {
+      resultado = resultado.filter(obra => {
+        // Se não tem data de inauguração, só incluir se o filtro for "todas"
+        if (!obra.data_prevista_inauguracao) {
+          return dashboardStatus === 'todas';
+        }
+        
+        const anoInauguracao = new Date(obra.data_prevista_inauguracao).getFullYear();
+        return anoInauguracao >= dashboardAnoInicio && anoInauguracao <= dashboardAnoFim;
+      });
+    }
 
     // Aplicar filtro de status
     if (dashboardStatus === 'inauguradas') {
@@ -310,6 +318,9 @@ export default function ObrasChecklist() {
       resultado = resultado.filter(o => !o.data_prevista_inauguracao && o.status_inauguracao !== 'inaugurada');
     } else if (dashboardStatus === 'atrasadas') {
       resultado = resultado.filter(o => o.diasRestantes < 0 && o.status_inauguracao !== 'inaugurada');
+    } else if (dashboardStatus === 'todas') {
+      // Para "todas", excluir inauguradas por padrão
+      resultado = resultado.filter(o => o.status_inauguracao !== 'inaugurada');
     }
 
     return resultado;
