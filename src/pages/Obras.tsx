@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Menu, X, RotateCcw, Plus, List, BarChart3, Settings } from 'lucide-react';
+import { Menu, X, RotateCcw, Plus, List, BarChart3, Settings, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleHeader } from '@/components/SimpleHeader';
@@ -108,6 +108,15 @@ export default function Obras() {
                   <span className="hidden sm:inline">Estatísticas</span>
                 </Button>
               </Link>
+              
+              <PermissionGuard requiresEdit showMessage={false}>
+                <Link to="/admin/obras/checklist">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Obras em Check-List</span>
+                  </Button>
+                </Link>
+              </PermissionGuard>
               
               <PermissionGuard requiresEdit showMessage={false}>
                 <Link to="/admin/obras">

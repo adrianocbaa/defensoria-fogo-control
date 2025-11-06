@@ -32,6 +32,8 @@ import { AdminObras } from "./pages/AdminObras";
 import { AdminObraEdit } from "./pages/AdminObraEdit";
 import { AdminObraNova } from "./pages/AdminObraNova";
 import { ObrasLista } from "./pages/ObrasLista";
+import ObrasChecklist from "./pages/ObrasChecklist";
+import ObraChecklistDetails from "./pages/ObraChecklistDetails";
 import { ManutencaoPage, ObraPage, PreventivoPage, ArCondicionadoPage, ProjetosPage } from "./pages/SectorPages";
 import { Medicao } from "./pages/Medicao";
 import Inventory from "./pages/Inventory";
@@ -335,6 +337,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ObrasLista />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/obras/checklist" 
+        element={
+          <ProtectedRoute>
+            <ObrasChecklist />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/obras/checklist/:id" 
+        element={
+          <ProtectedRoute>
+            <ObraChecklistDetails />
           </ProtectedRoute>
         } 
       />

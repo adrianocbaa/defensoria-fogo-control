@@ -37,6 +37,15 @@ export function formatPercentageValue(value: number): string {
 }
 
 /**
+ * Formats a date string to Brazilian format
+ * Example: "2024-12-31" -> "31/12/2024"
+ */
+export function formatDate(dateString: string): string {
+  if (!dateString) return 'Não informado';
+  return new Date(dateString).toLocaleDateString('pt-BR');
+}
+
+/**
  * Remove all non-digit characters
  */
 export function onlyDigits(value: string): string {
