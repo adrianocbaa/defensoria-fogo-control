@@ -6,7 +6,6 @@ import {
   Building2, 
   Calendar, 
   MapPin, 
-  TrendingUp, 
   AlertCircle,
   CheckCircle2,
   Clock,
@@ -256,11 +255,6 @@ function DraggableObraCard({ obra, onViewObra }: DraggableObraCardProps) {
             </div>
           </div>
         )}
-
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          <TrendingUp className="h-2.5 w-2.5 shrink-0" />
-          <span>{obra.porcentagem_execucao}% executado</span>
-        </div>
       </CardContent>
     </Card>
   );
