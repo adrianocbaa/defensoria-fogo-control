@@ -52,6 +52,12 @@ interface ViewObraChecklistModalProps {
 }
 
 export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: ViewObraChecklistModalProps) {
+  const handleClose = (isOpen: boolean) => {
+    onOpenChange(isOpen);
+    if (!isOpen && onUpdate) {
+      onUpdate();
+    }
+  };
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingObservacao, setEditingObservacao] = useState<string | null>(null);
@@ -114,7 +120,6 @@ export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: V
       );
 
       toast.success('Item atualizado');
-      if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Erro ao atualizar item:', error);
       toast.error('Erro ao atualizar item');
@@ -141,7 +146,6 @@ export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: V
 
       if (error) throw error;
       toast.success('Data atualizada');
-      if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Erro ao atualizar data:', error);
       toast.error('Erro ao atualizar data');
@@ -163,7 +167,6 @@ export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: V
       if (error) throw error;
       setTemPlaca(value);
       toast.success('Atualizado');
-      if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Erro ao atualizar:', error);
       toast.error('Erro ao atualizar');
@@ -207,7 +210,7 @@ export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: V
   const concluidos = checklistItems.filter(i => i.situacao === 'concluido').length;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
