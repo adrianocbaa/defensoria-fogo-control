@@ -99,7 +99,7 @@ export default function ObrasChecklist() {
         );
 
         // Filtrar obras: 
-        // 1. Obras inauguradas NÃO aparecem (status_inauguracao = 'inaugurada')
+        // 1. Obras inauguradas SÃO incluídas (para permitir filtro)
         // 2. Obras com checklist OU dentro do prazo (15 dias antes do término)
         // 3. Obras finalizadas (dias < 0) mas NÃO inauguradas
         const obrasEmChecklist = obras.filter(obra => {
@@ -107,12 +107,12 @@ export default function ObrasChecklist() {
           
           const obraData = obrasDataMap.get(obra.id);
           
-          // Se já foi inaugurada, NÃO mostrar
+          // Se já foi inaugurada, incluir (o filtro vai decidir se mostra ou não)
           if (obraData?.status_inauguracao === 'inaugurada') {
-            return false;
+            return true;
           }
           
-          // Se já tem checklist, sempre mostrar (desde que não esteja inaugurada)
+          // Se já tem checklist, sempre mostrar
           if (obrasIdsComChecklist.has(obra.id)) {
             return true;
           }
@@ -233,11 +233,14 @@ export default function ObrasChecklist() {
     } else if (filtroStatus === 'nao_inauguradas') {
       resultado = resultado.filter(o => o.status_inauguracao !== 'inaugurada');
     } else if (filtroStatus === 'com_data_inauguracao') {
-      resultado = resultado.filter(o => o.data_prevista_inauguracao && o.data_prevista_inauguracao !== null);
+      resultado = resultado.filter(o => o.data_prevista_inauguracao && o.data_prevista_inauguracao !== null && o.status_inauguracao !== 'inaugurada');
     } else if (filtroStatus === 'sem_data_inauguracao') {
-      resultado = resultado.filter(o => !o.data_prevista_inauguracao || o.data_prevista_inauguracao === null);
+      resultado = resultado.filter(o => (!o.data_prevista_inauguracao || o.data_prevista_inauguracao === null) && o.status_inauguracao !== 'inaugurada');
     } else if (filtroStatus === 'atrasadas') {
       resultado = resultado.filter(o => o.diasRestantes < 0 && o.status_inauguracao !== 'inaugurada');
+    } else if (filtroStatus === 'todas') {
+      // Por padrão, não mostrar obras inauguradas
+      resultado = resultado.filter(o => o.status_inauguracao !== 'inaugurada');
     }
 
     // Filtro por ano de inauguração (único)
