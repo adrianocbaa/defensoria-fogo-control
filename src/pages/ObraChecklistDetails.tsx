@@ -267,13 +267,13 @@ export default function ObraChecklistDetails() {
   // Calcular progresso
   const calcularProgresso = () => {
     if (checklistItems.length === 0) return 0;
-    const concluidos = checklistItems.filter(item => item.situacao === 'concluído').length;
+    const concluidos = checklistItems.filter(item => item.situacao === 'concluido').length;
     return (concluidos / checklistItems.length) * 100;
   };
 
   const getSituacaoColor = (situacao: string) => {
     switch (situacao) {
-      case 'concluído': return 'bg-green-500';
+      case 'concluido': return 'bg-green-500';
       case 'em_andamento': return 'bg-blue-500';
       case 'parado': return 'bg-yellow-500';
       case 'nao_iniciado': return 'bg-gray-400';
@@ -440,7 +440,7 @@ export default function ObraChecklistDetails() {
               </div>
               <Progress value={progresso} className="h-3" />
               <p className="text-xs text-muted-foreground">
-                {checklistItems.filter(i => i.situacao === 'concluído').length} de {checklistItems.length} atividades concluídas
+                {checklistItems.filter(i => i.situacao === 'concluido').length} de {checklistItems.length} atividades concluídas
               </p>
             </CardContent>
           </Card>
@@ -485,7 +485,7 @@ export default function ObraChecklistDetails() {
                           <SelectItem value="nao_iniciado">Não iniciado</SelectItem>
                           <SelectItem value="parado">Parado</SelectItem>
                           <SelectItem value="em_andamento">Em andamento</SelectItem>
-                          <SelectItem value="concluído">Concluído</SelectItem>
+                          <SelectItem value="concluido">Concluído</SelectItem>
                           <SelectItem value="nao_se_aplica">Não se aplica</SelectItem>
                         </SelectContent>
                       </Select>
