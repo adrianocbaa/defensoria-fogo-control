@@ -16,6 +16,7 @@ import { type Obra } from '@/data/mockObras';
 import { formatDate } from '@/lib/formatters';
 import { addMonths, startOfMonth, endOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ObrasKanbanBoard } from '@/components/ObrasKanbanBoard';
 
 // Atividades padrão do checklist
 const ATIVIDADES_PADRAO = [
@@ -288,6 +289,12 @@ export default function ObrasChecklist() {
     setFiltroAnoInauguracao('todos');
     setFiltroAnoInauguracaoDe('none');
     setFiltroAnoInauguracaoAte('none');
+  };
+
+  // Função para recarregar obras
+  const carregarObras = () => {
+    // Forçar recarregamento dos dados
+    window.location.reload();
   };
 
   // Filtrar obras para o dashboard baseado em período e status
@@ -654,23 +661,16 @@ export default function ObrasChecklist() {
                 </p>
               </div>
 
-              {/* Lista de obras */}
+              {/* Kanban Board */}
               {loadingChecklist ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map(i => (
-                    <Card key={i} className="animate-pulse">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
-                          <div className="h-16 w-16 bg-muted rounded" />
-                          <div className="flex-1 space-y-2">
-                            <div className="h-5 bg-muted rounded w-1/3" />
-                            <div className="h-4 bg-muted rounded w-1/2" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <div className="animate-pulse space-y-4">
+                      <div className="h-8 bg-muted rounded w-1/3 mx-auto" />
+                      <div className="h-4 bg-muted rounded w-1/2 mx-auto" />
+                    </div>
+                  </CardContent>
+                </Card>
               ) : obrasFiltradas.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center">
@@ -685,89 +685,26 @@ export default function ObrasChecklist() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-2">
-                  {obrasFiltradas.map(obra => (
-                    <Card 
-                      key={obra.id} 
-                      className="hover:shadow-md transition-all cursor-pointer border-l-4"
-                  style={{ borderLeftColor: `hsl(var(--${obra.diasRestantes <= 5 ? 'destructive' : obra.diasRestantes <= 10 ? 'orange' : 'warning'}))` }}
-                  onClick={() => navigate(`/admin/obras/checklist/${obra.id}`)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-6">
-                      {/* Indicador visual de progresso */}
-                      <div className="relative shrink-0">
-                        <div className="h-20 w-20 rounded-full border-8 border-muted flex items-center justify-center"
-                             style={{ 
-                               borderColor: obra.checklistProgress >= 75 ? 'hsl(var(--green-500))' : 
-                                          obra.checklistProgress >= 50 ? 'hsl(var(--blue-500))' : 
-                                          obra.checklistProgress >= 25 ? 'hsl(var(--orange-500))' : 
-                                          'hsl(var(--destructive))' 
-                             }}>
-                          <span className="text-2xl font-bold">{obra.checklistProgress.toFixed(0)}%</span>
-                        </div>
-                      </div>
-
-                      {/* Informações principais */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-xl font-semibold mb-1 truncate">{obra.nome}</h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Building2 className="h-4 w-4 shrink-0" />
-                              <span>{obra.municipio}</span>
-                              <span className="mx-2">•</span>
-                              <span>Contrato: {(obra as any).n_contrato || 'Não informado'}</span>
-                            </div>
-                          </div>
-                          
-                          <Badge className={`${getStatusColor(obra.diasRestantes)} text-white shrink-0`}>
-                            {obra.diasRestantes < 0 
-                              ? `${Math.abs(obra.diasRestantes)} dias atrás` 
-                              : `${obra.diasRestantes} dias`}
-                          </Badge>
-                        </div>
-
-                        {/* Datas e status */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <div>
-                              <span className="text-muted-foreground">Término: </span>
-                              <span className="font-medium">{formatDate(obra.previsaoTermino!)}</span>
-                            </div>
-                          </div>
-
-                          {obra.data_prevista_inauguracao && (
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-blue-500 shrink-0" />
-                              <div>
-                                <span className="text-muted-foreground">Inauguração: </span>
-                                <span className="font-medium">{formatDate(obra.data_prevista_inauguracao)}</span>
-                              </div>
-                            </div>
-                          )}
-
-                          {obra.status_inauguracao && obra.status_inauguracao !== 'aguardando' && (
-                            <div className="flex items-center gap-2">
-                              <Badge variant={obra.status_inauguracao === 'inaugurada' ? 'default' : 'secondary'}>
-                                {obra.status_inauguracao === 'inaugurada' ? '✓ Inaugurada' : 'Sem Previsão'}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Barra de progresso */}
-                        <div className="mt-4">
-                          <Progress value={obra.checklistProgress} className="h-2" />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                    ))}
-                  </div>
-                )}
+                <ObrasKanbanBoard 
+                  obras={obrasFiltradas.map(obra => ({
+                    id: obra.id,
+                    nome: obra.nome,
+                    municipio: obra.municipio,
+                    tipo: obra.tipo,
+                    data_prevista_inauguracao: obra.data_prevista_inauguracao || null,
+                    status_inauguracao: obra.status_inauguracao || 'aguardando',
+                    porcentagem_execucao: obra.porcentagemExecucao || 0,
+                    valor_total: obra.valor || 0,
+                    coordinates_lat: obra.coordenadas?.[0] || null,
+                    coordinates_lng: obra.coordenadas?.[1] || null,
+                    tem_placa_inauguracao: (obra as any).tem_placa_inauguracao || false,
+                    checklist_progresso: obra.checklistProgress,
+                    total_checklist: 11, // Total de itens padrão do checklist
+                    concluidos_checklist: Math.round((obra.checklistProgress / 100) * 11)
+                  }))}
+                  onObrasUpdate={carregarObras}
+                />
+              )}
               </TabsContent>
             </Tabs>
           </div>
