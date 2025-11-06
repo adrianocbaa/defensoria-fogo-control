@@ -266,9 +266,11 @@ export default function ObraChecklistDetails() {
 
   // Calcular progresso
   const calcularProgresso = () => {
-    if (checklistItems.length === 0) return 0;
-    const concluidos = checklistItems.filter(item => item.situacao === 'concluido').length;
-    return (concluidos / checklistItems.length) * 100;
+    // Filtrar apenas itens aplicáveis (excluir "não se aplica")
+    const itensAplicaveis = checklistItems.filter(item => item.situacao !== 'nao_se_aplica');
+    if (itensAplicaveis.length === 0) return 0;
+    const concluidos = itensAplicaveis.filter(item => item.situacao === 'concluido').length;
+    return (concluidos / itensAplicaveis.length) * 100;
   };
 
   const getSituacaoColor = (situacao: string) => {
@@ -440,7 +442,7 @@ export default function ObraChecklistDetails() {
               </div>
               <Progress value={progresso} className="h-3" />
               <p className="text-xs text-muted-foreground">
-                {checklistItems.filter(i => i.situacao === 'concluido').length} de {checklistItems.length} atividades concluídas
+                {checklistItems.filter(i => i.situacao === 'concluido').length} de {checklistItems.filter(i => i.situacao !== 'nao_se_aplica').length} atividades concluídas
               </p>
             </CardContent>
           </Card>

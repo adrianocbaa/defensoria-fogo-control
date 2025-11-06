@@ -96,9 +96,10 @@ export default function ObrasChecklist() {
               };
             }
 
-            // Calcular progresso
-            const totalItens = checklistItems.length;
-            const concluidos = (checklistItems as any[]).filter((item: any) => item.situacao === 'concluído').length;
+            // Calcular progresso (excluindo itens "não se aplica")
+            const itensAplicaveis = (checklistItems as any[]).filter((item: any) => item.situacao !== 'nao_se_aplica');
+            const totalItens = itensAplicaveis.length;
+            const concluidos = itensAplicaveis.filter((item: any) => item.situacao === 'concluido').length;
             const checklistProgress = totalItens > 0 ? (concluidos / totalItens) * 100 : 0;
 
             return {
