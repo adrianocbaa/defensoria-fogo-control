@@ -194,46 +194,46 @@ function DraggableObraCard({ obra, onViewObra }: DraggableObraCardProps) {
       {...attributes} 
       {...listeners}
     >
-      <CardHeader className="pb-2 space-y-2">
+      <CardHeader className="pb-1 p-3 space-y-1">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-sm font-semibold line-clamp-2 flex-1">
+          <CardTitle className="text-xs font-semibold line-clamp-2 flex-1">
             {obra.nome}
           </CardTitle>
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-7 w-7 p-0 hover:bg-primary/10 shrink-0"
+            className="h-6 w-6 p-0 hover:bg-primary/10 shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               onViewObra(obra.id);
             }}
           >
-            <Eye className="h-3.5 w-3.5" />
+            <Eye className="h-3 w-3" />
           </Button>
         </div>
         
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1">
           {getStatusBadge()}
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-[10px] px-1 py-0">
             {obra.tipo}
           </Badge>
           {obra.tem_placa_inauguracao && (
-            <Badge variant="default" className="bg-blue-600 text-xs">
+            <Badge variant="default" className="bg-blue-600 text-[10px] px-1 py-0">
               Com Placa
             </Badge>
           )}
         </div>
       </CardHeader>
       
-      <CardContent className="pt-0 space-y-2">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MapPin className="h-3 w-3 shrink-0" />
+      <CardContent className="pt-0 p-3 space-y-1.5">
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <MapPin className="h-2.5 w-2.5 shrink-0" />
           <span className="truncate">{obra.municipio}</span>
         </div>
 
         {obra.data_prevista_inauguracao && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3 shrink-0" />
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Calendar className="h-2.5 w-2.5 shrink-0" />
             <span>
               {format(new Date(obra.data_prevista_inauguracao), "dd/MM/yyyy", { locale: ptBR })}
             </span>
@@ -241,14 +241,14 @@ function DraggableObraCard({ obra, onViewObra }: DraggableObraCardProps) {
         )}
 
         {obra.checklist_progresso !== undefined && (
-          <div className="space-y-1">
-            <div className="flex justify-between items-center text-xs">
+          <div className="space-y-0.5">
+            <div className="flex justify-between items-center text-[11px]">
               <span className="text-muted-foreground">Checklist</span>
               <span className="font-medium">
                 {obra.concluidos_checklist}/{obra.total_checklist}
               </span>
             </div>
-            <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
               <div 
                 className="bg-primary h-full transition-all rounded-full"
                 style={{ width: `${obra.checklist_progresso}%` }}
@@ -257,8 +257,8 @@ function DraggableObraCard({ obra, onViewObra }: DraggableObraCardProps) {
           </div>
         )}
 
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <TrendingUp className="h-3 w-3 shrink-0" />
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <TrendingUp className="h-2.5 w-2.5 shrink-0" />
           <span>{obra.porcentagem_execucao}% executado</span>
         </div>
       </CardContent>
@@ -437,14 +437,14 @@ export function ObrasKanbanBoard({ obras, onObrasUpdate }: ObrasKanbanBoardProps
       <DragOverlay>
         {activeObra ? (
           <Card className="shadow-2xl ring-2 ring-primary rotate-3">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold line-clamp-2">
+            <CardHeader className="pb-1 p-3">
+              <CardTitle className="text-xs font-semibold line-clamp-2">
                 {activeObra.nome}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
+            <CardContent className="pt-0 p-3">
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <MapPin className="h-2.5 w-2.5" />
                 <span>{activeObra.municipio}</span>
               </div>
             </CardContent>
