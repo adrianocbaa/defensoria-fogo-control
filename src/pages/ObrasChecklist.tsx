@@ -29,6 +29,12 @@ const ATIVIDADES_PADRAO = [
   'Instalação das câmeras'
 ];
 
+interface ObraData {
+  id: string;
+  data_prevista_inauguracao?: string;
+  status_inauguracao?: string;
+}
+
 interface ObraComChecklist extends Obra {
   diasRestantes: number;
   checklistProgress: number;
@@ -47,7 +53,6 @@ export default function ObrasChecklist() {
   const [filtroAnoInauguracao, setFiltroAnoInauguracao] = useState<string>('todos');
   const [filtroAnoInauguracaoDe, setFiltroAnoInauguracaoDe] = useState<string>('none');
   const [filtroAnoInauguracaoAte, setFiltroAnoInauguracaoAte] = useState<string>('none');
-  const [filtroMunicipio, setFiltroMunicipio] = useState<string>('todos');
 
   // Calcula dias restantes ou dias passados desde o término
   const calcularDiasRestantes = (dataTermino: string): number => {
@@ -66,6 +71,20 @@ export default function ObrasChecklist() {
       try {
         setLoadingChecklist(true);
         
+        // Buscar todas as obras diretamente do Supabase com os campos necessários
+        const { data: obrasData, error: obrasError } = await (supabase as any)
+          .from('obras')
+          .select('id, data_prevista_inauguracao, status_inauguracao');
+        
+        if (obrasError) {
+          console.error('Erro ao buscar dados das obras:', obrasError);
+        }
+
+        // Criar mapa de dados adicionais das obras
+        const obrasDataMap = new Map<string, ObraData>(
+          (obrasData || []).map((o: ObraData) => [o.id, o])
+        );
+
         // Buscar todas as obras que têm checklist criado
         const { data: obrasComChecklist, error: checklistError } = await (supabase as any)
           .from('obra_checklist_items')
@@ -86,8 +105,10 @@ export default function ObrasChecklist() {
         const obrasEmChecklist = obras.filter(obra => {
           if (!obra.previsaoTermino) return false;
           
+          const obraData = obrasDataMap.get(obra.id);
+          
           // Se já foi inaugurada, NÃO mostrar
-          if ((obra as any).status_inauguracao === 'inaugurada') {
+          if (obraData?.status_inauguracao === 'inaugurada') {
             return false;
           }
           
@@ -105,6 +126,7 @@ export default function ObrasChecklist() {
         const obrasComProgresso = await Promise.all(
           obrasEmChecklist.map(async (obra) => {
             const diasRestantes = calcularDiasRestantes(obra.previsaoTermino!);
+            const obraData = obrasDataMap.get(obra.id);
             
             // Buscar itens do checklist
             const { data: checklistItems, error } = await (supabase as any)
@@ -129,13 +151,13 @@ export default function ObrasChecklist() {
                 ...obra,
                 diasRestantes,
                 checklistProgress: 0,
-                data_prevista_inauguracao: (obra as any).data_prevista_inauguracao,
-                status_inauguracao: (obra as any).status_inauguracao || 'aguardando'
+                data_prevista_inauguracao: obraData?.data_prevista_inauguracao,
+                status_inauguracao: obraData?.status_inauguracao || 'aguardando'
               };
             }
 
             // Calcular progresso (excluindo itens "não se aplica")
-            const itensAplicaveis = (checklistItems as any[]).filter((item: any) => item.situacao !== 'nao_se_aplica');
+            const itensAplicaveis = (checklistItems as any[])?.filter((item: any) => item.situacao !== 'nao_se_aplica') || [];
             const totalItens = itensAplicaveis.length;
             const concluidos = itensAplicaveis.filter((item: any) => item.situacao === 'concluido').length;
             const checklistProgress = totalItens > 0 ? (concluidos / totalItens) * 100 : 0;
@@ -144,8 +166,8 @@ export default function ObrasChecklist() {
               ...obra,
               diasRestantes,
               checklistProgress,
-              data_prevista_inauguracao: (obra as any).data_prevista_inauguracao,
-              status_inauguracao: (obra as any).status_inauguracao || 'aguardando'
+              data_prevista_inauguracao: obraData?.data_prevista_inauguracao,
+              status_inauguracao: obraData?.status_inauguracao || 'aguardando'
             };
           })
         );
@@ -207,15 +229,15 @@ export default function ObrasChecklist() {
 
     // Filtro por status
     if (filtroStatus === 'inauguradas') {
-      resultado = resultado.filter(o => (o as any).status_inauguracao === 'inaugurada');
+      resultado = resultado.filter(o => o.status_inauguracao === 'inaugurada');
     } else if (filtroStatus === 'nao_inauguradas') {
-      resultado = resultado.filter(o => (o as any).status_inauguracao !== 'inaugurada');
+      resultado = resultado.filter(o => o.status_inauguracao !== 'inaugurada');
     } else if (filtroStatus === 'com_data_inauguracao') {
-      resultado = resultado.filter(o => o.data_prevista_inauguracao);
+      resultado = resultado.filter(o => o.data_prevista_inauguracao && o.data_prevista_inauguracao !== null);
     } else if (filtroStatus === 'sem_data_inauguracao') {
-      resultado = resultado.filter(o => !o.data_prevista_inauguracao);
+      resultado = resultado.filter(o => !o.data_prevista_inauguracao || o.data_prevista_inauguracao === null);
     } else if (filtroStatus === 'atrasadas') {
-      resultado = resultado.filter(o => o.diasRestantes < 0 && (o as any).status_inauguracao !== 'inaugurada');
+      resultado = resultado.filter(o => o.diasRestantes < 0 && o.status_inauguracao !== 'inaugurada');
     }
 
     // Filtro por ano de inauguração (único)
@@ -227,7 +249,7 @@ export default function ObrasChecklist() {
       });
     }
 
-    // Filtro por range de anos
+    // Filtro por range de anos (só aplicar se ambos estiverem selecionados)
     if (filtroAnoInauguracaoDe !== 'none' && filtroAnoInauguracaoAte !== 'none') {
       resultado = resultado.filter(o => {
         if (!o.data_prevista_inauguracao) return false;
@@ -236,13 +258,8 @@ export default function ObrasChecklist() {
       });
     }
 
-    // Filtro por município
-    if (filtroMunicipio !== 'todos') {
-      resultado = resultado.filter(o => o.municipio === filtroMunicipio);
-    }
-
     return resultado;
-  }, [obrasChecklist, filtroStatus, filtroAnoInauguracao, filtroAnoInauguracaoDe, filtroAnoInauguracaoAte, filtroMunicipio]);
+  }, [obrasChecklist, filtroStatus, filtroAnoInauguracao, filtroAnoInauguracaoDe, filtroAnoInauguracaoAte]);
 
   // Extrair anos disponíveis e municípios
   const anosDisponiveis = useMemo(() => {
@@ -255,20 +272,11 @@ export default function ObrasChecklist() {
     return Array.from(anos).sort();
   }, [obrasChecklist]);
 
-  const municipiosDisponiveis = useMemo(() => {
-    const municipios = new Set<string>();
-    obrasChecklist.forEach(obra => {
-      if (obra.municipio) municipios.add(obra.municipio);
-    });
-    return Array.from(municipios).sort();
-  }, [obrasChecklist]);
-
   const limparFiltros = () => {
     setFiltroStatus('todas');
     setFiltroAnoInauguracao('todos');
     setFiltroAnoInauguracaoDe('none');
     setFiltroAnoInauguracaoAte('none');
-    setFiltroMunicipio('todos');
   };
 
   return (
@@ -300,7 +308,7 @@ export default function ObrasChecklist() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Filtro por Status */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
@@ -367,24 +375,6 @@ export default function ObrasChecklist() {
                       {anosDisponiveis.map(ano => (
                         <SelectItem key={ano} value={ano.toString()}>
                           {ano}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Filtro por Município */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Município</label>
-                  <Select value={filtroMunicipio} onValueChange={setFiltroMunicipio}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      {municipiosDisponiveis.map(municipio => (
-                        <SelectItem key={municipio} value={municipio}>
-                          {municipio}
                         </SelectItem>
                       ))}
                     </SelectContent>
