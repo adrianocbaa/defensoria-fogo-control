@@ -388,7 +388,11 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                       step="1"
                       placeholder="0" 
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

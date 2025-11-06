@@ -41,10 +41,12 @@ export default function ObrasChecklist() {
   const [obrasChecklist, setObrasChecklist] = useState<ObraComChecklist[]>([]);
   const [loadingChecklist, setLoadingChecklist] = useState(true);
 
-  // Calcula se a obra está em fase de checklist (15 dias ou menos)
+  // Calcula dias restantes ou dias passados desde o término
   const calcularDiasRestantes = (dataTermino: string): number => {
     const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
     const termino = new Date(dataTermino);
+    termino.setHours(0, 0, 0, 0);
     const diffTime = termino.getTime() - hoje.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -56,11 +58,12 @@ export default function ObrasChecklist() {
       try {
         setLoadingChecklist(true);
         
-        // Filtrar obras que estão dentro do prazo de 15 dias
+        // Filtrar obras que estão dentro do prazo de 15 dias ou já finalizadas (até 90 dias após término)
         const obrasEmChecklist = obras.filter(obra => {
           if (!obra.previsaoTermino) return false;
           const diasRestantes = calcularDiasRestantes(obra.previsaoTermino);
-          return diasRestantes <= 15 && diasRestantes >= 0;
+          // Incluir obras com até 15 dias antes do término E obras já finalizadas (até 90 dias depois)
+          return diasRestantes <= 15 && diasRestantes >= -90;
         });
 
         // Para cada obra, buscar o checklist e calcular progresso
@@ -150,6 +153,7 @@ export default function ObrasChecklist() {
   };
 
   const getStatusColor = (diasRestantes: number) => {
+    if (diasRestantes < 0) return 'bg-blue-500'; // Obra já finalizada
     if (diasRestantes <= 5) return 'bg-red-500';
     if (diasRestantes <= 10) return 'bg-orange-500';
     return 'bg-yellow-500';
@@ -226,7 +230,9 @@ export default function ObrasChecklist() {
                     <div className="flex items-start justify-between mb-2">
                       <CardTitle className="text-lg line-clamp-2">{obra.nome}</CardTitle>
                       <Badge className={`${getStatusColor(obra.diasRestantes)} text-white shrink-0 ml-2`}>
-                        {obra.diasRestantes} dias
+                        {obra.diasRestantes < 0 
+                          ? `${Math.abs(obra.diasRestantes)} dias atrás` 
+                          : `${obra.diasRestantes} dias`}
                       </Badge>
                     </div>
                     <CardDescription className="flex items-center gap-1">
