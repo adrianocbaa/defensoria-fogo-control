@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { addDays, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ const obraSchema = z.object({
   valor_aditivado: z.number().min(0).optional(),
   valor_executado: z.number().min(0).optional(),
   data_inicio: z.string().optional(),
+  tempo_obra: z.number().min(0, 'Tempo de obra deve ser positivo').optional(),
   previsao_termino: z.string().optional(),
   empresa_responsavel: z.string().optional(),
   secretaria_responsavel: z.string().optional(),
@@ -97,6 +99,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
       valor_aditivado: (initialData as any)?.valor_aditivado || 0,
       valor_executado: initialData?.valor_executado || 0,
       data_inicio: initialData?.data_inicio || '',
+      tempo_obra: (initialData as any)?.tempo_obra || undefined,
       previsao_termino: initialData?.previsao_termino || '',
       empresa_responsavel: initialData?.empresa_responsavel || '',
       secretaria_responsavel: initialData?.secretaria_responsavel || '',
@@ -111,6 +114,28 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     setShowMapSelector(false);
     toast.success('Localização selecionada com sucesso');
   };
+
+  // Calcular automaticamente a previsão de término quando data_inicio ou tempo_obra mudarem
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'data_inicio' || name === 'tempo_obra') {
+        const dataInicio = value.data_inicio;
+        const tempoObra = value.tempo_obra;
+
+        if (dataInicio && tempoObra && tempoObra > 0) {
+          try {
+            const dataInicioParsed = new Date(dataInicio);
+            const dataTermino = addDays(dataInicioParsed, tempoObra);
+            const dataTerminoFormatted = format(dataTermino, 'yyyy-MM-dd');
+            form.setValue('previsao_termino', dataTerminoFormatted);
+          } catch (error) {
+            console.error('Erro ao calcular data de término:', error);
+          }
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const onSubmit = async (data: ObraFormData) => {
     if (!user) {
@@ -351,12 +376,38 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
 
             <FormField
               control={form.control}
+              name="tempo_obra"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tempo de Obra (dias)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="0"
+                      step="1"
+                      placeholder="0" 
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="previsao_termino"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Previsão de Término</FormLabel>
+                  <FormLabel>Previsão de Término (calculado automaticamente)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input 
+                      type="date" 
+                      {...field} 
+                      disabled
+                      className="bg-muted cursor-not-allowed"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
