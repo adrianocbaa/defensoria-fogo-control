@@ -58,8 +58,9 @@ export default function ObrasChecklist() {
   const [filtroAnoInauguracaoAte, setFiltroAnoInauguracaoAte] = useState<string>('none');
 
   // Filtros do dashboard
-  const [dashboardMesInicio, setDashboardMesInicio] = useState<Date>(startOfMonth(new Date()));
-  const [dashboardMesFim, setDashboardMesFim] = useState<Date>(endOfMonth(addMonths(new Date(), 2)));
+  const [dashboardAnoInicio, setDashboardAnoInicio] = useState<number>(new Date().getFullYear());
+  const [dashboardAnoFim, setDashboardAnoFim] = useState<number>(new Date().getFullYear() + 1);
+  const [dashboardStatus, setDashboardStatus] = useState<string>('todas');
 
   // Calcula dias restantes ou dias passados desde o término
   const calcularDiasRestantes = (dataTermino: string): number => {
@@ -289,15 +290,30 @@ export default function ObrasChecklist() {
     setFiltroAnoInauguracaoAte('none');
   };
 
-  // Filtrar obras para o dashboard baseado em período
+  // Filtrar obras para o dashboard baseado em período e status
   const obrasDashboard = useMemo(() => {
-    return obrasChecklist.filter(obra => {
+    let resultado = obrasChecklist.filter(obra => {
       if (!obra.data_prevista_inauguracao) return false;
       
-      const dataInauguracao = new Date(obra.data_prevista_inauguracao);
-      return dataInauguracao >= dashboardMesInicio && dataInauguracao <= dashboardMesFim;
+      const anoInauguracao = new Date(obra.data_prevista_inauguracao).getFullYear();
+      return anoInauguracao >= dashboardAnoInicio && anoInauguracao <= dashboardAnoFim;
     });
-  }, [obrasChecklist, dashboardMesInicio, dashboardMesFim]);
+
+    // Aplicar filtro de status
+    if (dashboardStatus === 'inauguradas') {
+      resultado = resultado.filter(o => o.status_inauguracao === 'inaugurada');
+    } else if (dashboardStatus === 'nao_inauguradas') {
+      resultado = resultado.filter(o => o.status_inauguracao !== 'inaugurada');
+    } else if (dashboardStatus === 'com_data_inauguracao') {
+      resultado = resultado.filter(o => o.data_prevista_inauguracao && o.status_inauguracao !== 'inaugurada');
+    } else if (dashboardStatus === 'sem_data_inauguracao') {
+      resultado = resultado.filter(o => !o.data_prevista_inauguracao && o.status_inauguracao !== 'inaugurada');
+    } else if (dashboardStatus === 'atrasadas') {
+      resultado = resultado.filter(o => o.diasRestantes < 0 && o.status_inauguracao !== 'inaugurada');
+    }
+
+    return resultado;
+  }, [obrasChecklist, dashboardAnoInicio, dashboardAnoFim, dashboardStatus]);
 
   // Calcular estatísticas do dashboard
   const stats = useMemo(() => {
@@ -321,15 +337,15 @@ export default function ObrasChecklist() {
     };
   }, [obrasDashboard]);
 
-  // Meses disponíveis para filtro do dashboard
-  const mesesDisponiveis = useMemo(() => {
-    const meses: Date[] = [];
-    const hoje = new Date();
-    // 6 meses para trás e 12 meses para frente
-    for (let i = -6; i <= 12; i++) {
-      meses.push(addMonths(startOfMonth(hoje), i));
+  // Anos disponíveis para filtro do dashboard
+  const anosDashboard = useMemo(() => {
+    const anoAtual = new Date().getFullYear();
+    const anos: number[] = [];
+    // 5 anos para trás e 5 anos para frente
+    for (let i = -5; i <= 5; i++) {
+      anos.push(anoAtual + i);
     }
-    return meses;
+    return anos;
   }, []);
 
   return (
@@ -359,45 +375,61 @@ export default function ObrasChecklist() {
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    <CardTitle className="text-base">Filtro de Período</CardTitle>
+                    <Filter className="h-5 w-5" />
+                    <CardTitle className="text-base">Filtros</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Mês Início</label>
+                      <label className="text-sm font-medium">Ano Início</label>
                       <Select 
-                        value={dashboardMesInicio.toISOString()} 
-                        onValueChange={(v) => setDashboardMesInicio(new Date(v))}
+                        value={dashboardAnoInicio.toString()} 
+                        onValueChange={(v) => setDashboardAnoInicio(parseInt(v))}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {mesesDisponiveis.map(mes => (
-                            <SelectItem key={mes.toISOString()} value={mes.toISOString()}>
-                              {format(mes, 'MMMM yyyy', { locale: ptBR })}
+                          {anosDashboard.map(ano => (
+                            <SelectItem key={ano} value={ano.toString()}>
+                              {ano}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Mês Fim</label>
+                      <label className="text-sm font-medium">Ano Fim</label>
                       <Select 
-                        value={dashboardMesFim.toISOString()} 
-                        onValueChange={(v) => setDashboardMesFim(endOfMonth(new Date(v)))}
+                        value={dashboardAnoFim.toString()} 
+                        onValueChange={(v) => setDashboardAnoFim(parseInt(v))}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {mesesDisponiveis.map(mes => (
-                            <SelectItem key={mes.toISOString()} value={mes.toISOString()}>
-                              {format(mes, 'MMMM yyyy', { locale: ptBR })}
+                          {anosDashboard.map(ano => (
+                            <SelectItem key={ano} value={ano.toString()}>
+                              {ano}
                             </SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Status</label>
+                      <Select value={dashboardStatus} onValueChange={setDashboardStatus}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todas">Todas</SelectItem>
+                          <SelectItem value="nao_inauguradas">Não Inauguradas</SelectItem>
+                          <SelectItem value="inauguradas">Inauguradas</SelectItem>
+                          <SelectItem value="com_data_inauguracao">Com Data de Inauguração</SelectItem>
+                          <SelectItem value="sem_data_inauguracao">Sem Data de Inauguração</SelectItem>
+                          <SelectItem value="atrasadas">Atrasadas</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
