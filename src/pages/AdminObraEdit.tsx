@@ -107,7 +107,7 @@ export function AdminObraEdit() {
             initialData={obra ? {
               ...obra,
               status: obra.status as any,
-              tipo: (obra.tipo === 'Reforma' || obra.tipo === 'Construção') ? obra.tipo : 'Reforma',
+              tipo: (obra.tipo === 'Reforma' || obra.tipo === 'Construção' || obra.tipo === 'Adequações') ? obra.tipo : 'Reforma',
               fotos: Array.isArray(obra.fotos) ? obra.fotos : [],
               documentos: Array.isArray(obra.documentos) ? obra.documentos : [],
             } : undefined}

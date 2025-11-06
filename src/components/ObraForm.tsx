@@ -22,7 +22,7 @@ const obraSchema = z.object({
   municipio: z.string().min(1, 'Município é obrigatório'),
   n_contrato: z.string().min(1, 'Número do contrato é obrigatório'),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
-  tipo: z.enum(['Reforma', 'Construção']),
+  tipo: z.enum(['Reforma', 'Construção', 'Adequações']),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
   valor_aditivado: z.number().min(0).optional(),
   valor_executado: z.number().min(0).optional(),
@@ -59,7 +59,7 @@ const statusOptions = [
   { value: 'paralisada', label: 'Paralisada' },
 ];
 
-const tipoOptions = ['Reforma', 'Construção'];
+const tipoOptions = ['Reforma', 'Construção', 'Adequações'];
 
 export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormProps) {
   const { user } = useAuth();
@@ -92,7 +92,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
       municipio: initialData?.municipio || '',
       n_contrato: initialData?.n_contrato || '',
       status: initialData?.status || 'planejamento',
-      tipo: (initialData?.tipo as "Reforma" | "Construção") || 'Reforma',
+      tipo: (initialData?.tipo as "Reforma" | "Construção" | "Adequações") || 'Reforma',
       valor_total: initialData?.valor_total || 0,
       valor_aditivado: (initialData as any)?.valor_aditivado || 0,
       valor_executado: initialData?.valor_executado || 0,
