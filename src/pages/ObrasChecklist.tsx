@@ -45,8 +45,8 @@ export default function ObrasChecklist() {
   // Filtros
   const [filtroStatus, setFiltroStatus] = useState<string>('todas');
   const [filtroAnoInauguracao, setFiltroAnoInauguracao] = useState<string>('todos');
-  const [filtroAnoInauguracaoDe, setFiltroAnoInauguracaoDe] = useState<string>('');
-  const [filtroAnoInauguracaoAte, setFiltroAnoInauguracaoAte] = useState<string>('');
+  const [filtroAnoInauguracaoDe, setFiltroAnoInauguracaoDe] = useState<string>('none');
+  const [filtroAnoInauguracaoAte, setFiltroAnoInauguracaoAte] = useState<string>('none');
   const [filtroMunicipio, setFiltroMunicipio] = useState<string>('todos');
 
   // Calcula dias restantes ou dias passados desde o término
@@ -228,7 +228,7 @@ export default function ObrasChecklist() {
     }
 
     // Filtro por range de anos
-    if (filtroAnoInauguracaoDe && filtroAnoInauguracaoAte) {
+    if (filtroAnoInauguracaoDe !== 'none' && filtroAnoInauguracaoAte !== 'none') {
       resultado = resultado.filter(o => {
         if (!o.data_prevista_inauguracao) return false;
         const ano = new Date(o.data_prevista_inauguracao).getFullYear();
@@ -266,8 +266,8 @@ export default function ObrasChecklist() {
   const limparFiltros = () => {
     setFiltroStatus('todas');
     setFiltroAnoInauguracao('todos');
-    setFiltroAnoInauguracaoDe('');
-    setFiltroAnoInauguracaoAte('');
+    setFiltroAnoInauguracaoDe('none');
+    setFiltroAnoInauguracaoAte('none');
     setFiltroMunicipio('todos');
   };
 
@@ -345,7 +345,7 @@ export default function ObrasChecklist() {
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-</SelectItem>
+                      <SelectItem value="none">-</SelectItem>
                       {anosDisponiveis.map(ano => (
                         <SelectItem key={ano} value={ano.toString()}>
                           {ano}
@@ -363,7 +363,7 @@ export default function ObrasChecklist() {
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-</SelectItem>
+                      <SelectItem value="none">-</SelectItem>
                       {anosDisponiveis.map(ano => (
                         <SelectItem key={ano} value={ano.toString()}>
                           {ano}
