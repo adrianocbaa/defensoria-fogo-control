@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Building2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Calendar, Building2, Filter } from 'lucide-react';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useObras } from '@/hooks/useObras';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -40,6 +41,13 @@ export default function ObrasChecklist() {
   const { obras, loading } = useObras();
   const [obrasChecklist, setObrasChecklist] = useState<ObraComChecklist[]>([]);
   const [loadingChecklist, setLoadingChecklist] = useState(true);
+  
+  // Filtros
+  const [filtroStatus, setFiltroStatus] = useState<string>('todas');
+  const [filtroAnoInauguracao, setFiltroAnoInauguracao] = useState<string>('todos');
+  const [filtroAnoInauguracaoDe, setFiltroAnoInauguracaoDe] = useState<string>('');
+  const [filtroAnoInauguracaoAte, setFiltroAnoInauguracaoAte] = useState<string>('');
+  const [filtroMunicipio, setFiltroMunicipio] = useState<string>('todos');
 
   // Calcula dias restantes ou dias passados desde o término
   const calcularDiasRestantes = (dataTermino: string): number => {
@@ -71,18 +79,26 @@ export default function ObrasChecklist() {
           (obrasComChecklist || []).map((item: any) => item.obra_id)
         );
 
-        // Filtrar obras: aquelas com checklist OU dentro do prazo (15 dias antes até 90 dias depois)
+        // Filtrar obras: 
+        // 1. Obras inauguradas NÃO aparecem (status_inauguracao = 'inaugurada')
+        // 2. Obras com checklist OU dentro do prazo (15 dias antes do término)
+        // 3. Obras finalizadas (dias < 0) mas NÃO inauguradas
         const obrasEmChecklist = obras.filter(obra => {
           if (!obra.previsaoTermino) return false;
           
-          // Se já tem checklist, sempre mostrar
+          // Se já foi inaugurada, NÃO mostrar
+          if ((obra as any).status_inauguracao === 'inaugurada') {
+            return false;
+          }
+          
+          // Se já tem checklist, sempre mostrar (desde que não esteja inaugurada)
           if (obrasIdsComChecklist.has(obra.id)) {
             return true;
           }
           
-          // Senão, verificar se está dentro dos 15 dias antes do término OU até 90 dias depois
+          // Senão, verificar se está dentro dos 15 dias antes do término
           const diasRestantes = calcularDiasRestantes(obra.previsaoTermino);
-          return diasRestantes <= 15 && diasRestantes >= -90;
+          return diasRestantes <= 15;
         });
 
         // Para cada obra, buscar o checklist e calcular progresso
@@ -101,8 +117,8 @@ export default function ObrasChecklist() {
               console.error('Erro ao buscar checklist:', error);
             }
 
-            // Se não existir checklist E está dentro do período (15 dias antes até 90 dias depois), criar automaticamente
-            if ((!checklistItems || checklistItems.length === 0) && diasRestantes <= 15 && diasRestantes >= -90) {
+            // Se não existir checklist E está dentro dos 15 dias antes, criar automaticamente
+            if ((!checklistItems || checklistItems.length === 0) && diasRestantes <= 15) {
               await criarChecklistPadrao(obra.id);
               const { data: novoChecklist } = await (supabase as any)
                 .from('obra_checklist_items')
@@ -185,6 +201,76 @@ export default function ObrasChecklist() {
     return 'text-red-600';
   };
 
+  // Filtrar obras baseado nos filtros aplicados
+  const obrasFiltradas = useMemo(() => {
+    let resultado = [...obrasChecklist];
+
+    // Filtro por status
+    if (filtroStatus === 'inauguradas') {
+      resultado = resultado.filter(o => (o as any).status_inauguracao === 'inaugurada');
+    } else if (filtroStatus === 'nao_inauguradas') {
+      resultado = resultado.filter(o => (o as any).status_inauguracao !== 'inaugurada');
+    } else if (filtroStatus === 'com_data_inauguracao') {
+      resultado = resultado.filter(o => o.data_prevista_inauguracao);
+    } else if (filtroStatus === 'sem_data_inauguracao') {
+      resultado = resultado.filter(o => !o.data_prevista_inauguracao);
+    } else if (filtroStatus === 'atrasadas') {
+      resultado = resultado.filter(o => o.diasRestantes < 0 && (o as any).status_inauguracao !== 'inaugurada');
+    }
+
+    // Filtro por ano de inauguração (único)
+    if (filtroAnoInauguracao !== 'todos') {
+      resultado = resultado.filter(o => {
+        if (!o.data_prevista_inauguracao) return false;
+        const ano = new Date(o.data_prevista_inauguracao).getFullYear();
+        return ano.toString() === filtroAnoInauguracao;
+      });
+    }
+
+    // Filtro por range de anos
+    if (filtroAnoInauguracaoDe && filtroAnoInauguracaoAte) {
+      resultado = resultado.filter(o => {
+        if (!o.data_prevista_inauguracao) return false;
+        const ano = new Date(o.data_prevista_inauguracao).getFullYear();
+        return ano >= parseInt(filtroAnoInauguracaoDe) && ano <= parseInt(filtroAnoInauguracaoAte);
+      });
+    }
+
+    // Filtro por município
+    if (filtroMunicipio !== 'todos') {
+      resultado = resultado.filter(o => o.municipio === filtroMunicipio);
+    }
+
+    return resultado;
+  }, [obrasChecklist, filtroStatus, filtroAnoInauguracao, filtroAnoInauguracaoDe, filtroAnoInauguracaoAte, filtroMunicipio]);
+
+  // Extrair anos disponíveis e municípios
+  const anosDisponiveis = useMemo(() => {
+    const anos = new Set<number>();
+    obrasChecklist.forEach(obra => {
+      if (obra.data_prevista_inauguracao) {
+        anos.add(new Date(obra.data_prevista_inauguracao).getFullYear());
+      }
+    });
+    return Array.from(anos).sort();
+  }, [obrasChecklist]);
+
+  const municipiosDisponiveis = useMemo(() => {
+    const municipios = new Set<string>();
+    obrasChecklist.forEach(obra => {
+      if (obra.municipio) municipios.add(obra.municipio);
+    });
+    return Array.from(municipios).sort();
+  }, [obrasChecklist]);
+
+  const limparFiltros = () => {
+    setFiltroStatus('todas');
+    setFiltroAnoInauguracao('todos');
+    setFiltroAnoInauguracaoDe('');
+    setFiltroAnoInauguracaoAte('');
+    setFiltroMunicipio('todos');
+  };
+
   return (
     <SimpleHeader>
       <div className="min-h-screen bg-background">
@@ -200,103 +286,230 @@ export default function ObrasChecklist() {
         />
 
         <div className="container mx-auto px-4 py-6 space-y-6">
+          {/* Filtros */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  <CardTitle>Filtros</CardTitle>
+                </div>
+                <Button variant="outline" size="sm" onClick={limparFiltros}>
+                  Limpar Filtros
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Filtro por Status */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas</SelectItem>
+                      <SelectItem value="nao_inauguradas">Não Inauguradas</SelectItem>
+                      <SelectItem value="inauguradas">Inauguradas</SelectItem>
+                      <SelectItem value="com_data_inauguracao">Com Data de Inauguração</SelectItem>
+                      <SelectItem value="sem_data_inauguracao">Sem Data de Inauguração</SelectItem>
+                      <SelectItem value="atrasadas">Atrasadas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro por Ano (único) */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Ano de Inauguração</label>
+                  <Select value={filtroAnoInauguracao} onValueChange={setFiltroAnoInauguracao}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {anosDisponiveis.map(ano => (
+                        <SelectItem key={ano} value={ano.toString()}>
+                          {ano}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro De Ano */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">De Ano</label>
+                  <Select value={filtroAnoInauguracaoDe} onValueChange={setFiltroAnoInauguracaoDe}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">-</SelectItem>
+                      {anosDisponiveis.map(ano => (
+                        <SelectItem key={ano} value={ano.toString()}>
+                          {ano}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro Até Ano */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Até Ano</label>
+                  <Select value={filtroAnoInauguracaoAte} onValueChange={setFiltroAnoInauguracaoAte}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">-</SelectItem>
+                      {anosDisponiveis.map(ano => (
+                        <SelectItem key={ano} value={ano.toString()}>
+                          {ano}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro por Município */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Município</label>
+                  <Select value={filtroMunicipio} onValueChange={setFiltroMunicipio}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {municipiosDisponiveis.map(municipio => (
+                        <SelectItem key={municipio} value={municipio}>
+                          {municipio}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Contador de obras */}
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold">
-              {loadingChecklist ? 'Carregando...' : `${obrasChecklist.length} obra${obrasChecklist.length !== 1 ? 's' : ''} em fase de checklist`}
+              {loadingChecklist ? 'Carregando...' : `${obrasFiltradas.length} obra${obrasFiltradas.length !== 1 ? 's' : ''} em fase de checklist`}
             </h2>
           </div>
 
           {/* Lista de obras */}
           {loadingChecklist ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-3">
               {[1, 2, 3].map(i => (
                 <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-6 bg-muted rounded w-3/4 mb-2" />
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="h-4 bg-muted rounded" />
-                      <div className="h-4 bg-muted rounded" />
-                      <div className="h-8 bg-muted rounded" />
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-6">
+                      <div className="h-20 w-20 bg-muted rounded" />
+                      <div className="flex-1 space-y-3">
+                        <div className="h-6 bg-muted rounded w-1/3" />
+                        <div className="h-4 bg-muted rounded w-1/2" />
+                        <div className="h-4 bg-muted rounded w-2/3" />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          ) : obrasChecklist.length === 0 ? (
+          ) : obrasFiltradas.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-lg font-medium mb-2">Nenhuma obra em fase de checklist</p>
+                <p className="text-lg font-medium mb-2">Nenhuma obra encontrada</p>
                 <p className="text-sm text-muted-foreground">
-                  As obras aparecerão aqui quando faltarem 15 dias ou menos para o término do contrato.
+                  {obrasChecklist.length === 0 
+                    ? 'As obras aparecerão aqui quando faltarem 15 dias ou menos para o término do contrato.'
+                    : 'Nenhuma obra corresponde aos filtros selecionados.'
+                  }
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {obrasChecklist.map(obra => (
+            <div className="space-y-3">
+              {obrasFiltradas.map(obra => (
                 <Card 
                   key={obra.id} 
                   className="hover:shadow-lg transition-all cursor-pointer border-l-4"
                   style={{ borderLeftColor: `hsl(var(--${obra.diasRestantes <= 5 ? 'destructive' : obra.diasRestantes <= 10 ? 'orange' : 'warning'}))` }}
                   onClick={() => navigate(`/admin/obras/checklist/${obra.id}`)}
                 >
-                  <CardHeader>
-                    <div className="flex items-start justify-between mb-2">
-                      <CardTitle className="text-lg line-clamp-2">{obra.nome}</CardTitle>
-                      <Badge className={`${getStatusColor(obra.diasRestantes)} text-white shrink-0 ml-2`}>
-                        {obra.diasRestantes < 0 
-                          ? `${Math.abs(obra.diasRestantes)} dias atrás` 
-                          : `${obra.diasRestantes} dias`}
-                      </Badge>
-                    </div>
-                    <CardDescription className="flex items-center gap-1">
-                      <Building2 className="h-3 w-3" />
-                      {obra.municipio}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Data de término */}
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Término:</span>
-                      <span className="font-medium">{formatDate(obra.previsaoTermino!)}</span>
-                    </div>
-
-                    {/* Data prevista inauguração */}
-                    {obra.data_prevista_inauguracao && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-blue-500" />
-                        <span className="text-muted-foreground">Inauguração:</span>
-                        <span className="font-medium">{formatDate(obra.data_prevista_inauguracao)}</span>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-6">
+                      {/* Indicador visual de progresso */}
+                      <div className="relative shrink-0">
+                        <div className="h-20 w-20 rounded-full border-8 border-muted flex items-center justify-center"
+                             style={{ 
+                               borderColor: obra.checklistProgress >= 75 ? 'hsl(var(--green-500))' : 
+                                          obra.checklistProgress >= 50 ? 'hsl(var(--blue-500))' : 
+                                          obra.checklistProgress >= 25 ? 'hsl(var(--orange-500))' : 
+                                          'hsl(var(--destructive))' 
+                             }}>
+                          <span className="text-2xl font-bold">{obra.checklistProgress.toFixed(0)}%</span>
+                        </div>
                       </div>
-                    )}
 
-                    {/* Status inauguração */}
-                    {obra.status_inauguracao && obra.status_inauguracao !== 'aguardando' && (
-                      <Badge variant={obra.status_inauguracao === 'inaugurada' ? 'default' : 'secondary'}>
-                        {obra.status_inauguracao === 'inaugurada' ? 'Inaugurada' : 'Sem Previsão'}
-                      </Badge>
-                    )}
+                      {/* Informações principais */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-xl font-semibold mb-1 truncate">{obra.nome}</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Building2 className="h-4 w-4 shrink-0" />
+                              <span>{obra.municipio}</span>
+                              <span className="mx-2">•</span>
+                              <span>Contrato: {(obra as any).n_contrato || 'Não informado'}</span>
+                            </div>
+                          </div>
+                          
+                          <Badge className={`${getStatusColor(obra.diasRestantes)} text-white shrink-0`}>
+                            {obra.diasRestantes < 0 
+                              ? `${Math.abs(obra.diasRestantes)} dias atrás` 
+                              : `${obra.diasRestantes} dias`}
+                          </Badge>
+                        </div>
 
-                    {/* Progresso do checklist */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Progresso do Checklist:</span>
-                        <span className={`font-semibold ${getProgressColor(obra.checklistProgress)}`}>
-                          {obra.checklistProgress.toFixed(0)}%
-                        </span>
+                        {/* Datas e status */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <div>
+                              <span className="text-muted-foreground">Término: </span>
+                              <span className="font-medium">{formatDate(obra.previsaoTermino!)}</span>
+                            </div>
+                          </div>
+
+                          {obra.data_prevista_inauguracao && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-blue-500 shrink-0" />
+                              <div>
+                                <span className="text-muted-foreground">Inauguração: </span>
+                                <span className="font-medium">{formatDate(obra.data_prevista_inauguracao)}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {obra.status_inauguracao && obra.status_inauguracao !== 'aguardando' && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant={obra.status_inauguracao === 'inaugurada' ? 'default' : 'secondary'}>
+                                {obra.status_inauguracao === 'inaugurada' ? '✓ Inaugurada' : 'Sem Previsão'}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Barra de progresso */}
+                        <div className="mt-4">
+                          <Progress value={obra.checklistProgress} className="h-2" />
+                        </div>
                       </div>
-                      <Progress value={obra.checklistProgress} className="h-2" />
-                    </div>
-
-                    {/* Contrato */}
-                    <div className="text-xs text-muted-foreground pt-2 border-t">
-                      Contrato: {(obra as any).n_contrato || 'Não informado'}
                     </div>
                   </CardContent>
                 </Card>
