@@ -8,11 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useObras } from '@/hooks/useObras';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { type Obra } from '@/data/mockObras';
 import { formatDate } from '@/lib/formatters';
+import { addMonths, startOfMonth, endOfMonth, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Atividades padrão do checklist
 const ATIVIDADES_PADRAO = [
@@ -48,11 +51,15 @@ export default function ObrasChecklist() {
   const [obrasChecklist, setObrasChecklist] = useState<ObraComChecklist[]>([]);
   const [loadingChecklist, setLoadingChecklist] = useState(true);
   
-  // Filtros
+  // Filtros da lista
   const [filtroStatus, setFiltroStatus] = useState<string>('todas');
   const [filtroAnoInauguracao, setFiltroAnoInauguracao] = useState<string>('todos');
   const [filtroAnoInauguracaoDe, setFiltroAnoInauguracaoDe] = useState<string>('none');
   const [filtroAnoInauguracaoAte, setFiltroAnoInauguracaoAte] = useState<string>('none');
+
+  // Filtros do dashboard
+  const [dashboardMesInicio, setDashboardMesInicio] = useState<Date>(startOfMonth(new Date()));
+  const [dashboardMesFim, setDashboardMesFim] = useState<Date>(endOfMonth(addMonths(new Date(), 2)));
 
   // Calcula dias restantes ou dias passados desde o término
   const calcularDiasRestantes = (dataTermino: string): number => {
@@ -282,15 +289,26 @@ export default function ObrasChecklist() {
     setFiltroAnoInauguracaoAte('none');
   };
 
+  // Filtrar obras para o dashboard baseado em período
+  const obrasDashboard = useMemo(() => {
+    return obrasChecklist.filter(obra => {
+      if (!obra.data_prevista_inauguracao) return false;
+      
+      const dataInauguracao = new Date(obra.data_prevista_inauguracao);
+      return dataInauguracao >= dashboardMesInicio && dataInauguracao <= dashboardMesFim;
+    });
+  }, [obrasChecklist, dashboardMesInicio, dashboardMesFim]);
+
   // Calcular estatísticas do dashboard
   const stats = useMemo(() => {
-    const total = obrasChecklist.length;
-    const comDataInauguracao = obrasChecklist.filter(o => o.data_prevista_inauguracao).length;
+    const dataSource = obrasDashboard;
+    const total = dataSource.length;
+    const comDataInauguracao = dataSource.filter(o => o.data_prevista_inauguracao).length;
     const semDataInauguracao = total - comDataInauguracao;
-    const inauguradas = obrasChecklist.filter(o => o.status_inauguracao === 'inaugurada').length;
-    const atrasadas = obrasChecklist.filter(o => o.diasRestantes < 0 && o.status_inauguracao !== 'inaugurada').length;
+    const inauguradas = dataSource.filter(o => o.status_inauguracao === 'inaugurada').length;
+    const atrasadas = dataSource.filter(o => o.diasRestantes < 0 && o.status_inauguracao !== 'inaugurada').length;
     const progressoMedio = total > 0 
-      ? obrasChecklist.reduce((acc, o) => acc + o.checklistProgress, 0) / total 
+      ? dataSource.reduce((acc, o) => acc + o.checklistProgress, 0) / total 
       : 0;
 
     return {
@@ -301,7 +319,18 @@ export default function ObrasChecklist() {
       atrasadas,
       progressoMedio
     };
-  }, [obrasChecklist]);
+  }, [obrasDashboard]);
+
+  // Meses disponíveis para filtro do dashboard
+  const mesesDisponiveis = useMemo(() => {
+    const meses: Date[] = [];
+    const hoje = new Date();
+    // 6 meses para trás e 12 meses para frente
+    for (let i = -6; i <= 12; i++) {
+      meses.push(addMonths(startOfMonth(hoje), i));
+    }
+    return meses;
+  }, []);
 
   return (
     <SimpleHeader>
@@ -317,108 +346,189 @@ export default function ObrasChecklist() {
           }
         />
 
-        <div className="container mx-auto px-4 py-6 space-y-6">
-          {/* Dashboard de Estatísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total de Obras
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-primary" />
-                  <div className="text-2xl font-bold">{stats.total}</div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="container mx-auto px-4 py-4 space-y-4">
+          <Tabs defaultValue="lista" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="lista">Lista de Obras</TabsTrigger>
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            </TabsList>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Com Data de Inauguração
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <CalendarCheck className="h-4 w-4 text-green-600" />
-                  <div className="text-2xl font-bold">{stats.comDataInauguracao}</div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Aba: Dashboard */}
+            <TabsContent value="dashboard" className="space-y-4 mt-4">
+              {/* Filtros de Data do Dashboard */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    <CardTitle className="text-base">Filtro de Período</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Mês Início</label>
+                      <Select 
+                        value={dashboardMesInicio.toISOString()} 
+                        onValueChange={(v) => setDashboardMesInicio(new Date(v))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mesesDisponiveis.map(mes => (
+                            <SelectItem key={mes.toISOString()} value={mes.toISOString()}>
+                              {format(mes, 'MMMM yyyy', { locale: ptBR })}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Mês Fim</label>
+                      <Select 
+                        value={dashboardMesFim.toISOString()} 
+                        onValueChange={(v) => setDashboardMesFim(endOfMonth(new Date(v)))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mesesDisponiveis.map(mes => (
+                            <SelectItem key={mes.toISOString()} value={mes.toISOString()}>
+                              {format(mes, 'MMMM yyyy', { locale: ptBR })}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Sem Data de Inauguração
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <CalendarX className="h-4 w-4 text-orange-600" />
-                  <div className="text-2xl font-bold">{stats.semDataInauguracao}</div>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Cards de Estatísticas */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <Card className="p-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Building2 className="h-3.5 w-3.5" />
+                      <p className="text-xs font-medium">Total</p>
+                    </div>
+                    <p className="text-2xl font-bold">{stats.total}</p>
+                  </div>
+                </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Inauguradas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                  <div className="text-2xl font-bold">{stats.inauguradas}</div>
-                </div>
-              </CardContent>
-            </Card>
+                <Card className="p-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-green-600">
+                      <CalendarCheck className="h-3.5 w-3.5" />
+                      <p className="text-xs font-medium">Com Data</p>
+                    </div>
+                    <p className="text-2xl font-bold">{stats.comDataInauguracao}</p>
+                  </div>
+                </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Atrasadas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <div className="text-2xl font-bold">{stats.atrasadas}</div>
-                </div>
-              </CardContent>
-            </Card>
+                <Card className="p-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-orange-600">
+                      <CalendarX className="h-3.5 w-3.5" />
+                      <p className="text-xs font-medium">Sem Data</p>
+                    </div>
+                    <p className="text-2xl font-bold">{stats.semDataInauguracao}</p>
+                  </div>
+                </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Progresso Médio
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                  <div className="text-2xl font-bold">{stats.progressoMedio.toFixed(0)}%</div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          {/* Filtros */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  <CardTitle>Filtros</CardTitle>
-                </div>
-                <Button variant="outline" size="sm" onClick={limparFiltros}>
-                  Limpar Filtros
-                </Button>
+                <Card className="p-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-blue-600">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <p className="text-xs font-medium">Inauguradas</p>
+                    </div>
+                    <p className="text-2xl font-bold">{stats.inauguradas}</p>
+                  </div>
+                </Card>
+
+                <Card className="p-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-red-600">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      <p className="text-xs font-medium">Atrasadas</p>
+                    </div>
+                    <p className="text-2xl font-bold">{stats.atrasadas}</p>
+                  </div>
+                </Card>
+
+                <Card className="p-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-primary">
+                      <TrendingUp className="h-3.5 w-3.5" />
+                      <p className="text-xs font-medium">Progresso</p>
+                    </div>
+                    <p className="text-2xl font-bold">{stats.progressoMedio.toFixed(0)}%</p>
+                  </div>
+                </Card>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+              {/* Lista das obras filtradas no período */}
+              {obrasDashboard.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium mb-2">Nenhuma obra no período</p>
+                    <p className="text-sm text-muted-foreground">
+                      Ajuste o período de filtro para ver as obras
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Obras no Período ({obrasDashboard.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {obrasDashboard.map(obra => (
+                      <div 
+                        key={obra.id}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer"
+                        onClick={() => navigate(`/obras/checklist/${obra.id}`)}
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{obra.nome}</p>
+                          <p className="text-xs text-muted-foreground">{obra.municipio}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {obra.data_prevista_inauguracao && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatDate(obra.data_prevista_inauguracao)}
+                            </Badge>
+                          )}
+                          <Badge variant={obra.status_inauguracao === 'inaugurada' ? 'default' : 'secondary'} className="text-xs">
+                            {Math.round(obra.checklistProgress)}%
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* Aba: Lista de Obras */}
+            <TabsContent value="lista" className="space-y-4 mt-4">
+              {/* Filtros */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-5 w-5" />
+                      <CardTitle className="text-base">Filtros</CardTitle>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={limparFiltros}>
+                      Limpar Filtros
+                    </Button>
+                  </div>
+                </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Filtro por Status */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
@@ -490,54 +600,53 @@ export default function ObrasChecklist() {
                     </SelectContent>
                   </Select>
                 </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Contador de obras */}
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {loadingChecklist ? 'Carregando...' : `${obrasFiltradas.length} obra${obrasFiltradas.length !== 1 ? 's' : ''} encontrada${obrasFiltradas.length !== 1 ? 's' : ''}`}
+                </p>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Contador de obras */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">
-              {loadingChecklist ? 'Carregando...' : `${obrasFiltradas.length} obra${obrasFiltradas.length !== 1 ? 's' : ''} em fase de checklist`}
-            </h2>
-          </div>
-
-          {/* Lista de obras */}
-          {loadingChecklist ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-6">
-                      <div className="h-20 w-20 bg-muted rounded" />
-                      <div className="flex-1 space-y-3">
-                        <div className="h-6 bg-muted rounded w-1/3" />
-                        <div className="h-4 bg-muted rounded w-1/2" />
-                        <div className="h-4 bg-muted rounded w-2/3" />
-                      </div>
-                    </div>
+              {/* Lista de obras */}
+              {loadingChecklist ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map(i => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          <div className="h-16 w-16 bg-muted rounded" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-5 bg-muted rounded w-1/3" />
+                            <div className="h-4 bg-muted rounded w-1/2" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : obrasFiltradas.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-base font-medium mb-2">Nenhuma obra encontrada</p>
+                    <p className="text-sm text-muted-foreground">
+                      {obrasChecklist.length === 0 
+                        ? 'As obras aparecerão aqui quando faltarem 15 dias ou menos para o término.'
+                        : 'Nenhuma obra corresponde aos filtros selecionados.'
+                      }
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          ) : obrasFiltradas.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-lg font-medium mb-2">Nenhuma obra encontrada</p>
-                <p className="text-sm text-muted-foreground">
-                  {obrasChecklist.length === 0 
-                    ? 'As obras aparecerão aqui quando faltarem 15 dias ou menos para o término do contrato.'
-                    : 'Nenhuma obra corresponde aos filtros selecionados.'
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {obrasFiltradas.map(obra => (
-                <Card 
-                  key={obra.id} 
-                  className="hover:shadow-lg transition-all cursor-pointer border-l-4"
+              ) : (
+                <div className="space-y-2">
+                  {obrasFiltradas.map(obra => (
+                    <Card 
+                      key={obra.id} 
+                      className="hover:shadow-md transition-all cursor-pointer border-l-4"
                   style={{ borderLeftColor: `hsl(var(--${obra.diasRestantes <= 5 ? 'destructive' : obra.diasRestantes <= 10 ? 'orange' : 'warning'}))` }}
                   onClick={() => navigate(`/admin/obras/checklist/${obra.id}`)}
                 >
@@ -613,11 +722,13 @@ export default function ObrasChecklist() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-      </div>
-    </SimpleHeader>
-  );
-}
+      </SimpleHeader>
+    );
+  }
