@@ -67,11 +67,8 @@ export default function PublicObras() {
     fetchObras();
   }, []);
 
-  // Calculate filter options from data
-  const availableTypes = useMemo(() => 
-    [...new Set(obrasData.map(obra => obra.tipo))], 
-    [obrasData]
-  );
+  // Fixed types - always show all available types
+  const availableTypes = ['Reforma', 'Construção', 'Adequações'];
   
   const availableMunicipios = useMemo(() => 
     [...new Set(obrasData.map(obra => obra.municipio))].sort(), 
