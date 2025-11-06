@@ -1006,6 +1006,7 @@ export type Database = {
           descricao_atividade: string
           has_subtasks: boolean | null
           id: string
+          informacao: string | null
           is_custom: boolean | null
           obra_id: string
           observacoes: string | null
@@ -1021,6 +1022,7 @@ export type Database = {
           descricao_atividade: string
           has_subtasks?: boolean | null
           id?: string
+          informacao?: string | null
           is_custom?: boolean | null
           obra_id: string
           observacoes?: string | null
@@ -1036,6 +1038,7 @@ export type Database = {
           descricao_atividade?: string
           has_subtasks?: boolean | null
           id?: string
+          informacao?: string | null
           is_custom?: boolean | null
           obra_id?: string
           observacoes?: string | null

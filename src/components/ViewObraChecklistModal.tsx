@@ -25,6 +25,7 @@ interface ChecklistItem {
   descricao_atividade: string;
   situacao: string;
   observacoes?: string;
+  informacao?: string;
   data_atualizacao: string;
   ordem: number;
   is_custom: boolean;
@@ -65,6 +66,8 @@ export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: V
   const [loading, setLoading] = useState(false);
   const [editingObservacao, setEditingObservacao] = useState<string | null>(null);
   const [tempObservacao, setTempObservacao] = useState('');
+  const [editingInformacao, setEditingInformacao] = useState<string | null>(null);
+  const [tempInformacao, setTempInformacao] = useState('');
   const [dataInauguracao, setDataInauguracao] = useState('');
   const [temPlaca, setTemPlaca] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -190,6 +193,12 @@ export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: V
     await handleUpdateItem(itemId, 'observacoes', tempObservacao);
     setEditingObservacao(null);
     setTempObservacao('');
+  };
+
+  const handleSaveInformacao = async (itemId: string) => {
+    await handleUpdateItem(itemId, 'informacao', tempInformacao);
+    setEditingInformacao(null);
+    setTempInformacao('');
   };
 
   const handleUpdateDataInauguracao = async () => {
@@ -451,6 +460,55 @@ export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: V
                             <span>{getSituacaoLabel(item.situacao)}</span>
                           </div>
 
+                          {editingInformacao === item.id ? (
+                            <div className="space-y-2">
+                              <Label className="text-xs font-medium">Informação</Label>
+                              <Textarea
+                                value={tempInformacao}
+                                onChange={(e) => setTempInformacao(e.target.value)}
+                                placeholder="Adicionar informação..."
+                                className="min-h-[60px] text-sm"
+                              />
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => handleSaveInformacao(item.id)}>
+                                  Salvar
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => {
+                                    setEditingInformacao(null);
+                                    setTempInformacao('');
+                                  }}
+                                >
+                                  Cancelar
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              {item.informacao && (
+                                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-2 rounded">
+                                  <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-1">Informação:</p>
+                                  <p className="text-xs text-blue-800 dark:text-blue-200">{item.informacao}</p>
+                                </div>
+                              )}
+                              {!obraBloqueada && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 text-xs"
+                                  onClick={() => {
+                                    setEditingInformacao(item.id);
+                                    setTempInformacao(item.informacao || '');
+                                  }}
+                                >
+                                  {item.informacao ? 'Editar informação' : 'Adicionar informação'}
+                                </Button>
+                              )}
+                            </>
+                          )}
+
                           {editingObservacao === item.id ? (
                             <div className="space-y-2">
                               <Textarea
@@ -539,6 +597,55 @@ export function ViewObraChecklistModal({ obra, open, onOpenChange, onUpdate }: V
                               {subtask.situacao === 'nao_iniciado' && <XCircle className="h-3 w-3" />}
                               <span>{getSituacaoLabel(subtask.situacao)}</span>
                             </div>
+
+                            {editingInformacao === subtask.id ? (
+                              <div className="space-y-2">
+                                <Label className="text-xs font-medium">Informação</Label>
+                                <Textarea
+                                  value={tempInformacao}
+                                  onChange={(e) => setTempInformacao(e.target.value)}
+                                  placeholder="Adicionar informação..."
+                                  className="min-h-[60px] text-sm"
+                                />
+                                <div className="flex gap-2">
+                                  <Button size="sm" onClick={() => handleSaveInformacao(subtask.id)}>
+                                    Salvar
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => {
+                                      setEditingInformacao(null);
+                                      setTempInformacao('');
+                                    }}
+                                  >
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                {subtask.informacao && (
+                                  <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-2 rounded">
+                                    <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-1">Informação:</p>
+                                    <p className="text-xs text-blue-800 dark:text-blue-200">{subtask.informacao}</p>
+                                  </div>
+                                )}
+                                {!obraBloqueada && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 text-xs"
+                                    onClick={() => {
+                                      setEditingInformacao(subtask.id);
+                                      setTempInformacao(subtask.informacao || '');
+                                    }}
+                                  >
+                                    {subtask.informacao ? 'Editar informação' : 'Adicionar informação'}
+                                  </Button>
+                                )}
+                              </>
+                            )}
 
                             {editingObservacao === subtask.id ? (
                               <div className="space-y-2">
