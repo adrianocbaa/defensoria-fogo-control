@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Image, Calendar, FolderOpen, Eye, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Image, Calendar, FolderOpen, Eye, Trash2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ interface PhotoMetadata {
   uploadedAt: string;
   fileName: string;
   monthFolder?: string; // Format: YYYY-MM
+  isCover?: boolean;
 }
 
 interface PhotosByMonth {
@@ -24,12 +25,14 @@ interface PhotosByMonth {
 interface PhotoGalleryCollapsibleProps {
   photos: PhotoMetadata[];
   onPhotoRemove?: (photoUrl: string) => void;
+  onSetCover?: (photoUrl: string) => void;
   isEditing?: boolean;
 }
 
 export function PhotoGalleryCollapsible({ 
   photos, 
-  onPhotoRemove, 
+  onPhotoRemove,
+  onSetCover, 
   isEditing = false 
 }: PhotoGalleryCollapsibleProps) {
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -163,7 +166,7 @@ export function PhotoGalleryCollapsible({
                   {monthData.photos.map((photo, index) => (
                     <div 
                       key={index}
-                      className="relative aspect-square rounded-lg overflow-hidden group"
+                      className={`relative aspect-square rounded-lg overflow-hidden group ${photo.isCover ? 'ring-2 ring-primary' : ''}`}
                     >
                       <img 
                         src={photo.url} 
@@ -173,6 +176,14 @@ export function PhotoGalleryCollapsible({
                         onClick={() => openGallery(monthData.photos, index)}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                      
+                      {/* Cover badge */}
+                      {photo.isCover && (
+                        <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-current" />
+                          Capa
+                        </div>
+                      )}
                       
                       {/* Action buttons overlay */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -186,6 +197,20 @@ export function PhotoGalleryCollapsible({
                           >
                             <Eye className="h-3 w-3" />
                           </Button>
+                          {isEditing && onSetCover && !photo.isCover && (
+                            <Button 
+                              type="button"
+                              variant="default" 
+                              size="sm" 
+                              className="shadow-lg"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSetCover(photo.url);
+                              }}
+                            >
+                              <Star className="h-3 w-3" />
+                            </Button>
+                          )}
                           {isEditing && onPhotoRemove && (
                             <Button 
                               type="button"

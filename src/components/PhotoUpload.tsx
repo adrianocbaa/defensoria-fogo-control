@@ -286,64 +286,6 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100, onSetCove
         </Alert>
       )}
 
-      {/* Empty State */}
-      {photos.length === 0 && selectedMonth && (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <Image className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground mb-2">Nenhuma foto adicionada</p>
-            <p className="text-xs text-muted-foreground">
-              Pasta de destino selecionada: <code>/obras/{selectedMonth}/</code>
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Photos Grid with Cover Selection */}
-      {photos.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">
-            Fotos Enviadas ({photos.length})
-          </Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {photos.map((photo, index) => (
-              <div key={index} className="relative group">
-                <div className={`relative aspect-video rounded-lg overflow-hidden border-2 ${photo.isCover ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
-                  <img 
-                    src={photo.url} 
-                    alt={photo.fileName}
-                    className="w-full h-full object-cover"
-                  />
-                  {photo.isCover && (
-                    <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded">
-                      Capa
-                    </div>
-                  )}
-                  {onSetCover && !photo.isCover && (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white hover:bg-black/70"
-                      onClick={() => onSetCover(index)}
-                    >
-                      Definir como Capa
-                    </Button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 truncate" title={photo.fileName}>
-                  {photo.fileName}
-                </p>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {photos.some(p => p.isCover) 
-              ? 'A foto marcada como "Capa" será exibida na visualização principal da obra.' 
-              : 'Clique em uma foto para defini-la como capa da obra.'}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

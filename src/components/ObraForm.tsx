@@ -115,10 +115,10 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     toast.success('Localização selecionada com sucesso');
   };
 
-  const handleSetCoverPhoto = (photoIndex: number) => {
-    const updatedPhotos = photos.map((photo, index) => ({
+  const handleSetCoverPhoto = (photoUrl: string) => {
+    const updatedPhotos = photos.map((photo) => ({
       ...photo,
-      isCover: index === photoIndex
+      isCover: photo.url === photoUrl
     }));
     setPhotos(updatedPhotos);
     toast.success('Foto de capa atualizada');
@@ -484,18 +484,18 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
             <PhotoUpload 
               photos={photos}
               onPhotosChange={setPhotos}
-              onSetCover={handleSetCoverPhoto}
             />
             
             {/* Collapsible Photo Gallery for editing */}
             {photos.length > 0 && (
               <div className="space-y-2">
-                <h3 className="text-sm font-medium">Fotos Cadastradas</h3>
+                <h3 className="text-sm font-medium">Fotos Cadastradas ({photos.length})</h3>
                 <PhotoGalleryCollapsible
                   photos={photos}
                   onPhotoRemove={(photoUrl) => {
                     setPhotos(prev => prev.filter(p => p.url !== photoUrl));
                   }}
+                  onSetCover={handleSetCoverPhoto}
                   isEditing={true}
                 />
               </div>
