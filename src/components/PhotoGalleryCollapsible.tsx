@@ -178,6 +178,7 @@ export function PhotoGalleryCollapsible({
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <div className="flex gap-2">
                           <Button 
+                            type="button"
                             variant="secondary" 
                             size="sm" 
                             className="shadow-lg"
@@ -187,6 +188,7 @@ export function PhotoGalleryCollapsible({
                           </Button>
                           {isEditing && onPhotoRemove && (
                             <Button 
+                              type="button"
                               variant="destructive" 
                               size="sm" 
                               className="shadow-lg"
