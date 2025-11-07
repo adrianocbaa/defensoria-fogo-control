@@ -486,20 +486,6 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               onPhotosChange={setPhotos}
               onSetCover={handleSetCoverPhoto}
             />
-            
-            {/* Collapsible Photo Gallery for editing */}
-            {photos.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Fotos Cadastradas</h3>
-                <PhotoGalleryCollapsible
-                  photos={photos}
-                  onPhotoRemove={(photoUrl) => {
-                    setPhotos(prev => prev.filter(p => p.url !== photoUrl));
-                  }}
-                  isEditing={true}
-                />
-              </div>
-            )}
           </div>
 
           {/* Documents Upload */}
