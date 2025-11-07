@@ -22,32 +22,48 @@ interface PhotoUploadProps {
   maxPhotos?: number;
 }
 
-// Generate month options for the current year and 6 months before
-const generateMonthOptions = () => {
+// Generate year options (current year and +/- 3 years)
+const generateYearOptions = () => {
   const options = [];
-  const now = new Date();
+  const currentYear = new Date().getFullYear();
   
-  for (let i = -6; i <= 12; i++) {
-    const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const displayName = date.toLocaleDateString('pt-BR', { 
-      month: 'long', 
-      year: 'numeric' 
-    });
-    options.push({ value: yearMonth, label: displayName });
+  for (let i = -3; i <= 3; i++) {
+    const year = currentYear + i;
+    options.push({ value: year.toString(), label: year.toString() });
   }
   
   return options;
 };
 
+// Month names in Portuguese
+const monthOptions = [
+  { value: '01', label: 'Janeiro' },
+  { value: '02', label: 'Fevereiro' },
+  { value: '03', label: 'Março' },
+  { value: '04', label: 'Abril' },
+  { value: '05', label: 'Maio' },
+  { value: '06', label: 'Junho' },
+  { value: '07', label: 'Julho' },
+  { value: '08', label: 'Agosto' },
+  { value: '09', label: 'Setembro' },
+  { value: '10', label: 'Outubro' },
+  { value: '11', label: 'Novembro' },
+  { value: '12', label: 'Dezembro' },
+];
+
 export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUploadProps) {
   const { uploadFile, uploading } = useFileUpload();
   const [dragOver, setDragOver] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [selectedYear, setSelectedYear] = useState(() => {
+    return new Date().getFullYear().toString();
   });
+  const [selectedMonthNum, setSelectedMonthNum] = useState(() => {
+    return String(new Date().getMonth() + 1).padStart(2, '0');
+  });
+  
+  // Combine year and month into the expected format
+  const selectedMonth = `${selectedYear}-${selectedMonthNum}`;
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files) return;
@@ -147,7 +163,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
     handleFileSelect(e.dataTransfer.files);
   };
 
-  const monthOptions = generateMonthOptions();
+  const yearOptions = generateYearOptions();
 
   return (
     <div className="space-y-4">
@@ -158,24 +174,48 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
         </span>
       </div>
 
-      {/* Month Selection */}
+      {/* Month and Year Selection */}
       <div className="space-y-2">
-        <Label htmlFor="month-selector" className="text-sm font-medium flex items-center gap-2">
+        <Label className="text-sm font-medium flex items-center gap-2">
           <Calendar className="h-4 w-4" />
-          📅 Mês da Pasta *
+          📅 Mês e Ano da Pasta *
         </Label>
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger id="month-selector">
-            <SelectValue placeholder="Selecione o mês para organizar as fotos" />
-          </SelectTrigger>
-          <SelectContent>
-            {monthOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="month-selector" className="text-xs text-muted-foreground mb-1 block">
+              Mês
+            </Label>
+            <Select value={selectedMonthNum} onValueChange={setSelectedMonthNum}>
+              <SelectTrigger id="month-selector">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="year-selector" className="text-xs text-muted-foreground mb-1 block">
+              Ano
+            </Label>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger id="year-selector">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {yearOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <p className="text-xs text-muted-foreground">
           As fotos serão organizadas na pasta: <code>/obras/{selectedMonth}/</code>
         </p>

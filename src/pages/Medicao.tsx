@@ -628,12 +628,20 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
     // 5) Valor Acumulado (SEMPRE até a ÚLTIMA medição, não a atual visualizada)
     // Isso garante que o progresso mostrado em "Valor Pago" sempre reflita a última medição
+    // IMPORTANTE: Somar apenas itens FOLHA (MICROs) para evitar dupla contagem com MACROs
     let valorAcumulado = 0;
     if (medicoes.length > 0) {
       // Somar TODAS as medições para obter o valor acumulado real (última medição)
       for (let i = 0; i < medicoes.length; i++) {
         const dados = medicoes[i].dados;
-        valorAcumulado += Object.values(dados).reduce((s, d: any) => s + (d.total || 0), 0);
+        // Filtrar apenas itens folha para evitar dupla contagem
+        Object.entries(dados).forEach(([itemIdStr, d]: [string, any]) => {
+          const itemId = parseInt(itemIdStr);
+          const item = items.find(it => it.id === itemId);
+          if (item && ehItemFolha(item.item)) {
+            valorAcumulado += d.total || 0;
+          }
+        });
       }
     }
     // Não somar aditivos automaticamente ao valor acumulado
