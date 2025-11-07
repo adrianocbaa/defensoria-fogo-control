@@ -91,7 +91,8 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
         url: '',
         uploadedAt: new Date().toISOString(),
         fileName: `foto-${index + 1}.jpg`,
-        monthFolder: undefined
+        monthFolder: undefined,
+        isCover: false
       };
     }
 
@@ -101,7 +102,8 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
         url: photo.url,
         uploadedAt: photo.uploadedAt || new Date().toISOString(),
         fileName: photo.fileName || `foto-${index + 1}.jpg`,
-        monthFolder: photo.monthFolder
+        monthFolder: photo.monthFolder,
+        isCover: photo.isCover || false
       };
     }
     
@@ -112,18 +114,26 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
       url,
       uploadedAt: new Date().toISOString(),
       fileName: url.split('/').pop() || `foto-${index + 1}.jpg`,
-      monthFolder: monthMatch ? monthMatch[1] : undefined
+      monthFolder: monthMatch ? monthMatch[1] : undefined,
+      isCover: false
     };
   }).filter(photo => photo.url); // Remove photos with empty URLs
+  
+  // Sort photos: cover photo first, then others
+  const sortedPhotos = [...photosWithMetadata].sort((a, b) => {
+    if (a.isCover) return -1;
+    if (b.isCover) return 1;
+    return 0;
+  });
 
   return (
     <div className="space-y-4 lg:space-y-6 animate-fade-in">
       {/* Header com foto principal */}
       <div className="relative">
-        {photosWithMetadata.length > 0 && (
-          <div className="w-full h-48 lg:h-64 rounded-lg overflow-hidden mb-4">
+        {sortedPhotos.length > 0 && (
+          <div className="w-full h-48 lg:h-64 rounded-lg overflow-hidden mb-4 relative">
             <img
-              src={photosWithMetadata[0].url}
+              src={sortedPhotos[0].url}
               alt="Foto principal da obra"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -131,6 +141,11 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 target.src = 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800';
               }}
             />
+            {sortedPhotos[0].isCover && (
+              <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-3 py-1 rounded-full shadow-lg">
+                Foto de Capa
+              </div>
+            )}
           </div>
         )}
         
@@ -301,15 +316,15 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center gap-2">
               <Image className="h-4 w-4" />
-              <span className="font-semibold">Álbum de Fotos ({photosWithMetadata.length})</span>
+              <span className="font-semibold">Álbum de Fotos ({sortedPhotos.length})</span>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
-            {photosWithMetadata.length > 0 ? (
+            {sortedPhotos.length > 0 ? (
               photosLoading ? (
-                <PhotoGalleryLoadingSkeleton count={photosWithMetadata.length} />
+                <PhotoGalleryLoadingSkeleton count={sortedPhotos.length} />
               ) : (
-                <PhotoGalleryCollapsible photos={photosWithMetadata} />
+                <PhotoGalleryCollapsible photos={sortedPhotos} />
               )
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhuma foto cadastrada</p>

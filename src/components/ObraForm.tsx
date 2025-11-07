@@ -115,6 +115,15 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     toast.success('Localização selecionada com sucesso');
   };
 
+  const handleSetCoverPhoto = (photoIndex: number) => {
+    const updatedPhotos = photos.map((photo, index) => ({
+      ...photo,
+      isCover: index === photoIndex
+    }));
+    setPhotos(updatedPhotos);
+    toast.success('Foto de capa atualizada');
+  };
+
   // Calcular automaticamente a previsão de término quando data_inicio ou tempo_obra mudarem
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -472,9 +481,10 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
 
           {/* Photos Upload */}
           <div className="space-y-4">
-            <PhotoUpload
+            <PhotoUpload 
               photos={photos}
               onPhotosChange={setPhotos}
+              onSetCover={handleSetCoverPhoto}
             />
             
             {/* Collapsible Photo Gallery for editing */}

@@ -14,12 +14,14 @@ interface PhotoMetadata {
   uploadedAt: string;
   fileName: string;
   monthFolder?: string; // Format: YYYY-MM
+  isCover?: boolean; // Marca se é a foto de capa
 }
 
 interface PhotoUploadProps {
   photos: PhotoMetadata[];
   onPhotosChange: (photos: PhotoMetadata[]) => void;
   maxPhotos?: number;
+  onSetCover?: (photoIndex: number) => void;
 }
 
 // Generate year options (current year and +/- 3 years)
@@ -51,7 +53,7 @@ const monthOptions = [
   { value: '12', label: 'Dezembro' },
 ];
 
-export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUploadProps) {
+export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100, onSetCover }: PhotoUploadProps) {
   const { uploadFile, uploading } = useFileUpload();
   const [dragOver, setDragOver] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -295,6 +297,52 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 100 }: PhotoUp
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Photos Grid with Cover Selection */}
+      {photos.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
+            Fotos Enviadas ({photos.length})
+          </Label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {photos.map((photo, index) => (
+              <div key={index} className="relative group">
+                <div className={`relative aspect-video rounded-lg overflow-hidden border-2 ${photo.isCover ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
+                  <img 
+                    src={photo.url} 
+                    alt={photo.fileName}
+                    className="w-full h-full object-cover"
+                  />
+                  {photo.isCover && (
+                    <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded">
+                      Capa
+                    </div>
+                  )}
+                  {onSetCover && !photo.isCover && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white hover:bg-black/70"
+                      onClick={() => onSetCover(index)}
+                    >
+                      Definir como Capa
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate" title={photo.fileName}>
+                  {photo.fileName}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {photos.some(p => p.isCover) 
+              ? 'A foto marcada como "Capa" será exibida na visualização principal da obra.' 
+              : 'Clique em uma foto para defini-la como capa da obra.'}
+          </p>
+        </div>
       )}
     </div>
   );
