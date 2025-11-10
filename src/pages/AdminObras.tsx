@@ -25,6 +25,7 @@ interface Obra {
   valor_aditivado?: number;
   porcentagem_execucao: number;
   created_at: string;
+  previsao_termino?: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -46,6 +47,7 @@ export function AdminObras() {
   const [filteredObras, setFilteredObras] = useState<Obra[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('todos');
   const { canEdit } = useUserRole();
   const navigate = useNavigate();
   const [execPercents, setExecPercents] = useState<Record<string, number>>({});
@@ -56,8 +58,7 @@ export function AdminObras() {
       setLoading(true);
       const { data, error } = await supabase
         .from('obras')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) throw error;
       
@@ -73,8 +74,11 @@ export function AdminObras() {
         };
       });
       
-      setObras(obrasWithCalculatedExecution);
-      setFilteredObras(obrasWithCalculatedExecution);
+      // Ordenar obras
+      const sortedObras = sortObras(obrasWithCalculatedExecution);
+      
+      setObras(sortedObras);
+      setFilteredObras(sortedObras);
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');
@@ -86,22 +90,50 @@ export function AdminObras() {
     }
   };
 
+  // Função de ordenação customizada
+  const sortObras = (obrasList: Obra[]) => {
+    const statusOrder = { em_andamento: 1, paralisada: 2, concluida: 3, planejamento: 4 };
+    
+    return [...obrasList].sort((a, b) => {
+      // Primeiro ordena por status
+      const statusA = statusOrder[a.status as keyof typeof statusOrder] || 99;
+      const statusB = statusOrder[b.status as keyof typeof statusOrder] || 99;
+      
+      if (statusA !== statusB) {
+        return statusA - statusB;
+      }
+      
+      // Depois ordena por data de término (mais próximas primeiro)
+      const dateA = a.previsao_termino ? new Date(a.previsao_termino).getTime() : Infinity;
+      const dateB = b.previsao_termino ? new Date(b.previsao_termino).getTime() : Infinity;
+      
+      return dateA - dateB;
+    });
+  };
+
   useEffect(() => {
     fetchObras();
   }, []);
 
   useEffect(() => {
-    if (!searchTerm) {
-      setFilteredObras(obras);
-    } else {
-      const filtered = obras.filter(obra =>
+    let filtered = obras;
+    
+    // Filtro por busca
+    if (searchTerm) {
+      filtered = filtered.filter(obra =>
         obra.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         obra.municipio.toLowerCase().includes(searchTerm.toLowerCase()) ||
         obra.tipo.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredObras(filtered);
     }
-  }, [searchTerm, obras]);
+    
+    // Filtro por status
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(obra => obra.status === statusFilter);
+    }
+    
+    setFilteredObras(filtered);
+  }, [searchTerm, statusFilter, obras]);
 
   // Sincroniza Execução e Total do Contrato com o Sistema de Medição (localStorage)
   useEffect(() => {
@@ -208,14 +240,49 @@ export function AdminObras() {
       <Card>
         <CardHeader>
           <CardTitle>Lista de Obras</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Search className="h-4 w-4" />
-            <Input
-              placeholder="Buscar por nome, município ou tipo..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex items-center space-x-2 flex-1">
+              <Search className="h-4 w-4" />
+              <Input
+                placeholder="Buscar por nome, município ou tipo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Filtrar por:</span>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant={statusFilter === 'todos' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('todos')}
+                >
+                  Todos
+                </Button>
+                <Button
+                  variant={statusFilter === 'em_andamento' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('em_andamento')}
+                >
+                  Em Andamento
+                </Button>
+                <Button
+                  variant={statusFilter === 'paralisada' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('paralisada')}
+                >
+                  Paralisado
+                </Button>
+                <Button
+                  variant={statusFilter === 'concluida' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('concluida')}
+                >
+                  Concluído
+                </Button>
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
