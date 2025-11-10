@@ -92,7 +92,7 @@ export function AdminObras() {
 
   // Função de ordenação customizada
   const sortObras = (obrasList: Obra[]) => {
-    const statusOrder = { em_andamento: 1, paralisada: 2, concluida: 3, planejamento: 4 };
+    const statusOrder = { em_andamento: 1, planejamento: 2, paralisada: 3, concluida: 4 };
     
     return [...obrasList].sort((a, b) => {
       // Primeiro ordena por status
