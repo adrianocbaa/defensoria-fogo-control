@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { useCronogramaFinanceiro, CronogramaFinanceiro, CronogramaItem } from '@/hooks/useCronogramaFinanceiro';
@@ -189,18 +189,32 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
                 <p className="text-xs text-muted-foreground mb-4">
                   O arquivo deve conter os MACROS da planilha com valores distribuídos por períodos (30, 60, 90 dias, etc.)
                 </p>
-                <label htmlFor="cronograma-upload" className="cursor-pointer">
-                  <Button type="button" variant="outline" asChild>
-                    <span>Selecionar Arquivo</span>
+                <div className="flex flex-col gap-3 items-center">
+                  <label htmlFor="cronograma-upload" className="cursor-pointer">
+                    <Button type="button" variant="outline" asChild>
+                      <span>Selecionar Arquivo</span>
+                    </Button>
+                  </label>
+                  <input
+                    id="cronograma-upload"
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className="gap-2"
+                  >
+                    <a href="/templates/Modelo_-_Cronograma.xlsx" download>
+                      <Download className="w-4 h-4" />
+                      Baixar Modelo Excel
+                    </a>
                   </Button>
-                </label>
-                <input
-                  id="cronograma-upload"
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+                </div>
               </div>
 
               <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
