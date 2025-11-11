@@ -3234,10 +3234,6 @@ const criarNovaMedicao = async () => {
                         />
                       </DialogContent>
                     </Dialog>
-                    <Button onClick={adicionarItem} className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Adicionar Item
-                    </Button>
                   </div>
                 </div>
               </CardHeader>
