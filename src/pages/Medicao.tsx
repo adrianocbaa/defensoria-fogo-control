@@ -103,7 +103,7 @@ const relativeTimePTBR = (iso?: string) => {
 export function Medicao() {
   const { id } = useParams();
   const navigate = useNavigate();
-const { isAdmin } = useUserRole();
+const { isAdmin, canEdit } = useUserRole();
 const { createSession, blockSession, reopenSession, deleteSession } = useMedicaoSessions();
 const { createSession: createAditivoSession, reopenSession: reopenAditivoSession, deleteSession: deleteAditivoSession, fetchSessionsWithItems: fetchAditivoSessions, blockSession: blockAditivoSession } = useAditivoSessions();
 const { upsertItems } = useMedicaoItems();
@@ -2407,7 +2407,169 @@ const criarNovaMedicao = async () => {
         }
       }
   };
-  // Função para salvar e bloquear medição
+  // Função para salvar medição (sem bloquear - para editores)
+  const salvarMedicao = async (medicaoId: number) => {
+    const medicao = medicoes.find(m => m.id === medicaoId);
+    if (!medicao || !obra) return;
+
+    // Verificar se há dados preenchidos
+    const temDados = Object.values(medicao.dados).some(dados => 
+      dados.qnt > 0 || dados.percentual > 0 || dados.total > 0
+    );
+
+    if (!temDados) {
+      toast.error('Não há dados para salvar.');
+      return;
+    }
+
+    // Hard guard: validar que nenhum item excede 100%
+    const medicaoIndex = medicoes.findIndex(m => m.id === medicaoId);
+    const itensInvalidos: { codigo: string; disponivel: number; digitado: number }[] = [];
+    for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
+      const itemId = parseInt(itemIdStr);
+      const item = items.find(i => i.id === itemId);
+      if (!item) continue;
+
+      let qntAcumAnterior = 0;
+      for (let i = 0; i < medicaoIndex; i++) {
+        const dh = dadosHierarquicosMemoizados[medicoes[i].id];
+        if (dh && dh[itemId]) {
+          qntAcumAnterior += dh[itemId].qnt || 0;
+        }
+      }
+      const qntAditivoAcum = aditivos
+        .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
+        .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
+      const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
+      const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
+      if (dados.qnt > disponivel + 1e-9) {
+        itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
+      }
+    }
+
+    if (itensInvalidos.length > 0) {
+      const lista = itensInvalidos
+        .map(it => `${it.codigo}: disponível ${it.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, digitado ${it.digitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+        .join('\n');
+      toast.error(`Itens ultrapassam 100% e impedem o salvamento:\n${lista}`);
+      return;
+    }
+
+    try {
+      if (!medicao.sessionId) {
+        toast.error('Sessão de medição inválida. Recarregue a página.');
+        return;
+      }
+
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id ?? null;
+
+      const payload = Object.entries(medicao.dados)
+        .map(([itemIdStr, dados]) => {
+          const itemId = parseInt(itemIdStr);
+          const item = items.find(i => i.id === itemId);
+          if (!item || !item.codigo || !item.codigo.trim()) return null;
+
+          const qtd = Number(dados.qnt) || 0;
+          if (qtd <= 0) return null;
+          const totalContrato = calcularTotalContratoComAditivos(item, medicaoId);
+          const total = dados.total && !isNaN(dados.total)
+            ? Number(dados.total)
+            : (totalContrato > 0 ? (qtd / (item.quantidade || 1)) * totalContrato : 0);
+          const pct = totalContrato > 0 ? (total / totalContrato) * 100 : 0;
+
+          return {
+            item_code: item.codigo.trim(),
+            qtd,
+            pct,
+            total,
+          };
+        })
+        .filter(Boolean) as { item_code: string; qtd: number; pct: number; total: number }[];
+
+      if (payload.length === 0) {
+        toast.error('Não há itens com quantidade para salvar.');
+        return;
+      }
+
+      await upsertItems(medicao.sessionId, payload, userId);
+
+      toast.success('Medição salva com sucesso.');
+    } catch (error) {
+      console.error('Erro ao salvar medição:', error);
+      toast.error(`Erro ao salvar medição no banco: ${ (error as any)?.message || 'Tente novamente.'}`);
+    }
+  };
+
+  // Função para bloquear medição (para editores)
+  const bloquearMedicao = async (medicaoId: number) => {
+    const medicao = medicoes.find(m => m.id === medicaoId);
+    if (!medicao || !obra) return;
+
+    // Verificar se há dados preenchidos
+    const temDados = Object.values(medicao.dados).some(dados => 
+      dados.qnt > 0 || dados.percentual > 0 || dados.total > 0
+    );
+
+    if (!temDados) {
+      toast.error('Não é possível bloquear uma medição sem dados preenchidos.');
+      return;
+    }
+
+    try {
+      if (!medicao.sessionId) {
+        toast.error('Sessão de medição inválida. Recarregue a página.');
+        return;
+      }
+
+      await blockSession(medicao.sessionId);
+
+      setMedicoes(prevMedicoes =>
+        prevMedicoes.map(m =>
+          m.id === medicaoId
+            ? {
+                ...m,
+                bloqueada: true,
+                dataBloqueio: new Date().toISOString(),
+                usuarioBloqueio: 'Usuário Atual',
+              }
+            : m
+        )
+      );
+
+      toast.success('Medição bloqueada.');
+      
+      // Calcular valores financeiros corretos
+      const valorTotalOriginalCorreto = items
+        .filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual')
+        .reduce((total, item) => total + item.valorTotal, 0);
+      
+      const totalAditivoCorreto = aditivos
+        .filter(a => a.bloqueada)
+        .reduce((adSum, a) => {
+          return adSum + items.reduce((itemSum, item) => itemSum + (a.dados[item.id]?.total || 0), 0);
+        }, 0);
+      
+      const totalContratoCorreto = valorTotalOriginalCorreto + totalAditivoCorreto;
+
+      const resumoFinanceiro = {
+        obraId: obra.id,
+        valorTotalOriginal: valorTotalOriginalCorreto,
+        totalAditivo: totalAditivoCorreto,
+        totalContrato: totalContratoCorreto,
+        servicosExecutados: totalServicosExecutados,
+        valorAcumulado: valorAcumuladoTotal,
+      };
+
+      localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
+      window.dispatchEvent(new CustomEvent('medicaoAtualizada', { detail: resumoFinanceiro }));
+    } catch (error) {
+      console.error('Erro ao bloquear medição:', error);
+      toast.error(`Erro ao bloquear medição: ${ (error as any)?.message || 'Tente novamente.'}`);
+    }
+  };
+
+  // Função para salvar e bloquear medição (mantido para admins)
   const salvarEBloquearMedicao = async (medicaoId: number) => {
     const medicao = medicoes.find(m => m.id === medicaoId);
     if (!medicao || !obra) return;
@@ -2437,7 +2599,6 @@ const criarNovaMedicao = async () => {
           qntAcumAnterior += dh[itemId].qnt || 0;
         }
       }
-      // Considerar QNT adicionada por aditivos publicados anteriores ou na mesma medição
       const qntAditivoAcum = aditivos
         .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
         .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
@@ -2457,13 +2618,11 @@ const criarNovaMedicao = async () => {
     }
 
     try {
-      // Persistir itens na tabela normalizada e bloquear a sessão
       if (!medicao.sessionId) {
         toast.error('Sessão de medição inválida. Recarregue a página.');
         return;
       }
 
-      // Montar payload para upsert dos itens da medição ativa
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData?.user?.id ?? null;
 
@@ -2474,7 +2633,7 @@ const criarNovaMedicao = async () => {
           if (!item || !item.codigo || !item.codigo.trim()) return null;
 
           const qtd = Number(dados.qnt) || 0;
-          if (qtd <= 0) return null; // só persiste itens com QNT > 0
+          if (qtd <= 0) return null;
           const totalContrato = calcularTotalContratoComAditivos(item, medicaoId);
           const total = dados.total && !isNaN(dados.total)
             ? Number(dados.total)
@@ -3490,14 +3649,16 @@ const criarNovaMedicao = async () => {
                             <DropdownMenuContent align="start" className="min-w-[200px]">
                               {m.bloqueada ? (
                                 <>
-                                  <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      setConfirm({ open: true, type: 'reabrir-medicao', medicaoId: m.id });
-                                    }}
-                                  >
-                                    🔓 Reabrir
-                                  </DropdownMenuItem>
+                                  {isAdmin && (
+                                    <DropdownMenuItem
+                                      onSelect={(e) => {
+                                        e.preventDefault();
+                                        setConfirm({ open: true, type: 'reabrir-medicao', medicaoId: m.id });
+                                      }}
+                                    >
+                                      🔓 Reabrir
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem
                                     className="text-destructive"
                                     onSelect={(e) => {
@@ -3510,14 +3671,35 @@ const criarNovaMedicao = async () => {
                                 </>
                               ) : (
                                 <>
-                                  <DropdownMenuItem
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      salvarEBloquearMedicao(m.id);
-                                    }}
-                                  >
-                                    ✅ Salvar e Bloquear
-                                  </DropdownMenuItem>
+                                  {isAdmin ? (
+                                    <DropdownMenuItem
+                                      onSelect={(e) => {
+                                        e.preventDefault();
+                                        salvarEBloquearMedicao(m.id);
+                                      }}
+                                    >
+                                      ✅ Salvar e Bloquear
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <>
+                                      <DropdownMenuItem
+                                        onSelect={(e) => {
+                                          e.preventDefault();
+                                          salvarMedicao(m.id);
+                                        }}
+                                      >
+                                        💾 Salvar
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onSelect={(e) => {
+                                          e.preventDefault();
+                                          bloquearMedicao(m.id);
+                                        }}
+                                      >
+                                        🔒 Bloquear
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
                                   <DropdownMenuItem
                                     className="text-destructive"
                                     onSelect={(e) => {
