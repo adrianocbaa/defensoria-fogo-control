@@ -36,15 +36,12 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is admin
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+    // Check if user is admin using the is_admin() function
+    const { data: isAdmin, error: adminCheckError } = await supabaseAdmin
+      .rpc('is_admin', { user_id: user.id });
 
-    if (profileError || profile?.role !== 'admin') {
-      console.error('Admin check failed:', profileError);
+    if (adminCheckError || !isAdmin) {
+      console.error('Admin check failed:', adminCheckError);
       return new Response(
         JSON.stringify({ error: 'Apenas administradores podem resetar senhas' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

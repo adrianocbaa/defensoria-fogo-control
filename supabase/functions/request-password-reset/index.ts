@@ -28,14 +28,6 @@ serve(async (req: Request) => {
       );
     }
 
-    // Temporariamente apenas permitir email de teste
-    if (email !== "adriano.eng.mt@gmail.com") {
-      return new Response(
-        JSON.stringify({ error: "Recuperação de senha temporariamente disponível apenas para email autorizado. Entre em contato com o administrador." }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Find user by email

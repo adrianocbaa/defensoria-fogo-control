@@ -35,13 +35,28 @@ export function UserManagement() {
 
   const loadUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // Get profiles with their roles from user_roles table
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, user_id, display_name, role, created_at, is_active')
+        .select('id, user_id, display_name, created_at, is_active')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUsers(data || []);
+      if (profilesError) throw profilesError;
+
+      // Get roles for each user
+      const usersWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          const { data: roleData } = await supabase
+            .rpc('get_user_role', { user_uuid: profile.user_id });
+          
+          return {
+            ...profile,
+            role: (roleData as UserRole) || 'viewer'
+          };
+        })
+      );
+
+      setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error loading users:', error);
       toast({
@@ -56,15 +71,22 @@ export function UserManagement() {
 
   const updateUserRole = async (userId: string, role: UserRole) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role })
-        .eq('id', userId);
+      // Find the user by profile id
+      const user = users.find(u => u.id === userId);
+      if (!user) throw new Error('Usuário não encontrado');
 
-      if (error) throw error;
+      // Update role in user_roles table
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert({ 
+          user_id: user.user_id, 
+          role 
+        });
 
-      setUsers(prev => prev.map(user => 
-        user.id === userId ? { ...user, role } : user
+      if (roleError) throw roleError;
+
+      setUsers(prev => prev.map(u => 
+        u.id === userId ? { ...u, role } : u
       ));
 
       toast({
