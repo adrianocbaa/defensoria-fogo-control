@@ -150,6 +150,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Force clear state and redirect
+    setSession(null);
+    setUser(null);
+    window.location.href = '/auth';
   };
 
   const resetPassword = async (email: string) => {
