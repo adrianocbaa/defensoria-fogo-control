@@ -149,11 +149,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    // Force clear state and redirect
-    setSession(null);
-    setUser(null);
-    window.location.href = '/auth';
+    try {
+      // Clear state first to prevent any re-renders
+      setSession(null);
+      setUser(null);
+      
+      // Clear Supabase session with 'local' scope to immediately remove from storage
+      await supabase.auth.signOut({ scope: 'local' });
+      
+      // Small delay to ensure storage is cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Force redirect with full page reload to clear any remaining state
+      window.location.replace('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Still redirect even if error occurs
+      window.location.replace('/auth');
+    }
   };
 
   const resetPassword = async (email: string) => {
