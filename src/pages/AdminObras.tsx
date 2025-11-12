@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 
@@ -208,6 +208,29 @@ export function AdminObras() {
     }).format(value);
   };
 
+  const handleLimparCache = () => {
+    try {
+      // Limpar dados financeiros do localStorage
+      obras.forEach((obra) => {
+        localStorage.removeItem(`resumo_financeiro_${obra.id}`);
+      });
+      
+      // Resetar estados calculados
+      setExecPercents({});
+      setContractTotals({});
+      
+      toast.success('Cache limpo com sucesso!', {
+        description: 'Recarregando dados atualizados...'
+      });
+      
+      // Recarregar as obras
+      fetchObras();
+    } catch (error) {
+      console.error('Erro ao limpar cache:', error);
+      toast.error('Erro ao limpar cache');
+    }
+  };
+
   if (loading) {
     return <LoadingStates.TableSkeleton />;
   }
@@ -219,6 +242,15 @@ export function AdminObras() {
         subtitle="Visualize e gerencie todas as obras públicas"
         actions={
           <>
+            <Button 
+              onClick={handleLimparCache} 
+              variant="outline" 
+              size="sm"
+              title="Limpar cache e atualizar dados de progresso"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar Progresso
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/obras">
                 <Map className="h-4 w-4 mr-2" />
