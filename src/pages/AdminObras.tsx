@@ -62,8 +62,8 @@ export function AdminObras() {
 
       if (error) throw error;
       
-      // Calcular porcentagem de execução corretamente
-      const obrasWithCalculatedExecution = (data || []).map(obra => {
+      // Calcular porcentagem de execução baseada nos dados do banco
+      const obrasWithCalculatedExecution = (data || []).map((obra: any) => {
         const valorFinal = Number(obra.valor_total) + Number(obra.valor_aditivado || 0);
         const valorPago = Number(obra.valor_executado || 0);
         const porcentagemExecucao = valorFinal > 0 ? (valorPago / valorFinal) * 100 : 0;
@@ -215,16 +215,14 @@ export function AdminObras() {
         localStorage.removeItem(`resumo_financeiro_${obra.id}`);
       });
       
-      // Resetar estados calculados
-      setExecPercents({});
-      setContractTotals({});
-      
-      toast.success('Cache limpo com sucesso!', {
-        description: 'Recarregando dados atualizados...'
+      toast.success('Cache limpo!', {
+        description: 'Recarregando página para atualizar dados...'
       });
       
-      // Recarregar as obras
-      fetchObras();
+      // Recarregar a página completa
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error('Erro ao limpar cache:', error);
       toast.error('Erro ao limpar cache');
