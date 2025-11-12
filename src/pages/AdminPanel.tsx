@@ -36,6 +36,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const [tempPassDialog, setTempPassDialog] = useState<{ open: boolean; userName: string; password: string }>({ open: false, userName: '', password: '' });
 
   useEffect(() => {
     if (isAdmin) {
@@ -193,9 +194,17 @@ export default function AdminPanel() {
 
       if (error) throw error;
 
+      const tempPassword: string | undefined = (data as any)?.tempPassword;
+      if (tempPassword) {
+        setTempPassDialog({ open: true, userName, password: tempPassword });
+        try { await navigator.clipboard.writeText(tempPassword); } catch {}
+      }
+
       toast({
-        title: 'Sucesso',
-        description: `Senha de ${userName} resetada para Admin123`,
+        title: 'Senha resetada',
+        description: tempPassword
+          ? `Senha temporária de ${userName}: ${tempPassword}\n(Copiada para a área de transferência)`
+          : `Senha de ${userName} resetada.`,
       });
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -342,7 +351,8 @@ export default function AdminPanel() {
                                       <AlertDialogTitle>Resetar Senha</AlertDialogTitle>
                                       <AlertDialogDescription>
                                         Resetar senha de <strong>{profile.display_name}</strong>?
-                                        <br />Nova senha: <strong>Admin123</strong>
+                                        <br />
+                                        <span className="text-sm text-muted-foreground">Uma senha temporária segura será gerada e exibida após a confirmação (copiada para a área de transferência).</span>
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -504,6 +514,33 @@ export default function AdminPanel() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Modal com senha temporária */}
+        <AlertDialog open={tempPassDialog.open} onOpenChange={(open) => setTempPassDialog((prev) => ({ ...prev, open }))}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Senha temporária gerada</AlertDialogTitle>
+              <AlertDialogDescription>
+                Informe ao usuário <strong>{tempPassDialog.userName}</strong> para colar a senha sem espaços e alterá-la no primeiro acesso.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="bg-muted rounded-md p-3 font-mono text-sm select-all">
+              {tempPassDialog.password}
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogAction
+                onClick={() => {
+                  if (tempPassDialog.password && navigator?.clipboard) {
+                    try { navigator.clipboard.writeText(tempPassDialog.password); } catch {}
+                  }
+                  setTempPassDialog({ open: false, userName: '', password: '' });
+                }}
+              >
+                Copiar e fechar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
