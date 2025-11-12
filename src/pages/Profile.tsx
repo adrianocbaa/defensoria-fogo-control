@@ -11,9 +11,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Lock, Settings, Shield, Eye, EyeOff, Upload } from 'lucide-react';
+import { User, Lock, Settings, Shield, Eye, EyeOff, Upload, Trash2, AlertTriangle } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { AvatarCropDialog } from '@/components/AvatarCropDialog';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -37,6 +47,7 @@ export default function Profile() {
   // Settings state
   const [language, setLanguage] = useState('pt-BR');
   const [theme, setTheme] = useState('system');
+  const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
 
   // Sync form with profile data when it loads
   useEffect(() => {
@@ -151,6 +162,28 @@ export default function Profile() {
 
   const handleSettingsUpdate = () => {
     updateProfile({ language, theme });
+  };
+
+  const handleClearCache = () => {
+    try {
+      // Limpar todo localStorage
+      localStorage.clear();
+      
+      // Limpar sessionStorage
+      sessionStorage.clear();
+      
+      toast.success('Cache limpo com sucesso!', {
+        description: 'Você será redirecionado para a página de login.'
+      });
+      
+      // Redirecionar para login após 1 segundo
+      setTimeout(() => {
+        window.location.replace('/auth');
+      }, 1000);
+    } catch (error) {
+      console.error('Erro ao limpar cache:', error);
+      toast.error('Erro ao limpar cache. Tente novamente.');
+    }
   };
 
   const getRoleLabel = (role: string) => {
@@ -459,6 +492,40 @@ export default function Profile() {
               </CardContent>
             </Card>
 
+            {/* Maintenance Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Manutenção do Sistema
+                </CardTitle>
+                <CardDescription>
+                  Ferramentas para resolver problemas comuns
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-4 p-4 border border-orange-200 bg-orange-50 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-2">
+                    <h4 className="font-medium text-sm">Limpar Cache do Navegador</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Se você está enfrentando problemas ao editar, cadastrar ou realizar ações no sistema, 
+                      limpar o cache pode resolver. Esta ação removerá todos os dados armazenados localmente 
+                      e você precisará fazer login novamente.
+                    </p>
+                    <Button 
+                      variant="outline"
+                      className="mt-2"
+                      onClick={() => setShowClearCacheDialog(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Limpar Cache e Dados Locais
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {isAdmin && (
               <Card>
                 <CardHeader>
@@ -502,6 +569,35 @@ export default function Profile() {
             onCropComplete={handleCropComplete}
           />
         )}
+
+        {/* Clear Cache Confirmation Dialog */}
+        <AlertDialog open={showClearCacheDialog} onOpenChange={setShowClearCacheDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                Limpar Cache do Navegador
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>Esta ação irá:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Remover todos os dados armazenados localmente</li>
+                  <li>Encerrar sua sessão atual</li>
+                  <li>Exigir que você faça login novamente</li>
+                </ul>
+                <p className="font-medium mt-3">
+                  Use esta opção se estiver enfrentando problemas ao usar o sistema.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearCache} className="bg-orange-600 hover:bg-orange-700">
+                Limpar Cache
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SimpleHeader>
   );

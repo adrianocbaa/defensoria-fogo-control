@@ -7,6 +7,7 @@ import { NucleiProvider } from "@/contexts/NucleiContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStorageVersioning } from "@/hooks/useStorageVersioning";
 import MainDashboard from "./pages/MainDashboard";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
@@ -420,20 +421,25 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <NucleiProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </TooltipProvider>
-      </NucleiProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Detectar e limpar dados antigos/corrompidos do storage
+  useStorageVersioning();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <NucleiProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </TooltipProvider>
+        </NucleiProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
