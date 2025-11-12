@@ -28,6 +28,7 @@ export function UserManagement() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState<UserRole>('viewer');
   const { toast } = useToast();
+  const [tempPassDialog, setTempPassDialog] = useState<{ open: boolean; userName: string; password: string }>({ open: false, userName: '', password: '' });
 
   useEffect(() => {
     loadUsers();
@@ -140,6 +141,9 @@ export function UserManagement() {
       if (error) throw error;
 
       const tempPassword: string | undefined = (data as any)?.tempPassword;
+      if (tempPassword) {
+        setTempPassDialog({ open: true, userName, password: tempPassword });
+      }
       // Try to copy to clipboard for convenience
       if (tempPassword && navigator?.clipboard) {
         try { await navigator.clipboard.writeText(tempPassword); } catch {}
@@ -375,6 +379,33 @@ export function UserManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Temp password modal */}
+      <AlertDialog open={tempPassDialog.open} onOpenChange={(open) => setTempPassDialog((prev) => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Senha temporária gerada</AlertDialogTitle>
+            <AlertDialogDescription>
+              Forneça esta senha ao usuário <strong>{tempPassDialog.userName}</strong> e peça para colar sem espaços e alterar no primeiro login.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="bg-muted rounded-md p-3 font-mono text-sm select-all">
+            {tempPassDialog.password}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => {
+                if (tempPassDialog.password && navigator?.clipboard) {
+                  try { navigator.clipboard.writeText(tempPassDialog.password); } catch {}
+                }
+                setTempPassDialog({ open: false, userName: '', password: '' });
+              }}
+            >
+              Copiar e fechar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
