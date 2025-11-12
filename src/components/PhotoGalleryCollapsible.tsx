@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Image, Calendar, FolderOpen, Eye, Trash2, Star } from 'lucide-react';
+import { ChevronDown, ChevronRight, Image, Calendar, FolderOpen, Eye, Trash2, Star, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ImageGallery } from '@/components/ImageGallery';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface PhotoMetadata {
   url: string;
@@ -18,6 +21,7 @@ interface PhotosByMonth {
   month: string;
   year: string;
   monthYear: string;
+  monthFolder: string; // Original YYYY-MM format
   photos: PhotoMetadata[];
   count: number;
 }
@@ -26,19 +30,25 @@ interface PhotoGalleryCollapsibleProps {
   photos: PhotoMetadata[];
   onPhotoRemove?: (photoUrl: string) => void;
   onSetCover?: (photoUrl: string) => void;
+  onEditAlbumDate?: (oldMonthFolder: string, newMonthFolder: string) => void;
   isEditing?: boolean;
 }
 
 export function PhotoGalleryCollapsible({ 
   photos, 
   onPhotoRemove,
-  onSetCover, 
+  onSetCover,
+  onEditAlbumDate,
   isEditing = false 
 }: PhotoGalleryCollapsibleProps) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [currentViewPhotos, setCurrentViewPhotos] = useState<string[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingMonthFolder, setEditingMonthFolder] = useState('');
+  const [newMonth, setNewMonth] = useState('');
+  const [newYear, setNewYear] = useState('');
   
   // Group photos by month using monthFolder (selected by user)
   const photosByMonth = useMemo(() => {
@@ -57,6 +67,7 @@ export function PhotoGalleryCollapsible({
           month: date.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase(),
           year: date.getFullYear().toString(),
           monthYear: monthName,
+          monthFolder: monthYear, // Store original YYYY-MM format
           photos: [],
           count: 0
         };
@@ -70,9 +81,7 @@ export function PhotoGalleryCollapsible({
 
     // Sort by date (most recent first)
     return Object.values(grouped).sort((a, b) => {
-      const aKey = Object.keys(grouped).find(key => grouped[key].monthYear === a.monthYear) || '';
-      const bKey = Object.keys(grouped).find(key => grouped[key].monthYear === b.monthYear) || '';
-      return bKey.localeCompare(aKey);
+      return b.monthFolder.localeCompare(a.monthFolder);
     });
   }, [photos]);
 
@@ -91,6 +100,49 @@ export function PhotoGalleryCollapsible({
     }
     setExpandedFolders(newExpanded);
   };
+
+  const handleEditAlbumDate = (monthFolder: string) => {
+    const [year, month] = monthFolder.split('-');
+    setEditingMonthFolder(monthFolder);
+    setNewMonth(month);
+    setNewYear(year);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveAlbumDate = () => {
+    if (!newMonth || !newYear) {
+      toast.error('Selecione mês e ano');
+      return;
+    }
+
+    const newMonthFolder = `${newYear}-${newMonth}`;
+    
+    if (onEditAlbumDate) {
+      onEditAlbumDate(editingMonthFolder, newMonthFolder);
+    }
+    
+    setEditDialogOpen(false);
+    toast.success('Data do álbum atualizada com sucesso');
+  };
+
+  // Generate month and year options
+  const months = [
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' },
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - i + 1);
 
   if (photos.length === 0) {
     return (
@@ -119,9 +171,9 @@ export function PhotoGalleryCollapsible({
             open={expandedFolders.has(monthData.monthYear)}
             onOpenChange={() => toggleFolder(monthData.monthYear)}
           >
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center gap-3 flex-1 cursor-pointer">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <FolderOpen className="h-5 w-5 text-primary" />
                   </div>
@@ -132,33 +184,47 @@ export function PhotoGalleryCollapsible({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* Mini preview thumbnails */}
-                  <div className="flex gap-1">
-                    {monthData.photos.slice(0, 3).map((photo, index) => (
-                      <div key={index} className="w-8 h-8 rounded overflow-hidden bg-muted">
-                        <img
-                          src={photo.url}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    ))}
-                    {monthData.count > 3 && (
-                      <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                        <span className="text-xs">+{monthData.count - 3}</span>
-                      </div>
-                    )}
-                  </div>
-                  {expandedFolders.has(monthData.monthYear) ? (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <div className="flex items-center gap-2">
+                {isEditing && onEditAlbumDate && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditAlbumDate(monthData.monthFolder);
+                    }}
+                    className="h-8"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                {/* Mini preview thumbnails */}
+                <div className="flex gap-1">
+                  {monthData.photos.slice(0, 3).map((photo, index) => (
+                    <div key={index} className="w-8 h-8 rounded overflow-hidden bg-muted">
+                      <img
+                        src={photo.url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
+                  {monthData.count > 3 && (
+                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                      <span className="text-xs">+{monthData.count - 3}</span>
+                    </div>
                   )}
                 </div>
+                {expandedFolders.has(monthData.monthYear) ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
               </div>
-            </CollapsibleTrigger>
+            </div>
             
             <CollapsibleContent>
               <div className="px-4 pb-4">
@@ -251,6 +317,58 @@ export function PhotoGalleryCollapsible({
         onClose={() => setGalleryOpen(false)}
         initialIndex={selectedImageIndex}
       />
+
+      {/* Edit Album Date Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Data do Álbum</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mês</label>
+              <Select value={newMonth} onValueChange={setNewMonth}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month) => (
+                    <SelectItem key={month.value} value={month.value}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ano</label>
+              <Select value={newYear} onValueChange={setNewYear}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveAlbumDate}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

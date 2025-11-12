@@ -124,6 +124,19 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     toast.success('Foto de capa atualizada');
   };
 
+  const handleEditAlbumDate = (oldMonthFolder: string, newMonthFolder: string) => {
+    const updatedPhotos = photos.map((photo) => {
+      if (photo.monthFolder === oldMonthFolder) {
+        return {
+          ...photo,
+          monthFolder: newMonthFolder
+        };
+      }
+      return photo;
+    });
+    setPhotos(updatedPhotos);
+  };
+
   // Calcular automaticamente a previsão de término quando data_inicio ou tempo_obra mudarem
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -496,6 +509,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                     setPhotos(prev => prev.filter(p => p.url !== photoUrl));
                   }}
                   onSetCover={handleSetCoverPhoto}
+                  onEditAlbumDate={handleEditAlbumDate}
                   isEditing={true}
                 />
               </div>
