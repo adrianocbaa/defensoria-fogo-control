@@ -79,6 +79,9 @@ export function AdminObras() {
       
       setObras(sortedObras);
       setFilteredObras(sortedObras);
+
+      // Atualiza progresso de medições direto do banco
+      await fetchProgressoMedicaoDB(sortedObras.map((o) => o.id));
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');
@@ -208,24 +211,67 @@ export function AdminObras() {
     }).format(value);
   };
 
-  const handleLimparCache = () => {
+  // Busca progresso de medições diretamente no banco (sem depender de localStorage)
+  const fetchProgressoMedicaoDB = async (obraIdsParam?: string[]) => {
+    try {
+      const obraIds = obraIdsParam ?? obras.map((o) => o.id);
+      if (obraIds.length === 0) return;
+
+      const { data: acumulado, error: err1 } = await supabase
+        .from('medicao_acumulado_por_item')
+        .select('obra_id, total_sum')
+        .in('obra_id', obraIds);
+
+      const { data: contratoAtual, error: err2 } = await supabase
+        .from('medicao_contrato_atual_por_item')
+        .select('obra_id, contrato_total_atual')
+        .in('obra_id', obraIds);
+
+      if (err1) throw err1;
+      if (err2) throw err2;
+
+      const execByObra: Record<string, number> = {};
+      (acumulado || []).forEach((r: any) => {
+        const id = r.obra_id as string;
+        execByObra[id] = (execByObra[id] || 0) + Number(r.total_sum || 0);
+      });
+
+      const contratoByObra: Record<string, number> = {};
+      (contratoAtual || []).forEach((r: any) => {
+        const id = r.obra_id as string;
+        contratoByObra[id] = (contratoByObra[id] || 0) + Number(r.contrato_total_atual || 0);
+      });
+
+      const pctMap: Record<string, number> = {};
+      Object.keys(contratoByObra).forEach((id) => {
+        const totalContrato = contratoByObra[id] || 0;
+        const totalExec = execByObra[id] || 0;
+        pctMap[id] = totalContrato > 0 ? (totalExec / totalContrato) * 100 : 0;
+      });
+
+      setExecPercents(pctMap);
+      setContractTotals(contratoByObra);
+    } catch (e) {
+      console.error('Erro ao buscar progresso (DB):', e);
+    }
+  };
+
+  const handleLimparCache = async () => {
     try {
       // Limpar dados financeiros do localStorage
       obras.forEach((obra) => {
         localStorage.removeItem(`resumo_financeiro_${obra.id}`);
       });
-      
-      toast.success('Cache limpo!', {
-        description: 'Recarregando página para atualizar dados...'
+
+      toast.success('Progresso atualizado!', {
+        description: 'Recalculando a partir do banco...'
       });
-      
-      // Recarregar a página completa
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+
+      // Recalcular progresso direto do banco (sem recarregar a página)
+      await fetchProgressoMedicaoDB();
     } catch (error) {
       console.error('Erro ao limpar cache:', error);
-      toast.error('Erro ao limpar cache');
+      toast.error('Erro ao atualizar progresso');
     }
   };
 
