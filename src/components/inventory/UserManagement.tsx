@@ -139,9 +139,17 @@ export function UserManagement() {
 
       if (error) throw error;
 
+      const tempPassword: string | undefined = (data as any)?.tempPassword;
+      // Try to copy to clipboard for convenience
+      if (tempPassword && navigator?.clipboard) {
+        try { await navigator.clipboard.writeText(tempPassword); } catch {}
+      }
+
       toast({
-        title: 'Sucesso',
-        description: `Senha de ${userName} resetada para Admin123`,
+        title: 'Senha resetada',
+        description: tempPassword
+          ? `Senha temporária de ${userName}: ${tempPassword}\n(Copiada para a área de transferência)`
+          : `Senha de ${userName} resetada. A senha temporária foi gerada com sucesso.`,
       });
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -256,7 +264,7 @@ export function UserManagement() {
                             <AlertDialogDescription>
                               Tem certeza que deseja resetar a senha de <strong>{user.display_name}</strong>?
                               <br />
-                              A nova senha será: <strong>Admin123</strong>
+                              <span className="text-sm text-muted-foreground">Uma senha temporária segura será gerada e exibida após a confirmação e será copiada para a área de transferência.</span>
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
