@@ -58,19 +58,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!isRecoveryMode) {
         // Set up auth state listener
+        const suppressInitial = sessionStorage.getItem('suppress_initial_session') === 'true';
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
             console.log('Auth state changed:', event);
+            if (event === 'INITIAL_SESSION' && suppressInitial) {
+              console.log('Initial session suppressed after signout');
+              sessionStorage.removeItem('suppress_initial_session');
+              setLoading(false);
+              return;
+            }
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
           }
         );
 
-        // Check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
+        // Check for existing session only if not suppressing
+        if (!suppressInitial) {
+          const { data: { session } } = await supabase.auth.getSession();
+          setSession(session);
+          setUser(session?.user ?? null);
+        } else {
+          sessionStorage.removeItem('suppress_initial_session');
+        }
         setLoading(false);
 
         // Cleanup
@@ -150,21 +161,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Clear state first to prevent any re-renders
+      // 1) Clear React state immediately
       setSession(null);
       setUser(null);
-      
-      // Clear Supabase session with 'local' scope to immediately remove from storage
-      await supabase.auth.signOut({ scope: 'local' });
-      
-      // Small delay to ensure storage is cleared
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Force redirect with full page reload to clear any remaining state
+
+      // 2) Proactively clear any auth artifacts from storage
+      try {
+        const projectRef = 'mmumfgxngzaivvyqfbed';
+        const possibleKeys = [
+          `sb-${projectRef}-auth-token`,
+          'supabase.auth.token',
+        ];
+        possibleKeys.forEach((k) => localStorage.removeItem(k));
+        // Remove any leftover sb-* auth keys
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i) || '';
+          if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+            localStorage.removeItem(key);
+          }
+        }
+        // Clear recovery flow flags
+        sessionStorage.removeItem('recovery_access_token');
+        sessionStorage.removeItem('recovery_refresh_token');
+        sessionStorage.removeItem('in_recovery_mode');
+        // Mark to suppress INITIAL_SESSION once after signout
+        sessionStorage.setItem('suppress_initial_session', 'true');
+      } catch {}
+
+      // 3) Invalidate current session with Supabase (global to revoke refresh token)
+      await supabase.auth.signOut({ scope: 'global' });
+
+      // 4) Small delay to ensure storage is flushed
+      await new Promise((resolve) => setTimeout(resolve, 120));
+
+      // 5) Hard redirect to login
       window.location.replace('/auth');
     } catch (error) {
       console.error('Error signing out:', error);
-      // Still redirect even if error occurs
       window.location.replace('/auth');
     }
   };
