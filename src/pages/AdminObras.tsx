@@ -177,11 +177,16 @@ export function AdminObras() {
   }, []);
 
   const getFormattedTotalContrato = (o: Obra): string => {
+    // Prioridade 1: Valor do sistema de medição (se planilha importada)
     const fromMedicao = contractTotals[o.id];
-    // Valor Contrato Pós Aditivo: preferir total do sistema de Medição; senão, somar aditivos ao contrato
-    const fallback = Number(o.valor_total || 0) + Number((o as any).valor_aditivado || 0);
-    const total = typeof fromMedicao === 'number' && fromMedicao > 0 ? fromMedicao : fallback;
-    return formatCurrency(total);
+    if (typeof fromMedicao === 'number' && fromMedicao > 0) {
+      return formatCurrency(fromMedicao);
+    }
+    
+    // Prioridade 2: Somatória de Valor Inicial + Valor Aditivado da obra
+    const valorInicial = Number(o.valor_total || 0);
+    const valorAditivado = Number(o.valor_aditivado || 0);
+    return formatCurrency(valorInicial + valorAditivado);
   };
 
   const handleDelete = async (id: string, nome: string) => {
