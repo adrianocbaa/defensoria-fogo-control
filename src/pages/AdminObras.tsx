@@ -178,9 +178,9 @@ export function AdminObras() {
 
   const getFormattedTotalContrato = (o: Obra): string => {
     const fromMedicao = contractTotals[o.id];
-    // Usar apenas valor_total pois já inclui aditivos
-    const fallback = Number(o.valor_total || 0);
-    const total = typeof fromMedicao === 'number' ? fromMedicao : fallback;
+    // Valor Contrato Pós Aditivo: preferir total do sistema de Medição; senão, somar aditivos ao contrato
+    const fallback = Number(o.valor_total || 0) + Number((o as any).valor_aditivado || 0);
+    const total = typeof fromMedicao === 'number' && fromMedicao > 0 ? fromMedicao : fallback;
     return formatCurrency(total);
   };
 
