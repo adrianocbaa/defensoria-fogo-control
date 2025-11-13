@@ -157,8 +157,23 @@ export function AdminObras() {
         }
       });
     } catch {}
-    setExecPercents(pctMap);
-    setContractTotals(totalMap);
+
+    // NÃO sobrescrever valores vindos do banco. Preencher apenas quando ausente.
+    setExecPercents((prev) => {
+      const merged = { ...prev } as Record<string, number>;
+      Object.entries(pctMap).forEach(([id, pct]) => {
+        if (!(id in merged) || (merged[id] ?? 0) <= 0) merged[id] = pct;
+      });
+      return merged;
+    });
+
+    setContractTotals((prev) => {
+      const merged = { ...prev } as Record<string, number>;
+      Object.entries(totalMap).forEach(([id, total]) => {
+        if (!(id in merged) || (merged[id] ?? 0) <= 0) merged[id] = total;
+      });
+      return merged;
+    });
   }, [obras]);
 
   useEffect(() => {
@@ -255,8 +270,9 @@ export function AdminObras() {
         pctMap[id] = totalContrato > 0 ? (totalExec / totalContrato) * 100 : 0;
       });
 
-      setExecPercents(pctMap);
-      setContractTotals(contratoByObra);
+      // Banco tem prioridade: sobrescreve localStorage
+      setExecPercents((prev) => ({ ...prev, ...pctMap }));
+      setContractTotals((prev) => ({ ...prev, ...contratoByObra }));
     } catch (e) {
       console.error('Erro ao buscar progresso (DB):', e);
     }
