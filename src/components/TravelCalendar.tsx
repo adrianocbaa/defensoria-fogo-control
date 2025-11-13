@@ -95,6 +95,23 @@ export function TravelCalendar() {
     });
   };
 
+  const getTasksForDate = (date: Date) => {
+    // Achatar o objeto de tickets agrupados em um array único
+    const allTickets = Object.values(tickets).flat();
+    
+    return allTickets.filter(ticket => {
+      if (!ticket.travel_id) return false;
+      
+      // Buscar a viagem associada
+      const travel = travels.find(t => t.id === ticket.travel_id);
+      if (!travel) return false;
+      
+      const startDate = parseISO(travel.data_ida);
+      const endDate = parseISO(travel.data_volta);
+      return isWithinInterval(date, { start: startDate, end: endDate });
+    });
+  };
+
   const getTravelPosition = (travel: Travel, date: Date) => {
     const startDate = parseISO(travel.data_ida);
     const endDate = parseISO(travel.data_volta);
@@ -210,6 +227,21 @@ export function TravelCalendar() {
       'bg-indigo-100 text-indigo-800 border-indigo-200',
     ];
     return colors[index % colors.length];
+  };
+
+  const getTaskColor = (index: number) => {
+    const colors = [
+      'bg-amber-100 text-amber-800 border-amber-200',
+      'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'bg-lime-100 text-lime-800 border-lime-200',
+      'bg-emerald-100 text-emerald-800 border-emerald-200',
+    ];
+    return colors[index % colors.length];
+  };
+
+  const handleViewTask = (task: MaintenanceTicket) => {
+    setSelectedTask(task);
+    setShowViewTaskModal(true);
   };
 
   if (loading) {
@@ -362,6 +394,7 @@ export function TravelCalendar() {
               {getDaysInMonth().map(({ date, isCurrentMonth }, index) => {
                 const daysInMonth = getDaysInMonth();
                 const dayTravels = getTravelsForDate(date);
+                const dayTasks = getTasksForDate(date);
                 const isToday = isSameDay(date, new Date());
                 
                 return (
@@ -424,12 +457,58 @@ export function TravelCalendar() {
                               <div className="w-full h-full"></div>
                             )}
                           </div>
+                          );
+                        })}
+
+                      {/* Task Events */}
+                      {dayTasks.map((task, taskIndex) => {
+                        // Buscar viagem associada para determinar posição
+                        const travel = travels.find(t => t.id === task.travel_id);
+                        if (!travel) return null;
+                        
+                        const position = getTravelPosition(travel, date);
+                        if (!position.show) return null;
+                        
+                        return (
+                          <div
+                            key={task.id}
+                            className={`
+                              relative text-xs cursor-pointer transition-all hover:opacity-80 group mb-0.5
+                              ${getTaskColor(taskIndex)}
+                              ${position.position === 'start' ? 'rounded-l-md rounded-r-none ml-0' : ''}
+                              ${position.position === 'end' ? 'rounded-r-md rounded-l-none mr-0' : ''}
+                              ${position.position === 'middle' ? 'rounded-none mx-0' : ''}
+                              ${position.position === 'single' ? 'rounded-md' : ''}
+                              px-2 py-1 border h-6 flex items-center
+                            `}
+                            style={{
+                              marginLeft: position.position === 'start' || position.position === 'single' ? '0' : '-1px',
+                              marginRight: position.position === 'end' || position.position === 'single' ? '0' : '-1px',
+                              zIndex: 5 + taskIndex
+                            }}
+                            onClick={() => handleViewTask(task)}
+                            title={`${task.assignee} - ${task.title}`}
+                          >
+                            {/* Show content only on start or single day */}
+                            {position.position === 'start' || position.position === 'single' ? (
+                              <div className="flex items-center gap-1 w-full min-w-0">
+                                <div className="font-medium truncate text-[11px] flex-1">
+                                  {task.assignee}
+                                </div>
+                                <div className="flex items-center gap-0.5 opacity-75 text-[10px]">
+                                  <span className="truncate max-w-[50px]">{task.title}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="w-full h-full"></div>
+                            )}
+                          </div>
                         );
                       })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         </div>
