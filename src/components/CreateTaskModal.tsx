@@ -351,22 +351,19 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
 
           <div className="space-y-2">
             <Label htmlFor="assignee">Responsável</Label>
-            <Select
+            <Input
+              id="assignee"
+              list="assignee-suggestions"
               value={formData.assignee}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
+              placeholder="Digite o nome do responsável..."
               required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um responsável..." />
-              </SelectTrigger>
-              <SelectContent>
-                {maintenanceUsers.map((user) => (
-                  <SelectItem key={user.id} value={user.display_name || user.user_id}>
-                    {user.display_name || user.user_id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
+            <datalist id="assignee-suggestions">
+              {maintenanceUsers.map((user) => (
+                <option key={user.id} value={user.display_name || user.user_id} />
+              ))}
+            </datalist>
           </div>
 
 
