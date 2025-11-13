@@ -138,6 +138,44 @@ export function AdminObras() {
     setFilteredObras(filtered);
   }, [searchTerm, statusFilter, obras]);
 
+  // Sincroniza Execução e Total do Contrato com o Sistema de Medição (localStorage)
+  useEffect(() => {
+    const pctMap: Record<string, number> = {};
+    const totalMap: Record<string, number> = {};
+    try {
+      obras.forEach((o) => {
+        const raw = localStorage.getItem(`resumo_financeiro_${o.id}`);
+        if (raw) {
+          const data = JSON.parse(raw);
+          // Usar Valor Contrato Pós Aditivo (valor inicial + aditivos)
+          const valorContratoPosAditivo = Number(data?.totalContrato) || 0;
+          const valorAcumulado = Number(data?.valorAcumulado) || 0;
+          // Cálculo: Valor Acumulado / Valor Contrato Pós Aditivo * 100
+          const pct = valorContratoPosAditivo > 0 ? (valorAcumulado / valorContratoPosAditivo) * 100 : 0;
+          pctMap[o.id] = pct;
+          if (valorContratoPosAditivo > 0) totalMap[o.id] = valorContratoPosAditivo;
+        }
+      });
+    } catch {}
+    setExecPercents(pctMap);
+    setContractTotals(totalMap);
+  }, [obras]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<any>).detail;
+      if (!detail?.obraId) return;
+      const valorContratoPosAditivo = Number(detail?.totalContrato) || 0;
+      const valorAcumulado = Number(detail?.valorAcumulado) || 0;
+      // Cálculo: Valor Acumulado / Valor Contrato Pós Aditivo * 100
+      const pct = valorContratoPosAditivo > 0 ? (valorAcumulado / valorContratoPosAditivo) * 100 : 0;
+      setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
+      if (valorContratoPosAditivo > 0) setContractTotals((prev) => ({ ...prev, [detail.obraId]: valorContratoPosAditivo }));
+    };
+    window.addEventListener('medicaoAtualizada', handler as EventListener);
+    return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
+  }, []);
+
   const getFormattedTotalContrato = (o: Obra): string => {
     // Prioridade 1: Valor do sistema de medição (se planilha importada)
     const fromMedicao = contractTotals[o.id];
@@ -217,9 +255,8 @@ export function AdminObras() {
         pctMap[id] = totalContrato > 0 ? (totalExec / totalContrato) * 100 : 0;
       });
 
-      // Banco tem prioridade: sobrescreve localStorage
-      setExecPercents((prev) => ({ ...prev, ...pctMap }));
-      setContractTotals((prev) => ({ ...prev, ...contratoByObra }));
+      setExecPercents(pctMap);
+      setContractTotals(contratoByObra);
     } catch (e) {
       console.error('Erro ao buscar progresso (DB):', e);
     }
@@ -227,16 +264,19 @@ export function AdminObras() {
 
   const handleLimparCache = async () => {
     try {
-      toast.success('Atualizando progresso...', {
-        description: 'Buscando dados do banco...'
+      // Limpar dados financeiros do localStorage
+      obras.forEach((obra) => {
+        localStorage.removeItem(`resumo_financeiro_${obra.id}`);
       });
 
-      // Recalcular progresso direto do banco
+      toast.success('Progresso atualizado!', {
+        description: 'Recalculando a partir do banco...'
+      });
+
+      // Recalcular progresso direto do banco (sem recarregar a página)
       await fetchProgressoMedicaoDB();
-      
-      toast.success('Progresso atualizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar progresso:', error);
+      console.error('Erro ao limpar cache:', error);
       toast.error('Erro ao atualizar progresso');
     }
   };

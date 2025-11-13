@@ -412,31 +412,6 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   };
 
   // Função para calcular Valor Total Original (soma dos itens folha contratuais)
-  // Buscar valor do contrato direto da view do banco
-  const [valorContratoBanco, setValorContratoBanco] = useState<number>(0);
-
-  useEffect(() => {
-    const fetchValorContratoBanco = async () => {
-      if (!obra?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('medicao_contrato_atual_por_item')
-          .select('contrato_total_atual')
-          .eq('obra_id', obra.id);
-
-        if (error) throw error;
-        
-        const total = (data || []).reduce((sum, row) => sum + Number(row.contrato_total_atual || 0), 0);
-        setValorContratoBanco(total);
-      } catch (error) {
-        console.error('Erro ao buscar valor do contrato do banco:', error);
-      }
-    };
-
-    fetchValorContratoBanco();
-  }, [obra?.id, items, aditivos]);
-
   const calcularValorTotalOriginal = useMemo(() => {
     return items
       .filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual')
@@ -459,11 +434,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       }, 0);
   }, [aditivos, items]);
 
-  // Usar valor do banco se disponível, senão calcular localmente
-  const totalContratoFinal = useMemo(() => 
-    valorContratoBanco > 0 ? valorContratoBanco : calcularValorTotalOriginal + totalAditivoBloqueado, 
-    [valorContratoBanco, calcularValorTotalOriginal, totalAditivoBloqueado]
-  );
+  const totalContratoFinal = useMemo(() => calcularValorTotalOriginal + totalAditivoBloqueado, [calcularValorTotalOriginal, totalAditivoBloqueado]);
 
   // Cálculos detalhados para o resumo financeiro
   const resumoFinanceiro = useMemo(() => {
