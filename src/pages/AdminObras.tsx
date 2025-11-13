@@ -79,9 +79,6 @@ export function AdminObras() {
       
       setObras(sortedObras);
       setFilteredObras(sortedObras);
-
-      // Atualiza progresso de medições direto do banco
-      await fetchProgressoMedicaoDB(sortedObras.map((o) => o.id));
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');
@@ -138,49 +135,62 @@ export function AdminObras() {
     setFilteredObras(filtered);
   }, [searchTerm, statusFilter, obras]);
 
-  // Sincroniza Execução e Total do Contrato com o Sistema de Medição (localStorage)
+  // Sincroniza valores de progresso do localStorage quando as obras mudarem
   useEffect(() => {
+    if (obras.length === 0) return;
+    
     const pctMap: Record<string, number> = {};
     const totalMap: Record<string, number> = {};
+    
     try {
       obras.forEach((o) => {
         const raw = localStorage.getItem(`resumo_financeiro_${o.id}`);
         if (raw) {
           const data = JSON.parse(raw);
-          // Usar Valor Contrato Pós Aditivo (valor inicial + aditivos)
+          // Usar Valor Contrato Pós Aditivo do localStorage (mesmo da tela de medição)
           const valorContratoPosAditivo = Number(data?.totalContrato) || 0;
           const valorAcumulado = Number(data?.valorAcumulado) || 0;
-          // Cálculo: Valor Acumulado / Valor Contrato Pós Aditivo * 100
-          const pct = valorContratoPosAditivo > 0 ? (valorAcumulado / valorContratoPosAditivo) * 100 : 0;
-          pctMap[o.id] = pct;
-          if (valorContratoPosAditivo > 0) totalMap[o.id] = valorContratoPosAditivo;
+          
+          if (valorContratoPosAditivo > 0) {
+            const pct = (valorAcumulado / valorContratoPosAditivo) * 100;
+            pctMap[o.id] = pct;
+            totalMap[o.id] = valorContratoPosAditivo;
+          }
         }
       });
-    } catch {}
+    } catch (e) {
+      console.error('Erro ao atualizar progresso do localStorage:', e);
+    }
+    
     setExecPercents(pctMap);
     setContractTotals(totalMap);
   }, [obras]);
 
+  // Escuta eventos de atualização de medição
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<any>).detail;
       if (!detail?.obraId) return;
+      
       const valorContratoPosAditivo = Number(detail?.totalContrato) || 0;
       const valorAcumulado = Number(detail?.valorAcumulado) || 0;
-      // Cálculo: Valor Acumulado / Valor Contrato Pós Aditivo * 100
-      const pct = valorContratoPosAditivo > 0 ? (valorAcumulado / valorContratoPosAditivo) * 100 : 0;
-      setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
-      if (valorContratoPosAditivo > 0) setContractTotals((prev) => ({ ...prev, [detail.obraId]: valorContratoPosAditivo }));
+      
+      if (valorContratoPosAditivo > 0) {
+        const pct = (valorAcumulado / valorContratoPosAditivo) * 100;
+        setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
+        setContractTotals((prev) => ({ ...prev, [detail.obraId]: valorContratoPosAditivo }));
+      }
     };
+    
     window.addEventListener('medicaoAtualizada', handler as EventListener);
     return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
   }, []);
 
   const getFormattedTotalContrato = (o: Obra): string => {
-    // Prioridade 1: Valor do sistema de medição (se planilha importada)
-    const fromMedicao = contractTotals[o.id];
-    if (typeof fromMedicao === 'number' && fromMedicao > 0) {
-      return formatCurrency(fromMedicao);
+    // Prioridade 1: Valor do localStorage (mesmo valor da tela de medição)
+    const fromLocalStorage = contractTotals[o.id];
+    if (typeof fromLocalStorage === 'number' && fromLocalStorage > 0) {
+      return formatCurrency(fromLocalStorage);
     }
     
     // Prioridade 2: Somatória de Valor Inicial + Valor Aditivado da obra
@@ -217,67 +227,23 @@ export function AdminObras() {
     }).format(value);
   };
 
-  // Busca progresso de medições diretamente no banco (sem depender de localStorage)
-  const fetchProgressoMedicaoDB = async (obraIdsParam?: string[]) => {
-    try {
-      const obraIds = obraIdsParam ?? obras.map((o) => o.id);
-      if (obraIds.length === 0) return;
-
-      const { data: acumulado, error: err1 } = await supabase
-        .from('medicao_acumulado_por_item')
-        .select('obra_id, total_sum')
-        .in('obra_id', obraIds);
-
-      const { data: contratoAtual, error: err2 } = await supabase
-        .from('medicao_contrato_atual_por_item')
-        .select('obra_id, contrato_total_atual')
-        .in('obra_id', obraIds);
-
-      if (err1) throw err1;
-      if (err2) throw err2;
-
-      const execByObra: Record<string, number> = {};
-      (acumulado || []).forEach((r: any) => {
-        const id = r.obra_id as string;
-        execByObra[id] = (execByObra[id] || 0) + Number(r.total_sum || 0);
-      });
-
-      const contratoByObra: Record<string, number> = {};
-      (contratoAtual || []).forEach((r: any) => {
-        const id = r.obra_id as string;
-        contratoByObra[id] = (contratoByObra[id] || 0) + Number(r.contrato_total_atual || 0);
-      });
-
-      const pctMap: Record<string, number> = {};
-      Object.keys(contratoByObra).forEach((id) => {
-        const totalContrato = contratoByObra[id] || 0;
-        const totalExec = execByObra[id] || 0;
-        pctMap[id] = totalContrato > 0 ? (totalExec / totalContrato) * 100 : 0;
-      });
-
-      setExecPercents(pctMap);
-      setContractTotals(contratoByObra);
-    } catch (e) {
-      console.error('Erro ao buscar progresso (DB):', e);
-    }
-  };
-
-  const handleLimparCache = async () => {
+  const handleLimparCache = () => {
     try {
       // Limpar dados financeiros do localStorage
       obras.forEach((obra) => {
         localStorage.removeItem(`resumo_financeiro_${obra.id}`);
       });
 
-      toast.success('Progresso atualizado!', {
-        description: 'Recalculando a partir do banco...'
-      });
+      // Limpar os estados
+      setExecPercents({});
+      setContractTotals({});
 
-      // Recalcular progresso direto do banco (sem recarregar a página)
-      await fetchProgressoMedicaoDB();
+      toast.success('Cache limpo com sucesso!', {
+        description: 'Os dados serão recalculados ao acessar a página de medição.'
+      });
     } catch (error) {
       console.error('Erro ao limpar cache:', error);
-      toast.error('Erro ao atualizar progresso');
+      toast.error('Erro ao limpar cache');
     }
   };
 
