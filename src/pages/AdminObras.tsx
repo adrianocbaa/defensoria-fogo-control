@@ -57,10 +57,9 @@ export function AdminObras() {
       // Verifica se existe planilha orçamentária (orcamento_items_hierarquia)
       const { data: orcamentoItems, error: orcError } = await supabase
         .from('orcamento_items_hierarquia')
-        .select('obra_id, valor_total, is_macro, eh_administracao_local, origem')
+        .select('obra_id, valor_total, is_macro, origem')
         .eq('obra_id', obraId)
         .or('is_macro.is.null,is_macro.eq.false')
-        .neq('eh_administracao_local', true)
         .neq('origem', 'extracontratual');
 
       if (orcError) throw orcError;
