@@ -192,14 +192,25 @@ export function AdminObras() {
       if (obras.length === 0) return;
       const obraIds = obras.map(o => o.id);
       
-      // Buscar valor total do contrato a partir do orçamento
+      // Buscar valor total do contrato PÓS ADITIVO (preferência)
+      const { data: contratoData, error: contratoError } = await supabase
+        .from('medicao_contrato_atual_por_item')
+        .select('obra_id, contrato_total_atual')
+        .in('obra_id', obraIds);
+      if (contratoError) throw contratoError;
+
+      const contratoAtualPorObra: Record<string, number> = {};
+      (contratoData || []).forEach((row: any) => {
+        contratoAtualPorObra[row.obra_id] = (contratoAtualPorObra[row.obra_id] || 0) + Number(row.contrato_total_atual || 0);
+      });
+
+      // Buscar valor total do contrato a partir do orçamento (fallback)
       const { data: orcamentoData, error: orcError } = await supabase
         .from('orcamento_items')
         .select('obra_id, total_contrato, origem, eh_administracao_local')
         .in('obra_id', obraIds)
         .eq('eh_administracao_local', false)
         .neq('origem', 'extracontratual');
-      
       if (orcError) throw orcError;
 
       const totalContratoMap: Record<string, number> = {};
@@ -207,12 +218,11 @@ export function AdminObras() {
         totalContratoMap[item.obra_id] = (totalContratoMap[item.obra_id] || 0) + Number(item.total_contrato || 0);
       });
 
-      // Buscar medições
+      // Buscar medições (acumulado)
       const { data: medicaoData, error: medError } = await supabase
         .from('medicao_sessions')
         .select('id, obra_id, medicao_items(total)')
         .in('obra_id', obraIds);
-      
       if (medError) throw medError;
 
       const acumuladoPorObra: Record<string, number> = {};
@@ -225,10 +235,17 @@ export function AdminObras() {
       const totalMap: Record<string, number> = {};
       
       obras.forEach((o) => {
-        // Prioridade 1: Valor do orçamento
-        // Prioridade 2: Valor cadastrado na obra
-        let totalContrato = totalContratoMap[o.id] || 0;
-        if (totalContrato === 0) {
+        // Prioridades:
+        // 1) Valor Contrato Pós Aditivo (view medicao_contrato_atual_por_item)
+        // 2) Soma do orçamento (contratual, sem administração/extracontratual)
+        // 3) Valor cadastrado na obra (valor_total + valor_aditivado)
+        let totalContrato = 0;
+        const posAditivo = contratoAtualPorObra[o.id] || 0;
+        if (posAditivo > 0) {
+          totalContrato = posAditivo;
+        } else if ((totalContratoMap[o.id] || 0) > 0) {
+          totalContrato = totalContratoMap[o.id];
+        } else {
           totalContrato = Number(o.valor_total || 0) + Number(o.valor_aditivado || 0);
         }
         
