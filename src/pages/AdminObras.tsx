@@ -11,9 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList, RefreshCw } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 
 interface Obra {
   id: string;
@@ -50,8 +49,6 @@ export function AdminObras() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const { canEdit } = useUserRole();
   const navigate = useNavigate();
-  const [execPercents, setExecPercents] = useState<Record<string, number>>({});
-  const [contractTotals, setContractTotals] = useState<Record<string, number>>({});
 
   const fetchObras = async () => {
     try {
@@ -135,153 +132,6 @@ export function AdminObras() {
     setFilteredObras(filtered);
   }, [searchTerm, statusFilter, obras]);
 
-  // Sincroniza valores de progresso do localStorage quando as obras mudarem
-  useEffect(() => {
-    if (obras.length === 0) return;
-    
-    const pctMap: Record<string, number> = {};
-    const totalMap: Record<string, number> = {};
-    
-    try {
-      obras.forEach((o) => {
-        const raw = localStorage.getItem(`resumo_financeiro_${o.id}`);
-        if (raw) {
-          const data = JSON.parse(raw);
-          // Usar Valor Contrato Pós Aditivo do localStorage (mesmo da tela de medição)
-          const valorContratoPosAditivo = Number(data?.totalContrato) || 0;
-          const valorAcumulado = Number(data?.valorAcumulado) || 0;
-          
-          if (valorContratoPosAditivo > 0) {
-            const pct = (valorAcumulado / valorContratoPosAditivo) * 100;
-            pctMap[o.id] = pct;
-            totalMap[o.id] = valorContratoPosAditivo;
-          }
-        }
-      });
-    } catch (e) {
-      console.error('Erro ao atualizar progresso do localStorage:', e);
-    }
-    
-    setExecPercents(pctMap);
-    setContractTotals(totalMap);
-  }, [obras]);
-
-  // Escuta eventos de atualização de medição
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<any>).detail;
-      if (!detail?.obraId) return;
-      
-      const valorContratoPosAditivo = Number(detail?.totalContrato) || 0;
-      const valorAcumulado = Number(detail?.valorAcumulado) || 0;
-      
-      if (valorContratoPosAditivo > 0) {
-        const pct = (valorAcumulado / valorContratoPosAditivo) * 100;
-        setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
-        setContractTotals((prev) => ({ ...prev, [detail.obraId]: valorContratoPosAditivo }));
-      }
-    };
-    
-    window.addEventListener('medicaoAtualizada', handler as EventListener);
-    return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
-  }, []);
-
-  // Recalcula progresso/valores a partir do banco (medicao_sessions/medicao_items)
-  const recomputeFinanceFromDB = async () => {
-    try {
-      if (obras.length === 0) return;
-      const obraIds = obras.map(o => o.id);
-      
-      // Buscar valor contrato inicial (itens folha contratuais, sem administração)
-      // IMPORTANTE: usar valor_total (não total_contrato) para consistência com a tela de medição
-      const { data: orcamentoData, error: orcError } = await supabase
-        .from('orcamento_items_hierarquia')
-        .select('obra_id, valor_total')
-        .in('obra_id', obraIds)
-        .eq('eh_administracao_local', false)
-        .neq('origem', 'extracontratual')
-        .or('is_macro.is.null,is_macro.eq.false');
-      if (orcError) throw orcError;
-
-      const valorInicialPorObra: Record<string, number> = {};
-      (orcamentoData || []).forEach((item: any) => {
-        valorInicialPorObra[item.obra_id] = (valorInicialPorObra[item.obra_id] || 0) + Number(item.valor_total || 0);
-      });
-
-      // Buscar aditivos bloqueados
-      const { data: aditivosData, error: aditivosError } = await supabase
-        .from('aditivo_sessions')
-        .select(`
-          id,
-          obra_id,
-          status,
-          aditivo_items!inner(total)
-        `)
-        .in('obra_id', obraIds)
-        .eq('status', 'bloqueada');
-      if (aditivosError) throw aditivosError;
-
-      const totalAditivosPorObra: Record<string, number> = {};
-      (aditivosData || []).forEach((sessao: any) => {
-        const somaAditivos = (sessao.aditivo_items || []).reduce((sum: number, item: any) => sum + Number(item.total || 0), 0);
-        totalAditivosPorObra[sessao.obra_id] = (totalAditivosPorObra[sessao.obra_id] || 0) + somaAditivos;
-      });
-
-      // Buscar medições (acumulado)
-      const { data: medicaoData, error: medError } = await supabase
-        .from('medicao_sessions')
-        .select('id, obra_id, medicao_items(total)')
-        .in('obra_id', obraIds);
-      if (medError) throw medError;
-
-      const acumuladoPorObra: Record<string, number> = {};
-      (medicaoData || []).forEach((s: any) => {
-        const soma = (s.medicao_items || []).reduce((sum: number, it: any) => sum + Number(it.total || 0), 0);
-        acumuladoPorObra[s.obra_id] = (acumuladoPorObra[s.obra_id] || 0) + soma;
-      });
-
-      const pctMap: Record<string, number> = {};
-      const totalMap: Record<string, number> = {};
-      
-      obras.forEach((o) => {
-        // Calcular Valor Contrato Pós Aditivo = Valor Inicial + Aditivos Bloqueados
-        const valorInicial = valorInicialPorObra[o.id] || 0;
-        const aditivos = totalAditivosPorObra[o.id] || 0;
-        let totalContrato = valorInicial + aditivos;
-        
-        // Fallback: usar valor cadastrado na obra se não houver orçamento
-        if (totalContrato === 0) {
-          totalContrato = Number(o.valor_total || 0) + Number(o.valor_aditivado || 0);
-        }
-        
-        totalMap[o.id] = totalContrato;
-        const acumulado = acumuladoPorObra[o.id] || 0;
-        const pct = totalContrato > 0 ? (acumulado / totalContrato) * 100 : 0;
-        pctMap[o.id] = pct;
-      });
-      
-      setContractTotals(totalMap);
-      setExecPercents(pctMap);
-    } catch (err) {
-      console.error('Erro ao recomputar progresso das obras via DB:', err);
-    }
-  };
-
-  useEffect(() => { recomputeFinanceFromDB(); }, [obras]);
-
-  const getFormattedTotalContrato = (o: Obra): string => {
-    // Prioridade 1: Valor do localStorage (mesmo valor da tela de medição)
-    const fromLocalStorage = contractTotals[o.id];
-    if (typeof fromLocalStorage === 'number' && fromLocalStorage > 0) {
-      return formatCurrency(fromLocalStorage);
-    }
-    
-    // Prioridade 2: Somatória de Valor Inicial + Valor Aditivado da obra
-    const valorInicial = Number(o.valor_total || 0);
-    const valorAditivado = Number(o.valor_aditivado || 0);
-    return formatCurrency(valorInicial + valorAditivado);
-  };
-
   const handleDelete = async (id: string, nome: string) => {
     if (!window.confirm(`Tem certeza que deseja excluir a obra "${nome}"?`)) {
       return;
@@ -310,23 +160,6 @@ export function AdminObras() {
     }).format(value);
   };
 
-  const handleLimparCache = () => {
-    try {
-      // Limpar dados financeiros do localStorage
-      obras.forEach((obra) => {
-        localStorage.removeItem(`resumo_financeiro_${obra.id}`);
-      });
-
-      // Recalcular direto do banco
-      recomputeFinanceFromDB();
-      toast.success('Progresso atualizado!', {
-        description: 'Os valores foram recalculados com base nas medições registradas.'
-      });
-    } catch (error) {
-      console.error('Erro ao limpar cache:', error);
-      toast.error('Erro ao limpar cache');
-    }
-  };
 
   if (loading) {
     return <LoadingStates.TableSkeleton />;
@@ -339,15 +172,6 @@ export function AdminObras() {
         subtitle="Visualize e gerencie todas as obras públicas"
         actions={
           <>
-            <Button 
-              onClick={handleLimparCache} 
-              variant="outline" 
-              size="sm"
-              title="Limpar cache e atualizar dados de progresso"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar Progresso
-            </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/obras">
                 <Map className="h-4 w-4 mr-2" />
@@ -437,8 +261,6 @@ export function AdminObras() {
                   <TableHead>Município</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Valor Total</TableHead>
-                  <TableHead className="min-w-[250px]">Progresso</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -452,10 +274,6 @@ export function AdminObras() {
                       <Badge className={statusColors[obra.status]}>
                         {statusLabels[obra.status]}
                       </Badge>
-                    </TableCell>
-                    <TableCell>{getFormattedTotalContrato(obra)}</TableCell>
-                    <TableCell>
-                      <ProgressCell obraId={obra.id} execPercents={execPercents} obra={obra} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -521,38 +339,6 @@ export function AdminObras() {
           Para criar, editar ou excluir obras, é necessário ter permissão de Editor ou Administrador.
         </div>
       </PermissionGuard>
-    </div>
-  );
-}
-
-// Componente separado para renderizar as duas barras de progresso
-function ProgressCell({ obraId, execPercents, obra }: { obraId: string; execPercents: Record<string, number>; obra: any }) {
-  const { data: rdoProgress = 0 } = useRdoProgressByObra(obraId);
-  
-  // Valor Pago (Medições)
-  const valorPagoPercent = execPercents[obraId] ?? Number(obra.porcentagem_execucao || 0);
-  
-  return (
-    <div className="space-y-3">
-      {/* Andamento da Obra (RDO) - Ocultar se 0% */}
-      {rdoProgress > 0 && (
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Andamento da Obra:</span>
-            <span className="font-medium">{rdoProgress.toFixed(2)}%</span>
-          </div>
-          <Progress value={Math.min(rdoProgress, 100)} className="h-2" />
-        </div>
-      )}
-      
-      {/* Valor Pago (Medições) */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Valor Pago:</span>
-          <span className="font-medium">{valorPagoPercent.toFixed(2)}%</span>
-        </div>
-        <Progress value={Math.min(valorPagoPercent, 100)} className="h-2" />
-      </div>
     </div>
   );
 }
