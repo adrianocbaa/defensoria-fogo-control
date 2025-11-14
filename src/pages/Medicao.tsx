@@ -3261,12 +3261,15 @@ const criarNovaMedicao = async () => {
                         />
                       </DialogContent>
                     </Dialog>
-                    {items.length > 0 && (
+                    {items.length > 0 && canEdit && (
                       <Button 
                         variant="outline" 
                         size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setConfirm({ open: true, type: 'limpar-planilha' })}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirm({ open: true, type: 'limpar-planilha' });
+                        }}
                         title="Excluir planilha"
                       >
                         <Trash2 className="h-4 w-4" />
