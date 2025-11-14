@@ -192,30 +192,38 @@ export function AdminObras() {
       if (obras.length === 0) return;
       const obraIds = obras.map(o => o.id);
       
-      // Buscar valor total do contrato PÓS ADITIVO (preferência)
-      const { data: contratoData, error: contratoError } = await supabase
-        .from('medicao_contrato_atual_por_item')
-        .select('obra_id, contrato_total_atual')
-        .in('obra_id', obraIds);
-      if (contratoError) throw contratoError;
-
-      const contratoAtualPorObra: Record<string, number> = {};
-      (contratoData || []).forEach((row: any) => {
-        contratoAtualPorObra[row.obra_id] = (contratoAtualPorObra[row.obra_id] || 0) + Number(row.contrato_total_atual || 0);
-      });
-
-      // Buscar valor total do contrato a partir do orçamento (fallback)
+      // Buscar valor contrato inicial (itens folha contratuais, sem administração)
       const { data: orcamentoData, error: orcError } = await supabase
-        .from('orcamento_items')
-        .select('obra_id, total_contrato, origem, eh_administracao_local')
+        .from('orcamento_items_hierarquia')
+        .select('obra_id, total_contrato')
         .in('obra_id', obraIds)
         .eq('eh_administracao_local', false)
-        .neq('origem', 'extracontratual');
+        .neq('origem', 'extracontratual')
+        .or('is_macro.is.null,is_macro.eq.false');
       if (orcError) throw orcError;
 
-      const totalContratoMap: Record<string, number> = {};
+      const valorInicialPorObra: Record<string, number> = {};
       (orcamentoData || []).forEach((item: any) => {
-        totalContratoMap[item.obra_id] = (totalContratoMap[item.obra_id] || 0) + Number(item.total_contrato || 0);
+        valorInicialPorObra[item.obra_id] = (valorInicialPorObra[item.obra_id] || 0) + Number(item.total_contrato || 0);
+      });
+
+      // Buscar aditivos bloqueados
+      const { data: aditivosData, error: aditivosError } = await supabase
+        .from('aditivo_sessions')
+        .select(`
+          id,
+          obra_id,
+          status,
+          aditivo_items!inner(total)
+        `)
+        .in('obra_id', obraIds)
+        .eq('status', 'bloqueada');
+      if (aditivosError) throw aditivosError;
+
+      const totalAditivosPorObra: Record<string, number> = {};
+      (aditivosData || []).forEach((sessao: any) => {
+        const somaAditivos = (sessao.aditivo_items || []).reduce((sum: number, item: any) => sum + Number(item.total || 0), 0);
+        totalAditivosPorObra[sessao.obra_id] = (totalAditivosPorObra[sessao.obra_id] || 0) + somaAditivos;
       });
 
       // Buscar medições (acumulado)
@@ -235,17 +243,13 @@ export function AdminObras() {
       const totalMap: Record<string, number> = {};
       
       obras.forEach((o) => {
-        // Prioridades:
-        // 1) Valor Contrato Pós Aditivo (view medicao_contrato_atual_por_item)
-        // 2) Soma do orçamento (contratual, sem administração/extracontratual)
-        // 3) Valor cadastrado na obra (valor_total + valor_aditivado)
-        let totalContrato = 0;
-        const posAditivo = contratoAtualPorObra[o.id] || 0;
-        if (posAditivo > 0) {
-          totalContrato = posAditivo;
-        } else if ((totalContratoMap[o.id] || 0) > 0) {
-          totalContrato = totalContratoMap[o.id];
-        } else {
+        // Calcular Valor Contrato Pós Aditivo = Valor Inicial + Aditivos Bloqueados
+        const valorInicial = valorInicialPorObra[o.id] || 0;
+        const aditivos = totalAditivosPorObra[o.id] || 0;
+        let totalContrato = valorInicial + aditivos;
+        
+        // Fallback: usar valor cadastrado na obra se não houver orçamento
+        if (totalContrato === 0) {
           totalContrato = Number(o.valor_total || 0) + Number(o.valor_aditivado || 0);
         }
         
