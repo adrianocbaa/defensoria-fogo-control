@@ -3246,16 +3246,6 @@ const criarNovaMedicao = async () => {
                         />
                       </DialogContent>
                     </Dialog>
-                    {items.length > 0 && (
-                      <Button 
-                        variant="outline" 
-                        className="flex items-center gap-2 text-destructive hover:text-destructive"
-                        onClick={() => setConfirm({ open: true, type: 'limpar-planilha' })}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Limpar Planilha
-                      </Button>
-                    )}
                     <Dialog open={modalImportarRDOAberto} onOpenChange={setModalImportarRDOAberto}>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="flex items-center gap-2">
@@ -3271,6 +3261,17 @@ const criarNovaMedicao = async () => {
                         />
                       </DialogContent>
                     </Dialog>
+                    {items.length > 0 && (
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setConfirm({ open: true, type: 'limpar-planilha' })}
+                        title="Excluir planilha"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
