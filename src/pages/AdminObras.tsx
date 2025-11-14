@@ -193,9 +193,10 @@ export function AdminObras() {
       const obraIds = obras.map(o => o.id);
       
       // Buscar valor contrato inicial (itens folha contratuais, sem administração)
+      // IMPORTANTE: usar valor_total (não total_contrato) para consistência com a tela de medição
       const { data: orcamentoData, error: orcError } = await supabase
         .from('orcamento_items_hierarquia')
-        .select('obra_id, total_contrato')
+        .select('obra_id, valor_total')
         .in('obra_id', obraIds)
         .eq('eh_administracao_local', false)
         .neq('origem', 'extracontratual')
@@ -204,7 +205,7 @@ export function AdminObras() {
 
       const valorInicialPorObra: Record<string, number> = {};
       (orcamentoData || []).forEach((item: any) => {
-        valorInicialPorObra[item.obra_id] = (valorInicialPorObra[item.obra_id] || 0) + Number(item.total_contrato || 0);
+        valorInicialPorObra[item.obra_id] = (valorInicialPorObra[item.obra_id] || 0) + Number(item.valor_total || 0);
       });
 
       // Buscar aditivos bloqueados
