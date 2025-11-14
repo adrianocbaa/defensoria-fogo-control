@@ -49,6 +49,7 @@ export function AdminObras() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [obraValores, setObraValores] = useState<Record<string, number>>({});
+  const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
   const { canEdit } = useUserRole();
   const navigate = useNavigate();
 
@@ -102,6 +103,83 @@ export function AdminObras() {
     }
   };
 
+  const calcularProgressoObra = async (obraId: string, obraData: any): Promise<number> => {
+    try {
+      // Verifica se existe planilha orçamentária
+      const { data: orcamentoItems, error: orcError } = await supabase
+        .from('orcamento_items_hierarquia')
+        .select('obra_id, valor_total, is_macro, origem')
+        .eq('obra_id', obraId)
+        .or('is_macro.is.null,is_macro.eq.false')
+        .neq('origem', 'extracontratual');
+
+      if (orcError) throw orcError;
+
+      if (orcamentoItems && orcamentoItems.length > 0) {
+        // Tem planilha: calcular Valor Acumulado / Valor Contrato Pós Aditivo
+        const valorInicial = orcamentoItems.reduce((sum, item) => sum + Number(item.valor_total || 0), 0);
+
+        // Buscar aditivos bloqueados
+        const { data: aditivoSessions, error: adtError } = await supabase
+          .from('aditivo_sessions')
+          .select('id')
+          .eq('obra_id', obraId)
+          .eq('status', 'bloqueada');
+
+        if (adtError) throw adtError;
+
+        let aditivos = 0;
+        if (aditivoSessions && aditivoSessions.length > 0) {
+          const sessionIds = aditivoSessions.map(s => s.id);
+          const { data: aditivoItems, error: adtItemsError } = await supabase
+            .from('aditivo_items')
+            .select('total')
+            .in('aditivo_id', sessionIds);
+
+          if (adtItemsError) throw adtItemsError;
+
+          aditivos = aditivoItems?.reduce((sum, item) => sum + Number(item.total || 0), 0) || 0;
+        }
+
+        const valorContratoAditivo = valorInicial + aditivos;
+
+        // Buscar Valor Acumulado (soma de total de medicao_items)
+        // Primeiro buscar as sessões de medição da obra
+        const { data: medicaoSessions, error: sessionsError } = await supabase
+          .from('medicao_sessions')
+          .select('id')
+          .eq('obra_id', obraId);
+
+        if (sessionsError) throw sessionsError;
+
+        let valorAcumulado = 0;
+        if (medicaoSessions && medicaoSessions.length > 0) {
+          const sessionIds = medicaoSessions.map(s => s.id);
+          const { data: medicaoItems, error: medicaoError } = await supabase
+            .from('medicao_items')
+            .select('total')
+            .in('medicao_id', sessionIds);
+
+          if (medicaoError) throw medicaoError;
+
+          valorAcumulado = medicaoItems?.reduce((sum, item) => sum + Number(item.total || 0), 0) || 0;
+        }
+
+        return valorContratoAditivo > 0 ? (valorAcumulado / valorContratoAditivo) * 100 : 0;
+      } else {
+        // Não tem planilha: calcular Valor Executado / Valor Final
+        const valorFinal = Number(obraData.valor_total || 0) + Number(obraData.valor_aditivado || 0);
+        const valorExecutado = Number(obraData.valor_executado || 0);
+
+        return valorFinal > 0 ? (valorExecutado / valorFinal) * 100 : 0;
+      }
+    } catch (error) {
+      console.error('Erro ao calcular progresso da obra:', error);
+      // Fallback: usar porcentagem_execucao da obra
+      return Number(obraData.porcentagem_execucao || 0);
+    }
+  };
+
   const fetchObras = async () => {
     try {
       setLoading(true);
@@ -131,10 +209,13 @@ export function AdminObras() {
 
       // Calcular valores para cada obra
       const valores: Record<string, number> = {};
+      const progressos: Record<string, number> = {};
       for (const obra of sortedObras) {
         valores[obra.id] = await calcularValorObra(obra.id, obra);
+        progressos[obra.id] = await calcularProgressoObra(obra.id, obra);
       }
       setObraValores(valores);
+      setObraProgressos(progressos);
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');
@@ -321,6 +402,7 @@ export function AdminObras() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
+                  <TableHead>Progresso</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -339,6 +421,19 @@ export function AdminObras() {
                       {obraValores[obra.id] !== undefined
                         ? formatCurrency(obraValores[obra.id])
                         : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress 
+                          value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0} 
+                          className="w-[100px]"
+                        />
+                        <span className="text-sm font-medium whitespace-nowrap">
+                          {obraProgressos[obra.id] !== undefined 
+                            ? `${obraProgressos[obra.id].toFixed(1)}%` 
+                            : '-'}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
