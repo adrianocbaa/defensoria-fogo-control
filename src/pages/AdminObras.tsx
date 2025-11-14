@@ -186,6 +186,39 @@ export function AdminObras() {
     return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
   }, []);
 
+  // Recalcula progresso/valores a partir do banco (medicao_sessions/medicao_items)
+  const recomputeFinanceFromDB = async () => {
+    try {
+      if (obras.length === 0) return;
+      const obraIds = obras.map(o => o.id);
+      const { data, error } = await supabase
+        .from('medicao_sessions')
+        .select('id, obra_id, medicao_items(total)')
+        .in('obra_id', obraIds);
+      if (error) throw error;
+      const acumuladoPorObra: Record<string, number> = {};
+      (data || []).forEach((s: any) => {
+        const soma = (s.medicao_items || []).reduce((sum: number, it: any) => sum + Number(it.total || 0), 0);
+        acumuladoPorObra[s.obra_id] = (acumuladoPorObra[s.obra_id] || 0) + soma;
+      });
+      const pctMap: Record<string, number> = {};
+      const totalMap: Record<string, number> = {};
+      obras.forEach((o) => {
+        const totalContrato = Number(o.valor_total || 0) + Number(o.valor_aditivado || 0);
+        totalMap[o.id] = totalContrato;
+        const acumulado = acumuladoPorObra[o.id] || 0;
+        const pct = totalContrato > 0 ? (acumulado / totalContrato) * 100 : 0;
+        pctMap[o.id] = pct;
+      });
+      setContractTotals(totalMap);
+      setExecPercents(pctMap);
+    } catch (err) {
+      console.error('Erro ao recomputar progresso das obras via DB:', err);
+    }
+  };
+
+  useEffect(() => { recomputeFinanceFromDB(); }, [obras]);
+
   const getFormattedTotalContrato = (o: Obra): string => {
     // Prioridade 1: Valor do localStorage (mesmo valor da tela de medição)
     const fromLocalStorage = contractTotals[o.id];
@@ -234,12 +267,10 @@ export function AdminObras() {
         localStorage.removeItem(`resumo_financeiro_${obra.id}`);
       });
 
-      // Limpar os estados
-      setExecPercents({});
-      setContractTotals({});
-
-      toast.success('Cache limpo com sucesso!', {
-        description: 'Os dados serão recalculados ao acessar a página de medição.'
+      // Recalcular direto do banco
+      recomputeFinanceFromDB();
+      toast.success('Progresso atualizado!', {
+        description: 'Os valores foram recalculados com base nas medições registradas.'
       });
     } catch (error) {
       console.error('Erro ao limpar cache:', error);
