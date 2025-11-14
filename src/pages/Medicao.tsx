@@ -2772,40 +2772,49 @@ const criarNovaMedicao = async () => {
   const limparPlanilha = async () => {
     if (!id) return;
 
-    try {
-      // Deletar todos os itens de medição primeiro
-      const { error: medicaoItemsError } = await supabase
-        .from('medicao_items')
-        .delete()
-        .in('medicao_id', medicoes.map(m => m.sessionId).filter(Boolean));
+    // Limpar a UI imediatamente para refletir a exclusão
+    setItems([]);
+    setMedicoes([]);
+    setAditivos([]);
+    setMedicaoAtual(null);
+    setConfirm({ open: false });
 
-      if (medicaoItemsError) console.warn('Erro ao deletar medicao_items:', medicaoItemsError);
+    try {
+      // Deletar itens de medição, se houver
+      const medicaoIds = medicoes.map(m => m.sessionId).filter(Boolean) as string[];
+      if (medicaoIds.length > 0) {
+        const { error: medicaoItemsError } = await supabase
+          .from('medicao_items')
+          .delete()
+          .in('medicao_id', medicaoIds);
+        if (medicaoItemsError) console.warn('Erro ao deletar medicao_items:', medicaoItemsError);
+      }
 
       // Deletar as sessões de medição
       const { error: medicaoSessionsError } = await supabase
         .from('medicao_sessions')
         .delete()
         .eq('obra_id', id);
-
       if (medicaoSessionsError) console.warn('Erro ao deletar medicao_sessions:', medicaoSessionsError);
 
-      // Deletar todos os itens de aditivo
-      const { error: aditivoItemsError } = await supabase
-        .from('aditivo_items')
-        .delete()
-        .in('aditivo_id', aditivos.map(a => a.sessionId).filter(Boolean));
-
-      if (aditivoItemsError) console.warn('Erro ao deletar aditivo_items:', aditivoItemsError);
+      // Deletar itens de aditivo, se houver
+      const aditivoIds = aditivos.map(a => a.sessionId).filter(Boolean) as string[];
+      if (aditivoIds.length > 0) {
+        const { error: aditivoItemsError } = await supabase
+          .from('aditivo_items')
+          .delete()
+          .in('aditivo_id', aditivoIds);
+        if (aditivoItemsError) console.warn('Erro ao deletar aditivo_items:', aditivoItemsError);
+      }
 
       // Deletar as sessões de aditivo
       const { error: aditivoSessionsError } = await supabase
         .from('aditivo_sessions')
         .delete()
         .eq('obra_id', id);
-
       if (aditivoSessionsError) console.warn('Erro ao deletar aditivo_sessions:', aditivoSessionsError);
 
-      // Deletar todos os items orçamentários da obra
+      // Deletar todos os itens orçamentários da obra
       const { error: deleteError } = await supabase
         .from('orcamento_items')
         .delete()
@@ -2813,13 +2822,7 @@ const criarNovaMedicao = async () => {
 
       if (deleteError) throw deleteError;
 
-      // Resetar todos os estados locais
-      setItems([]);
-      setMedicoes([]);
-      setAditivos([]);
-
       toast.success('Planilha excluída com sucesso!');
-      setConfirm({ open: false });
     } catch (error) {
       console.error('Erro ao excluir planilha:', error);
       toast.error('Erro ao excluir planilha');
