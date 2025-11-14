@@ -2773,7 +2773,39 @@ const criarNovaMedicao = async () => {
     if (!id) return;
 
     try {
-      // Deletar todos os items orçamentários da obra (origem contratual e extracontratual)
+      // Deletar todos os itens de medição primeiro
+      const { error: medicaoItemsError } = await supabase
+        .from('medicao_items')
+        .delete()
+        .in('medicao_id', medicoes.map(m => m.sessionId).filter(Boolean));
+
+      if (medicaoItemsError) console.warn('Erro ao deletar medicao_items:', medicaoItemsError);
+
+      // Deletar as sessões de medição
+      const { error: medicaoSessionsError } = await supabase
+        .from('medicao_sessions')
+        .delete()
+        .eq('obra_id', id);
+
+      if (medicaoSessionsError) console.warn('Erro ao deletar medicao_sessions:', medicaoSessionsError);
+
+      // Deletar todos os itens de aditivo
+      const { error: aditivoItemsError } = await supabase
+        .from('aditivo_items')
+        .delete()
+        .in('aditivo_id', aditivos.map(a => a.sessionId).filter(Boolean));
+
+      if (aditivoItemsError) console.warn('Erro ao deletar aditivo_items:', aditivoItemsError);
+
+      // Deletar as sessões de aditivo
+      const { error: aditivoSessionsError } = await supabase
+        .from('aditivo_sessions')
+        .delete()
+        .eq('obra_id', id);
+
+      if (aditivoSessionsError) console.warn('Erro ao deletar aditivo_sessions:', aditivoSessionsError);
+
+      // Deletar todos os items orçamentários da obra
       const { error: deleteError } = await supabase
         .from('orcamento_items')
         .delete()
@@ -2781,12 +2813,10 @@ const criarNovaMedicao = async () => {
 
       if (deleteError) throw deleteError;
 
-      // Limpar estado local
+      // Resetar todos os estados locais
       setItems([]);
-      
-      // Limpar dados de medições e aditivos
-      setMedicoes(medicoes.map(medicao => ({ ...medicao, dados: {} })));
-      setAditivos(aditivos.map(aditivo => ({ ...aditivo, dados: {} })));
+      setMedicoes([]);
+      setAditivos([]);
 
       toast.success('Planilha excluída com sucesso!');
       setConfirm({ open: false });
