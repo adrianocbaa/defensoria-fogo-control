@@ -25,6 +25,7 @@ interface Obra {
   porcentagem_execucao: number;
   created_at: string;
   previsao_termino?: string;
+  valor_calculado?: number;
 }
 
 const statusColors: Record<string, string> = {
@@ -47,8 +48,60 @@ export function AdminObras() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
+  const [obraValores, setObraValores] = useState<Record<string, number>>({});
   const { canEdit } = useUserRole();
   const navigate = useNavigate();
+
+  const calcularValorObra = async (obraId: string, obraData: any): Promise<number> => {
+    try {
+      // Verifica se existe planilha orçamentária (orcamento_items_hierarquia)
+      const { data: orcamentoItems, error: orcError } = await supabase
+        .from('orcamento_items_hierarquia')
+        .select('obra_id, valor_total, is_macro, eh_administracao_local, origem')
+        .eq('obra_id', obraId)
+        .or('is_macro.is.null,is_macro.eq.false')
+        .neq('eh_administracao_local', true)
+        .neq('origem', 'extracontratual');
+
+      if (orcError) throw orcError;
+
+      if (orcamentoItems && orcamentoItems.length > 0) {
+        // Tem planilha: calcular valor inicial + aditivos bloqueados
+        const valorInicial = orcamentoItems.reduce((sum, item) => sum + Number(item.valor_total || 0), 0);
+
+        // Buscar aditivos bloqueados
+        const { data: aditivoSessions, error: adtError } = await supabase
+          .from('aditivo_sessions')
+          .select('id')
+          .eq('obra_id', obraId)
+          .eq('status', 'bloqueada');
+
+        if (adtError) throw adtError;
+
+        let aditivos = 0;
+        if (aditivoSessions && aditivoSessions.length > 0) {
+          const sessionIds = aditivoSessions.map(s => s.id);
+          const { data: aditivoItems, error: adtItemsError } = await supabase
+            .from('aditivo_items')
+            .select('total')
+            .in('aditivo_id', sessionIds);
+
+          if (adtItemsError) throw adtItemsError;
+
+          aditivos = aditivoItems?.reduce((sum, item) => sum + Number(item.total || 0), 0) || 0;
+        }
+
+        return valorInicial + aditivos;
+      } else {
+        // Não tem planilha: usar valor_total + valor_aditivado da obra
+        return Number(obraData.valor_total || 0) + Number(obraData.valor_aditivado || 0);
+      }
+    } catch (error) {
+      console.error('Erro ao calcular valor da obra:', error);
+      // Fallback: usar valores da obra
+      return Number(obraData.valor_total || 0) + Number(obraData.valor_aditivado || 0);
+    }
+  };
 
   const fetchObras = async () => {
     try {
@@ -76,6 +129,13 @@ export function AdminObras() {
       
       setObras(sortedObras);
       setFilteredObras(sortedObras);
+
+      // Calcular valores para cada obra
+      const valores: Record<string, number> = {};
+      for (const obra of sortedObras) {
+        valores[obra.id] = await calcularValorObra(obra.id, obra);
+      }
+      setObraValores(valores);
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');
@@ -261,6 +321,7 @@ export function AdminObras() {
                   <TableHead>Município</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -274,6 +335,11 @@ export function AdminObras() {
                       <Badge className={statusColors[obra.status]}>
                         {statusLabels[obra.status]}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {obraValores[obra.id] !== undefined
+                        ? formatCurrency(obraValores[obra.id])
+                        : '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
