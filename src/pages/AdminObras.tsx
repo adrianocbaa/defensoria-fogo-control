@@ -191,25 +191,53 @@ export function AdminObras() {
     try {
       if (obras.length === 0) return;
       const obraIds = obras.map(o => o.id);
-      const { data, error } = await supabase
+      
+      // Buscar valor total do contrato a partir do orçamento
+      const { data: orcamentoData, error: orcError } = await supabase
+        .from('orcamento_items')
+        .select('obra_id, total_contrato, origem, eh_administracao_local')
+        .in('obra_id', obraIds)
+        .eq('eh_administracao_local', false)
+        .neq('origem', 'extracontratual');
+      
+      if (orcError) throw orcError;
+
+      const totalContratoMap: Record<string, number> = {};
+      (orcamentoData || []).forEach((item: any) => {
+        totalContratoMap[item.obra_id] = (totalContratoMap[item.obra_id] || 0) + Number(item.total_contrato || 0);
+      });
+
+      // Buscar medições
+      const { data: medicaoData, error: medError } = await supabase
         .from('medicao_sessions')
         .select('id, obra_id, medicao_items(total)')
         .in('obra_id', obraIds);
-      if (error) throw error;
+      
+      if (medError) throw medError;
+
       const acumuladoPorObra: Record<string, number> = {};
-      (data || []).forEach((s: any) => {
+      (medicaoData || []).forEach((s: any) => {
         const soma = (s.medicao_items || []).reduce((sum: number, it: any) => sum + Number(it.total || 0), 0);
         acumuladoPorObra[s.obra_id] = (acumuladoPorObra[s.obra_id] || 0) + soma;
       });
+
       const pctMap: Record<string, number> = {};
       const totalMap: Record<string, number> = {};
+      
       obras.forEach((o) => {
-        const totalContrato = Number(o.valor_total || 0) + Number(o.valor_aditivado || 0);
+        // Prioridade 1: Valor do orçamento
+        // Prioridade 2: Valor cadastrado na obra
+        let totalContrato = totalContratoMap[o.id] || 0;
+        if (totalContrato === 0) {
+          totalContrato = Number(o.valor_total || 0) + Number(o.valor_aditivado || 0);
+        }
+        
         totalMap[o.id] = totalContrato;
         const acumulado = acumuladoPorObra[o.id] || 0;
         const pct = totalContrato > 0 ? (acumulado / totalContrato) * 100 : 0;
         pctMap[o.id] = pct;
       });
+      
       setContractTotals(totalMap);
       setExecPercents(pctMap);
     } catch (err) {
