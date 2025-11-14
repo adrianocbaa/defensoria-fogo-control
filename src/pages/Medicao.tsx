@@ -122,7 +122,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const [modalImportarRDOAberto, setModalImportarRDOAberto] = useState(false);
   const [mostrarAditivos, setMostrarAditivos] = useState(true);
   const [novoAditivoAberto, setNovoAditivoAberto] = useState(false);
-  const [confirm, setConfirm] = useState<{ open: boolean; type?: 'reabrir-medicao' | 'excluir-medicao' | 'excluir-aditivo'; medicaoId?: number; aditivoId?: number }>({ open: false });
+  const [confirm, setConfirm] = useState<{ open: boolean; type?: 'reabrir-medicao' | 'excluir-medicao' | 'excluir-aditivo' | 'limpar-planilha'; medicaoId?: number; aditivoId?: number }>({ open: false });
 
   useEffect(() => {
     if (id) {
@@ -2769,6 +2769,33 @@ const criarNovaMedicao = async () => {
       toast.error('Erro ao excluir medição');
     }
   };
+  const limparPlanilha = async () => {
+    if (!id) return;
+
+    try {
+      // Deletar todos os items orçamentários da obra (origem contratual e extracontratual)
+      const { error: deleteError } = await supabase
+        .from('orcamento_items')
+        .delete()
+        .eq('obra_id', id);
+
+      if (deleteError) throw deleteError;
+
+      // Limpar estado local
+      setItems([]);
+      
+      // Limpar dados de medições e aditivos
+      setMedicoes(medicoes.map(medicao => ({ ...medicao, dados: {} })));
+      setAditivos(aditivos.map(aditivo => ({ ...aditivo, dados: {} })));
+
+      toast.success('Planilha excluída com sucesso!');
+      setConfirm({ open: false });
+    } catch (error) {
+      console.error('Erro ao excluir planilha:', error);
+      toast.error('Erro ao excluir planilha');
+    }
+  };
+
   const importarDados = async (dadosImportados: Item[]) => {
     if (!id) return;
 
@@ -2783,19 +2810,19 @@ const criarNovaMedicao = async () => {
         quantidade: item.quantidade,
         valorUnitario: item.valorUnitario,
         valorTotal: item.valorTotal,
-        aditivo: { ...(item.aditivo || { qnt: 0, percentual: 0, total: 0 }) },
-        totalContrato: item.totalContrato,
+        aditivo: { qnt: 0, percentual: 0, total: 0 },
+        totalContrato: item.valorTotal,
         importado: true,
-        nivel: determinarNivel(item.item),
-        ehAdministracaoLocal: false, // Inicialmente nenhum item é marcado como administração local
-        ordem: item.ordem ?? idx
+        nivel: item.nivel || 1,
+        ehAdministracaoLocal: item.ehAdministracaoLocal || false,
+        ordem: item.ordem ?? idx,
+        origem: 'contratual'
       }));
-      
-      const dadosComTotais = calcularTotaisHierarquicos(dadosComNivel);
-      setItems(dadosComTotais);
-      
-      // Salvar items da planilha no banco de dados
-      const itemsParaSalvar = dadosComTotais.map(item => ({
+
+      setItems(dadosComNivel);
+
+      // Salvar no banco de dados
+      const itemsParaSalvar = dadosComNivel.map((item) => ({
         obra_id: id,
         item: item.item,
         codigo: item.codigo,
@@ -3219,6 +3246,16 @@ const criarNovaMedicao = async () => {
                         />
                       </DialogContent>
                     </Dialog>
+                    {items.length > 0 && (
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2 text-destructive hover:text-destructive"
+                        onClick={() => setConfirm({ open: true, type: 'limpar-planilha' })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Limpar Planilha
+                      </Button>
+                    )}
                     <Dialog open={modalImportarRDOAberto} onOpenChange={setModalImportarRDOAberto}>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="flex items-center gap-2">
@@ -3847,10 +3884,12 @@ const criarNovaMedicao = async () => {
                 {confirm.type === 'reabrir-medicao' && 'Reabrir medição?'}
                 {confirm.type === 'excluir-medicao' && 'Excluir medição?'}
                 {confirm.type === 'excluir-aditivo' && 'Excluir aditivo?'}
+                {confirm.type === 'limpar-planilha' && 'Excluir planilha orçamentária?'}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {confirm.type === 'reabrir-medicao' && 'A medição voltará para edição.'}
-                {confirm.type?.startsWith('excluir') && 'Esta ação não pode ser desfeita.'}
+                {confirm.type === 'limpar-planilha' && 'Todos os dados da planilha orçamentária serão excluídos. Esta ação não pode ser desfeita.'}
+                {(confirm.type === 'excluir-medicao' || confirm.type === 'excluir-aditivo') && 'Esta ação não pode ser desfeita.'}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -3865,6 +3904,9 @@ const criarNovaMedicao = async () => {
                   }
                   if (confirm.type === 'excluir-aditivo' && confirm.aditivoId != null) {
                     excluirAditivo(confirm.aditivoId);
+                  }
+                  if (confirm.type === 'limpar-planilha') {
+                    limparPlanilha();
                   }
                   setConfirm({ open: false });
                 }}
