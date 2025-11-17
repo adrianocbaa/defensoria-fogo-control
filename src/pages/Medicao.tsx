@@ -3916,50 +3916,50 @@ const criarNovaMedicao = async () => {
             </CardContent>
           )}
         </Card>
-
-        {/* Confirmações */}
-        <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {confirm.type === 'reabrir-medicao' && 'Reabrir medição?'}
-                {confirm.type === 'excluir-medicao' && 'Excluir medição?'}
-                {confirm.type === 'excluir-aditivo' && 'Excluir aditivo?'}
-                {confirm.type === 'limpar-planilha' && 'Excluir planilha orçamentária?'}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {confirm.type === 'reabrir-medicao' && 'A medição voltará para edição.'}
-                {confirm.type === 'limpar-planilha' && 'Todos os dados da planilha orçamentária serão excluídos. Esta ação não pode ser desfeita.'}
-                {(confirm.type === 'excluir-medicao' || confirm.type === 'excluir-aditivo') && 'Esta ação não pode ser desfeita.'}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (confirm.type === 'reabrir-medicao' && confirm.medicaoId != null) {
-                    reabrirMedicao(confirm.medicaoId);
-                  }
-                  if (confirm.type === 'excluir-medicao' && confirm.medicaoId != null) {
-                    excluirMedicao(confirm.medicaoId);
-                  }
-                  if (confirm.type === 'excluir-aditivo' && confirm.aditivoId != null) {
-                    excluirAditivo(confirm.aditivoId);
-                  }
-                  if (confirm.type === 'limpar-planilha') {
-                    limparPlanilha();
-                  }
-                  setConfirm({ open: false });
-                }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Confirmar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </TabsContent>
     </Tabs>
+
+    {/* Confirmações - Movido para fora das Tabs para aparecer em qualquer aba */}
+    <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {confirm.type === 'reabrir-medicao' && 'Reabrir medição?'}
+            {confirm.type === 'excluir-medicao' && 'Excluir medição?'}
+            {confirm.type === 'excluir-aditivo' && 'Excluir aditivo?'}
+            {confirm.type === 'limpar-planilha' && 'Excluir planilha orçamentária?'}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {confirm.type === 'reabrir-medicao' && 'A medição voltará para edição.'}
+            {confirm.type === 'limpar-planilha' && 'Todos os dados da planilha orçamentária serão excluídos. Esta ação não pode ser desfeita.'}
+            {(confirm.type === 'excluir-medicao' || confirm.type === 'excluir-aditivo') && 'Esta ação não pode ser desfeita.'}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (confirm.type === 'reabrir-medicao' && confirm.medicaoId != null) {
+                reabrirMedicao(confirm.medicaoId);
+              }
+              if (confirm.type === 'excluir-medicao' && confirm.medicaoId != null) {
+                excluirMedicao(confirm.medicaoId);
+              }
+              if (confirm.type === 'excluir-aditivo' && confirm.aditivoId != null) {
+                excluirAditivo(confirm.aditivoId);
+              }
+              if (confirm.type === 'limpar-planilha') {
+                limparPlanilha();
+              }
+              setConfirm({ open: false });
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Confirmar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
       </div>
     </div>
   );
