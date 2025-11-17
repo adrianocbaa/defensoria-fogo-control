@@ -2772,11 +2772,6 @@ const criarNovaMedicao = async () => {
   const limparPlanilha = async () => {
     if (!id) return;
 
-    // Limpar a UI imediatamente para refletir a exclusão
-    setItems([]);
-    setMedicoes([]);
-    setAditivos([]);
-    setMedicaoAtual(null);
     setConfirm({ open: false });
 
     try {
@@ -2821,6 +2816,15 @@ const criarNovaMedicao = async () => {
         .eq('obra_id', id);
 
       if (deleteError) throw deleteError;
+
+      // Limpar estados locais após exclusão bem-sucedida
+      setItems([]);
+      setMedicoes([]);
+      setAditivos([]);
+      setMedicaoAtual(null);
+
+      // Recarregar dados para sincronizar com o banco
+      await fetchMedicoesSalvas();
 
       toast.success('Planilha excluída com sucesso!');
     } catch (error) {
