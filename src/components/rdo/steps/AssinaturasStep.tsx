@@ -262,11 +262,87 @@ export function AssinaturasStep({
       </div>
 
       {isApproved && (
-        <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <p className="text-sm text-green-800 dark:text-green-200">
-            ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
-          </p>
-        </div>
+        <>
+          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <p className="text-sm text-green-800 dark:text-green-200">
+              ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
+            </p>
+          </div>
+
+          {/* Resumo das Assinaturas */}
+          <Card className="border-primary/20">
+            <div className="p-6">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                Resumo das Assinaturas
+              </h3>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Resumo Fiscal */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h4 className="font-medium">Fiscal/Gestor (DPE-MT)</h4>
+                  </div>
+                  
+                  <div className="space-y-2 pl-10">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Nome</p>
+                      <p className="text-sm font-medium">{reportData?.assinatura_fiscal_nome || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Cargo</p>
+                      <p className="text-sm">{reportData?.assinatura_fiscal_cargo || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">CREA/CPF/ID</p>
+                      <p className="text-sm">{reportData?.assinatura_fiscal_documento || "—"}</p>
+                    </div>
+                    {fiscalValidado && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Data/Hora da Validação</p>
+                        <p className="text-sm">{new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Resumo Contratada */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h4 className="font-medium">Responsável Técnico (Contratada)</h4>
+                  </div>
+                  
+                  <div className="space-y-2 pl-10">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Nome</p>
+                      <p className="text-sm font-medium">{reportData?.assinatura_contratada_nome || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Cargo</p>
+                      <p className="text-sm">{reportData?.assinatura_contratada_cargo || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">CREA/CPF/ID</p>
+                      <p className="text-sm">{reportData?.assinatura_contratada_documento || "—"}</p>
+                    </div>
+                    {contratadaValidado && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Data/Hora da Validação</p>
+                        <p className="text-sm">{new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </>
       )}
     </div>
   );
