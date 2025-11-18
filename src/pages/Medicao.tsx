@@ -3266,38 +3266,42 @@ const criarNovaMedicao = async () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <Dialog open={modalImportarAberto} onOpenChange={setModalImportarAberto}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          Importar Planilha
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-lg">
-                        <DialogHeader>
-                          <DialogTitle>Importar Dados da Planilha</DialogTitle>
-                        </DialogHeader>
-                        <ImportarPlanilha 
-                          onImportar={importarDados}
-                          onFechar={() => setModalImportarAberto(false)}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                    <Dialog open={modalImportarRDOAberto} onOpenChange={setModalImportarRDOAberto}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          Importar do RDO
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-lg">
-                        <ImportarDoRDO 
-                          obraId={id!}
-                          onImportar={importarDadosDoRDO}
-                          onFechar={() => setModalImportarRDOAberto(false)}
-                        />
-                      </DialogContent>
-                    </Dialog>
+                    {canEdit && (
+                      <>
+                        <Dialog open={modalImportarAberto} onOpenChange={setModalImportarAberto}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" className="flex items-center gap-2">
+                              <Upload className="h-4 w-4" />
+                              Importar Planilha
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-lg">
+                            <DialogHeader>
+                              <DialogTitle>Importar Dados da Planilha</DialogTitle>
+                            </DialogHeader>
+                            <ImportarPlanilha 
+                              onImportar={importarDados}
+                              onFechar={() => setModalImportarAberto(false)}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                        <Dialog open={modalImportarRDOAberto} onOpenChange={setModalImportarRDOAberto}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" className="flex items-center gap-2">
+                              <Upload className="h-4 w-4" />
+                              Importar do RDO
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-lg">
+                            <ImportarDoRDO 
+                              obraId={id!}
+                              onImportar={importarDadosDoRDO}
+                              onFechar={() => setModalImportarRDOAberto(false)}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                      </>
+                    )}
                     {items.length > 0 && canEdit && (
                       <Button 
                         variant="outline" 
@@ -3497,7 +3501,7 @@ const criarNovaMedicao = async () => {
                                      className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
                                      step="0.01"
                                      min="0"
-                                     disabled={aditivo.bloqueada && !isAdmin}
+                                     disabled={aditivo.bloqueada || !canEdit}
                                    />
                                  </TableCell>
                                  <TableCell className="bg-blue-100 border border-blue-300 p-1">
@@ -3567,7 +3571,7 @@ const criarNovaMedicao = async () => {
                                   className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
                                   step="0.01"
                                   min="0"
-                                  disabled={medicaoAtualObj.bloqueada && !isAdmin}
+                                  disabled={medicaoAtualObj.bloqueada || !canEdit}
                                 />
                               ) : (
                                 ehItemFolha(item.item) ? (
@@ -3638,6 +3642,7 @@ const criarNovaMedicao = async () => {
                                 size="sm"
                                 onClick={() => toggleAdministracaoLocal(item.id)}
                                 className="h-6 w-8 p-0 text-xs"
+                                disabled={!canEdit}
                               >
                                 <Check className="h-3 w-3" />
                               </Button>
@@ -3679,16 +3684,20 @@ const criarNovaMedicao = async () => {
                 Medições
               </CardTitle>
               <div className="flex items-center gap-2">
-                <ImportarCronograma 
-                  obraId={obra.id} 
-                  onSuccess={() => {
-                    toast.success('Cronograma importado com sucesso!');
-                  }}
-                />
-                <Button onClick={criarNovaMedicao} className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Nova Medição
-                </Button>
+                {canEdit && (
+                  <>
+                    <ImportarCronograma 
+                      obraId={obra.id} 
+                      onSuccess={() => {
+                        toast.success('Cronograma importado com sucesso!');
+                      }}
+                    />
+                    <Button onClick={criarNovaMedicao} className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Nova Medição
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -3827,10 +3836,12 @@ const criarNovaMedicao = async () => {
                   {mostrarAditivos ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   {mostrarAditivos ? 'Ocultar' : 'Mostrar'} Aditivos
                 </Button>
-                <Button onClick={() => setNovoAditivoAberto(true)} className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Novo Aditivo
-                </Button>
+                {canEdit && (
+                  <Button onClick={() => setNovoAditivoAberto(true)} className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Novo Aditivo
+                  </Button>
+                )}
                 <NovoAditivoModal
                   open={novoAditivoAberto}
                   onOpenChange={setNovoAditivoAberto}
@@ -3861,51 +3872,59 @@ const criarNovaMedicao = async () => {
                       <DropdownMenuContent align="start" className="min-w-[200px]">
                         {a.bloqueada ? (
                           <>
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                editarAditivo(a.id);
-                              }}
-                            >
-                              ✏️ Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
-                              }}
-                            >
-                              🗑️ Excluir
-                            </DropdownMenuItem>
+                            {canEdit && (
+                              <>
+                                <DropdownMenuItem
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    editarAditivo(a.id);
+                                  }}
+                                >
+                                  ✏️ Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                                  }}
+                                >
+                                  🗑️ Excluir
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </>
                         ) : (
                           <>
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                salvarAditivo(a.id);
-                              }}
-                            >
-                              💾 Salvar rascunho
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                publicarAditivo(a.id);
-                              }}
-                            >
-                              ✅ Salvar e Publicar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
-                              }}
-                            >
-                              🗑️ Excluir
-                            </DropdownMenuItem>
+                            {canEdit && (
+                              <>
+                                <DropdownMenuItem
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    salvarAditivo(a.id);
+                                  }}
+                                >
+                                  💾 Salvar rascunho
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    publicarAditivo(a.id);
+                                  }}
+                                >
+                                  ✅ Salvar e Publicar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                                  }}
+                                >
+                                  🗑️ Excluir
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </>
                         )}
                       </DropdownMenuContent>
