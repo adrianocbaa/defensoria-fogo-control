@@ -11,9 +11,10 @@ import { CronogramaComparativo } from './CronogramaComparativo';
 
 interface CronogramaViewProps {
   obraId: string;
+  canEdit?: boolean;
 }
 
-export function CronogramaView({ obraId }: CronogramaViewProps) {
+export function CronogramaView({ obraId, canEdit = true }: CronogramaViewProps) {
   const [cronograma, setCronograma] = useState<CronogramaFinanceiro | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const { fetchCronograma, deleteCronograma, loading } = useCronogramaFinanceiro();
@@ -121,28 +122,30 @@ export function CronogramaView({ obraId }: CronogramaViewProps) {
                     minute: '2-digit'
                   })}
                 </p>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="gap-2">
-                      <Trash2 className="w-4 h-4" />
-                      Excluir
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja excluir o cronograma financeiro? Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete}>
+                {canEdit && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" className="gap-2">
+                        <Trash2 className="w-4 h-4" />
                         Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir o cronograma financeiro? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete}>
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </div>
           </CardHeader>

@@ -3182,10 +3182,10 @@ const criarNovaMedicao = async () => {
 
         {/* Sistema de Abas */}
         <Tabs defaultValue="medicao-atual" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className={`grid w-full ${canEdit ? 'grid-cols-3' : 'grid-cols-2'} mb-6`}>
             <TabsTrigger value="medicao-atual">Medição Atual</TabsTrigger>
             <TabsTrigger value="analise-financeira">Análise Financeira</TabsTrigger>
-            <TabsTrigger value="gestao">Gestão</TabsTrigger>
+            {canEdit && <TabsTrigger value="gestao">Gestão</TabsTrigger>}
           </TabsList>
 
           {/* ABA 1: MEDIÇÃO ATUAL */}
@@ -3667,10 +3667,11 @@ const criarNovaMedicao = async () => {
           items={items}
           ehItemPrimeiroNivel={ehItemPrimeiroNivel}
           medicaoAtual={medicaoAtual}
+          canEdit={canEdit}
         />
 
         {/* Cronograma Financeiro */}
-        <CronogramaView obraId={obra.id} />
+        <CronogramaView obraId={obra.id} canEdit={canEdit} />
       </TabsContent>
 
       {/* ABA 3: GESTÃO */}

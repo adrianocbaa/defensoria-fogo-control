@@ -28,6 +28,7 @@ interface ResumoContratoProps {
   items: Item[];
   ehItemPrimeiroNivel: (itemCode: string) => boolean;
   medicaoAtual?: number;
+  canEdit?: boolean;
 }
 
 interface ResumoAditivoData {
@@ -47,7 +48,8 @@ export function ResumoContrato({
   aditivos, 
   items, 
   ehItemPrimeiroNivel,
-  medicaoAtual
+  medicaoAtual,
+  canEdit = true
 }: ResumoContratoProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
