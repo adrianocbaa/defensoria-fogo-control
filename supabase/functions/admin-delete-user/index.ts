@@ -125,7 +125,33 @@ serve(async (req) => {
     }
     if (delErr) {
       console.error('Error deleting auth user:', delErr);
-      throw delErr;
+      // Fallback: release email by renaming the auth user so the original can be reused
+      try {
+        const fallbackEmail = `deleted+${Date.now()}@example.com`;
+        const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
+          email: fallbackEmail,
+          email_confirm: true,
+          user_metadata: { deleted_at: new Date().toISOString() }
+        } as any);
+        if (updErr) throw updErr;
+
+        await supabaseAdmin.from('audit_logs').insert({
+          table_name: 'auth.users',
+          record_id: targetUserId,
+          operation: 'UPDATE',
+          new_values: { action: 'email_released', new_email: fallbackEmail },
+          user_id: user.id,
+          user_email: user.email,
+        });
+
+        return new Response(
+          JSON.stringify({ success: true, userId: targetUserId, emailReleased: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      } catch (fallbackErr) {
+        console.error('Fallback (release email) failed:', fallbackErr);
+        throw delErr;
+      }
     }
 
     // Log
