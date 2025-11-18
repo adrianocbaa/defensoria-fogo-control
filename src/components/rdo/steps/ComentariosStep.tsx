@@ -144,8 +144,10 @@ export function ComentariosStep({ reportId, obraId }: ComentariosStepProps) {
             </div>
           ) : (
             comments.map((comment) => {
-              const roleLabel = comment.profiles?.role === 'contratada' ? 'Contratada' : 'Fiscal';
-              const roleColor = comment.profiles?.role === 'contratada' 
+              // Determinar role e estilo do badge baseado no perfil do autor do comentário
+              const isContratada = comment.profiles?.role === 'contratada';
+              const roleLabel = isContratada ? 'Contratada' : 'Fiscal';
+              const roleColor = isContratada
                 ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' 
                 : 'bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
               
