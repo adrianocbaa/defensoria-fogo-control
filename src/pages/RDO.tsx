@@ -323,7 +323,7 @@ function RDOConfig() {
 export function RDO() {
   const { obraId } = useParams();
   const navigate = useNavigate();
-  const { canEdit } = useUserRole();
+  const { canEditRDO } = useUserRole();
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -390,7 +390,7 @@ export function RDO() {
     );
   }
 
-  if (!canEdit) {
+  if (!canEditRDO) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
