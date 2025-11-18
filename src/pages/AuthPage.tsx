@@ -498,13 +498,12 @@ const AuthPage = () => {
                 </form>
               </div>
             ) : (
-          {/* Cadastro removido - apenas admins podem criar usuários */}
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-1">
-              <TabsTrigger value="login">Login</TabsTrigger>
-            </TabsList>
-              
-              <TabsContent value="login" className="space-y-4">
+              <Tabs defaultValue="login" className="w-full">
+                <TabsList className="grid w-full grid-cols-1">
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
@@ -613,108 +612,6 @@ const AuthPage = () => {
                     </form>
                   </div>
                 )}
-              </TabsContent>
-              
-              <TabsContent value="signup" className="space-y-4">
-                <Alert className="border-amber-200 bg-amber-50">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    Use uma senha forte com pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas e números.
-                  </AlertDescription>
-                </Alert>
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Nome de Exibição</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Seu nome"
-                        value={signupForm.displayName}
-                        onChange={(e) => setSignupForm(prev => ({ ...prev, displayName: e.target.value }))}
-                        className={`pl-10 ${validationErrors.displayName ? 'border-red-500' : ''}`}
-                        required
-                        autoComplete="name"
-                        maxLength={100}
-                      />
-                      {validationErrors.displayName && (
-                        <p className="text-sm text-red-600 mt-1">{validationErrors.displayName}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={signupForm.email}
-                        onChange={(e) => setSignupForm(prev => ({ ...prev, email: e.target.value }))}
-                        className={`pl-10 ${validationErrors.email ? 'border-red-500' : ''}`}
-                        required
-                        autoComplete="email"
-                        maxLength={255}
-                      />
-                      {validationErrors.email && (
-                        <p className="text-sm text-red-600 mt-1">{validationErrors.email}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signupForm.password}
-                        onChange={(e) => setSignupForm(prev => ({ ...prev, password: e.target.value }))}
-                        className={`pl-10 ${validationErrors.password ? 'border-red-500' : ''}`}
-                        required
-                        autoComplete="new-password"
-                        minLength={8}
-                        maxLength={128}
-                      />
-                      {validationErrors.password && (
-                        <p className="text-sm text-red-600 mt-1">{validationErrors.password}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm">Confirmar Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="signup-confirm"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signupForm.confirmPassword}
-                        onChange={(e) => setSignupForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        className={`pl-10 ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
-                        required
-                        autoComplete="new-password"
-                      />
-                      {validationErrors.confirmPassword && (
-                        <p className="text-sm text-red-600 mt-1">{validationErrors.confirmPassword}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isLoading || loading}
-                  >
-                    {isLoading ? 'Cadastrando...' : 'Criar Conta'}
-                  </Button>
-                </form>
               </TabsContent>
               </Tabs>
             )}
