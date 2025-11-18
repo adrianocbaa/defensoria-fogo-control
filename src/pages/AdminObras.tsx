@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Obra {
@@ -344,6 +344,14 @@ export function AdminObras() {
         subtitle="Visualize e gerencie todas as obras públicas"
         actions={
           <>
+            {!userRole.isContratada && (
+              <Link to="/dashboard">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Estatísticas
+                </Button>
+              </Link>
+            )}
             <Button asChild variant="outline" size="sm">
               <Link to="/obras">
                 <Map className="h-4 w-4 mr-2" />
