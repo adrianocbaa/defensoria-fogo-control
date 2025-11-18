@@ -1677,11 +1677,15 @@ const criarNovaMedicao = async () => {
             }
           }
           
-          // Formatar números como moeda ou percentual
+          // Formatar números como moeda, percentual ou contábil
           const colName = Object.keys(exportData[0])[C];
           if (colName?.includes('PCT') || colName?.includes('%')) {
             ws[cellAddress].z = '0.00"%"';
+          } else if (colName?.includes('QNT') || colName === 'Quant.') {
+            // Colunas de quantidade devem ser contábil (sem cifrão)
+            ws[cellAddress].z = '#,##0.00';
           } else if (typeof ws[cellAddress].v === 'number' && C > 3) {
+            // Colunas de valor devem ser moeda
             ws[cellAddress].z = 'R$ #,##0.00';
           }
         }
