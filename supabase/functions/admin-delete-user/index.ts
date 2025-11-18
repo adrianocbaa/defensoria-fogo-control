@@ -107,6 +107,8 @@ serve(async (req) => {
       () => supabaseAdmin.from('nuclei').update({ user_id: null }).eq('user_id', targetUserId),
       () => supabaseAdmin.from('stock_movements').update({ user_id: null }).eq('user_id', targetUserId),
       () => supabaseAdmin.from('travels').update({ user_id: null }).eq('user_id', targetUserId),
+      () => supabaseAdmin.from('user_roles').update({ created_by: null }).eq('created_by', targetUserId),
+      () => supabaseAdmin.from('user_obra_access').update({ created_by: null }).eq('created_by', targetUserId),
     ];
 
     for (const op of [...safeDeletes, ...safeNullUpdates]) {
@@ -114,7 +116,13 @@ serve(async (req) => {
     }
 
     // Finally delete auth user
-    const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+    let delErr;
+    for (let i = 0; i < 2; i++) {
+      const res = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+      delErr = res.error;
+      if (!delErr) break;
+      await new Promise(r => setTimeout(r, 250));
+    }
     if (delErr) {
       console.error('Error deleting auth user:', delErr);
       throw delErr;
