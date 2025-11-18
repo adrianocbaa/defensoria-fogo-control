@@ -15,6 +15,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Button } from '@/components/ui/button';
 
 ChartJS.register(
@@ -25,7 +26,8 @@ ChartJS.register(
   PointElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ChartDataLabels
 );
 
 interface CronogramaComparativoProps {
@@ -402,12 +404,31 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                   return label;
                 }
               }
+            },
+            datalabels: {
+              display: chartType === 'line',
+              align: 'top' as const,
+              anchor: 'end' as const,
+              backgroundColor: function(context: any) {
+                return context.dataset.borderColor;
+              },
+              borderRadius: 4,
+              color: 'white',
+              font: {
+                weight: 'bold' as const,
+                size: 10
+              },
+              padding: 4,
+              formatter: function(value: any) {
+                if (value === null || value === undefined) return '';
+                return value.toFixed(1) + '%';
+              }
             }
           },
           scales: {
             y: {
               beginAtZero: true,
-              max: 120, // Limite de 120% para visualizar melhor
+              max: 100,
               ticks: {
                 callback: function(value: any) {
                   return value + '%';
