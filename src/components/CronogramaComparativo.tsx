@@ -420,8 +420,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
               },
               padding: 4,
               formatter: function(value: any) {
-                if (value === null || value === undefined) return '';
-                return value.toFixed(1) + '%';
+                if (value === null || value === undefined || value === 0) return '';
+                return value.toFixed(2) + '%';
               }
             }
           },
