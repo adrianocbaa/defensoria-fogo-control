@@ -36,6 +36,8 @@ export interface RdoFormData {
   hash_verificacao?: string;
   modo_atividades?: 'manual' | 'planilha' | 'template';
   template_id?: string;
+  fiscal_concluido_em?: string;
+  contratada_concluido_em?: string;
 }
 
 export function useRdoForm(obraId: string, data: string) {
@@ -180,11 +182,40 @@ export function useRdoForm(obraId: string, data: string) {
   const conclude = useCallback(async () => {
     if (!validateMinimum()) return;
     
-    const updatedData = { ...formData, status: 'concluido' as const };
+    // Obter role do usuário para determinar qual campo atualizar
+    const { data: roleData } = await supabase.rpc('get_user_role', { user_uuid: user?.id });
+    const userRole = roleData;
+    
+    const now = new Date().toISOString();
+    const updatedFields: Partial<RdoFormData> = {};
+    
+    // Atualizar campo apropriado baseado no role
+    if (userRole === 'contratada') {
+      updatedFields.contratada_concluido_em = now;
+    } else {
+      // Fiscal, admin, editor, etc
+      updatedFields.fiscal_concluido_em = now;
+    }
+    
+    // Verificar se AMBOS concluíram para mudar status
+    const otherPartyConcluded = userRole === 'contratada' 
+      ? formData.fiscal_concluido_em 
+      : formData.contratada_concluido_em;
+    
+    if (otherPartyConcluded) {
+      updatedFields.status = 'concluido' as const;
+    }
+    
+    const updatedData = { ...formData, ...updatedFields };
     await saveMutation.mutateAsync(updatedData);
     setFormData(updatedData);
-    toast.success('RDO concluído com sucesso');
-  }, [formData, validateMinimum, saveMutation]);
+    
+    if (otherPartyConcluded) {
+      toast.success('RDO concluído por ambas as partes e pronto para aprovação');
+    } else {
+      toast.success('Conclusão registrada. Aguardando conclusão da outra parte.');
+    }
+  }, [formData, validateMinimum, saveMutation, user]);
 
   const sendForApproval = useCallback(async () => {
     if (!formData.id) {
@@ -205,6 +236,12 @@ export function useRdoForm(obraId: string, data: string) {
 
   const approve = useCallback(async (observacao?: string) => {
     if (!formData.id) return;
+
+    // Verificar se ambos concluíram antes de aprovar
+    if (!formData.fiscal_concluido_em || !formData.contratada_concluido_em) {
+      toast.error('Ambas as partes devem concluir o RDO antes da aprovação');
+      return;
+    }
 
     const updatedData = { 
       ...formData, 

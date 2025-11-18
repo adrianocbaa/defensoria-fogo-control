@@ -1804,9 +1804,11 @@ export type Database = {
           cond_manha: string | null
           cond_noite: string | null
           cond_tarde: string | null
+          contratada_concluido_em: string | null
           created_at: string
           created_by: string | null
           data: string
+          fiscal_concluido_em: string | null
           hash_verificacao: string | null
           id: string
           modo_atividades: string | null
@@ -1840,9 +1842,11 @@ export type Database = {
           cond_manha?: string | null
           cond_noite?: string | null
           cond_tarde?: string | null
+          contratada_concluido_em?: string | null
           created_at?: string
           created_by?: string | null
           data: string
+          fiscal_concluido_em?: string | null
           hash_verificacao?: string | null
           id?: string
           modo_atividades?: string | null
@@ -1876,9 +1880,11 @@ export type Database = {
           cond_manha?: string | null
           cond_noite?: string | null
           cond_tarde?: string | null
+          contratada_concluido_em?: string | null
           created_at?: string
           created_by?: string | null
           data?: string
+          fiscal_concluido_em?: string | null
           hash_verificacao?: string | null
           id?: string
           modo_atividades?: string | null
