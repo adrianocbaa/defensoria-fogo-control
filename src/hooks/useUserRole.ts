@@ -48,6 +48,7 @@ export function useUserRole() {
   const isGM = role === 'gm';
   const isContratada = role === 'contratada' || role === 'prestadora'; // Aceita ambos para compatibilidade
   const canEditRDO = role === 'admin' || role === 'editor' || role === 'gm' || role === 'contratada' || role === 'prestadora';
+  const canViewMedicoes = role === 'admin' || role === 'editor' || role === 'gm' || role === 'contratada';
 
   const refreshRole = () => {
     fetchUserRole();
@@ -60,6 +61,7 @@ export function useUserRole() {
     isGM,
     isContratada,
     canEditRDO,
+    canViewMedicoes,
     loading,
     refreshRole
   };
