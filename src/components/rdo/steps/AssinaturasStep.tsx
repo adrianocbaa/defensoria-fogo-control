@@ -29,7 +29,11 @@ export function AssinaturasStep({
   const [isSaving, setIsSaving] = useState(false);
   
   const canValidateFiscal = canEdit || isAdmin;
-  const canValidateContratada = isContratada; // Apenas usuários com role "contratada"
+  const canValidateContratada = isContratada;
+  
+  const fiscalValidado = reportData?.assinatura_fiscal_validado_em;
+  const contratadaValidado = reportData?.assinatura_contratada_validado_em;
+  const isApproved = reportData?.status === "aprovado";
   
   const [fiscalNome, setFiscalNome] = useState(reportData?.assinatura_fiscal_nome || "");
   const [fiscalCargo, setFiscalCargo] = useState(reportData?.assinatura_fiscal_cargo || "");
@@ -128,18 +132,20 @@ export function AssinaturasStep({
     }
   };
 
-  const fiscalValidado = reportData?.assinatura_fiscal_validado_em;
-  const contratadaValidado = reportData?.assinatura_contratada_validado_em;
-  const isApproved = reportData?.status === "aprovado";
+  // Valores para exibição (preferir reportData para garantir dados salvos)
+  const fiscalNomeDisplay = reportData?.assinatura_fiscal_nome || fiscalNome;
+  const fiscalCargoDisplay = reportData?.assinatura_fiscal_cargo || fiscalCargo;
+  const fiscalDocumentoDisplay = reportData?.assinatura_fiscal_documento || fiscalDocumento;
   
-  // Usar os valores dos estados locais ou do reportData
-  const fiscalNomeDisplay = fiscalNome || reportData?.assinatura_fiscal_nome;
-  const fiscalCargoDisplay = fiscalCargo || reportData?.assinatura_fiscal_cargo;
-  const fiscalDocumentoDisplay = fiscalDocumento || reportData?.assinatura_fiscal_documento;
+  const contratadaNomeDisplay = reportData?.assinatura_contratada_nome || contratadaNome;
+  const contratadaCargoDisplay = reportData?.assinatura_contratada_cargo || contratadaCargo;
+  const contratadaDocumentoDisplay = reportData?.assinatura_contratada_documento || contratadaDocumento;
   
-  const contratadaNomeDisplay = contratadaNome || reportData?.assinatura_contratada_nome;
-  const contratadaCargoDisplay = contratadaCargo || reportData?.assinatura_contratada_cargo;
-  const contratadaDocumentoDisplay = contratadaDocumento || reportData?.assinatura_contratada_documento;
+  // Determinar se deve mostrar apenas o resumo
+  const showOnlySummary = isApproved || (fiscalValidado && contratadaValidado);
+  
+  // Determinar se deve mostrar os campos de validação
+  const showValidationFields = !isApproved && (!fiscalValidado || !contratadaValidado);
 
   return (
     <div className="space-y-6 pb-20">
@@ -150,10 +156,11 @@ export function AssinaturasStep({
         </p>
       </div>
 
-      {/* Ocultar campos de validação quando aprovado */}
-      {!isApproved && (
+      {/* Mostrar campos de validação apenas se necessário */}
+      {showValidationFields && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Fiscal/Gestor */}
+        {!fiscalValidado && canValidateFiscal && (
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Assinatura do Fiscal/Gestor (DPE-MT)</h3>
           <div className="space-y-4">
@@ -164,7 +171,7 @@ export function AssinaturasStep({
                 value={fiscalNome}
                 onChange={(e) => setFiscalNome(e.target.value)}
                 placeholder="Nome completo"
-                disabled={!!fiscalValidado || isApproved || !canValidateFiscal}
+                disabled={false}
               />
             </div>
             <div>
@@ -174,7 +181,7 @@ export function AssinaturasStep({
                 value={fiscalCargo}
                 onChange={(e) => setFiscalCargo(e.target.value)}
                 placeholder="Cargo/Função"
-                disabled={!!fiscalValidado || isApproved || !canValidateFiscal}
+                disabled={false}
               />
             </div>
             <div>
@@ -184,35 +191,49 @@ export function AssinaturasStep({
                 value={fiscalDocumento}
                 onChange={(e) => setFiscalDocumento(e.target.value)}
                 placeholder="Documento"
-                disabled={!!fiscalValidado || isApproved || !canValidateFiscal}
+                disabled={false}
               />
             </div>
-            {!canValidateFiscal && !fiscalValidado && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Apenas usuários com permissão de Editor ou Administrador podem validar esta assinatura.
-                </AlertDescription>
-              </Alert>
-            )}
-            {fiscalValidado ? (
-              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-3 rounded-md">
-                <Check className="h-4 w-4" />
-                <span>Validado em {new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
-              </div>
-            ) : canValidateFiscal ? (
-              <Button
-                onClick={handleValidateFiscal}
-                disabled={isSaving || isApproved}
-                className="w-full"
-              >
-                Validar Assinatura
-              </Button>
-            ) : null}
+            <Button
+              onClick={handleValidateFiscal}
+              disabled={isSaving}
+              className="w-full"
+            >
+              Validar Assinatura
+            </Button>
           </div>
         </Card>
+        )}
+        
+        {fiscalValidado && (
+          <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+            <div className="flex items-center gap-2 mb-3">
+              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <h3 className="font-semibold">Fiscal/Gestor (DPE-MT) - Validado</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Nome:</span>
+                <span className="ml-2 font-medium">{fiscalNomeDisplay}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Cargo:</span>
+                <span className="ml-2">{fiscalCargoDisplay}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">CREA/CPF/ID:</span>
+                <span className="ml-2">{fiscalDocumentoDisplay}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Validado em:</span>
+                <span className="ml-2">{new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Contratada */}
+        {!contratadaValidado && canValidateContratada && (
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Assinatura do Responsável Técnico (Contratada)</h3>
           <div className="space-y-4">
@@ -223,7 +244,7 @@ export function AssinaturasStep({
                 value={contratadaNome}
                 onChange={(e) => setContratadaNome(e.target.value)}
                 placeholder="Nome completo"
-                disabled={!!contratadaValidado || isApproved || !canValidateContratada}
+                disabled={false}
               />
             </div>
             <div>
@@ -233,7 +254,7 @@ export function AssinaturasStep({
                 value={contratadaCargo}
                 onChange={(e) => setContratadaCargo(e.target.value)}
                 placeholder="Cargo/Função"
-                disabled={!!contratadaValidado || isApproved || !canValidateContratada}
+                disabled={false}
               />
             </div>
             <div>
@@ -243,51 +264,64 @@ export function AssinaturasStep({
                 value={contratadaDocumento}
                 onChange={(e) => setContratadaDocumento(e.target.value)}
                 placeholder="Documento"
-                disabled={!!contratadaValidado || isApproved || !canValidateContratada}
+                disabled={false}
               />
             </div>
-            {!canValidateContratada && !contratadaValidado && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Apenas usuários com permissão de "Contratada" podem validar esta assinatura.
-                </AlertDescription>
-              </Alert>
-            )}
-            {contratadaValidado ? (
-              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-3 rounded-md">
-                <Check className="h-4 w-4" />
-                <span>Validado em {new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
-              </div>
-            ) : canValidateContratada ? (
-              <Button
-                onClick={handleValidateContratada}
-                disabled={isSaving || isApproved}
-                className="w-full"
-              >
-                Validar Assinatura
-              </Button>
-            ) : null}
+            <Button
+              onClick={handleValidateContratada}
+              disabled={isSaving}
+              className="w-full"
+            >
+              Validar Assinatura
+            </Button>
           </div>
         </Card>
+        )}
+        
+        {contratadaValidado && (
+          <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+            <div className="flex items-center gap-2 mb-3">
+              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <h3 className="font-semibold">Responsável Técnico (Contratada) - Validado</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Nome:</span>
+                <span className="ml-2 font-medium">{contratadaNomeDisplay}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Cargo:</span>
+                <span className="ml-2">{contratadaCargoDisplay}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">CREA/CPF/ID:</span>
+                <span className="ml-2">{contratadaDocumentoDisplay}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Validado em:</span>
+                <span className="ml-2">{new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
+              </div>
+            </div>
+          </Card>
+        )}
         </div>
       )}
 
-      {/* Mostrar resumo quando aprovado OU quando ambas as assinaturas foram validadas */}
-      {(isApproved || (fiscalValidado && contratadaValidado)) && (
+      {/* Mostrar resumo completo quando aprovado */}
+      {showOnlySummary && (
         <>
-          {!isApproved && (
-            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                ✓ Ambas as assinaturas foram validadas. Aguardando aprovação final.
-              </p>
-            </div>
-          )}
-          
           {isApproved && (
             <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <p className="text-sm text-green-800 dark:text-green-200">
                 ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
+              </p>
+            </div>
+          )}
+          
+          {!isApproved && fiscalValidado && contratadaValidado && (
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                ✓ Ambas as assinaturas foram validadas. Aguardando conclusão final.
               </p>
             </div>
           )}

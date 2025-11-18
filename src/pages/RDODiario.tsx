@@ -241,7 +241,7 @@ export default function RDODiario() {
   const otherPartyConcluded = isContratada
     ? !!formData.fiscal_concluido_em
     : !!formData.contratada_concluido_em;
-  const bothConcluded = formData.fiscal_concluido_em && formData.contratada_concluido_em;
+  const bothConcluded = !!formData.fiscal_concluido_em && !!formData.contratada_concluido_em;
 
   // Navegação entre dias
   const currentDate = new Date(data);
@@ -322,13 +322,13 @@ export default function RDODiario() {
                       {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
                     </Button>
                   )}
-                  {canEdit && isApproved && (
+                  {canEdit && (isApproved || hasValidatedSignature) && (
                     <Button variant="outline" size="sm" onClick={handleReopen}>
                       <Unlock className="h-4 w-4 mr-2" />
                       Reabrir
                     </Button>
                   )}
-                  {canEdit && formData.id && (
+                  {canEdit && formData.id && !isApproved && !hasValidatedSignature && (
                     <Button variant="destructive" size="sm" onClick={() => setDeleteDialog(true)}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Excluir RDO
