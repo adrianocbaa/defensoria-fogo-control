@@ -86,11 +86,32 @@ serve(async (req) => {
     console.log('Deleting related rows for user:', targetUserId);
 
     // Clean dependent rows that may block deletion
-    await supabaseAdmin.from('user_roles').delete().eq('user_id', targetUserId);
-    await supabaseAdmin.from('profiles').delete().eq('user_id', targetUserId);
+    const safeDeletes = [
+      () => supabaseAdmin.from('user_roles').delete().eq('user_id', targetUserId),
+      () => supabaseAdmin.from('profiles').delete().eq('user_id', targetUserId),
+      () => supabaseAdmin.from('user_obra_access').delete().eq('user_id', targetUserId),
+      () => supabaseAdmin.from('password_resets').delete().eq('user_id', targetUserId),
+    ];
 
-    // Optional known tables (ignore errors if table doesn't exist)
-    try { await supabaseAdmin.from('user_obra_access').delete().eq('user_id', targetUserId); } catch (e) { console.warn('user_obra_access cleanup skipped', e?.message); }
+    const safeNullUpdates = [
+      () => supabaseAdmin.from('obras').update({ created_by: null }).eq('created_by', targetUserId),
+      () => supabaseAdmin.from('rdo_reports').update({ created_by: null }).eq('created_by', targetUserId),
+      () => supabaseAdmin.from('rdo_comments').update({ created_by: null }).eq('created_by', targetUserId),
+      () => supabaseAdmin.from('rdo_activity_notes').update({ created_by: null }).eq('created_by', targetUserId),
+      () => supabaseAdmin.from('rdo_templates_atividades').update({ created_by: null }).eq('created_by', targetUserId),
+      () => supabaseAdmin.from('rdo_audit_log').update({ actor_id: null }).eq('actor_id', targetUserId),
+      () => supabaseAdmin.from('rdo_config').update({ chosen_by: null }).eq('chosen_by', targetUserId),
+      () => supabaseAdmin.from('cronograma_financeiro').update({ user_id: null }).eq('user_id', targetUserId),
+      () => supabaseAdmin.from('obra_checklist_items').update({ user_id: null }).eq('user_id', targetUserId),
+      () => supabaseAdmin.from('nucleos_central').update({ user_id: null }).eq('user_id', targetUserId),
+      () => supabaseAdmin.from('nuclei').update({ user_id: null }).eq('user_id', targetUserId),
+      () => supabaseAdmin.from('stock_movements').update({ user_id: null }).eq('user_id', targetUserId),
+      () => supabaseAdmin.from('travels').update({ user_id: null }).eq('user_id', targetUserId),
+    ];
+
+    for (const op of [...safeDeletes, ...safeNullUpdates]) {
+      try { await op(); } catch (e) { console.warn('cleanup step skipped', e?.message); }
+    }
 
     // Finally delete auth user
     const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
