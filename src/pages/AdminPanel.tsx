@@ -44,6 +44,9 @@ export default function AdminPanel() {
   const [newUserName, setNewUserName] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('viewer');
   const [creatingUser, setCreatingUser] = useState(false);
+  const [deleteUserDialog, setDeleteUserDialog] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [deletingUser, setDeletingUser] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
@@ -193,6 +196,33 @@ export default function AdminPanel() {
     }
   };
 
+  const deleteUserByEmail = async () => {
+    if (!deleteEmail || !deleteEmail.includes('@')) {
+      toast({ title: 'Erro', description: 'Email inválido', variant: 'destructive' });
+      return;
+    }
+    setDeletingUser(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { email: deleteEmail },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (error || (data as any)?.error) {
+        const msg = (error as any)?.message || (data as any)?.error || 'Falha ao excluir usuário';
+        toast({ title: 'Erro ao excluir usuário', description: msg, variant: 'destructive' });
+        return;
+      }
+      toast({ title: 'Usuário excluído', description: `Removido: ${deleteEmail}` });
+      setDeleteUserDialog(false);
+      setDeleteEmail('');
+      fetchProfiles();
+    } catch (e: any) {
+      toast({ title: 'Erro ao excluir usuário', description: e?.message || 'Tente novamente.', variant: 'destructive' });
+    } finally {
+      setDeletingUser(false);
+    }
+  };
   const createNewUser = async () => {
     if (!newUserEmail || !newUserEmail.includes('@')) {
       toast({
@@ -392,6 +422,14 @@ export default function AdminPanel() {
           >
             <UserPlus className="h-4 w-4" />
             Criar Novo Usuário
+          </Button>
+          <Button
+            onClick={() => setDeleteUserDialog(true)}
+            variant="destructive"
+            className="gap-2"
+          >
+            <UserX className="h-4 w-4" />
+            Forçar exclusão por email
           </Button>
           <Button
             onClick={() => navigate('/data-recovery')}
@@ -725,6 +763,41 @@ export default function AdminPanel() {
                 </Button>
                 <Button onClick={createNewUser} disabled={creatingUser || !newUserEmail}>
                   {creatingUser ? 'Criando...' : 'Criar Usuário'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Dialog para forçar exclusão de usuário por email */}
+          <Dialog open={deleteUserDialog} onOpenChange={setDeleteUserDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Forçar exclusão de usuário</DialogTitle>
+                <DialogDescription>
+                  Remove o usuário do Auth e apaga vínculos (profiles, user_roles). Use quando o Supabase recusar a exclusão por conflito no banco.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="delete-user-email">Email do usuário *</Label>
+                  <Input
+                    id="delete-user-email"
+                    type="email"
+                    placeholder="usuario@exemplo.com"
+                    value={deleteEmail}
+                    onChange={(e) => setDeleteEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteUserDialog(false)} disabled={deletingUser}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={deleteUserByEmail} disabled={deletingUser || !deleteEmail}>
+                  {deletingUser ? 'Excluindo...' : 'Excluir Usuário'}
                 </Button>
               </DialogFooter>
             </DialogContent>
