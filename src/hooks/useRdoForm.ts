@@ -24,11 +24,13 @@ export interface RdoFormData {
   assinatura_fiscal_cargo?: string;
   assinatura_fiscal_documento?: string;
   assinatura_fiscal_datetime?: string;
+  assinatura_fiscal_validado_em?: string;
   assinatura_contratada_url?: string;
   assinatura_contratada_nome?: string;
   assinatura_contratada_cargo?: string;
   assinatura_contratada_documento?: string;
   assinatura_contratada_datetime?: string;
+  assinatura_contratada_validado_em?: string;
   aprovacao_observacao?: string;
   pdf_url?: string;
   hash_verificacao?: string;

@@ -24,6 +24,7 @@ interface Workforce {
 interface MaoDeObraStepProps {
   reportId?: string;
   obraId: string;
+  disabled?: boolean;
 }
 
 const FUNCOES_COMUNS = [
@@ -39,7 +40,7 @@ const FUNCOES_COMUNS = [
   'Operador de Máquinas',
 ];
 
-export function MaoDeObraStep({ reportId, obraId }: MaoDeObraStepProps) {
+export function MaoDeObraStep({ reportId, obraId, disabled }: MaoDeObraStepProps) {
   const queryClient = useQueryClient();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Workforce>>>({});
   const debouncedValues = useDebounce(localValues, 500);

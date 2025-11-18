@@ -23,9 +23,10 @@ interface EvidenciasStepProps {
   reportId?: string;
   obraId: string;
   data: string;
+  disabled?: boolean;
 }
 
-export function EvidenciasStep({ reportId, obraId, data }: EvidenciasStepProps) {
+export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasStepProps) {
   const queryClient = useQueryClient();
   const { uploadFile, uploading } = useFileUpload();
   const [activeTab, setActiveTab] = useState<'foto' | 'video' | 'anexo'>('foto');

@@ -25,9 +25,10 @@ interface Occurrence {
 interface OcorrenciasStepProps {
   reportId?: string;
   obraId: string;
+  disabled?: boolean;
 }
 
-export function OcorrenciasStep({ reportId, obraId }: OcorrenciasStepProps) {
+export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepProps) {
   const queryClient = useQueryClient();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Occurrence>>>({});
   const debouncedValues = useDebounce(localValues, 500);

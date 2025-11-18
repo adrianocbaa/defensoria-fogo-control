@@ -11,9 +11,10 @@ interface AnotacoesStepProps {
   formData: RdoFormData;
   updateField: (field: keyof RdoFormData, value: any) => void;
   onCopyPrevious?: () => void;
+  disabled?: boolean;
 }
 
-export function AnotacoesStep({ formData, updateField, onCopyPrevious }: AnotacoesStepProps) {
+export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled }: AnotacoesStepProps) {
   return (
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -44,24 +45,24 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
               {/* Manhã */}
               <div className="space-y-3">
                 <Label className="text-sm">Manhã:</Label>
-                <RadioGroup value={formData.clima_manha} onValueChange={(v) => updateField('clima_manha', v)}>
+                <RadioGroup value={formData.clima_manha} onValueChange={(v) => updateField('clima_manha', v)} disabled={disabled}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="claro" id="clima-manha-claro" />
+                      <RadioGroupItem value="claro" id="clima-manha-claro" disabled={disabled} />
                       <Label htmlFor="clima-manha-claro" className="font-normal cursor-pointer flex items-center gap-1">
                         <Sun className="h-4 w-4 text-yellow-500" />
                         Claro
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="nublado" id="clima-manha-nublado" />
+                      <RadioGroupItem value="nublado" id="clima-manha-nublado" disabled={disabled} />
                       <Label htmlFor="clima-manha-nublado" className="font-normal cursor-pointer flex items-center gap-1">
                         <Cloud className="h-4 w-4 text-gray-500" />
                         Nublado
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="chuvoso" id="clima-manha-chuvoso" />
+                      <RadioGroupItem value="chuvoso" id="clima-manha-chuvoso" disabled={disabled} />
                       <Label htmlFor="clima-manha-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
                         <CloudRain className="h-4 w-4 text-blue-500" />
                         Chuvoso
@@ -74,24 +75,24 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious }: Anotaco
               {/* Tarde */}
               <div className="space-y-3">
                 <Label className="text-sm">Tarde:</Label>
-                <RadioGroup value={formData.clima_tarde} onValueChange={(v) => updateField('clima_tarde', v)}>
+                <RadioGroup value={formData.clima_tarde} onValueChange={(v) => updateField('clima_tarde', v)} disabled={disabled}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="claro" id="clima-tarde-claro" />
+                      <RadioGroupItem value="claro" id="clima-tarde-claro" disabled={disabled} />
                       <Label htmlFor="clima-tarde-claro" className="font-normal cursor-pointer flex items-center gap-1">
                         <Sun className="h-4 w-4 text-yellow-500" />
                         Claro
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="nublado" id="clima-tarde-nublado" />
+                      <RadioGroupItem value="nublado" id="clima-tarde-nublado" disabled={disabled} />
                       <Label htmlFor="clima-tarde-nublado" className="font-normal cursor-pointer flex items-center gap-1">
                         <Cloud className="h-4 w-4 text-gray-500" />
                         Nublado
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="chuvoso" id="clima-tarde-chuvoso" />
+                      <RadioGroupItem value="chuvoso" id="clima-tarde-chuvoso" disabled={disabled} />
                       <Label htmlFor="clima-tarde-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
                         <CloudRain className="h-4 w-4 text-blue-500" />
                         Chuvoso

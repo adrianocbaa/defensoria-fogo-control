@@ -28,9 +28,10 @@ interface Comment {
 interface ComentariosStepProps {
   reportId?: string;
   obraId: string;
+  disabled?: boolean;
 }
 
-export function ComentariosStep({ reportId, obraId }: ComentariosStepProps) {
+export function ComentariosStep({ reportId, obraId, disabled }: ComentariosStepProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');

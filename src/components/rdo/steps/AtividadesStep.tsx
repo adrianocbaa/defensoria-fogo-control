@@ -39,9 +39,10 @@ interface AtividadesStepProps {
   reportId?: string;
   obraId: string;
   data: string;
+  disabled?: boolean;
 }
 
-export function AtividadesStep({ reportId, obraId, data }: AtividadesStepProps) {
+export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesStepProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
