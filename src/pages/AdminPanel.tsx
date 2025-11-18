@@ -206,7 +206,25 @@ export default function AdminPanel() {
     setCreatingUser(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
+      // Quick pre-check to avoid calling the edge function when email already exists
+      const { data: existingProfiles, error: checkErr } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', newUserEmail)
+        .limit(1);
+
+      if (checkErr) {
+        console.error('Error checking existing email:', checkErr);
+      } else if (existingProfiles && existingProfiles.length > 0) {
+        toast({
+          title: 'Email já cadastrado',
+          description: 'Este email já está registrado no sistema. Use outro email ou edite o usuário existente.',
+          variant: 'destructive',
+        });
+        setCreatingUser(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: newUserEmail,
@@ -221,31 +239,37 @@ export default function AdminPanel() {
       // When edge function returns non-2xx status, error object contains the response
       if (error) {
         let errorMessage = 'Erro ao criar usuário';
-        
-        // Try to extract error message from FunctionsHttpError
-        if (error.message) {
+
+        // Try to extract error payload returned by the edge function
+        const anyErr: any = error as any;
+        if (anyErr?.context?.response && typeof anyErr.context.response.text === 'function') {
           try {
-            const errorData = JSON.parse(error.message);
-            errorMessage = errorData.error || error.message;
+            const raw = await anyErr.context.response.text();
+            const parsed = JSON.parse(raw);
+            if (parsed?.error) errorMessage = parsed.error;
           } catch {
-            errorMessage = error.message;
+            // ignore JSON parse issues and fall back to default message
           }
+        } else if (data?.error) {
+          errorMessage = data.error as string;
+        } else if (error.message) {
+          errorMessage = error.message;
         }
-        
-        // Check if it's the specific "email already exists" error
+
+        // Specific duplicate email detection
         if (errorMessage.includes('already been registered') || errorMessage.includes('email_exists')) {
           toast({
-            title: "Email já cadastrado",
-            description: "Este email já está registrado no sistema. Use outro email ou edite o usuário existente.",
-            variant: "destructive"
+            title: 'Email já cadastrado',
+            description: 'Este email já está registrado no sistema. Use outro email ou edite o usuário existente.',
+            variant: 'destructive',
           });
           return;
         }
-        
+
         toast({
-          title: "Erro ao criar usuário",
+          title: 'Erro ao criar usuário',
           description: errorMessage,
-          variant: "destructive"
+          variant: 'destructive',
         });
         return;
       }
