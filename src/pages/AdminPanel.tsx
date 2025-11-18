@@ -218,7 +218,18 @@ export default function AdminPanel() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's the specific "email already exists" error
+        if (error.message?.includes('already been registered') || error.message?.includes('email_exists')) {
+          toast({
+            title: "Email já cadastrado",
+            description: "Este email já está registrado no sistema. Use outro email ou edite o usuário existente.",
+            variant: "destructive"
+          });
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: 'Usuário criado!',
