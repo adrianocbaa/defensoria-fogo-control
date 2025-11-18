@@ -14,8 +14,10 @@ import { Sector } from '@/hooks/useUserSectors';
 import { useAvailableSectors } from '@/hooks/useAvailableSectors';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Edit, Eye, Wrench, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw } from 'lucide-react';
+import { Shield, Edit, Eye, Wrench, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw, UserPlus } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 interface Profile {
   id: string;
@@ -37,6 +39,11 @@ export default function AdminPanel() {
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const [tempPassDialog, setTempPassDialog] = useState<{ open: boolean; userName: string; password: string }>({ open: false, userName: '', password: '' });
+  const [createUserDialog, setCreateUserDialog] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserRole, setNewUserRole] = useState<UserRole>('viewer');
+  const [creatingUser, setCreatingUser] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
@@ -186,6 +193,55 @@ export default function AdminPanel() {
     }
   };
 
+  const createNewUser = async () => {
+    if (!newUserEmail || !newUserEmail.includes('@')) {
+      toast({
+        title: 'Erro',
+        description: 'Email inválido',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCreatingUser(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: newUserEmail,
+          displayName: newUserName || newUserEmail.split('@')[0],
+          role: newUserRole,
+        },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Usuário criado!',
+        description: `Email enviado para ${newUserEmail} com a senha temporária: Admin123`,
+      });
+
+      setCreateUserDialog(false);
+      setNewUserEmail('');
+      setNewUserName('');
+      setNewUserRole('viewer');
+      fetchProfiles(); // Recarregar lista
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao criar usuário',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
   const resetUserPassword = async (userId: string, userName: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('admin-reset-password', {
@@ -275,7 +331,14 @@ export default function AdminPanel() {
           subtitle="Gerencie permissões de usuários"
         />
 
-        <div className="mb-6">
+        <div className="mb-6 flex gap-3">
+          <Button
+            onClick={() => setCreateUserDialog(true)}
+            className="gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Criar Novo Usuário
+          </Button>
           <Button
             onClick={() => navigate('/data-recovery')}
             variant="outline"
@@ -539,9 +602,80 @@ export default function AdminPanel() {
                 Copiar e fechar
               </AlertDialogAction>
             </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Dialog para criar novo usuário */}
+          <Dialog open={createUserDialog} onOpenChange={setCreateUserDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar Novo Usuário</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados do novo usuário. Uma senha temporária (Admin123) será enviada por email.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-user-email">Email *</Label>
+                  <Input
+                    id="new-user-email"
+                    type="email"
+                    placeholder="usuario@exemplo.com"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="new-user-name">Nome de Exibição</Label>
+                  <Input
+                    id="new-user-name"
+                    type="text"
+                    placeholder="Nome do usuário (opcional)"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="new-user-role">Perfil</Label>
+                  <Select value={newUserRole} onValueChange={(value) => setNewUserRole(value as UserRole)}>
+                    <SelectTrigger id="new-user-role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewer">Visualizador</SelectItem>
+                      <SelectItem value="editor">Editor</SelectItem>
+                      <SelectItem value="gm">GM</SelectItem>
+                      <SelectItem value="contratada">Contratada</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCreateUserDialog(false);
+                    setNewUserEmail('');
+                    setNewUserName('');
+                    setNewUserRole('viewer');
+                  }}
+                  disabled={creatingUser}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={createNewUser} disabled={creatingUser || !newUserEmail}>
+                  {creatingUser ? 'Criando...' : 'Criar Usuário'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
     </Layout>
   );
 }
