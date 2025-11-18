@@ -218,12 +218,22 @@ export default function AdminPanel() {
         },
       });
 
-      // Check for errors in both error object and data
-      const errorMessage = error?.message || data?.error;
-      
-      if (error || data?.error) {
+      // When edge function returns non-2xx status, error object contains the response
+      if (error) {
+        let errorMessage = 'Erro ao criar usuário';
+        
+        // Try to extract error message from FunctionsHttpError
+        if (error.message) {
+          try {
+            const errorData = JSON.parse(error.message);
+            errorMessage = errorData.error || error.message;
+          } catch {
+            errorMessage = error.message;
+          }
+        }
+        
         // Check if it's the specific "email already exists" error
-        if (errorMessage?.includes('already been registered') || errorMessage?.includes('email_exists')) {
+        if (errorMessage.includes('already been registered') || errorMessage.includes('email_exists')) {
           toast({
             title: "Email já cadastrado",
             description: "Este email já está registrado no sistema. Use outro email ou edite o usuário existente.",
@@ -234,7 +244,7 @@ export default function AdminPanel() {
         
         toast({
           title: "Erro ao criar usuário",
-          description: errorMessage || "Ocorreu um erro ao criar o usuário. Tente novamente.",
+          description: errorMessage,
           variant: "destructive"
         });
         return;
