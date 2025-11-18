@@ -46,7 +46,7 @@ export default function RDODiario() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { canEdit, isAdmin } = useUserRole();
+  const { canEdit, isAdmin, isContratada } = useUserRole();
   const queryClient = useQueryClient();
   const data = searchParams.get('data') || new Date().toISOString().split('T')[0];
   const [currentStep, setCurrentStep] = useState(0);
@@ -114,17 +114,27 @@ export default function RDODiario() {
         actorId: user?.id,
       });
 
-      // Download PDF automatically
-      const link = document.createElement('a');
-      link.href = pdfData.pdfUrl;
-      link.download = `RDO-${formData.numero_seq}-${data}.pdf`;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
-      toast.success('PDF gerado e download iniciado!');
+      // Usar fetch para baixar o PDF e evitar bloqueios de navegador
+      try {
+        const response = await fetch(pdfData.pdfUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `RDO-${formData.numero_seq}-${data}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
+        toast.success('PDF gerado e download iniciado!');
+      } catch (downloadError) {
+        console.error('Erro ao baixar PDF, tentando abrir em nova aba:', downloadError);
+        // Fallback: abrir em nova aba
+        window.open(pdfData.pdfUrl, '_blank');
+        toast.success('PDF gerado! Abrindo em nova aba...');
+      }
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       toast.error('Erro ao gerar PDF. Verifique os logs.');
@@ -223,6 +233,15 @@ export default function RDODiario() {
   // Bloquear RDO se qualquer assinatura foi validada
   const hasValidatedSignature = !!(formData.assinatura_fiscal_validado_em || formData.assinatura_contratada_validado_em);
   const isLocked = hasValidatedSignature || isApproved;
+  
+  // Verificar se usuário atual já concluiu
+  const userHasConcluded = isContratada 
+    ? !!formData.contratada_concluido_em 
+    : !!formData.fiscal_concluido_em;
+  const otherPartyConcluded = isContratada
+    ? !!formData.fiscal_concluido_em
+    : !!formData.contratada_concluido_em;
+  const bothConcluded = formData.fiscal_concluido_em && formData.contratada_concluido_em;
 
   // Navegação entre dias
   const currentDate = new Date(data);
@@ -297,7 +316,7 @@ export default function RDODiario() {
                       </Button>
                     </>
                   )}
-                  {(isConcluded || isApproved) && (
+                  {((isConcluded || isApproved) || (canEdit && userHasConcluded) || (isContratada && userHasConcluded)) && (
                     <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
                       <FileText className="h-4 w-4 mr-2" />
                       {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
@@ -366,7 +385,22 @@ export default function RDODiario() {
               🔒 RDO bloqueado: Assinatura validada
             </div>
           )}
-          {!isLocked && (
+          
+          {/* Mostrar status de conclusão quando usuário já concluiu */}
+          {!isLocked && userHasConcluded && (
+            <div className="flex-1 text-center">
+              <div className="inline-flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-md">
+                <CheckCircle2 className="h-4 w-4" />
+                {otherPartyConcluded ? (
+                  <span>Ambas as partes concluíram. Aguardando aprovação final.</span>
+                ) : (
+                  <span>✓ Você concluiu. Aguardando conclusão {isContratada ? 'do Fiscal' : 'da Contratada'}.</span>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {!isLocked && !userHasConcluded && (
             <>
               <Button
                 variant="outline"

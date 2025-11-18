@@ -273,13 +273,24 @@ export function AssinaturasStep({
         </div>
       )}
 
-      {isApproved && (
+      {/* Mostrar resumo quando aprovado OU quando ambas as assinaturas foram validadas */}
+      {(isApproved || (fiscalValidado && contratadaValidado)) && (
         <>
-          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <p className="text-sm text-green-800 dark:text-green-200">
-              ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
-            </p>
-          </div>
+          {!isApproved && (
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                ✓ Ambas as assinaturas foram validadas. Aguardando aprovação final.
+              </p>
+            </div>
+          )}
+          
+          {isApproved && (
+            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <p className="text-sm text-green-800 dark:text-green-200">
+                ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
+              </p>
+            </div>
+          )}
 
           {/* Resumo das Assinaturas */}
           <Card className="border-primary/20">

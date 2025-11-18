@@ -47,7 +47,39 @@ export function RdoShareDialog({
   };
 
   const handleDownload = async () => {
-    toast.info('A geração de PDF está em desenvolvimento. Por enquanto, você pode compartilhar o link de verificação.');
+    if (!pdfUrl) {
+      toast.error('PDF não disponível');
+      return;
+    }
+
+    try {
+      // Registrar ação no audit log
+      await createAuditLog({
+        obraId,
+        reportId,
+        acao: 'DOWNLOAD_PDF',
+        detalhes: { url: pdfUrl },
+      });
+
+      // Tentar download usando fetch para evitar bloqueio de navegador
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `RDO-${reportId.slice(0, 8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Download iniciado');
+    } catch (error) {
+      console.error('Erro ao baixar PDF:', error);
+      // Fallback: tentar abrir em nova aba
+      window.open(pdfUrl, '_blank');
+      toast.info('PDF aberto em nova aba');
+    }
   };
 
   const handleShare = async () => {
@@ -132,9 +164,14 @@ export function RdoShareDialog({
               Compartilhar Link
             </Button>
             
-            <div className="text-xs text-muted-foreground text-center">
-              Download de PDF em desenvolvimento
-            </div>
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              className="w-full"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Baixar PDF
+            </Button>
           </div>
 
           {/* Enviar por e-mail */}
