@@ -118,14 +118,12 @@ export default function Obras() {
                 </Link>
               </PermissionGuard>
               
-              <PermissionGuard requiresEdit showMessage={false}>
-                <Link to="/admin/obras">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline">Painel de Obras</span>
-                  </Button>
-                </Link>
-              </PermissionGuard>
+              <Link to="/admin/obras">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Painel de Obras</span>
+                </Button>
+              </Link>
               
               <PermissionGuard requiresEdit showMessage={false}>
                 <Button asChild variant="outline">
