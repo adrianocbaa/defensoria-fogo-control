@@ -52,10 +52,16 @@ export function ComentariosStep({ reportId, obraId }: ComentariosStepProps) {
       
       // Buscar perfis dos criadores
       const creatorIds = [...new Set(commentsData.map(c => c.created_by).filter(Boolean))];
-      const { data: profilesData } = await supabase
+      if (creatorIds.length === 0) return commentsData as Comment[];
+      
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, display_name, email, role')
         .in('user_id', creatorIds);
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
       
       // Mapear profiles por user_id
       const profilesMap = new Map(
