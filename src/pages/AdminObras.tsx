@@ -50,7 +50,7 @@ export function AdminObras() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [obraValores, setObraValores] = useState<Record<string, number>>({});
   const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
-  const { canEdit } = useUserRole();
+  const userRole = useUserRole();
   const navigate = useNavigate();
 
   const calcularValorObra = async (obraId: string, obraData: any): Promise<number> => {
@@ -183,9 +183,41 @@ export function AdminObras() {
   const fetchObras = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('obras')
-        .select('*');
+      
+      // Buscar obras baseado no perfil do usuário
+      let query = supabase.from('obras').select('*');
+      
+      // Se for contratada, filtrar apenas obras com acesso
+      if (userRole.isContratada && !userRole.canEdit) {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setObras([]);
+          setFilteredObras([]);
+          setLoading(false);
+          return;
+        }
+        
+        const { data: accessData, error: accessError } = await supabase
+          .from('user_obra_access')
+          .select('obra_id')
+          .eq('user_id', user.id);
+        
+        if (accessError) throw accessError;
+        
+        const obraIds = accessData?.map(a => a.obra_id) || [];
+        if (obraIds.length === 0) {
+          // Usuário não tem acesso a nenhuma obra
+          setObras([]);
+          setFilteredObras([]);
+          setLoading(false);
+          return;
+        }
+        
+        query = query.in('id', obraIds);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -495,7 +527,8 @@ export function AdminObras() {
 
       <PermissionGuard requiresEdit={false}>
         <div className="text-sm text-muted-foreground bg-muted p-4 rounded-lg">
-          <strong>Informação:</strong> Você tem permissão apenas para visualização. 
+          <strong>Informação:</strong> Você tem permissão de visualização
+          {userRole.isContratada && ' das obras atribuídas a você'}. 
           Para criar, editar ou excluir obras, é necessário ter permissão de Editor ou Administrador.
         </div>
       </PermissionGuard>
