@@ -498,11 +498,11 @@ const AuthPage = () => {
                 </form>
               </div>
             ) : (
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup">Cadastro</TabsTrigger>
-                </TabsList>
+          {/* Cadastro removido - apenas admins podem criar usuários */}
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-1">
+              <TabsTrigger value="login">Login</TabsTrigger>
+            </TabsList>
               
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
