@@ -46,7 +46,7 @@ export function UserObraAccessManager({ userId, userName, isContratada }: UserOb
       const { data: obrasData, error: obrasError } = await supabase
         .from('obras')
         .select('id, nome, municipio, status')
-        .eq('status', 'Em andamento')
+        .eq('status', 'em_andamento')
         .order('nome');
 
       if (obrasError) throw obrasError;
