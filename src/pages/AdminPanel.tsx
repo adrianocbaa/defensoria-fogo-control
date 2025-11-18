@@ -218,9 +218,12 @@ export default function AdminPanel() {
         },
       });
 
-      if (error) {
+      // Check for errors in both error object and data
+      const errorMessage = error?.message || data?.error;
+      
+      if (error || data?.error) {
         // Check if it's the specific "email already exists" error
-        if (error.message?.includes('already been registered') || error.message?.includes('email_exists')) {
+        if (errorMessage?.includes('already been registered') || errorMessage?.includes('email_exists')) {
           toast({
             title: "Email já cadastrado",
             description: "Este email já está registrado no sistema. Use outro email ou edite o usuário existente.",
@@ -228,7 +231,13 @@ export default function AdminPanel() {
           });
           return;
         }
-        throw error;
+        
+        toast({
+          title: "Erro ao criar usuário",
+          description: errorMessage || "Ocorreu um erro ao criar o usuário. Tente novamente.",
+          variant: "destructive"
+        });
+        return;
       }
 
       toast({
