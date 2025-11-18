@@ -1255,6 +1255,7 @@ export type Database = {
           department: string | null
           display_name: string | null
           email: string | null
+          force_password_change: boolean | null
           id: string
           is_active: boolean
           language: string | null
@@ -1272,6 +1273,7 @@ export type Database = {
           department?: string | null
           display_name?: string | null
           email?: string | null
+          force_password_change?: boolean | null
           id?: string
           is_active?: boolean
           language?: string | null
@@ -1289,6 +1291,7 @@ export type Database = {
           department?: string | null
           display_name?: string | null
           email?: string | null
+          force_password_change?: boolean | null
           id?: string
           is_active?: boolean
           language?: string | null
@@ -2160,6 +2163,38 @@ export type Database = {
           },
         ]
       }
+      user_obra_access: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          obra_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          obra_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          obra_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_obra_access_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2699,6 +2734,10 @@ export type Database = {
           updated_at: string
           zoning: string
         }[]
+      }
+      user_has_obra_access: {
+        Args: { obra_uuid: string; user_uuid: string }
+        Returns: boolean
       }
     }
     Enums: {
