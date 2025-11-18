@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Send, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ interface Comment {
   profiles?: {
     display_name?: string;
     email?: string;
+    role?: 'admin' | 'editor' | 'contratada';
   };
 }
 
@@ -52,7 +54,7 @@ export function ComentariosStep({ reportId, obraId }: ComentariosStepProps) {
       const creatorIds = [...new Set(commentsData.map(c => c.created_by).filter(Boolean))];
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('user_id, display_name, email')
+        .select('user_id, display_name, email, role')
         .in('user_id', creatorIds);
       
       // Mapear profiles por user_id
@@ -141,40 +143,52 @@ export function ComentariosStep({ reportId, obraId }: ComentariosStepProps) {
               Nenhum comentário. Seja o primeiro a comentar!
             </div>
           ) : (
-            comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3 p-3 border rounded-lg">
-                <Avatar className="h-10 w-10 flex-shrink-0">
-                  <AvatarFallback>
-                    {comment.profiles?.display_name?.[0]?.toUpperCase() || 
-                     comment.profiles?.email?.[0]?.toUpperCase() || 
-                     '?'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">
-                        {comment.profiles?.display_name || comment.profiles?.email || 'Usuário'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(comment.created_at), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                      </p>
+            comments.map((comment) => {
+              const roleLabel = comment.profiles?.role === 'contratada' ? 'Contratada' : 'Fiscal';
+              const roleColor = comment.profiles?.role === 'contratada' 
+                ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' 
+                : 'bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
+              
+              return (
+                <div key={comment.id} className="flex gap-3 p-3 border rounded-lg">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarFallback>
+                      {comment.profiles?.display_name?.[0]?.toUpperCase() || 
+                       comment.profiles?.email?.[0]?.toUpperCase() || 
+                       '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">
+                            {comment.profiles?.display_name || comment.profiles?.email || 'Usuário'}
+                          </p>
+                          <Badge variant="outline" className={`text-xs ${roleColor}`}>
+                            {roleLabel}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(comment.created_at), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      </div>
+                      {comment.created_by === user?.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => deleteMutation.mutate(comment.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
-                    {comment.created_by === user?.id && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => deleteMutation.mutate(comment.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
+                    <p className="text-sm whitespace-pre-wrap">{comment.texto}</p>
                   </div>
-                  <p className="text-sm whitespace-pre-wrap">{comment.texto}</p>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
