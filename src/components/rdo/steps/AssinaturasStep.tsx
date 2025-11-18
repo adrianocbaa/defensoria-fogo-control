@@ -131,6 +131,15 @@ export function AssinaturasStep({
   const fiscalValidado = reportData?.assinatura_fiscal_validado_em;
   const contratadaValidado = reportData?.assinatura_contratada_validado_em;
   const isApproved = reportData?.status === "aprovado";
+  
+  // Usar os valores dos estados locais ou do reportData
+  const fiscalNomeDisplay = fiscalNome || reportData?.assinatura_fiscal_nome;
+  const fiscalCargoDisplay = fiscalCargo || reportData?.assinatura_fiscal_cargo;
+  const fiscalDocumentoDisplay = fiscalDocumento || reportData?.assinatura_fiscal_documento;
+  
+  const contratadaNomeDisplay = contratadaNome || reportData?.assinatura_contratada_nome;
+  const contratadaCargoDisplay = contratadaCargo || reportData?.assinatura_contratada_cargo;
+  const contratadaDocumentoDisplay = contratadaDocumento || reportData?.assinatura_contratada_documento;
 
   return (
     <div className="space-y-6 pb-20">
@@ -141,7 +150,9 @@ export function AssinaturasStep({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Ocultar campos de validação quando aprovado */}
+      {!isApproved && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Fiscal/Gestor */}
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Assinatura do Fiscal/Gestor (DPE-MT)</h3>
@@ -259,7 +270,8 @@ export function AssinaturasStep({
             ) : null}
           </div>
         </Card>
-      </div>
+        </div>
+      )}
 
       {isApproved && (
         <>
@@ -290,15 +302,15 @@ export function AssinaturasStep({
                   <div className="space-y-2 pl-10">
                     <div>
                       <p className="text-xs text-muted-foreground">Nome</p>
-                      <p className="text-sm font-medium">{reportData?.assinatura_fiscal_nome || "—"}</p>
+                      <p className="text-sm font-medium">{fiscalNomeDisplay || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Cargo</p>
-                      <p className="text-sm">{reportData?.assinatura_fiscal_cargo || "—"}</p>
+                      <p className="text-sm">{fiscalCargoDisplay || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">CREA/CPF/ID</p>
-                      <p className="text-sm">{reportData?.assinatura_fiscal_documento || "—"}</p>
+                      <p className="text-sm">{fiscalDocumentoDisplay || "—"}</p>
                     </div>
                     {fiscalValidado && (
                       <div>
@@ -321,15 +333,15 @@ export function AssinaturasStep({
                   <div className="space-y-2 pl-10">
                     <div>
                       <p className="text-xs text-muted-foreground">Nome</p>
-                      <p className="text-sm font-medium">{reportData?.assinatura_contratada_nome || "—"}</p>
+                      <p className="text-sm font-medium">{contratadaNomeDisplay || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Cargo</p>
-                      <p className="text-sm">{reportData?.assinatura_contratada_cargo || "—"}</p>
+                      <p className="text-sm">{contratadaCargoDisplay || "—"}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">CREA/CPF/ID</p>
-                      <p className="text-sm">{reportData?.assinatura_contratada_documento || "—"}</p>
+                      <p className="text-sm">{contratadaDocumentoDisplay || "—"}</p>
                     </div>
                     {contratadaValidado && (
                       <div>
