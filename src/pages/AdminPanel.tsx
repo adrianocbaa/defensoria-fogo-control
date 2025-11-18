@@ -14,10 +14,11 @@ import { Sector } from '@/hooks/useUserSectors';
 import { useAvailableSectors } from '@/hooks/useAvailableSectors';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Edit, Eye, Wrench, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw, UserPlus } from 'lucide-react';
+import { Shield, Edit, Eye, Wrench, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw, UserPlus, Building2 } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { UserObraAccessManager } from '@/components/UserObraAccessManager';
 
 interface Profile {
   id: string;
@@ -564,34 +565,45 @@ export default function AdminPanel() {
                         </CollapsibleTrigger>
 
                         <CollapsibleContent>
-                          <div className="border-t p-4 bg-muted/20">
-                            <h4 className="text-sm font-medium mb-3">Módulos Permitidos</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                              {modules.map((module) => {
-                                const ModuleIcon = module.icon;
-                                const isEnabled = currentSectors.includes(module.id);
-                                
-                                return (
-                                  <div
-                                    key={module.id}
-                                    className="flex items-center justify-between p-3 border rounded-md hover:bg-accent/50 transition-colors bg-background"
-                                  >
-                                    <Label
-                                      htmlFor={`${profile.user_id}-${module.id}`}
-                                      className="flex items-center gap-2 cursor-pointer flex-1"
+                          <div className="border-t p-4 bg-muted/20 space-y-4">
+                            <div>
+                              <h4 className="text-sm font-medium mb-3">Módulos Permitidos</h4>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {modules.map((module) => {
+                                  const ModuleIcon = module.icon;
+                                  const isEnabled = currentSectors.includes(module.id);
+                                  
+                                  return (
+                                    <div
+                                      key={module.id}
+                                      className="flex items-center justify-between p-3 border rounded-md hover:bg-accent/50 transition-colors bg-background"
                                     >
-                                      <ModuleIcon className="h-4 w-4" />
-                                      <span className="text-sm">{module.label}</span>
-                                    </Label>
-                                    <Switch
-                                      id={`${profile.user_id}-${module.id}`}
-                                      checked={isEnabled}
-                                      onCheckedChange={() => toggleUserSector(profile.user_id, module.id, currentSectors)}
-                                    />
-                                  </div>
-                                );
-                              })}
+                                      <Label
+                                        htmlFor={`${profile.user_id}-${module.id}`}
+                                        className="flex items-center gap-2 cursor-pointer flex-1"
+                                      >
+                                        <ModuleIcon className="h-4 w-4" />
+                                        <span className="text-sm">{module.label}</span>
+                                      </Label>
+                                      <Switch
+                                        id={`${profile.user_id}-${module.id}`}
+                                        checked={isEnabled}
+                                        onCheckedChange={() => toggleUserSector(profile.user_id, module.id, currentSectors)}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
+
+                            {/* User Obra Access Manager for Contratada users */}
+                            {profile.role === 'contratada' && (
+                              <UserObraAccessManager 
+                                userId={profile.user_id}
+                                userName={profile.display_name}
+                                isContratada={true}
+                              />
+                            )}
                           </div>
                         </CollapsibleContent>
                       </div>
@@ -627,7 +639,7 @@ export default function AdminPanel() {
             <CardTitle>Níveis de Permissão</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Eye className="h-5 w-5 text-muted-foreground" />
@@ -655,6 +667,16 @@ export default function AdminPanel() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Pode gerenciar tarefas de manutenção e atualizar status
+                </p>
+              </div>
+
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 className="h-5 w-5 text-blue-500" />
+                  <h3 className="font-medium">Contratada</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Visualiza medições e edita diários apenas de obras autorizadas
                 </p>
               </div>
               
