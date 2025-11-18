@@ -42,10 +42,11 @@ export function UserObraAccessManager({ userId, userName, isContratada }: UserOb
     try {
       setLoading(true);
 
-      // Fetch all obras
+      // Fetch only obras "Em andamento"
       const { data: obrasData, error: obrasError } = await supabase
         .from('obras')
-        .select('id, nome, municipio')
+        .select('id, nome, municipio, status')
+        .eq('status', 'Em andamento')
         .order('nome');
 
       if (obrasError) throw obrasError;
