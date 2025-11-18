@@ -193,21 +193,21 @@ export default function RDODiario() {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <AnotacoesStep formData={formData} updateField={updateField} />;
+        return <AnotacoesStep formData={formData} updateField={updateField} disabled={isLocked} />;
       case 1:
-        return <AtividadesStep reportId={formData.id} obraId={obraId!} data={data} />;
+        return <AtividadesStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} />;
       case 2:
-        return <OcorrenciasStep reportId={formData.id} obraId={obraId!} />;
+        return <OcorrenciasStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
       case 3:
-        return <VisitasStep reportId={formData.id} obraId={obraId!} />;
+        return <VisitasStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
       case 4:
-        return <EquipamentosStep reportId={formData.id} obraId={obraId!} data={data} />;
+        return <EquipamentosStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} />;
       case 5:
-        return <MaoDeObraStep reportId={formData.id} obraId={obraId!} />;
+        return <MaoDeObraStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
       case 6:
-        return <EvidenciasStep reportId={formData.id} obraId={obraId!} data={data} />;
+        return <EvidenciasStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} />;
       case 7:
-        return <ComentariosStep reportId={formData.id} obraId={obraId!} />;
+        return <ComentariosStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
       case 8:
         return <AssinaturasStep reportId={formData.id} obraId={obraId!} reportData={formData} onUpdate={() => queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] })} />;
       default:
@@ -219,6 +219,10 @@ export default function RDODiario() {
   const isApproved = formData.status === 'aprovado';
   const isConcluded = formData.status === 'concluido';
   const hasSignatures = formData.assinatura_fiscal_url || formData.assinatura_contratada_url;
+  
+  // Bloquear RDO se qualquer assinatura foi validada
+  const hasValidatedSignature = !!(formData.assinatura_fiscal_validado_em || formData.assinatura_contratada_validado_em);
+  const isLocked = hasValidatedSignature || isApproved;
 
   // Navegação entre dias
   const currentDate = new Date(data);
@@ -357,38 +361,47 @@ export default function RDODiario() {
       {/* Footer fixo */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t p-4 z-10">
         <div className="container mx-auto flex items-center justify-between gap-2">
-          <Button
-            variant="outline"
-            onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}
-            disabled={currentStep === 0}
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={async () => {
-              (document.activeElement as HTMLElement | null)?.blur();
-              if ((window as any).rdoSavePending) {
-                try { await (window as any).rdoSavePending(); } catch {}
-              }
-              await saveNow();
-            }} disabled={isSaving}>
-              <Save className="h-4 w-4 mr-2" />
-              Salvar
-            </Button>
-
-            {currentStep === STEPS.length - 1 ? (
-              <Button onClick={conclude} disabled={isSaving}>
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Concluir
+          {isLocked && hasValidatedSignature && (
+            <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+              🔒 RDO bloqueado: Assinatura validada
+            </div>
+          )}
+          {!isLocked && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}
+                disabled={currentStep === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Voltar
               </Button>
-            ) : (
-              <Button onClick={() => setCurrentStep(currentStep + 1)}>
-                Próximo
-              </Button>
-            )}
-          </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={async () => {
+                  (document.activeElement as HTMLElement | null)?.blur();
+                  if ((window as any).rdoSavePending) {
+                    try { await (window as any).rdoSavePending(); } catch {}
+                  }
+                  await saveNow();
+                }} disabled={isSaving}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar
+                </Button>
+
+                {currentStep === STEPS.length - 1 ? (
+                  <Button onClick={conclude} disabled={isSaving}>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Concluir
+                  </Button>
+                ) : (
+                  <Button onClick={() => setCurrentStep(currentStep + 1)}>
+                    Próximo
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

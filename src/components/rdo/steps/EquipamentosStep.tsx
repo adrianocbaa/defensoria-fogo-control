@@ -24,9 +24,10 @@ interface EquipamentosStepProps {
   reportId?: string;
   obraId: string;
   data: string;
+  disabled?: boolean;
 }
 
-export function EquipamentosStep({ reportId, obraId, data }: EquipamentosStepProps) {
+export function EquipamentosStep({ reportId, obraId, data, disabled }: EquipamentosStepProps) {
   const queryClient = useQueryClient();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Equipment>>>({});
   const debouncedValues = useDebounce(localValues, 500);

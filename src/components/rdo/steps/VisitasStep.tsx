@@ -22,9 +22,10 @@ interface Visit {
 interface VisitasStepProps {
   reportId?: string;
   obraId: string;
+  disabled?: boolean;
 }
 
-export function VisitasStep({ reportId, obraId }: VisitasStepProps) {
+export function VisitasStep({ reportId, obraId, disabled }: VisitasStepProps) {
   const queryClient = useQueryClient();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Visit>>>({});
   const debouncedValues = useDebounce(localValues, 500);
