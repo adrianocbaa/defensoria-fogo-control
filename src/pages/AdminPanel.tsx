@@ -555,6 +555,7 @@ export default function AdminPanel() {
                                   <SelectItem value="viewer">Visualizador</SelectItem>
                                   <SelectItem value="editor">Editor</SelectItem>
                                   <SelectItem value="gm">GM</SelectItem>
+                                  <SelectItem value="contratada">Contratada</SelectItem>
                                   <SelectItem value="admin">Administrador</SelectItem>
                                 </SelectContent>
                               </Select>
