@@ -277,8 +277,6 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           const dadosExecutado: number[] = [0]; // Começar do zero
           const dadosPrevisto: number[] = [0]; // Começar do zero
           const labels: string[] = ['0 dias']; // Ponto inicial
-          const pontosComMedicao: boolean[] = [false]; // Rastrear quais pontos têm medição
-          const medicoesPorPonto: (MedicaoComparativo | null)[] = [null]; // Dados da medição em cada ponto
           
           // Para cada período do cronograma
           todosPeriodos.forEach((dias) => {
@@ -286,11 +284,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             
             // Verificar se há medição para este período
             const sequenciaPeriodo = dias / 30;
-            const medicaoNoPeriodo = medicoesComparativo.find(m => m.sequencia === sequenciaPeriodo);
-            const temMedicao = !!medicaoNoPeriodo;
-            
-            pontosComMedicao.push(temMedicao);
-            medicoesPorPonto.push(medicaoNoPeriodo || null);
+            const temMedicao = medicoesComparativo.some(m => m.sequencia === sequenciaPeriodo);
             
             if (temMedicao || sequenciaPeriodo < medicaoComp.sequencia) {
               // Se tem medição para este período ou é anterior à medição atual
@@ -324,41 +318,22 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 data: dadosExecutado,
                 backgroundColor: 'rgba(239, 68, 68, 0.7)',
                 borderColor: 'rgba(239, 68, 68, 1)',
-                borderWidth: 2,
-                fill: false,
+                borderWidth: chartType === 'line' ? 2 : 1,
+                fill: chartType === 'line' ? false : true,
                 tension: 0.4,
                 spanGaps: false,
-                pointRadius: dadosExecutado.map((_, i) => pontosComMedicao[i] ? 8 : 4),
-                pointHoverRadius: dadosExecutado.map((_, i) => pontosComMedicao[i] ? 10 : 6),
-                pointBackgroundColor: dadosExecutado.map((_, i) => 
-                  pontosComMedicao[i] ? 'rgba(239, 68, 68, 1)' : 'rgba(239, 68, 68, 0.7)'
-                ),
-                pointBorderColor: '#fff',
-                pointBorderWidth: dadosExecutado.map((_, i) => pontosComMedicao[i] ? 3 : 2),
               },
               {
                 label: 'Previsto (%)',
                 data: dadosPrevisto,
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                 borderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: 2,
-                fill: false,
+                borderWidth: chartType === 'line' ? 2 : 1,
+                fill: chartType === 'line' ? false : true,
                 tension: 0.4,
                 spanGaps: false,
-                pointRadius: dadosPrevisto.map((_, i) => pontosComMedicao[i] ? 8 : 4),
-                pointHoverRadius: dadosPrevisto.map((_, i) => pontosComMedicao[i] ? 10 : 6),
-                pointBackgroundColor: dadosPrevisto.map((_, i) => 
-                  pontosComMedicao[i] ? 'rgba(59, 130, 246, 1)' : 'rgba(59, 130, 246, 0.7)'
-                ),
-                pointBorderColor: '#fff',
-                pointBorderWidth: dadosPrevisto.map((_, i) => pontosComMedicao[i] ? 3 : 2),
               },
             ],
-            // Armazenar metadata para uso no tooltip
-            metadata: {
-              pontosComMedicao,
-              medicoesPorPonto,
-            }
           };
         } else {
           // Modo MACROs: mostrar por MACRO (valores acumulados)
@@ -420,52 +395,13 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             },
             tooltip: {
               callbacks: {
-                title: function(context: any) {
-                  const index = context[0].dataIndex;
-                  const metadata = (chartData as any).metadata;
-                  
-                  if (metadata && metadata.pontosComMedicao && metadata.pontosComMedicao[index]) {
-                    const medicao = metadata.medicoesPorPonto[index];
-                    if (medicao) {
-                      return [`${context[0].label}`, `Medição ${medicao.sequencia} ✓`];
-                    }
-                  }
-                  return context[0].label;
-                },
                 label: function(context: any) {
-                  const index = context.dataIndex;
-                  const metadata = (chartData as any).metadata;
                   let label = context.dataset.label || '';
-                  
                   if (label) {
                     label += ': ';
                   }
                   label += context.parsed.y.toFixed(2) + '%';
-                  
-                  // Se tem medição, adicionar informação extra
-                  if (metadata && metadata.pontosComMedicao && metadata.pontosComMedicao[index]) {
-                    const medicao = metadata.medicoesPorPonto[index];
-                    if (medicao && context.datasetIndex === 0) { // Só mostrar uma vez
-                      const totalExec = medicao.macros.reduce((sum, m) => sum + m.totalExecutado, 0);
-                      const totalPrev = medicao.macros.reduce((sum, m) => sum + m.totalPrevisto, 0);
-                      return [
-                        label,
-                        `Executado: ${formatCurrency(totalExec)}`,
-                        `Previsto: ${formatCurrency(totalPrev)}`
-                      ];
-                    }
-                  }
-                  
                   return label;
-                },
-                afterLabel: function(context: any) {
-                  const index = context.dataIndex;
-                  const metadata = (chartData as any).metadata;
-                  
-                  if (metadata && metadata.pontosComMedicao && metadata.pontosComMedicao[index]) {
-                    return '📍 Marco de medição';
-                  }
-                  return '';
                 }
               }
             },
@@ -540,84 +476,6 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
               <div className="h-[400px]">
                 <ChartComponent data={chartData} options={chartOptions} />
               </div>
-
-              {/* Barra de Progresso com Marcos (apenas no modo acumulado) */}
-              {isAcumulado && (chartData as any).metadata && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    Linha do Tempo - Medições Realizadas
-                  </h3>
-                  <div className="relative">
-                    {/* Barra de progresso */}
-                    <div className="h-3 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
-                        style={{ 
-                          width: `${((medicaoComp.sequencia * 30) / Math.max(...cronograma.items.flatMap(i => i.periodos.map(p => p.periodo)))) * 100}%` 
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Marcos de medição */}
-                    <div className="relative h-16 mt-2">
-                      {medicoesComparativo.map((med) => {
-                        const dias = med.sequencia * 30;
-                        const maxDias = Math.max(...cronograma.items.flatMap(i => i.periodos.map(p => p.periodo)));
-                        const posicao = (dias / maxDias) * 100;
-                        
-                        const totalExec = med.macros.reduce((sum, m) => sum + m.totalExecutado, 0);
-                        const percExec = totalObra > 0 ? (totalExec / totalObra) * 100 : 0;
-                        
-                        return (
-                          <div 
-                            key={med.sequencia}
-                            className="absolute group cursor-pointer"
-                            style={{ left: `${posicao}%` }}
-                            onClick={() => setMedicaoSelecionada(med.sequencia)}
-                          >
-                            {/* Marco visual */}
-                            <div className={`absolute -top-8 left-1/2 -translate-x-1/2 w-1 h-6 transition-all ${
-                              medicaoSelecionada === med.sequencia 
-                                ? 'bg-primary h-8' 
-                                : 'bg-border group-hover:bg-primary/60 group-hover:h-7'
-                            }`} />
-                            
-                            {/* Ponto */}
-                            <div className={`absolute -top-9 left-1/2 -translate-x-1/2 transition-all ${
-                              medicaoSelecionada === med.sequencia
-                                ? 'w-4 h-4 bg-primary ring-4 ring-primary/20'
-                                : 'w-3 h-3 bg-border group-hover:bg-primary/60 group-hover:w-4 group-hover:h-4'
-                            } rounded-full`} />
-                            
-                            {/* Label */}
-                            <div className={`absolute top-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-medium transition-all ${
-                              medicaoSelecionada === med.sequencia
-                                ? 'text-primary scale-110'
-                                : 'text-muted-foreground group-hover:text-primary group-hover:scale-105'
-                            }`}>
-                              Med. {med.sequencia}
-                            </div>
-                            
-                            {/* Tooltip no hover */}
-                            <div className="absolute top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                              <div className="bg-popover text-popover-foreground border rounded-lg shadow-lg p-3 text-xs whitespace-nowrap">
-                                <div className="font-semibold mb-1">Medição {med.sequencia}</div>
-                                <div className="text-muted-foreground">
-                                  {dias} dias • {percExec.toFixed(2)}%
-                                </div>
-                                <div className="text-muted-foreground">
-                                  {formatCurrency(totalExec)}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Tabela de Desvios */}
               <div>
