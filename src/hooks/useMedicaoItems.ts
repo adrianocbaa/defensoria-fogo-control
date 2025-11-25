@@ -14,6 +14,7 @@ export function useMedicaoItems() {
     userId?: string | null
   ): Promise<void> => {
     // Use Map to keep only the last value for each item_code (no summing)
+    // IMPORTANTE: item_code deve sempre ser o código hierárquico (item), nunca o código de banco
     const deduped = new Map<string, MedicaoItemUpsertInput>();
     for (const it of items) {
       const key = it.item_code.trim();
@@ -23,7 +24,7 @@ export function useMedicaoItems() {
 
     const payload = Array.from(deduped.values()).map((it) => ({
       medicao_id: sessionId,
-      item_code: it.item_code.trim(),
+      item_code: it.item_code.trim(), // Sempre código hierárquico
       qtd: it.qtd,
       pct: it.pct,
       total: it.total,
