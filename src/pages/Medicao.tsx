@@ -559,16 +559,24 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     const cache: { [medicaoId: number]: { [itemId: number]: { qnt: number; percentual: number; total: number } } } = {};
 
     medicoes.forEach(medicao => {
+      // IMPORTANTE: Copiar os dados originais da medição salvos no banco
+      // Estes valores NÃO devem ser sobrescritos para itens folha
       const dadosCalculados: { [itemId: number]: { qnt: number; percentual: number; total: number } } = { ...medicao.dados };
 
+      // Processar do nível mais profundo até o nível 1 para calcular agregações hierárquicas
+      // ATENÇÃO: Apenas recalcular valores para itens MACRO (que possuem filhos)
+      // Itens FOLHA devem manter os valores originais do banco
       for (let nivel = maxNivelHierarquia; nivel >= 1; nivel--) {
         const codes = codesByLevel.get(nivel) || [];
         codes.forEach(code => {
           const parent = itemsByCode.get(code);
           if (!parent) return;
           const filhos = childrenByCode.get(code) || [];
+          
+          // Se não tem filhos, é um item folha - NÃO recalcular, manter valor original
           if (filhos.length === 0) return;
 
+          // Item MACRO: calcular somando os valores dos filhos
           let qntTotal = 0;
           let valorTotal = 0;
           filhos.forEach(filho => {
@@ -579,6 +587,8 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
 
           const totalContratoParent = calcularTotalContratoComAditivos(parent, medicao.id);
           const percentualCalculado = totalContratoParent > 0 ? (valorTotal / totalContratoParent) * 100 : 0;
+          
+          // Sobrescrever APENAS para itens MACRO (pais)
           dadosCalculados[parent.id] = {
             qnt: qntTotal,
             percentual: percentualCalculado,
