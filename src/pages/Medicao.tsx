@@ -199,15 +199,13 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           } as Item;
         });
 
-        // Criar mapa código -> ID para usar ao converter medições salvas (chave normalizada)
+        // Criar mapa código -> ID usando APENAS o código hierárquico (item)
         codigoToIdMap = new Map<string, number>();
         itemsConvertidos.forEach(i => {
-          // Priorizar código hierárquico (item) que é único
           const codeHier = String(i.item || '').trim();
-          if (codeHier) codigoToIdMap.set(codeHier, i.id);
-          // Fallback para código de banco caso não haja hierárquico
-          const codeBanco = String(i.codigo || '').trim();
-          if (codeBanco && !codigoToIdMap.has(codeBanco)) codigoToIdMap.set(codeBanco, i.id);
+          if (codeHier) {
+            codigoToIdMap.set(codeHier, i.id);
+          }
         });
 
         setItems(itemsConvertidos);
@@ -236,7 +234,11 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           const itens = (s.medicao_items || []) as any[];
           itens.forEach((it: any) => {
             const code = (it.item_code || '').trim();
-            const mappedId = codigoToIdMap.get(code) ?? stableIdFromCodigo(code);
+            const mappedId = codigoToIdMap.get(code);
+            // Ignorar registros antigos que usam apenas código de banco (sem correspondência no orçamento)
+            if (!mappedId) {
+              return;
+            }
             m.dados[mappedId] = {
               qnt: Number(it.qtd) || 0,
               percentual: Number(it.pct) || 0,
@@ -288,7 +290,11 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           const itens = (s.aditivo_items || []) as any[];
           itens.forEach((it: any) => {
             const code = (it.item_code || '').trim();
-            const mappedId = codigoToIdMap.get(code) ?? stableIdFromCodigo(code);
+            const mappedId = codigoToIdMap.get(code);
+            // Ignorar registros antigos que usam apenas código de banco (sem correspondência no orçamento)
+            if (!mappedId) {
+              return;
+            }
             a.dados[mappedId] = {
               qnt: Number(it.qtd) || 0,
               percentual: Number(it.pct) || 0,
