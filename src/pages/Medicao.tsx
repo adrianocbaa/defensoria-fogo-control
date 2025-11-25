@@ -165,6 +165,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     try {
       // Mapa auxiliar para relacionar código do serviço ao ID do item
       let codigoToIdMap = new Map<string, number>();
+      let codigoBancoMap = new Map<string, number>();
       // Primeiro, buscar os items da planilha orçamentária
       const { data: orcamentoItems, error: orcamentoError } = await supabase
         .from('orcamento_items')
@@ -199,12 +200,19 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           } as Item;
         });
 
-        // Criar mapa código -> ID usando APENAS o código hierárquico (item)
+        // Criar mapa código -> ID priorizando código hierárquico (item)
         codigoToIdMap = new Map<string, number>();
+        const codigoBancoMap = new Map<string, number>();
         itemsConvertidos.forEach(i => {
           const codeHier = String(i.item || '').trim();
+          const codeBanco = String(i.codigo || '').trim();
+          // Priorizar código hierárquico
           if (codeHier) {
             codigoToIdMap.set(codeHier, i.id);
+          }
+          // Manter mapa separado para códigos de banco (compatibilidade com dados antigos)
+          if (codeBanco && !codigoBancoMap.has(codeBanco)) {
+            codigoBancoMap.set(codeBanco, i.id);
           }
         });
 
@@ -234,8 +242,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           const itens = (s.medicao_items || []) as any[];
           itens.forEach((it: any) => {
             const code = (it.item_code || '').trim();
-            const mappedId = codigoToIdMap.get(code);
-            // Ignorar registros antigos que usam apenas código de banco (sem correspondência no orçamento)
+            // Tentar primeiro com código hierárquico, depois fallback para código de banco
+            let mappedId = codigoToIdMap.get(code);
+            if (!mappedId) {
+              mappedId = codigoBancoMap.get(code);
+            }
+            // Ignorar apenas se realmente não encontrar correspondência
             if (!mappedId) {
               return;
             }
@@ -290,8 +302,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
           const itens = (s.aditivo_items || []) as any[];
           itens.forEach((it: any) => {
             const code = (it.item_code || '').trim();
-            const mappedId = codigoToIdMap.get(code);
-            // Ignorar registros antigos que usam apenas código de banco (sem correspondência no orçamento)
+            // Tentar primeiro com código hierárquico, depois fallback para código de banco
+            let mappedId = codigoToIdMap.get(code);
+            if (!mappedId) {
+              mappedId = codigoBancoMap.get(code);
+            }
+            // Ignorar apenas se realmente não encontrar correspondência
             if (!mappedId) {
               return;
             }
