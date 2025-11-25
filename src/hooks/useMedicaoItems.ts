@@ -13,27 +13,15 @@ export function useMedicaoItems() {
     items: MedicaoItemUpsertInput[],
     userId?: string | null
   ): Promise<void> => {
-    // Aggregate items by item_code (trimmed) to avoid duplicate upserts
-    const aggregated = new Map<string, { item_code: string; qtd: number; pct: number; total: number }>();
+    // Use Map to keep only the last value for each item_code (no summing)
+    const deduped = new Map<string, MedicaoItemUpsertInput>();
     for (const it of items) {
       const key = it.item_code.trim();
-      const existing = aggregated.get(key);
-      if (existing) {
-        existing.qtd += it.qtd;
-        existing.total += it.total;
-        // Keep the latest pct provided (UI recalculates % from total/contrato)
-        existing.pct = it.pct;
-      } else {
-        aggregated.set(key, {
-          item_code: it.item_code, // keep original formatting for downstream matching
-          qtd: it.qtd,
-          pct: it.pct,
-          total: it.total,
-        });
-      }
+      // Replace with latest value, don't sum
+      deduped.set(key, it);
     }
 
-    const payload = Array.from(aggregated.values()).map((it) => ({
+    const payload = Array.from(deduped.values()).map((it) => ({
       medicao_id: sessionId,
       item_code: it.item_code.trim(),
       qtd: it.qtd,
