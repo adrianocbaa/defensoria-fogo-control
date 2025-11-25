@@ -202,10 +202,12 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         // Criar mapa código -> ID para usar ao converter medições salvas (chave normalizada)
         codigoToIdMap = new Map<string, number>();
         itemsConvertidos.forEach(i => {
-          const codeBanco = String(i.codigo || '').trim();
-          if (codeBanco) codigoToIdMap.set(codeBanco, i.id);
+          // Priorizar código hierárquico (item) que é único
           const codeHier = String(i.item || '').trim();
           if (codeHier) codigoToIdMap.set(codeHier, i.id);
+          // Fallback para código de banco caso não haja hierárquico
+          const codeBanco = String(i.codigo || '').trim();
+          if (codeBanco && !codigoToIdMap.has(codeBanco)) codigoToIdMap.set(codeBanco, i.id);
         });
 
         setItems(itemsConvertidos);
@@ -909,7 +911,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         if (!d) return arr;
         const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
         if (!hasData) return arr;
-        arr.push({ item_code: (it.codigo?.trim() || it.item.trim()), qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
+        arr.push({ item_code: it.item.trim(), qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
         return arr;
       }, [] as { item_code: string; qtd: number; pct: number; total: number }[]);
 
@@ -934,7 +936,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
         if (!d) return arr;
         const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
         if (!hasData) return arr;
-        arr.push({ item_code: (it.codigo?.trim() || it.item.trim()), qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
+        arr.push({ item_code: it.item.trim(), qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
         return arr;
       }, [] as { item_code: string; qtd: number; pct: number; total: number }[]);
 
@@ -2472,7 +2474,7 @@ const criarNovaMedicao = async () => {
         .map(([itemIdStr, dados]) => {
           const itemId = parseInt(itemIdStr);
           const item = items.find(i => i.id === itemId);
-          if (!item || !item.codigo || !item.codigo.trim()) return null;
+          if (!item || !item.item || !item.item.trim()) return null;
 
           const qtd = Number(dados.qnt) || 0;
           if (qtd <= 0) return null;
@@ -2483,7 +2485,7 @@ const criarNovaMedicao = async () => {
           const pct = totalContrato > 0 ? (total / totalContrato) * 100 : 0;
 
           return {
-            item_code: item.codigo.trim(),
+            item_code: item.item.trim(),
             qtd,
             pct,
             total,
@@ -2634,7 +2636,7 @@ const criarNovaMedicao = async () => {
         .map(([itemIdStr, dados]) => {
           const itemId = parseInt(itemIdStr);
           const item = items.find(i => i.id === itemId);
-          if (!item || !item.codigo || !item.codigo.trim()) return null;
+          if (!item || !item.item || !item.item.trim()) return null;
 
           const qtd = Number(dados.qnt) || 0;
           if (qtd <= 0) return null;
@@ -2645,7 +2647,7 @@ const criarNovaMedicao = async () => {
           const pct = totalContrato > 0 ? (total / totalContrato) * 100 : 0;
 
           return {
-            item_code: item.codigo.trim(),
+            item_code: item.item.trim(),
             qtd,
             pct,
             total,
@@ -2962,7 +2964,7 @@ const criarNovaMedicao = async () => {
 
           return {
             medicao_id: medicaoAtualObj.sessionId,
-            item_code: item.codigo.trim(),
+            item_code: item.item.trim(),
             qtd: valores.qnt,
             pct: valores.percentual,
             total: valores.total
