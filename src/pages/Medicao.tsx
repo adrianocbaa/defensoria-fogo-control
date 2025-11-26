@@ -2461,37 +2461,39 @@ const criarNovaMedicao = async () => {
       return;
     }
 
-    // Hard guard: validar que nenhum item excede 100%
-    const medicaoIndex = medicoes.findIndex(m => m.id === medicaoId);
-    const itensInvalidos: { codigo: string; disponivel: number; digitado: number }[] = [];
-    for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
-      const itemId = parseInt(itemIdStr);
-      const item = items.find(i => i.id === itemId);
-      if (!item) continue;
+    // Hard guard: validar que nenhum item excede 100% (apenas para não-administradores)
+    if (!isAdmin) {
+      const medicaoIndex = medicoes.findIndex(m => m.id === medicaoId);
+      const itensInvalidos: { codigo: string; disponivel: number; digitado: number }[] = [];
+      for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
+        const itemId = parseInt(itemIdStr);
+        const item = items.find(i => i.id === itemId);
+        if (!item) continue;
 
-      let qntAcumAnterior = 0;
-      for (let i = 0; i < medicaoIndex; i++) {
-        const dh = dadosHierarquicosMemoizados[medicoes[i].id];
-        if (dh && dh[itemId]) {
-          qntAcumAnterior += dh[itemId].qnt || 0;
+        let qntAcumAnterior = 0;
+        for (let i = 0; i < medicaoIndex; i++) {
+          const dh = dadosHierarquicosMemoizados[medicoes[i].id];
+          if (dh && dh[itemId]) {
+            qntAcumAnterior += dh[itemId].qnt || 0;
+          }
+        }
+        const qntAditivoAcum = aditivos
+          .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
+          .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
+        const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
+        const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
+        if (dados.qnt > disponivel + 1e-9) {
+          itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
         }
       }
-      const qntAditivoAcum = aditivos
-        .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
-        .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
-      const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
-      const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
-      if (dados.qnt > disponivel + 1e-9) {
-        itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
-      }
-    }
 
-    if (itensInvalidos.length > 0) {
-      const lista = itensInvalidos
-        .map(it => `${it.codigo}: disponível ${it.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, digitado ${it.digitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-        .join('\n');
-      toast.error(`Itens ultrapassam 100% e impedem o salvamento:\n${lista}`);
-      return;
+      if (itensInvalidos.length > 0) {
+        const lista = itensInvalidos
+          .map(it => `${it.codigo}: disponível ${it.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, digitado ${it.digitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+          .join('\n');
+        toast.error(`Itens ultrapassam 100% e impedem o salvamento:\n${lista}`);
+        return;
+      }
     }
 
     try {
@@ -2658,37 +2660,39 @@ const criarNovaMedicao = async () => {
       return;
     }
 
-    // Hard guard: validar que nenhum item excede 100%
-    const medicaoIndex = medicoes.findIndex(m => m.id === medicaoId);
-    const itensInvalidos: { codigo: string; disponivel: number; digitado: number }[] = [];
-    for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
-      const itemId = parseInt(itemIdStr);
-      const item = items.find(i => i.id === itemId);
-      if (!item) continue;
+    // Hard guard: validar que nenhum item excede 100% (apenas para não-administradores)
+    if (!isAdmin) {
+      const medicaoIndex = medicoes.findIndex(m => m.id === medicaoId);
+      const itensInvalidos: { codigo: string; disponivel: number; digitado: number }[] = [];
+      for (const [itemIdStr, dados] of Object.entries(medicao.dados)) {
+        const itemId = parseInt(itemIdStr);
+        const item = items.find(i => i.id === itemId);
+        if (!item) continue;
 
-      let qntAcumAnterior = 0;
-      for (let i = 0; i < medicaoIndex; i++) {
-        const dh = dadosHierarquicosMemoizados[medicoes[i].id];
-        if (dh && dh[itemId]) {
-          qntAcumAnterior += dh[itemId].qnt || 0;
+        let qntAcumAnterior = 0;
+        for (let i = 0; i < medicaoIndex; i++) {
+          const dh = dadosHierarquicosMemoizados[medicoes[i].id];
+          if (dh && dh[itemId]) {
+            qntAcumAnterior += dh[itemId].qnt || 0;
+          }
+        }
+        const qntAditivoAcum = aditivos
+          .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
+          .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
+        const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
+        const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
+        if (dados.qnt > disponivel + 1e-9) {
+          itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
         }
       }
-      const qntAditivoAcum = aditivos
-        .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
-        .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
-      const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
-      const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
-      if (dados.qnt > disponivel + 1e-9) {
-        itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
-      }
-    }
 
-    if (itensInvalidos.length > 0) {
-      const lista = itensInvalidos
-        .map(it => `${it.codigo}: disponível ${it.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, digitado ${it.digitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-        .join('\n');
-      toast.error(`Itens ultrapassam 100% e impedem o salvamento:\n${lista}`);
-      return;
+      if (itensInvalidos.length > 0) {
+        const lista = itensInvalidos
+          .map(it => `${it.codigo}: disponível ${it.disponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, digitado ${it.digitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+          .join('\n');
+        toast.error(`Itens ultrapassam 100% e impedem o salvamento:\n${lista}`);
+        return;
+      }
     }
 
     try {
