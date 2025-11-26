@@ -2539,6 +2539,33 @@ const criarNovaMedicao = async () => {
         return;
       }
 
+      // Remover do banco quaisquer itens dessa medição que tenham sido apagados na interface
+      const { data: existingItems, error: existingError } = await supabase
+        .from('medicao_items')
+        .select('item_code')
+        .eq('medicao_id', medicao.sessionId);
+
+      if (existingError) throw existingError;
+
+      const payloadCodes = new Set(payload.map(p => p.item_code.trim()));
+      const existingCodes = new Set(
+        (existingItems || [])
+          .map((it: any) => (it.item_code || '').trim())
+          .filter((code: string) => !!code)
+      );
+
+      const codesToDelete = Array.from(existingCodes).filter(code => !payloadCodes.has(code));
+
+      if (codesToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('medicao_items')
+          .delete()
+          .eq('medicao_id', medicao.sessionId)
+          .in('item_code', codesToDelete);
+
+        if (deleteError) throw deleteError;
+      }
+
       await upsertItems(medicao.sessionId, payload, userId);
 
       toast.success('Medição salva com sucesso.');
