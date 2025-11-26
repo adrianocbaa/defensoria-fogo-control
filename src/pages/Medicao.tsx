@@ -2510,12 +2510,20 @@ const criarNovaMedicao = async () => {
           if (!item || !item.item || !item.item.trim()) return null;
 
           const qtd = Number(dados.qnt) || 0;
-          if (qtd <= 0) return null;
           const totalContrato = calcularTotalContratoComAditivos(item, medicaoId);
-          const total = dados.total && !isNaN(dados.total)
-            ? Number(dados.total)
-            : (totalContrato > 0 ? (qtd / (item.quantidade || 1)) * totalContrato : 0);
-          const pct = totalContrato > 0 ? (total / totalContrato) * 100 : 0;
+
+          let total = 0;
+          let pct = 0;
+
+          if (totalContrato > 0) {
+            if (dados.total !== undefined && dados.total !== null && !isNaN(Number(dados.total as number))) {
+              total = Number(dados.total);
+              pct = (total / totalContrato) * 100;
+            } else if (qtd > 0) {
+              total = (qtd / (item.quantidade || 1)) * totalContrato;
+              pct = (total / totalContrato) * 100;
+            }
+          }
 
           return {
             item_code: item.item.trim(),
