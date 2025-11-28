@@ -22,6 +22,7 @@ interface Obra {
   tipo: string;
   valor_total: number;
   valor_aditivado?: number;
+  valor_executado?: number;
   porcentagem_execucao: number;
   created_at: string;
   previsao_termino?: string;
@@ -52,133 +53,6 @@ export function AdminObras() {
   const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
   const userRole = useUserRole();
   const navigate = useNavigate();
-
-  const calcularValorObra = async (obraId: string, obraData: any): Promise<number> => {
-    try {
-      // Verifica se existe planilha orçamentária (orcamento_items_hierarquia)
-      const { data: orcamentoItems, error: orcError } = await supabase
-        .from('orcamento_items_hierarquia')
-        .select('obra_id, valor_total, is_macro, origem')
-        .eq('obra_id', obraId)
-        .or('is_macro.is.null,is_macro.eq.false')
-        .neq('origem', 'extracontratual');
-
-      if (orcError) throw orcError;
-
-      if (orcamentoItems && orcamentoItems.length > 0) {
-        // Tem planilha: calcular valor inicial + aditivos bloqueados
-        const valorInicial = orcamentoItems.reduce((sum, item) => sum + Number(item.valor_total || 0), 0);
-
-        // Buscar aditivos bloqueados
-        const { data: aditivoSessions, error: adtError } = await supabase
-          .from('aditivo_sessions')
-          .select('id')
-          .eq('obra_id', obraId)
-          .eq('status', 'bloqueada');
-
-        if (adtError) throw adtError;
-
-        let aditivos = 0;
-        if (aditivoSessions && aditivoSessions.length > 0) {
-          const sessionIds = aditivoSessions.map(s => s.id);
-          const { data: aditivoItems, error: adtItemsError } = await supabase
-            .from('aditivo_items')
-            .select('total')
-            .in('aditivo_id', sessionIds);
-
-          if (adtItemsError) throw adtItemsError;
-
-          aditivos = aditivoItems?.reduce((sum, item) => sum + Number(item.total || 0), 0) || 0;
-        }
-
-        return valorInicial + aditivos;
-      } else {
-        // Não tem planilha: usar valor_total + valor_aditivado da obra
-        return Number(obraData.valor_total || 0) + Number(obraData.valor_aditivado || 0);
-      }
-    } catch (error) {
-      console.error('Erro ao calcular valor da obra:', error);
-      // Fallback: usar valores da obra
-      return Number(obraData.valor_total || 0) + Number(obraData.valor_aditivado || 0);
-    }
-  };
-
-  const calcularProgressoObra = async (obraId: string, obraData: any): Promise<number> => {
-    try {
-      // Verifica se existe planilha orçamentária
-      const { data: orcamentoItems, error: orcError } = await supabase
-        .from('orcamento_items_hierarquia')
-        .select('obra_id, valor_total, is_macro, origem')
-        .eq('obra_id', obraId)
-        .or('is_macro.is.null,is_macro.eq.false')
-        .neq('origem', 'extracontratual');
-
-      if (orcError) throw orcError;
-
-      if (orcamentoItems && orcamentoItems.length > 0) {
-        // Tem planilha: calcular Valor Acumulado / Valor Contrato Pós Aditivo
-        const valorInicial = orcamentoItems.reduce((sum, item) => sum + Number(item.valor_total || 0), 0);
-
-        // Buscar aditivos bloqueados
-        const { data: aditivoSessions, error: adtError } = await supabase
-          .from('aditivo_sessions')
-          .select('id')
-          .eq('obra_id', obraId)
-          .eq('status', 'bloqueada');
-
-        if (adtError) throw adtError;
-
-        let aditivos = 0;
-        if (aditivoSessions && aditivoSessions.length > 0) {
-          const sessionIds = aditivoSessions.map(s => s.id);
-          const { data: aditivoItems, error: adtItemsError } = await supabase
-            .from('aditivo_items')
-            .select('total')
-            .in('aditivo_id', sessionIds);
-
-          if (adtItemsError) throw adtItemsError;
-
-          aditivos = aditivoItems?.reduce((sum, item) => sum + Number(item.total || 0), 0) || 0;
-        }
-
-        const valorContratoAditivo = valorInicial + aditivos;
-
-        // Buscar Valor Acumulado (soma de total de medicao_items)
-        // Primeiro buscar as sessões de medição da obra
-        const { data: medicaoSessions, error: sessionsError } = await supabase
-          .from('medicao_sessions')
-          .select('id')
-          .eq('obra_id', obraId);
-
-        if (sessionsError) throw sessionsError;
-
-        let valorAcumulado = 0;
-        if (medicaoSessions && medicaoSessions.length > 0) {
-          const sessionIds = medicaoSessions.map(s => s.id);
-          const { data: medicaoItems, error: medicaoError } = await supabase
-            .from('medicao_items')
-            .select('total')
-            .in('medicao_id', sessionIds);
-
-          if (medicaoError) throw medicaoError;
-
-          valorAcumulado = medicaoItems?.reduce((sum, item) => sum + Number(item.total || 0), 0) || 0;
-        }
-
-        return valorContratoAditivo > 0 ? (valorAcumulado / valorContratoAditivo) * 100 : 0;
-      } else {
-        // Não tem planilha: calcular Valor Executado / Valor Final
-        const valorFinal = Number(obraData.valor_total || 0) + Number(obraData.valor_aditivado || 0);
-        const valorExecutado = Number(obraData.valor_executado || 0);
-
-        return valorFinal > 0 ? (valorExecutado / valorFinal) * 100 : 0;
-      }
-    } catch (error) {
-      console.error('Erro ao calcular progresso da obra:', error);
-      // Fallback: usar porcentagem_execucao da obra
-      return Number(obraData.porcentagem_execucao || 0);
-    }
-  };
 
   const fetchObras = async () => {
     try {
@@ -239,13 +113,92 @@ export function AdminObras() {
       setObras(sortedObras);
       setFilteredObras(sortedObras);
 
-      // Calcular valores para cada obra
+      // Calcular valores e progressos em paralelo para TODAS as obras de uma vez
+      const obraIds = sortedObras.map(o => o.id);
+      
+      // Buscar todos os dados de uma vez
+      const [orcamentoData, aditivoData, medicaoData] = await Promise.all([
+        // Buscar orcamento_items de todas as obras
+        supabase
+          .from('orcamento_items_hierarquia')
+          .select('obra_id, valor_total, is_macro, origem')
+          .in('obra_id', obraIds)
+          .or('is_macro.is.null,is_macro.eq.false')
+          .neq('origem', 'extracontratual'),
+        
+        // Buscar aditivo_sessions bloqueadas de todas as obras
+        supabase
+          .from('aditivo_sessions')
+          .select('id, obra_id')
+          .in('obra_id', obraIds)
+          .eq('status', 'bloqueada'),
+        
+        // Buscar medicao_sessions de todas as obras
+        supabase
+          .from('medicao_sessions')
+          .select('id, obra_id')
+          .in('obra_id', obraIds)
+      ]);
+
+      // Buscar aditivo_items e medicao_items se houver sessões
+      let aditivoItemsData = { data: [], error: null };
+      let medicaoItemsData = { data: [], error: null };
+      
+      if (aditivoData.data && aditivoData.data.length > 0) {
+        const aditivoSessionIds = aditivoData.data.map(s => s.id);
+        aditivoItemsData = await supabase
+          .from('aditivo_items')
+          .select('aditivo_id, total')
+          .in('aditivo_id', aditivoSessionIds);
+      }
+      
+      if (medicaoData.data && medicaoData.data.length > 0) {
+        const medicaoSessionIds = medicaoData.data.map(s => s.id);
+        medicaoItemsData = await supabase
+          .from('medicao_items')
+          .select('medicao_id, total')
+          .in('medicao_id', medicaoSessionIds);
+      }
+
+      // Processar dados para cada obra
       const valores: Record<string, number> = {};
       const progressos: Record<string, number> = {};
+      
       for (const obra of sortedObras) {
-        valores[obra.id] = await calcularValorObra(obra.id, obra);
-        progressos[obra.id] = await calcularProgressoObra(obra.id, obra);
+        // Calcular valor da obra
+        const obraOrcamento = orcamentoData.data?.filter(item => item.obra_id === obra.id) || [];
+        
+        if (obraOrcamento.length > 0) {
+          const valorInicial = obraOrcamento.reduce((sum, item) => sum + Number(item.valor_total || 0), 0);
+          
+          // Buscar aditivos da obra
+          const obraAditivoSessions = aditivoData.data?.filter(s => s.obra_id === obra.id) || [];
+          const aditivoSessionIds = obraAditivoSessions.map(s => s.id);
+          const obraAditivoItems = aditivoItemsData.data?.filter(item => 
+            aditivoSessionIds.includes(item.aditivo_id)
+          ) || [];
+          const aditivos = obraAditivoItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
+          
+          valores[obra.id] = valorInicial + aditivos;
+          
+          // Calcular progresso
+          const obraMedicaoSessions = medicaoData.data?.filter(s => s.obra_id === obra.id) || [];
+          const medicaoSessionIds = obraMedicaoSessions.map(s => s.id);
+          const obraMedicaoItems = medicaoItemsData.data?.filter(item => 
+            medicaoSessionIds.includes(item.medicao_id)
+          ) || [];
+          const valorAcumulado = obraMedicaoItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
+          
+          progressos[obra.id] = valores[obra.id] > 0 ? (valorAcumulado / valores[obra.id]) * 100 : 0;
+        } else {
+          // Não tem planilha: usar valores da obra
+          valores[obra.id] = Number(obra.valor_total || 0) + Number(obra.valor_aditivado || 0);
+          progressos[obra.id] = valores[obra.id] > 0 
+            ? (Number(obra.valor_executado || 0) / valores[obra.id]) * 100 
+            : 0;
+        }
       }
+      
       setObraValores(valores);
       setObraProgressos(progressos);
     } catch (error) {
