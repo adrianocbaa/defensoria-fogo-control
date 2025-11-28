@@ -128,7 +128,7 @@ export function useCronogramaFinanceiro() {
 
         if (updateError) throw updateError;
 
-        // Deletar items e períodos antigos
+        // Deletar items antigos (CASCADE DELETE vai remover os períodos automaticamente)
         const { error: deleteItemsError } = await supabase
           .from('cronograma_items')
           .delete()
@@ -201,34 +201,7 @@ export function useCronogramaFinanceiro() {
     try {
       setLoading(true);
 
-      // Buscar todos os items do cronograma
-      const { data: items, error: itemsError } = await supabase
-        .from('cronograma_items')
-        .select('id')
-        .eq('cronograma_id', cronogramaId);
-
-      if (itemsError) throw itemsError;
-
-      // Deletar todos os períodos dos items
-      if (items && items.length > 0) {
-        const itemIds = items.map(item => item.id);
-        const { error: periodosError } = await supabase
-          .from('cronograma_periodos')
-          .delete()
-          .in('item_id', itemIds);
-
-        if (periodosError) throw periodosError;
-      }
-
-      // Deletar todos os items
-      const { error: deleteItemsError } = await supabase
-        .from('cronograma_items')
-        .delete()
-        .eq('cronograma_id', cronogramaId);
-
-      if (deleteItemsError) throw deleteItemsError;
-
-      // Deletar o cronograma
+      // Deletar o cronograma (CASCADE DELETE vai remover items e períodos automaticamente)
       const { error } = await supabase
         .from('cronograma_financeiro')
         .delete()
