@@ -105,8 +105,10 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             codigoParaMacro.set(macro, { macro, descricao: item.descricao });
           }
         }
-        // Mapear também o código completo para o macro
+        // Mapear código de banco (ex: "93674") para o macro
         codigoParaMacro.set(item.codigo, { macro, descricao: item.descricao });
+        // Mapear código hierárquico (ex: "9.31") para o macro
+        codigoParaMacro.set(item.item, { macro, descricao: item.descricao });
       });
 
       // Processar cada medição individualmente
