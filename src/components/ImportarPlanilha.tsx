@@ -34,6 +34,7 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
+  const [percentualDesconto, setPercentualDesconto] = useState<string>('')
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -52,6 +53,11 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
   const processarPlanilha = async () => {
     if (!arquivo) {
       setErro('Por favor, selecione um arquivo')
+      return
+    }
+
+    if (!percentualDesconto || parseFloat(percentualDesconto) < 0 || parseFloat(percentualDesconto) > 100) {
+      setErro('Por favor, informe um percentual de desconto válido (0-100)')
       return
     }
 
@@ -92,6 +98,7 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
 
       // Processar os dados a partir da linha seguinte ao cabeçalho
       const dadosProcessados: Item[] = []
+      const desconto = parseFloat(percentualDesconto) / 100
       
       for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
         const row = jsonData[i]
@@ -106,18 +113,38 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         // Log para debug
         console.log(`Processando linha ${i}:`, row)
         
+        // Nova estrutura com 9 colunas (A-I):
+        // A: Item (0)
+        // B: Código (1)
+        // C: Banco (2)
+        // D: Descrição (3)
+        // E: Und (4)
+        // F: Quant. (5)
+        // G: Valor Unit (6)
+        // H: Valor Unit com BDI (7)
+        // I: Total sem Desconto (8)
+        
+        const quantidade = parseFloat(row[5]) || 0
+        const totalSemDesconto = parseFloat(row[8]) || 0
+        
+        // Aplicar desconto: TRUNCAR(I - (I * desconto%), 2)
+        const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * desconto)) * 100) / 100
+        
+        // Calcular valor unitário com desconto
+        const valorUnitarioComDesconto = quantidade > 0 ? valorTotalComDesconto / quantidade : 0
+        
         const item: Item = {
           id: Date.now() + i, // ID único
           item: row[0] ? row[0].toString().trim() : '',
           codigo: row[1] ? row[1].toString().trim() : '',
-          banco: row[1] ? row[1].toString().trim() : '', // Usando código como banco
-          descricao: row[2] ? row[2].toString().trim() : '',
-          und: row[3] ? row[3].toString().trim() : '',
-          quantidade: parseFloat(row[4]) || 0,
-          valorUnitario: parseFloat(row[5]) || 0,
-          valorTotal: parseFloat(row[6]) || 0,
+          banco: row[2] ? row[2].toString().trim() : '',
+          descricao: row[3] ? row[3].toString().trim() : '',
+          und: row[4] ? row[4].toString().trim() : '',
+          quantidade: quantidade,
+          valorUnitario: valorUnitarioComDesconto,
+          valorTotal: valorTotalComDesconto,
           aditivo: { qnt: 0, percentual: 0, total: 0 },
-          totalContrato: parseFloat(row[6]) || 0,
+          totalContrato: valorTotalComDesconto,
           importado: true,
           nivel: 3,
           ehAdministracaoLocal: false,
@@ -173,6 +200,25 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Percentual de Desconto (%)
+          </label>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            value={percentualDesconto}
+            onChange={(e) => setPercentualDesconto(e.target.value)}
+            placeholder="Ex: 5.50"
+            className="w-full"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Informe o percentual de desconto ofertado pela empresa (0-100%)
+          </p>
+        </div>
+
         {erro && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -191,19 +237,24 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
           <p className="font-medium mb-1">Formato esperado:</p>
           <ul className="text-xs space-y-1">
             <li>• Item</li>
-            <li>• Código Banco</li>
+            <li>• Código</li>
+            <li>• Banco</li>
             <li>• Descrição</li>
             <li>• Und</li>
             <li>• Quant.</li>
-            <li>• Valor unit com BDI e Desc.</li>
-            <li>• Valor total com BDI e Desconto</li>
+            <li>• Valor Unit</li>
+            <li>• Valor Unit com BDI</li>
+            <li>• Total sem Desconto</li>
           </ul>
+          <p className="text-xs mt-2 italic">
+            O desconto será aplicado automaticamente sobre o Total sem Desconto
+          </p>
         </div>
 
         <div className="flex gap-2">
           <Button 
             onClick={processarPlanilha} 
-            disabled={!arquivo || carregando}
+            disabled={!arquivo || !percentualDesconto || carregando}
             className="flex-1"
           >
             {carregando ? (
