@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -6,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle, History, XCircle } from "lucide-react";
 import { createAuditLog } from "@/hooks/useRdoAuditLog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface AssinaturasStepProps {
   reportId: string;
@@ -47,6 +49,24 @@ export function AssinaturasStep({
   // Usar estado local para atualização imediata da UI
   const fiscalValidado = fiscalValidadoLocal;
   const contratadaValidado = contratadaValidadoLocal;
+
+  // Buscar histórico de reprovações
+  const { data: rejectionHistory } = useQuery({
+    queryKey: ['rdo-rejection-history', reportId],
+    queryFn: async () => {
+      if (!reportId) return [];
+      const { data, error } = await supabase
+        .from('rdo_audit_log')
+        .select('*')
+        .eq('report_id', reportId)
+        .eq('acao', 'REPROVAR')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!reportId,
+  });
 
   const handleValidateFiscal = async () => {
     if (!canValidateFiscal) {
@@ -188,6 +208,48 @@ export function AssinaturasStep({
             Este RDO foi reprovado. Clique em "Reabrir RDO" para permitir edição e novas assinaturas.
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Histórico de Reprovações */}
+      {rejectionHistory && rejectionHistory.length > 0 && (
+        <Collapsible defaultOpen={isRejected}>
+          <Card className="border-amber-200 dark:border-amber-800">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 rounded-lg transition-colors">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <h3 className="font-semibold">Histórico de Reprovações ({rejectionHistory.length})</h3>
+              </div>
+              <span className="text-sm text-muted-foreground">Clique para expandir</span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-3">
+                {rejectionHistory.map((item: any, index: number) => (
+                  <div 
+                    key={item.id} 
+                    className="flex gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900"
+                  >
+                    <XCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium text-red-700 dark:text-red-300">
+                          Reprovação #{rejectionHistory.length - index}
+                        </span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-muted-foreground">
+                          {new Date(item.created_at).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}
+                        </span>
+                      </div>
+                      <p className="text-sm mt-1 text-foreground">
+                        <span className="font-medium">Motivo:</span>{' '}
+                        {item.detalhes?.observacao || 'Não informado'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       )}
 
       {/* Mostrar campos de validação apenas se necessário */}
