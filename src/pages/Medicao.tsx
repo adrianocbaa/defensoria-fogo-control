@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical, Download } from 'lucide-react';
+import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical, Download, Pencil, X } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -124,6 +124,8 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const [mostrarAditivos, setMostrarAditivos] = useState(true);
   const [novoAditivoAberto, setNovoAditivoAberto] = useState(false);
   const [confirm, setConfirm] = useState<{ open: boolean; type?: 'reabrir-medicao' | 'excluir-medicao' | 'excluir-aditivo' | 'limpar-planilha'; medicaoId?: number; aditivoId?: number }>({ open: false });
+  const [editandoDesconto, setEditandoDesconto] = useState(false);
+  const [novoDesconto, setNovoDesconto] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -2917,6 +2919,32 @@ const criarNovaMedicao = async () => {
     }
   };
 
+  const salvarPercentualDesconto = async () => {
+    if (!id || !obra) return;
+    
+    const desconto = parseFloat(novoDesconto);
+    if (isNaN(desconto) || desconto < 0 || desconto > 100) {
+      toast.error('Percentual de desconto inválido (0-100)');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('obras')
+        .update({ percentual_desconto: desconto } as any)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setObra(prev => prev ? { ...prev, percentual_desconto: desconto } : prev);
+      setEditandoDesconto(false);
+      toast.success('Percentual de desconto atualizado');
+    } catch (error) {
+      console.error('Erro ao salvar desconto:', error);
+      toast.error('Erro ao salvar percentual de desconto');
+    }
+  };
+
   const importarDados = async (dadosImportados: Item[], percentualDesconto?: number) => {
     if (!id) return;
 
@@ -3336,6 +3364,53 @@ const criarNovaMedicao = async () => {
                   <div className="text-2xl font-bold text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
                 </CardContent>
               </Card>
+              {canEdit && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground flex items-center justify-between">
+                      <span>Desconto da Obra</span>
+                      {!editandoDesconto && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6"
+                          onClick={() => {
+                            setNovoDesconto(String(obra?.percentual_desconto ?? 0));
+                            setEditandoDesconto(true);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    {editandoDesconto ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={novoDesconto}
+                          onChange={(e) => setNovoDesconto(e.target.value)}
+                          className="h-8 w-24 text-sm"
+                          placeholder="0.00"
+                        />
+                        <span className="text-sm">%</span>
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={salvarPercentualDesconto}>
+                          <Check className="h-3 w-3 text-green-600" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditandoDesconto(false)}>
+                          <X className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-2xl font-bold text-purple-600">
+                        {(obra?.percentual_desconto ?? 0).toFixed(2)}%
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
             {/* Tabela Principal */}
             <Card className="shadow-lg">
