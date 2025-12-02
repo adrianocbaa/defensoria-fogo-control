@@ -159,16 +159,18 @@ export function EquipamentosStep({ reportId, obraId, data, disabled }: Equipamen
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Equipamentos</CardTitle>
-        <div className="flex gap-2">
-          <Button onClick={copyFromYesterday} size="sm" variant="outline">
-            <Copy className="h-4 w-4 mr-2" />
-            Duplicar de ontem
-          </Button>
-          <Button onClick={() => addMutation.mutate()} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar
-          </Button>
-        </div>
+        {!disabled && (
+          <div className="flex gap-2">
+            <Button onClick={copyFromYesterday} size="sm" variant="outline">
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicar de ontem
+            </Button>
+            <Button onClick={() => addMutation.mutate()} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar
+            </Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {equipment.length === 0 ? (
@@ -189,14 +191,17 @@ export function EquipamentosStep({ reportId, obraId, data, disabled }: Equipamen
                     }))
                   }
                   className="flex-1"
+                  disabled={disabled}
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMutation.mutate(equip.id!)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                {!disabled && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteMutation.mutate(equip.id!)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -209,6 +214,7 @@ export function EquipamentosStep({ reportId, obraId, data, disabled }: Equipamen
                       value: v,
                     })
                   }
+                  disabled={disabled}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Origem" />
@@ -230,6 +236,7 @@ export function EquipamentosStep({ reportId, obraId, data, disabled }: Equipamen
                       value: parseFloat(e.target.value) || undefined,
                     })
                   }
+                  disabled={disabled}
                 />
 
                 <Select
@@ -241,6 +248,7 @@ export function EquipamentosStep({ reportId, obraId, data, disabled }: Equipamen
                       value: v,
                     })
                   }
+                  disabled={disabled}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Situação" />
@@ -263,6 +271,7 @@ export function EquipamentosStep({ reportId, obraId, data, disabled }: Equipamen
                     [equip.id!]: { ...prev[equip.id!], observacao: e.target.value }
                   }))
                 }
+                disabled={disabled}
               />
             </div>
           ))

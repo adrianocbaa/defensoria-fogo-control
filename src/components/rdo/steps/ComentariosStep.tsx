@@ -182,7 +182,7 @@ export function ComentariosStep({ reportId, obraId, disabled }: ComentariosStepP
                           {format(new Date(comment.created_at), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                         </p>
                       </div>
-                      {comment.created_by === user?.id && (
+                      {!disabled && comment.created_by === user?.id && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -202,31 +202,33 @@ export function ComentariosStep({ reportId, obraId, disabled }: ComentariosStepP
         </div>
 
         {/* Campo de novo comentário */}
-        <div className="space-y-2 pt-4 border-t">
-          <Textarea
-            placeholder="Escreva um comentário..."
-            rows={3}
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                handleAddComment();
-              }
-            }}
-          />
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-muted-foreground">
-              Pressione Ctrl+Enter para enviar
-            </p>
-            <Button
-              onClick={handleAddComment}
-              disabled={!newComment.trim() || addMutation.isPending}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Adicionar Comentário
-            </Button>
+        {!disabled && (
+          <div className="space-y-2 pt-4 border-t">
+            <Textarea
+              placeholder="Escreva um comentário..."
+              rows={3}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  handleAddComment();
+                }
+              }}
+            />
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-muted-foreground">
+                Pressione Ctrl+Enter para enviar
+              </p>
+              <Button
+                onClick={handleAddComment}
+                disabled={!newComment.trim() || addMutation.isPending}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Adicionar Comentário
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

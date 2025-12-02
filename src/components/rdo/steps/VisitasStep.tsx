@@ -151,10 +151,12 @@ export function VisitasStep({ reportId, obraId, disabled }: VisitasStepProps) {
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Visitas</CardTitle>
-        <Button onClick={() => addMutation.mutate()} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar
-        </Button>
+        {!disabled && (
+          <Button onClick={() => addMutation.mutate()} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {visits.length === 0 ? (
@@ -175,14 +177,17 @@ export function VisitasStep({ reportId, obraId, disabled }: VisitasStepProps) {
                     }))
                   }
                   className="flex-1"
+                  disabled={disabled}
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMutation.mutate(visit.id!)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                {!disabled && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteMutation.mutate(visit.id!)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -195,6 +200,7 @@ export function VisitasStep({ reportId, obraId, disabled }: VisitasStepProps) {
                       [visit.id!]: { ...prev[visit.id!], cargo: e.target.value }
                     }))
                   }
+                  disabled={disabled}
                 />
                 <Input
                   placeholder="Instituição"
@@ -205,6 +211,7 @@ export function VisitasStep({ reportId, obraId, disabled }: VisitasStepProps) {
                       [visit.id!]: { ...prev[visit.id!], instituicao: e.target.value }
                     }))
                   }
+                  disabled={disabled}
                 />
                 <Input
                   type="time"
@@ -217,6 +224,7 @@ export function VisitasStep({ reportId, obraId, disabled }: VisitasStepProps) {
                       value: e.target.value,
                     })
                   }
+                  disabled={disabled}
                 />
               </div>
 
@@ -230,6 +238,7 @@ export function VisitasStep({ reportId, obraId, disabled }: VisitasStepProps) {
                     [visit.id!]: { ...prev[visit.id!], assunto: e.target.value }
                   }))
                 }
+                disabled={disabled}
               />
             </div>
           ))

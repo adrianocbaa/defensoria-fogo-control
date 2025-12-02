@@ -28,6 +28,7 @@ interface AtividadesTemplateModeProps {
   obraId: string;
   localValues: Record<string, Partial<Activity>>;
   setLocalValues: React.Dispatch<React.SetStateAction<Record<string, Partial<Activity>>>>;
+  disabled?: boolean;
 }
 
 export function AtividadesTemplateMode({
@@ -35,6 +36,7 @@ export function AtividadesTemplateMode({
   obraId,
   localValues,
   setLocalValues,
+  disabled,
 }: AtividadesTemplateModeProps) {
   const queryClient = useQueryClient();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -253,7 +255,7 @@ export function AtividadesTemplateMode({
           {/* Seletor de Template */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Selecionar Modelo</label>
-            <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
+            <Select value={selectedTemplateId} onValueChange={handleTemplateSelect} disabled={disabled}>
               <SelectTrigger>
                 <SelectValue placeholder="Escolha um template..." />
               </SelectTrigger>
@@ -277,10 +279,12 @@ export function AtividadesTemplateMode({
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-sm">Atividades</h3>
-              <Button onClick={() => addMutation.mutate()} size="sm" variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Adicionar Extra</span>
-              </Button>
+              {!disabled && (
+                <Button onClick={() => addMutation.mutate()} size="sm" variant="outline" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Adicionar Extra</span>
+                </Button>
+              )}
             </div>
 
             {activities.length === 0 ? (
@@ -309,6 +313,7 @@ export function AtividadesTemplateMode({
                             }
                             onBlur={() => handleBlur(activity.id!, 'descricao')}
                             className="flex-1 min-w-[200px]"
+                            disabled={disabled}
                           />
                           {isFromTemplate && (
                             <Badge variant="secondary" className="text-xs shrink-0">
@@ -333,13 +338,15 @@ export function AtividadesTemplateMode({
                             <MessageSquare className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteMutation.mutate(activity.id!)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {!disabled && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteMutation.mutate(activity.id!)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -361,6 +368,7 @@ export function AtividadesTemplateMode({
                           max={100}
                           step={5}
                           className="w-full"
+                          disabled={disabled}
                         />
                       </div>
 
@@ -377,6 +385,7 @@ export function AtividadesTemplateMode({
                             value: v,
                           });
                         }}
+                        disabled={disabled}
                       >
                         <SelectTrigger>
                           <SelectValue />

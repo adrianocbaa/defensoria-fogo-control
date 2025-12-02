@@ -162,10 +162,12 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Ocorrências</CardTitle>
-        <Button onClick={() => addMutation.mutate()} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar
-        </Button>
+        {!disabled && (
+          <Button onClick={() => addMutation.mutate()} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {occurrences.length === 0 ? (
@@ -180,7 +182,7 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
                 occurrence.gravidade >= 4 ? 'border-destructive/50 bg-destructive/5' : ''
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 flex-1">
                   {occurrence.gravidade >= 4 && (
                     <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
@@ -195,15 +197,18 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
                       }))
                     }
                     className="flex-1"
+                    disabled={disabled}
                   />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMutation.mutate(occurrence.id!)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                {!disabled && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteMutation.mutate(occurrence.id!)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
               </div>
 
               <div className="flex items-center gap-4">
@@ -214,12 +219,13 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
                       <button
                         key={level}
                         onClick={() =>
-                          updateMutation.mutate({
+                          !disabled && updateMutation.mutate({
                             id: occurrence.id!,
                             field: 'gravidade',
                             value: level,
                           })
                         }
+                        disabled={disabled}
                         className={`w-8 h-8 rounded-full border-2 transition-all ${
                           level <= occurrence.gravidade
                             ? level >= 4
@@ -228,7 +234,7 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
                               ? 'bg-orange-500 border-orange-500'
                               : 'bg-yellow-500 border-yellow-500'
                             : 'border-muted-foreground/30'
-                        }`}
+                        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {level}
                       </button>
@@ -248,6 +254,7 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
                     [occurrence.id!]: { ...prev[occurrence.id!], descricao: e.target.value }
                   }))
                 }
+                disabled={disabled}
               />
 
               <div className="flex items-center gap-2">
@@ -260,6 +267,7 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
                       value: checked,
                     })
                   }
+                  disabled={disabled}
                 />
                 <Label>Impacto no cronograma</Label>
               </div>
@@ -275,6 +283,7 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
                       [occurrence.id!]: { ...prev[occurrence.id!], acao_imediata: e.target.value }
                     }))
                   }
+                  disabled={disabled}
                 />
               )}
             </div>

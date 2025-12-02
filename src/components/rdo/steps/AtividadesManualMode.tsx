@@ -24,6 +24,7 @@ interface AtividadesManualModeProps {
   activities: Activity[];
   localValues: Record<string, Partial<Activity>>;
   setLocalValues: React.Dispatch<React.SetStateAction<Record<string, Partial<Activity>>>>;
+  disabled?: boolean;
 }
 
 export function AtividadesManualMode({
@@ -32,6 +33,7 @@ export function AtividadesManualMode({
   activities,
   localValues,
   setLocalValues,
+  disabled,
 }: AtividadesManualModeProps) {
   const queryClient = useQueryClient();
 
@@ -105,10 +107,12 @@ export function AtividadesManualMode({
           </div>
           <SaveIndicator isSaving={updateMutation.isPending} />
         </div>
-        <Button onClick={() => addMutation.mutate()} size="sm" className="gap-2">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Adicionar</span>
-        </Button>
+        {!disabled && (
+          <Button onClick={() => addMutation.mutate()} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Adicionar</span>
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
         {activities.length === 0 ? (
@@ -133,15 +137,18 @@ export function AtividadesManualMode({
                     }
                     onBlur={() => handleBlur(activity.id!, 'descricao')}
                     className="flex-1"
+                    disabled={disabled}
                   />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteMutation.mutate(activity.id!)}
-                    className="shrink-0"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {!disabled && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteMutation.mutate(activity.id!)}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -162,6 +169,7 @@ export function AtividadesManualMode({
                       max={100}
                       step={5}
                       className="w-full"
+                      disabled={disabled}
                     />
                   </div>
 
@@ -178,6 +186,7 @@ export function AtividadesManualMode({
                         value: v,
                       });
                     }}
+                    disabled={disabled}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -199,6 +208,7 @@ export function AtividadesManualMode({
                       }))
                     }
                     onBlur={() => handleBlur(activity.id!, 'observacao')}
+                    disabled={disabled}
                   />
                 </div>
               </div>
