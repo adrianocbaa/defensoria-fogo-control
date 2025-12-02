@@ -16,6 +16,7 @@ interface AssinaturasStepProps {
   obraId: string;
   reportData: any;
   onUpdate: () => void;
+  onConclude?: () => Promise<void>;
 }
 
 export function AssinaturasStep({
@@ -23,6 +24,7 @@ export function AssinaturasStep({
   obraId,
   reportData,
   onUpdate,
+  onConclude,
 }: AssinaturasStepProps) {
   const { user } = useAuth();
   const { canEdit, isAdmin, isContratada } = useUserRole();
@@ -82,6 +84,11 @@ export function AssinaturasStep({
 
       toast.success("Validação do Fiscal/Gestor registrada");
       onUpdate();
+      
+      // Auto-conclude after signature validation
+      if (onConclude) {
+        await onConclude();
+      }
     } catch (error: any) {
       console.error("Error validating fiscal signature:", error);
       toast.error("Erro ao validar assinatura");
@@ -124,6 +131,11 @@ export function AssinaturasStep({
 
       toast.success("Validação do Responsável Técnico registrada");
       onUpdate();
+      
+      // Auto-conclude after signature validation
+      if (onConclude) {
+        await onConclude();
+      }
     } catch (error: any) {
       console.error("Error validating contratada signature:", error);
       toast.error("Erro ao validar assinatura");
