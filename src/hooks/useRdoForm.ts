@@ -186,6 +186,20 @@ export function useRdoForm(obraId: string, data: string) {
     const { data: roleData } = await supabase.rpc('get_user_role', { user_uuid: user?.id });
     const userRole = roleData;
     
+    // VALIDAÇÃO: Verificar se a assinatura foi validada antes de concluir
+    if (userRole === 'contratada') {
+      if (!formData.assinatura_contratada_validado_em) {
+        toast.error('Você precisa validar sua assinatura antes de concluir o RDO');
+        return;
+      }
+    } else {
+      // Fiscal, admin, editor, etc
+      if (!formData.assinatura_fiscal_validado_em) {
+        toast.error('Você precisa validar sua assinatura antes de concluir o RDO');
+        return;
+      }
+    }
+    
     const now = new Date().toISOString();
     const updatedFields: Partial<RdoFormData> = {};
     
@@ -198,11 +212,15 @@ export function useRdoForm(obraId: string, data: string) {
     }
     
     // Verificar se AMBOS concluíram para mudar status
+    // Ambos precisam ter validado assinatura E clicado concluir
+    const otherPartyValidated = userRole === 'contratada' 
+      ? formData.assinatura_fiscal_validado_em 
+      : formData.assinatura_contratada_validado_em;
     const otherPartyConcluded = userRole === 'contratada' 
       ? formData.fiscal_concluido_em 
       : formData.contratada_concluido_em;
     
-    if (otherPartyConcluded) {
+    if (otherPartyValidated && otherPartyConcluded) {
       updatedFields.status = 'concluido' as const;
     }
     
@@ -210,7 +228,7 @@ export function useRdoForm(obraId: string, data: string) {
     await saveMutation.mutateAsync(updatedData);
     setFormData(updatedData);
     
-    if (otherPartyConcluded) {
+    if (otherPartyValidated && otherPartyConcluded) {
       toast.success('RDO concluído por ambas as partes e pronto para aprovação');
     } else {
       toast.success('Conclusão registrada. Aguardando conclusão da outra parte.');
