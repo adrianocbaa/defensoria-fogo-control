@@ -19,7 +19,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled 
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Anotações do Dia</CardTitle>
-        {onCopyPrevious && (
+        {onCopyPrevious && !disabled && (
           <Button variant="outline" size="sm" onClick={onCopyPrevious}>
             <Copy className="h-4 w-4 mr-2" />
             Copiar do dia anterior
@@ -105,24 +105,24 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled 
               {/* Noite */}
               <div className="space-y-3">
                 <Label className="text-sm">Noite:</Label>
-                <RadioGroup value={formData.clima_noite} onValueChange={(v) => updateField('clima_noite', v)}>
+                <RadioGroup value={formData.clima_noite} onValueChange={(v) => updateField('clima_noite', v)} disabled={disabled}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="claro" id="clima-noite-claro" />
+                      <RadioGroupItem value="claro" id="clima-noite-claro" disabled={disabled} />
                       <Label htmlFor="clima-noite-claro" className="font-normal cursor-pointer flex items-center gap-1">
                         <Sun className="h-4 w-4 text-yellow-500" />
                         Claro
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="nublado" id="clima-noite-nublado" />
+                      <RadioGroupItem value="nublado" id="clima-noite-nublado" disabled={disabled} />
                       <Label htmlFor="clima-noite-nublado" className="font-normal cursor-pointer flex items-center gap-1">
                         <Cloud className="h-4 w-4 text-gray-500" />
                         Nublado
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="chuvoso" id="clima-noite-chuvoso" />
+                      <RadioGroupItem value="chuvoso" id="clima-noite-chuvoso" disabled={disabled} />
                       <Label htmlFor="clima-noite-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
                         <CloudRain className="h-4 w-4 text-blue-500" />
                         Chuvoso
@@ -140,17 +140,17 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled 
               {/* Manhã */}
               <div className="space-y-3">
                 <Label className="text-sm">Manhã:</Label>
-                <RadioGroup value={formData.cond_manha} onValueChange={(v) => updateField('cond_manha', v)}>
+                <RadioGroup value={formData.cond_manha} onValueChange={(v) => updateField('cond_manha', v)} disabled={disabled}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="praticavel" id="cond-manha-praticavel" />
+                      <RadioGroupItem value="praticavel" id="cond-manha-praticavel" disabled={disabled} />
                       <Label htmlFor="cond-manha-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
                         <Check className="h-4 w-4 text-green-500" />
                         Praticável
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="impraticavel" id="cond-manha-impraticavel" />
+                      <RadioGroupItem value="impraticavel" id="cond-manha-impraticavel" disabled={disabled} />
                       <Label htmlFor="cond-manha-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
                         <X className="h-4 w-4 text-red-500" />
                         Impraticável
@@ -163,17 +163,17 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled 
               {/* Tarde */}
               <div className="space-y-3">
                 <Label className="text-sm">Tarde:</Label>
-                <RadioGroup value={formData.cond_tarde} onValueChange={(v) => updateField('cond_tarde', v)}>
+                <RadioGroup value={formData.cond_tarde} onValueChange={(v) => updateField('cond_tarde', v)} disabled={disabled}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="praticavel" id="cond-tarde-praticavel" />
+                      <RadioGroupItem value="praticavel" id="cond-tarde-praticavel" disabled={disabled} />
                       <Label htmlFor="cond-tarde-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
                         <Check className="h-4 w-4 text-green-500" />
                         Praticável
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="impraticavel" id="cond-tarde-impraticavel" />
+                      <RadioGroupItem value="impraticavel" id="cond-tarde-impraticavel" disabled={disabled} />
                       <Label htmlFor="cond-tarde-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
                         <X className="h-4 w-4 text-red-500" />
                         Impraticável
@@ -186,17 +186,17 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled 
               {/* Noite */}
               <div className="space-y-3">
                 <Label className="text-sm">Noite:</Label>
-                <RadioGroup value={formData.cond_noite} onValueChange={(v) => updateField('cond_noite', v)}>
+                <RadioGroup value={formData.cond_noite} onValueChange={(v) => updateField('cond_noite', v)} disabled={disabled}>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="praticavel" id="cond-noite-praticavel" />
+                      <RadioGroupItem value="praticavel" id="cond-noite-praticavel" disabled={disabled} />
                       <Label htmlFor="cond-noite-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
                         <Check className="h-4 w-4 text-green-500" />
                         Praticável
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="impraticavel" id="cond-noite-impraticavel" />
+                      <RadioGroupItem value="impraticavel" id="cond-noite-impraticavel" disabled={disabled} />
                       <Label htmlFor="cond-noite-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
                         <X className="h-4 w-4 text-red-500" />
                         Impraticável
@@ -217,6 +217,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled 
               placeholder="0.00"
               value={formData.pluviometria_mm || ''}
               onChange={(e) => updateField('pluviometria_mm', parseFloat(e.target.value) || undefined)}
+              disabled={disabled}
             />
           </div>
         </div>
@@ -229,6 +230,7 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled 
             rows={6}
             value={formData.observacoes || ''}
             onChange={(e) => updateField('observacoes', e.target.value)}
+            disabled={disabled}
           />
         </div>
       </CardContent>
