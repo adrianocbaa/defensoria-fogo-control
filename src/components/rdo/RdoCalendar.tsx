@@ -316,8 +316,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             </span>
                           )}
                           {/* Indicador de pendência de assinatura */}
-                          {((rdo.fiscal_concluido_em && !rdo.contratada_concluido_em) || 
-                            (!rdo.fiscal_concluido_em && rdo.contratada_concluido_em)) && (
+                          {((rdo.assinatura_fiscal_validado_em && !rdo.assinatura_contratada_validado_em) || 
+                            (!rdo.assinatura_fiscal_validado_em && rdo.assinatura_contratada_validado_em)) && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -327,9 +327,9 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p className="text-xs">
-                                    {rdo.fiscal_concluido_em && !rdo.contratada_concluido_em 
-                                      ? 'Aguardando assinatura da Contratada'
-                                      : 'Aguardando assinatura do Fiscal'}
+                                    {rdo.assinatura_contratada_validado_em && !rdo.assinatura_fiscal_validado_em 
+                                      ? 'Aguardando assinatura do Fiscal'
+                                      : 'Aguardando assinatura da Contratada'}
                                   </p>
                                 </TooltipContent>
                               </Tooltip>

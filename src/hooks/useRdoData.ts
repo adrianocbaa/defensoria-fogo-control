@@ -22,6 +22,8 @@ export interface RdoCalendarDay {
   comment_count: number;
   fiscal_concluido_em: string | null;
   contratada_concluido_em: string | null;
+  assinatura_fiscal_validado_em: string | null;
+  assinatura_contratada_validado_em: string | null;
 }
 
 export interface RdoRecente {
@@ -129,7 +131,9 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
           numero_seq,
           status,
           fiscal_concluido_em,
-          contratada_concluido_em
+          contratada_concluido_em,
+          assinatura_fiscal_validado_em,
+          assinatura_contratada_validado_em
         `)
         .eq('obra_id', obraId)
         .gte('data', startDate)
@@ -173,6 +177,8 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
             comment_count: comments.count || 0,
             fiscal_concluido_em: report.fiscal_concluido_em,
             contratada_concluido_em: report.contratada_concluido_em,
+            assinatura_fiscal_validado_em: report.assinatura_fiscal_validado_em,
+            assinatura_contratada_validado_em: report.assinatura_contratada_validado_em,
           };
         })
       );
