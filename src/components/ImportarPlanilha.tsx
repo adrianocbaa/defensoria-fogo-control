@@ -25,7 +25,7 @@ interface Item {
 }
 
 interface ImportarPlanilhaProps {
-  onImportar: (dados: Item[]) => void;
+  onImportar: (dados: Item[], percentualDesconto: number) => void;
   onFechar: () => void;
 }
 
@@ -162,8 +162,8 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         throw new Error('Nenhum dado válido foi encontrado na planilha.')
       }
 
-      // Chamar a função de callback para importar os dados
-      onImportar(dadosProcessados)
+      // Chamar a função de callback para importar os dados e percentual de desconto
+      onImportar(dadosProcessados, parseFloat(percentualDesconto))
       setSucesso(`${dadosProcessados.length} itens importados com sucesso!`)
       
       // Fechar o modal após 2 segundos

@@ -1082,6 +1082,7 @@ export type Database = {
           n_contrato: string | null
           nome: string
           obra_bloqueada: boolean | null
+          percentual_desconto: number | null
           porcentagem_execucao: number | null
           previsao_termino: string | null
           secretaria_responsavel: string | null
@@ -1112,6 +1113,7 @@ export type Database = {
           n_contrato?: string | null
           nome: string
           obra_bloqueada?: boolean | null
+          percentual_desconto?: number | null
           porcentagem_execucao?: number | null
           previsao_termino?: string | null
           secretaria_responsavel?: string | null
@@ -1142,6 +1144,7 @@ export type Database = {
           n_contrato?: string | null
           nome?: string
           obra_bloqueada?: boolean | null
+          percentual_desconto?: number | null
           porcentagem_execucao?: number | null
           previsao_termino?: string | null
           secretaria_responsavel?: string | null
