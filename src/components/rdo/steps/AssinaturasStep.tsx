@@ -152,20 +152,24 @@ export function AssinaturasStep({
   const contratadaCargoDisplay = reportData?.assinatura_contratada_cargo || contratadaCargo;
   const contratadaDocumentoDisplay = reportData?.assinatura_contratada_documento || contratadaDocumento;
   
+  // Status concluído
+  const isConcluded = reportData?.status === "concluido";
+  
   // Ambos validaram (RDO concluído por ambas as partes)
   const bothValidated = fiscalValidado && contratadaValidado && !isRejected;
   
   // Determinar se deve mostrar ambas assinaturas
   // - Aprovado: mostrar ambas
+  // - Concluído: mostrar ambas
   // - Ambos validaram (pendente aprovação): mostrar ambas
-  const showBothSignatures = isApproved || bothValidated;
+  const showBothSignatures = isApproved || isConcluded || bothValidated;
   
-  // Pendente de aprovação (ambos validaram mas ainda não foi aprovado/reprovado)
-  const isPendingApproval = bothValidated && !isApproved;
+  // Pendente de aprovação (ambos validaram ou concluído, mas ainda não foi aprovado/reprovado)
+  const isPendingApproval = (bothValidated || isConcluded) && !isApproved;
   
   // Determinar se deve mostrar os campos de validação
-  // Mostrar campos se: não aprovado E (falta assinatura OU foi reprovado)
-  const showValidationFields = !isApproved && (!fiscalValidado || !contratadaValidado || isRejected);
+  // Mostrar campos se: não aprovado E não concluído E (falta assinatura OU foi reprovado)
+  const showValidationFields = !isApproved && !isConcluded && (!fiscalValidado || !contratadaValidado || isRejected);
 
   return (
     <div className="space-y-6 pb-20">
