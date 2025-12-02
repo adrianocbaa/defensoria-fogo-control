@@ -41,6 +41,7 @@ const FUNCOES_DIRETA = [
   'Encarregado',
   'Encanador',
   'Eletricista',
+  'Engenheiro Civil',
 ];
 
 interface WorkforceTableProps {
