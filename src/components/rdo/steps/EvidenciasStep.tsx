@@ -223,25 +223,27 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
           </TabsList>
 
           <TabsContent value="foto" className="space-y-4">
-            <div>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => handleFileUpload(e, 'foto')}
-                className="hidden"
-                id="upload-foto"
-                disabled={uploading}
-              />
-              <label htmlFor="upload-foto">
-                <Button asChild disabled={uploading}>
-                  <span>
-                    <Camera className="h-4 w-4 mr-2" />
-                    {uploading ? 'Enviando...' : 'Adicionar Fotos'}
-                  </span>
-                </Button>
-              </label>
-            </div>
+            {!disabled && (
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleFileUpload(e, 'foto')}
+                  className="hidden"
+                  id="upload-foto"
+                  disabled={uploading}
+                />
+                <label htmlFor="upload-foto">
+                  <Button asChild disabled={uploading}>
+                    <span>
+                      <Camera className="h-4 w-4 mr-2" />
+                      {uploading ? 'Enviando...' : 'Adicionar Fotos'}
+                    </span>
+                  </Button>
+                </label>
+              </div>
+            )}
 
             {fotos.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -257,14 +259,16 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
                         alt="Foto RDO"
                         className="object-cover w-full h-full"
                       />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-8 w-8"
-                        onClick={() => deleteMutation.mutate(foto.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {!disabled && (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8"
+                          onClick={() => deleteMutation.mutate(foto.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                     <Input
                       placeholder="Descrição..."
@@ -272,6 +276,7 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
                       onChange={(e) =>
                         setLocalDescriptions(prev => ({ ...prev, [foto.id]: e.target.value }))
                       }
+                      disabled={disabled}
                     />
                   </div>
                 ))}
@@ -280,25 +285,27 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
           </TabsContent>
 
           <TabsContent value="video" className="space-y-4">
-            <div>
-              <input
-                type="file"
-                accept="video/*"
-                multiple
-                onChange={(e) => handleFileUpload(e, 'video')}
-                className="hidden"
-                id="upload-video"
-                disabled={uploading}
-              />
-              <label htmlFor="upload-video">
-                <Button asChild disabled={uploading}>
-                  <span>
-                    <Video className="h-4 w-4 mr-2" />
-                    {uploading ? 'Enviando...' : 'Adicionar Vídeos (max 100MB cada)'}
-                  </span>
-                </Button>
-              </label>
-            </div>
+            {!disabled && (
+              <div>
+                <input
+                  type="file"
+                  accept="video/*"
+                  multiple
+                  onChange={(e) => handleFileUpload(e, 'video')}
+                  className="hidden"
+                  id="upload-video"
+                  disabled={uploading}
+                />
+                <label htmlFor="upload-video">
+                  <Button asChild disabled={uploading}>
+                    <span>
+                      <Video className="h-4 w-4 mr-2" />
+                      {uploading ? 'Enviando...' : 'Adicionar Vídeos (max 100MB cada)'}
+                    </span>
+                  </Button>
+                </label>
+              </div>
+            )}
 
             {videos.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -318,13 +325,15 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
                         <Video className="h-4 w-4" />
                         Ver vídeo
                       </a>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteMutation.mutate(video.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {!disabled && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteMutation.mutate(video.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                     <Input
                       placeholder="Descrição..."
@@ -332,6 +341,7 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
                       onChange={(e) =>
                         setLocalDescriptions(prev => ({ ...prev, [video.id]: e.target.value }))
                       }
+                      disabled={disabled}
                     />
                   </div>
                 ))}
@@ -340,25 +350,27 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
           </TabsContent>
 
           <TabsContent value="anexo" className="space-y-4">
-            <div>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.xls,.xlsx"
-                multiple
-                onChange={(e) => handleFileUpload(e, 'anexo')}
-                className="hidden"
-                id="upload-anexo"
-                disabled={uploading}
-              />
-              <label htmlFor="upload-anexo">
-                <Button asChild disabled={uploading}>
-                  <span>
-                    <FileUp className="h-4 w-4 mr-2" />
-                    {uploading ? 'Enviando...' : 'Adicionar Anexos'}
-                  </span>
-                </Button>
-              </label>
-            </div>
+            {!disabled && (
+              <div>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  multiple
+                  onChange={(e) => handleFileUpload(e, 'anexo')}
+                  className="hidden"
+                  id="upload-anexo"
+                  disabled={uploading}
+                />
+                <label htmlFor="upload-anexo">
+                  <Button asChild disabled={uploading}>
+                    <span>
+                      <FileUp className="h-4 w-4 mr-2" />
+                      {uploading ? 'Enviando...' : 'Adicionar Anexos'}
+                    </span>
+                  </Button>
+                </label>
+              </div>
+            )}
 
             {anexos.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -378,13 +390,15 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
                         <FileUp className="h-4 w-4" />
                         Abrir arquivo
                       </a>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteMutation.mutate(anexo.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {!disabled && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteMutation.mutate(anexo.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                     <Input
                       placeholder="Descrição..."
@@ -392,6 +406,7 @@ export function EvidenciasStep({ reportId, obraId, data, disabled }: EvidenciasS
                       onChange={(e) =>
                         setLocalDescriptions(prev => ({ ...prev, [anexo.id]: e.target.value }))
                       }
+                      disabled={disabled}
                     />
                   </div>
                 ))}

@@ -15,9 +15,10 @@ interface AtividadesPlanilhaModeProps {
   reportId?: string;
   obraId: string;
   dataRdo: string;
+  disabled?: boolean;
 }
 
-export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: AtividadesPlanilhaModeProps) {
+export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: AtividadesPlanilhaModeProps) {
   const queryClient = useQueryClient();
   const [localExecutado, setLocalExecutado] = useState<Record<string, number>>({});
   const [isInitialized, setIsInitialized] = useState(false);
@@ -65,6 +66,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
   });
 
   const isRdoApproved = rdoReport?.status === 'aprovado';
+  const isDisabled = disabled || isRdoApproved;
 
   // Garantir que usamos a atividade correta por item (evitar duplicados), priorizando maior executado_dia
   const activitiesByItem = useMemo(() => {
@@ -335,7 +337,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
                 });
               }}
               isUpdating={updateExecutadoMutation.isPending}
-              isRdoApproved={isRdoApproved}
+              isRdoApproved={isDisabled}
             />
           )}
         </CardContent>

@@ -238,7 +238,7 @@ export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExis
                   </div>
                   <Badge variant="secondary" className="ml-2">Fixado</Badge>
                 </div>
-                {isFiscal && (
+                {isFiscal && !disabled && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -267,12 +267,14 @@ export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExis
             activities={activities}
             localValues={localValues}
             setLocalValues={setLocalValues}
+            disabled={disabled}
           />
         ) : selectedMode === 'planilha' ? (
           <AtividadesPlanilhaMode
             reportId={currentReportId}
             obraId={obraId}
             dataRdo={data}
+            disabled={disabled}
           />
         ) : (
           <AtividadesTemplateMode
@@ -280,6 +282,7 @@ export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExis
             obraId={obraId}
             localValues={localValues}
             setLocalValues={setLocalValues}
+            disabled={disabled}
           />
         )}
       </div>
