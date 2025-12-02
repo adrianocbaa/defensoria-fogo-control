@@ -152,8 +152,14 @@ export function AssinaturasStep({
   const contratadaCargoDisplay = reportData?.assinatura_contratada_cargo || contratadaCargo;
   const contratadaDocumentoDisplay = reportData?.assinatura_contratada_documento || contratadaDocumento;
   
-  // Determinar se deve mostrar apenas o resumo
-  const showOnlySummary = isApproved || (fiscalValidado && contratadaValidado && !isRejected);
+  // Ambos validaram (RDO concluído por ambas as partes)
+  const bothValidated = fiscalValidado && contratadaValidado && !isRejected;
+  
+  // Determinar se deve mostrar ambas assinaturas ou apenas a própria
+  // - Aprovado: mostrar ambas
+  // - Ambos validaram mas não aprovado: cada um vê só a sua
+  const showBothSignatures = isApproved;
+  const showOnlyOwnSignature = bothValidated && !isApproved;
   
   // Determinar se deve mostrar os campos de validação
   // Mostrar campos se: não aprovado E (falta assinatura OU foi reprovado)
@@ -335,26 +341,99 @@ export function AssinaturasStep({
         </div>
       )}
 
-      {/* Mostrar resumo completo quando aprovado */}
-      {showOnlySummary && (
+      {/* Mostrar apenas a própria assinatura quando ambos validaram mas não foi aprovado ainda */}
+      {showOnlyOwnSignature && (
         <>
-          {isApproved && (
-            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <p className="text-sm text-green-800 dark:text-green-200">
-                ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
-              </p>
-            </div>
-          )}
-          
-          {!isApproved && fiscalValidado && contratadaValidado && (
-            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                ✓ Ambas as assinaturas foram validadas. Aguardando conclusão final.
-              </p>
-            </div>
-          )}
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              🔒 RDO concluído por ambas as partes. Todas as edições estão bloqueadas. Aguardando aprovação final.
+            </p>
+          </div>
 
-          {/* Resumo das Assinaturas */}
+          {/* Mostrar apenas a assinatura do usuário atual */}
+          <Card className="border-primary/20">
+            <div className="p-6">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                Sua Assinatura
+              </h3>
+              
+              {/* Se for fiscal/gestor, mostrar assinatura do fiscal */}
+              {canValidateFiscal && fiscalValidado && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h4 className="font-medium">Fiscal/Gestor (DPE-MT) - Validado</h4>
+                  </div>
+                  
+                  <div className="space-y-2 pl-10">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Nome</p>
+                      <p className="text-sm font-medium">{fiscalNomeDisplay || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Cargo</p>
+                      <p className="text-sm">{fiscalCargoDisplay || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">CREA/CPF/ID</p>
+                      <p className="text-sm">{fiscalDocumentoDisplay || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Data/Hora da Validação</p>
+                      <p className="text-sm">{new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Se for contratada, mostrar assinatura da contratada */}
+              {canValidateContratada && contratadaValidado && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h4 className="font-medium">Responsável Técnico (Contratada) - Validado</h4>
+                  </div>
+                  
+                  <div className="space-y-2 pl-10">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Nome</p>
+                      <p className="text-sm font-medium">{contratadaNomeDisplay || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Cargo</p>
+                      <p className="text-sm">{contratadaCargoDisplay || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">CREA/CPF/ID</p>
+                      <p className="text-sm">{contratadaDocumentoDisplay || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Data/Hora da Validação</p>
+                      <p className="text-sm">{new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+        </>
+      )}
+
+      {/* Mostrar resumo completo quando aprovado */}
+      {showBothSignatures && (
+        <>
+          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <p className="text-sm text-green-800 dark:text-green-200">
+              ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
+            </p>
+          </div>
+
+          {/* Resumo das Assinaturas - ambas visíveis */}
           <Card className="border-primary/20">
             <div className="p-6">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
