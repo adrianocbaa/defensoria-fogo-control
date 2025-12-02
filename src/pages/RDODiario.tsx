@@ -233,6 +233,7 @@ export default function RDODiario() {
   
   // Bloquear RDO se qualquer assinatura foi validada, aprovado ou concluído
   const hasValidatedSignature = !!(formData.assinatura_fiscal_validado_em || formData.assinatura_contratada_validado_em);
+  const bothSignaturesValidated = !!(formData.assinatura_fiscal_validado_em && formData.assinatura_contratada_validado_em);
   const isLocked = hasValidatedSignature || isApproved || isConcluded;
   
   // Verificar se usuário atual já concluiu
@@ -243,6 +244,9 @@ export default function RDODiario() {
     ? !!formData.fiscal_concluido_em
     : !!formData.contratada_concluido_em;
   const bothConcluded = !!formData.fiscal_concluido_em && !!formData.contratada_concluido_em;
+  
+  // Pronto para aprovação: ambas assinaturas validadas OU status concluído
+  const readyForApproval = (bothSignaturesValidated || isConcluded) && !isApproved;
 
   // Navegação entre dias - usar parseISO para evitar problemas de timezone
   const [year, month, day] = data.split('-').map(Number);
@@ -300,7 +304,7 @@ export default function RDODiario() {
               {/* Action buttons */}
               {canEdit && (
                 <div className="flex flex-wrap gap-2">
-                  {isConcluded && !isApproved && (
+                  {readyForApproval && (
                     <>
                       <Button variant="outline" size="sm" onClick={handleSendForApproval}>
                         <Send className="h-4 w-4 mr-2" />
@@ -316,7 +320,7 @@ export default function RDODiario() {
                       </Button>
                     </>
                   )}
-                  {((isConcluded || isApproved) || (canEdit && userHasConcluded) || (isContratada && userHasConcluded)) && (
+                  {((readyForApproval || isApproved) || (canEdit && userHasConcluded) || (isContratada && userHasConcluded)) && (
                     <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
                       <FileText className="h-4 w-4 mr-2" />
                       {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}

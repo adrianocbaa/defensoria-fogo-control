@@ -255,9 +255,9 @@ export function useRdoForm(obraId: string, data: string) {
   const approve = useCallback(async (observacao?: string) => {
     if (!formData.id) return;
 
-    // Verificar se ambos concluíram antes de aprovar
-    if (!formData.fiscal_concluido_em || !formData.contratada_concluido_em) {
-      toast.error('Ambas as partes devem concluir o RDO antes da aprovação');
+    // Verificar se ambas assinaturas foram validadas antes de aprovar
+    if (!formData.assinatura_fiscal_validado_em || !formData.assinatura_contratada_validado_em) {
+      toast.error('Ambas as partes devem validar suas assinaturas antes da aprovação');
       return;
     }
 

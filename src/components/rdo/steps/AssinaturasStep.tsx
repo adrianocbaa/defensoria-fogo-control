@@ -83,6 +83,10 @@ export function AssinaturasStep({
     try {
       const validatedAt = new Date().toISOString();
       
+      // Verificar se a contratada já validou para determinar o status
+      const contratadaJaValidou = reportData?.assinatura_contratada_validado_em;
+      const novoStatus = contratadaJaValidou ? 'concluido' : reportData?.status;
+      
       const { error: updateError } = await supabase
         .from("rdo_reports")
         .update({
@@ -90,6 +94,8 @@ export function AssinaturasStep({
           assinatura_fiscal_cargo: fiscalCargo,
           assinatura_fiscal_documento: fiscalDocumento,
           assinatura_fiscal_validado_em: validatedAt,
+          fiscal_concluido_em: validatedAt,
+          status: novoStatus,
           updated_at: new Date().toISOString(),
         })
         .eq("id", reportId);
@@ -108,7 +114,11 @@ export function AssinaturasStep({
       // Atualizar estado local imediatamente para refletir na UI
       setFiscalValidadoLocal(validatedAt);
       
-      toast.success("Validação do Fiscal/Gestor registrada");
+      if (contratadaJaValidou) {
+        toast.success("RDO concluído por ambas as partes e pronto para aprovação");
+      } else {
+        toast.success("Validação do Fiscal/Gestor registrada. Aguardando Contratada.");
+      }
       onUpdate();
     } catch (error: any) {
       console.error("Error validating fiscal signature:", error);
@@ -128,6 +138,10 @@ export function AssinaturasStep({
     try {
       const validatedAt = new Date().toISOString();
       
+      // Verificar se o fiscal já validou para determinar o status
+      const fiscalJaValidou = reportData?.assinatura_fiscal_validado_em;
+      const novoStatus = fiscalJaValidou ? 'concluido' : reportData?.status;
+      
       const { error: updateError } = await supabase
         .from("rdo_reports")
         .update({
@@ -135,6 +149,8 @@ export function AssinaturasStep({
           assinatura_contratada_cargo: contratadaCargo,
           assinatura_contratada_documento: contratadaDocumento,
           assinatura_contratada_validado_em: validatedAt,
+          contratada_concluido_em: validatedAt,
+          status: novoStatus,
           updated_at: new Date().toISOString(),
         })
         .eq("id", reportId);
@@ -153,7 +169,11 @@ export function AssinaturasStep({
       // Atualizar estado local imediatamente para refletir na UI
       setContratadaValidadoLocal(validatedAt);
       
-      toast.success("Validação do Responsável Técnico registrada");
+      if (fiscalJaValidou) {
+        toast.success("RDO concluído por ambas as partes e pronto para aprovação");
+      } else {
+        toast.success("Validação do Responsável Técnico registrada. Aguardando Fiscal.");
+      }
       onUpdate();
     } catch (error: any) {
       console.error("Error validating contratada signature:", error);
