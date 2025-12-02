@@ -143,12 +143,22 @@ export default function Profile() {
 
   const handlePasswordChange = () => {
     if (newPassword !== confirmPassword) {
-      alert('As senhas não coincidem');
+      toast.error('As senhas não coincidem');
       return;
     }
 
     if (newPassword.length < 8) {
-      alert('A senha deve ter pelo menos 8 caracteres');
+      toast.error('A senha deve ter pelo menos 8 caracteres');
+      return;
+    }
+
+    // Validar requisitos do Supabase: letra minúscula, maiúscula e número
+    const hasLowercase = /[a-z]/.test(newPassword);
+    const hasUppercase = /[A-Z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+
+    if (!hasLowercase || !hasUppercase || !hasNumber) {
+      toast.error('A senha deve conter pelo menos uma letra minúscula, uma maiúscula e um número');
       return;
     }
 
