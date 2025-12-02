@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, Send, ThumbsUp, ThumbsDown, FileText, Unlock, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, ThumbsUp, ThumbsDown, FileText, Unlock, Trash2 } from 'lucide-react';
 import { RdoStepper, STEPS } from '@/components/rdo/RdoStepper';
 import { useRdoForm } from '@/hooks/useRdoForm';
 import { AnotacoesStep } from '@/components/rdo/steps/AnotacoesStep';
@@ -62,7 +62,6 @@ export default function RDODiario() {
     updateField,
     saveNow,
     conclude,
-    sendForApproval,
     approve,
     reject,
     reopen,
@@ -171,16 +170,6 @@ export default function RDODiario() {
     }
   };
 
-  const handleSendForApproval = async () => {
-    await sendForApproval();
-    await createAuditLog({
-      obraId: obraId!,
-      reportId: formData.id!,
-      acao: 'ENVIAR_APROVACAO',
-      actorId: user?.id,
-    });
-    queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
-  };
 
   const handleReopen = async () => {
     await reopen();
@@ -306,10 +295,6 @@ export default function RDODiario() {
                 <div className="flex flex-wrap gap-2">
                   {readyForApproval && (
                     <>
-                      <Button variant="outline" size="sm" onClick={handleSendForApproval}>
-                        <Send className="h-4 w-4 mr-2" />
-                        Enviar Aprovação
-                      </Button>
                       <Button variant="default" size="sm" onClick={() => setApprovalDialog({ open: true, action: 'approve' })}>
                         <ThumbsUp className="h-4 w-4 mr-2" />
                         Aprovar

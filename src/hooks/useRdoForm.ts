@@ -235,23 +235,6 @@ export function useRdoForm(obraId: string, data: string) {
     }
   }, [formData, validateMinimum, saveMutation, user]);
 
-  const sendForApproval = useCallback(async () => {
-    if (!formData.id) {
-      toast.error('Salve o RDO antes de enviar para aprovação');
-      return;
-    }
-
-    if (formData.status !== 'concluido' && formData.status !== 'preenchendo') {
-      toast.error('RDO precisa estar concluído para enviar para aprovação');
-      return;
-    }
-
-    const updatedData = { ...formData, status: 'concluido' as const };
-    await saveMutation.mutateAsync(updatedData);
-    setFormData(updatedData);
-    toast.success('RDO enviado para aprovação');
-  }, [formData, saveMutation]);
-
   const approve = useCallback(async (observacao?: string) => {
     if (!formData.id) return;
 
@@ -365,7 +348,6 @@ export function useRdoForm(obraId: string, data: string) {
     updateField,
     saveNow,
     conclude,
-    sendForApproval,
     approve,
     reject,
     reopen,
