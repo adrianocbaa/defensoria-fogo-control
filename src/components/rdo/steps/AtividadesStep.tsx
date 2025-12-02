@@ -45,20 +45,23 @@ interface AtividadesStepProps {
 export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesStepProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isContratada, canEdit } = useUserRole();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Activity>>>({});
   const [showChooseDialog, setShowChooseDialog] = useState(false);
   const [showChangeDialog, setShowChangeDialog] = useState(false);
   
+  // Somente Fiscal (admin, editor, gm) pode definir o modo - Contratada não pode
+  const isFiscal = canEdit && !isContratada;
+  
   // Buscar configuração da obra
   const { config, isLoading: isLoadingConfig, createConfig, updateConfig, isCreating } = useRdoConfig(obraId);
 
-  // Abrir dialog se não existe config
+  // Abrir dialog se não existe config E usuário é Fiscal
   useEffect(() => {
-    if (!isLoadingConfig && !config) {
+    if (!isLoadingConfig && !config && isFiscal) {
       setShowChooseDialog(true);
     }
-  }, [isLoadingConfig, config]);
+  }, [isLoadingConfig, config, isFiscal]);
 
   const selectedMode = config?.modo_atividades || 'manual';
 
@@ -127,6 +130,24 @@ export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesS
     );
   }
 
+  // Se não existe config e usuário é Contratada, mostrar mensagem de aguardo
+  if (!config && isContratada) {
+    return (
+      <Card className="rounded-2xl shadow-sm">
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Modo de Preenchimento Pendente</h3>
+            <p className="text-muted-foreground max-w-md">
+              O Fiscal ainda não definiu o modo de preenchimento das atividades para esta obra.
+              Aguarde a definição para prosseguir com o registro das atividades.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const getModeLabel = (mode: ModoAtividades) => {
     switch (mode) {
       case 'manual':
@@ -140,11 +161,14 @@ export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesS
 
   return (
     <>
-      <ChooseModeDialog
-        open={showChooseDialog}
-        onConfirm={handleConfirmMode}
-        isLoading={isCreating}
-      />
+      {/* Dialog só aparece para Fiscal */}
+      {isFiscal && (
+        <ChooseModeDialog
+          open={showChooseDialog}
+          onConfirm={handleConfirmMode}
+          isLoading={isCreating}
+        />
+      )}
 
       <AlertDialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
         <AlertDialogContent>
@@ -194,7 +218,7 @@ export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesS
                   </div>
                   <Badge variant="secondary" className="ml-2">Fixado</Badge>
                 </div>
-                {isAdmin && (
+                {isFiscal && (
                   <Button
                     variant="outline"
                     size="sm"
