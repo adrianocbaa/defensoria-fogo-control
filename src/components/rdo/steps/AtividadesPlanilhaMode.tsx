@@ -1,10 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, RefreshCw } from "lucide-react";
+import { FileSpreadsheet } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useOrcamentoItems } from "@/hooks/useOrcamentoItems";
 import { useRdoActivitiesAcumulado } from "@/hooks/useRdoActivitiesAcumulado";
 import { ActivityNoteDialog } from "@/components/rdo/ActivityNoteDialog";
@@ -182,9 +181,46 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
   
   const handleExecutadoChange = (orcamentoItemId: string, activityId: string, value: number) => {
     setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: value }));
+    // Agendar auto-save
+    pendingUpdatesRef.current.set(orcamentoItemId, { activityId, value });
   };
 
+  // Referência para atualizações pendentes
+  const pendingUpdatesRef = useRef<Map<string, { activityId: string; value: number }>>(new Map());
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-save com debounce
+  useEffect(() => {
+    if (pendingUpdatesRef.current.size === 0) return;
+    
+    // Limpar timer anterior
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Agendar save após 500ms de inatividade
+    debounceTimerRef.current = setTimeout(() => {
+      const updates = Array.from(pendingUpdatesRef.current.entries());
+      pendingUpdatesRef.current.clear();
+      
+      updates.forEach(([orcamentoItemId, { activityId, value }]) => {
+        updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
+      });
+    }, 500);
+    
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [localExecutado]);
+
   const handleExecutadoBlur = (orcamentoItemId: string, activityId: string, value: number) => {
+    // Salvar imediatamente no blur (caso o usuário saia do campo)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    pendingUpdatesRef.current.delete(orcamentoItemId);
     updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
   };
 
@@ -267,24 +303,12 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
     <>
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Lista de Serviços (Planilha)</CardTitle>
-              </div>
-              <SaveIndicator isSaving={updateExecutadoMutation.isPending} />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Lista de Serviços (Planilha)</CardTitle>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => syncMutation.mutate()}
-              disabled={syncMutation.isPending}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Sincronizar</span>
-            </Button>
+            <SaveIndicator isSaving={updateExecutadoMutation.isPending || syncMutation.isPending} />
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Visualização hierárquica da planilha orçamentária (MACRO/MICRO)
