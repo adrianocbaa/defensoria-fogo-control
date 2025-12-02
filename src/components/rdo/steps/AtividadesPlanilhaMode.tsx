@@ -178,16 +178,16 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo }: Atividades
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
     },
   });
+
+  // Referência para atualizações pendentes (deve ser declarado antes do uso)
+  const pendingUpdatesRef = useRef<Map<string, { activityId: string; value: number }>>(new Map());
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const handleExecutadoChange = (orcamentoItemId: string, activityId: string, value: number) => {
     setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: value }));
     // Agendar auto-save
     pendingUpdatesRef.current.set(orcamentoItemId, { activityId, value });
   };
-
-  // Referência para atualizações pendentes
-  const pendingUpdatesRef = useRef<Map<string, { activityId: string; value: number }>>(new Map());
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-save com debounce
   useEffect(() => {
