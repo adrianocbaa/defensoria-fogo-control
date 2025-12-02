@@ -31,18 +31,22 @@ export function AssinaturasStep({
   const canValidateFiscal = canEdit || isAdmin;
   const canValidateContratada = isContratada;
   
-  const fiscalValidado = reportData?.assinatura_fiscal_validado_em;
-  const contratadaValidado = reportData?.assinatura_contratada_validado_em;
   const isApproved = reportData?.status === "aprovado";
   const isRejected = reportData?.status === "reprovado";
   
   const [fiscalNome, setFiscalNome] = useState(reportData?.assinatura_fiscal_nome || "");
   const [fiscalCargo, setFiscalCargo] = useState(reportData?.assinatura_fiscal_cargo || "");
   const [fiscalDocumento, setFiscalDocumento] = useState(reportData?.assinatura_fiscal_documento || "");
+  const [fiscalValidadoLocal, setFiscalValidadoLocal] = useState<string | null>(reportData?.assinatura_fiscal_validado_em || null);
   
   const [contratadaNome, setContratadaNome] = useState(reportData?.assinatura_contratada_nome || "");
   const [contratadaCargo, setContratadaCargo] = useState(reportData?.assinatura_contratada_cargo || "");
   const [contratadaDocumento, setContratadaDocumento] = useState(reportData?.assinatura_contratada_documento || "");
+  const [contratadaValidadoLocal, setContratadaValidadoLocal] = useState<string | null>(reportData?.assinatura_contratada_validado_em || null);
+  
+  // Usar estado local para atualização imediata da UI
+  const fiscalValidado = fiscalValidadoLocal;
+  const contratadaValidado = contratadaValidadoLocal;
 
   const handleValidateFiscal = async () => {
     if (!canValidateFiscal) {
@@ -81,6 +85,9 @@ export function AssinaturasStep({
         actorNome: fiscalNome,
       });
 
+      // Atualizar estado local imediatamente para refletir na UI
+      setFiscalValidadoLocal(validatedAt);
+      
       toast.success("Validação do Fiscal/Gestor registrada");
       onUpdate();
     } catch (error: any) {
@@ -123,6 +130,9 @@ export function AssinaturasStep({
         actorNome: contratadaNome,
       });
 
+      // Atualizar estado local imediatamente para refletir na UI
+      setContratadaValidadoLocal(validatedAt);
+      
       toast.success("Validação do Responsável Técnico registrada");
       onUpdate();
     } catch (error: any) {
