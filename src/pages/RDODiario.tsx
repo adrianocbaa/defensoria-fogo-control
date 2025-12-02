@@ -231,9 +231,9 @@ export default function RDODiario() {
   const isConcluded = formData.status === 'concluido';
   const hasSignatures = formData.assinatura_fiscal_url || formData.assinatura_contratada_url;
   
-  // Bloquear RDO se qualquer assinatura foi validada
+  // Bloquear RDO se qualquer assinatura foi validada, aprovado ou concluído
   const hasValidatedSignature = !!(formData.assinatura_fiscal_validado_em || formData.assinatura_contratada_validado_em);
-  const isLocked = hasValidatedSignature || isApproved;
+  const isLocked = hasValidatedSignature || isApproved || isConcluded;
   
   // Verificar se usuário atual já concluiu
   const userHasConcluded = isContratada 
