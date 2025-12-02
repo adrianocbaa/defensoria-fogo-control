@@ -20,6 +20,8 @@ export interface RdoCalendarDay {
   occurrence_count: number;
   photo_count: number;
   comment_count: number;
+  fiscal_concluido_em: string | null;
+  contratada_concluido_em: string | null;
 }
 
 export interface RdoRecente {
@@ -125,7 +127,9 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
           id,
           data,
           numero_seq,
-          status
+          status,
+          fiscal_concluido_em,
+          contratada_concluido_em
         `)
         .eq('obra_id', obraId)
         .gte('data', startDate)
@@ -167,6 +171,8 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
             occurrence_count: occurrences.count || 0,
             photo_count: photos.count || 0,
             comment_count: comments.count || 0,
+            fiscal_concluido_em: report.fiscal_concluido_em,
+            contratada_concluido_em: report.contratada_concluido_em,
           };
         })
       );
