@@ -226,15 +226,15 @@ export function AssinaturasStep({
         )}
         
         {fiscalValidado && !isRejected && (
-          <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-2 mb-3">
+          <Card className="p-5">
+            <div className="flex items-center gap-2 mb-4">
               <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <h3 className="font-semibold">Fiscal/Gestor (DPE-MT) - Validado</h3>
+              <h3 className="font-semibold text-green-700 dark:text-green-400">Fiscal/Gestor (DPE-MT) - Validado</h3>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 text-sm">
               <div>
                 <span className="text-muted-foreground">Nome:</span>
-                <span className="ml-2 font-medium">{fiscalNomeDisplay}</span>
+                <span className="ml-2 text-primary">{fiscalNomeDisplay}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Cargo:</span>
@@ -307,15 +307,15 @@ export function AssinaturasStep({
         )}
         
         {contratadaValidado && !isRejected && (
-          <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-2 mb-3">
+          <Card className="p-5">
+            <div className="flex items-center gap-2 mb-4">
               <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <h3 className="font-semibold">Responsável Técnico (Contratada) - Validado</h3>
+              <h3 className="font-semibold text-green-700 dark:text-green-400">Responsável Técnico (Contratada) - Validado</h3>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 text-sm">
               <div>
                 <span className="text-muted-foreground">Nome:</span>
-                <span className="ml-2 font-medium">{contratadaNomeDisplay}</span>
+                <span className="ml-2 text-primary">{contratadaNomeDisplay}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Cargo:</span>
