@@ -244,3 +244,25 @@ export function useFotosRecentes(obraId: string, limit: number = 12) {
     enabled: !!obraId,
   });
 }
+
+// Hook para buscar o último RDO preenchido (não rascunho) de todos os tempos
+export function useLastFilledRdo(obraId: string) {
+  return useQuery({
+    queryKey: ['last-filled-rdo', obraId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rdo_reports')
+        .select('data, status')
+        .eq('obra_id', obraId)
+        .neq('status', 'rascunho')
+        .order('data', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!obraId,
+    staleTime: 30000,
+  });
+}

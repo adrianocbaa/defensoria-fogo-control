@@ -42,6 +42,7 @@ interface Obra {
   tipo: string;
   status: string;
   valor_total: number;
+  data_inicio: string | null;
 }
 
 // Placeholder components for each section
@@ -78,7 +79,7 @@ function PlaceholderSection({
   );
 }
 
-function RDOResumo() {
+function RDOResumo({ obraStartDate }: { obraStartDate?: string | null }) {
   const { obraId } = useParams();
   const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -136,6 +137,7 @@ function RDOResumo() {
         isLoading={calendarLoading}
         currentMonth={currentMonth}
         onMonthChange={setCurrentMonth}
+        obraStartDate={obraStartDate}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -335,7 +337,7 @@ export function RDO() {
         setLoading(true);
         const { data, error } = await supabase
           .from('obras')
-          .select('id, nome, municipio, tipo, status, valor_total')
+          .select('id, nome, municipio, tipo, status, valor_total, data_inicio')
           .eq('id', obraId)
           .single();
 
@@ -488,7 +490,7 @@ export function RDO() {
         <main className="flex-1 container mx-auto py-6 px-4 lg:px-6">
           <Routes>
             <Route index element={<Navigate to="resumo" replace />} />
-            <Route path="resumo" element={<RDOResumo />} />
+            <Route path="resumo" element={<RDOResumo obraStartDate={obra.data_inicio} />} />
             <Route path="equipe" element={<RDOEquipe />} />
             <Route path="equipamentos" element={<RDOEquipamentos />} />
             <Route path="materiais" element={<RDOMateriais />} />
