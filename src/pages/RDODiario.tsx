@@ -67,6 +67,7 @@ export default function RDODiario() {
     reject,
     reopen,
     deleteRdo,
+    ensureRdoExists,
     isLoading,
     isSaving,
     hasChanges,
@@ -205,7 +206,7 @@ export default function RDODiario() {
       case 0:
         return <AnotacoesStep formData={formData} updateField={updateField} disabled={isLocked} />;
       case 1:
-        return <AtividadesStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} />;
+        return <AtividadesStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} ensureRdoExists={ensureRdoExists} />;
       case 2:
         return <OcorrenciasStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
       case 3:

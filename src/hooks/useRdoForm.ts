@@ -324,6 +324,19 @@ export function useRdoForm(obraId: string, data: string) {
     }
   }, [formData.id, queryClient, obraId, data]);
 
+  // Criar RDO automaticamente se não existir (retorna o reportId)
+  const ensureRdoExists = useCallback(async (): Promise<string | null> => {
+    if (formData.id) return formData.id;
+    
+    try {
+      const reportId = await saveMutation.mutateAsync(formData);
+      return reportId;
+    } catch (error) {
+      console.error('Erro ao criar RDO:', error);
+      return null;
+    }
+  }, [formData, saveMutation]);
+
   return {
     formData,
     updateField,
@@ -334,6 +347,7 @@ export function useRdoForm(obraId: string, data: string) {
     reject,
     reopen,
     deleteRdo,
+    ensureRdoExists,
     isLoading,
     isSaving: saveMutation.isPending,
     hasChanges,
