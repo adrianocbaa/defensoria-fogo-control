@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       supabase.from('rdo_occurrences').select('*').eq('report_id', reportId),
       supabase.from('rdo_visits').select('*').eq('report_id', reportId),
       supabase.from('rdo_equipment').select('*').eq('report_id', reportId),
-      supabase.from('rdo_labor').select('*').eq('report_id', reportId),
+      supabase.from('rdo_workforce').select('*').eq('report_id', reportId),
       supabase.from('rdo_comments').select('*').eq('report_id', reportId),
       supabase.from('obras').select('*').eq('id', obraId).single(),
       supabase.from('rdo_media').select('*').eq('report_id', reportId).eq('tipo', 'foto').order('created_at'),
