@@ -91,7 +91,6 @@ function RDOResumo({ obraStartDate }: { obraStartDate?: string | null }) {
 
   const counterCards = [
     { title: 'Relatórios', value: counts?.relatorios || 0, icon: ClipboardCheck, color: 'text-blue-500' },
-    { title: 'Atividades', value: counts?.atividades || 0, icon: ActivitySquare, color: 'text-green-500' },
     { title: 'Ocorrências', value: counts?.ocorrencias || 0, icon: AlertTriangle, color: 'text-red-500' },
     { title: 'Comentários', value: counts?.comentarios || 0, icon: MessageSquareText, color: 'text-purple-500' },
     { title: 'Fotos', value: counts?.fotos || 0, icon: Camera, color: 'text-orange-500' },
@@ -173,11 +172,6 @@ function RDOResumo({ obraStartDate }: { obraStartDate?: string | null }) {
                           <Badge className={statusConfig[report.status as keyof typeof statusConfig]?.color}>
                             {statusConfig[report.status as keyof typeof statusConfig]?.label}
                           </Badge>
-                          {report.activity_count > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              {report.activity_count} atividades
-                            </span>
-                          )}
                           {report.photo_count > 0 && (
                             <span className="text-xs text-muted-foreground">
                               {report.photo_count} fotos

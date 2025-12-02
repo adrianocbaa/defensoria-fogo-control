@@ -305,11 +305,6 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                         
                         {/* Indicadores */}
                         <div className="flex gap-0.5 flex-wrap items-center">
-                          {rdo.activity_count > 0 && (
-                            <span className="text-[8px] bg-blue-100 text-blue-700 px-1 rounded">
-                              {rdo.activity_count} ativ
-                            </span>
-                          )}
                           {rdo.photo_count > 0 && (
                             <span className="text-[8px] bg-green-100 text-green-700 px-1 rounded">
                               {rdo.photo_count} fotos
