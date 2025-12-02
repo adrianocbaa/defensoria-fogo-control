@@ -34,6 +34,7 @@ export function AssinaturasStep({
   const fiscalValidado = reportData?.assinatura_fiscal_validado_em;
   const contratadaValidado = reportData?.assinatura_contratada_validado_em;
   const isApproved = reportData?.status === "aprovado";
+  const isRejected = reportData?.status === "reprovado";
   
   const [fiscalNome, setFiscalNome] = useState(reportData?.assinatura_fiscal_nome || "");
   const [fiscalCargo, setFiscalCargo] = useState(reportData?.assinatura_fiscal_cargo || "");
@@ -142,10 +143,11 @@ export function AssinaturasStep({
   const contratadaDocumentoDisplay = reportData?.assinatura_contratada_documento || contratadaDocumento;
   
   // Determinar se deve mostrar apenas o resumo
-  const showOnlySummary = isApproved || (fiscalValidado && contratadaValidado);
+  const showOnlySummary = isApproved || (fiscalValidado && contratadaValidado && !isRejected);
   
   // Determinar se deve mostrar os campos de validação
-  const showValidationFields = !isApproved && (!fiscalValidado || !contratadaValidado);
+  // Mostrar campos se: não aprovado E (falta assinatura OU foi reprovado)
+  const showValidationFields = !isApproved && (!fiscalValidado || !contratadaValidado || isRejected);
 
   return (
     <div className="space-y-6 pb-20">
@@ -156,13 +158,31 @@ export function AssinaturasStep({
         </p>
       </div>
 
+      {/* Alerta quando RDO está reprovado */}
+      {isRejected && (
+        <Alert className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
+          <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <AlertDescription className="text-red-800 dark:text-red-200">
+            Este RDO foi reprovado. Clique em "Reabrir RDO" para permitir edição e novas assinaturas.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Mostrar campos de validação apenas se necessário */}
       {showValidationFields && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Fiscal/Gestor */}
-        {!fiscalValidado && canValidateFiscal && (
+        {/* Fiscal/Gestor - mostrar se não validado OU se foi reprovado e assinaturas foram limpas */}
+        {((!fiscalValidado || isRejected) && canValidateFiscal) && (
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Assinatura do Fiscal/Gestor (DPE-MT)</h3>
+          {isRejected && fiscalValidado && (
+            <Alert className="mb-4 bg-amber-50 dark:bg-amber-950/20 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                RDO foi reprovado. Clique em "Reabrir RDO" para permitir nova validação.
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="space-y-4">
             <div>
               <Label htmlFor="fiscal-nome">Nome *</Label>
@@ -171,7 +191,7 @@ export function AssinaturasStep({
                 value={fiscalNome}
                 onChange={(e) => setFiscalNome(e.target.value)}
                 placeholder="Nome completo"
-                disabled={false}
+                disabled={isRejected && !!fiscalValidado}
               />
             </div>
             <div>
@@ -181,7 +201,7 @@ export function AssinaturasStep({
                 value={fiscalCargo}
                 onChange={(e) => setFiscalCargo(e.target.value)}
                 placeholder="Cargo/Função"
-                disabled={false}
+                disabled={isRejected && !!fiscalValidado}
               />
             </div>
             <div>
@@ -191,12 +211,12 @@ export function AssinaturasStep({
                 value={fiscalDocumento}
                 onChange={(e) => setFiscalDocumento(e.target.value)}
                 placeholder="Documento"
-                disabled={false}
+                disabled={isRejected && !!fiscalValidado}
               />
             </div>
             <Button
               onClick={handleValidateFiscal}
-              disabled={isSaving}
+              disabled={isSaving || (isRejected && !!fiscalValidado)}
               className="w-full"
             >
               Validar Assinatura
@@ -205,7 +225,7 @@ export function AssinaturasStep({
         </Card>
         )}
         
-        {fiscalValidado && (
+        {fiscalValidado && !isRejected && (
           <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
             <div className="flex items-center gap-2 mb-3">
               <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -232,10 +252,18 @@ export function AssinaturasStep({
           </Card>
         )}
 
-        {/* Contratada */}
-        {!contratadaValidado && canValidateContratada && (
+        {/* Contratada - mostrar se não validado OU se foi reprovado e assinaturas foram limpas */}
+        {((!contratadaValidado || isRejected) && canValidateContratada) && (
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Assinatura do Responsável Técnico (Contratada)</h3>
+          {isRejected && contratadaValidado && (
+            <Alert className="mb-4 bg-amber-50 dark:bg-amber-950/20 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                RDO foi reprovado. Clique em "Reabrir RDO" para permitir nova validação.
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="space-y-4">
             <div>
               <Label htmlFor="contratada-nome">Nome *</Label>
@@ -244,7 +272,7 @@ export function AssinaturasStep({
                 value={contratadaNome}
                 onChange={(e) => setContratadaNome(e.target.value)}
                 placeholder="Nome completo"
-                disabled={false}
+                disabled={isRejected && !!contratadaValidado}
               />
             </div>
             <div>
@@ -254,7 +282,7 @@ export function AssinaturasStep({
                 value={contratadaCargo}
                 onChange={(e) => setContratadaCargo(e.target.value)}
                 placeholder="Cargo/Função"
-                disabled={false}
+                disabled={isRejected && !!contratadaValidado}
               />
             </div>
             <div>
@@ -264,12 +292,12 @@ export function AssinaturasStep({
                 value={contratadaDocumento}
                 onChange={(e) => setContratadaDocumento(e.target.value)}
                 placeholder="Documento"
-                disabled={false}
+                disabled={isRejected && !!contratadaValidado}
               />
             </div>
             <Button
               onClick={handleValidateContratada}
-              disabled={isSaving}
+              disabled={isSaving || (isRejected && !!contratadaValidado)}
               className="w-full"
             >
               Validar Assinatura
@@ -278,7 +306,7 @@ export function AssinaturasStep({
         </Card>
         )}
         
-        {contratadaValidado && (
+        {contratadaValidado && !isRejected && (
           <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
             <div className="flex items-center gap-2 mb-3">
               <Check className="h-5 w-5 text-green-600 dark:text-green-400" />

@@ -273,14 +273,19 @@ export function useRdoForm(obraId: string, data: string) {
   const reopen = useCallback(async () => {
     if (!formData.id) return;
 
+    // Limpar assinaturas para permitir revalidação
     const updatedData = { 
       ...formData, 
       status: 'preenchendo' as const,
       aprovacao_observacao: null,
+      assinatura_fiscal_validado_em: null,
+      assinatura_contratada_validado_em: null,
+      fiscal_concluido_em: null,
+      contratada_concluido_em: null,
     };
     await saveMutation.mutateAsync(updatedData);
     setFormData(updatedData);
-    toast.success('RDO reaberto para edição');
+    toast.success('RDO reaberto para edição. Novas assinaturas serão necessárias.');
   }, [formData, saveMutation]);
 
   const deleteRdo = useCallback(async () => {
