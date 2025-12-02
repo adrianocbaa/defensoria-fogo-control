@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
-import { RdoCalendarDay } from '@/hooks/useRdoData';
+import { RdoCalendarDay, useLastFilledRdo } from '@/hooks/useRdoData';
 import { cn } from '@/lib/utils';
 import { 
   AlertDialog, 
@@ -23,6 +24,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -34,18 +36,32 @@ const STATUS_CONFIG = {
   reprovado: { label: 'Reprovado', color: 'bg-red-100 text-red-800 border-red-200' },
 };
 
+const MAX_DIAS_SEM_RDO = 7;
+
 interface RdoCalendarProps {
   obraId: string;
   rdoData: RdoCalendarDay[];
   isLoading: boolean;
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
+  obraStartDate?: string | null;
 }
 
-export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange }: RdoCalendarProps) {
+export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange, obraStartDate }: RdoCalendarProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const today = new Date();
+  const { isContratada } = useUserRole();
+  const today = startOfDay(new Date());
+  const obraStart = obraStartDate ? parseISO(obraStartDate) : null;
+  
+  // Buscar o último RDO preenchido globalmente
+  const { data: lastFilledRdoGlobal } = useLastFilledRdo(obraId);
+  const lastFilledDate = lastFilledRdoGlobal?.data ? parseISO(lastFilledRdoGlobal.data) : null;
+  
+  // Calcular dias sem RDO para alerta
+  const referenceDate = lastFilledDate || obraStart;
+  const daysWithoutRdo = referenceDate ? differenceInDays(today, startOfDay(referenceDate)) : 0;
+  const showRestrictionAlert = isContratada && daysWithoutRdo > MAX_DIAS_SEM_RDO;
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; reportId: string | null; date: string | null }>({
     open: false,
     reportId: null,
@@ -75,6 +91,18 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   const handleCreateRdo = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const existingRdo = rdoData.find(r => r.data === dateStr);
+    
+    // Verificar restrição para contratada
+    if (!existingRdo && isContratada && obraStart) {
+      const dayStart = startOfDay(date);
+      const refDateForCheck = lastFilledDate || obraStart;
+      const daysFromRef = differenceInDays(dayStart, startOfDay(refDateForCheck));
+      
+      if (daysFromRef > MAX_DIAS_SEM_RDO) {
+        toast.error(`Não é possível criar RDO: limite de ${MAX_DIAS_SEM_RDO} dias consecutivos sem preenchimento excedido.`);
+        return;
+      }
+    }
     
     if (existingRdo) {
       navigate(`/obras/${obraId}/rdo/diario?data=${dateStr}&id=${existingRdo.report_id}`);
@@ -152,6 +180,28 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
         </div>
       </CardHeader>
       <CardContent>
+        {/* Alerta de restrição para Contratada */}
+        {showRestrictionAlert && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Limite de {MAX_DIAS_SEM_RDO} dias excedido!</strong> São {daysWithoutRdo} dias sem preenchimento de RDO. 
+              A criação de novos RDOs está bloqueada. Entre em contato com o Fiscal para regularizar a situação.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* Alerta de atenção para dias sem RDO */}
+        {!showRestrictionAlert && daysWithoutRdo > 3 && obraStart && (
+          <Alert className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-700 dark:text-amber-400">
+              <strong>Atenção:</strong> {daysWithoutRdo} dias sem preenchimento de RDO. 
+              {isContratada && ` Restam ${MAX_DIAS_SEM_RDO - daysWithoutRdo} dias antes do bloqueio.`}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-8 w-full" />
@@ -181,20 +231,48 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
               {/* Dias do mês */}
               {daysInMonth.map((day) => {
                 const rdo = getRdoForDay(day);
+                const dayStart = startOfDay(day);
                 const isToday = isSameDay(day, today);
                 const statusConfig = rdo ? STATUS_CONFIG[rdo.status as keyof typeof STATUS_CONFIG] : null;
+                
+                // Verificar se é dia sem RDO após início da obra
+                const isAfterObraStart = obraStart && !isBefore(dayStart, startOfDay(obraStart));
+                const isWorkingDay = isAfterObraStart && !isAfter(dayStart, today);
+                const isMissingRdo = isWorkingDay && !rdo;
+                
+                // Verificar se a contratada pode criar RDO neste dia
+                const refDateForRestriction = lastFilledDate || obraStart;
+                const daysSinceRef = refDateForRestriction ? differenceInDays(dayStart, startOfDay(refDateForRestriction)) : 0;
+                const isBlockedForContratada = isContratada && isWorkingDay && daysSinceRef > MAX_DIAS_SEM_RDO;
 
                 return (
                   <div
                     key={day.toString()}
                     className={cn(
-                      "relative aspect-square border rounded-lg p-2 hover:bg-accent/50 transition-colors",
-                      isToday && "ring-2 ring-primary"
+                      "relative aspect-square border rounded-lg p-2 transition-colors",
+                      isToday && "ring-2 ring-primary",
+                      isMissingRdo && "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200",
+                      isBlockedForContratada && "bg-red-50/50 dark:bg-red-950/20 border-red-200",
+                      !isBlockedForContratada && "hover:bg-accent/50"
                     )}
                   >
-                    {/* Número do dia */}
-                    <div className="text-xs font-medium mb-1">
-                      {format(day, 'd')}
+                    {/* Número do dia + indicador de alerta */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">{format(day, 'd')}</span>
+                      {isMissingRdo && !rdo && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex">
+                                <AlertTriangle className="h-3 w-3 text-amber-500" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">RDO não preenchido</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </div>
 
                     {/* Conteúdo do RDO */}
@@ -264,6 +342,19 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                           )}
                         </div>
                       </div>
+                    ) : isBlockedForContratada ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="absolute bottom-1 right-1">
+                              <Ban className="h-4 w-4 text-red-500" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Bloqueado: limite de {MAX_DIAS_SEM_RDO} dias excedido</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
                       <Button
                         variant="ghost"

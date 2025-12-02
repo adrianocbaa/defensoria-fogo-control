@@ -244,15 +244,14 @@ export default function RDODiario() {
     : !!formData.contratada_concluido_em;
   const bothConcluded = !!formData.fiscal_concluido_em && !!formData.contratada_concluido_em;
 
-  // Navegação entre dias
-  const currentDate = new Date(data);
-  const previousDate = new Date(currentDate);
-  previousDate.setDate(previousDate.getDate() - 1);
-  const nextDate = new Date(currentDate);
-  nextDate.setDate(nextDate.getDate() + 1);
+  // Navegação entre dias - usar parseISO para evitar problemas de timezone
+  const [year, month, day] = data.split('-').map(Number);
+  const currentDate = new Date(year, month - 1, day);
+  const previousDate = new Date(year, month - 1, day - 1);
+  const nextDate = new Date(year, month - 1, day + 1);
 
   const navigateToDate = (newDate: Date) => {
-    const dateStr = newDate.toISOString().split('T')[0];
+    const dateStr = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}-${String(newDate.getDate()).padStart(2, '0')}`;
     navigate(`/obras/${obraId}/rdo/diario?data=${dateStr}`);
   };
 
@@ -277,7 +276,7 @@ export default function RDODiario() {
               <div className="flex items-center gap-4">
                 <div>
                   <h1 className="text-2xl font-bold">RDO {formData.numero_seq ? `Nº ${formData.numero_seq}` : ''}</h1>
-                  <p className="text-sm text-muted-foreground">Data: {new Date(data).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-sm text-muted-foreground">Data: {currentDate.toLocaleDateString('pt-BR')}</p>
                 </div>
                 <div className="flex gap-1">
                   <Button
