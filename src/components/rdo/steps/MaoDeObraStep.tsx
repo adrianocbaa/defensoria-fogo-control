@@ -25,12 +25,9 @@ interface MaoDeObraStepProps {
 }
 
 const FUNCOES_INDIRETA = [
-  'Gerente de Contrato',
-  'Engenheiro de Produção',
   'Técnico de Segurança',
   'Auxiliar Administrativo',
-  'Comprador',
-  'Orçamentista',
+  'Gerente de Contrato',
 ];
 
 const FUNCOES_DIRETA = [
@@ -38,12 +35,12 @@ const FUNCOES_DIRETA = [
   'Armador',
   'Carpinteiro',
   'Pedreiro',
-  'Soldador',
-  'Eletricista',
-  'Encanador',
   'Pintor',
-  'Operador de Máquinas',
-  'Servente',
+  'Gesseiro',
+  'Mestre de obra',
+  'Encarregado',
+  'Encanador',
+  'Eletricista',
 ];
 
 interface WorkforceTableProps {
