@@ -395,7 +395,7 @@ export function AdminObras() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Progresso</TableHead>
+                  <TableHead>Andamento</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -416,16 +416,19 @@ export function AdminObras() {
                         : '-'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="space-y-1 min-w-[140px]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Andamento da Obra:</span>
+                          <span className="text-sm font-semibold text-green-600">
+                            {obraProgressos[obra.id] !== undefined 
+                              ? `${obraProgressos[obra.id].toFixed(2)}%` 
+                              : '-'}
+                          </span>
+                        </div>
                         <Progress 
                           value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0} 
-                          className="w-[100px]"
+                          className="h-2"
                         />
-                        <span className="text-sm font-medium whitespace-nowrap">
-                          {obraProgressos[obra.id] !== undefined 
-                            ? `${obraProgressos[obra.id].toFixed(1)}%` 
-                            : '-'}
-                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
