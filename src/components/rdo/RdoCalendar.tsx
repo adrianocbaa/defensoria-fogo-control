@@ -244,6 +244,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                 const refDateForRestriction = lastFilledDate || obraStart;
                 const daysSinceRef = refDateForRestriction ? differenceInDays(dayStart, startOfDay(refDateForRestriction)) : 0;
                 const isBlockedForContratada = isContratada && isWorkingDay && daysSinceRef > MAX_DIAS_SEM_RDO;
+                const isApproved = rdo?.status === 'aprovado';
 
                 return (
                   <div
@@ -251,9 +252,10 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                     className={cn(
                       "relative aspect-square border rounded-lg p-2 transition-colors",
                       isToday && "ring-2 ring-primary",
-                      isMissingRdo && "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200",
-                      isBlockedForContratada && "bg-red-50/50 dark:bg-red-950/20 border-red-200",
-                      !isBlockedForContratada && "hover:bg-accent/50"
+                      isApproved && "bg-green-100 dark:bg-green-950/30 border-green-300",
+                      !isApproved && isMissingRdo && "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200",
+                      !isApproved && isBlockedForContratada && "bg-red-50/50 dark:bg-red-950/20 border-red-200",
+                      !isApproved && !isBlockedForContratada && "hover:bg-accent/50"
                     )}
                   >
                     {/* Número do dia + indicador de alerta */}
