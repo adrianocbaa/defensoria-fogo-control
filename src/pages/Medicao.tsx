@@ -40,6 +40,7 @@ interface Obra {
   valor_executado?: number;
   n_contrato?: string;
   empresa_responsavel?: string;
+  percentual_desconto?: number;
 }
 
 interface Item {
@@ -2238,31 +2239,34 @@ const criarNovaMedicao = async () => {
                    segundoItem.includes('descricao') || segundoItem.includes('descrição');
       }
       
+      // Usar percentual de desconto da obra (cadastrado na importação inicial)
+      const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
+      
       let idx;
       if (hasHeader) {
-        // Mapear cabeçalhos normalmente
+        // Mapear cabeçalhos normalmente - novo formato de 9 colunas
         const header = rows[0].map(h => normalizeHeader(h));
         idx = {
           item: header.findIndex(h => h && h === 'item'),
-          codigoBanco: header.findIndex(h => h && (h.includes('codigo banco') || h === 'codigo' || h === 'codigobanco')),
+          codigo: header.findIndex(h => h && h === 'codigo'),
+          banco: header.findIndex(h => h && h === 'banco'),
           descricao: header.findIndex(h => h && h === 'descricao'),
           und: header.findIndex(h => h && (h === 'und' || h === 'unidade')),
           quant: header.findIndex(h => h && h.startsWith('quant')),
-          valorUnit: header.findIndex(h => h && (h.includes('valor unit') || h.includes('valor unitario'))),
-          valorTotal: header.findIndex(h => h && h.includes('valor total')),
+          valorUnit: header.findIndex(h => h && h === 'valor unit'),
+          valorUnitBDI: header.findIndex(h => h && h.includes('valor unit com bdi')),
+          totalSemDesconto: header.findIndex(h => h && h.includes('total sem desconto')),
         };
         
         // Validar cabeçalhos obrigatórios
-        const camposObrigatorios = ['item', 'codigoBanco', 'descricao', 'und', 'quant', 'valorUnit', 'valorTotal'];
+        const camposObrigatorios = ['item', 'codigo', 'descricao', 'und', 'quant', 'totalSemDesconto'];
         const camposFaltantes = camposObrigatorios.filter(campo => idx[campo as keyof typeof idx] === -1);
         
         if (camposFaltantes.length > 0) {
           const cabecalhosDetectados = header.filter(h => h && h.trim()).join(', ');
           const faltantesTexto = camposFaltantes.map(campo => {
             switch(campo) {
-              case 'codigoBanco': return 'Código/Código Banco';
-              case 'valorUnit': return 'Valor Unitário com BDI';
-              case 'valorTotal': return 'Valor Total com BDI';
+              case 'totalSemDesconto': return 'Total sem Desconto';
               default: return campo.charAt(0).toUpperCase() + campo.slice(1);
             }
           }).join(', ');
@@ -2272,22 +2276,25 @@ const criarNovaMedicao = async () => {
         
         headerRowIndex = 1;
       } else {
-        // Sem cabeçalho: mapear por posição e encontrar a primeira linha de dados válida (>=7 colunas)
+        // Sem cabeçalho: mapear por posição - novo formato de 9 colunas
+        // A: Item, B: Código, C: Banco, D: Descrição, E: Und, F: Quant, G: Valor Unit, H: Valor Unit com BDI, I: Total sem Desconto
         idx = {
-          item: 0,          // Coluna A - item
-          codigoBanco: 1,   // Coluna B - código banco
-          descricao: 2,     // Coluna C - descrições
-          und: 3,           // Coluna D - unidades
-          quant: 4,         // Coluna E - quantidades
-          valorUnit: 5,     // Coluna F - valor unitário
-          valorTotal: 6,    // Coluna G - valor total
+          item: 0,              // Coluna A - item
+          codigo: 1,            // Coluna B - código
+          banco: 2,             // Coluna C - banco
+          descricao: 3,         // Coluna D - descrição
+          und: 4,               // Coluna E - unidade
+          quant: 5,             // Coluna F - quantidade
+          valorUnit: 6,         // Coluna G - valor unitário
+          valorUnitBDI: 7,      // Coluna H - valor unitário com BDI
+          totalSemDesconto: 8,  // Coluna I - total sem desconto
         };
         
-        // Procurar a primeira linha com ao menos 7 colunas (pula títulos como 'EXTRACONTRATUAL', se houver)
-        const candidateIndex = rows.findIndex(r => Array.isArray(r) && r.length >= 7);
+        // Procurar a primeira linha com ao menos 9 colunas (pula títulos como 'EXTRACONTRATUAL', se houver)
+        const candidateIndex = rows.findIndex(r => Array.isArray(r) && r.length >= 9);
         if (candidateIndex === -1) {
           const cols = primeiraLinha ? primeiraLinha.length : 0;
-          throw new Error(`Não foi possível localizar linhas de itens com 7 colunas. Verifique se sua planilha possui as colunas: Item, Código, Descrição, Unidade, Quantidade, Valor Unitário e Valor Total. Primeira linha possui ${cols} colunas.`);
+          throw new Error(`Não foi possível localizar linhas de itens com 9 colunas. Verifique se sua planilha possui as colunas: Item, Código, Banco, Descrição, Und, Quant., Valor Unit, Valor Unit com BDI, Total sem Desconto. Primeira linha possui ${cols} colunas.`);
         }
         
         // Processar desde o início para incluir linhas de estrutura (ex.: "4", "4.1") antes da 1ª linha completa
@@ -2306,13 +2313,19 @@ const criarNovaMedicao = async () => {
         const code = idx.item >= 0 ? String(r[idx.item] ?? '').trim() : '';
         const descricao = idx.descricao >= 0 ? String(r[idx.descricao] ?? '').trim() : '';
         const und = idx.und >= 0 ? String(r[idx.und] ?? '').trim() : '';
-        const codigoBanco = idx.codigoBanco >= 0 ? String(r[idx.codigoBanco] ?? '').trim() : '';
+        const codigoBanco = idx.codigo >= 0 ? String(r[idx.codigo] ?? '').trim() : '';
+        const banco = idx.banco >= 0 ? String(r[idx.banco] ?? '').trim() : '';
         const quant = parseNumber(idx.quant >= 0 ? r[idx.quant] : 0);
-        const valorUnit = parseNumber(idx.valorUnit >= 0 ? r[idx.valorUnit] : 0);
-        const valorTotalPlanilha = parseNumber(idx.valorTotal >= 0 ? r[idx.valorTotal] : 0);
+        
+        // Buscar Total sem Desconto e aplicar desconto da obra
+        const totalSemDesconto = parseNumber(idx.totalSemDesconto >= 0 ? r[idx.totalSemDesconto] : 0);
+        // Aplicar desconto: TRUNCAR(totalSemDesconto - (totalSemDesconto * desconto%), 2)
+        const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
+        // Calcular valor unitário com desconto
+        const valorUnitComDesconto = quant > 0 ? valorTotalComDesconto / quant : 0;
 
         // Ignorar linhas completamente vazias
-        const hasAnyContent = code || descricao || und || codigoBanco || quant > 0 || valorUnit > 0 || valorTotalPlanilha > 0;
+        const hasAnyContent = code || descricao || und || codigoBanco || quant > 0 || totalSemDesconto > 0;
         if (!hasAnyContent) {
           console.log(`Linha ${i + 1} ignorada: vazia`);
           return;
@@ -2320,7 +2333,7 @@ const criarNovaMedicao = async () => {
 
         // Ignorar apenas linhas que são cabeçalhos genéricos (sem código de item)
         // Mas permitir linhas de estrutura que têm código de item (ex: "4", "4.1")
-        const ehCabecalhoGenerico = !code && !codigoBanco && quant <= 0 && valorUnit <= 0 && valorTotalPlanilha <= 0 && 
+        const ehCabecalhoGenerico = !code && !codigoBanco && quant <= 0 && totalSemDesconto <= 0 && 
                                    descricao && (descricao.toUpperCase().includes('SINAPI') || descricao.toUpperCase().includes('ITEM'));
         if (ehCabecalhoGenerico) {
           console.log(`Linha ${i + 1} ignorada: cabeçalho genérico`);
@@ -2329,7 +2342,7 @@ const criarNovaMedicao = async () => {
 
         // Para itens de estrutura/categoria (que têm código mas sem valor), permitir importação
         // Para itens com valores, exigir código obrigatoriamente
-        if (!code && (quant > 0 || valorUnit > 0 || valorTotalPlanilha > 0)) {
+        if (!code && (quant > 0 || totalSemDesconto > 0)) {
           console.log(`Linha ${i + 1} ignorada: item com valores mas sem código`);
           return;
         }
@@ -2342,7 +2355,7 @@ const criarNovaMedicao = async () => {
         }
         vistosNoArquivo.add(code);
 
-        console.log(`Linha ${i + 1} processada: item=${code}, descricao=${descricao}, quant=${quant}`);
+        console.log(`Linha ${i + 1} processada: item=${code}, descricao=${descricao}, quant=${quant}, desconto=${descontoObra * 100}%`);
 
         // Valor total importado não entra no Valor Total Original
         const valorTotalOriginal = 0;
@@ -2357,12 +2370,12 @@ const criarNovaMedicao = async () => {
           id: stableIdForRow(code, codigoBanco, ordemVal),
           item: code, // Manter código original da planilha
           codigo: codigoBanco,
-          banco: '',
+          banco: banco,
           descricao,
           und,
           quantidade: (nivel === 1 ? 0 : quant),
-          valorUnitario: (nivel === 1 ? 0 : valorUnit),
-          valorTotal: (nivel === 1 ? valorTotalPlanilha : valorTotalOriginal),
+          valorUnitario: (nivel === 1 ? 0 : valorUnitComDesconto),
+          valorTotal: (nivel === 1 ? valorTotalComDesconto : valorTotalOriginal),
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: 0,
           importado: true,
@@ -2907,10 +2920,25 @@ const criarNovaMedicao = async () => {
     }
   };
 
-  const importarDados = async (dadosImportados: Item[]) => {
+  const importarDados = async (dadosImportados: Item[], percentualDesconto?: number) => {
     if (!id) return;
 
     try {
+      // Salvar percentual de desconto na obra
+      if (percentualDesconto !== undefined) {
+        const { error: updateError } = await supabase
+          .from('obras')
+          .update({ percentual_desconto: percentualDesconto } as any)
+          .eq('id', id);
+        
+        if (updateError) {
+          console.error('Erro ao salvar percentual de desconto:', updateError);
+        } else {
+          // Atualizar estado local da obra
+          setObra(prev => prev ? { ...prev, percentual_desconto: percentualDesconto } : prev);
+        }
+      }
+
       const dadosComNivel = dadosImportados.map((item, idx) => ({
         id: stableIdForRow(item.item, item.codigo, item.ordem ?? idx),
         item: item.item,
