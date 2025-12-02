@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -225,7 +226,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                         </div>
                         
                         {/* Indicadores */}
-                        <div className="flex gap-0.5 flex-wrap">
+                        <div className="flex gap-0.5 flex-wrap items-center">
                           {rdo.activity_count > 0 && (
                             <span className="text-[8px] bg-blue-100 text-blue-700 px-1 rounded">
                               {rdo.activity_count} ativ
@@ -240,6 +241,26 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             <span className="text-[8px] bg-red-100 text-red-700 px-1 rounded">
                               {rdo.occurrence_count} ocor
                             </span>
+                          )}
+                          {/* Indicador de pendência de assinatura */}
+                          {((rdo.fiscal_concluido_em && !rdo.contratada_concluido_em) || 
+                            (!rdo.fiscal_concluido_em && rdo.contratada_concluido_em)) && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center justify-center">
+                                    <PenLine className="h-3 w-3 text-amber-600" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">
+                                    {rdo.fiscal_concluido_em && !rdo.contratada_concluido_em 
+                                      ? 'Aguardando assinatura da Contratada'
+                                      : 'Aguardando assinatura do Fiscal'}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                         </div>
                       </div>
