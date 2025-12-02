@@ -116,7 +116,7 @@ const WorkforceTable = memo(({
       {!disabled && (
         <div className="border-t p-2 space-y-2">
           <div className="flex flex-wrap gap-1">
-            {funcoesSugeridas.filter(f => !items.some(w => w.funcao === f)).slice(0, 4).map((funcao) => (
+            {funcoesSugeridas.filter(f => !items.some(w => w.funcao === f)).map((funcao) => (
               <Button
                 key={funcao}
                 variant="outline"
