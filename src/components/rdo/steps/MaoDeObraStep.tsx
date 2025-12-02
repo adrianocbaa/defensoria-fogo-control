@@ -180,12 +180,15 @@ export function MaoDeObraStep({ reportId, obraId, disabled }: MaoDeObraStepProps
         return;
       }
 
+      // Se tem função predefinida, já insere com quantidade 1
+      const quantidadeInicial = funcao ? 1 : 0;
+
       const { error } = await supabase.from('rdo_workforce').insert({
         obra_id: obraId,
         report_id: reportId,
         funcao: funcao || '',
         origem,
-        quantidade: 0,
+        quantidade: quantidadeInicial,
         horas: 0,
       });
 
