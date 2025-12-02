@@ -2357,9 +2357,6 @@ const criarNovaMedicao = async () => {
 
         console.log(`Linha ${i + 1} processada: item=${code}, descricao=${descricao}, quant=${quant}, desconto=${descontoObra * 100}%`);
 
-        // Valor total importado não entra no Valor Total Original
-        const valorTotalOriginal = 0;
-
         // Verificar se o item já existe no contrato original para definir a origem correta
         const itemJaExiste = existentes.has(code);
         const origemItem = itemJaExiste ? 'contratual' : 'extracontratual';
@@ -2375,7 +2372,7 @@ const criarNovaMedicao = async () => {
           und,
           quantidade: (nivel === 1 ? 0 : quant),
           valorUnitario: (nivel === 1 ? 0 : valorUnitComDesconto),
-          valorTotal: (nivel === 1 ? valorTotalComDesconto : valorTotalOriginal),
+          valorTotal: valorTotalComDesconto,
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: 0,
           importado: true,
