@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 
 interface Workforce {
   id?: string;
@@ -45,6 +45,109 @@ const FUNCOES_DIRETA = [
   'Operador de Máquinas',
   'Servente',
 ];
+
+interface WorkforceTableProps {
+  title: string;
+  items: Workforce[];
+  funcoesSugeridas: string[];
+  origem: 'propria' | 'empreiteira';
+  disabled?: boolean;
+  localValues: Record<string, Partial<Workforce>>;
+  onLocalChange: (id: string, field: keyof Workforce, value: any) => void;
+  onQuantidadeChange: (id: string, value: number) => void;
+  onDelete: (id: string) => void;
+  onAdd: (funcao: string | undefined, origem: 'propria' | 'empreiteira') => void;
+}
+
+const WorkforceTable = memo(({ 
+  title, 
+  items, 
+  funcoesSugeridas,
+  origem,
+  disabled,
+  localValues,
+  onLocalChange,
+  onQuantidadeChange,
+  onDelete,
+  onAdd,
+}: WorkforceTableProps) => (
+  <div className="flex-1 min-w-[280px]">
+    <div className="border rounded-lg overflow-hidden">
+      <div className="bg-muted/50 px-3 py-2 border-b">
+        <h3 className="font-semibold text-sm text-center">{title}</h3>
+      </div>
+      <div className="bg-muted/30 grid grid-cols-[1fr_60px_32px] gap-1 px-2 py-1 border-b text-xs font-medium text-muted-foreground">
+        <span>FUNÇÃO / CARGO</span>
+        <span className="text-center">QTDE</span>
+        <span></span>
+      </div>
+      <div className="divide-y max-h-[300px] overflow-y-auto">
+        {items.map((worker) => (
+          <div key={worker.id} className="grid grid-cols-[1fr_60px_32px] gap-1 px-2 py-1 items-center">
+            <Input
+              placeholder="Função"
+              value={localValues[worker.id!]?.funcao ?? worker.funcao}
+              onChange={(e) => onLocalChange(worker.id!, 'funcao', e.target.value)}
+              className="h-7 text-sm border-0 shadow-none px-1 focus-visible:ring-1"
+              disabled={disabled}
+            />
+            <Input
+              type="number"
+              min="0"
+              value={worker.quantidade || ''}
+              onChange={(e) => onQuantidadeChange(worker.id!, parseInt(e.target.value) || 0)}
+              className="h-7 text-sm text-center border-0 shadow-none px-1 focus-visible:ring-1"
+              disabled={disabled}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => onDelete(worker.id!)}
+              disabled={disabled}
+            >
+              <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+            </Button>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="text-center py-4 text-xs text-muted-foreground">
+            Nenhum registro
+          </div>
+        )}
+      </div>
+      {!disabled && (
+        <div className="border-t p-2 space-y-2">
+          <div className="flex flex-wrap gap-1">
+            {funcoesSugeridas.filter(f => !items.some(w => w.funcao === f)).slice(0, 4).map((funcao) => (
+              <Button
+                key={funcao}
+                variant="outline"
+                size="sm"
+                className="h-6 text-xs px-2"
+                onClick={() => onAdd(funcao, origem)}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                {funcao}
+              </Button>
+            ))}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full h-7 text-xs"
+            onClick={() => onAdd(undefined, origem)}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Adicionar
+          </Button>
+        </div>
+      )}
+    </div>
+  </div>
+));
+
+WorkforceTable.displayName = 'WorkforceTable';
 
 export function MaoDeObraStep({ reportId, obraId, disabled }: MaoDeObraStepProps) {
   const queryClient = useQueryClient();
@@ -162,6 +265,25 @@ export function MaoDeObraStep({ reportId, obraId, disabled }: MaoDeObraStepProps
     },
   });
 
+  const handleLocalChange = useCallback((id: string, field: keyof Workforce, value: any) => {
+    setLocalValues(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value }
+    }));
+  }, []);
+
+  const handleQuantidadeChange = useCallback((id: string, value: number) => {
+    updateMutation.mutate({ id, field: 'quantidade', value });
+  }, [updateMutation]);
+
+  const handleDelete = useCallback((id: string) => {
+    deleteMutation.mutate(id);
+  }, [deleteMutation]);
+
+  const handleAdd = useCallback((funcao: string | undefined, origem: 'propria' | 'empreiteira') => {
+    addMutation.mutate({ funcao, origem });
+  }, [addMutation]);
+
   if (isLoading) {
     return (
       <Card className="rounded-2xl shadow-sm">
@@ -175,104 +297,6 @@ export function MaoDeObraStep({ reportId, obraId, disabled }: MaoDeObraStepProps
     );
   }
 
-  const WorkforceTable = ({ 
-    title, 
-    items, 
-    funcoesSugeridas,
-    origem 
-  }: { 
-    title: string; 
-    items: Workforce[]; 
-    funcoesSugeridas: string[];
-    origem: 'propria' | 'empreiteira';
-  }) => (
-    <div className="flex-1 min-w-[280px]">
-      <div className="border rounded-lg overflow-hidden">
-        <div className="bg-muted/50 px-3 py-2 border-b">
-          <h3 className="font-semibold text-sm text-center">{title}</h3>
-        </div>
-        <div className="bg-muted/30 grid grid-cols-[1fr_60px_32px] gap-1 px-2 py-1 border-b text-xs font-medium text-muted-foreground">
-          <span>FUNÇÃO / CARGO</span>
-          <span className="text-center">QTDE</span>
-          <span></span>
-        </div>
-        <div className="divide-y max-h-[300px] overflow-y-auto">
-          {items.map((worker) => (
-            <div key={worker.id} className="grid grid-cols-[1fr_60px_32px] gap-1 px-2 py-1 items-center">
-              <Input
-                placeholder="Função"
-                value={localValues[worker.id!]?.funcao ?? worker.funcao}
-                onChange={(e) =>
-                  setLocalValues(prev => ({
-                    ...prev,
-                    [worker.id!]: { ...prev[worker.id!], funcao: e.target.value }
-                  }))
-                }
-                className="h-7 text-sm border-0 shadow-none px-1 focus-visible:ring-1"
-                disabled={disabled}
-              />
-              <Input
-                type="number"
-                min="0"
-                value={worker.quantidade || ''}
-                onChange={(e) =>
-                  updateMutation.mutate({
-                    id: worker.id!,
-                    field: 'quantidade',
-                    value: parseInt(e.target.value) || 0,
-                  })
-                }
-                className="h-7 text-sm text-center border-0 shadow-none px-1 focus-visible:ring-1"
-                disabled={disabled}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => deleteMutation.mutate(worker.id!)}
-                disabled={disabled}
-              >
-                <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-              </Button>
-            </div>
-          ))}
-          {items.length === 0 && (
-            <div className="text-center py-4 text-xs text-muted-foreground">
-              Nenhum registro
-            </div>
-          )}
-        </div>
-        {!disabled && (
-          <div className="border-t p-2 space-y-2">
-            <div className="flex flex-wrap gap-1">
-              {funcoesSugeridas.filter(f => !items.some(w => w.funcao === f)).slice(0, 4).map((funcao) => (
-                <Button
-                  key={funcao}
-                  variant="outline"
-                  size="sm"
-                  className="h-6 text-xs px-2"
-                  onClick={() => addMutation.mutate({ funcao, origem })}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  {funcao}
-                </Button>
-              ))}
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full h-7 text-xs"
-              onClick={() => addMutation.mutate({ origem })}
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Adicionar
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="pb-2">
@@ -285,12 +309,24 @@ export function MaoDeObraStep({ reportId, obraId, disabled }: MaoDeObraStepProps
             items={[...maoObraIndireta, ...outros.filter(w => w.origem === 'propria')]}
             funcoesSugeridas={FUNCOES_INDIRETA}
             origem="propria"
+            disabled={disabled}
+            localValues={localValues}
+            onLocalChange={handleLocalChange}
+            onQuantidadeChange={handleQuantidadeChange}
+            onDelete={handleDelete}
+            onAdd={handleAdd}
           />
           <WorkforceTable 
             title="MÃO DE OBRA DIRETA" 
             items={[...maoObraDireta, ...outros.filter(w => w.origem !== 'propria')]}
             funcoesSugeridas={FUNCOES_DIRETA}
             origem="empreiteira"
+            disabled={disabled}
+            localValues={localValues}
+            onLocalChange={handleLocalChange}
+            onQuantidadeChange={handleQuantidadeChange}
+            onDelete={handleDelete}
+            onAdd={handleAdd}
           />
         </div>
       </CardContent>
