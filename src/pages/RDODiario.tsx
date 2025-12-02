@@ -220,7 +220,7 @@ export default function RDODiario() {
       case 7:
         return <ComentariosStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
       case 8:
-        return <AssinaturasStep reportId={formData.id} obraId={obraId!} reportData={formData} onUpdate={() => queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] })} onConclude={conclude} />;
+        return <AssinaturasStep reportId={formData.id} obraId={obraId!} reportData={formData} onUpdate={() => queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] })} />;
       default:
         return null;
     }
