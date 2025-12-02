@@ -40,21 +40,41 @@ interface AtividadesStepProps {
   obraId: string;
   data: string;
   disabled?: boolean;
+  ensureRdoExists?: () => Promise<string | null>;
 }
 
-export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesStepProps) {
+export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExists }: AtividadesStepProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdmin, isContratada, canEdit } = useUserRole();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Activity>>>({});
   const [showChooseDialog, setShowChooseDialog] = useState(false);
   const [showChangeDialog, setShowChangeDialog] = useState(false);
+  const [currentReportId, setCurrentReportId] = useState<string | undefined>(reportId);
   
   // Somente Fiscal (admin, editor, gm) pode definir o modo - Contratada não pode
   const isFiscal = canEdit && !isContratada;
   
   // Buscar configuração da obra
   const { config, isLoading: isLoadingConfig, createConfig, updateConfig, isCreating } = useRdoConfig(obraId);
+
+  // Criar RDO automaticamente quando entrar nesta aba se não existir
+  useEffect(() => {
+    if (!reportId && !currentReportId && ensureRdoExists && config) {
+      ensureRdoExists().then((newId) => {
+        if (newId) {
+          setCurrentReportId(newId);
+        }
+      });
+    }
+  }, [reportId, currentReportId, ensureRdoExists, config]);
+
+  // Sincronizar reportId quando vier do parent
+  useEffect(() => {
+    if (reportId) {
+      setCurrentReportId(reportId);
+    }
+  }, [reportId]);
 
   // Abrir dialog se não existe config E usuário é Fiscal
   useEffect(() => {
@@ -66,20 +86,20 @@ export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesS
   const selectedMode = config?.modo_atividades || 'manual';
 
   const { data: activities = [], isLoading } = useQuery({
-    queryKey: ['rdo-activities', reportId, selectedMode],
+    queryKey: ['rdo-activities', currentReportId, selectedMode],
     queryFn: async () => {
-      if (!reportId) return [];
+      if (!currentReportId) return [];
       const { data, error } = await supabase
         .from('rdo_activities')
         .select('*')
-        .eq('report_id', reportId)
+        .eq('report_id', currentReportId)
         .eq('tipo', selectedMode)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
       return data as Activity[];
     },
-    enabled: !!reportId && !!config,
+    enabled: !!currentReportId && !!config,
   });
 
   const handleConfirmMode = async (mode: ModoAtividades) => {
@@ -90,13 +110,13 @@ export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesS
     });
 
     // Atualizar também o RDO atual para consistência
-    if (reportId) {
+    if (currentReportId) {
       await supabase
         .from('rdo_reports')
         .update({ modo_atividades: mode })
-        .eq('id', reportId);
+        .eq('id', currentReportId);
       
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
+      queryClient.invalidateQueries({ queryKey: ['rdo-activities', currentReportId] });
     }
 
     setShowChooseDialog(false);
@@ -109,13 +129,13 @@ export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesS
     });
 
     // Atualizar também o RDO atual
-    if (reportId) {
+    if (currentReportId) {
       await supabase
         .from('rdo_reports')
         .update({ modo_atividades: mode })
-        .eq('id', reportId);
+        .eq('id', currentReportId);
       
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities', reportId] });
+      queryClient.invalidateQueries({ queryKey: ['rdo-activities', currentReportId] });
     }
 
     setShowChangeDialog(false);
@@ -242,7 +262,7 @@ export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesS
         {/* Conteúdo do Modo Selecionado */}
         {selectedMode === 'manual' ? (
           <AtividadesManualMode
-            reportId={reportId}
+            reportId={currentReportId}
             obraId={obraId}
             activities={activities}
             localValues={localValues}
@@ -250,13 +270,13 @@ export function AtividadesStep({ reportId, obraId, data, disabled }: AtividadesS
           />
         ) : selectedMode === 'planilha' ? (
           <AtividadesPlanilhaMode
-            reportId={reportId}
+            reportId={currentReportId}
             obraId={obraId}
             dataRdo={data}
           />
         ) : (
           <AtividadesTemplateMode
-            reportId={reportId}
+            reportId={currentReportId}
             obraId={obraId}
             localValues={localValues}
             setLocalValues={setLocalValues}
