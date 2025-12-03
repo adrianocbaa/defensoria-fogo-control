@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, FileText, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, FileText, Trash2, RotateCcw } from 'lucide-react';
 import { RdoStepper, STEPS } from '@/components/rdo/RdoStepper';
 import { useRdoForm } from '@/hooks/useRdoForm';
 import { AnotacoesStep } from '@/components/rdo/steps/AnotacoesStep';
@@ -50,6 +50,7 @@ export default function RDODiario() {
   const initialStep = parseInt(searchParams.get('step') || '0', 10);
   const [currentStep, setCurrentStep] = useState(Math.max(0, Math.min(initialStep, 7)));
   const [deleteDialog, setDeleteDialog] = useState(false);
+  const [reopenDialog, setReopenDialog] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const {
@@ -57,6 +58,7 @@ export default function RDODiario() {
     updateField,
     saveNow,
     conclude,
+    reopen,
     deleteRdo,
     ensureRdoExists,
     isLoading,
@@ -249,6 +251,13 @@ export default function RDODiario() {
                     {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
                   </Button>
                 )}
+                {/* Botão Reabrir - apenas para admin quando RDO aprovado */}
+                {isAdmin && isApproved && formData.id && (
+                  <Button variant="outline" size="sm" onClick={() => setReopenDialog(true)}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reabrir RDO
+                  </Button>
+                )}
                 {/* RDOs aprovados só podem ser excluídos por admin */}
                 {formData.id && (!isApproved || isAdmin) && !hasValidatedSignature && (canEdit || isAdmin) && (
                   <Button variant="destructive" size="sm" onClick={() => setDeleteDialog(true)}>
@@ -278,6 +287,30 @@ export default function RDODiario() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reopen Dialog */}
+      <AlertDialog open={reopenDialog} onOpenChange={setReopenDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reabrir RDO Aprovado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja reabrir este RDO? As assinaturas de ambas as partes serão invalidadas e novas assinaturas serão necessárias após a correção.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                await reopen();
+                setReopenDialog(false);
+                queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
+              }}
+            >
+              Reabrir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

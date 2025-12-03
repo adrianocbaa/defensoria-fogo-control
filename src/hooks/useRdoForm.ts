@@ -288,8 +288,19 @@ export function useRdoForm(obraId: string, data: string) {
     };
     await saveMutation.mutateAsync(updatedData);
     setFormData(updatedData);
+
+    // Registrar no audit log
+    await supabase.from('rdo_audit_log').insert({
+      report_id: formData.id,
+      obra_id: obraId,
+      acao: 'REABRIR',
+      actor_id: user?.id,
+      actor_nome: user?.email,
+      detalhes: { motivo: 'Reabertura pelo administrador para correção' },
+    });
+
     toast.success('RDO reaberto para edição. Novas assinaturas serão necessárias.');
-  }, [formData, saveMutation]);
+  }, [formData, saveMutation, obraId, user]);
 
   const deleteRdo = useCallback(async () => {
     if (!formData.id) return;
