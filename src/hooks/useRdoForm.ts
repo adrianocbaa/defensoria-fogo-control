@@ -141,6 +141,7 @@ export function useRdoForm(obraId: string, data: string) {
     onSuccess: (reportId) => {
       queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
       queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['last-filled-rdo', obraId] });
       setHasChanges(false);
       
       if (!formData.id) {
@@ -321,6 +322,7 @@ export function useRdoForm(obraId: string, data: string) {
 
       queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
       queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['last-filled-rdo', obraId] });
       toast.success('RDO excluído com sucesso');
       return true;
     } catch (error) {

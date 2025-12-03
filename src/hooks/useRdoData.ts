@@ -269,6 +269,6 @@ export function useLastFilledRdo(obraId: string) {
       return data;
     },
     enabled: !!obraId,
-    staleTime: 30000,
+    staleTime: 5000,
   });
 }
