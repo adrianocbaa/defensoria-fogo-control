@@ -251,7 +251,7 @@ export function useFotosRecentes(obraId: string, limit: number = 12) {
   });
 }
 
-// Hook para buscar o último RDO preenchido (não rascunho) de todos os tempos
+// Hook para buscar o último RDO preenchido (qualquer status exceto deletados) de todos os tempos
 export function useLastFilledRdo(obraId: string) {
   return useQuery({
     queryKey: ['last-filled-rdo', obraId],
@@ -260,7 +260,6 @@ export function useLastFilledRdo(obraId: string) {
         .from('rdo_reports')
         .select('data, status')
         .eq('obra_id', obraId)
-        .neq('status', 'rascunho')
         .order('data', { ascending: false })
         .limit(1)
         .maybeSingle();
