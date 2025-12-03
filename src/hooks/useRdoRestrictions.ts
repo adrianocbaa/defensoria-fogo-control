@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { differenceInDays, parseISO, startOfDay, getDay, isBefore, isAfter } from 'date-fns';
+import { differenceInDays, parseISO, startOfDay, getDay, isBefore, isAfter, format } from 'date-fns';
 
 const MAX_DIAS_SEM_RDO = 7;
 
@@ -67,7 +67,8 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
         while (!isAfter(current, today)) {
           const dayOfWeek = getDay(current);
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-          const dateStr = current.toISOString().split('T')[0];
+          // Usar format para evitar problema de timezone com toISOString
+          const dateStr = format(current, 'yyyy-MM-dd');
           
           // Se é dia útil e não tem RDO, encontramos o primeiro gap
           if (!isWeekend && !rdoDates.has(dateStr)) {
@@ -114,7 +115,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
 
       const daysWithoutRdo = countWorkingDaysSince(firstMissingDay);
 
-      const firstMissingDateStr = firstMissingDay.toISOString().split('T')[0];
+      const firstMissingDateStr = format(firstMissingDay, 'yyyy-MM-dd');
 
       // Se for contratada, aplicar restrição de 7 dias
       if (isContratada && daysWithoutRdo > MAX_DIAS_SEM_RDO) {
