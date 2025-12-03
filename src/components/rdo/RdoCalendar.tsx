@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
-import { RdoCalendarDay, useLastFilledRdo } from '@/hooks/useRdoData';
+import { RdoCalendarDay, useLastFilledRdo, useFirstMissingRdoDate } from '@/hooks/useRdoData';
 import { cn } from '@/lib/utils';
 import { 
   AlertDialog, 
@@ -62,8 +62,13 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   const { data: lastFilledRdoGlobal } = useLastFilledRdo(obraId);
   const lastFilledDate = lastFilledRdoGlobal?.data ? parseISO(lastFilledRdoGlobal.data) : null;
   
-  // Calcular dias sem RDO para alerta (excluindo dias sem expediente)
-  const referenceDate = lastFilledDate || obraStart;
+  // Buscar o PRIMEIRO dia sem RDO na sequência (para bloqueio correto)
+  const { data: firstMissingData } = useFirstMissingRdoDate(obraId, obraStartDate || null);
+  const firstMissingDate = firstMissingData?.firstMissingDate ? parseISO(firstMissingData.firstMissingDate) : null;
+  
+  // A referência para bloqueio é o primeiro dia sem RDO (não o último RDO preenchido)
+  // Se não há gap, usar o início da obra
+  const referenceDate = firstMissingDate || obraStart;
   
   // Função para contar dias úteis entre duas datas (excluindo TODOS os fins de semana)
   const countWorkingDaysBetween = (fromDate: Date, toDate: Date): number => {
@@ -124,14 +129,14 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
     const dateStr = format(date, 'yyyy-MM-dd');
     const existingRdo = rdoData.find(r => r.data === dateStr);
     
-    // Verificar restrição para contratada (usando dias úteis)
-    if (!existingRdo && isContratada && obraStart) {
+    // Verificar restrição para contratada (baseado no primeiro dia sem RDO)
+    if (!existingRdo && isContratada && obraStart && firstMissingDate) {
       const dayStart = startOfDay(date);
-      const refDateForCheck = lastFilledDate || obraStart;
-      const workingDaysFromRef = countWorkingDaysBetween(startOfDay(refDateForCheck), dayStart);
+      // Calcular dias úteis desde o primeiro dia sem RDO até a data alvo
+      const workingDaysFromFirstMissing = countWorkingDaysBetween(startOfDay(firstMissingDate), dayStart);
       
-      if (workingDaysFromRef > MAX_DIAS_SEM_RDO) {
-        toast.error(`Não é possível criar RDO: limite de ${MAX_DIAS_SEM_RDO} dias úteis sem preenchimento excedido.`);
+      if (workingDaysFromFirstMissing > MAX_DIAS_SEM_RDO) {
+        toast.error(`Não é possível criar RDO: limite de ${MAX_DIAS_SEM_RDO} dias úteis sem preenchimento excedido. Preencha primeiro o dia ${format(firstMissingDate, 'dd/MM/yyyy')}.`);
         return;
       }
     }
@@ -147,14 +152,14 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   const handleCreateEmptyRdo = async (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
-    // Verificar restrição para contratada (usando dias úteis)
-    if (isContratada && obraStart) {
+    // Verificar restrição para contratada (baseado no primeiro dia sem RDO)
+    if (isContratada && obraStart && firstMissingDate) {
       const dayStart = startOfDay(date);
-      const refDateForCheck = lastFilledDate || obraStart;
-      const workingDaysFromRef = countWorkingDaysBetween(startOfDay(refDateForCheck), dayStart);
+      // Calcular dias úteis desde o primeiro dia sem RDO até a data alvo
+      const workingDaysFromFirstMissing = countWorkingDaysBetween(startOfDay(firstMissingDate), dayStart);
       
-      if (workingDaysFromRef > MAX_DIAS_SEM_RDO) {
-        toast.error(`Não é possível criar RDO: limite de ${MAX_DIAS_SEM_RDO} dias úteis sem preenchimento excedido.`);
+      if (workingDaysFromFirstMissing > MAX_DIAS_SEM_RDO) {
+        toast.error(`Não é possível criar RDO: limite de ${MAX_DIAS_SEM_RDO} dias úteis sem preenchimento excedido. Preencha primeiro o dia ${format(firstMissingDate, 'dd/MM/yyyy')}.`);
         return;
       }
     }
@@ -188,6 +193,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
       
       queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['last-filled-rdo', obraId] });
+      queryClient.invalidateQueries({ queryKey: ['first-missing-rdo', obraId] });
       
       toast.success('RDO sem atividade criado');
       
@@ -237,6 +243,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
       queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['rdo-report'] });
       queryClient.invalidateQueries({ queryKey: ['last-filled-rdo', obraId] });
+      queryClient.invalidateQueries({ queryKey: ['first-missing-rdo', obraId] });
       toast.success('RDO excluído com sucesso');
       setDeleteDialog({ open: false, reportId: null, date: null });
     } catch (error) {
@@ -333,10 +340,10 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                 // Se é fim de semana marcado como sem expediente, não é "missing"
                 const isMissingRdo = isWorkingDay && !rdo && !(isDayWeekend && isDayMarkedOff);
                 
-                // Verificar se a contratada pode criar RDO neste dia (contando apenas dias úteis)
-                const refDateForRestriction = lastFilledDate || obraStart;
-                const workingDaysSinceRef = refDateForRestriction ? countWorkingDaysBetween(startOfDay(refDateForRestriction), dayStart) : 0;
-                const isBlockedForContratada = isContratada && isWorkingDay && workingDaysSinceRef > MAX_DIAS_SEM_RDO && !(isDayWeekend && isDayMarkedOff);
+                // Verificar se a contratada pode criar RDO neste dia (baseado no PRIMEIRO dia sem RDO)
+                // A referência é o primeiro gap na sequência de RDOs, não o último RDO preenchido
+                const workingDaysSinceFirstMissing = firstMissingDate ? countWorkingDaysBetween(startOfDay(firstMissingDate), dayStart) : 0;
+                const isBlockedForContratada = isContratada && isWorkingDay && firstMissingDate && workingDaysSinceFirstMissing > MAX_DIAS_SEM_RDO && !(isDayWeekend && isDayMarkedOff);
                 const isApproved = rdo?.status === 'aprovado';
 
                 return (

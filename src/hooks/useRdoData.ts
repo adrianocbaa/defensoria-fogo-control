@@ -271,3 +271,56 @@ export function useLastFilledRdo(obraId: string) {
     staleTime: 5000,
   });
 }
+
+// Hook para encontrar o PRIMEIRO dia útil sem RDO na sequência (desde o início da obra)
+export function useFirstMissingRdoDate(obraId: string, obraStartDate: string | null) {
+  return useQuery({
+    queryKey: ['first-missing-rdo', obraId, obraStartDate],
+    queryFn: async () => {
+      if (!obraStartDate) return null;
+
+      // Buscar TODOS os RDOs da obra
+      const { data: allRdos, error } = await supabase
+        .from('rdo_reports')
+        .select('data')
+        .eq('obra_id', obraId)
+        .order('data', { ascending: true });
+
+      if (error) throw error;
+
+      // Criar set de datas com RDO para busca rápida
+      const rdoDates = new Set<string>();
+      if (allRdos) {
+        allRdos.forEach(rdo => rdoDates.add(rdo.data));
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const obraStart = new Date(obraStartDate + 'T00:00:00');
+      
+      // Se obra não começou, não há dias faltando
+      if (obraStart > today) return null;
+
+      // Encontrar o PRIMEIRO dia útil sem RDO na sequência
+      let current = new Date(obraStart);
+      
+      while (current <= today) {
+        const dayOfWeek = current.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const dateStr = current.toISOString().split('T')[0];
+        
+        // Se é dia útil e não tem RDO, encontramos o primeiro gap
+        if (!isWeekend && !rdoDates.has(dateStr)) {
+          return { firstMissingDate: dateStr };
+        }
+        
+        current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
+      }
+      
+      return null; // Todos os dias úteis têm RDO
+    },
+    enabled: !!obraId && !!obraStartDate,
+    staleTime: 5000,
+  });
+}
