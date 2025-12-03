@@ -1,17 +1,34 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Check, AlertCircle, History, XCircle, ThumbsDown } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Check, AlertCircle, History, XCircle, ThumbsDown, Send, Trash2 } from "lucide-react";
 import { createAuditLog } from "@/hooks/useRdoAuditLog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface Comment {
+  id: string;
+  texto: string;
+  created_by?: string;
+  created_at: string;
+  profiles?: {
+    display_name?: string;
+    email?: string;
+    role?: 'admin' | 'editor' | 'contratada';
+  };
+}
 
 interface AssinaturasStepProps {
   reportId: string;
@@ -28,7 +45,9 @@ export function AssinaturasStep({
 }: AssinaturasStepProps) {
   const { user } = useAuth();
   const { canEdit, isAdmin, isContratada } = useUserRole();
+  const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
+  const [newComment, setNewComment] = useState('');
   
   const canValidateFiscal = canEdit || isAdmin;
   const canValidateContratada = isContratada;
@@ -47,7 +66,6 @@ export function AssinaturasStep({
   const [rejectObservation, setRejectObservation] = useState("");
   const [showRejectInput, setShowRejectInput] = useState(false);
   
-  // Usar estado local para atualização imediata da UI
   const fiscalValidado = fiscalValidadoLocal;
   const contratadaValidado = contratadaValidadoLocal;
 
@@ -69,6 +87,91 @@ export function AssinaturasStep({
     enabled: !!reportId,
   });
 
+  // Buscar comentários
+  const { data: comments = [], isLoading: isLoadingComments } = useQuery({
+    queryKey: ['rdo-comments', reportId],
+    queryFn: async () => {
+      if (!reportId) return [];
+      
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('rdo_comments')
+        .select('*')
+        .eq('report_id', reportId)
+        .order('created_at', { ascending: true });
+      
+      if (commentsError) throw commentsError;
+      if (!commentsData || commentsData.length === 0) return [];
+      
+      const creatorIds = [...new Set(commentsData.map(c => c.created_by).filter(Boolean))];
+      if (creatorIds.length === 0) return commentsData as Comment[];
+      
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, email, role')
+        .in('user_id', creatorIds);
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+      
+      const profilesMap = new Map(
+        profilesData?.map(p => [p.user_id, p]) || []
+      );
+      
+      return commentsData.map(comment => ({
+        ...comment,
+        profiles: comment.created_by ? profilesMap.get(comment.created_by) : undefined
+      })) as Comment[];
+    },
+    enabled: !!reportId,
+  });
+
+  const addCommentMutation = useMutation({
+    mutationFn: async (texto: string) => {
+      if (!reportId) {
+        toast.error('Salve o RDO antes de adicionar comentários');
+        return;
+      }
+
+      const { error } = await supabase.from('rdo_comments').insert({
+        obra_id: obraId,
+        report_id: reportId,
+        texto,
+        created_by: user?.id,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-comments', reportId] });
+      setNewComment('');
+      toast.success('Comentário adicionado');
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('rdo_comments')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rdo-comments', reportId] });
+      toast.success('Comentário removido');
+    },
+  });
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) {
+      toast.error('Digite um comentário');
+      return;
+    }
+    addCommentMutation.mutate(newComment);
+  };
+
   const handleValidateFiscal = async () => {
     if (!canValidateFiscal) {
       toast.error("Você não tem permissão para validar esta assinatura");
@@ -84,7 +187,6 @@ export function AssinaturasStep({
     try {
       const validatedAt = new Date().toISOString();
       
-      // Se a contratada já validou, quando o fiscal assinar = APROVADO automaticamente
       const contratadaJaValidou = reportData?.assinatura_contratada_validado_em;
       const novoStatus = contratadaJaValidou ? 'aprovado' : reportData?.status;
       
@@ -112,7 +214,6 @@ export function AssinaturasStep({
         actorNome: fiscalNome,
       });
 
-      // Atualizar estado local imediatamente para refletir na UI
       setFiscalValidadoLocal(validatedAt);
       
       if (contratadaJaValidou) {
@@ -137,7 +238,6 @@ export function AssinaturasStep({
 
     setIsSaving(true);
     try {
-      // Reprovar = reabrir automaticamente o RDO (limpar assinaturas e voltar para preenchendo)
       const { error: updateError } = await supabase
         .from("rdo_reports")
         .update({
@@ -161,7 +261,6 @@ export function AssinaturasStep({
         actorId: user?.id,
       });
 
-      // Resetar estados locais
       setFiscalValidadoLocal(null);
       setContratadaValidadoLocal(null);
       setRejectObservation("");
@@ -187,7 +286,6 @@ export function AssinaturasStep({
     try {
       const validatedAt = new Date().toISOString();
       
-      // Verificar se o fiscal já validou para determinar o status
       const fiscalJaValidou = reportData?.assinatura_fiscal_validado_em;
       const novoStatus = fiscalJaValidou ? 'concluido' : reportData?.status;
       
@@ -215,7 +313,6 @@ export function AssinaturasStep({
         actorNome: contratadaNome,
       });
 
-      // Atualizar estado local imediatamente para refletir na UI
       setContratadaValidadoLocal(validatedAt);
       
       if (fiscalJaValidou) {
@@ -232,7 +329,6 @@ export function AssinaturasStep({
     }
   };
 
-  // Valores para exibição (preferir reportData para garantir dados salvos)
   const fiscalNomeDisplay = reportData?.assinatura_fiscal_nome || fiscalNome;
   const fiscalCargoDisplay = reportData?.assinatura_fiscal_cargo || fiscalCargo;
   const fiscalDocumentoDisplay = reportData?.assinatura_fiscal_documento || fiscalDocumento;
@@ -241,27 +337,18 @@ export function AssinaturasStep({
   const contratadaCargoDisplay = reportData?.assinatura_contratada_cargo || contratadaCargo;
   const contratadaDocumentoDisplay = reportData?.assinatura_contratada_documento || contratadaDocumento;
   
-  // Ambos validaram
   const bothValidated = fiscalValidado && contratadaValidado;
-  
-  // Determinar se deve mostrar ambas assinaturas
-  // - Aprovado: mostrar ambas
-  // - Ambos validaram: mostrar ambas
   const showBothSignatures = isApproved || bothValidated;
-  
-  // Pendente de aprovação (ambos validaram, mas ainda não foi aprovado)
   const isPendingApproval = bothValidated && !isApproved;
-  
-  // Determinar se deve mostrar os campos de validação
-  // Mostrar campos se: não aprovado E (falta assinatura de alguma parte)
   const showValidationFields = !isApproved && (!fiscalValidado || !contratadaValidado);
+  const isLocked = bothValidated || isApproved;
 
   return (
     <div className="space-y-6 pb-20">
       <div>
-        <h2 className="text-xl font-semibold mb-2">Validação de Assinaturas</h2>
+        <h2 className="text-xl font-semibold mb-2">Validação e Comentários</h2>
         <p className="text-sm text-muted-foreground">
-          Preencha os dados e valide para registrar sua assinatura no relatório
+          Preencha os dados para validar assinaturas e deixe comentários sobre o relatório
         </p>
       </div>
 
@@ -307,291 +394,335 @@ export function AssinaturasStep({
         </Collapsible>
       )}
 
-      {/* Mostrar campos de validação apenas se necessário */}
-      {showValidationFields && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Fiscal/Gestor - mostrar se não validado */}
-        {!fiscalValidado && canValidateFiscal && (
-        <Card className="p-6">
-          <h3 className="font-semibold mb-4">Assinatura do Fiscal/Gestor (DPE-MT)</h3>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="fiscal-nome">Nome *</Label>
-              <Input
-                id="fiscal-nome"
-                value={fiscalNome}
-                onChange={(e) => setFiscalNome(e.target.value)}
-                placeholder="Nome completo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="fiscal-cargo">Cargo *</Label>
-              <Input
-                id="fiscal-cargo"
-                value={fiscalCargo}
-                onChange={(e) => setFiscalCargo(e.target.value)}
-                placeholder="Cargo/Função"
-              />
-            </div>
-            <div>
-              <Label htmlFor="fiscal-documento">CREA/CPF/ID *</Label>
-              <Input
-                id="fiscal-documento"
-                value={fiscalDocumento}
-                onChange={(e) => setFiscalDocumento(e.target.value)}
-                placeholder="Documento"
-              />
-            </div>
-            <Button
-              onClick={handleValidateFiscal}
-              disabled={isSaving}
-              className="w-full"
-            >
-              Validar Assinatura
-            </Button>
-            
-            {/* Botão Reprovar - apenas quando Contratada já assinou */}
-            {contratadaValidado && !showRejectInput && (
-              <Button
-                variant="destructive"
-                onClick={() => setShowRejectInput(true)}
-                disabled={isSaving}
-                className="w-full"
-              >
-                <ThumbsDown className="h-4 w-4 mr-2" />
-                Reprovar RDO
-              </Button>
-            )}
-            
-            {/* Input de motivo da reprovação */}
-            {showRejectInput && (
-              <div className="space-y-2 border-t pt-4 mt-2">
-                <Label htmlFor="reject-observation">Motivo da Reprovação *</Label>
-                <Input
-                  id="reject-observation"
-                  value={rejectObservation}
-                  onChange={(e) => setRejectObservation(e.target.value)}
-                  placeholder="Descreva o motivo da reprovação"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    variant="destructive"
-                    onClick={handleReject}
-                    disabled={isSaving || !rejectObservation.trim()}
-                    className="flex-1"
-                  >
-                    Confirmar Reprovação
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowRejectInput(false);
-                      setRejectObservation("");
-                    }}
-                    disabled={isSaving}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-        )}
-        
-        {fiscalValidado && (
-          <Card className="p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <h3 className="font-semibold text-green-700 dark:text-green-400">Fiscal/Gestor (DPE-MT) - Validado</h3>
-            </div>
-            <div className="space-y-1 text-sm">
-              <div>
-                <span className="text-muted-foreground">Nome:</span>
-                <span className="ml-2 text-primary">{fiscalNomeDisplay}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Cargo:</span>
-                <span className="ml-2">{fiscalCargoDisplay}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">CREA/CPF/ID:</span>
-                <span className="ml-2">{fiscalDocumentoDisplay}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Validado em:</span>
-                <span className="ml-2">{new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
-              </div>
-            </div>
-          </Card>
-        )}
+      {/* Layout lado a lado: Assinaturas + Comentários */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Coluna Esquerda: Assinaturas */}
+        <div className="space-y-4">
+          {showValidationFields && (
+            <div className="space-y-4">
+              {/* Fiscal/Gestor - mostrar se não validado */}
+              {!fiscalValidado && canValidateFiscal && (
+                <Card className="p-5">
+                  <h3 className="font-semibold mb-4">Assinatura do Fiscal/Gestor (DPE-MT)</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="fiscal-nome">Nome *</Label>
+                      <Input
+                        id="fiscal-nome"
+                        value={fiscalNome}
+                        onChange={(e) => setFiscalNome(e.target.value)}
+                        placeholder="Nome completo"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="fiscal-cargo">Cargo *</Label>
+                      <Input
+                        id="fiscal-cargo"
+                        value={fiscalCargo}
+                        onChange={(e) => setFiscalCargo(e.target.value)}
+                        placeholder="Cargo/Função"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="fiscal-documento">CREA/CPF/ID *</Label>
+                      <Input
+                        id="fiscal-documento"
+                        value={fiscalDocumento}
+                        onChange={(e) => setFiscalDocumento(e.target.value)}
+                        placeholder="Documento"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleValidateFiscal}
+                      disabled={isSaving}
+                      className="w-full"
+                    >
+                      Validar Assinatura
+                    </Button>
+                    
+                    {contratadaValidado && !showRejectInput && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => setShowRejectInput(true)}
+                        disabled={isSaving}
+                        className="w-full"
+                      >
+                        <ThumbsDown className="h-4 w-4 mr-2" />
+                        Reprovar RDO
+                      </Button>
+                    )}
+                    
+                    {showRejectInput && (
+                      <div className="space-y-2 border-t pt-4 mt-2">
+                        <Label htmlFor="reject-observation">Motivo da Reprovação *</Label>
+                        <Input
+                          id="reject-observation"
+                          value={rejectObservation}
+                          onChange={(e) => setRejectObservation(e.target.value)}
+                          placeholder="Descreva o motivo da reprovação"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="destructive"
+                            onClick={handleReject}
+                            disabled={isSaving || !rejectObservation.trim()}
+                            className="flex-1"
+                          >
+                            Confirmar Reprovação
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowRejectInput(false);
+                              setRejectObservation("");
+                            }}
+                            disabled={isSaving}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+              
+              {fiscalValidado && (
+                <Card className="p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <h3 className="font-semibold text-green-700 dark:text-green-400">Fiscal/Gestor (DPE-MT) - Validado</h3>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div><span className="text-muted-foreground">Nome:</span><span className="ml-2 text-primary">{fiscalNomeDisplay}</span></div>
+                    <div><span className="text-muted-foreground">Cargo:</span><span className="ml-2">{fiscalCargoDisplay}</span></div>
+                    <div><span className="text-muted-foreground">CREA/CPF/ID:</span><span className="ml-2">{fiscalDocumentoDisplay}</span></div>
+                    <div><span className="text-muted-foreground">Validado em:</span><span className="ml-2">{new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span></div>
+                  </div>
+                </Card>
+              )}
 
-        {/* Contratada - mostrar formulário apenas se não validou ainda */}
-        {!contratadaValidado && canValidateContratada && (
-        <Card className="p-6">
-          <h3 className="font-semibold mb-4">Assinatura do Responsável Técnico (Contratada)</h3>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="contratada-nome">Nome *</Label>
-              <Input
-                id="contratada-nome"
-                value={contratadaNome}
-                onChange={(e) => setContratadaNome(e.target.value)}
-                placeholder="Nome completo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="contratada-cargo">Cargo *</Label>
-              <Input
-                id="contratada-cargo"
-                value={contratadaCargo}
-                onChange={(e) => setContratadaCargo(e.target.value)}
-                placeholder="Cargo/Função"
-              />
-            </div>
-            <div>
-              <Label htmlFor="contratada-documento">CREA/CPF/ID *</Label>
-              <Input
-                id="contratada-documento"
-                value={contratadaDocumento}
-                onChange={(e) => setContratadaDocumento(e.target.value)}
-                placeholder="Documento"
-              />
-            </div>
-            <Button
-              onClick={handleValidateContratada}
-              disabled={isSaving}
-              className="w-full"
-            >
-              Validar Assinatura
-            </Button>
-          </div>
-        </Card>
-        )}
-        
-        {/* Card de validado da Contratada - aparece para todos verem após validação */}
-        {contratadaValidado && (
-          <Card className="p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <h3 className="font-semibold text-green-700 dark:text-green-400">Responsável Técnico (Contratada) - Validado</h3>
-            </div>
-            <div className="space-y-1 text-sm">
-              <div>
-                <span className="text-muted-foreground">Nome:</span>
-                <span className="ml-2 text-primary">{contratadaNomeDisplay}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Cargo:</span>
-                <span className="ml-2">{contratadaCargoDisplay}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">CREA/CPF/ID:</span>
-                <span className="ml-2">{contratadaDocumentoDisplay}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Validado em:</span>
-                <span className="ml-2">{new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span>
-              </div>
-            </div>
-          </Card>
-        )}
-        </div>
-      )}
-
-
-      {/* Mostrar resumo completo quando ambos validaram ou quando aprovado */}
-      {showBothSignatures && (
-        <>
-          {isPendingApproval ? (
-            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                🔒 RDO concluído por ambas as partes. Todas as edições estão bloqueadas. Aguardando aprovação final.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <p className="text-sm text-green-800 dark:text-green-200">
-                ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
-              </p>
+              {/* Contratada */}
+              {!contratadaValidado && canValidateContratada && (
+                <Card className="p-5">
+                  <h3 className="font-semibold mb-4">Assinatura do Responsável Técnico (Contratada)</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="contratada-nome">Nome *</Label>
+                      <Input
+                        id="contratada-nome"
+                        value={contratadaNome}
+                        onChange={(e) => setContratadaNome(e.target.value)}
+                        placeholder="Nome completo"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contratada-cargo">Cargo *</Label>
+                      <Input
+                        id="contratada-cargo"
+                        value={contratadaCargo}
+                        onChange={(e) => setContratadaCargo(e.target.value)}
+                        placeholder="Cargo/Função"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contratada-documento">CREA/CPF/ID *</Label>
+                      <Input
+                        id="contratada-documento"
+                        value={contratadaDocumento}
+                        onChange={(e) => setContratadaDocumento(e.target.value)}
+                        placeholder="Documento"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleValidateContratada}
+                      disabled={isSaving}
+                      className="w-full"
+                    >
+                      Validar Assinatura
+                    </Button>
+                  </div>
+                </Card>
+              )}
+              
+              {contratadaValidado && (
+                <Card className="p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <h3 className="font-semibold text-green-700 dark:text-green-400">Responsável Técnico (Contratada) - Validado</h3>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div><span className="text-muted-foreground">Nome:</span><span className="ml-2 text-primary">{contratadaNomeDisplay}</span></div>
+                    <div><span className="text-muted-foreground">Cargo:</span><span className="ml-2">{contratadaCargoDisplay}</span></div>
+                    <div><span className="text-muted-foreground">CREA/CPF/ID:</span><span className="ml-2">{contratadaDocumentoDisplay}</span></div>
+                    <div><span className="text-muted-foreground">Validado em:</span><span className="ml-2">{new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</span></div>
+                  </div>
+                </Card>
+              )}
             </div>
           )}
 
-          {/* Resumo das Assinaturas - ambas visíveis */}
-          <Card className="border-primary/20">
-            <div className="p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-                Resumo das Assinaturas
-              </h3>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Resumo Fiscal */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <h4 className="font-medium">Fiscal/Gestor (DPE-MT)</h4>
-                  </div>
-                  
-                  <div className="space-y-2 pl-10">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Nome</p>
-                      <p className="text-sm font-medium">{fiscalNomeDisplay || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Cargo</p>
-                      <p className="text-sm">{fiscalCargoDisplay || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">CREA/CPF/ID</p>
-                      <p className="text-sm">{fiscalDocumentoDisplay || "—"}</p>
-                    </div>
-                    {fiscalValidado && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Data/Hora da Validação</p>
-                        <p className="text-sm">{new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>
-                      </div>
-                    )}
-                  </div>
+          {/* Resumo completo quando ambos validaram ou aprovado */}
+          {showBothSignatures && (
+            <>
+              {isPendingApproval ? (
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    🔒 RDO concluído por ambas as partes. Todas as edições estão bloqueadas. Aguardando aprovação final.
+                  </p>
                 </div>
+              ) : (
+                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    ✓ RDO aprovado. As assinaturas não podem mais ser alteradas.
+                  </p>
+                </div>
+              )}
 
-                {/* Resumo Contratada */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <h4 className="font-medium">Responsável Técnico (Contratada)</h4>
-                  </div>
+              <Card className="border-primary/20">
+                <div className="p-5">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    Resumo das Assinaturas
+                  </h3>
                   
-                  <div className="space-y-2 pl-10">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Nome</p>
-                      <p className="text-sm font-medium">{contratadaNomeDisplay || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Cargo</p>
-                      <p className="text-sm">{contratadaCargoDisplay || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">CREA/CPF/ID</p>
-                      <p className="text-sm">{contratadaDocumentoDisplay || "—"}</p>
-                    </div>
-                    {contratadaValidado && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Data/Hora da Validação</p>
-                        <p className="text-sm">{new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Resumo Fiscal */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h4 className="font-medium text-sm">Fiscal/Gestor (DPE-MT)</h4>
                       </div>
-                    )}
+                      <div className="space-y-1 pl-8 text-sm">
+                        <p><span className="text-muted-foreground">Nome:</span> {fiscalNomeDisplay || "—"}</p>
+                        <p><span className="text-muted-foreground">Cargo:</span> {fiscalCargoDisplay || "—"}</p>
+                        {fiscalValidado && (
+                          <p><span className="text-muted-foreground">Validado:</span> {new Date(fiscalValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Resumo Contratada */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h4 className="font-medium text-sm">Responsável Técnico (Contratada)</h4>
+                      </div>
+                      <div className="space-y-1 pl-8 text-sm">
+                        <p><span className="text-muted-foreground">Nome:</span> {contratadaNomeDisplay || "—"}</p>
+                        <p><span className="text-muted-foreground">Cargo:</span> {contratadaCargoDisplay || "—"}</p>
+                        {contratadaValidado && (
+                          <p><span className="text-muted-foreground">Validado:</span> {new Date(contratadaValidado).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </Card>
+            </>
+          )}
+        </div>
+
+        {/* Coluna Direita: Comentários */}
+        <div>
+          <Card className="h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Comentários</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Lista de comentários */}
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {comments.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    Nenhum comentário. Seja o primeiro a comentar!
+                  </div>
+                ) : (
+                  comments.map((comment) => {
+                    const isContratadaComment = comment.profiles?.role === 'contratada';
+                    const roleLabel = isContratadaComment ? 'Contratada' : 'Fiscal';
+                    const roleColor = isContratadaComment
+                      ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' 
+                      : 'bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
+                    
+                    return (
+                      <div key={comment.id} className="flex gap-2 p-2 border rounded-lg">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarFallback className="text-xs">
+                            {comment.profiles?.display_name?.[0]?.toUpperCase() || 
+                             comment.profiles?.email?.[0]?.toUpperCase() || 
+                             '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="text-xs font-medium truncate">
+                                {comment.profiles?.display_name || comment.profiles?.email || 'Usuário'}
+                              </p>
+                              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${roleColor}`}>
+                                {roleLabel}
+                              </Badge>
+                            </div>
+                            {!isLocked && comment.created_by === user?.id && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => deleteCommentMutation.mutate(comment.id)}
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(comment.created_at), "d 'de' MMM 'às' HH:mm", { locale: ptBR })}
+                          </p>
+                          <p className="text-sm whitespace-pre-wrap">{comment.texto}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
-            </div>
+
+              {/* Campo de novo comentário */}
+              {!isLocked && (
+                <div className="space-y-2 pt-3 border-t">
+                  <Textarea
+                    placeholder="Escreva um comentário..."
+                    rows={2}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                        handleAddComment();
+                      }
+                    }}
+                    className="text-sm"
+                  />
+                  <div className="flex justify-between items-center">
+                    <p className="text-[10px] text-muted-foreground">
+                      Ctrl+Enter para enviar
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={handleAddComment}
+                      disabled={!newComment.trim() || addCommentMutation.isPending}
+                    >
+                      <Send className="h-3 w-3 mr-1.5" />
+                      Enviar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
           </Card>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
