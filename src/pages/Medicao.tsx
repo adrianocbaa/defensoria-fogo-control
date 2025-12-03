@@ -3469,6 +3469,7 @@ const criarNovaMedicao = async () => {
                           <DialogContent className="max-w-lg">
                             <ImportarDoRDO 
                               obraId={id!}
+                              medicaoId={medicoes.find(m => m.id === medicaoAtual)?.sessionId || ''}
                               onImportar={importarDadosDoRDO}
                               onFechar={() => setModalImportarRDOAberto(false)}
                             />
