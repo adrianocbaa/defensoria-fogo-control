@@ -47,7 +47,8 @@ export default function RDODiario() {
   const { canEdit, isAdmin, isContratada } = useUserRole();
   const queryClient = useQueryClient();
   const data = searchParams.get('data') || new Date().toISOString().split('T')[0];
-  const [currentStep, setCurrentStep] = useState(0);
+  const initialStep = parseInt(searchParams.get('step') || '0', 10);
+  const [currentStep, setCurrentStep] = useState(Math.max(0, Math.min(initialStep, 7)));
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
