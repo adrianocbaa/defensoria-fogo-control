@@ -33,15 +33,12 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
         };
       }
 
-      // Buscar último RDO (qualquer status) para calcular referência
-      const { data: lastRdo, error: rdoError } = await supabase
+      // Buscar TODOS os RDOs da obra para encontrar o primeiro gap
+      const { data: allRdos, error: rdoError } = await supabase
         .from('rdo_reports')
-        .select('data, status')
+        .select('data')
         .eq('obra_id', obraId)
-        .order('data', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
+        .order('data', { ascending: true });
 
       const today = startOfDay(new Date());
       const obraStartDate = parseISO(obra.data_inicio);
@@ -57,48 +54,86 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
         };
       }
 
-      // Calcular último dia de referência (último RDO ou início da obra)
-      const lastReferenceDate = lastRdo?.data 
-        ? parseISO(lastRdo.data) 
-        : obraStartDate;
+      // Criar set de datas com RDO para busca rápida
+      const rdoDates = new Set<string>();
+      if (allRdos) {
+        allRdos.forEach(rdo => rdoDates.add(rdo.data));
+      }
 
-      // Calcular dias úteis sem RDO (excluindo TODOS os fins de semana)
-      const countWorkingDaysWithoutRdo = (): number => {
-        let count = 0;
-        let current = startOfDay(lastReferenceDate);
-        while (isBefore(current, today)) {
+      // Encontrar o PRIMEIRO dia útil sem RDO na sequência (a partir do início da obra)
+      const findFirstMissingWorkday = (): Date | null => {
+        let current = startOfDay(obraStartDate);
+        
+        while (!isAfter(current, today)) {
+          const dayOfWeek = getDay(current);
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          const dateStr = current.toISOString().split('T')[0];
+          
+          // Se é dia útil e não tem RDO, encontramos o primeiro gap
+          if (!isWeekend && !rdoDates.has(dateStr)) {
+            return current;
+          }
+          
           current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
+        }
+        
+        return null; // Todos os dias úteis têm RDO
+      };
+
+      const firstMissingDay = findFirstMissingWorkday();
+      
+      // Se não há gap, está tudo preenchido
+      if (!firstMissingDay) {
+        return {
+          canCreateRdo: true,
+          daysWithoutRdo: 0,
+          lastRdoDate: allRdos && allRdos.length > 0 ? allRdos[allRdos.length - 1].data : null,
+          obraStartDate: obra.data_inicio,
+          message: null,
+        };
+      }
+
+      // Calcular dias úteis desde o primeiro dia sem RDO até hoje
+      const countWorkingDaysSince = (fromDate: Date): number => {
+        let count = 0;
+        let current = startOfDay(fromDate);
+        
+        while (!isAfter(current, today)) {
           const dayOfWeek = getDay(current);
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
           
-          // Contar apenas dias úteis (seg-sex), excluindo todos os fins de semana
-          if (!isWeekend && !isAfter(current, today)) {
+          if (!isWeekend) {
             count++;
           }
+          
+          current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
         }
+        
         return count;
       };
 
-      const daysWithoutRdo = countWorkingDaysWithoutRdo();
+      const daysWithoutRdo = countWorkingDaysSince(firstMissingDay);
+
+      const firstMissingDateStr = firstMissingDay.toISOString().split('T')[0];
 
       // Se for contratada, aplicar restrição de 7 dias
       if (isContratada && daysWithoutRdo > MAX_DIAS_SEM_RDO) {
         return {
           canCreateRdo: false,
           daysWithoutRdo,
-          lastRdoDate: lastRdo?.data || null,
+          lastRdoDate: firstMissingDateStr,
           obraStartDate: obra.data_inicio,
-          message: `Limite de ${MAX_DIAS_SEM_RDO} dias sem preenchimento excedido. Último preenchimento: ${lastRdo?.data ? new Date(lastRdo.data + 'T12:00:00').toLocaleDateString('pt-BR') : 'Data de início da obra'}. Contate o fiscal para regularizar.`,
+          message: `Limite de ${MAX_DIAS_SEM_RDO} dias sem preenchimento excedido. Primeiro dia sem RDO: ${new Date(firstMissingDateStr + 'T12:00:00').toLocaleDateString('pt-BR')}. Contate o fiscal para regularizar.`,
         };
       }
 
       return {
         canCreateRdo: true,
         daysWithoutRdo,
-        lastRdoDate: lastRdo?.data || null,
+        lastRdoDate: allRdos && allRdos.length > 0 ? allRdos[allRdos.length - 1].data : null,
         obraStartDate: obra.data_inicio,
         message: daysWithoutRdo > 3 
-          ? `Atenção: ${daysWithoutRdo} dias sem preenchimento de RDO`
+          ? `Atenção: ${daysWithoutRdo} dias sem preenchimento de RDO (desde ${new Date(firstMissingDateStr + 'T12:00:00').toLocaleDateString('pt-BR')})`
           : null,
       };
     },
