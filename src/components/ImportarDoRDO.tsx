@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DateRange } from 'react-day-picker';
 import { format, isWithinInterval, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Loader2, Calendar, Info } from 'lucide-react';
+import { Loader2, Calendar, Info, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -15,6 +15,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ImportarDoRDOProps {
   obraId: string;
@@ -24,6 +34,7 @@ interface ImportarDoRDOProps {
 }
 
 interface PeriodoImportado {
+  id: string;
   data_inicio: string;
   data_fim: string;
 }
@@ -34,27 +45,58 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
   const [erro, setErro] = useState('');
   const [periodosImportados, setPeriodosImportados] = useState<PeriodoImportado[]>([]);
   const [loadingPeriodos, setLoadingPeriodos] = useState(true);
+  const [deletingPeriodo, setDeletingPeriodo] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [periodoToDelete, setPeriodoToDelete] = useState<PeriodoImportado | null>(null);
 
   // Buscar períodos já importados para esta obra
-  useEffect(() => {
-    const fetchPeriodosImportados = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('medicao_rdo_imports')
-          .select('data_inicio, data_fim')
-          .eq('obra_id', obraId);
+  const fetchPeriodosImportados = useCallback(async () => {
+    try {
+      setLoadingPeriodos(true);
+      const { data, error } = await supabase
+        .from('medicao_rdo_imports')
+        .select('id, data_inicio, data_fim')
+        .eq('obra_id', obraId)
+        .order('data_inicio', { ascending: true });
 
-        if (error) throw error;
-        setPeriodosImportados(data || []);
-      } catch (err) {
-        console.error('Erro ao buscar períodos importados:', err);
-      } finally {
-        setLoadingPeriodos(false);
-      }
-    };
-
-    fetchPeriodosImportados();
+      if (error) throw error;
+      setPeriodosImportados(data || []);
+    } catch (err) {
+      console.error('Erro ao buscar períodos importados:', err);
+    } finally {
+      setLoadingPeriodos(false);
+    }
   }, [obraId]);
+
+  useEffect(() => {
+    fetchPeriodosImportados();
+  }, [fetchPeriodosImportados]);
+
+  // Excluir período importado
+  const handleDeletePeriodo = async () => {
+    if (!periodoToDelete) return;
+
+    try {
+      setDeletingPeriodo(periodoToDelete.id);
+      
+      const { error } = await supabase
+        .from('medicao_rdo_imports')
+        .delete()
+        .eq('id', periodoToDelete.id);
+
+      if (error) throw error;
+
+      toast.success('Período de importação excluído. Você pode reimportar os dados deste período.');
+      await fetchPeriodosImportados();
+    } catch (err) {
+      console.error('Erro ao excluir período:', err);
+      toast.error('Erro ao excluir período de importação');
+    } finally {
+      setDeletingPeriodo(null);
+      setDeleteDialogOpen(false);
+      setPeriodoToDelete(null);
+    }
+  };
 
   // Gerar lista de datas já importadas para destacar no calendário
   const datasJaImportadas = React.useMemo(() => {
@@ -213,6 +255,7 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
   const sobreposicaoAtual = verificarSobreposicao();
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -234,13 +277,48 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
         )}
 
         {periodosImportados.length > 0 && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Já existem {periodosImportados.length} período(s) importado(s) para esta obra. 
-              As datas com fundo destacado no calendário não podem ser selecionadas novamente.
-            </AlertDescription>
-          </Alert>
+          <div className="space-y-2">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Já existem {periodosImportados.length} período(s) importado(s) para esta obra. 
+                As datas com fundo destacado no calendário não podem ser selecionadas novamente.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="border rounded-lg p-3 space-y-2 bg-muted/30">
+              <p className="text-sm font-medium">Períodos importados:</p>
+              {periodosImportados.map((periodo) => (
+                <div 
+                  key={periodo.id} 
+                  className="flex items-center justify-between p-2 bg-background rounded border text-sm"
+                >
+                  <span>
+                    {format(parseISO(periodo.data_inicio), 'dd/MM/yyyy', { locale: ptBR })} - {format(parseISO(periodo.data_fim), 'dd/MM/yyyy', { locale: ptBR })}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      setPeriodoToDelete(periodo);
+                      setDeleteDialogOpen(true);
+                    }}
+                    disabled={deletingPeriodo === periodo.id}
+                  >
+                    {deletingPeriodo === periodo.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">
+                Exclua um período para permitir reimportação após correção do RDO.
+              </p>
+            </div>
+          </div>
         )}
 
         <div className="space-y-2">
@@ -339,5 +417,30 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
         </div>
       </CardContent>
     </Card>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir Período de Importação</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tem certeza que deseja excluir o período de importação 
+            {periodoToDelete && (
+              <strong>
+                {" "}{format(parseISO(periodoToDelete.data_inicio), 'dd/MM/yyyy', { locale: ptBR })} - {format(parseISO(periodoToDelete.data_fim), 'dd/MM/yyyy', { locale: ptBR })}
+              </strong>
+            )}
+            ? Isso permitirá reimportar os dados desse período após correção do RDO.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeletePeriodo}>
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
