@@ -173,6 +173,11 @@ export function AssinaturasStep({
   };
 
   const handleValidateFiscal = async () => {
+    if (!reportId) {
+      toast.error("Salve o RDO antes de validar a assinatura");
+      return;
+    }
+    
     if (!canValidateFiscal) {
       toast.error("Você não tem permissão para validar esta assinatura");
       return;
@@ -277,6 +282,11 @@ export function AssinaturasStep({
   };
 
   const handleValidateContratada = async () => {
+    if (!reportId) {
+      toast.error("Salve o RDO antes de validar a assinatura");
+      return;
+    }
+    
     if (!contratadaNome || !contratadaCargo || !contratadaDocumento) {
       toast.error("Preencha todos os campos do Responsável Técnico");
       return;
