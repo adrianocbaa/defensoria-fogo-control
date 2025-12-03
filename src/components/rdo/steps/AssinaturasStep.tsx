@@ -129,8 +129,7 @@ export function AssinaturasStep({
   const addCommentMutation = useMutation({
     mutationFn: async (texto: string) => {
       if (!reportId) {
-        toast.error('Salve o RDO antes de adicionar comentários');
-        return;
+        throw new Error('RDO não salvo');
       }
 
       const { error } = await supabase.from('rdo_comments').insert({
@@ -146,6 +145,14 @@ export function AssinaturasStep({
       queryClient.invalidateQueries({ queryKey: ['rdo-comments', reportId] });
       setNewComment('');
       toast.success('Comentário adicionado');
+    },
+    onError: (error) => {
+      if (error.message === 'RDO não salvo') {
+        toast.error('Salve o RDO antes de adicionar comentários');
+      } else {
+        toast.error('Erro ao adicionar comentário');
+        console.error('Error adding comment:', error);
+      }
     },
   });
 
