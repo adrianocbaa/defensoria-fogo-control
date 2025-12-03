@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, ThumbsUp, ThumbsDown, FileText, Unlock, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, FileText, Trash2 } from 'lucide-react';
 import { RdoStepper, STEPS } from '@/components/rdo/RdoStepper';
 import { useRdoForm } from '@/hooks/useRdoForm';
 import { AnotacoesStep } from '@/components/rdo/steps/AnotacoesStep';
@@ -14,7 +14,6 @@ import { MaoDeObraStep } from '@/components/rdo/steps/MaoDeObraStep';
 import { EvidenciasStep } from '@/components/rdo/steps/EvidenciasStep';
 import { ComentariosStep } from '@/components/rdo/steps/ComentariosStep';
 import { AssinaturasStep } from '@/components/rdo/steps/AssinaturasStep';
-import { RdoApprovalDialog } from '@/components/rdo/RdoApprovalDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useQueryClient } from '@tanstack/react-query';
@@ -50,10 +49,6 @@ export default function RDODiario() {
   const queryClient = useQueryClient();
   const data = searchParams.get('data') || new Date().toISOString().split('T')[0];
   const [currentStep, setCurrentStep] = useState(0);
-  const [approvalDialog, setApprovalDialog] = useState<{ open: boolean; action: 'approve' | 'reject' | null }>({
-    open: false,
-    action: null,
-  });
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -62,9 +57,6 @@ export default function RDODiario() {
     updateField,
     saveNow,
     conclude,
-    approve,
-    reject,
-    reopen,
     deleteRdo,
     ensureRdoExists,
     isLoading,
@@ -141,45 +133,6 @@ export default function RDODiario() {
     } finally {
       setIsGeneratingPdf(false);
     }
-  };
-
-  const handleApprovalConfirm = async (observacao?: string) => {
-    try {
-      if (approvalDialog.action === 'approve') {
-        await approve(observacao);
-        await createAuditLog({
-          obraId: obraId!,
-          reportId: formData.id!,
-          acao: 'APROVAR',
-          detalhes: { observacao },
-          actorId: user?.id,
-        });
-      } else if (approvalDialog.action === 'reject') {
-        await reject(observacao!);
-        await createAuditLog({
-          obraId: obraId!,
-          reportId: formData.id!,
-          acao: 'REPROVAR',
-          detalhes: { observacao },
-          actorId: user?.id,
-        });
-      }
-      queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
-    } catch (error) {
-      console.error('Erro ao processar aprovação:', error);
-    }
-  };
-
-
-  const handleReopen = async () => {
-    await reopen();
-    await createAuditLog({
-      obraId: obraId!,
-      reportId: formData.id!,
-      acao: 'REABRIR',
-      actorId: user?.id,
-    });
-    queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] });
   };
 
   const handleDeleteRdo = async () => {
@@ -291,53 +244,26 @@ export default function RDODiario() {
                 </div>
               </div>
               {/* Action buttons */}
-              {canEdit && (
-                <div className="flex flex-wrap gap-2">
-                  {readyForApproval && (
-                    <>
-                      <Button variant="default" size="sm" onClick={() => setApprovalDialog({ open: true, action: 'approve' })}>
-                        <ThumbsUp className="h-4 w-4 mr-2" />
-                        Aprovar
-                      </Button>
-                      <Button variant="destructive" size="sm" onClick={() => setApprovalDialog({ open: true, action: 'reject' })}>
-                        <ThumbsDown className="h-4 w-4 mr-2" />
-                        Reprovar
-                      </Button>
-                    </>
-                  )}
-                  {((readyForApproval || isApproved) || (canEdit && userHasConcluded) || (isContratada && userHasConcluded)) && (
-                    <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
-                      <FileText className="h-4 w-4 mr-2" />
-                      {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
-                    </Button>
-                  )}
-                  {canEdit && (isApproved || hasValidatedSignature) && (
-                    <Button variant="outline" size="sm" onClick={handleReopen}>
-                      <Unlock className="h-4 w-4 mr-2" />
-                      Reabrir
-                    </Button>
-                  )}
-                  {canEdit && formData.id && !isApproved && !hasValidatedSignature && (
-                    <Button variant="destructive" size="sm" onClick={() => setDeleteDialog(true)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Excluir RDO
-                    </Button>
-                  )}
-                </div>
-              )}
+              <div className="flex flex-wrap gap-2">
+                {((readyForApproval || isApproved) || (canEdit && userHasConcluded) || (isContratada && userHasConcluded)) && (
+                  <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
+                  </Button>
+                )}
+                {canEdit && formData.id && !isApproved && !hasValidatedSignature && (
+                  <Button variant="destructive" size="sm" onClick={() => setDeleteDialog(true)}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir RDO
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Dialogs */}
-      <RdoApprovalDialog
-        open={approvalDialog.open}
-        onOpenChange={(open) => setApprovalDialog({ ...approvalDialog, open })}
-        action={approvalDialog.action}
-        onConfirm={handleApprovalConfirm}
-      />
-
+      {/* Delete Dialog */}
       <AlertDialog open={deleteDialog} onOpenChange={setDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
