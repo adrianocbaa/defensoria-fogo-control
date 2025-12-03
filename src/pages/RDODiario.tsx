@@ -324,23 +324,30 @@ export default function RDODiario() {
               </Button>
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={async () => {
-                  (document.activeElement as HTMLElement | null)?.blur();
-                  if ((window as any).rdoSavePending) {
-                    try { await (window as any).rdoSavePending(); } catch {}
-                  }
-                  await saveNow();
-                }} disabled={isSaving}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Salvar
-                </Button>
+                {/* Salvar e Concluir apenas para Fiscal - Contratada tem autosave e conclui via assinatura */}
+                {!isContratada && (
+                  <>
+                    <Button variant="outline" onClick={async () => {
+                      (document.activeElement as HTMLElement | null)?.blur();
+                      if ((window as any).rdoSavePending) {
+                        try { await (window as any).rdoSavePending(); } catch {}
+                      }
+                      await saveNow();
+                    }} disabled={isSaving}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Salvar
+                    </Button>
 
-                {currentStep === STEPS.length - 1 ? (
-                  <Button onClick={conclude} disabled={isSaving}>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Concluir
-                  </Button>
-                ) : (
+                    {currentStep === STEPS.length - 1 && (
+                      <Button onClick={conclude} disabled={isSaving}>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Concluir
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {currentStep < STEPS.length - 1 && (
                   <Button onClick={() => setCurrentStep(currentStep + 1)}>
                     Próximo
                   </Button>
