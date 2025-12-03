@@ -297,7 +297,7 @@ export function useFirstMissingRdoDate(obraId: string, obraStartDate: string | n
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const obraStart = new Date(obraStartDate + 'T00:00:00');
+      const obraStart = new Date(obraStartDate + 'T12:00:00');
       
       // Se obra não começou, não há dias faltando
       if (obraStart > today) return null;
@@ -308,7 +308,11 @@ export function useFirstMissingRdoDate(obraId: string, obraStartDate: string | n
       while (current <= today) {
         const dayOfWeek = current.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const dateStr = current.toISOString().split('T')[0];
+        // Usar formato local para evitar problema de timezone
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, '0');
+        const day = String(current.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         
         // Se é dia útil e não tem RDO, encontramos o primeiro gap
         if (!isWeekend && !rdoDates.has(dateStr)) {
