@@ -65,21 +65,17 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   // Calcular dias sem RDO para alerta (excluindo dias sem expediente)
   const referenceDate = lastFilledDate || obraStart;
   
-  // Função para contar dias úteis entre duas datas (excluindo fins de semana marcados como sem expediente)
+  // Função para contar dias úteis entre duas datas (excluindo TODOS os fins de semana)
   const countWorkingDaysBetween = (fromDate: Date, toDate: Date): number => {
     let count = 0;
     let current = startOfDay(fromDate);
     while (isBefore(current, toDate)) {
       current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
-      const dateStr = format(current, 'yyyy-MM-dd');
       const dayOfWeek = getDay(current);
       const isWeekendDay = dayOfWeek === 0 || dayOfWeek === 6;
-      const isMarkedOff = isDiaSemExpediente(dateStr);
-      // Não contar fins de semana que foram marcados como sem expediente
-      if (!isWeekendDay || (isWeekendDay && !isMarkedOff)) {
-        if (!isAfter(current, toDate)) {
-          count++;
-        }
+      // Contar apenas dias úteis (seg-sex), excluindo todos os fins de semana
+      if (!isWeekendDay && !isAfter(current, toDate)) {
+        count++;
       }
     }
     return count;
