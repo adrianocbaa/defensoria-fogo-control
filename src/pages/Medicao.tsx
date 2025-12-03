@@ -3466,10 +3466,7 @@ const criarNovaMedicao = async () => {
                               Importar do RDO
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-lg" aria-describedby={undefined}>
-                            <DialogHeader className="sr-only">
-                              <DialogTitle>Importar Dados do RDO</DialogTitle>
-                            </DialogHeader>
+                          <DialogContent className="max-w-lg">
                             <ImportarDoRDO 
                               obraId={id!}
                               medicaoId={medicoes.find(m => m.id === medicaoAtual)?.sessionId || ''}
