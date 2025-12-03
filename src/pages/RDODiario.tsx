@@ -12,7 +12,6 @@ import { VisitasStep } from '@/components/rdo/steps/VisitasStep';
 import { EquipamentosStep } from '@/components/rdo/steps/EquipamentosStep';
 import { MaoDeObraStep } from '@/components/rdo/steps/MaoDeObraStep';
 import { EvidenciasStep } from '@/components/rdo/steps/EvidenciasStep';
-import { ComentariosStep } from '@/components/rdo/steps/ComentariosStep';
 import { AssinaturasStep } from '@/components/rdo/steps/AssinaturasStep';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -160,8 +159,6 @@ export default function RDODiario() {
       case 6:
         return <EvidenciasStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} />;
       case 7:
-        return <ComentariosStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
-      case 8:
         return <AssinaturasStep reportId={formData.id} obraId={obraId!} reportData={formData} onUpdate={() => queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] })} />;
       default:
         return null;
