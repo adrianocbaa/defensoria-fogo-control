@@ -87,8 +87,9 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   };
   
   const countWorkingDaysWithoutRdo = () => {
-    if (!referenceDate) return 0;
-    return countWorkingDaysBetween(referenceDate, today);
+    // Se não há dia faltando na sequência, retorna 0
+    if (!firstMissingDate) return 0;
+    return countWorkingDaysBetween(firstMissingDate, today);
   };
   
   const daysWithoutRdo = countWorkingDaysWithoutRdo();
