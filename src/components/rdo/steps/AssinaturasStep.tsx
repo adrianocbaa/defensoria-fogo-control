@@ -199,8 +199,15 @@ export function AssinaturasStep({
     try {
       const validatedAt = new Date().toISOString();
       
-      const contratadaJaValidou = reportData?.assinatura_contratada_validado_em;
-      const novoStatus = contratadaJaValidou ? 'aprovado' : reportData?.status;
+      // Buscar estado atual do banco para verificar se contratada já validou
+      const { data: currentReport } = await supabase
+        .from("rdo_reports")
+        .select("assinatura_contratada_validado_em, status")
+        .eq("id", reportId)
+        .single();
+      
+      const contratadaJaValidou = currentReport?.assinatura_contratada_validado_em;
+      const novoStatus = contratadaJaValidou ? 'aprovado' : (currentReport?.status || reportData?.status);
       
       const { error: updateError } = await supabase
         .from("rdo_reports")
