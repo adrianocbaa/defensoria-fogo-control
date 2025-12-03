@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { differenceInDays, parseISO, startOfDay } from 'date-fns';
+import { differenceInDays, parseISO, startOfDay, format, getDay, isBefore, isAfter } from 'date-fns';
 
 const MAX_DIAS_SEM_RDO = 7;
 
@@ -43,6 +43,14 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
         .limit(1)
         .maybeSingle();
 
+      // Buscar dias sem expediente
+      const { data: diasSemExpediente } = await supabase
+        .from('rdo_dias_sem_expediente')
+        .select('data')
+        .eq('obra_id', obraId);
+
+      const diasSemExpedienteSet = new Set(diasSemExpediente?.map(d => d.data) || []);
+
       const today = startOfDay(new Date());
       const obraStartDate = parseISO(obra.data_inicio);
       
@@ -62,7 +70,28 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
         ? parseISO(lastRdo.data) 
         : obraStartDate;
 
-      const daysWithoutRdo = differenceInDays(today, lastReferenceDate);
+      // Calcular dias sem RDO excluindo fins de semana marcados como sem expediente
+      const countWorkingDaysWithoutRdo = (): number => {
+        let count = 0;
+        let current = startOfDay(lastReferenceDate);
+        while (isBefore(current, today)) {
+          current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
+          const dateStr = format(current, 'yyyy-MM-dd');
+          const dayOfWeek = getDay(current);
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          const isMarkedOff = diasSemExpedienteSet.has(dateStr);
+          
+          // Não contar fins de semana que foram marcados como sem expediente
+          if (!isWeekend || (isWeekend && !isMarkedOff)) {
+            if (!isAfter(current, today)) {
+              count++;
+            }
+          }
+        }
+        return count;
+      };
+
+      const daysWithoutRdo = countWorkingDaysWithoutRdo();
 
       // Se for contratada, aplicar restrição de 7 dias
       if (isContratada && daysWithoutRdo > MAX_DIAS_SEM_RDO) {
