@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, differenceInDays, getDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -64,23 +64,30 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   
   // Calcular dias sem RDO para alerta (excluindo dias sem expediente)
   const referenceDate = lastFilledDate || obraStart;
-  const countWorkingDaysWithoutRdo = () => {
-    if (!referenceDate) return 0;
+  
+  // Função para contar dias úteis entre duas datas (excluindo fins de semana marcados como sem expediente)
+  const countWorkingDaysBetween = (fromDate: Date, toDate: Date): number => {
     let count = 0;
-    let current = startOfDay(referenceDate);
-    while (isBefore(current, today)) {
+    let current = startOfDay(fromDate);
+    while (isBefore(current, toDate)) {
       current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
       const dateStr = format(current, 'yyyy-MM-dd');
-      const isWeekend = getDay(current) === 0 || getDay(current) === 6;
+      const dayOfWeek = getDay(current);
+      const isWeekendDay = dayOfWeek === 0 || dayOfWeek === 6;
       const isMarkedOff = isDiaSemExpediente(dateStr);
-      // Contar apenas dias que não são fins de semana marcados como sem expediente
-      if (!isWeekend || (isWeekend && !isMarkedOff)) {
-        if (!isAfter(current, today)) {
+      // Não contar fins de semana que foram marcados como sem expediente
+      if (!isWeekendDay || (isWeekendDay && !isMarkedOff)) {
+        if (!isAfter(current, toDate)) {
           count++;
         }
       }
     }
     return count;
+  };
+  
+  const countWorkingDaysWithoutRdo = () => {
+    if (!referenceDate) return 0;
+    return countWorkingDaysBetween(referenceDate, today);
   };
   
   const daysWithoutRdo = countWorkingDaysWithoutRdo();
@@ -121,14 +128,14 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
     const dateStr = format(date, 'yyyy-MM-dd');
     const existingRdo = rdoData.find(r => r.data === dateStr);
     
-    // Verificar restrição para contratada
+    // Verificar restrição para contratada (usando dias úteis)
     if (!existingRdo && isContratada && obraStart) {
       const dayStart = startOfDay(date);
       const refDateForCheck = lastFilledDate || obraStart;
-      const daysFromRef = differenceInDays(dayStart, startOfDay(refDateForCheck));
+      const workingDaysFromRef = countWorkingDaysBetween(startOfDay(refDateForCheck), dayStart);
       
-      if (daysFromRef > MAX_DIAS_SEM_RDO) {
-        toast.error(`Não é possível criar RDO: limite de ${MAX_DIAS_SEM_RDO} dias consecutivos sem preenchimento excedido.`);
+      if (workingDaysFromRef > MAX_DIAS_SEM_RDO) {
+        toast.error(`Não é possível criar RDO: limite de ${MAX_DIAS_SEM_RDO} dias úteis sem preenchimento excedido.`);
         return;
       }
     }
@@ -273,10 +280,10 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                 // Se é fim de semana marcado como sem expediente, não é "missing"
                 const isMissingRdo = isWorkingDay && !rdo && !(isDayWeekend && isDayMarkedOff);
                 
-                // Verificar se a contratada pode criar RDO neste dia
+                // Verificar se a contratada pode criar RDO neste dia (contando apenas dias úteis)
                 const refDateForRestriction = lastFilledDate || obraStart;
-                const daysSinceRef = refDateForRestriction ? differenceInDays(dayStart, startOfDay(refDateForRestriction)) : 0;
-                const isBlockedForContratada = isContratada && isWorkingDay && daysSinceRef > MAX_DIAS_SEM_RDO && !(isDayWeekend && isDayMarkedOff);
+                const workingDaysSinceRef = refDateForRestriction ? countWorkingDaysBetween(startOfDay(refDateForRestriction), dayStart) : 0;
+                const isBlockedForContratada = isContratada && isWorkingDay && workingDaysSinceRef > MAX_DIAS_SEM_RDO && !(isDayWeekend && isDayMarkedOff);
                 const isApproved = rdo?.status === 'aprovado';
 
                 return (
