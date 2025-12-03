@@ -383,7 +383,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                           )}
                         </div>
                       </div>
-                    ) : isBlockedForContratada ? (
+                    ) : isBlockedForContratada && !isDayWeekend ? (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -447,14 +447,17 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             </Tooltip>
                           </TooltipProvider>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 hover:bg-green-100"
-                          onClick={() => handleCreateRdo(day)}
-                        >
-                          <Plus className="h-3 w-3 text-green-600" />
-                        </Button>
+                        {/* Não mostrar botão de criar RDO se estiver bloqueado */}
+                        {!isBlockedForContratada && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 hover:bg-green-100"
+                            onClick={() => handleCreateRdo(day)}
+                          >
+                            <Plus className="h-3 w-3 text-green-600" />
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
