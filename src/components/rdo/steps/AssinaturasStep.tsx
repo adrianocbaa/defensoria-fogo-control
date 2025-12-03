@@ -362,6 +362,16 @@ export function AssinaturasStep({
         </p>
       </div>
 
+      {/* Alerta se RDO não foi salvo ainda */}
+      {!reportId && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Este RDO ainda não foi salvo. Salve o RDO antes de adicionar comentários ou validar assinaturas.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Histórico de Reprovações */}
       {rejectionHistory && rejectionHistory.length > 0 && (
         <Collapsible defaultOpen={rejectionHistory.length > 0}>
@@ -444,7 +454,7 @@ export function AssinaturasStep({
                     </div>
                     <Button
                       onClick={handleValidateFiscal}
-                      disabled={isSaving}
+                      disabled={isSaving || !reportId}
                       className="w-full"
                     >
                       Validar Assinatura
@@ -546,7 +556,7 @@ export function AssinaturasStep({
                     </div>
                     <Button
                       onClick={handleValidateContratada}
-                      disabled={isSaving}
+                      disabled={isSaving || !reportId}
                       className="w-full"
                     >
                       Validar Assinatura
@@ -721,7 +731,7 @@ export function AssinaturasStep({
                     <Button
                       size="sm"
                       onClick={handleAddComment}
-                      disabled={!newComment.trim() || addCommentMutation.isPending}
+                      disabled={!newComment.trim() || addCommentMutation.isPending || !reportId}
                     >
                       <Send className="h-3 w-3 mr-1.5" />
                       Enviar
