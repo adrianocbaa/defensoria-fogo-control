@@ -180,6 +180,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
 
       queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['rdo-report'] });
+      queryClient.invalidateQueries({ queryKey: ['last-filled-rdo', obraId] });
       toast.success('RDO excluído com sucesso');
       setDeleteDialog({ open: false, reportId: null, date: null });
     } catch (error) {
