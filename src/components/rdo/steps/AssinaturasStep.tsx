@@ -374,7 +374,7 @@ export function AssinaturasStep({
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Este RDO ainda não foi salvo. Salve o RDO antes de adicionar comentários ou validar assinaturas.
+            Este RDO ainda não foi salvo. Vá em "Atividades" para que o RDO seja salvo antes de adicionar comentários ou validar assinaturas.
           </AlertDescription>
         </Alert>
       )}
