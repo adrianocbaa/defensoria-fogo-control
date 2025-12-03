@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, differenceInDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, differenceInDays, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useDiasSemExpediente } from '@/hooks/useDiasSemExpediente';
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -54,13 +55,35 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   const today = startOfDay(new Date());
   const obraStart = obraStartDate ? parseISO(obraStartDate) : null;
   
+  // Hook para dias sem expediente
+  const { diasSemExpediente, isDiaSemExpediente, toggleDiaSemExpediente, isToggling } = useDiasSemExpediente(obraId);
+  
   // Buscar o último RDO preenchido globalmente
   const { data: lastFilledRdoGlobal } = useLastFilledRdo(obraId);
   const lastFilledDate = lastFilledRdoGlobal?.data ? parseISO(lastFilledRdoGlobal.data) : null;
   
-  // Calcular dias sem RDO para alerta
+  // Calcular dias sem RDO para alerta (excluindo dias sem expediente)
   const referenceDate = lastFilledDate || obraStart;
-  const daysWithoutRdo = referenceDate ? differenceInDays(today, startOfDay(referenceDate)) : 0;
+  const countWorkingDaysWithoutRdo = () => {
+    if (!referenceDate) return 0;
+    let count = 0;
+    let current = startOfDay(referenceDate);
+    while (isBefore(current, today)) {
+      current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
+      const dateStr = format(current, 'yyyy-MM-dd');
+      const isWeekend = getDay(current) === 0 || getDay(current) === 6;
+      const isMarkedOff = isDiaSemExpediente(dateStr);
+      // Contar apenas dias que não são fins de semana marcados como sem expediente
+      if (!isWeekend || (isWeekend && !isMarkedOff)) {
+        if (!isAfter(current, today)) {
+          count++;
+        }
+      }
+    }
+    return count;
+  };
+  
+  const daysWithoutRdo = countWorkingDaysWithoutRdo();
   const showRestrictionAlert = isContratada && daysWithoutRdo > MAX_DIAS_SEM_RDO;
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; reportId: string | null; date: string | null }>({
     open: false,
@@ -75,6 +98,12 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   // Calcular dias vazios no início
   const startDayOfWeek = monthStart.getDay();
   const emptyDays = Array(startDayOfWeek).fill(null);
+  
+  // Helper para verificar se é fim de semana
+  const isWeekend = (date: Date): boolean => {
+    const day = getDay(date);
+    return day === 0 || day === 6;
+  };
 
   const handlePrevMonth = () => {
     onMonthChange(subMonths(currentMonth, 1));
@@ -234,16 +263,20 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                 const dayStart = startOfDay(day);
                 const isToday = isSameDay(day, today);
                 const statusConfig = rdo ? STATUS_CONFIG[rdo.status as keyof typeof STATUS_CONFIG] : null;
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const isDayWeekend = isWeekend(day);
+                const isDayMarkedOff = isDiaSemExpediente(dateStr);
                 
                 // Verificar se é dia sem RDO após início da obra
                 const isAfterObraStart = obraStart && !isBefore(dayStart, startOfDay(obraStart));
                 const isWorkingDay = isAfterObraStart && !isAfter(dayStart, today);
-                const isMissingRdo = isWorkingDay && !rdo;
+                // Se é fim de semana marcado como sem expediente, não é "missing"
+                const isMissingRdo = isWorkingDay && !rdo && !(isDayWeekend && isDayMarkedOff);
                 
                 // Verificar se a contratada pode criar RDO neste dia
                 const refDateForRestriction = lastFilledDate || obraStart;
                 const daysSinceRef = refDateForRestriction ? differenceInDays(dayStart, startOfDay(refDateForRestriction)) : 0;
-                const isBlockedForContratada = isContratada && isWorkingDay && daysSinceRef > MAX_DIAS_SEM_RDO;
+                const isBlockedForContratada = isContratada && isWorkingDay && daysSinceRef > MAX_DIAS_SEM_RDO && !(isDayWeekend && isDayMarkedOff);
                 const isApproved = rdo?.status === 'aprovado';
 
                 return (
@@ -252,10 +285,11 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                     className={cn(
                       "relative aspect-square border rounded-lg p-2 transition-colors",
                       isToday && "ring-2 ring-primary",
-                      isApproved && "bg-green-100 dark:bg-green-950/30 border-green-300",
-                      !isApproved && isMissingRdo && "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200",
-                      !isApproved && isBlockedForContratada && "bg-red-50/50 dark:bg-red-950/20 border-red-200",
-                      !isApproved && !isBlockedForContratada && "hover:bg-accent/50"
+                      isDayMarkedOff && "bg-slate-100 dark:bg-slate-800/50 border-slate-300",
+                      isApproved && !isDayMarkedOff && "bg-green-100 dark:bg-green-950/30 border-green-300",
+                      !isApproved && !isDayMarkedOff && isMissingRdo && "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200",
+                      !isApproved && !isDayMarkedOff && isBlockedForContratada && "bg-red-50/50 dark:bg-red-950/20 border-red-200",
+                      !isApproved && !isDayMarkedOff && !isBlockedForContratada && "hover:bg-accent/50"
                     )}
                   >
                     {/* Número do dia + indicador de alerta */}
@@ -355,15 +389,66 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    ) : isDayMarkedOff ? (
+                      // Dia marcado como sem expediente
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-col items-center gap-1">
+                                <Coffee className="h-4 w-4 text-slate-500" />
+                                <span className="text-[8px] text-slate-500 font-medium">Sem Expediente</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">Sem expediente na obra</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        {isContratada && !isAfter(dayStart, today) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-1 right-1 h-5 w-5 hover:bg-red-100"
+                            onClick={() => toggleDiaSemExpediente(dateStr)}
+                            disabled={isToggling}
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        )}
+                      </div>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute bottom-1 right-1 h-6 w-6 hover:bg-green-100"
-                        onClick={() => handleCreateRdo(day)}
-                      >
-                        <Plus className="h-3 w-3 text-green-600" />
-                      </Button>
+                      <div className="flex flex-col items-end justify-end h-full gap-1">
+                        {/* Botão "Sem Expediente" para fins de semana (apenas Contratada) */}
+                        {isDayWeekend && isContratada && !isAfter(dayStart, today) && isAfterObraStart && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 hover:bg-slate-200"
+                                  onClick={() => toggleDiaSemExpediente(dateStr)}
+                                  disabled={isToggling}
+                                >
+                                  <Coffee className="h-3 w-3 text-slate-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">Marcar como sem expediente</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 hover:bg-green-100"
+                          onClick={() => handleCreateRdo(day)}
+                        >
+                          <Plus className="h-3 w-3 text-green-600" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 );

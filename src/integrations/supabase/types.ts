@@ -1673,6 +1673,38 @@ export type Database = {
           },
         ]
       }
+      rdo_dias_sem_expediente: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          marcado_por: string | null
+          obra_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+          marcado_por?: string | null
+          obra_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          marcado_por?: string | null
+          obra_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_dias_sem_expediente_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rdo_equipment: {
         Row: {
           created_at: string
