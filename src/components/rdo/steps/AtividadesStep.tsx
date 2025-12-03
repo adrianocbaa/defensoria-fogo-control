@@ -60,13 +60,23 @@ export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExis
 
   // Criar RDO automaticamente quando entrar nesta aba se não existir
   useEffect(() => {
+    let isMounted = true;
+    
     if (!reportId && !currentReportId && ensureRdoExists && config) {
-      ensureRdoExists().then((newId) => {
-        if (newId) {
-          setCurrentReportId(newId);
-        }
-      });
+      ensureRdoExists()
+        .then((newId) => {
+          if (isMounted && newId) {
+            setCurrentReportId(newId);
+          }
+        })
+        .catch((error) => {
+          console.error('Erro ao criar RDO automaticamente:', error);
+        });
     }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [reportId, currentReportId, ensureRdoExists, config]);
 
   // Sincronizar reportId quando vier do parent

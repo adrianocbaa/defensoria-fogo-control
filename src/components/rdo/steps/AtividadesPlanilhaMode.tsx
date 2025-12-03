@@ -22,6 +22,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   const queryClient = useQueryClient();
   const [localExecutado, setLocalExecutado] = useState<Record<string, number>>({});
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasSynced, setHasSynced] = useState(false);
   const [noteDialog, setNoteDialog] = useState<{
     open: boolean;
     activityId?: string;
@@ -57,7 +58,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
         .from('rdo_reports')
         .select('status')
         .eq('id', reportId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -84,6 +85,13 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     });
     return map;
   }, [rdoActivities]);
+
+  // Resetar estado quando reportId mudar
+  useEffect(() => {
+    setIsInitialized(false);
+    setHasSynced(false);
+    setLocalExecutado({});
+  }, [reportId]);
 
   // Inicializar valores locais apenas uma vez quando as atividades carregarem
   useEffect(() => {
@@ -255,16 +263,20 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     return () => { delete (window as any).rdoSavePending; };
   }, [savePending]);
 
-  // Sincronizar automaticamente quando houver itens sem atividades
+  // Sincronizar automaticamente quando houver itens sem atividades (apenas uma vez)
   useEffect(() => {
-    if (reportId && !loadingActivities && orcamentoItems.length > 0) {
+    if (reportId && !loadingActivities && orcamentoItems.length > 0 && !hasSynced && !syncMutation.isPending) {
       // Verificar se há itens sem atividade criada
       const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id));
       if (itemsSemAtividade.length > 0) {
+        setHasSynced(true);
         syncMutation.mutate();
+      } else {
+        // Se todos os itens já têm atividade, marcar como sincronizado
+        setHasSynced(true);
       }
     }
-  }, [reportId, loadingActivities, orcamentoItems.length, activitiesByItem]);
+  }, [reportId, loadingActivities, orcamentoItems.length, hasSynced, syncMutation.isPending]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities) {
     return (
