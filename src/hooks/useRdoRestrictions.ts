@@ -33,12 +33,11 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
         };
       }
 
-      // Buscar último RDO com preenchimento (atividades ou status diferente de rascunho)
+      // Buscar último RDO (qualquer status) para calcular referência
       const { data: lastRdo, error: rdoError } = await supabase
         .from('rdo_reports')
         .select('data, status')
         .eq('obra_id', obraId)
-        .or('status.neq.rascunho')
         .order('data', { ascending: false })
         .limit(1)
         .maybeSingle();
