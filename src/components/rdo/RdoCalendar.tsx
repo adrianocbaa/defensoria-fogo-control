@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee, FileX } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -140,6 +140,62 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
       navigate(`/obras/${obraId}/rdo/diario?data=${dateStr}&id=${existingRdo.report_id}`);
     } else {
       navigate(`/obras/${obraId}/rdo/diario?data=${dateStr}`);
+    }
+  };
+
+  // Criar RDO sem atividade e ir direto para assinaturas
+  const handleCreateEmptyRdo = async (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    // Verificar restrição para contratada (usando dias úteis)
+    if (isContratada && obraStart) {
+      const dayStart = startOfDay(date);
+      const refDateForCheck = lastFilledDate || obraStart;
+      const workingDaysFromRef = countWorkingDaysBetween(startOfDay(refDateForCheck), dayStart);
+      
+      if (workingDaysFromRef > MAX_DIAS_SEM_RDO) {
+        toast.error(`Não é possível criar RDO: limite de ${MAX_DIAS_SEM_RDO} dias úteis sem preenchimento excedido.`);
+        return;
+      }
+    }
+    
+    try {
+      // Buscar próximo número sequencial
+      const { data: maxSeq } = await supabase
+        .from('rdo_reports')
+        .select('numero_seq')
+        .eq('obra_id', obraId)
+        .order('numero_seq', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      const nextSeq = (maxSeq?.numero_seq || 0) + 1;
+      
+      // Criar RDO vazio
+      const { data: newRdo, error } = await supabase
+        .from('rdo_reports')
+        .insert({
+          obra_id: obraId,
+          data: dateStr,
+          numero_seq: nextSeq,
+          status: 'preenchendo',
+          observacoes: 'Sem atividade no dia'
+        })
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['last-filled-rdo', obraId] });
+      
+      toast.success('RDO sem atividade criado');
+      
+      // Navegar direto para assinaturas (step 7 = índice do último step)
+      navigate(`/obras/${obraId}/rdo/diario?data=${dateStr}&id=${newRdo.id}&step=7`);
+    } catch (error) {
+      console.error('Erro ao criar RDO sem atividade:', error);
+      toast.error('Erro ao criar RDO');
     }
   };
 
@@ -444,16 +500,46 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             </Tooltip>
                           </TooltipProvider>
                         )}
-                        {/* Não mostrar botão de criar RDO se estiver bloqueado */}
-                        {!isBlockedForContratada && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 hover:bg-green-100"
-                            onClick={() => handleCreateRdo(day)}
-                          >
-                            <Plus className="h-3 w-3 text-green-600" />
-                          </Button>
+                        {/* Não mostrar botões de criar RDO se estiver bloqueado */}
+                        {!isBlockedForContratada && isAfterObraStart && !isAfter(dayStart, today) && (
+                          <div className="flex gap-0.5">
+                            {/* Botão RDO Sem Atividade */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 hover:bg-amber-100"
+                                    onClick={() => handleCreateEmptyRdo(day)}
+                                  >
+                                    <FileX className="h-3 w-3 text-amber-600" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">RDO sem atividade (ir para assinaturas)</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {/* Botão criar RDO normal */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 hover:bg-green-100"
+                                    onClick={() => handleCreateRdo(day)}
+                                  >
+                                    <Plus className="h-3 w-3 text-green-600" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Criar RDO completo</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         )}
                       </div>
                     )}
