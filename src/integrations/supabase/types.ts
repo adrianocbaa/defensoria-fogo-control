@@ -634,6 +634,44 @@ export type Database = {
           },
         ]
       }
+      medicao_rdo_imports: {
+        Row: {
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          id: string
+          medicao_id: string
+          obra_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          id?: string
+          medicao_id: string
+          obra_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          medicao_id?: string
+          obra_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicao_rdo_imports_medicao_id_fkey"
+            columns: ["medicao_id"]
+            isOneToOne: false
+            referencedRelation: "medicao_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medicao_sessions: {
         Row: {
           created_at: string
