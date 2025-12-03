@@ -248,7 +248,8 @@ export default function RDODiario() {
                     {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
                   </Button>
                 )}
-                {canEdit && formData.id && !isApproved && !hasValidatedSignature && (
+                {/* RDOs aprovados só podem ser excluídos por admin */}
+                {formData.id && (!isApproved || isAdmin) && !hasValidatedSignature && (canEdit || isAdmin) && (
                   <Button variant="destructive" size="sm" onClick={() => setDeleteDialog(true)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Excluir RDO

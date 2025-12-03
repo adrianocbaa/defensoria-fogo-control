@@ -50,7 +50,7 @@ interface RdoCalendarProps {
 export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange, obraStartDate }: RdoCalendarProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isContratada } = useUserRole();
+  const { isContratada, isAdmin } = useUserRole();
   const today = startOfDay(new Date());
   const obraStart = obraStartDate ? parseISO(obraStartDate) : null;
   
@@ -292,17 +292,20 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                               #{rdo.numero_seq}
                             </Badge>
                           </button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5 hover:bg-red-100"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteDialog({ open: true, reportId: rdo.report_id, date: rdo.data });
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3 text-red-600" />
-                          </Button>
+                          {/* Botão excluir: RDOs aprovados só podem ser excluídos por admin */}
+                          {(rdo.status !== 'aprovado' || isAdmin) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 hover:bg-red-100"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteDialog({ open: true, reportId: rdo.report_id, date: rdo.data });
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 text-red-600" />
+                            </Button>
+                          )}
                         </div>
                         
                         {/* Indicadores */}
