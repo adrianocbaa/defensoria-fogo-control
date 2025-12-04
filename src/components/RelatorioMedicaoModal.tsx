@@ -1241,11 +1241,11 @@ export function RelatorioMedicaoModal({
                 <div class="section-title" style="font-size: 12pt;">MEDIÇÃO ATUAL</div>
                 <table class="medicao-table">
                   <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Descrição</th>
-                      <th>Executado</th>
-                      <th>Executado Acum.</th>
+                    <tr style="background: #4a7c59; color: white;">
+                      <th style="background: #4a7c59; color: white;">Item</th>
+                      <th style="background: #4a7c59; color: white;">Descrição</th>
+                      <th style="background: #4a7c59; color: white;">Executado</th>
+                      <th style="background: #4a7c59; color: white;">Executado Acum.</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1257,15 +1257,15 @@ export function RelatorioMedicaoModal({
                         <td class="text-right">${formatMoney(g.executadoAcum)}</td>
                       </tr>
                     `).join('')}
-                    <tr class="total-row">
-                      <td colspan="2" style="text-align: right;">VALOR TOTAL:</td>
-                      <td class="text-right">${formatMoney(totais.executado)}</td>
-                      <td class="text-right">${formatMoney(totais.executadoAcum)}</td>
+                    <tr class="total-row" style="background: #d4edda;">
+                      <td colspan="2" style="text-align: right; font-weight: bold;">VALOR TOTAL:</td>
+                      <td class="text-right" style="font-weight: bold;">${formatMoney(totais.executado)}</td>
+                      <td class="text-right" style="font-weight: bold;">${formatMoney(totais.executadoAcum)}</td>
                     </tr>
-                    <tr class="total-row">
-                      <td colspan="2" style="text-align: right;">PERCENTUAL:</td>
-                      <td class="text-right">${percentualAtual.toFixed(2)}%</td>
-                      <td class="text-right">${totais.percentual.toFixed(2)}%</td>
+                    <tr class="total-row" style="background: #d4edda;">
+                      <td colspan="2" style="text-align: right; font-weight: bold;">PERCENTUAL:</td>
+                      <td class="text-right" style="font-weight: bold;">${percentualAtual.toFixed(2)}%</td>
+                      <td class="text-right" style="font-weight: bold;">${totais.percentual.toFixed(2)}%</td>
                     </tr>
                   </tbody>
                 </table>
