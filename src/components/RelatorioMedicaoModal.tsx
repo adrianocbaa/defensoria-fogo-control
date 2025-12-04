@@ -794,25 +794,49 @@ export function RelatorioMedicaoModal({
             { title: `Previsto x Executado - ${medicaoAtual}ª Medição` }
           );
 
-          // Gráfico de barras: Acumulado
+          // Gráfico de linha: Acumulado (Previsto x Executado por período)
+          // Calcular percentuais totais acumulados
+          const totalContrato = dadosComparativo.reduce((sum, d) => sum + d.previstoAcum, 0);
+          const totalPrevistoAcum = dadosComparativo.reduce((sum, d) => sum + d.previstoAcum, 0);
+          const totalExecutadoAcum = dadosComparativo.reduce((sum, d) => sum + d.executadoAcum, 0);
+          const pctPrevisto = totalContrato > 0 ? (totalPrevistoAcum / totalContrato) * 100 : 0;
+          const pctExecutado = totalContrato > 0 ? (totalExecutadoAcum / totalContrato) * 100 : 0;
+
+          // Criar pontos para o gráfico de linha (0 dias, 30 dias por medição)
+          const labelsLine = ['0 dias'];
+          const dataPrevisto = [0];
+          const dataExecutado = [0];
+          
+          for (let i = 1; i <= medicaoAtual; i++) {
+            labelsLine.push(`${i * 30} dias`);
+            dataPrevisto.push(i === medicaoAtual ? pctPrevisto : (pctPrevisto / medicaoAtual) * i);
+            dataExecutado.push(i === medicaoAtual ? pctExecutado : (pctExecutado / medicaoAtual) * i);
+          }
+
           chartAcumulado = await generateChartImage(
-            'bar',
-            labelsBar,
+            'line',
+            labelsLine,
             [
               {
-                label: 'Previsto Acumulado',
-                data: dadosComparativo.map(d => d.previstoAcum),
-                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                label: 'Previsto (%)',
+                data: dataPrevisto,
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
                 borderColor: 'rgb(59, 130, 246)',
+                fill: true,
               },
               {
-                label: 'Executado Acumulado',
-                data: dadosComparativo.map(d => d.executadoAcum),
-                backgroundColor: 'rgba(34, 197, 94, 0.7)',
-                borderColor: 'rgb(34, 197, 94)',
+                label: 'Executado (%)',
+                data: dataExecutado,
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                borderColor: 'rgb(239, 68, 68)',
+                fill: true,
               },
             ],
-            { title: 'Comparativo Acumulado por MACRO' }
+            { 
+              title: `Medição ${medicaoAtual} - Comparativo Previsto x Executado`,
+              yAxisSuffix: '%',
+              yAxisLabel: 'Percentual (%)'
+            }
           );
         } catch (chartError) {
           console.error('Erro ao gerar gráficos:', chartError);
