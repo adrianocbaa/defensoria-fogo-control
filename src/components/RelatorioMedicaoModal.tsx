@@ -745,15 +745,12 @@ export function RelatorioMedicaoModal({
               
               /* Footer menor para anexo */
               .footer-anexo {
-                position: absolute;
-                bottom: 5mm;
-                left: 0;
-                right: 0;
                 text-align: center;
                 font-size: 8px;
                 color: #666;
                 border-top: 1px solid #ccc;
                 padding-top: 5px;
+                margin-top: 10px;
               }
             </style>
           </head>
