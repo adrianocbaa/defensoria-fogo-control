@@ -39,9 +39,7 @@ export function ProgressBarWithMarkers({ value, marcos, className = '' }: Progre
               <TooltipContent side="top" className="text-xs">
                 <div className="font-semibold">Medição {marco.sequencia}</div>
                 <div className="text-muted-foreground">
-                  <span className="font-medium">{marco.percentualAcumulado.toFixed(2)}%</span>
-                  <span className="mx-1">•</span>
-                  <span>{formatCurrency(marco.valorAcumulado)}</span>
+                  <span>{formatCurrency(marco.valorMedicao)}</span>
                 </div>
               </TooltipContent>
             </Tooltip>
