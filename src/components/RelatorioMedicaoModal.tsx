@@ -443,30 +443,28 @@ export function RelatorioMedicaoModal({
         return `
           <div class="page">
             <div class="header">
-              <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
-              <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+              <div class="header-center">
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+              </div>
             </div>
             <div class="page-content">
-              <div style="text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0 15px 0;">
-                ANEXO 01
-              </div>
+              <div class="anexo-title">ANEXO 01</div>
 
-              <div style="margin-bottom: 8px; font-size: 11px;">
+              <div class="photo-info">
                 <strong>Obra:</strong> ${obra.nome}
               </div>
-              <div style="margin-bottom: 8px; font-size: 11px;">
+              <div class="photo-info">
                 <strong>Local:</strong> ${obra.municipio} - MT
               </div>
-              <div style="margin-bottom: 8px; font-size: 11px;">
+              <div class="photo-info">
                 <strong>Data da vistoria:</strong> ${dataVistoriaFormatada}
               </div>
-              <div style="margin-bottom: 15px; font-size: 11px; text-align: justify;">
+              <div class="photo-info">
                 <strong>Objeto:</strong> As fotos abaixo elencadas apresentam o relatório fotográfico da vistoria realizada pelo ${fiscalCargo || 'Fiscal'} ${fiscalNome || '[Nome do Fiscal]'}. O relatório fotográfico tem como propósito a fiscalização dos serviços executados pela empresa ${obra.empresa_responsavel || '[Empresa]'} ${periodoInicio && periodoFim ? `no período de ${format(new Date(periodoInicio + 'T12:00:00'), 'dd/MM/yyyy')} até ${format(new Date(periodoFim + 'T12:00:00'), 'dd/MM/yyyy')}` : ''}, dando como finalizada a ${medicaoAtual}ª Medição.
               </div>
 
-              <div style="text-align: center; font-size: 14px; font-weight: bold; margin: 10px 0;">
-                RELATÓRIO FOTOGRÁFICO
-              </div>
+              <div class="anexo-subtitle">RELATÓRIO FOTOGRÁFICO</div>
 
               <div class="photo-grid-first">
         `;
@@ -474,8 +472,10 @@ export function RelatorioMedicaoModal({
         return `
           <div class="page">
             <div class="header">
-              <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
-              <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+              <div class="header-center">
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+              </div>
             </div>
             <div class="page-content">
               <div class="photo-grid">
@@ -488,7 +488,8 @@ export function RelatorioMedicaoModal({
               </div>
             </div>
             <div class="footer">
-              Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
+              <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
+              <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
             </div>
           </div>`;
     };
@@ -547,11 +548,14 @@ export function RelatorioMedicaoModal({
           <head>
             <meta charset="UTF-8">
             <style>
-              @page { size: A4; margin: 2.5cm 15mm 2.0cm 15mm; }
+              @page { 
+                size: A4; 
+                margin: 2.5cm; 
+              }
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { 
-                font-family: 'Times New Roman', serif; 
-                font-size: 12px; 
+                font-family: 'Inter', Arial, sans-serif; 
+                font-size: 12pt; 
                 line-height: 1.5;
                 color: #000;
               }
@@ -568,25 +572,38 @@ export function RelatorioMedicaoModal({
               /* Content area grows to push footer down */
               .page-content {
                 flex: 1;
+                text-align: justify;
               }
               
-              /* Header */
+              /* Header - standardized */
               .header {
+                display: flex;
+                align-items: center;
+                margin-bottom: 12px;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 8px;
+                position: relative;
+              }
+              .header-logo {
+                height: 30px;
+                width: auto;
+                object-fit: contain;
+                position: absolute;
+                left: 0;
+              }
+              .header-center {
+                flex: 1;
                 text-align: center;
-                margin-bottom: 20px;
-                border-bottom: 2px solid #1e40af;
-                padding-bottom: 10px;
               }
               .header-title {
-                font-size: 14px;
+                font-size: 12pt;
                 font-weight: bold;
                 color: #1e40af;
-                text-transform: uppercase;
               }
               .header-subtitle {
-                font-size: 12px;
-                color: #1e40af;
-                margin-top: 5px;
+                font-size: 9pt;
+                color: #666;
+                margin-top: 2px;
               }
               
               /* Footer - standardized across all pages */
@@ -599,12 +616,20 @@ export function RelatorioMedicaoModal({
                 font-size: 9pt;
                 line-height: 1.2;
                 color: #666;
-                border-top: 1px solid #ccc;
                 padding: 0;
                 margin-bottom: 0;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                flex-direction: column;
+              }
+              .footer-line1 {
+                margin: 0;
+                padding: 0;
+              }
+              .footer-line2 {
+                margin: 0;
+                padding: 0;
               }
               
               /* Cover Page */
@@ -617,27 +642,27 @@ export function RelatorioMedicaoModal({
                 text-align: center;
               }
               .cover-title {
-                font-size: 24px;
+                font-size: 18pt;
                 font-weight: bold;
                 color: #1e40af;
                 margin-bottom: 30px;
                 text-transform: uppercase;
               }
               .cover-medicao {
-                font-size: 20px;
+                font-size: 16pt;
                 font-weight: bold;
                 margin-bottom: 20px;
               }
               .cover-periodo {
-                font-size: 16px;
+                font-size: 14pt;
                 margin-bottom: 10px;
               }
               .cover-contrato {
-                font-size: 16px;
+                font-size: 14pt;
                 margin-bottom: 30px;
               }
               .cover-obra {
-                font-size: 18px;
+                font-size: 16pt;
                 font-weight: bold;
                 max-width: 80%;
                 margin-bottom: 50px;
@@ -645,28 +670,31 @@ export function RelatorioMedicaoModal({
               
               /* Sections */
               .section-title {
-                font-size: 14px;
+                font-size: 14pt;
                 font-weight: bold;
                 margin: 20px 0 10px 0;
+                text-align: left;
               }
               .section-content {
                 text-align: justify;
                 margin-bottom: 15px;
+                font-size: 12pt;
               }
               
               /* Tables */
               .info-table {
                 width: 100%;
                 border-collapse: collapse;
-                margin: 15px 0;
+                margin: 12px 0;
               }
               .info-table th, .info-table td {
                 border: 1px solid #000;
                 padding: 8px 10px;
                 text-align: left;
+                vertical-align: middle;
               }
               .info-table th {
-                background: #e5e7eb;
+                background: #F2F2F2;
                 font-weight: bold;
                 width: 30%;
               }
@@ -674,15 +702,16 @@ export function RelatorioMedicaoModal({
               .medicao-table {
                 width: 100%;
                 border-collapse: collapse;
-                margin: 15px 0;
-                font-size: 11px;
+                margin: 12px 0;
+                font-size: 11pt;
               }
               .medicao-table th, .medicao-table td {
                 border: 1px solid #000;
                 padding: 6px 8px;
+                vertical-align: middle;
               }
               .medicao-table th {
-                background: #d1d5db;
+                background: #F2F2F2;
                 font-weight: bold;
                 text-align: center;
               }
@@ -691,7 +720,14 @@ export function RelatorioMedicaoModal({
               }
               .medicao-table tr.total-row {
                 font-weight: bold;
-                background: #f3f4f6;
+                background: #F2F2F2;
+              }
+              
+              .table-caption {
+                text-align: center;
+                font-size: 10pt;
+                margin-top: 5px;
+                margin-bottom: 12px;
               }
               
               /* Signature */
@@ -708,20 +744,43 @@ export function RelatorioMedicaoModal({
                 font-weight: bold;
               }
               .signature-cargo {
-                font-size: 11px;
+                font-size: 11pt;
               }
               
-              /* Photo Grid - 1 foto por linha */
+              /* Charts */
+              .chart-container {
+                text-align: center;
+                margin: 12px auto;
+                max-width: 85%;
+              }
+              .chart-title {
+                font-size: 12pt;
+                text-align: center;
+                margin-bottom: 10px;
+              }
+              
+              /* Photo Annex */
+              .anexo-title {
+                text-align: center;
+                font-size: 14pt;
+                font-weight: bold;
+                margin: 20px 0 15px 0;
+              }
+              .anexo-subtitle {
+                text-align: center;
+                font-size: 14pt;
+                margin: 10px 0;
+              }
               .photo-grid {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                gap: 16px;
                 margin-top: 10px;
               }
               .photo-grid-first {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                gap: 16px;
                 margin-top: 10px;
               }
               .photo-item {
@@ -753,9 +812,14 @@ export function RelatorioMedicaoModal({
                 object-fit: contain;
               }
               .photo-caption {
-                font-size: 10px;
-                margin-top: 3px;
-                font-style: italic;
+                font-size: 11pt;
+                margin-top: 5px;
+                text-align: center;
+              }
+              .photo-info {
+                font-size: 11pt;
+                margin-bottom: 8px;
+                text-align: justify;
               }
             </style>
           </head>
@@ -763,8 +827,10 @@ export function RelatorioMedicaoModal({
             <!-- CAPA -->
             <div class="page">
               <div class="header">
-                <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
-                <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-center">
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+                </div>
               </div>
               <div class="cover-content">
                 <div class="cover-title">RELATÓRIO TÉCNICO DE ACOMPANHAMENTO DE REFORMA PREDIAL</div>
@@ -776,21 +842,24 @@ export function RelatorioMedicaoModal({
                 <div class="cover-obra">${obra.nome.toUpperCase()}</div>
               </div>
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
+                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
+                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
 
             <!-- PÁGINA 2: INTRODUÇÃO -->
             <div class="page">
               <div class="header">
-                <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
-                <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-center">
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+                </div>
               </div>
               <div class="page-content">
-                <div style="text-align: center; font-weight: bold; margin: 20px 0; font-size: 14px;">
+                <div style="text-align: center; font-weight: bold; margin: 20px 0; font-size: 14pt;">
                   ${mesAno.charAt(0).toUpperCase() + mesAno.slice(1)}
                 </div>
-                <div style="text-align: center; font-weight: bold; margin: 10px 0; font-size: 16px;">
+                <div style="text-align: center; font-weight: bold; margin: 10px 0; font-size: 16pt;">
                   Relatório Técnico de Acompanhamento de obra
                 </div>
                 <div style="text-align: center; font-weight: bold; margin: 10px 0 30px 0;">
@@ -832,22 +901,25 @@ export function RelatorioMedicaoModal({
                     <td>${format(new Date(dataRelatorio), "dd/MM/yyyy")}</td>
                   </tr>
                 </table>
-                <div style="text-align: center; font-size: 10px; margin-top: 5px;">Tabela 1 - Informações gerais</div>
+                <div class="table-caption">Tabela 1 - Informações gerais</div>
 
                 <div class="section-content" style="margin-top: 20px;">
                   O presente relatório tem por objetivo apresentar o resultado da ${medicaoAtual}ª medição. Esta verificação ocorre através da medição analisada no canteiro de obra por servidor desta Instituição.
                 </div>
               </div>
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
+                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
+                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
 
             <!-- PÁGINA 3: MEDIÇÃO -->
             <div class="page">
               <div class="header">
-                <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
-                <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-center">
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+                </div>
               </div>
               <div class="page-content">
                 <div class="section-title">4. DA MEDIÇÃO:</div>
@@ -865,7 +937,7 @@ export function RelatorioMedicaoModal({
                   `}
                 </div>
 
-                <div style="font-weight: bold; margin: 20px 0 10px 0;">2. MEDIÇÃO ATUAL</div>
+                <div class="section-title" style="font-size: 12pt;">MEDIÇÃO ATUAL</div>
                 <table class="medicao-table">
                   <thead>
                     <tr>
@@ -896,18 +968,21 @@ export function RelatorioMedicaoModal({
                     </tr>
                   </tbody>
                 </table>
-                <div style="text-align: center; font-size: 10px; margin-top: 5px;">Tabela 2 – Medição Atual</div>
+                <div class="table-caption">Tabela 2 – Medição Atual</div>
               </div>
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
+                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
+                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
 
             <!-- PÁGINA 4: SERVIÇOS EXECUTADOS -->
             <div class="page">
               <div class="header">
-                <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
-                <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-center">
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+                </div>
               </div>
               <div class="page-content">
                 <div class="section-title">5. DOS SERVIÇOS EXECUTADOS:</div>
@@ -923,20 +998,23 @@ export function RelatorioMedicaoModal({
                 </div>
               </div>
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
+                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
+                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
 
             <!-- PÁGINA 5: CONCLUSÃO -->
             <div class="page">
               <div class="header">
-                <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
-                <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-center">
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+                </div>
               </div>
               <div class="page-content">
                 <div class="section-title">6. CONCLUSÃO:</div>
                 <div class="section-content">
-                  Sendo assim, e conforme as informações expostas na tabela 3, a ${numeroMedicaoExtenso(medicaoAtual)} medição contratual resultou no valor de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}) a ser pago à empresa ${obra.empresa_responsavel || '[Empresa]'}.
+                  Sendo assim, e conforme as informações expostas na tabela 2, a ${numeroMedicaoExtenso(medicaoAtual)} medição contratual resultou no valor de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}) a ser pago à empresa ${obra.empresa_responsavel || '[Empresa]'}.
                 </div>
 
                 <div style="margin-top: 40px;">
@@ -952,7 +1030,8 @@ export function RelatorioMedicaoModal({
                 ` : ''}
               </div>
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
+                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
+                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
 
