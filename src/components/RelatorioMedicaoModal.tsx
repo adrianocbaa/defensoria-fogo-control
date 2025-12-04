@@ -1324,13 +1324,6 @@ export function RelatorioMedicaoModal({
                   </tbody>
                 </table>
                 <div class="table-caption">Tabela 3 – Análise de Desvios por MACRO</div>
-                
-                <div style="background: #eff6ff; padding: 12px; border-radius: 6px; margin-top: 20px;">
-                  <p style="font-size: 10pt; color: #4b5563; margin: 0;">
-                    <strong>Legenda:</strong> Valores positivos no desvio indicam que o executado superou o previsto. 
-                    Valores negativos indicam que o executado está abaixo do previsto no cronograma financeiro.
-                  </p>
-                </div>
               </div>
               <div class="footer">
                 <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
