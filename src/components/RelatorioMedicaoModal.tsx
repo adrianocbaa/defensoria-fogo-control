@@ -422,12 +422,12 @@ export function RelatorioMedicaoModal({
     return formatarExtenso(valor);
   };
 
-  // Gerar páginas do Anexo 01 (4 fotos na primeira página, 6 nas demais)
+  // Gerar páginas do Anexo 01 (2 fotos na primeira página, 3 nas demais - 1 por linha)
   const gerarPaginasAnexo = () => {
     if (fotosRelatorio.length === 0) return '';
 
-    const fotosFirstPage = 4; // Primeira página tem cabeçalho, cabe 4 fotos
-    const fotosPerPage = 6;   // Demais páginas cabem 6 fotos (3 linhas x 2 colunas)
+    const fotosFirstPage = 2; // Primeira página tem cabeçalho, cabe 2 fotos
+    const fotosPerPage = 3;   // Demais páginas cabem 3 fotos (1 por linha)
     const pages: string[] = [];
     const dataVistoriaFormatada = dataVistoria 
       ? format(new Date(dataVistoria + 'T12:00:00'), 'dd/MM/yyyy')
@@ -485,9 +485,8 @@ export function RelatorioMedicaoModal({
     const closePage = () => {
       return `
           </div>
-          <div class="footer">
-            Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
-            Site: www.defensoriapublica.mt.gov.br
+          <div class="footer-anexo">
+            Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
           </div>
         </div>`;
     };
@@ -697,25 +696,25 @@ export function RelatorioMedicaoModal({
                 font-size: 11px;
               }
               
-              /* Photo Grid - 2x3 (6 fotos por página) */
+              /* Photo Grid - 1 foto por linha, 3 por página */
               .photo-grid {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-                margin-top: 15px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-top: 10px;
               }
               .photo-grid-first {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-                margin-top: 15px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-top: 10px;
               }
               .photo-item {
                 text-align: center;
               }
               .photo-img-container {
                 width: 100%;
-                height: 120px;
+                height: 200px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -725,7 +724,7 @@ export function RelatorioMedicaoModal({
               }
               .photo-img-container-large {
                 width: 100%;
-                height: 100px;
+                height: 170px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -739,9 +738,22 @@ export function RelatorioMedicaoModal({
                 object-fit: contain;
               }
               .photo-caption {
-                font-size: 9px;
-                margin-top: 4px;
+                font-size: 10px;
+                margin-top: 3px;
                 font-style: italic;
+              }
+              
+              /* Footer menor para anexo */
+              .footer-anexo {
+                position: absolute;
+                bottom: 5mm;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 8px;
+                color: #666;
+                border-top: 1px solid #ccc;
+                padding-top: 5px;
               }
             </style>
           </head>
