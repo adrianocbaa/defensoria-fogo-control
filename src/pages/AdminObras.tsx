@@ -460,6 +460,7 @@ export function AdminObras() {
                               value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0}
                               marcos={obraMarcos[obra.id]}
                               className="w-[100px]"
+                              variant="subtle"
                             />
                             <span className="text-sm font-medium whitespace-nowrap text-transparent">
                               {obraProgressos[obra.id] !== undefined 
