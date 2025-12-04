@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { ProgressBarWithMarkers } from '@/components/ProgressBarWithMarkers';
+import { MedicaoMarco } from '@/hooks/useMedicoesFinanceiro';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList, BarChart3 } from 'lucide-react';
@@ -51,6 +53,7 @@ export function AdminObras() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [obraValores, setObraValores] = useState<Record<string, number>>({});
   const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
+  const [obraMarcos, setObraMarcos] = useState<Record<string, MedicaoMarco[]>>({});
   const userRole = useUserRole();
   const navigate = useNavigate();
 
@@ -163,6 +166,7 @@ export function AdminObras() {
       // Processar dados para cada obra
       const valores: Record<string, number> = {};
       const progressos: Record<string, number> = {};
+      const marcos: Record<string, MedicaoMarco[]> = {};
       
       for (const obra of sortedObras) {
         // Calcular valor da obra
@@ -181,15 +185,36 @@ export function AdminObras() {
           
           valores[obra.id] = valorInicial + aditivos;
           
-          // Calcular progresso
-          const obraMedicaoSessions = medicaoData.data?.filter(s => s.obra_id === obra.id) || [];
-          const medicaoSessionIds = obraMedicaoSessions.map(s => s.id);
-          const obraMedicaoItems = medicaoItemsData.data?.filter(item => 
+          // Calcular progresso e marcos
+          const obraMedicaoSessions = (medicaoData.data?.filter(s => s.obra_id === obra.id) || [])
+            .sort((a: any, b: any) => a.sequencia - b.sequencia);
+          const medicaoSessionIds = obraMedicaoSessions.map((s: any) => s.id);
+          const obraMedicaoItems = medicaoItemsData.data?.filter((item: any) => 
             medicaoSessionIds.includes(item.medicao_id)
           ) || [];
-          const valorAcumulado = obraMedicaoItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
+          const valorAcumulado = obraMedicaoItems.reduce((sum, item: any) => sum + Number(item.total || 0), 0);
           
           progressos[obra.id] = valores[obra.id] > 0 ? (valorAcumulado / valores[obra.id]) * 100 : 0;
+          
+          // Calcular marcos para cada sessão de medição
+          const valorPorSessao: Record<string, number> = {};
+          obraMedicaoItems.forEach((item: any) => {
+            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + Number(item.total || 0);
+          });
+          
+          let acumuladoMarco = 0;
+          const obraMarcos: MedicaoMarco[] = [];
+          for (const session of obraMedicaoSessions) {
+            const valorMedicao = valorPorSessao[(session as any).id] || 0;
+            acumuladoMarco += valorMedicao;
+            obraMarcos.push({
+              sequencia: (session as any).sequencia,
+              valorAcumulado: acumuladoMarco,
+              valorMedicao: valorMedicao,
+              percentualAcumulado: valores[obra.id] > 0 ? (acumuladoMarco / valores[obra.id]) * 100 : 0
+            });
+          }
+          marcos[obra.id] = obraMarcos;
         } else {
           // Não tem planilha: usar valores da obra
           valores[obra.id] = Number(obra.valor_total || 0) + Number(obra.valor_aditivado || 0);
@@ -201,6 +226,7 @@ export function AdminObras() {
       
       setObraValores(valores);
       setObraProgressos(progressos);
+      setObraMarcos(marcos);
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');
@@ -416,16 +442,25 @@ export function AdminObras() {
                         : '-'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress 
-                          value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0} 
-                          className="w-[100px]"
-                        />
-                        <span className="text-sm font-medium whitespace-nowrap">
-                          {obraProgressos[obra.id] !== undefined 
-                            ? `${obraProgressos[obra.id].toFixed(1)}%` 
-                            : '-'}
-                        </span>
+                      <div className="flex flex-col gap-1.5 min-w-[140px]">
+                        <div className="flex items-center gap-2">
+                          <Progress 
+                            value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0} 
+                            className="w-[100px]"
+                          />
+                          <span className="text-sm font-medium whitespace-nowrap">
+                            {obraProgressos[obra.id] !== undefined 
+                              ? `${obraProgressos[obra.id].toFixed(1)}%` 
+                              : '-'}
+                          </span>
+                        </div>
+                        {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (
+                          <ProgressBarWithMarkers
+                            value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0}
+                            marcos={obraMarcos[obra.id]}
+                            className="w-[100px]"
+                          />
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
