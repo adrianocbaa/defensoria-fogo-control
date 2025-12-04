@@ -1,14 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, Download, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import html2pdf from 'html2pdf.js';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Obra {
   id: string;
@@ -51,6 +55,22 @@ interface GrupoMedicao {
   executadoAcum: number;
 }
 
+interface FotoRelatorio {
+  id: string;
+  url: string;
+  legenda: string;
+  data?: string;
+  fromRdo: boolean;
+}
+
+interface RdoMedia {
+  id: string;
+  file_url: string;
+  descricao: string | null;
+  data: string;
+  report_id: string;
+}
+
 interface RelatorioMedicaoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -81,6 +101,13 @@ export function RelatorioMedicaoModal({
   const [fiscalNome, setFiscalNome] = useState('');
   const [fiscalCargo, setFiscalCargo] = useState('');
   const [gerando, setGerando] = useState(false);
+  
+  // Estado para fotos
+  const [fotosRelatorio, setFotosRelatorio] = useState<FotoRelatorio[]>([]);
+  const [rdoMedias, setRdoMedias] = useState<RdoMedia[]>([]);
+  const [selectedRdoIds, setSelectedRdoIds] = useState<Set<string>>(new Set());
+  const [loadingRdoMedias, setLoadingRdoMedias] = useState(false);
+  const [dataVistoria, setDataVistoria] = useState('');
 
   // Função para converter número da medição em ordinal por extenso
   const numeroMedicaoExtenso = (num: number): string => {
@@ -94,24 +121,173 @@ export function RelatorioMedicaoModal({
     return ordinais[num] || `${num}ª`;
   };
 
+  // Buscar fotos do RDO quando período mudar
+  useEffect(() => {
+    const fetchRdoMedias = async () => {
+      if (!obra.id || !periodoInicio || !periodoFim) {
+        setRdoMedias([]);
+        return;
+      }
+
+      setLoadingRdoMedias(true);
+      try {
+        const { data, error } = await supabase
+          .from('rdo_media')
+          .select(`
+            id,
+            file_url,
+            descricao,
+            report_id,
+            rdo_reports!inner(data, obra_id)
+          `)
+          .eq('rdo_reports.obra_id', obra.id)
+          .gte('rdo_reports.data', periodoInicio)
+          .lte('rdo_reports.data', periodoFim)
+          .eq('tipo', 'foto')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        const medias: RdoMedia[] = (data || []).map((item: any) => ({
+          id: item.id,
+          file_url: item.file_url,
+          descricao: item.descricao,
+          data: item.rdo_reports?.data,
+          report_id: item.report_id
+        }));
+
+        setRdoMedias(medias);
+      } catch (error) {
+        console.error('Erro ao buscar fotos do RDO:', error);
+      } finally {
+        setLoadingRdoMedias(false);
+      }
+    };
+
+    fetchRdoMedias();
+  }, [obra.id, periodoInicio, periodoFim]);
+
+  // Agrupar fotos RDO por data
+  const rdoMediasByDate = useMemo(() => {
+    const grouped: { [date: string]: RdoMedia[] } = {};
+    rdoMedias.forEach(media => {
+      const date = media.data || 'Sem data';
+      if (!grouped[date]) grouped[date] = [];
+      grouped[date].push(media);
+    });
+    return grouped;
+  }, [rdoMedias]);
+
+  // Selecionar/desselecionar foto do RDO
+  const toggleRdoPhoto = (media: RdoMedia) => {
+    const newSelected = new Set(selectedRdoIds);
+    if (newSelected.has(media.id)) {
+      newSelected.delete(media.id);
+      setFotosRelatorio(prev => prev.filter(f => f.id !== media.id));
+    } else {
+      newSelected.add(media.id);
+      setFotosRelatorio(prev => [...prev, {
+        id: media.id,
+        url: media.file_url,
+        legenda: media.descricao || '',
+        data: media.data,
+        fromRdo: true
+      }]);
+    }
+    setSelectedRdoIds(newSelected);
+  };
+
+  // Selecionar todas as fotos de uma data
+  const selectAllFromDate = (date: string, select: boolean) => {
+    const mediasDate = rdoMediasByDate[date] || [];
+    const newSelected = new Set(selectedRdoIds);
+    
+    if (select) {
+      mediasDate.forEach(media => {
+        if (!newSelected.has(media.id)) {
+          newSelected.add(media.id);
+          setFotosRelatorio(prev => [...prev, {
+            id: media.id,
+            url: media.file_url,
+            legenda: media.descricao || '',
+            data: media.data,
+            fromRdo: true
+          }]);
+        }
+      });
+    } else {
+      mediasDate.forEach(media => {
+        newSelected.delete(media.id);
+      });
+      setFotosRelatorio(prev => prev.filter(f => !mediasDate.some(m => m.id === f.id)));
+    }
+    
+    setSelectedRdoIds(newSelected);
+  };
+
+  // Upload de fotos do computador
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setFotosRelatorio(prev => [...prev, {
+          id: `upload-${Date.now()}-${i}`,
+          url: dataUrl,
+          legenda: '',
+          fromRdo: false
+        }]);
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  // Remover foto
+  const removeFoto = (fotoId: string) => {
+    setFotosRelatorio(prev => prev.filter(f => f.id !== fotoId));
+    setSelectedRdoIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(fotoId);
+      return newSet;
+    });
+  };
+
+  // Atualizar legenda
+  const updateLegenda = (fotoId: string, legenda: string) => {
+    setFotosRelatorio(prev => prev.map(f => 
+      f.id === fotoId ? { ...f, legenda } : f
+    ));
+  };
+
+  // Mover foto para cima/baixo
+  const moveFoto = (index: number, direction: 'up' | 'down') => {
+    const newFotos = [...fotosRelatorio];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= newFotos.length) return;
+    [newFotos[index], newFotos[newIndex]] = [newFotos[newIndex], newFotos[index]];
+    setFotosRelatorio(newFotos);
+  };
+
   // Calcular grupos de primeiro nível (MACROs)
   const gruposMedicao = useMemo(() => {
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
     if (!medicaoAtualObj) return [];
 
-    // Filtrar apenas itens de primeiro nível (grupos principais)
     const gruposPrincipais = items.filter(item => {
       const parts = item.item.split('.');
       return parts.length === 1 && !isNaN(parseInt(parts[0]));
     });
 
     return gruposPrincipais.map(grupo => {
-      // Encontrar todos os itens filhos deste grupo
       const itemsDoGrupo = items.filter(item => 
         item.item.startsWith(grupo.item + '.') || item.item === grupo.item
       );
 
-      // Calcular valor executado nesta medição
       let executado = 0;
       let executadoAcum = 0;
       
@@ -137,7 +313,6 @@ export function RelatorioMedicaoModal({
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
     if (!medicaoAtualObj) return { executado: 0, executadoAcum: 0, contrato: 0, percentual: 0 };
 
-    // Itens folha (sem filhos)
     const ehItemFolha = (itemCode: string) => {
       return !items.some(other => 
         other.item !== itemCode && 
@@ -175,7 +350,6 @@ export function RelatorioMedicaoModal({
   };
 
   const formatMoneyExtenso = (valor: number) => {
-    // Função simplificada para converter número em extenso
     const formatarExtenso = (num: number): string => {
       if (num === 0) return 'zero reais';
       
@@ -246,6 +420,97 @@ export function RelatorioMedicaoModal({
     };
 
     return formatarExtenso(valor);
+  };
+
+  // Gerar páginas do Anexo 01 (4 fotos por página)
+  const gerarPaginasAnexo = () => {
+    if (fotosRelatorio.length === 0) return '';
+
+    const fotosPerPage = 4;
+    const pages: string[] = [];
+    const dataVistoriaFormatada = dataVistoria 
+      ? format(new Date(dataVistoria + 'T12:00:00'), 'dd/MM/yyyy')
+      : format(new Date(dataRelatorio), 'dd/MM/yyyy');
+
+    // Primeira página do anexo com cabeçalho
+    let currentPage = `
+      <div class="page">
+        <div class="header">
+          <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
+          <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+        </div>
+
+        <div style="text-align: center; font-size: 18px; font-weight: bold; margin: 30px 0 20px 0;">
+          ANEXO 01
+        </div>
+
+        <div style="margin-bottom: 10px;">
+          <strong>Obra:</strong> ${obra.nome}
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Local:</strong> ${obra.municipio} - MT
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Data da vistoria:</strong> ${dataVistoriaFormatada}
+        </div>
+        <div style="margin-bottom: 20px;">
+          <strong>Objeto:</strong> As fotos abaixo elencadas apresentam o relatório fotográfico da vistoria realizada pelo ${fiscalCargo || 'Fiscal'} ${fiscalNome || '[Nome do Fiscal]'}. O relatório fotográfico tem como propósito a fiscalização dos serviços executados pela empresa ${obra.empresa_responsavel || '[Empresa]'} ${periodoInicio && periodoFim ? `no período de ${format(new Date(periodoInicio + 'T12:00:00'), 'dd/MM/yyyy')} até ${format(new Date(periodoFim + 'T12:00:00'), 'dd/MM/yyyy')}` : ''}, dando como finalizada a ${medicaoAtual}ª Medição.
+        </div>
+
+        <div style="text-align: center; font-size: 16px; font-weight: bold; margin: 20px 0;">
+          RELATÓRIO FOTOGRÁFICO
+        </div>
+
+        <div class="photo-grid">
+    `;
+
+    let fotoIndex = 0;
+    let fotosOnCurrentPage = 0;
+
+    fotosRelatorio.forEach((foto, idx) => {
+      if (fotosOnCurrentPage === fotosPerPage) {
+        // Fechar página atual e iniciar nova
+        currentPage += `
+          </div>
+          <div class="footer">
+            Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
+            Site: www.defensoriapublica.mt.gov.br
+          </div>
+        </div>`;
+        pages.push(currentPage);
+        
+        currentPage = `
+          <div class="page">
+            <div class="header">
+              <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
+              <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+            </div>
+            <div class="photo-grid">
+        `;
+        fotosOnCurrentPage = 0;
+      }
+
+      fotoIndex++;
+      currentPage += `
+        <div class="photo-item">
+          <img src="${foto.url}" alt="Foto ${fotoIndex}" class="photo-img" crossorigin="anonymous" />
+          <div class="photo-caption">Foto ${fotoIndex} – ${foto.legenda || 'Sem descrição'}</div>
+        </div>
+      `;
+      fotosOnCurrentPage++;
+    });
+
+    // Fechar última página
+    currentPage += `
+        </div>
+        <div class="footer">
+          Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
+          Site: www.defensoriapublica.mt.gov.br
+        </div>
+      </div>`;
+    pages.push(currentPage);
+
+    return pages.join('');
   };
 
   const gerarPDF = async () => {
@@ -413,12 +678,26 @@ export function RelatorioMedicaoModal({
                 font-size: 11px;
               }
               
-              /* List */
-              .services-list {
-                margin: 10px 0 10px 20px;
+              /* Photo Grid - 2x2 */
+              .photo-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                margin-top: 20px;
               }
-              .services-list li {
-                margin-bottom: 5px;
+              .photo-item {
+                text-align: center;
+              }
+              .photo-img {
+                width: 100%;
+                max-height: 180px;
+                object-fit: contain;
+                border: 1px solid #ccc;
+              }
+              .photo-caption {
+                font-size: 10px;
+                margin-top: 5px;
+                font-style: italic;
               }
             </style>
           </head>
@@ -623,6 +902,9 @@ export function RelatorioMedicaoModal({
                 Site: www.defensoriapublica.mt.gov.br
               </div>
             </div>
+
+            <!-- ANEXO 01: RELATÓRIO FOTOGRÁFICO -->
+            ${gerarPaginasAnexo()}
           </body>
         </html>
       `;
@@ -640,7 +922,8 @@ export function RelatorioMedicaoModal({
         html2canvas: { 
           scale: 2,
           useCORS: true,
-          letterRendering: true
+          letterRendering: true,
+          allowTaint: true
         },
         jsPDF: { 
           unit: 'mm', 
@@ -664,7 +947,7 @@ export function RelatorioMedicaoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -672,98 +955,267 @@ export function RelatorioMedicaoModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Período */}
-          <div className="grid grid-cols-2 gap-4">
+        <Tabs defaultValue="dados" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="dados">Dados do Relatório</TabsTrigger>
+            <TabsTrigger value="fotos" className="flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              Anexo Fotográfico ({fotosRelatorio.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dados" className="space-y-4 mt-4">
+            {/* Período */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="periodoInicio">Período Início</Label>
+                <Input
+                  id="periodoInicio"
+                  type="date"
+                  value={periodoInicio}
+                  onChange={(e) => setPeriodoInicio(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="periodoFim">Período Fim</Label>
+                <Input
+                  id="periodoFim"
+                  type="date"
+                  value={periodoFim}
+                  onChange={(e) => setPeriodoFim(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Data do Relatório */}
             <div>
-              <Label htmlFor="periodoInicio">Período Início</Label>
+              <Label htmlFor="dataRelatorio">Data do Relatório</Label>
               <Input
-                id="periodoInicio"
+                id="dataRelatorio"
                 type="date"
-                value={periodoInicio}
-                onChange={(e) => setPeriodoInicio(e.target.value)}
+                value={dataRelatorio}
+                onChange={(e) => setDataRelatorio(e.target.value)}
               />
             </div>
+
+            {/* Serviços Executados */}
             <div>
-              <Label htmlFor="periodoFim">Período Fim</Label>
+              <Label htmlFor="servicosExecutados">5. DOS SERVIÇOS EXECUTADOS (Preenchimento do Fiscal)</Label>
+              <Textarea
+                id="servicosExecutados"
+                placeholder="Descreva os serviços executados durante o período da medição...&#10;&#10;Exemplo:&#10;1. Execução de pintura de parede e calçada;&#10;2. Demolição de contrapiso e execução de rampa;"
+                value={servicosExecutados}
+                onChange={(e) => setServicosExecutados(e.target.value)}
+                rows={6}
+                className="mt-1"
+              />
+            </div>
+
+            {/* Conclusão - Preview */}
+            <div className="bg-muted/50 p-3 rounded-lg border">
+              <Label className="text-muted-foreground text-xs">6. CONCLUSÃO (gerada automaticamente)</Label>
+              <p className="text-sm mt-1">
+                Sendo assim, e conforme as informações expostas na tabela 3, a <strong>{numeroMedicaoExtenso(medicaoAtual)}</strong> medição contratual resultou no valor de <strong>{formatMoney(totais.executado)}</strong> ({formatMoneyExtenso(totais.executado)}) a ser pago à empresa <strong>{obra.empresa_responsavel || '[Empresa]'}</strong>.
+              </p>
+            </div>
+
+            {/* Fiscal */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fiscalNome">Nome do Fiscal</Label>
+                <Input
+                  id="fiscalNome"
+                  placeholder="Ex: João da Silva"
+                  value={fiscalNome}
+                  onChange={(e) => setFiscalNome(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="fiscalCargo">Cargo do Fiscal</Label>
+                <Input
+                  id="fiscalCargo"
+                  placeholder="Ex: Engenheiro Civil"
+                  value={fiscalCargo}
+                  onChange={(e) => setFiscalCargo(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Resumo */}
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-semibold mb-2">Resumo da Medição</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>Valor do Contrato:</div>
+                <div className="font-medium">{formatMoney(totais.contrato)}</div>
+                <div>Valor desta Medição:</div>
+                <div className="font-medium">{formatMoney(totais.executado)}</div>
+                <div>Valor Acumulado:</div>
+                <div className="font-medium">{formatMoney(totais.executadoAcum)}</div>
+                <div>% Executado:</div>
+                <div className="font-medium">{totais.percentual.toFixed(2)}%</div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="fotos" className="space-y-4 mt-4">
+            {/* Data da Vistoria */}
+            <div>
+              <Label htmlFor="dataVistoria">Data da Vistoria (Anexo 01)</Label>
               <Input
-                id="periodoFim"
+                id="dataVistoria"
                 type="date"
-                value={periodoFim}
-                onChange={(e) => setPeriodoFim(e.target.value)}
+                value={dataVistoria}
+                onChange={(e) => setDataVistoria(e.target.value)}
+                placeholder="Se não informada, usa a data do relatório"
               />
             </div>
-          </div>
 
-          {/* Data do Relatório */}
-          <div>
-            <Label htmlFor="dataRelatorio">Data do Relatório</Label>
-            <Input
-              id="dataRelatorio"
-              type="date"
-              value={dataRelatorio}
-              onChange={(e) => setDataRelatorio(e.target.value)}
-            />
-          </div>
-
-          {/* Serviços Executados */}
-          <div>
-            <Label htmlFor="servicosExecutados">5. DOS SERVIÇOS EXECUTADOS (Preenchimento do Fiscal)</Label>
-            <Textarea
-              id="servicosExecutados"
-              placeholder="Descreva os serviços executados durante o período da medição...&#10;&#10;Exemplo:&#10;1. Execução de pintura de parede e calçada;&#10;2. Demolição de contrapiso e execução de rampa;"
-              value={servicosExecutados}
-              onChange={(e) => setServicosExecutados(e.target.value)}
-              rows={6}
-              className="mt-1"
-            />
-          </div>
-
-          {/* Conclusão - Preview */}
-          <div className="bg-muted/50 p-3 rounded-lg border">
-            <Label className="text-muted-foreground text-xs">6. CONCLUSÃO (gerada automaticamente)</Label>
-            <p className="text-sm mt-1">
-              Sendo assim, e conforme as informações expostas na tabela 3, a <strong>{numeroMedicaoExtenso(medicaoAtual)}</strong> medição contratual resultou no valor de <strong>{formatMoney(totais.executado)}</strong> ({formatMoneyExtenso(totais.executado)}) a ser pago à empresa <strong>{obra.empresa_responsavel || '[Empresa]'}</strong>.
-            </p>
-          </div>
-
-          {/* Fiscal */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fiscalNome">Nome do Fiscal</Label>
-              <Input
-                id="fiscalNome"
-                placeholder="Ex: João da Silva"
-                value={fiscalNome}
-                onChange={(e) => setFiscalNome(e.target.value)}
+            {/* Upload de fotos */}
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                id="photo-upload"
               />
+              <label htmlFor="photo-upload" className="cursor-pointer">
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Clique para adicionar fotos do computador
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  ou arraste e solte aqui
+                </p>
+              </label>
             </div>
-            <div>
-              <Label htmlFor="fiscalCargo">Cargo do Fiscal</Label>
-              <Input
-                id="fiscalCargo"
-                placeholder="Ex: Engenheiro Civil"
-                value={fiscalCargo}
-                onChange={(e) => setFiscalCargo(e.target.value)}
-              />
-            </div>
-          </div>
 
-          {/* Resumo */}
-          <div className="bg-muted p-4 rounded-lg">
-            <h4 className="font-semibold mb-2">Resumo da Medição</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>Valor do Contrato:</div>
-              <div className="font-medium">{formatMoney(totais.contrato)}</div>
-              <div>Valor desta Medição:</div>
-              <div className="font-medium">{formatMoney(totais.executado)}</div>
-              <div>Valor Acumulado:</div>
-              <div className="font-medium">{formatMoney(totais.executadoAcum)}</div>
-              <div>% Executado:</div>
-              <div className="font-medium">{totais.percentual.toFixed(2)}%</div>
-            </div>
-          </div>
-        </div>
+            {/* Fotos do RDO */}
+            {periodoInicio && periodoFim && (
+              <div className="space-y-3">
+                <Label>Fotos do RDO ({periodoInicio} a {periodoFim})</Label>
+                {loadingRdoMedias ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="ml-2 text-sm">Carregando fotos do RDO...</span>
+                  </div>
+                ) : Object.keys(rdoMediasByDate).length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhuma foto encontrada no RDO para este período.
+                  </p>
+                ) : (
+                  <ScrollArea className="h-48 border rounded-lg p-2">
+                    {Object.entries(rdoMediasByDate).map(([date, medias]) => {
+                      const allSelected = medias.every(m => selectedRdoIds.has(m.id));
+                      return (
+                        <div key={date} className="mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Checkbox
+                              checked={allSelected}
+                              onCheckedChange={(checked) => selectAllFromDate(date, !!checked)}
+                            />
+                            <span className="font-medium text-sm">
+                              {format(new Date(date + 'T12:00:00'), 'dd/MM/yyyy')} ({medias.length} fotos)
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-6 gap-2 ml-6">
+                            {medias.map(media => (
+                              <div
+                                key={media.id}
+                                className={`relative cursor-pointer rounded border-2 overflow-hidden ${
+                                  selectedRdoIds.has(media.id) ? 'border-primary' : 'border-transparent'
+                                }`}
+                                onClick={() => toggleRdoPhoto(media)}
+                              >
+                                <img
+                                  src={media.file_url}
+                                  alt=""
+                                  className="w-full h-12 object-cover"
+                                />
+                                {selectedRdoIds.has(media.id) && (
+                                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                    <div className="bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                                      ✓
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </ScrollArea>
+                )}
+              </div>
+            )}
+
+            {/* Lista de fotos selecionadas com legendas */}
+            {fotosRelatorio.length > 0 && (
+              <div className="space-y-3">
+                <Label>Fotos Selecionadas ({fotosRelatorio.length})</Label>
+                <ScrollArea className="h-64 border rounded-lg p-2">
+                  {fotosRelatorio.map((foto, index) => (
+                    <div key={foto.id} className="flex items-start gap-3 mb-3 p-2 bg-muted/50 rounded">
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6"
+                          onClick={() => moveFoto(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </Button>
+                        <span className="text-xs text-center font-medium">{index + 1}</span>
+                      </div>
+                      <img
+                        src={foto.url}
+                        alt=""
+                        className="w-16 h-16 object-cover rounded border"
+                      />
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Legenda da foto (ex: Execução de pintura em parede)"
+                          value={foto.legenda}
+                          onChange={(e) => updateLegenda(foto.id, e.target.value)}
+                          className="text-sm"
+                        />
+                        <div className="flex items-center gap-2 mt-1">
+                          {foto.fromRdo && (
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                              RDO {foto.data ? format(new Date(foto.data + 'T12:00:00'), 'dd/MM') : ''}
+                            </span>
+                          )}
+                          {!foto.fromRdo && (
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                              Upload
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => removeFoto(foto.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+            )}
+
+            {fotosRelatorio.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma foto selecionada. O ANEXO 01 não será incluído no relatório.
+              </p>
+            )}
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
