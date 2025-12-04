@@ -5,12 +5,12 @@ export function useRdoProgressByObra(obraId: string) {
   return useQuery({
     queryKey: ['rdo-progress', obraId],
     queryFn: async () => {
-      // 1. Buscar todos os itens do orçamento desta obra (excluindo ADMINISTRAÇÃO e itens sob ela)
+      // 1. Buscar todos os itens do orçamento desta obra (excluindo administração)
       const { data: orcamentoItems, error: orcError } = await supabase
-        .from('vw_planilha_hierarquia')
-        .select('id, quantidade_total, is_macro, origem, is_under_administracao')
+        .from('orcamento_items_hierarquia')
+        .select('id, quantidade, eh_administracao_local, is_macro, origem')
         .eq('obra_id', obraId)
-        .eq('is_under_administracao', false)
+        .eq('eh_administracao_local', false)
         .or('is_macro.is.null,is_macro.eq.false')
         .neq('origem', 'extracontratual');
       
@@ -30,7 +30,7 @@ export function useRdoProgressByObra(obraId: string) {
       // 3. Criar mapa de quantidade por item do orçamento
       const orcamentoMap = new Map<string, number>();
       orcamentoItems.forEach(item => {
-        orcamentoMap.set(item.id, item.quantidade_total);
+        orcamentoMap.set(item.id, item.quantidade);
       });
 
       // 4. Agrupar execução por item (acumular executado_dia de todos os RDOs)
