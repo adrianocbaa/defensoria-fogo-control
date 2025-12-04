@@ -547,7 +547,7 @@ export function RelatorioMedicaoModal({
           <head>
             <meta charset="UTF-8">
             <style>
-              @page { size: A4; margin: 25mm 15mm 20mm 15mm; }
+              @page { size: A4; margin: 2.5cm 15mm 2.0cm 15mm; }
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { 
                 font-family: 'Times New Roman', serif; 
@@ -560,9 +560,8 @@ export function RelatorioMedicaoModal({
               .page { 
                 display: flex;
                 flex-direction: column;
-                min-height: 247mm; /* 297mm - 25mm top - 25mm bottom margin */
+                min-height: 29.7cm;
                 page-break-after: always;
-                position: relative;
               }
               .page:last-child { page-break-after: avoid; }
               
@@ -601,9 +600,11 @@ export function RelatorioMedicaoModal({
                 line-height: 1.2;
                 color: #666;
                 border-top: 1px solid #ccc;
-                padding-top: 3px;
-                padding-bottom: 0;
+                padding: 0;
                 margin-bottom: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
               }
               
               /* Cover Page */
