@@ -14,10 +14,10 @@ export function ProgressBarWithMarkers({ value, marcos, className = '' }: Progre
 
   return (
     <TooltipProvider>
-      <div className={`relative h-3 w-full overflow-visible rounded-full bg-secondary ${className}`}>
-        {/* Barra de progresso */}
+      <div className={`relative h-2 w-full overflow-visible rounded-full bg-secondary ${className}`}>
+        {/* Barra de progresso - usando bg-primary igual ao Progress padrão */}
         <div
-          className="h-full rounded-full bg-green-500 transition-all duration-300"
+          className="h-full rounded-full bg-primary transition-all duration-300"
           style={{ width: `${clampedValue}%` }}
         />
         
@@ -29,17 +29,19 @@ export function ProgressBarWithMarkers({ value, marcos, className = '' }: Progre
             <Tooltip key={marco.sequencia}>
               <TooltipTrigger asChild>
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-0.5 h-5 bg-foreground/80 cursor-pointer hover:bg-foreground transition-colors z-10"
+                  className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-foreground/70 cursor-pointer hover:bg-foreground transition-colors z-10"
                   style={{ left: `${position}%`, transform: `translateX(-50%) translateY(-50%)` }}
                 >
                   {/* Marcador circular no topo */}
-                  <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-foreground border border-background shadow-sm" />
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-foreground border border-background" />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                <div className="font-medium">Medição {marco.sequencia}</div>
+                <div className="font-semibold">Medição {marco.sequencia}</div>
                 <div className="text-muted-foreground">
-                  {marco.percentualAcumulado.toFixed(2)}% • {formatCurrency(marco.valorAcumulado)}
+                  <span className="font-medium">{marco.percentualAcumulado.toFixed(2)}%</span>
+                  <span className="mx-1">•</span>
+                  <span>{formatCurrency(marco.valorAcumulado)}</span>
                 </div>
               </TooltipContent>
             </Tooltip>
