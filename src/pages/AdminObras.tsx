@@ -442,11 +442,11 @@ export function AdminObras() {
                         : '-'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1.5 min-w-[140px]">
+                      <div className="flex flex-col gap-1.5 min-w-[160px]">
                         <div className="flex items-center gap-2">
                           <Progress 
                             value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0} 
-                            className="w-[100px]"
+                            className="w-[100px] h-2"
                           />
                           <span className="text-sm font-medium whitespace-nowrap">
                             {obraProgressos[obra.id] !== undefined 
@@ -455,11 +455,18 @@ export function AdminObras() {
                           </span>
                         </div>
                         {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (
-                          <ProgressBarWithMarkers
-                            value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0}
-                            marcos={obraMarcos[obra.id]}
-                            className="w-[100px]"
-                          />
+                          <div className="flex items-center gap-2">
+                            <ProgressBarWithMarkers
+                              value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0}
+                              marcos={obraMarcos[obra.id]}
+                              className="w-[100px]"
+                            />
+                            <span className="text-sm font-medium whitespace-nowrap text-transparent">
+                              {obraProgressos[obra.id] !== undefined 
+                                ? `${obraProgressos[obra.id].toFixed(1)}%` 
+                                : '-'}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </TableCell>
