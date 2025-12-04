@@ -42,25 +42,46 @@ export const useMedicoesFinanceiro = (obraId: string) => {
           .eq('id', obraId)
           .single();
 
-        // 2. Buscar TODOS os itens de medição para calcular o acumulado
-        // Agrupa por obra_id e soma todos os totais de todas as medições
-        const { data: medicaoItems } = await supabase
-          .from('medicao_items')
-          .select(`
-            total,
-            medicao_id,
-            medicao_sessions!inner(obra_id)
-          `)
-          .eq('medicao_sessions.obra_id', obraId);
+        // 2. Buscar todas as sessões de medição da obra
+        const { data: sessions } = await supabase
+          .from('medicao_sessions')
+          .select('id')
+          .eq('obra_id', obraId);
 
-        // 3. Buscar total do contrato dos itens do orçamento (apenas itens folha)
+        // 3. Buscar todos os itens de medição dessas sessões
+        let valorAcumulado = 0;
+        if (sessions && sessions.length > 0) {
+          const sessionIds = sessions.map(s => s.id);
+          const { data: medicaoItems } = await supabase
+            .from('medicao_items')
+            .select('total')
+            .in('medicao_id', sessionIds);
+          
+          valorAcumulado = medicaoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
+        }
+
+        // 4. Buscar total do contrato dos itens do orçamento (apenas itens folha)
         const { data: orcamentoItems } = await supabase
-          .from('orcamento_items_hierarquia')
-          .select('total_contrato, is_macro')
-          .eq('obra_id', obraId)
-          .or('is_macro.is.null,is_macro.eq.false');
+          .from('orcamento_items')
+          .select('total_contrato, item')
+          .eq('obra_id', obraId);
 
-        // 4. Buscar aditivos bloqueados
+        // Função para verificar se é item folha (não tem filhos)
+        const ehItemFolha = (itemCode: string): boolean => {
+          if (!orcamentoItems) return true;
+          const prefix = itemCode + '.';
+          return !orcamentoItems.some(other => other.item.startsWith(prefix));
+        };
+
+        // Filtrar apenas itens folha para o cálculo do total do contrato
+        const totalContratoOrcamento = orcamentoItems?.reduce((sum, item) => {
+          if (ehItemFolha(item.item)) {
+            return sum + (item.total_contrato || 0);
+          }
+          return sum;
+        }, 0) || 0;
+
+        // 5. Buscar aditivos bloqueados
         const { data: aditivoSessions } = await supabase
           .from('aditivo_sessions')
           .select('id, status')
@@ -69,11 +90,11 @@ export const useMedicoesFinanceiro = (obraId: string) => {
 
         let totalAditivo = 0;
         if (aditivoSessions && aditivoSessions.length > 0) {
-          const sessionIds = aditivoSessions.map(s => s.id);
+          const aditivoSessionIds = aditivoSessions.map(s => s.id);
           const { data: aditivoItems } = await supabase
             .from('aditivo_items')
             .select('total')
-            .in('aditivo_id', sessionIds);
+            .in('aditivo_id', aditivoSessionIds);
           
           totalAditivo = aditivoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
         }
@@ -82,18 +103,12 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         const valorTotalOriginal = obraData?.valor_total || 0;
         const valorAditivadoObra = obraData?.valor_aditivado || 0;
         
-        // Total do contrato: soma dos itens folha do orçamento
-        const totalContratoOrcamento = orcamentoItems?.reduce((sum, item) => sum + (item.total_contrato || 0), 0) || 0;
-        
         // Se tem planilha importada, usar total do orçamento + aditivos bloqueados
         // Senão, usar valor da obra + valor aditivado
         const temPlanilha = totalContratoOrcamento > 0;
         const totalContrato = temPlanilha 
           ? totalContratoOrcamento + totalAditivo 
           : valorTotalOriginal + valorAditivadoObra;
-
-        // Valor acumulado: soma de TODOS os totais de medição (todas as sessões)
-        const valorAcumulado = medicaoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
 
         // Percentual executado
         const percentualExecutado = totalContrato > 0 ? (valorAcumulado / totalContrato) * 100 : 0;
@@ -132,7 +147,6 @@ export const useMedicoesFinanceiro = (obraId: string) => {
 
   const refetch = () => {
     if (obraId) {
-      // Trigger re-fetch by dispatching the event
       window.dispatchEvent(new CustomEvent('medicaoAtualizada'));
     }
   };
