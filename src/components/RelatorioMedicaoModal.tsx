@@ -583,7 +583,7 @@ export function RelatorioMedicaoModal({
     const startNewPage = (withHeader: boolean) => {
       if (withHeader) {
         return `
-          <div class="page">
+          <div class="page page-break">
             <div class="header">
               <div class="header-center">
                 <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
@@ -612,7 +612,7 @@ export function RelatorioMedicaoModal({
         `;
       } else {
         return `
-          <div class="page">
+          <div class="page page-break">
             <div class="header">
               <div class="header-center">
                 <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
@@ -867,8 +867,8 @@ export function RelatorioMedicaoModal({
                 flex-direction: column;
                 min-height: 29.7cm;
               }
-              .page:not(:first-child) {
-                break-before: page;
+              .page-break {
+                page-break-before: always;
               }
               
               /* Content area grows to push footer down */
@@ -1150,7 +1150,7 @@ export function RelatorioMedicaoModal({
             </div>
 
             <!-- PÁGINA 2: INTRODUÇÃO -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-center">
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
@@ -1216,7 +1216,7 @@ export function RelatorioMedicaoModal({
             </div>
 
             <!-- PÁGINA 3: MEDIÇÃO -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-center">
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
@@ -1280,7 +1280,7 @@ export function RelatorioMedicaoModal({
 
             ${dadosComparativo.length > 0 ? `
             <!-- PÁGINA: ANÁLISE DE DESVIOS -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-center">
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
@@ -1334,7 +1334,7 @@ export function RelatorioMedicaoModal({
 
             ${chartPrevistoExecutado || chartAcumulado ? `
             <!-- PÁGINA: GRÁFICOS COMPARATIVOS -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-center">
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
@@ -1370,7 +1370,7 @@ export function RelatorioMedicaoModal({
             ` : ''}
 
             <!-- PÁGINA 4: SERVIÇOS EXECUTADOS -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-center">
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
@@ -1397,7 +1397,7 @@ export function RelatorioMedicaoModal({
             </div>
 
             <!-- PÁGINA 5: CONCLUSÃO -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-center">
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
@@ -1455,7 +1455,7 @@ export function RelatorioMedicaoModal({
           format: 'a4', 
           orientation: 'portrait'
         },
-        pagebreak: { mode: ['css'] }
+        pagebreak: { mode: ['css'], before: '.page-break' }
       };
 
       await html2pdf().set(opt).from(tempDiv).save();
