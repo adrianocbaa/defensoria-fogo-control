@@ -5,6 +5,7 @@ export interface MedicaoMarco {
   sequencia: number;
   percentualAcumulado: number;
   valorAcumulado: number;
+  valorMedicao: number; // Valor individual da medição
 }
 
 interface MedicaoFinanceira {
@@ -79,10 +80,12 @@ export const useMedicoesFinanceiro = (obraId: string) => {
           // Calcular marcos acumulados por sequência
           let acumulado = 0;
           for (const session of sessions) {
-            acumulado += valorPorSessao[session.id] || 0;
+            const valorMedicao = valorPorSessao[session.id] || 0;
+            acumulado += valorMedicao;
             marcos.push({
               sequencia: session.sequencia,
               valorAcumulado: acumulado,
+              valorMedicao: valorMedicao,
               percentualAcumulado: 0 // Será calculado após obter totalContrato
             });
           }
@@ -144,7 +147,8 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         // Atualizar percentuais dos marcos
         const marcosComPercentual = marcos.map(marco => ({
           ...marco,
-          percentualAcumulado: totalContrato > 0 ? (marco.valorAcumulado / totalContrato) * 100 : 0
+          percentualAcumulado: totalContrato > 0 ? (marco.valorAcumulado / totalContrato) * 100 : 0,
+          percentualMedicao: totalContrato > 0 ? (marco.valorMedicao / totalContrato) * 100 : 0
         }));
 
         setDados({
