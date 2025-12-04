@@ -865,10 +865,10 @@ export function RelatorioMedicaoModal({
               .page { 
                 display: flex;
                 flex-direction: column;
-                height: 100%;
+                min-height: 29.7cm;
               }
               .page:not(:first-child) {
-                page-break-before: always;
+                break-before: page;
               }
               
               /* Content area grows to push footer down */
