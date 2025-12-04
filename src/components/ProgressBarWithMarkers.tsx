@@ -15,11 +15,8 @@ export function ProgressBarWithMarkers({ value, marcos, className = '', variant 
   
   const isSubtle = variant === 'subtle';
   const markerLineClass = isSubtle 
-    ? "absolute top-1/2 -translate-y-1/2 w-px h-2.5 bg-muted-foreground/40 cursor-pointer hover:bg-muted-foreground/60 transition-colors z-10"
+    ? "absolute top-1/2 -translate-y-1/2 w-px h-4 bg-muted-foreground/70 cursor-pointer hover:bg-muted-foreground transition-colors z-10"
     : "absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-foreground/70 cursor-pointer hover:bg-foreground transition-colors z-10";
-  const markerDotClass = isSubtle
-    ? "absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-muted-foreground/50"
-    : "absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-foreground border border-background";
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -41,8 +38,10 @@ export function ProgressBarWithMarkers({ value, marcos, className = '', variant 
                   className={markerLineClass}
                   style={{ left: `${position}%`, transform: `translateX(-50%) translateY(-50%)` }}
                 >
-                  {/* Marcador circular no topo */}
-                  <div className={markerDotClass} />
+                  {/* Marcador circular no topo - apenas para variant default */}
+                  {!isSubtle && (
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-foreground border border-background" />
+                  )}
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
