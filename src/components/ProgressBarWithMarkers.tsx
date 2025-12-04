@@ -13,7 +13,7 @@ export function ProgressBarWithMarkers({ value, marcos, className = '' }: Progre
   const clampedValue = Math.min(Math.max(value, 0), 100);
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={0}>
       <div className={`relative h-2 w-full overflow-visible rounded-full bg-secondary ${className}`}>
         {/* Barra de progresso - usando bg-primary igual ao Progress padrão */}
         <div
