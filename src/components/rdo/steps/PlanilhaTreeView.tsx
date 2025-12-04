@@ -28,6 +28,7 @@ interface PlanilhaTreeViewProps {
   onOpenNote: (activityId: string, orcamentoItemId: string, itemDescricao: string) => void;
   isUpdating: boolean;
   isRdoApproved?: boolean;
+  isContratada?: boolean;
 }
 
 export function PlanilhaTreeView({
@@ -37,7 +38,8 @@ export function PlanilhaTreeView({
   onExecutadoBlur,
   onOpenNote,
   isUpdating,
-  isRdoApproved = false
+  isRdoApproved = false,
+  isContratada = false
 }: PlanilhaTreeViewProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
@@ -168,7 +170,9 @@ export function PlanilhaTreeView({
     const hasChildren = node.children.length > 0;
     const isMacro = node.is_macro;
     const isAdministracaoMacro = isMacro && node.descricao.toLowerCase().includes('administração');
-    const isBlockedByAdministracao = !isMacro && hasAdministracaoAncestor(node, allFlatNodes);
+    const isUnderAdministracao = !isMacro && hasAdministracaoAncestor(node, allFlatNodes);
+    // Bloquear edição de itens de Administração APENAS para Contratada
+    const isBlockedByAdministracao = isUnderAdministracao && isContratada;
 
     const elements: JSX.Element[] = [];
 
@@ -289,7 +293,7 @@ export function PlanilhaTreeView({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Itens sob o MACRO "ADMINISTRAÇÃO" não recebem valores no RDO</p>
+                    <p>{isContratada ? 'Itens de Administração: preenchimento exclusivo do Fiscal' : 'MACRO não recebe valores'}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
