@@ -10,6 +10,7 @@ import { ActivityNoteDialog } from "@/components/rdo/ActivityNoteDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaveIndicator } from "@/components/ui/save-indicator";
 import { PlanilhaTreeView } from "./PlanilhaTreeView";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface AtividadesPlanilhaModeProps {
   reportId?: string;
@@ -20,6 +21,7 @@ interface AtividadesPlanilhaModeProps {
 
 export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: AtividadesPlanilhaModeProps) {
   const queryClient = useQueryClient();
+  const { isContratada } = useUserRole();
   const [localExecutado, setLocalExecutado] = useState<Record<string, number>>({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasSynced, setHasSynced] = useState(false);
@@ -350,6 +352,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
               }}
               isUpdating={updateExecutadoMutation.isPending}
               isRdoApproved={isDisabled}
+              isContratada={isContratada}
             />
           )}
         </CardContent>
