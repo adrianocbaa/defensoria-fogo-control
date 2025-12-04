@@ -422,64 +422,56 @@ export function RelatorioMedicaoModal({
     return formatarExtenso(valor);
   };
 
-  // Gerar páginas do Anexo 01 (4 fotos por página)
+  // Gerar páginas do Anexo 01 (4 fotos na primeira página, 6 nas demais)
   const gerarPaginasAnexo = () => {
     if (fotosRelatorio.length === 0) return '';
 
-    const fotosPerPage = 4;
+    const fotosFirstPage = 4; // Primeira página tem cabeçalho, cabe 4 fotos
+    const fotosPerPage = 6;   // Demais páginas cabem 6 fotos (3 linhas x 2 colunas)
     const pages: string[] = [];
     const dataVistoriaFormatada = dataVistoria 
       ? format(new Date(dataVistoria + 'T12:00:00'), 'dd/MM/yyyy')
       : format(new Date(dataRelatorio), 'dd/MM/yyyy');
 
-    // Primeira página do anexo com cabeçalho
-    let currentPage = `
-      <div class="page">
-        <div class="header">
-          <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
-          <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-        </div>
-
-        <div style="text-align: center; font-size: 18px; font-weight: bold; margin: 30px 0 20px 0;">
-          ANEXO 01
-        </div>
-
-        <div style="margin-bottom: 10px;">
-          <strong>Obra:</strong> ${obra.nome}
-        </div>
-        <div style="margin-bottom: 10px;">
-          <strong>Local:</strong> ${obra.municipio} - MT
-        </div>
-        <div style="margin-bottom: 10px;">
-          <strong>Data da vistoria:</strong> ${dataVistoriaFormatada}
-        </div>
-        <div style="margin-bottom: 20px;">
-          <strong>Objeto:</strong> As fotos abaixo elencadas apresentam o relatório fotográfico da vistoria realizada pelo ${fiscalCargo || 'Fiscal'} ${fiscalNome || '[Nome do Fiscal]'}. O relatório fotográfico tem como propósito a fiscalização dos serviços executados pela empresa ${obra.empresa_responsavel || '[Empresa]'} ${periodoInicio && periodoFim ? `no período de ${format(new Date(periodoInicio + 'T12:00:00'), 'dd/MM/yyyy')} até ${format(new Date(periodoFim + 'T12:00:00'), 'dd/MM/yyyy')}` : ''}, dando como finalizada a ${medicaoAtual}ª Medição.
-        </div>
-
-        <div style="text-align: center; font-size: 16px; font-weight: bold; margin: 20px 0;">
-          RELATÓRIO FOTOGRÁFICO
-        </div>
-
-        <div class="photo-grid">
-    `;
-
     let fotoIndex = 0;
+    let isFirstPage = true;
     let fotosOnCurrentPage = 0;
+    let currentPage = '';
 
-    fotosRelatorio.forEach((foto, idx) => {
-      if (fotosOnCurrentPage === fotosPerPage) {
-        // Fechar página atual e iniciar nova
-        currentPage += `
-          </div>
-          <div class="footer">
-            Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
-            Site: www.defensoriapublica.mt.gov.br
-          </div>
-        </div>`;
-        pages.push(currentPage);
-        
-        currentPage = `
+    const startNewPage = (withHeader: boolean) => {
+      if (withHeader) {
+        return `
+          <div class="page">
+            <div class="header">
+              <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
+              <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+            </div>
+
+            <div style="text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0 15px 0;">
+              ANEXO 01
+            </div>
+
+            <div style="margin-bottom: 8px; font-size: 11px;">
+              <strong>Obra:</strong> ${obra.nome}
+            </div>
+            <div style="margin-bottom: 8px; font-size: 11px;">
+              <strong>Local:</strong> ${obra.municipio} - MT
+            </div>
+            <div style="margin-bottom: 8px; font-size: 11px;">
+              <strong>Data da vistoria:</strong> ${dataVistoriaFormatada}
+            </div>
+            <div style="margin-bottom: 15px; font-size: 11px; text-align: justify;">
+              <strong>Objeto:</strong> As fotos abaixo elencadas apresentam o relatório fotográfico da vistoria realizada pelo ${fiscalCargo || 'Fiscal'} ${fiscalNome || '[Nome do Fiscal]'}. O relatório fotográfico tem como propósito a fiscalização dos serviços executados pela empresa ${obra.empresa_responsavel || '[Empresa]'} ${periodoInicio && periodoFim ? `no período de ${format(new Date(periodoInicio + 'T12:00:00'), 'dd/MM/yyyy')} até ${format(new Date(periodoFim + 'T12:00:00'), 'dd/MM/yyyy')}` : ''}, dando como finalizada a ${medicaoAtual}ª Medição.
+            </div>
+
+            <div style="text-align: center; font-size: 14px; font-weight: bold; margin: 10px 0;">
+              RELATÓRIO FOTOGRÁFICO
+            </div>
+
+            <div class="photo-grid-first">
+        `;
+      } else {
+        return `
           <div class="page">
             <div class="header">
               <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
@@ -487,27 +479,54 @@ export function RelatorioMedicaoModal({
             </div>
             <div class="photo-grid">
         `;
+      }
+    };
+
+    const closePage = () => {
+      return `
+          </div>
+          <div class="footer">
+            Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
+            Site: www.defensoriapublica.mt.gov.br
+          </div>
+        </div>`;
+    };
+
+    const renderPhoto = (foto: FotoRelatorio, index: number, useSmallContainer: boolean) => {
+      const containerClass = useSmallContainer ? 'photo-img-container-large' : 'photo-img-container';
+      return `
+        <div class="photo-item">
+          <div class="${containerClass}">
+            <img src="${foto.url}" alt="Foto ${index}" class="photo-img" crossorigin="anonymous" />
+          </div>
+          <div class="photo-caption">Foto ${index} – ${foto.legenda || 'Sem descrição'}</div>
+        </div>
+      `;
+    };
+
+    // Iniciar primeira página
+    currentPage = startNewPage(true);
+
+    fotosRelatorio.forEach((foto) => {
+      const maxFotos = isFirstPage ? fotosFirstPage : fotosPerPage;
+      
+      if (fotosOnCurrentPage === maxFotos) {
+        // Fechar página atual e iniciar nova
+        currentPage += closePage();
+        pages.push(currentPage);
+        
+        isFirstPage = false;
+        currentPage = startNewPage(false);
         fotosOnCurrentPage = 0;
       }
 
       fotoIndex++;
-      currentPage += `
-        <div class="photo-item">
-          <img src="${foto.url}" alt="Foto ${fotoIndex}" class="photo-img" crossorigin="anonymous" />
-          <div class="photo-caption">Foto ${fotoIndex} – ${foto.legenda || 'Sem descrição'}</div>
-        </div>
-      `;
+      currentPage += renderPhoto(foto, fotoIndex, isFirstPage);
       fotosOnCurrentPage++;
     });
 
     // Fechar última página
-    currentPage += `
-        </div>
-        <div class="footer">
-          Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
-          Site: www.defensoriapublica.mt.gov.br
-        </div>
-      </div>`;
+    currentPage += closePage();
     pages.push(currentPage);
 
     return pages.join('');
@@ -678,25 +697,50 @@ export function RelatorioMedicaoModal({
                 font-size: 11px;
               }
               
-              /* Photo Grid - 2x2 */
+              /* Photo Grid - 2x3 (6 fotos por página) */
               .photo-grid {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-                margin-top: 20px;
+                gap: 12px;
+                margin-top: 15px;
+              }
+              .photo-grid-first {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                margin-top: 15px;
               }
               .photo-item {
                 text-align: center;
               }
-              .photo-img {
+              .photo-img-container {
                 width: 100%;
-                max-height: 180px;
-                object-fit: contain;
+                height: 120px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 border: 1px solid #ccc;
+                background: #f9f9f9;
+                overflow: hidden;
+              }
+              .photo-img-container-large {
+                width: 100%;
+                height: 100px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid #ccc;
+                background: #f9f9f9;
+                overflow: hidden;
+              }
+              .photo-img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
               }
               .photo-caption {
-                font-size: 10px;
-                margin-top: 5px;
+                font-size: 9px;
+                margin-top: 4px;
                 font-style: italic;
               }
             </style>
