@@ -13,6 +13,7 @@ import { ptBR } from 'date-fns/locale';
 import html2pdf from 'html2pdf.js';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useCronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
 
 interface Obra {
   id: string;
@@ -108,6 +109,19 @@ export function RelatorioMedicaoModal({
   const [selectedRdoIds, setSelectedRdoIds] = useState<Set<string>>(new Set());
   const [loadingRdoMedias, setLoadingRdoMedias] = useState(false);
   const [dataVistoria, setDataVistoria] = useState('');
+  
+  // Dados do cronograma financeiro para comparativo
+  const { fetchCronograma } = useCronogramaFinanceiro();
+  const [dadosComparativo, setDadosComparativo] = useState<{
+    itemNumero: number;
+    descricao: string;
+    previsto: number;
+    previstoAcum: number;
+    executado: number;
+    executadoAcum: number;
+    desvioPct: number;
+    desvioAcumPct: number;
+  }[]>([]);
 
   // Função para converter número da medição em ordinal por extenso
   const numeroMedicaoExtenso = (num: number): string => {
@@ -166,6 +180,129 @@ export function RelatorioMedicaoModal({
 
     fetchRdoMedias();
   }, [obra.id, periodoInicio, periodoFim]);
+
+  // Carregar dados de comparativo do cronograma financeiro
+  useEffect(() => {
+    const carregarDadosComparativo = async () => {
+      if (!obra.id || !open) return;
+      
+      try {
+        const cronograma = await fetchCronograma(obra.id);
+        if (!cronograma || cronograma.items.length === 0) {
+          setDadosComparativo([]);
+          return;
+        }
+
+        // Buscar todas as medições bloqueadas
+        const { data: medicaoSessions, error: sessionsError } = await supabase
+          .from('medicao_sessions')
+          .select('id, sequencia')
+          .eq('obra_id', obra.id)
+          .eq('status', 'bloqueada')
+          .order('sequencia', { ascending: true });
+
+        if (sessionsError || !medicaoSessions?.length) {
+          setDadosComparativo([]);
+          return;
+        }
+
+        // Buscar itens do orçamento para mapear códigos
+        const { data: orcamentoItems, error: orcError } = await supabase
+          .from('orcamento_items')
+          .select('codigo, item, descricao')
+          .eq('obra_id', obra.id);
+
+        if (orcError) throw orcError;
+
+        const codigoParaMacro = new Map<string, { macro: string; descricao: string }>();
+        orcamentoItems?.forEach(item => {
+          const macro = item.item.split('.')[0];
+          if (!codigoParaMacro.has(macro)) {
+            const isMacro = item.item.split('.').length === 1;
+            if (isMacro) {
+              codigoParaMacro.set(macro, { macro, descricao: item.descricao });
+            }
+          }
+          codigoParaMacro.set(item.codigo, { macro, descricao: item.descricao });
+          codigoParaMacro.set(item.item, { macro, descricao: item.descricao });
+        });
+
+        // Calcular dados acumulados até a medição atual
+        const medicaoAtualSession = medicaoSessions.find(s => s.sequencia === medicaoAtual);
+        if (!medicaoAtualSession) {
+          setDadosComparativo([]);
+          return;
+        }
+
+        const sessionsAteMedicaoAtual = medicaoSessions.filter(s => s.sequencia <= medicaoAtual);
+        
+        // Calcular executado por medição
+        const executadoPorMacroPorMedicao = new Map<number, Map<number, number>>();
+        
+        for (const session of sessionsAteMedicaoAtual) {
+          const { data: medicaoItems } = await supabase
+            .from('medicao_items')
+            .select('item_code, total')
+            .eq('medicao_id', session.id);
+
+          const executadoMacro = new Map<number, number>();
+          medicaoItems?.forEach(item => {
+            const macroInfo = codigoParaMacro.get(item.item_code);
+            if (macroInfo) {
+              const macroNum = parseInt(macroInfo.macro);
+              if (!isNaN(macroNum)) {
+                const current = executadoMacro.get(macroNum) || 0;
+                executadoMacro.set(macroNum, current + (item.total || 0));
+              }
+            }
+          });
+          executadoPorMacroPorMedicao.set(session.sequencia, executadoMacro);
+        }
+
+        // Gerar dados de comparativo
+        const comparativos = cronograma.items.map(itemCronograma => {
+          const periodoAtual = medicaoAtual * 30;
+          const periodoAtualData = itemCronograma.periodos.find(p => p.periodo === periodoAtual);
+          const previsto = periodoAtualData?.valor || 0;
+          
+          // Calcular previsto acumulado (soma de todos os períodos até o atual)
+          const previstoAcum = itemCronograma.periodos
+            .filter(p => p.periodo <= periodoAtual)
+            .reduce((sum, p) => sum + p.valor, 0);
+
+          // Executado desta medição
+          const executadoMedicaoAtual = executadoPorMacroPorMedicao.get(medicaoAtual)?.get(itemCronograma.item_numero) || 0;
+          
+          // Executado acumulado
+          let executadoAcum = 0;
+          sessionsAteMedicaoAtual.forEach(session => {
+            executadoAcum += executadoPorMacroPorMedicao.get(session.sequencia)?.get(itemCronograma.item_numero) || 0;
+          });
+
+          const desvioPct = previsto > 0 ? ((executadoMedicaoAtual - previsto) / previsto) * 100 : 0;
+          const desvioAcumPct = previstoAcum > 0 ? ((executadoAcum - previstoAcum) / previstoAcum) * 100 : 0;
+
+          return {
+            itemNumero: itemCronograma.item_numero,
+            descricao: itemCronograma.descricao,
+            previsto,
+            previstoAcum,
+            executado: executadoMedicaoAtual,
+            executadoAcum,
+            desvioPct,
+            desvioAcumPct
+          };
+        });
+
+        setDadosComparativo(comparativos);
+      } catch (error) {
+        console.error('Erro ao carregar dados de comparativo:', error);
+        setDadosComparativo([]);
+      }
+    };
+
+    carregarDadosComparativo();
+  }, [obra.id, medicaoAtual, open, fetchCronograma]);
 
   // Agrupar fotos RDO por data
   const rdoMediasByDate = useMemo(() => {
@@ -975,6 +1112,68 @@ export function RelatorioMedicaoModal({
                 <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
+
+            ${dadosComparativo.length > 0 ? `
+            <!-- PÁGINA: ANÁLISE DE DESVIOS -->
+            <div class="page">
+              <div class="header">
+                <div class="header-center">
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+                </div>
+              </div>
+              <div class="page-content">
+                <div class="section-title">ANÁLISE DE DESVIOS - Cronograma x Executado</div>
+                <div class="section-content">
+                  A tabela abaixo apresenta a análise comparativa entre o previsto no cronograma físico-financeiro e o efetivamente executado para cada grupo de serviço (MACRO).
+                </div>
+                <table class="medicao-table" style="font-size: 10pt;">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Descrição</th>
+                      <th style="background: #dbeafe;">Previsto</th>
+                      <th style="background: #dbeafe;">Previsto Acum.</th>
+                      <th style="background: #dcfce7;">Executado</th>
+                      <th style="background: #dcfce7;">Executado Acum.</th>
+                      <th>Desvio (%)</th>
+                      <th>Desvio Acum. (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${dadosComparativo.map(d => `
+                      <tr>
+                        <td style="text-align: center;">${d.itemNumero}</td>
+                        <td>${d.descricao}</td>
+                        <td class="text-right" style="background: #eff6ff;">${formatMoney(d.previsto)}</td>
+                        <td class="text-right" style="background: #eff6ff;">${formatMoney(d.previstoAcum)}</td>
+                        <td class="text-right" style="background: #f0fdf4;">${formatMoney(d.executado)}</td>
+                        <td class="text-right" style="background: #f0fdf4;">${formatMoney(d.executadoAcum)}</td>
+                        <td class="text-right" style="color: ${d.desvioPct < 0 ? '#dc2626' : d.desvioPct > 0 ? '#16a34a' : '#666'}; font-weight: 600;">
+                          ${d.desvioPct >= 0 ? '' : ''}${d.desvioPct.toFixed(2)}%
+                        </td>
+                        <td class="text-right" style="color: ${d.desvioAcumPct < 0 ? '#dc2626' : d.desvioAcumPct > 0 ? '#16a34a' : '#666'}; font-weight: 600;">
+                          ${d.desvioAcumPct >= 0 ? '' : ''}${d.desvioAcumPct.toFixed(2)}%
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+                <div class="table-caption">Tabela 3 – Análise de Desvios por MACRO</div>
+                
+                <div style="background: #eff6ff; padding: 12px; border-radius: 6px; margin-top: 20px;">
+                  <p style="font-size: 10pt; color: #4b5563; margin: 0;">
+                    <strong>Legenda:</strong> Valores positivos no desvio indicam que o executado superou o previsto. 
+                    Valores negativos indicam que o executado está abaixo do previsto no cronograma financeiro.
+                  </p>
+                </div>
+              </div>
+              <div class="footer">
+                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
+                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
+              </div>
+            </div>
+            ` : ''}
 
             <!-- PÁGINA 4: SERVIÇOS EXECUTADOS -->
             <div class="page">
