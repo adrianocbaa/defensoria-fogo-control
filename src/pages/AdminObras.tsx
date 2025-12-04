@@ -13,7 +13,7 @@ import { ProgressBarWithMarkers } from '@/components/ProgressBarWithMarkers';
 import { MedicaoMarco } from '@/hooks/useMedicoesFinanceiro';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2, Ruler, Map, ClipboardList, BarChart3 } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler, Map as MapIcon, ClipboardList, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Obra {
@@ -53,6 +53,7 @@ export function AdminObras() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [obraValores, setObraValores] = useState<Record<string, number>>({});
   const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
+  const [obraRdoProgressos, setObraRdoProgressos] = useState<Record<string, number | null>>({});
   const [obraMarcos, setObraMarcos] = useState<Record<string, MedicaoMarco[]>>({});
   const userRole = useUserRole();
   const navigate = useNavigate();
@@ -120,7 +121,7 @@ export function AdminObras() {
       const obraIds = sortedObras.map(o => o.id);
       
       // Buscar todos os dados de uma vez
-      const [orcamentoData, aditivoData, medicaoData] = await Promise.all([
+      const [orcamentoData, aditivoData, medicaoData, rdoActivitiesData, orcamentoForRdoData] = await Promise.all([
         // Buscar orcamento_items de todas as obras
         supabase
           .from('orcamento_items_hierarquia')
@@ -139,8 +140,24 @@ export function AdminObras() {
         // Buscar medicao_sessions de todas as obras
         supabase
           .from('medicao_sessions')
-          .select('id, obra_id')
+          .select('id, obra_id, sequencia')
+          .in('obra_id', obraIds),
+        
+        // Buscar rdo_activities de todas as obras (para Andamento da Obra)
+        supabase
+          .from('rdo_activities')
+          .select('obra_id, orcamento_item_id, executado_dia')
           .in('obra_id', obraIds)
+          .not('orcamento_item_id', 'is', null),
+        
+        // Buscar orcamento_items para cálculo do RDO (excluindo administração)
+        supabase
+          .from('orcamento_items_hierarquia')
+          .select('id, obra_id, quantidade, eh_administracao_local, is_macro, origem')
+          .in('obra_id', obraIds)
+          .eq('eh_administracao_local', false)
+          .or('is_macro.is.null,is_macro.eq.false')
+          .neq('origem', 'extracontratual')
       ]);
 
       // Buscar aditivo_items e medicao_items se houver sessões
@@ -166,10 +183,50 @@ export function AdminObras() {
       // Processar dados para cada obra
       const valores: Record<string, number> = {};
       const progressos: Record<string, number> = {};
+      const rdoProgressos: Record<string, number | null> = {};
       const marcos: Record<string, MedicaoMarco[]> = {};
       
       for (const obra of sortedObras) {
-        // Calcular valor da obra
+        // Calcular Andamento da Obra (baseado em RDO)
+        const obraOrcamentoRdo = orcamentoForRdoData.data?.filter(item => item.obra_id === obra.id) || [];
+        const obraRdoActivities = rdoActivitiesData.data?.filter(a => a.obra_id === obra.id) || [];
+        
+        if (obraOrcamentoRdo.length > 0 && obraRdoActivities.length > 0) {
+          // Criar mapa de quantidade por item do orçamento
+          const orcamentoMap = new Map<string, number>();
+          obraOrcamentoRdo.forEach(item => {
+            orcamentoMap.set(item.id, item.quantidade);
+          });
+          
+          // Agrupar execução por item
+          const executadoMap = new Map<string, number>();
+          obraRdoActivities.forEach(activity => {
+            const itemId = activity.orcamento_item_id;
+            if (orcamentoMap.has(itemId)) {
+              const current = executadoMap.get(itemId) || 0;
+              executadoMap.set(itemId, current + (activity.executado_dia || 0));
+            }
+          });
+          
+          // Calcular percentual médio ponderado
+          let somaPercentuais = 0;
+          let somaQuantidades = 0;
+          
+          orcamentoMap.forEach((quantidadeOrcamento, itemId) => {
+            const executadoAcumulado = executadoMap.get(itemId) || 0;
+            if (quantidadeOrcamento > 0) {
+              const percentual = Math.min((executadoAcumulado / quantidadeOrcamento) * 100, 100);
+              somaPercentuais += percentual * quantidadeOrcamento;
+              somaQuantidades += quantidadeOrcamento;
+            }
+          });
+          
+          rdoProgressos[obra.id] = somaQuantidades > 0 ? somaPercentuais / somaQuantidades : null;
+        } else {
+          rdoProgressos[obra.id] = null;
+        }
+        
+        // Calcular valor da obra e Valor Pago (medição)
         const obraOrcamento = orcamentoData.data?.filter(item => item.obra_id === obra.id) || [];
         
         if (obraOrcamento.length > 0) {
@@ -226,6 +283,7 @@ export function AdminObras() {
       
       setObraValores(valores);
       setObraProgressos(progressos);
+      setObraRdoProgressos(rdoProgressos);
       setObraMarcos(marcos);
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
@@ -333,7 +391,7 @@ export function AdminObras() {
             )}
             <Button asChild variant="outline" size="sm">
               <Link to="/obras">
-                <Map className="h-4 w-4 mr-2" />
+                <MapIcon className="h-4 w-4 mr-2" />
                 Mapa de Obras
               </Link>
             </Button>
@@ -443,17 +501,19 @@ export function AdminObras() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1.5 min-w-[160px]">
-                        <div className="flex items-center gap-2">
-                          <Progress 
-                            value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0} 
-                            className="w-[100px] h-2"
-                          />
-                          <span className="text-sm font-medium whitespace-nowrap">
-                            {obraProgressos[obra.id] !== undefined 
-                              ? `${obraProgressos[obra.id].toFixed(1)}%` 
-                              : '-'}
-                          </span>
-                        </div>
+                        {/* Andamento da Obra (RDO) - só mostra se tiver dados */}
+                        {obraRdoProgressos[obra.id] !== null && obraRdoProgressos[obra.id] !== undefined && (
+                          <div className="flex items-center gap-2">
+                            <Progress 
+                              value={obraRdoProgressos[obra.id] || 0} 
+                              className="w-[100px] h-2"
+                            />
+                            <span className="text-sm font-medium whitespace-nowrap">
+                              {obraRdoProgressos[obra.id]?.toFixed(1)}%
+                            </span>
+                          </div>
+                        )}
+                        {/* Valor Pago (Medição) com marcadores */}
                         {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (
                           <div className="flex items-center gap-2">
                             <ProgressBarWithMarkers
@@ -462,12 +522,17 @@ export function AdminObras() {
                               className="w-[100px]"
                               variant="subtle"
                             />
-                            <span className="text-sm font-medium whitespace-nowrap text-transparent">
+                            <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">
                               {obraProgressos[obra.id] !== undefined 
                                 ? `${obraProgressos[obra.id].toFixed(1)}%` 
                                 : '-'}
                             </span>
                           </div>
+                        )}
+                        {/* Fallback: se não tiver nem RDO nem Medição */}
+                        {(obraRdoProgressos[obra.id] === null || obraRdoProgressos[obra.id] === undefined) && 
+                         (!obraMarcos[obra.id] || obraMarcos[obra.id].length === 0) && (
+                          <span className="text-sm text-muted-foreground">-</span>
                         )}
                       </div>
                     </TableCell>
