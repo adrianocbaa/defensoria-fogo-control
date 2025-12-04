@@ -666,17 +666,31 @@ export function RelatorioMedicaoModal({
                 background: #f3f4f6;
               }
               
-              /* Footer */
+              /* Footer - Padrão Institucional */
               .footer {
                 position: absolute;
                 bottom: 0;
                 left: 0;
                 right: 0;
-                text-align: center;
-                font-size: 9px;
-                color: #666;
-                border-top: 1px solid #ccc;
-                padding-top: 10px;
+                height: 70px !important;
+                padding: 8px !important;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                border-top: 1px solid #E0E0E0;
+                font-family: 'Inter', sans-serif;
+                font-size: 10px !important;
+                color: #4A4A4A;
+              }
+              .footer img {
+                height: 30px !important;
+                width: auto !important;
+                object-fit: contain !important;
+              }
+              .footer p, .footer span {
+                font-size: 10px !important;
+                margin: 0 !important;
               }
               
               /* Signature */
@@ -743,14 +757,28 @@ export function RelatorioMedicaoModal({
                 font-style: italic;
               }
               
-              /* Footer menor para anexo */
+              /* Footer para anexo - Mesmo padrão institucional */
               .footer-anexo {
-                text-align: center;
-                font-size: 8px;
-                color: #666;
-                border-top: 1px solid #ccc;
-                padding-top: 5px;
-                margin-top: 10px;
+                height: 70px !important;
+                padding: 8px !important;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                border-top: 1px solid #E0E0E0;
+                font-family: 'Inter', sans-serif;
+                font-size: 10px !important;
+                color: #4A4A4A;
+                margin-top: auto;
+              }
+              .footer-anexo img {
+                height: 30px !important;
+                width: auto !important;
+                object-fit: contain !important;
+              }
+              .footer-anexo p, .footer-anexo span {
+                font-size: 10px !important;
+                margin: 0 !important;
               }
             </style>
           </head>
