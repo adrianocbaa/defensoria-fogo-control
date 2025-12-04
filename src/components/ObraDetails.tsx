@@ -15,6 +15,7 @@ import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/components/LoadingStates';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
+import { ProgressBarWithMarkers } from '@/components/ProgressBarWithMarkers';
 
 interface ObraDetailsProps {
   obra: Obra | null;
@@ -294,7 +295,10 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                     <span className="text-sm font-medium text-muted-foreground">Valor Pago:</span>
                     <span className="text-lg font-semibold text-green-600">{percentualValorPago.toFixed(2)}%</span>
                   </div>
-                  <Progress value={Math.min(percentualValorPago, 100)} className="h-2" />
+                  <ProgressBarWithMarkers 
+                    value={Math.min(percentualValorPago, 100)} 
+                    marcos={dadosFinanceiros.marcos}
+                  />
                   <div className="flex justify-between text-xs text-muted-foreground pt-1">
                     <div>
                       <span className="font-medium">Valor Executado: </span>

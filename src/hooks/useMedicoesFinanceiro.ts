@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface MedicaoMarco {
+  sequencia: number;
+  percentualAcumulado: number;
+  valorAcumulado: number;
+}
+
 interface MedicaoFinanceira {
   valorTotalOriginal: number;
   totalAditivo: number;
@@ -9,6 +15,7 @@ interface MedicaoFinanceira {
   valorAcumulado: number;
   percentualExecutado: number;
   valorPago: number;
+  marcos: MedicaoMarco[];
 }
 
 export const useMedicoesFinanceiro = (obraId: string) => {
@@ -19,7 +26,8 @@ export const useMedicoesFinanceiro = (obraId: string) => {
     servicosExecutados: 0,
     valorAcumulado: 0,
     percentualExecutado: 0,
-    valorPago: 0
+    valorPago: 0,
+    marcos: []
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,22 +50,42 @@ export const useMedicoesFinanceiro = (obraId: string) => {
           .eq('id', obraId)
           .single();
 
-        // 2. Buscar todas as sessões de medição da obra
+        // 2. Buscar todas as sessões de medição da obra ordenadas por sequência
         const { data: sessions } = await supabase
           .from('medicao_sessions')
-          .select('id')
-          .eq('obra_id', obraId);
+          .select('id, sequencia')
+          .eq('obra_id', obraId)
+          .order('sequencia', { ascending: true });
 
         // 3. Buscar todos os itens de medição dessas sessões
         let valorAcumulado = 0;
+        const marcos: MedicaoMarco[] = [];
+        
         if (sessions && sessions.length > 0) {
           const sessionIds = sessions.map(s => s.id);
           const { data: medicaoItems } = await supabase
             .from('medicao_items')
-            .select('total')
+            .select('total, medicao_id')
             .in('medicao_id', sessionIds);
           
+          // Calcular valor por sessão para os marcos
+          const valorPorSessao: Record<string, number> = {};
+          medicaoItems?.forEach(item => {
+            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + (item.total || 0);
+          });
+          
           valorAcumulado = medicaoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
+          
+          // Calcular marcos acumulados por sequência
+          let acumulado = 0;
+          for (const session of sessions) {
+            acumulado += valorPorSessao[session.id] || 0;
+            marcos.push({
+              sequencia: session.sequencia,
+              valorAcumulado: acumulado,
+              percentualAcumulado: 0 // Será calculado após obter totalContrato
+            });
+          }
         }
 
         // 4. Buscar total do contrato dos itens do orçamento (apenas itens folha)
@@ -113,6 +141,12 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         // Percentual executado
         const percentualExecutado = totalContrato > 0 ? (valorAcumulado / totalContrato) * 100 : 0;
 
+        // Atualizar percentuais dos marcos
+        const marcosComPercentual = marcos.map(marco => ({
+          ...marco,
+          percentualAcumulado: totalContrato > 0 ? (marco.valorAcumulado / totalContrato) * 100 : 0
+        }));
+
         setDados({
           valorTotalOriginal: temPlanilha ? totalContratoOrcamento : valorTotalOriginal,
           totalAditivo: temPlanilha ? totalAditivo : valorAditivadoObra,
@@ -120,7 +154,8 @@ export const useMedicoesFinanceiro = (obraId: string) => {
           servicosExecutados: valorAcumulado,
           valorAcumulado,
           percentualExecutado,
-          valorPago: valorAcumulado
+          valorPago: valorAcumulado,
+          marcos: marcosComPercentual
         });
 
       } catch (err) {
