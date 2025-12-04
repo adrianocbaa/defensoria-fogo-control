@@ -446,29 +446,29 @@ export function RelatorioMedicaoModal({
               <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
               <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
             </div>
+            <div class="page-content">
+              <div style="text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0 15px 0;">
+                ANEXO 01
+              </div>
 
-            <div style="text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0 15px 0;">
-              ANEXO 01
-            </div>
+              <div style="margin-bottom: 8px; font-size: 11px;">
+                <strong>Obra:</strong> ${obra.nome}
+              </div>
+              <div style="margin-bottom: 8px; font-size: 11px;">
+                <strong>Local:</strong> ${obra.municipio} - MT
+              </div>
+              <div style="margin-bottom: 8px; font-size: 11px;">
+                <strong>Data da vistoria:</strong> ${dataVistoriaFormatada}
+              </div>
+              <div style="margin-bottom: 15px; font-size: 11px; text-align: justify;">
+                <strong>Objeto:</strong> As fotos abaixo elencadas apresentam o relatório fotográfico da vistoria realizada pelo ${fiscalCargo || 'Fiscal'} ${fiscalNome || '[Nome do Fiscal]'}. O relatório fotográfico tem como propósito a fiscalização dos serviços executados pela empresa ${obra.empresa_responsavel || '[Empresa]'} ${periodoInicio && periodoFim ? `no período de ${format(new Date(periodoInicio + 'T12:00:00'), 'dd/MM/yyyy')} até ${format(new Date(periodoFim + 'T12:00:00'), 'dd/MM/yyyy')}` : ''}, dando como finalizada a ${medicaoAtual}ª Medição.
+              </div>
 
-            <div style="margin-bottom: 8px; font-size: 11px;">
-              <strong>Obra:</strong> ${obra.nome}
-            </div>
-            <div style="margin-bottom: 8px; font-size: 11px;">
-              <strong>Local:</strong> ${obra.municipio} - MT
-            </div>
-            <div style="margin-bottom: 8px; font-size: 11px;">
-              <strong>Data da vistoria:</strong> ${dataVistoriaFormatada}
-            </div>
-            <div style="margin-bottom: 15px; font-size: 11px; text-align: justify;">
-              <strong>Objeto:</strong> As fotos abaixo elencadas apresentam o relatório fotográfico da vistoria realizada pelo ${fiscalCargo || 'Fiscal'} ${fiscalNome || '[Nome do Fiscal]'}. O relatório fotográfico tem como propósito a fiscalização dos serviços executados pela empresa ${obra.empresa_responsavel || '[Empresa]'} ${periodoInicio && periodoFim ? `no período de ${format(new Date(periodoInicio + 'T12:00:00'), 'dd/MM/yyyy')} até ${format(new Date(periodoFim + 'T12:00:00'), 'dd/MM/yyyy')}` : ''}, dando como finalizada a ${medicaoAtual}ª Medição.
-            </div>
+              <div style="text-align: center; font-size: 14px; font-weight: bold; margin: 10px 0;">
+                RELATÓRIO FOTOGRÁFICO
+              </div>
 
-            <div style="text-align: center; font-size: 14px; font-weight: bold; margin: 10px 0;">
-              RELATÓRIO FOTOGRÁFICO
-            </div>
-
-            <div class="photo-grid-first">
+              <div class="photo-grid-first">
         `;
       } else {
         return `
@@ -477,18 +477,20 @@ export function RelatorioMedicaoModal({
               <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
               <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
             </div>
-            <div class="photo-grid">
+            <div class="page-content">
+              <div class="photo-grid">
         `;
       }
     };
 
     const closePage = () => {
       return `
-          </div>
-          <div class="footer-anexo">
-            Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
-          </div>
-        </div>`;
+              </div>
+            </div>
+            <div class="footer">
+              Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
+            </div>
+          </div>`;
     };
 
     const renderPhoto = (foto: FotoRelatorio, index: number, useSmallContainer: boolean) => {
@@ -545,7 +547,7 @@ export function RelatorioMedicaoModal({
           <head>
             <meta charset="UTF-8">
             <style>
-              @page { size: A4; margin: 20mm 15mm 20mm 15mm; }
+              @page { size: A4; margin: 25mm 15mm 20mm 15mm; }
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { 
                 font-family: 'Times New Roman', serif; 
@@ -553,12 +555,21 @@ export function RelatorioMedicaoModal({
                 line-height: 1.5;
                 color: #000;
               }
+              
+              /* Page structure - flex container */
               .page { 
-                page-break-after: always; 
-                min-height: 250mm;
+                display: flex;
+                flex-direction: column;
+                min-height: 247mm; /* 297mm - 25mm top - 25mm bottom margin */
+                page-break-after: always;
                 position: relative;
               }
               .page:last-child { page-break-after: avoid; }
+              
+              /* Content area grows to push footer down */
+              .page-content {
+                flex: 1;
+              }
               
               /* Header */
               .header {
@@ -579,13 +590,29 @@ export function RelatorioMedicaoModal({
                 margin-top: 5px;
               }
               
+              /* Footer - standardized across all pages */
+              .footer {
+                margin-top: auto;
+                height: 1.2cm;
+                max-height: 1.2cm;
+                overflow: hidden;
+                text-align: center;
+                font-size: 9pt;
+                line-height: 1.2;
+                color: #666;
+                border-top: 1px solid #ccc;
+                padding-top: 3px;
+                padding-bottom: 0;
+                margin-bottom: 0;
+              }
+              
               /* Cover Page */
-              .cover-page {
+              .cover-content {
+                flex: 1;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                height: 250mm;
                 text-align: center;
               }
               .cover-title {
@@ -666,19 +693,6 @@ export function RelatorioMedicaoModal({
                 background: #f3f4f6;
               }
               
-              /* Footer */
-              .footer {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                text-align: center;
-                font-size: 9px;
-                color: #666;
-                border-top: 1px solid #ccc;
-                padding-top: 10px;
-              }
-              
               /* Signature */
               .signature-section {
                 margin-top: 60px;
@@ -696,7 +710,7 @@ export function RelatorioMedicaoModal({
                 font-size: 11px;
               }
               
-              /* Photo Grid - 1 foto por linha, 3 por página */
+              /* Photo Grid - 1 foto por linha */
               .photo-grid {
                 display: flex;
                 flex-direction: column;
@@ -742,16 +756,6 @@ export function RelatorioMedicaoModal({
                 margin-top: 3px;
                 font-style: italic;
               }
-              
-              /* Footer menor para anexo */
-              .footer-anexo {
-                text-align: center;
-                font-size: 8px;
-                color: #666;
-                border-top: 1px solid #ccc;
-                padding-top: 5px;
-                margin-top: 10px;
-              }
             </style>
           </head>
           <body>
@@ -761,7 +765,7 @@ export function RelatorioMedicaoModal({
                 <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
                 <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
-              <div class="cover-page">
+              <div class="cover-content">
                 <div class="cover-title">RELATÓRIO TÉCNICO DE ACOMPANHAMENTO DE REFORMA PREDIAL</div>
                 <div class="cover-medicao">${medicaoAtual}ª MEDIÇÃO</div>
                 ${periodoInicio && periodoFim ? `
@@ -771,8 +775,7 @@ export function RelatorioMedicaoModal({
                 <div class="cover-obra">${obra.nome.toUpperCase()}</div>
               </div>
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
-                Site: www.defensoriapublica.mt.gov.br
+                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
               </div>
             </div>
 
@@ -782,61 +785,60 @@ export function RelatorioMedicaoModal({
                 <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
                 <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
-              
-              <div style="text-align: center; font-weight: bold; margin: 20px 0; font-size: 14px;">
-                ${mesAno.charAt(0).toUpperCase() + mesAno.slice(1)}
-              </div>
-              <div style="text-align: center; font-weight: bold; margin: 10px 0; font-size: 16px;">
-                Relatório Técnico de Acompanhamento de obra
-              </div>
-              <div style="text-align: center; font-weight: bold; margin: 10px 0 30px 0;">
-                ${medicaoAtual}ª Medição Mensal
-              </div>
+              <div class="page-content">
+                <div style="text-align: center; font-weight: bold; margin: 20px 0; font-size: 14px;">
+                  ${mesAno.charAt(0).toUpperCase() + mesAno.slice(1)}
+                </div>
+                <div style="text-align: center; font-weight: bold; margin: 10px 0; font-size: 16px;">
+                  Relatório Técnico de Acompanhamento de obra
+                </div>
+                <div style="text-align: center; font-weight: bold; margin: 10px 0 30px 0;">
+                  ${medicaoAtual}ª Medição Mensal
+                </div>
 
-              <div class="section-title">1. DO PERÍODO DA MEDIÇÃO:</div>
-              <div class="section-content">
-                ${periodoInicio && periodoFim ? `
-                O período da medição refere-se à execução de reforma predial entre os dias ${format(new Date(periodoInicio + 'T12:00:00'), "dd/MM/yyyy")} ao dia ${format(new Date(periodoFim + 'T12:00:00'), "dd/MM/yyyy")}.
-                ` : 'Período não informado.'}
+                <div class="section-title">1. DO PERÍODO DA MEDIÇÃO:</div>
+                <div class="section-content">
+                  ${periodoInicio && periodoFim ? `
+                  O período da medição refere-se à execução de reforma predial entre os dias ${format(new Date(periodoInicio + 'T12:00:00'), "dd/MM/yyyy")} ao dia ${format(new Date(periodoFim + 'T12:00:00'), "dd/MM/yyyy")}.
+                  ` : 'Período não informado.'}
+                </div>
+
+                <div class="section-title">2. DO OBJETO:</div>
+                <div class="section-content">
+                  O objeto da medição é ${obra.nome}${obra.n_contrato ? ` (contrato nº ${obra.n_contrato})` : ''}, situado em ${obra.municipio} - MT.
+                </div>
+
+                <div class="section-title">3. OBSERVAÇÕES INICIAIS:</div>
+                <table class="info-table">
+                  <tr>
+                    <th>Objeto</th>
+                    <td>${obra.nome}</td>
+                  </tr>
+                  <tr>
+                    <th>Empresa Executora</th>
+                    <td>${obra.empresa_responsavel || '-'}</td>
+                  </tr>
+                  <tr>
+                    <th>Valor</th>
+                    <td>${formatMoney(totais.contrato)}</td>
+                  </tr>
+                  <tr>
+                    <th>Prazo</th>
+                    <td>${obra.tempo_obra ? `${obra.tempo_obra} dias` : '-'}</td>
+                  </tr>
+                  <tr>
+                    <th>Data da medição</th>
+                    <td>${format(new Date(dataRelatorio), "dd/MM/yyyy")}</td>
+                  </tr>
+                </table>
+                <div style="text-align: center; font-size: 10px; margin-top: 5px;">Tabela 1 - Informações gerais</div>
+
+                <div class="section-content" style="margin-top: 20px;">
+                  O presente relatório tem por objetivo apresentar o resultado da ${medicaoAtual}ª medição. Esta verificação ocorre através da medição analisada no canteiro de obra por servidor desta Instituição.
+                </div>
               </div>
-
-              <div class="section-title">2. DO OBJETO:</div>
-              <div class="section-content">
-                O objeto da medição é ${obra.nome}${obra.n_contrato ? ` (contrato nº ${obra.n_contrato})` : ''}, situado em ${obra.municipio} - MT.
-              </div>
-
-              <div class="section-title">3. OBSERVAÇÕES INICIAIS:</div>
-              <table class="info-table">
-                <tr>
-                  <th>Objeto</th>
-                  <td>${obra.nome}</td>
-                </tr>
-                <tr>
-                  <th>Empresa Executora</th>
-                  <td>${obra.empresa_responsavel || '-'}</td>
-                </tr>
-                <tr>
-                  <th>Valor</th>
-                  <td>${formatMoney(totais.contrato)}</td>
-                </tr>
-                <tr>
-                  <th>Prazo</th>
-                  <td>${obra.tempo_obra ? `${obra.tempo_obra} dias` : '-'}</td>
-                </tr>
-                <tr>
-                  <th>Data da medição</th>
-                  <td>${format(new Date(dataRelatorio), "dd/MM/yyyy")}</td>
-                </tr>
-              </table>
-              <div style="text-align: center; font-size: 10px; margin-top: 5px;">Tabela 1 - Informações gerais</div>
-
-              <div class="section-content" style="margin-top: 20px;">
-                O presente relatório tem por objetivo apresentar o resultado da ${medicaoAtual}ª medição. Esta verificação ocorre através da medição analisada no canteiro de obra por servidor desta Instituição.
-              </div>
-
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
-                Site: www.defensoriapublica.mt.gov.br
+                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
               </div>
             </div>
 
@@ -846,58 +848,57 @@ export function RelatorioMedicaoModal({
                 <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
                 <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
+              <div class="page-content">
+                <div class="section-title">4. DA MEDIÇÃO:</div>
+                <div class="section-content">
+                  O presente relatório tem por objetivo apresentar a ${medicaoAtual}ª medição do referido contrato. Durante o período indicado foram realizadas várias visitas à obra pelo Fiscal do Contrato para o acompanhamento dos serviços.
+                </div>
+                <div class="section-content">
+                  Todos os serviços executados são apresentados na planilha de medição, que indica as quantidades realizadas de cada item.
+                </div>
+                <div class="section-content">
+                  ${periodoInicio && periodoFim ? `
+                  O valor que se chega desta ${medicaoAtual}ª medição, referente ao período de ${format(new Date(periodoInicio + 'T12:00:00'), "dd/MM/yyyy")} a ${format(new Date(periodoFim + 'T12:00:00'), "dd/MM/yyyy")}, é de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}), que representa <strong>${percentualAtual.toFixed(2)}%</strong> do valor do contrato.
+                  ` : `
+                  O valor desta ${medicaoAtual}ª medição é de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}), que representa <strong>${percentualAtual.toFixed(2)}%</strong> do valor do contrato.
+                  `}
+                </div>
 
-              <div class="section-title">4. DA MEDIÇÃO:</div>
-              <div class="section-content">
-                O presente relatório tem por objetivo apresentar a ${medicaoAtual}ª medição do referido contrato. Durante o período indicado foram realizadas várias visitas à obra pelo Fiscal do Contrato para o acompanhamento dos serviços.
-              </div>
-              <div class="section-content">
-                Todos os serviços executados são apresentados na planilha de medição, que indica as quantidades realizadas de cada item.
-              </div>
-              <div class="section-content">
-                ${periodoInicio && periodoFim ? `
-                O valor que se chega desta ${medicaoAtual}ª medição, referente ao período de ${format(new Date(periodoInicio + 'T12:00:00'), "dd/MM/yyyy")} a ${format(new Date(periodoFim + 'T12:00:00'), "dd/MM/yyyy")}, é de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}), que representa <strong>${percentualAtual.toFixed(2)}%</strong> do valor do contrato.
-                ` : `
-                O valor desta ${medicaoAtual}ª medição é de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}), que representa <strong>${percentualAtual.toFixed(2)}%</strong> do valor do contrato.
-                `}
-              </div>
-
-              <div style="font-weight: bold; margin: 20px 0 10px 0;">2. MEDIÇÃO ATUAL</div>
-              <table class="medicao-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Descrição</th>
-                    <th>Executado</th>
-                    <th>Executado Acum.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${gruposMedicao.map(g => `
+                <div style="font-weight: bold; margin: 20px 0 10px 0;">2. MEDIÇÃO ATUAL</div>
+                <table class="medicao-table">
+                  <thead>
                     <tr>
-                      <td style="text-align: center;">${g.item}</td>
-                      <td>${g.descricao}</td>
-                      <td class="text-right">${formatMoney(g.executado)}</td>
-                      <td class="text-right">${formatMoney(g.executadoAcum)}</td>
+                      <th>Item</th>
+                      <th>Descrição</th>
+                      <th>Executado</th>
+                      <th>Executado Acum.</th>
                     </tr>
-                  `).join('')}
-                  <tr class="total-row">
-                    <td colspan="2" style="text-align: right;">VALOR TOTAL:</td>
-                    <td class="text-right">${formatMoney(totais.executado)}</td>
-                    <td class="text-right">${formatMoney(totais.executadoAcum)}</td>
-                  </tr>
-                  <tr class="total-row">
-                    <td colspan="2" style="text-align: right;">PERCENTUAL:</td>
-                    <td class="text-right">${percentualAtual.toFixed(2)}%</td>
-                    <td class="text-right">${totais.percentual.toFixed(2)}%</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div style="text-align: center; font-size: 10px; margin-top: 5px;">Tabela 2 – Medição Atual</div>
-
+                  </thead>
+                  <tbody>
+                    ${gruposMedicao.map(g => `
+                      <tr>
+                        <td style="text-align: center;">${g.item}</td>
+                        <td>${g.descricao}</td>
+                        <td class="text-right">${formatMoney(g.executado)}</td>
+                        <td class="text-right">${formatMoney(g.executadoAcum)}</td>
+                      </tr>
+                    `).join('')}
+                    <tr class="total-row">
+                      <td colspan="2" style="text-align: right;">VALOR TOTAL:</td>
+                      <td class="text-right">${formatMoney(totais.executado)}</td>
+                      <td class="text-right">${formatMoney(totais.executadoAcum)}</td>
+                    </tr>
+                    <tr class="total-row">
+                      <td colspan="2" style="text-align: right;">PERCENTUAL:</td>
+                      <td class="text-right">${percentualAtual.toFixed(2)}%</td>
+                      <td class="text-right">${totais.percentual.toFixed(2)}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style="text-align: center; font-size: 10px; margin-top: 5px;">Tabela 2 – Medição Atual</div>
+              </div>
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
-                Site: www.defensoriapublica.mt.gov.br
+                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
               </div>
             </div>
 
@@ -907,22 +908,21 @@ export function RelatorioMedicaoModal({
                 <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
                 <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
-
-              <div class="section-title">5. DOS SERVIÇOS EXECUTADOS:</div>
-              <div class="section-content">
-                Durante o período da medição, a empresa responsável pela obra executou serviços dos seguintes grupos:
+              <div class="page-content">
+                <div class="section-title">5. DOS SERVIÇOS EXECUTADOS:</div>
+                <div class="section-content">
+                  Durante o período da medição, a empresa responsável pela obra executou serviços dos seguintes grupos:
+                </div>
+                ${servicosExecutados ? `
+                <div class="section-content" style="white-space: pre-wrap;">${servicosExecutados}</div>
+                ` : '<div class="section-content" style="color: #666; font-style: italic;">Nenhum serviço descrito.</div>'}
+                
+                <div class="section-content" style="margin-top: 20px;">
+                  Todos os serviços executados, assim como aqueles parcialmente executados, foram verificados pelo fiscal da obra. É válido informar que cada um destes serviços está em conformidade com os projetos apresentados e também de acordo com os padrões e especificações requeridos. O fiscal da obra atestou a qualidade e a precisão dos trabalhos realizados, garantindo que cada etapa do projeto atenda às expectativas de qualidade e segurança. No entanto, o atesto da qualidade durante inspeção realizada pelo fiscal não exime a responsabilidade da empresa na ocorrência de vícios ocultos ou não identificados.
+                </div>
               </div>
-              ${servicosExecutados ? `
-              <div class="section-content" style="white-space: pre-wrap;">${servicosExecutados}</div>
-              ` : '<div class="section-content" style="color: #666; font-style: italic;">Nenhum serviço descrito.</div>'}
-              
-              <div class="section-content" style="margin-top: 20px;">
-                Todos os serviços executados, assim como aqueles parcialmente executados, foram verificados pelo fiscal da obra. É válido informar que cada um destes serviços está em conformidade com os projetos apresentados e também de acordo com os padrões e especificações requeridos. O fiscal da obra atestou a qualidade e a precisão dos trabalhos realizados, garantindo que cada etapa do projeto atenda às expectativas de qualidade e segurança. No entanto, o atesto da qualidade durante inspeção realizada pelo fiscal não exime a responsabilidade da empresa na ocorrência de vícios ocultos ou não identificados.
-              </div>
-
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
-                Site: www.defensoriapublica.mt.gov.br
+                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
               </div>
             </div>
 
@@ -932,27 +932,26 @@ export function RelatorioMedicaoModal({
                 <div class="header-title">DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO</div>
                 <div class="header-subtitle">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
+              <div class="page-content">
+                <div class="section-title">6. CONCLUSÃO:</div>
+                <div class="section-content">
+                  Sendo assim, e conforme as informações expostas na tabela 3, a ${numeroMedicaoExtenso(medicaoAtual)} medição contratual resultou no valor de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}) a ser pago à empresa ${obra.empresa_responsavel || '[Empresa]'}.
+                </div>
 
-              <div class="section-title">6. CONCLUSÃO:</div>
-              <div class="section-content">
-                Sendo assim, e conforme as informações expostas na tabela 3, a ${numeroMedicaoExtenso(medicaoAtual)} medição contratual resultou no valor de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}) a ser pago à empresa ${obra.empresa_responsavel || '[Empresa]'}.
+                <div style="margin-top: 40px;">
+                  ${obra.municipio || 'Cuiabá'}/MT, ${dataAtual}.
+                </div>
+
+                ${fiscalNome ? `
+                <div class="signature-section">
+                  <div class="signature-line"></div>
+                  <div class="signature-name">${fiscalNome}</div>
+                  <div class="signature-cargo">${fiscalCargo || 'Fiscal do Contrato'}</div>
+                </div>
+                ` : ''}
               </div>
-
-              <div style="margin-top: 40px;">
-                ${obra.municipio || 'Cuiabá'}/MT, ${dataAtual}.
-              </div>
-
-              ${fiscalNome ? `
-              <div class="signature-section">
-                <div class="signature-line"></div>
-                <div class="signature-name">${fiscalNome}</div>
-                <div class="signature-cargo">${fiscalCargo || 'Fiscal do Contrato'}</div>
-              </div>
-              ` : ''}
-
               <div class="footer">
-                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.<br/>
-                Site: www.defensoriapublica.mt.gov.br
+                Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT. | Site: www.defensoriapublica.mt.gov.br
               </div>
             </div>
 
