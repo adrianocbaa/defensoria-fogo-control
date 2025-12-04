@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import ImportarPlanilha from '@/components/ImportarPlanilha';
 import { ImportarDoRDO } from '@/components/ImportarDoRDO';
 import NovoAditivoModal from '@/components/NovoAditivoModal';
+import { RelatorioMedicaoModal } from '@/components/RelatorioMedicaoModal';
 import { ImportarCronograma } from '@/components/ImportarCronograma';
 import { CronogramaView } from '@/components/CronogramaView';
 import * as LoadingStates from '@/components/LoadingStates';
@@ -126,6 +127,7 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const [confirm, setConfirm] = useState<{ open: boolean; type?: 'reabrir-medicao' | 'excluir-medicao' | 'excluir-aditivo' | 'limpar-planilha'; medicaoId?: number; aditivoId?: number }>({ open: false });
   const [editandoDesconto, setEditandoDesconto] = useState(false);
   const [novoDesconto, setNovoDesconto] = useState('');
+  const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -3432,11 +3434,15 @@ const criarNovaMedicao = async () => {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={exportarPlanilhaXLS}>
                           <FileText className="h-4 w-4 mr-2" />
-                          Exportar em XLS
+                          Exportar Planilha XLS
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={exportarPlanilhaPDF}>
                           <FileText className="h-4 w-4 mr-2" />
-                          Exportar em PDF
+                          Exportar Planilha PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setModalRelatorioAberto(true)}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Relatório Técnico
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -4113,6 +4119,21 @@ const criarNovaMedicao = async () => {
         </Card>
       </TabsContent>
     </Tabs>
+
+    {/* Modal Relatório Técnico */}
+    {obra && medicaoAtual && (
+      <RelatorioMedicaoModal
+        open={modalRelatorioAberto}
+        onOpenChange={setModalRelatorioAberto}
+        obra={obra}
+        medicaoAtual={medicaoAtual}
+        items={items}
+        medicoes={medicoes}
+        calcularValorAcumuladoItem={calcularValorAcumuladoItem}
+        calcularTotalContratoComAditivos={calcularTotalContratoComAditivos}
+        dadosHierarquicos={dadosHierarquicosMemoizados}
+      />
+    )}
 
     {/* Confirmações - Movido para fora das Tabs para aparecer em qualquer aba */}
     <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
