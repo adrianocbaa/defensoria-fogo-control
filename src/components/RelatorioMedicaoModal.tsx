@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,11 @@ import html2pdf from 'html2pdf.js';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
+import { Chart, registerables } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
+// Register Chart.js components
+Chart.register(...registerables, ChartDataLabels);
 
 interface Obra {
   id: string;
@@ -671,6 +676,88 @@ export function RelatorioMedicaoModal({
     return pages.join('');
   };
 
+  // Função para gerar gráfico como imagem base64
+  const generateChartImage = async (
+    type: 'bar' | 'line',
+    labels: string[],
+    datasets: { label: string; data: number[]; backgroundColor?: string; borderColor?: string; fill?: boolean }[],
+    options: {
+      title?: string;
+      yAxisLabel?: string;
+      yAxisSuffix?: string;
+      stacked?: boolean;
+    } = {}
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 400;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject('Canvas context not available');
+        return;
+      }
+
+      const chart = new Chart(ctx, {
+        type,
+        data: {
+          labels,
+          datasets: datasets.map(ds => ({
+            ...ds,
+            borderWidth: type === 'bar' ? 1 : 2,
+            tension: type === 'line' ? 0.4 : undefined,
+          })),
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            title: options.title ? {
+              display: true,
+              text: options.title,
+              font: { size: 14, weight: 'bold' },
+            } : undefined,
+            legend: {
+              display: true,
+              position: 'bottom',
+            },
+            datalabels: {
+              display: false,
+            },
+          },
+          scales: {
+            x: {
+              stacked: options.stacked,
+              grid: { display: false },
+            },
+            y: {
+              stacked: options.stacked,
+              beginAtZero: true,
+              title: options.yAxisLabel ? {
+                display: true,
+                text: options.yAxisLabel,
+              } : undefined,
+              ticks: {
+                callback: (value) => options.yAxisSuffix 
+                  ? `${value}${options.yAxisSuffix}` 
+                  : `R$ ${Number(value).toLocaleString('pt-BR')}`,
+              },
+            },
+          },
+        },
+        plugins: [ChartDataLabels],
+      });
+
+      // Wait for chart to render
+      setTimeout(() => {
+        const imageData = canvas.toDataURL('image/png', 1.0);
+        chart.destroy();
+        resolve(imageData);
+      }, 100);
+    });
+  };
+
   const gerarPDF = async () => {
     setGerando(true);
     
@@ -678,6 +765,59 @@ export function RelatorioMedicaoModal({
       const dataAtual = format(new Date(dataRelatorio), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
       const mesAno = format(new Date(dataRelatorio), "MMMM/yyyy", { locale: ptBR });
       const percentualAtual = totais.contrato > 0 ? (totais.executado / totais.contrato) * 100 : 0;
+
+      // Gerar gráficos se houver dados de comparativo
+      let chartPrevistoExecutado = '';
+      let chartAcumulado = '';
+
+      if (dadosComparativo.length > 0) {
+        try {
+          // Gráfico de barras: Previsto vs Executado
+          const labelsBar = dadosComparativo.map(d => `${d.itemNumero}`);
+          chartPrevistoExecutado = await generateChartImage(
+            'bar',
+            labelsBar,
+            [
+              {
+                label: 'Previsto',
+                data: dadosComparativo.map(d => d.previsto),
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: 'rgb(59, 130, 246)',
+              },
+              {
+                label: 'Executado',
+                data: dadosComparativo.map(d => d.executado),
+                backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                borderColor: 'rgb(34, 197, 94)',
+              },
+            ],
+            { title: `Previsto x Executado - ${medicaoAtual}ª Medição` }
+          );
+
+          // Gráfico de barras: Acumulado
+          chartAcumulado = await generateChartImage(
+            'bar',
+            labelsBar,
+            [
+              {
+                label: 'Previsto Acumulado',
+                data: dadosComparativo.map(d => d.previstoAcum),
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: 'rgb(59, 130, 246)',
+              },
+              {
+                label: 'Executado Acumulado',
+                data: dadosComparativo.map(d => d.executadoAcum),
+                backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                borderColor: 'rgb(34, 197, 94)',
+              },
+            ],
+            { title: 'Comparativo Acumulado por MACRO' }
+          );
+        } catch (chartError) {
+          console.error('Erro ao gerar gráficos:', chartError);
+        }
+      }
       
       const htmlContent = `
         <!DOCTYPE html>
@@ -1173,6 +1313,42 @@ export function RelatorioMedicaoModal({
                 <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
+
+            ${chartPrevistoExecutado || chartAcumulado ? `
+            <!-- PÁGINA: GRÁFICOS COMPARATIVOS -->
+            <div class="page">
+              <div class="header">
+                <div class="header-center">
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
+                </div>
+              </div>
+              <div class="page-content">
+                <div class="section-title">GRÁFICOS COMPARATIVOS</div>
+                <div class="section-content">
+                  Os gráficos abaixo apresentam a análise visual comparativa entre o previsto no cronograma e o efetivamente executado.
+                </div>
+
+                ${chartPrevistoExecutado ? `
+                <div class="chart-container">
+                  <div class="chart-title">Gráfico 1 – Previsto x Executado por MACRO</div>
+                  <img src="${chartPrevistoExecutado}" alt="Gráfico Previsto x Executado" style="width: 100%; max-width: 600px; height: auto; margin: 0 auto; display: block;" />
+                </div>
+                ` : ''}
+
+                ${chartAcumulado ? `
+                <div class="chart-container" style="margin-top: 30px;">
+                  <div class="chart-title">Gráfico 2 – Comparativo Acumulado por MACRO</div>
+                  <img src="${chartAcumulado}" alt="Gráfico Acumulado" style="width: 100%; max-width: 600px; height: auto; margin: 0 auto; display: block;" />
+                </div>
+                ` : ''}
+              </div>
+              <div class="footer">
+                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
+                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
+              </div>
+            </div>
+            ` : ''}
             ` : ''}
 
             <!-- PÁGINA 4: SERVIÇOS EXECUTADOS -->
