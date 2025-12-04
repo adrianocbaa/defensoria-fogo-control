@@ -75,13 +75,24 @@ export function RelatorioMedicaoModal({
   dadosHierarquicos
 }: RelatorioMedicaoModalProps) {
   const [servicosExecutados, setServicosExecutados] = useState('');
-  const [conclusao, setConclusao] = useState('');
   const [periodoInicio, setPeriodoInicio] = useState('');
   const [periodoFim, setPeriodoFim] = useState('');
   const [dataRelatorio, setDataRelatorio] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [fiscalNome, setFiscalNome] = useState('');
   const [fiscalCargo, setFiscalCargo] = useState('');
   const [gerando, setGerando] = useState(false);
+
+  // Função para converter número da medição em ordinal por extenso
+  const numeroMedicaoExtenso = (num: number): string => {
+    const ordinais: { [key: number]: string } = {
+      1: 'primeira', 2: 'segunda', 3: 'terceira', 4: 'quarta', 5: 'quinta',
+      6: 'sexta', 7: 'sétima', 8: 'oitava', 9: 'nona', 10: 'décima',
+      11: 'décima primeira', 12: 'décima segunda', 13: 'décima terceira', 
+      14: 'décima quarta', 15: 'décima quinta', 16: 'décima sexta',
+      17: 'décima sétima', 18: 'décima oitava', 19: 'décima nona', 20: 'vigésima'
+    };
+    return ordinais[num] || `${num}ª`;
+  };
 
   // Calcular grupos de primeiro nível (MACROs)
   const gruposMedicao = useMemo(() => {
@@ -591,13 +602,9 @@ export function RelatorioMedicaoModal({
               </div>
 
               <div class="section-title">6. CONCLUSÃO:</div>
-              ${conclusao ? `
-              <div class="section-content" style="white-space: pre-wrap;">${conclusao}</div>
-              ` : `
               <div class="section-content">
-                Sendo assim, e conforme as informações expostas, a ${medicaoAtual}ª medição contratual resultou no valor de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}) a ser pago à empresa ${obra.empresa_responsavel || '[Empresa]'}.
+                Sendo assim, e conforme as informações expostas na tabela 3, a ${numeroMedicaoExtenso(medicaoAtual)} medição contratual resultou no valor de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}) a ser pago à empresa ${obra.empresa_responsavel || '[Empresa]'}.
               </div>
-              `}
 
               <div style="margin-top: 40px;">
                 ${obra.municipio || 'Cuiabá'}/MT, ${dataAtual}.
@@ -712,17 +719,12 @@ export function RelatorioMedicaoModal({
             />
           </div>
 
-          {/* Conclusão */}
-          <div>
-            <Label htmlFor="conclusao">6. CONCLUSÃO (Opcional - texto personalizado)</Label>
-            <Textarea
-              id="conclusao"
-              placeholder="Deixe em branco para usar o texto padrão ou digite uma conclusão personalizada..."
-              value={conclusao}
-              onChange={(e) => setConclusao(e.target.value)}
-              rows={4}
-              className="mt-1"
-            />
+          {/* Conclusão - Preview */}
+          <div className="bg-muted/50 p-3 rounded-lg border">
+            <Label className="text-muted-foreground text-xs">6. CONCLUSÃO (gerada automaticamente)</Label>
+            <p className="text-sm mt-1">
+              Sendo assim, e conforme as informações expostas na tabela 3, a <strong>{numeroMedicaoExtenso(medicaoAtual)}</strong> medição contratual resultou no valor de <strong>{formatMoney(totais.executado)}</strong> ({formatMoneyExtenso(totais.executado)}) a ser pago à empresa <strong>{obra.empresa_responsavel || '[Empresa]'}</strong>.
+            </p>
           </div>
 
           {/* Fiscal */}
