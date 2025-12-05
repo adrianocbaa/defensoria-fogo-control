@@ -1363,7 +1363,7 @@ export function RelatorioMedicaoModal({
                   Sendo assim, e conforme as informações expostas na tabela 2, a ${numeroMedicaoExtenso(medicaoAtual)} medição contratual resultou no valor de <strong>${formatMoney(totais.executado)}</strong> (${formatMoneyExtenso(totais.executado)}) a ser pago à empresa ${obra.empresa_responsavel || '[Empresa]'}.
                 </div>
 
-                <div style="margin-top: 40px;">
+                <div style="margin-top: 40px; text-align: right;">
                   ${obra.municipio || 'Cuiabá'}/MT, ${dataAtual}.
                 </div>
 
