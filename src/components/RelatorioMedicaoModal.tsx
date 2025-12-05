@@ -1335,9 +1335,9 @@ export function RelatorioMedicaoModal({
                 <div class="section-content">
                   Durante o período da medição, a empresa responsável pela obra executou serviços dos seguintes grupos:
                 </div>
-                ${servicosExecutados ? `
-                <div class="section-content" style="white-space: pre-wrap; text-indent: 1.5cm;">${servicosExecutados}</div>
-                ` : '<div class="section-content" style="color: #666; font-style: italic;">Nenhum serviço descrito.</div>'}
+                ${servicosExecutados ? servicosExecutados.split(/\n\s*\n/).map(paragraph => 
+                  `<div class="section-content" style="text-indent: 1.5cm;">${paragraph.trim()}</div>`
+                ).join('') : '<div class="section-content" style="color: #666; font-style: italic;">Nenhum serviço descrito.</div>'}
                 
                 <div class="section-content" style="margin-top: 20px;">
                   Todos os serviços executados, assim como aqueles parcialmente executados, foram verificados pelo fiscal da obra. É válido informar que cada um destes serviços está em conformidade com os projetos apresentados e também de acordo com os padrões e especificações requeridos. O fiscal da obra atestou a qualidade e a precisão dos trabalhos realizados, garantindo que cada etapa do projeto atenda às expectativas de qualidade e segurança. No entanto, o atesto da qualidade durante inspeção realizada pelo fiscal não exime a responsabilidade da empresa na ocorrência de vícios ocultos ou não identificados.
