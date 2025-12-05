@@ -70,15 +70,25 @@ const tipoOptions = ['Reforma', 'Construção', 'Adequações'];
 export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormProps) {
   const { user } = useAuth();
   const { empresas, loading: loadingEmpresas } = useEmpresas();
+  const [selectedEmpresaId, setSelectedEmpresaId] = useState<string>(
+    (initialData as any)?.empresa_id || ''
+  );
   
-  // Buscar regiões disponíveis das ATAs
+  // Buscar regiões disponíveis das ATAs filtradas pela empresa selecionada
   const { data: regioes = [] } = useQuery({
-    queryKey: ['regioes-ata'],
+    queryKey: ['regioes-ata', selectedEmpresaId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ata_polos')
         .select('polo')
         .order('polo');
+      
+      // Se uma empresa está selecionada, filtrar por ela
+      if (selectedEmpresaId) {
+        query = query.eq('empresa_id', selectedEmpresaId);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
@@ -474,7 +484,15 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Empresa Responsável</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedEmpresaId(value);
+                      // Limpar região se a empresa mudou
+                      form.setValue('regiao', '');
+                    }} 
+                    value={field.value || ''}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a empresa" />
@@ -499,10 +517,20 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Região</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ''}
+                    disabled={!selectedEmpresaId || regioes.length === 0}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione a região" />
+                        <SelectValue placeholder={
+                          !selectedEmpresaId 
+                            ? "Selecione primeiro a empresa" 
+                            : regioes.length === 0 
+                              ? "Nenhuma região disponível" 
+                              : "Selecione a região"
+                        } />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
