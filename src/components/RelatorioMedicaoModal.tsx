@@ -868,6 +868,8 @@ export function RelatorioMedicaoModal({
                 height: 29.7cm;
                 box-sizing: border-box;
                 overflow: hidden;
+                padding-left: 2.5cm;
+                padding-right: 2.5cm;
               }
               
               /* Content area grows to push footer down */
