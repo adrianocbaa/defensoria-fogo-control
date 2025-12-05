@@ -585,10 +585,8 @@ export function RelatorioMedicaoModal({
         return `
           <div class="page">
             <div class="header">
-              <div class="header-center">
-                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-              </div>
+              <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+              <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
             </div>
             <div class="page-content">
               <div class="anexo-title">ANEXO 01</div>
@@ -614,10 +612,8 @@ export function RelatorioMedicaoModal({
         return `
           <div class="page">
             <div class="header">
-              <div class="header-center">
-                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-              </div>
+              <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+              <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
             </div>
             <div class="page-content">
               <div class="photo-grid">
@@ -881,32 +877,23 @@ export function RelatorioMedicaoModal({
               /* Header - standardized */
               .header {
                 display: flex;
+                flex-direction: column;
                 align-items: center;
-                margin-bottom: 12px;
-                border-bottom: 1px solid #ccc;
-                padding-bottom: 8px;
-                position: relative;
+                margin-bottom: 20px;
+                padding-bottom: 12px;
               }
               .header-logo {
-                height: 30px;
+                height: 50px;
                 width: auto;
                 object-fit: contain;
-                position: absolute;
-                left: 0;
-              }
-              .header-center {
-                flex: 1;
-                text-align: center;
+                margin-bottom: 8px;
               }
               .header-title {
-                font-size: 12pt;
-                font-weight: bold;
-                color: #1e40af;
-              }
-              .header-subtitle {
-                font-size: 9pt;
-                color: #666;
-                margin-top: 2px;
+                font-size: 11pt;
+                font-weight: normal;
+                color: #4a7c59;
+                letter-spacing: 2px;
+                text-transform: uppercase;
               }
               
               /* Footer - standardized across all pages */
@@ -1134,10 +1121,8 @@ export function RelatorioMedicaoModal({
             <!-- CAPA -->
             <div class="page">
               <div class="header">
-                <div class="header-center">
-                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-                </div>
+                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
               <div class="cover-content">
                 <div class="cover-title">RELATÓRIO TÉCNICO DE ACOMPANHAMENTO DE REFORMA PREDIAL</div>
@@ -1157,10 +1142,8 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA 2: INTRODUÇÃO -->
             <div class="page">
               <div class="header">
-                <div class="header-center">
-                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-                </div>
+                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
               <div class="page-content">
                 <div style="text-align: center; font-weight: bold; margin: 20px 0; font-size: 14pt;">
@@ -1223,10 +1206,8 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA 3: MEDIÇÃO -->
             <div class="page">
               <div class="header">
-                <div class="header-center">
-                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-                </div>
+                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
               <div class="page-content">
                 <div class="section-title">4. DA MEDIÇÃO:</div>
@@ -1287,10 +1268,8 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA: GRÁFICOS COMPARATIVOS -->
             <div class="page">
               <div class="header">
-                <div class="header-center">
-                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-                </div>
+                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
               <div class="page-content">
                 <div class="section-title">GRÁFICOS COMPARATIVOS</div>
@@ -1322,10 +1301,8 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA 4: SERVIÇOS EXECUTADOS -->
             <div class="page">
               <div class="header">
-                <div class="header-center">
-                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-                </div>
+                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
               <div class="page-content">
                 <div class="section-title">5. DOS SERVIÇOS EXECUTADOS:</div>
@@ -1349,10 +1326,8 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA 5: CONCLUSÃO -->
             <div class="page">
               <div class="header">
-                <div class="header-center">
-                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-                </div>
+                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
               <div class="page-content">
                 <div class="section-title">6. CONCLUSÃO:</div>
