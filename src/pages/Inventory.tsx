@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InventoryDashboard } from '@/components/inventory/InventoryDashboard';
 import { MaterialsList } from '@/components/inventory/MaterialsList';
@@ -17,7 +18,8 @@ export default function Inventory() {
   const { role, canEdit, isAdmin } = useUserRole();
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <SimpleHeader>
+      <div className="container mx-auto p-6 space-y-6">
       <PageHeader 
         title="Sistema de Almoxarifado" 
         subtitle="Controle completo de materiais e movimentações"
@@ -70,6 +72,7 @@ export default function Inventory() {
           </TabsContent>
         </PermissionGuard>
       </Tabs>
-    </div>
+      </div>
+    </SimpleHeader>
   );
 }

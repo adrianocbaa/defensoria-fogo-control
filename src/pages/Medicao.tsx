@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -3286,8 +3287,9 @@ const criarNovaMedicao = async () => {
   const valorAcumuladoTotal = calcularValorAcumuladoTotal();
 
   return (
-    <div className="medicao-page min-h-screen bg-gray-50 py-3">
-      <div className="content-root w-full">
+    <SimpleHeader>
+      <div className="medicao-page min-h-screen bg-gray-50 py-3">
+        <div className="content-root w-full">
         {/* Cabeçalho */}
         <Card className="mb-6">
           <CardHeader>
@@ -4176,7 +4178,8 @@ const criarNovaMedicao = async () => {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+        </div>
       </div>
-    </div>
+    </SimpleHeader>
   );
 }

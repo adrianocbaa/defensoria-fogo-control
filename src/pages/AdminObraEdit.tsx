@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { ObraForm } from '@/components/ObraForm';
 import * as LoadingStates from '@/components/LoadingStates';
@@ -77,8 +78,9 @@ export function AdminObraEdit() {
   }
 
   return (
-    <PermissionGuard requiresEdit>
-      <div className="container mx-auto py-6 space-y-6">
+    <SimpleHeader>
+      <PermissionGuard requiresEdit>
+        <div className="container mx-auto py-6 space-y-6">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -115,7 +117,8 @@ export function AdminObraEdit() {
             onCancel={handleCancel}
           />
         </div>
-      </div>
-    </PermissionGuard>
+        </div>
+      </PermissionGuard>
+    </SimpleHeader>
   );
 }
