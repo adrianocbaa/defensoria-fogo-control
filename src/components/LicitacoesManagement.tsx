@@ -220,7 +220,7 @@ export function LicitacoesManagement() {
 
   const savePolo = async () => {
     if (!poloForm.polo.trim() || !currentAtaId) {
-      toast({ title: 'Erro', description: 'Polo é obrigatório', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Região é obrigatória', variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -240,11 +240,11 @@ export function LicitacoesManagement() {
           .update(poloData)
           .eq('id', editingPolo.id);
         if (error) throw error;
-        toast({ title: 'Sucesso', description: 'Polo atualizado' });
+        toast({ title: 'Sucesso', description: 'Região atualizada' });
       } else {
         const { error } = await supabase.from('ata_polos').insert(poloData);
         if (error) throw error;
-        toast({ title: 'Sucesso', description: 'Polo adicionado' });
+        toast({ title: 'Sucesso', description: 'Região adicionada' });
       }
       setPoloDialog(false);
       loadData();
@@ -259,7 +259,7 @@ export function LicitacoesManagement() {
     try {
       const { error } = await supabase.from('ata_polos').delete().eq('id', id);
       if (error) throw error;
-      toast({ title: 'Sucesso', description: 'Polo excluído' });
+      toast({ title: 'Sucesso', description: 'Região excluída' });
       loadData();
     } catch (error: any) {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
@@ -428,18 +428,18 @@ export function LicitacoesManagement() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary">{ata.polos?.length || 0} polo(s)</Badge>
+                            <Badge variant="secondary">{ata.polos?.length || 0} região(ões)</Badge>
                           </div>
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="border-t p-4 space-y-4">
                           <div className="flex justify-between items-center">
-                            <h4 className="font-medium">Polos</h4>
+                            <h4 className="font-medium">Regiões</h4>
                             <div className="flex gap-2">
                               <Button size="sm" variant="outline" onClick={() => openPoloDialog(ata.id)} className="gap-1">
                                 <Plus className="h-3 w-3" />
-                                Adicionar Polo
+                                Adicionar Região
                               </Button>
                               <Button size="sm" variant="outline" onClick={() => openAtaDialog(ata)} className="gap-1">
                                 <Pencil className="h-3 w-3" />
@@ -455,7 +455,7 @@ export function LicitacoesManagement() {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Excluir ATA?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Esta ação excluirá a ATA e todos os seus polos. Não pode ser desfeita.
+                                      Esta ação excluirá a ATA e todas as suas regiões. Não pode ser desfeita.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -471,7 +471,6 @@ export function LicitacoesManagement() {
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>Polo</TableHead>
                                   <TableHead>Região</TableHead>
                                   <TableHead>Fornecedor</TableHead>
                                   <TableHead className="text-right">Valor</TableHead>
@@ -483,7 +482,6 @@ export function LicitacoesManagement() {
                                 {ata.polos.map((polo) => (
                                   <TableRow key={polo.id}>
                                     <TableCell className="font-medium">{polo.polo}</TableCell>
-                                    <TableCell>{polo.regiao || '-'}</TableCell>
                                     <TableCell>{polo.empresa?.razao_social || '-'}</TableCell>
                                     <TableCell className="text-right">{formatCurrency(polo.valor)}</TableCell>
                                     <TableCell className="text-right">{polo.desconto}%</TableCell>
@@ -500,7 +498,7 @@ export function LicitacoesManagement() {
                                           </AlertDialogTrigger>
                                           <AlertDialogContent>
                                             <AlertDialogHeader>
-                                              <AlertDialogTitle>Excluir polo?</AlertDialogTitle>
+                                              <AlertDialogTitle>Excluir região?</AlertDialogTitle>
                                               <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
@@ -516,7 +514,7 @@ export function LicitacoesManagement() {
                               </TableBody>
                             </Table>
                           ) : (
-                            <p className="text-muted-foreground text-sm">Nenhum polo cadastrado</p>
+                            <p className="text-muted-foreground text-sm">Nenhuma região cadastrada</p>
                           )}
                         </div>
                       </CollapsibleContent>
@@ -636,27 +634,19 @@ export function LicitacoesManagement() {
           </DialogContent>
         </Dialog>
 
-        {/* Polo Dialog */}
+        {/* Região Dialog */}
         <Dialog open={poloDialog} onOpenChange={setPoloDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingPolo ? 'Editar Polo' : 'Adicionar Polo'}</DialogTitle>
-              <DialogDescription>Polo/Lote da ATA</DialogDescription>
+              <DialogTitle>{editingPolo ? 'Editar Região' : 'Adicionar Região'}</DialogTitle>
+              <DialogDescription>Região/Lote da ATA</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Polo/Lote *</Label>
+                <Label>Região *</Label>
                 <Input
                   value={poloForm.polo}
                   onChange={(e) => setPoloForm({ ...poloForm, polo: e.target.value })}
-                  placeholder="Ex: Polo 1, Lote A"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Região</Label>
-                <Input
-                  value={poloForm.regiao}
-                  onChange={(e) => setPoloForm({ ...poloForm, regiao: e.target.value })}
                   placeholder="Ex: Norte, Sul, Centro"
                 />
               </div>
