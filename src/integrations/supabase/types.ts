@@ -1306,6 +1306,7 @@ export type Database = {
           percentual_desconto: number | null
           porcentagem_execucao: number | null
           previsao_termino: string | null
+          regiao: string | null
           secretaria_responsavel: string | null
           sem_previsao_inauguracao: boolean | null
           status: string
@@ -1338,6 +1339,7 @@ export type Database = {
           percentual_desconto?: number | null
           porcentagem_execucao?: number | null
           previsao_termino?: string | null
+          regiao?: string | null
           secretaria_responsavel?: string | null
           sem_previsao_inauguracao?: boolean | null
           status: string
@@ -1370,6 +1372,7 @@ export type Database = {
           percentual_desconto?: number | null
           porcentagem_execucao?: number | null
           previsao_termino?: string | null
+          regiao?: string | null
           secretaria_responsavel?: string | null
           sem_previsao_inauguracao?: boolean | null
           status?: string
