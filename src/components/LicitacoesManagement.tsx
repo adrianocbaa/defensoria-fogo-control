@@ -28,6 +28,7 @@ interface AtaPolo {
   id: string;
   ata_id: string;
   empresa_id: string | null;
+  seq: string | null;
   polo: string;
   regiao: string | null;
   valor: number;
@@ -70,6 +71,7 @@ export function LicitacoesManagement() {
   const [editingPolo, setEditingPolo] = useState<AtaPolo | null>(null);
   const [currentAtaId, setCurrentAtaId] = useState<string | null>(null);
   const [poloForm, setPoloForm] = useState({
+    seq: '',
     polo: '',
     regiao: '',
     empresa_id: '',
@@ -205,6 +207,7 @@ export function LicitacoesManagement() {
     if (polo) {
       setEditingPolo(polo);
       setPoloForm({
+        seq: polo.seq || '',
         polo: polo.polo,
         regiao: polo.regiao || '',
         empresa_id: polo.empresa_id || '',
@@ -213,7 +216,7 @@ export function LicitacoesManagement() {
       });
     } else {
       setEditingPolo(null);
-      setPoloForm({ polo: '', regiao: '', empresa_id: '', valor: '', desconto: '0' });
+      setPoloForm({ seq: '', polo: '', regiao: '', empresa_id: '', valor: '', desconto: '0' });
     }
     setPoloDialog(true);
   };
@@ -227,6 +230,7 @@ export function LicitacoesManagement() {
     try {
       const poloData = {
         ata_id: currentAtaId,
+        seq: poloForm.seq || null,
         polo: poloForm.polo,
         regiao: poloForm.regiao || null,
         empresa_id: poloForm.empresa_id || null,
@@ -480,9 +484,9 @@ export function LicitacoesManagement() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {ata.polos.map((polo, index) => (
+                                {ata.polos.map((polo) => (
                                   <TableRow key={polo.id}>
-                                    <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+                                    <TableCell className="text-muted-foreground">{polo.seq || '-'}</TableCell>
                                     <TableCell className="font-medium">{polo.polo}</TableCell>
                                     <TableCell>{polo.empresa?.razao_social || '-'}</TableCell>
                                     <TableCell className="text-right">{formatCurrency(polo.valor)}</TableCell>
@@ -644,13 +648,23 @@ export function LicitacoesManagement() {
               <DialogDescription>Região/Lote da ATA</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Região *</Label>
-                <Input
-                  value={poloForm.polo}
-                  onChange={(e) => setPoloForm({ ...poloForm, polo: e.target.value })}
-                  placeholder="Ex: Norte, Sul, Centro"
-                />
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Seq.</Label>
+                  <Input
+                    value={poloForm.seq}
+                    onChange={(e) => setPoloForm({ ...poloForm, seq: e.target.value })}
+                    placeholder="Ex: 1"
+                  />
+                </div>
+                <div className="col-span-3 space-y-2">
+                  <Label>Região *</Label>
+                  <Input
+                    value={poloForm.polo}
+                    onChange={(e) => setPoloForm({ ...poloForm, polo: e.target.value })}
+                    placeholder="Ex: Norte, Sul, Centro"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Fornecedor</Label>

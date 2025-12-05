@@ -150,6 +150,7 @@ export type Database = {
           id: string
           polo: string
           regiao: string | null
+          seq: string | null
           updated_at: string
           valor: number
         }
@@ -161,6 +162,7 @@ export type Database = {
           id?: string
           polo: string
           regiao?: string | null
+          seq?: string | null
           updated_at?: string
           valor?: number
         }
@@ -172,6 +174,7 @@ export type Database = {
           id?: string
           polo?: string
           regiao?: string | null
+          seq?: string | null
           updated_at?: string
           valor?: number
         }
