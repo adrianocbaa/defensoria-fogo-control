@@ -1098,7 +1098,7 @@ export function RelatorioMedicaoModal({
               }
               .photo-img-container {
                 width: 100%;
-                height: 200px;
+                height: 250px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -1108,7 +1108,7 @@ export function RelatorioMedicaoModal({
               }
               .photo-img-container-large {
                 width: 100%;
-                height: 170px;
+                height: 220px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
