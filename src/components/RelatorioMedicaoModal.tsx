@@ -1025,11 +1025,13 @@ export function RelatorioMedicaoModal({
               }
               
               .table-caption {
-                text-align: center;
+                text-align: center !important;
                 font-size: 10pt;
                 margin-top: 5px;
                 margin-bottom: 12px;
                 white-space: nowrap;
+                width: 100%;
+                display: block;
               }
               
               /* Signature */
