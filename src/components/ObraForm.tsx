@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { addDays, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEmpresas } from '@/hooks/useEmpresas';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,7 +32,9 @@ const obraSchema = z.object({
   data_inicio: z.string().optional(),
   tempo_obra: z.number().min(0, 'Tempo de obra deve ser positivo').optional(),
   previsao_termino: z.string().optional(),
+  empresa_id: z.string().optional(),
   empresa_responsavel: z.string().optional(),
+  regiao: z.string().optional(),
   secretaria_responsavel: z.string().optional(),
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
@@ -65,6 +69,25 @@ const tipoOptions = ['Reforma', 'Construção', 'Adequações'];
 
 export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormProps) {
   const { user } = useAuth();
+  const { empresas, loading: loadingEmpresas } = useEmpresas();
+  
+  // Buscar regiões disponíveis das ATAs
+  const { data: regioes = [] } = useQuery({
+    queryKey: ['regioes-ata'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ata_polos')
+        .select('polo')
+        .order('polo');
+      
+      if (error) throw error;
+      
+      // Remove duplicatas
+      const uniqueRegioes = [...new Set(data.map(r => r.polo))];
+      return uniqueRegioes;
+    }
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
   const [photos, setPhotos] = useState<Array<{url: string; uploadedAt: string; fileName: string; monthFolder?: string}>>(
@@ -101,7 +124,9 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
       data_inicio: initialData?.data_inicio || '',
       tempo_obra: (initialData as any)?.tempo_obra || undefined,
       previsao_termino: initialData?.previsao_termino || '',
+      empresa_id: (initialData as any)?.empresa_id || '',
       empresa_responsavel: initialData?.empresa_responsavel || '',
+      regiao: (initialData as any)?.regiao || '',
       secretaria_responsavel: initialData?.secretaria_responsavel || '',
       coordinates_lat: initialData?.coordinates_lat,
       coordinates_lng: initialData?.coordinates_lng,
@@ -180,7 +205,9 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         data_inicio: data.data_inicio || null,
         tempo_obra: data.tempo_obra || null,
         previsao_termino: data.previsao_termino || null,
+        empresa_id: data.empresa_id || null,
         empresa_responsavel: data.empresa_responsavel || null,
+        regiao: data.regiao || null,
         secretaria_responsavel: data.secretaria_responsavel || null,
         coordinates_lat: data.coordinates_lat || null,
         coordinates_lng: data.coordinates_lng || null,
@@ -443,13 +470,49 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
 
             <FormField
               control={form.control}
-              name="empresa_responsavel"
+              name="empresa_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Empresa Responsável</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite a empresa responsável" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a empresa" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {empresas.map((empresa) => (
+                        <SelectItem key={empresa.id} value={empresa.id}>
+                          {empresa.razao_social}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="regiao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Região</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a região" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {regioes.map((regiao) => (
+                        <SelectItem key={regiao} value={regiao}>
+                          {regiao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
