@@ -982,6 +982,7 @@ export function RelatorioMedicaoModal({
                 text-align: justify;
                 margin-bottom: 15px;
                 font-size: 12pt;
+                text-indent: 1.25cm;
               }
               
               /* Tables */
