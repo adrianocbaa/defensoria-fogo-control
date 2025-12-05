@@ -471,6 +471,7 @@ export function LicitacoesManagement() {
                             <Table>
                               <TableHeader>
                                 <TableRow>
+                                  <TableHead className="w-[60px]">Seq.</TableHead>
                                   <TableHead>Região</TableHead>
                                   <TableHead>Fornecedor</TableHead>
                                   <TableHead className="text-right">Valor</TableHead>
@@ -479,8 +480,9 @@ export function LicitacoesManagement() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {ata.polos.map((polo) => (
+                                {ata.polos.map((polo, index) => (
                                   <TableRow key={polo.id}>
+                                    <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                                     <TableCell className="font-medium">{polo.polo}</TableCell>
                                     <TableCell>{polo.empresa?.razao_social || '-'}</TableCell>
                                     <TableCell className="text-right">{formatCurrency(polo.valor)}</TableCell>
