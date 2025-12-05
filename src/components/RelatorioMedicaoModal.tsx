@@ -1336,7 +1336,7 @@ export function RelatorioMedicaoModal({
                   Durante o período da medição, a empresa responsável pela obra executou serviços dos seguintes grupos:
                 </div>
                 ${servicosExecutados ? `
-                <div class="section-content" style="white-space: pre-wrap;">${servicosExecutados}</div>
+                <div class="section-content" style="white-space: pre-wrap; text-indent: 1.5cm;">${servicosExecutados}</div>
                 ` : '<div class="section-content" style="color: #666; font-style: italic;">Nenhum serviço descrito.</div>'}
                 
                 <div class="section-content" style="margin-top: 20px;">
