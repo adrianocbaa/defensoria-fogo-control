@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { PageHeader } from '@/components/PageHeader';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -375,7 +376,8 @@ export function AdminObras() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <SimpleHeader>
+      <div className="container mx-auto py-6 space-y-6">
       <PageHeader
         title="Gerenciar Obras"
         subtitle="Visualize e gerencie todas as obras públicas"
@@ -613,6 +615,7 @@ export function AdminObras() {
           Para criar, editar ou excluir obras, é necessário ter permissão de Editor ou Administrador.
         </div>
       </PermissionGuard>
-    </div>
+      </div>
+    </SimpleHeader>
   );
 }

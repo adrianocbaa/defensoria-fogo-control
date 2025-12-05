@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { RDOSidebar } from '@/components/RDOSidebar';
 import { RdoCalendar } from '@/components/rdo/RdoCalendar';
 import { PageHeader } from '@/components/PageHeader';
@@ -425,7 +426,8 @@ export function RDO() {
   };
 
   return (
-    <div className="min-h-screen w-full">
+    <SimpleHeader>
+      <div className="min-h-screen w-full">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
         <div className="container mx-auto py-4">
@@ -498,6 +500,7 @@ export function RDO() {
           </Routes>
         </main>
       </div>
-    </div>
+      </div>
+    </SimpleHeader>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { PageHeader } from '@/components/PageHeader';
 import { useObras } from '@/hooks/useObras';
@@ -61,8 +62,9 @@ export function ObrasLista() {
   }
 
   return (
-    <PermissionGuard requiresEdit>
-      <div className="container mx-auto py-6 space-y-6">
+    <SimpleHeader>
+      <PermissionGuard requiresEdit>
+        <div className="container mx-auto py-6 space-y-6">
         <PageHeader
           title="Lista de Obras"
           subtitle="Visualização em tabela de todas as obras públicas"
@@ -156,7 +158,8 @@ export function ObrasLista() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </PermissionGuard>
-  );
-}
+          </div>
+        </PermissionGuard>
+      </SimpleHeader>
+    );
+  }

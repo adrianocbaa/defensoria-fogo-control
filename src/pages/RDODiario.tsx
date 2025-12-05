@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { SimpleHeader } from '@/components/SimpleHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Save, Loader2, CheckCircle2, FileText, Trash2, RotateCcw } from 'lucide-react';
@@ -202,7 +203,8 @@ export default function RDODiario() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <SimpleHeader>
+      <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-card border-b">
         <div className="container mx-auto px-4 py-4">
@@ -392,6 +394,7 @@ export default function RDODiario() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </SimpleHeader>
   );
 }
