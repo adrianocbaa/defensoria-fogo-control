@@ -1029,6 +1029,7 @@ export function RelatorioMedicaoModal({
                 font-size: 10pt;
                 margin-top: 5px;
                 margin-bottom: 12px;
+                white-space: nowrap;
               }
               
               /* Signature */
@@ -1277,61 +1278,7 @@ export function RelatorioMedicaoModal({
               </div>
             </div>
 
-            ${dadosComparativo.length > 0 ? `
-            <!-- PÁGINA: ANÁLISE DE DESVIOS -->
-            <div class="page">
-              <div class="header">
-                <div class="header-center">
-                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
-                  <div class="header-subtitle">Rua 02, Quadra 04, Lote 04, CPA, Cuiabá-MT | www.defensoriapublica.mt.gov.br</div>
-                </div>
-              </div>
-              <div class="page-content">
-                <div class="section-title">ANÁLISE DE DESVIOS - Cronograma x Executado</div>
-                <div class="section-content">
-                  A tabela abaixo apresenta a análise comparativa entre o previsto no cronograma físico-financeiro e o efetivamente executado para cada grupo de serviço (MACRO).
-                </div>
-                <table class="medicao-table" style="font-size: 10pt;">
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Descrição</th>
-                      <th style="background: #dbeafe;">Previsto</th>
-                      <th style="background: #dbeafe;">Previsto Acum.</th>
-                      <th style="background: #dcfce7;">Executado</th>
-                      <th style="background: #dcfce7;">Executado Acum.</th>
-                      <th>Desvio (%)</th>
-                      <th>Desvio Acum. (%)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${dadosComparativo.map(d => `
-                      <tr>
-                        <td style="text-align: center;">${d.itemNumero}</td>
-                        <td>${d.descricao}</td>
-                        <td class="text-right" style="background: #eff6ff;">${formatMoney(d.previsto)}</td>
-                        <td class="text-right" style="background: #eff6ff;">${formatMoney(d.previstoAcum)}</td>
-                        <td class="text-right" style="background: #f0fdf4;">${formatMoney(d.executado)}</td>
-                        <td class="text-right" style="background: #f0fdf4;">${formatMoney(d.executadoAcum)}</td>
-                        <td class="text-right" style="color: ${d.desvioPct < 0 ? '#dc2626' : d.desvioPct > 0 ? '#16a34a' : '#666'}; font-weight: 600;">
-                          ${d.desvioPct >= 0 ? '' : ''}${d.desvioPct.toFixed(2)}%
-                        </td>
-                        <td class="text-right" style="color: ${d.desvioAcumPct < 0 ? '#dc2626' : d.desvioAcumPct > 0 ? '#16a34a' : '#666'}; font-weight: 600;">
-                          ${d.desvioAcumPct >= 0 ? '' : ''}${d.desvioAcumPct.toFixed(2)}%
-                        </td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-                <div class="table-caption">Tabela 3 – Análise de Desvios por MACRO</div>
-              </div>
-              <div class="footer">
-                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
-                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
-              </div>
-            </div>
-
-            ${chartPrevistoExecutado || chartAcumulado ? `
+            ${(chartPrevistoExecutado || chartAcumulado) ? `
             <!-- PÁGINA: GRÁFICOS COMPARATIVOS -->
             <div class="page">
               <div class="header">
@@ -1365,7 +1312,6 @@ export function RelatorioMedicaoModal({
                 <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
-            ` : ''}
             ` : ''}
 
             <!-- PÁGINA 4: SERVIÇOS EXECUTADOS -->
