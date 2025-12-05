@@ -875,25 +875,33 @@ export function RelatorioMedicaoModal({
               }
               
               /* Header - standardized */
+              /* Header - standardized across all pages */
               .header {
+                width: 100%;
+                height: 1.5cm;
+                max-height: 1.5cm;
+                min-height: 1.5cm;
                 display: flex;
-                flex-direction: column;
+                flex-direction: row;
                 align-items: center;
-                margin-bottom: 20px;
-                padding-bottom: 12px;
+                justify-content: center;
+                gap: 12px;
+                border-bottom: 1px solid #D0D0D0;
+                margin-bottom: 8px;
+                padding: 0;
               }
               .header-logo {
-                height: 50px;
+                height: 1.89cm;
                 width: auto;
                 object-fit: contain;
-                margin-bottom: 8px;
               }
               .header-title {
-                font-size: 11pt;
-                font-weight: normal;
-                color: #4a7c59;
-                letter-spacing: 2px;
-                text-transform: uppercase;
+                font-family: Inter, Arial, sans-serif;
+                font-size: 12pt;
+                font-weight: bold;
+                color: #000000;
+                text-align: center;
+                line-height: 1.0;
               }
               
               /* Footer - standardized across all pages */
