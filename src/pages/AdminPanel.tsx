@@ -14,11 +14,14 @@ import { Sector } from '@/hooks/useUserSectors';
 import { useAvailableSectors } from '@/hooks/useAvailableSectors';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Edit, Eye, Wrench, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw, UserPlus, Building2 } from 'lucide-react';
+import { Shield, Edit, Eye, Wrench, ChevronDown, Mail, Key, UserX, UserCheck, RotateCcw, UserPlus, Building2, Users } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { UserObraAccessManager } from '@/components/UserObraAccessManager';
+import { EmpresasManagement } from '@/components/EmpresasManagement';
+import { useEmpresas } from '@/hooks/useEmpresas';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Profile {
   id: string;
@@ -29,12 +32,14 @@ interface Profile {
   sectors: Sector[];
   created_at: string;
   is_active: boolean;
+  empresa_id: string | null;
 }
 
 export default function AdminPanel() {
   const navigate = useNavigate();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { sectors: availableSectors, loading: sectorsLoading } = useAvailableSectors();
+  const { empresas, loading: empresasLoading, refetch: refetchEmpresas } = useEmpresas();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
@@ -44,6 +49,7 @@ export default function AdminPanel() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('viewer');
+  const [newUserEmpresaId, setNewUserEmpresaId] = useState<string>('');
   const [creatingUser, setCreatingUser] = useState(false);
   const [deleteUserDialog, setDeleteUserDialog] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
@@ -59,7 +65,7 @@ export default function AdminPanel() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, display_name, email, role, sectors, created_at, is_active')
+        .select('id, user_id, display_name, email, role, sectors, created_at, is_active, empresa_id')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -68,7 +74,8 @@ export default function AdminPanel() {
         ...profile,
         email: profile.email || 'Email não disponível',
         role: profile.role as UserRole,
-        is_active: profile.is_active ?? true
+        is_active: profile.is_active ?? true,
+        empresa_id: (profile as any).empresa_id || null
       })));
     } catch (error) {
       console.error('Error fetching profiles:', error);
@@ -261,6 +268,7 @@ export default function AdminPanel() {
           email: newUserEmail,
           displayName: newUserName || newUserEmail.split('@')[0],
           role: newUserRole,
+          empresaId: newUserRole === 'contratada' ? newUserEmpresaId || null : null,
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
@@ -314,6 +322,7 @@ export default function AdminPanel() {
       setNewUserEmail('');
       setNewUserName('');
       setNewUserRole('viewer');
+      setNewUserEmpresaId('');
       fetchProfiles(); // Recarregar lista
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -416,33 +425,46 @@ export default function AdminPanel() {
           subtitle="Gerencie permissões de usuários"
         />
 
-        <div className="mb-6 flex gap-3">
-          <Button
-            onClick={() => setCreateUserDialog(true)}
-            className="gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            Criar Novo Usuário
-          </Button>
-          <Button
-            onClick={() => setDeleteUserDialog(true)}
-            variant="destructive"
-            className="gap-2"
-          >
-            <UserX className="h-4 w-4" />
-            Forçar exclusão por email
-          </Button>
-          <Button
-            onClick={() => navigate('/data-recovery')}
-            variant="outline"
-            className="gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Recuperar Dados Excluídos
-          </Button>
-        </div>
+        <Tabs defaultValue="usuarios" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="usuarios" className="gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="empresas" className="gap-2">
+              <Building2 className="h-4 w-4" />
+              Empresas
+            </TabsTrigger>
+          </TabsList>
 
-        <Card>
+          <TabsContent value="usuarios" className="space-y-4">
+            <div className="flex gap-3 flex-wrap">
+              <Button
+                onClick={() => setCreateUserDialog(true)}
+                className="gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                Criar Novo Usuário
+              </Button>
+              <Button
+                onClick={() => setDeleteUserDialog(true)}
+                variant="destructive"
+                className="gap-2"
+              >
+                <UserX className="h-4 w-4" />
+                Forçar exclusão por email
+              </Button>
+              <Button
+                onClick={() => navigate('/data-recovery')}
+                variant="outline"
+                className="gap-2"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Recuperar Dados Excluídos
+              </Button>
+            </div>
+
+            <Card>
           <CardHeader>
             <CardTitle>Usuários e Permissões</CardTitle>
             <CardDescription>
@@ -487,6 +509,14 @@ export default function AdminPanel() {
                                   <Mail className="h-3 w-3" />
                                   <span>{profile.email}</span>
                                 </div>
+                                {profile.role === 'contratada' && profile.empresa_id && (
+                                  <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 mt-0.5">
+                                    <Building2 className="h-3 w-3" />
+                                    <span>
+                                      {empresas.find(e => e.id === profile.empresa_id)?.razao_social || 'Empresa não encontrada'}
+                                    </span>
+                                  </div>
+                                )}
                                 <p className="text-xs text-muted-foreground mt-1">
                                   Cadastrado em {new Date(profile.created_at).toLocaleDateString('pt-BR')}
                                 </p>
@@ -692,6 +722,12 @@ export default function AdminPanel() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="empresas">
+            <EmpresasManagement />
+          </TabsContent>
+        </Tabs>
 
         {/* Modal com senha temporária */}
         <AlertDialog open={tempPassDialog.open} onOpenChange={(open) => setTempPassDialog((prev) => ({ ...prev, open }))}>
@@ -756,7 +792,10 @@ export default function AdminPanel() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="new-user-role">Perfil</Label>
-                  <Select value={newUserRole} onValueChange={(value) => setNewUserRole(value as UserRole)}>
+                  <Select value={newUserRole} onValueChange={(value) => {
+                    setNewUserRole(value as UserRole);
+                    if (value !== 'contratada') setNewUserEmpresaId('');
+                  }}>
                     <SelectTrigger id="new-user-role">
                       <SelectValue />
                     </SelectTrigger>
@@ -769,6 +808,30 @@ export default function AdminPanel() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {newUserRole === 'contratada' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="new-user-empresa">Empresa *</Label>
+                    <Select value={newUserEmpresaId} onValueChange={setNewUserEmpresaId}>
+                      <SelectTrigger id="new-user-empresa">
+                        <SelectValue placeholder="Selecione a empresa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {empresas.map((empresa) => (
+                          <SelectItem key={empresa.id} value={empresa.id}>
+                            {empresa.razao_social}
+                            {empresa.nome_fantasia && ` (${empresa.nome_fantasia})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {empresas.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma empresa cadastrada. Cadastre uma empresa primeiro na aba "Empresas".
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <DialogFooter>
@@ -779,12 +842,16 @@ export default function AdminPanel() {
                     setNewUserEmail('');
                     setNewUserName('');
                     setNewUserRole('viewer');
+                    setNewUserEmpresaId('');
                   }}
                   disabled={creatingUser}
                 >
                   Cancelar
                 </Button>
-                <Button onClick={createNewUser} disabled={creatingUser || !newUserEmail}>
+                <Button 
+                  onClick={createNewUser} 
+                  disabled={creatingUser || !newUserEmail || (newUserRole === 'contratada' && !newUserEmpresaId)}
+                >
                   {creatingUser ? 'Criando...' : 'Criar Usuário'}
                 </Button>
               </DialogFooter>
