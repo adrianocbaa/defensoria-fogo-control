@@ -585,8 +585,10 @@ export function RelatorioMedicaoModal({
         return `
           <div class="page">
             <div class="header">
-              <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
-              <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+              <div class="header-inner">
+                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+              </div>
             </div>
             <div class="page-content">
               <div class="anexo-title">ANEXO 01</div>
@@ -612,8 +614,10 @@ export function RelatorioMedicaoModal({
         return `
           <div class="page">
             <div class="header">
-              <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
-              <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+              <div class="header-inner">
+                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+              </div>
             </div>
             <div class="page-content">
               <div class="photo-grid">
@@ -878,30 +882,34 @@ export function RelatorioMedicaoModal({
               /* Header - standardized across all pages */
               .header {
                 width: 100%;
-                height: 1.5cm;
-                max-height: 1.5cm;
-                min-height: 1.5cm;
                 display: flex;
-                flex-direction: row;
+                flex-direction: column;
                 align-items: center;
-                justify-content: center;
-                gap: 12px;
+                justify-content: flex-start;
                 border-bottom: 1px solid #D0D0D0;
                 margin-bottom: 8px;
                 padding: 0;
+                padding-bottom: 8px;
+              }
+              .header-inner {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: auto;
               }
               .header-logo {
-                height: 1.89cm;
+                height: 1.5cm;
                 width: auto;
                 object-fit: contain;
               }
               .header-title {
                 font-family: Inter, Arial, sans-serif;
-                font-size: 12pt;
+                font-size: 10pt;
                 font-weight: bold;
                 color: #000000;
                 text-align: center;
-                line-height: 1.0;
+                line-height: 1.2;
+                margin-top: 2px;
               }
               
               /* Footer - standardized across all pages */
@@ -1129,8 +1137,10 @@ export function RelatorioMedicaoModal({
             <!-- CAPA -->
             <div class="page">
               <div class="header">
-                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
-                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-inner">
+                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                </div>
               </div>
               <div class="cover-content">
                 <div class="cover-title">RELATÓRIO TÉCNICO DE ACOMPANHAMENTO DE REFORMA PREDIAL</div>
@@ -1150,8 +1160,10 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA 2: INTRODUÇÃO -->
             <div class="page">
               <div class="header">
-                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
-                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-inner">
+                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                </div>
               </div>
               <div class="page-content">
                 <div style="text-align: center; font-weight: bold; margin: 20px 0; font-size: 14pt;">
@@ -1214,8 +1226,10 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA 3: MEDIÇÃO -->
             <div class="page">
               <div class="header">
-                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
-                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-inner">
+                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                </div>
               </div>
               <div class="page-content">
                 <div class="section-title">4. DA MEDIÇÃO:</div>
@@ -1276,8 +1290,10 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA: GRÁFICOS COMPARATIVOS -->
             <div class="page">
               <div class="header">
-                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
-                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-inner">
+                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                </div>
               </div>
               <div class="page-content">
                 <div class="section-title">GRÁFICOS COMPARATIVOS</div>
@@ -1309,8 +1325,10 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA 4: SERVIÇOS EXECUTADOS -->
             <div class="page">
               <div class="header">
-                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
-                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-inner">
+                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                </div>
               </div>
               <div class="page-content">
                 <div class="section-title">5. DOS SERVIÇOS EXECUTADOS:</div>
@@ -1334,8 +1352,10 @@ export function RelatorioMedicaoModal({
             <!-- PÁGINA 5: CONCLUSÃO -->
             <div class="page">
               <div class="header">
-                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
-                <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                <div class="header-inner">
+                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+                </div>
               </div>
               <div class="page-content">
                 <div class="section-title">6. CONCLUSÃO:</div>
