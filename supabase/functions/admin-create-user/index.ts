@@ -46,10 +46,15 @@ serve(async (req) => {
       throw new Error('User is not an admin');
     }
 
-    const { email, displayName, role = 'viewer' } = await req.json();
+    const { email, displayName, role = 'viewer', empresaId } = await req.json();
 
     if (!email) {
       throw new Error('Email is required');
+    }
+
+    // Validate empresa for contratada role
+    if (role === 'contratada' && !empresaId) {
+      throw new Error('Empresa é obrigatória para usuários Contratada');
     }
 
     console.log('Creating user with email:', email);
@@ -73,14 +78,19 @@ serve(async (req) => {
 
     console.log('User created successfully:', newUser.user.id);
 
-    // Set force_password_change flag
+    // Set force_password_change flag and empresa_id for contratada
+    const profileUpdate: Record<string, any> = { force_password_change: true };
+    if (role === 'contratada' && empresaId) {
+      profileUpdate.empresa_id = empresaId;
+    }
+
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .update({ force_password_change: true })
+      .update(profileUpdate)
       .eq('user_id', newUser.user.id);
 
     if (profileError) {
-      console.error('Error setting force_password_change:', profileError);
+      console.error('Error setting profile data:', profileError);
     }
 
     // Insert user role if not viewer

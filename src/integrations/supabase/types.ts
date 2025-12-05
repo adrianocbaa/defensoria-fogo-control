@@ -333,6 +333,57 @@ export type Database = {
           },
         ]
       }
+      empresas: {
+        Row: {
+          cep: string | null
+          cidade: string | null
+          cnpj: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          is_active: boolean
+          nome_fantasia: string | null
+          razao_social: string
+          telefone: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          cep?: string | null
+          cidade?: string | null
+          cnpj: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          is_active?: boolean
+          nome_fantasia?: string | null
+          razao_social: string
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          is_active?: boolean
+          nome_fantasia?: string | null
+          razao_social?: string
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fire_extinguishers: {
         Row: {
           capacity: string | null
@@ -1112,6 +1163,7 @@ export type Database = {
           data_inicio: string | null
           data_prevista_inauguracao: string | null
           documentos: Json | null
+          empresa_id: string | null
           empresa_responsavel: string | null
           fotos: Json | null
           id: string
@@ -1143,6 +1195,7 @@ export type Database = {
           data_inicio?: string | null
           data_prevista_inauguracao?: string | null
           documentos?: Json | null
+          empresa_id?: string | null
           empresa_responsavel?: string | null
           fotos?: Json | null
           id?: string
@@ -1174,6 +1227,7 @@ export type Database = {
           data_inicio?: string | null
           data_prevista_inauguracao?: string | null
           documentos?: Json | null
+          empresa_id?: string | null
           empresa_responsavel?: string | null
           fotos?: Json | null
           id?: string
@@ -1197,7 +1251,15 @@ export type Database = {
           valor_executado?: number | null
           valor_total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "obras_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orcamento_items: {
         Row: {
@@ -1296,6 +1358,7 @@ export type Database = {
           department: string | null
           display_name: string | null
           email: string | null
+          empresa_id: string | null
           force_password_change: boolean | null
           id: string
           is_active: boolean
@@ -1314,6 +1377,7 @@ export type Database = {
           department?: string | null
           display_name?: string | null
           email?: string | null
+          empresa_id?: string | null
           force_password_change?: boolean | null
           id?: string
           is_active?: boolean
@@ -1332,6 +1396,7 @@ export type Database = {
           department?: string | null
           display_name?: string | null
           email?: string | null
+          empresa_id?: string | null
           force_password_change?: boolean | null
           id?: string
           is_active?: boolean
@@ -1344,7 +1409,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       properties: {
         Row: {
