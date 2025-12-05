@@ -20,8 +20,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { UserObraAccessManager } from '@/components/UserObraAccessManager';
 import { EmpresasManagement } from '@/components/EmpresasManagement';
+import { LicitacoesManagement } from '@/components/LicitacoesManagement';
 import { useEmpresas } from '@/hooks/useEmpresas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -435,6 +437,10 @@ export default function AdminPanel() {
               <Building2 className="h-4 w-4" />
               Empresas
             </TabsTrigger>
+            <TabsTrigger value="licitacoes" className="gap-2">
+              <FileText className="h-4 w-4" />
+              ATAs/Contratos
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="usuarios" className="space-y-4">
@@ -726,6 +732,10 @@ export default function AdminPanel() {
 
           <TabsContent value="empresas">
             <EmpresasManagement />
+          </TabsContent>
+
+          <TabsContent value="licitacoes">
+            <LicitacoesManagement />
           </TabsContent>
         </Tabs>
 
