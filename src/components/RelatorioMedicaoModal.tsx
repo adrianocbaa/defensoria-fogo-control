@@ -865,11 +865,15 @@ export function RelatorioMedicaoModal({
               .page { 
                 display: flex;
                 flex-direction: column;
-                height: 29.7cm;
+                min-height: 29.7cm;
                 box-sizing: border-box;
-                overflow: hidden;
                 padding-left: 2.5cm;
                 padding-right: 2.5cm;
+                page-break-after: always;
+                page-break-inside: avoid;
+              }
+              .page:last-child {
+                page-break-after: auto;
               }
               
               /* Content area grows to push footer down */
@@ -1408,7 +1412,7 @@ export function RelatorioMedicaoModal({
           format: 'a4', 
           orientation: 'portrait'
         },
-        pagebreak: { mode: 'avoid-all', avoid: '.page' }
+        pagebreak: { mode: ['css'], before: '.page-break' }
       };
 
       await html2pdf().set(opt).from(tempDiv).save();
