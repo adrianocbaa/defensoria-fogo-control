@@ -306,7 +306,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o status" />
@@ -331,7 +331,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o tipo" />
