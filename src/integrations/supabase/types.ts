@@ -141,6 +141,87 @@ export type Database = {
           },
         ]
       }
+      ata_polos: {
+        Row: {
+          ata_id: string
+          created_at: string
+          desconto: number | null
+          empresa_id: string | null
+          id: string
+          polo: string
+          regiao: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ata_id: string
+          created_at?: string
+          desconto?: number | null
+          empresa_id?: string | null
+          id?: string
+          polo: string
+          regiao?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          ata_id?: string
+          created_at?: string
+          desconto?: number | null
+          empresa_id?: string | null
+          id?: string
+          polo?: string
+          regiao?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ata_polos_ata_id_fkey"
+            columns: ["ata_id"]
+            isOneToOne: false
+            referencedRelation: "atas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ata_polos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          numero_ata: string
+          pregao_eletronico: string | null
+          protocolo: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          numero_ata: string
+          pregao_eletronico?: string | null
+          protocolo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          numero_ata?: string
+          pregao_eletronico?: string | null
+          protocolo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           changed_fields: string[] | null
@@ -179,6 +260,53 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      contratos_licitacao: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          desconto: number | null
+          empresa_id: string | null
+          id: string
+          numero_contrato: string
+          pregao_eletronico: string | null
+          protocolo: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          desconto?: number | null
+          empresa_id?: string | null
+          id?: string
+          numero_contrato: string
+          pregao_eletronico?: string | null
+          protocolo?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          desconto?: number | null
+          empresa_id?: string | null
+          id?: string
+          numero_contrato?: string
+          pregao_eletronico?: string | null
+          protocolo?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_licitacao_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cronograma_financeiro: {
         Row: {
