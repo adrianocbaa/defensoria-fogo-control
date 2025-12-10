@@ -389,7 +389,8 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
     const idsParaSomar = [item.id, ...coletarDescendentesIds(item.item)];
 
     // TOTAL CONTRATO = Valor total com BDI e Desconto + TOTAL ADITIVO 1 + TOTAL ADITIVO 2
-    const valorOriginal = item.valorTotal;
+    // Usar totalContrato (valor com desconto) ao invés de valorTotal (sem desconto)
+    const valorOriginal = item.totalContrato;
     const totalAditivos = aditivos
       .filter(a => a.bloqueada && (a.sequencia === 1 || a.sequencia === 2))
       .reduce((sum, aditivo) => {
