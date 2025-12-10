@@ -1287,6 +1287,7 @@ export type Database = {
       }
       obras: {
         Row: {
+          aditivo_prazo: number | null
           coordinates_lat: number | null
           coordinates_lng: number | null
           created_at: string
@@ -1320,6 +1321,7 @@ export type Database = {
           valor_total: number
         }
         Insert: {
+          aditivo_prazo?: number | null
           coordinates_lat?: number | null
           coordinates_lng?: number | null
           created_at?: string
@@ -1353,6 +1355,7 @@ export type Database = {
           valor_total: number
         }
         Update: {
+          aditivo_prazo?: number | null
           coordinates_lat?: number | null
           coordinates_lng?: number | null
           created_at?: string

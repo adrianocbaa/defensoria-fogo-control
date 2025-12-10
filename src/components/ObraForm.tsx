@@ -31,6 +31,7 @@ const obraSchema = z.object({
   valor_executado: z.number().min(0).optional(),
   data_inicio: z.string().optional(),
   tempo_obra: z.number().min(0, 'Tempo de obra deve ser positivo').optional(),
+  aditivo_prazo: z.number().min(0).optional(),
   previsao_termino: z.string().optional(),
   empresa_id: z.string().optional(),
   empresa_responsavel: z.string().optional(),
@@ -133,6 +134,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
       valor_executado: initialData?.valor_executado || 0,
       data_inicio: initialData?.data_inicio || '',
       tempo_obra: (initialData as any)?.tempo_obra || undefined,
+      aditivo_prazo: (initialData as any)?.aditivo_prazo || undefined,
       previsao_termino: initialData?.previsao_termino || '',
       empresa_id: (initialData as any)?.empresa_id || '',
       empresa_responsavel: initialData?.empresa_responsavel || '',
@@ -172,17 +174,19 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     setPhotos(updatedPhotos);
   };
 
-  // Calcular automaticamente a previsão de término quando data_inicio ou tempo_obra mudarem
+  // Calcular automaticamente a previsão de término quando data_inicio, tempo_obra ou aditivo_prazo mudarem
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name === 'data_inicio' || name === 'tempo_obra') {
+      if (name === 'data_inicio' || name === 'tempo_obra' || name === 'aditivo_prazo') {
         const dataInicio = value.data_inicio;
-        const tempoObra = value.tempo_obra;
+        const tempoObra = value.tempo_obra || 0;
+        const aditivoPrazo = value.aditivo_prazo || 0;
+        const prazoTotal = tempoObra + aditivoPrazo;
 
-        if (dataInicio && tempoObra && tempoObra > 0) {
+        if (dataInicio && prazoTotal > 0) {
           try {
             const dataInicioParsed = new Date(dataInicio);
-            const dataTermino = addDays(dataInicioParsed, tempoObra);
+            const dataTermino = addDays(dataInicioParsed, prazoTotal);
             const dataTerminoFormatted = format(dataTermino, 'yyyy-MM-dd');
             form.setValue('previsao_termino', dataTerminoFormatted);
           } catch (error) {
@@ -214,6 +218,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         valor_executado: data.valor_executado || 0,
         data_inicio: data.data_inicio || null,
         tempo_obra: data.tempo_obra || null,
+        aditivo_prazo: data.aditivo_prazo || null,
         previsao_termino: data.previsao_termino || null,
         empresa_id: data.empresa_id || null,
         empresa_responsavel: data.empresa_responsavel || null,
@@ -440,6 +445,31 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tempo de Obra (dias)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="0"
+                      step="1"
+                      placeholder="0" 
+                      {...field}
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                        field.onChange(value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="aditivo_prazo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Aditivo de Prazo (dias)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
