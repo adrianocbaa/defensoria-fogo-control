@@ -463,7 +463,7 @@ export function RelatorioMedicaoModal({
     setFotosRelatorio(newFotos);
   };
 
-  // Calcular grupos de primeiro nível (MACROs)
+  // Calcular grupos de primeiro nível (MACROs) - usando dados específicos da medição selecionada
   const gruposMedicao = useMemo(() => {
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
     if (!medicaoAtualObj) return [];
@@ -481,12 +481,22 @@ export function RelatorioMedicaoModal({
       let executado = 0;
       let executadoAcum = 0;
       
+      // Executado desta medição específica
       itemsDoGrupo.forEach(item => {
-        const dadosMedicao = dadosHierarquicos[medicaoAtual]?.[item.id];
+        const dadosMedicao = medicaoAtualObj.dados?.[item.id];
         if (dadosMedicao) {
-          executado += dadosMedicao.total;
+          executado += dadosMedicao.total || 0;
         }
-        executadoAcum += calcularValorAcumuladoItem(item.id);
+      });
+      
+      // Executado acumulado: soma de todas as medições até a atual (inclusive)
+      medicoes.filter(m => m.id <= medicaoAtual).forEach(med => {
+        itemsDoGrupo.forEach(item => {
+          const dadosMed = med.dados?.[item.id];
+          if (dadosMed) {
+            executadoAcum += dadosMed.total || 0;
+          }
+        });
       });
 
       return {
@@ -496,7 +506,7 @@ export function RelatorioMedicaoModal({
         executadoAcum
       } as GrupoMedicao;
     }).filter(g => g.executado > 0 || g.executadoAcum > 0);
-  }, [items, medicoes, medicaoAtual, dadosHierarquicos, calcularValorAcumuladoItem]);
+  }, [items, medicoes, medicaoAtual]);
 
   // Calcular totais
   const totais = useMemo(() => {
@@ -613,7 +623,7 @@ export function RelatorioMedicaoModal({
   };
 
   // Gerar páginas do Anexo 01 (2 fotos na primeira página, 3 nas demais - 1 por linha)
-  const gerarPaginasAnexo = () => {
+  const gerarPaginasAnexo = (logoSrc: string) => {
     if (fotosRelatorio.length === 0) return '';
 
     const fotosFirstPage = 2; // Primeira página tem cabeçalho, cabe 2 fotos
@@ -634,7 +644,7 @@ export function RelatorioMedicaoModal({
           <div class="page">
             <div class="header">
               <div class="header-inner">
-                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <img class="header-logo" src="${logoSrc}" alt="DPE-MT" />
                 <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
             </div>
@@ -663,7 +673,7 @@ export function RelatorioMedicaoModal({
           <div class="page">
             <div class="header">
               <div class="header-inner">
-                <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                <img class="header-logo" src="${logoSrc}" alt="DPE-MT" />
                 <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
               </div>
             </div>
@@ -806,13 +816,42 @@ export function RelatorioMedicaoModal({
     });
   };
 
+  // Converter imagem para base64
+  const imageToBase64 = async (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = document.createElement('img') as HTMLImageElement;
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          reject('Canvas context not available');
+        }
+      };
+      img.onerror = () => reject('Failed to load image');
+      img.src = url;
+    });
+  };
+
   const gerarPDF = async () => {
     setGerando(true);
     
     try {
-      const dataAtual = format(new Date(dataRelatorio), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
       const mesAno = format(new Date(dataRelatorio), "MMMM/yyyy", { locale: ptBR });
       const percentualAtual = totais.contrato > 0 ? (totais.executado / totais.contrato) * 100 : 0;
+
+      // Converter logo para base64
+      let logoBase64 = '';
+      try {
+        logoBase64 = await imageToBase64('/images/logo-dpe-mt.png');
+      } catch (error) {
+        console.error('Erro ao carregar logo:', error);
+      }
 
       // Gerar gráficos se houver dados de comparativo
       let chartPrevistoExecutado = '';
@@ -1179,7 +1218,7 @@ export function RelatorioMedicaoModal({
             <div class="page">
               <div class="header">
                 <div class="header-inner">
-                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
                 </div>
               </div>
@@ -1202,7 +1241,7 @@ export function RelatorioMedicaoModal({
             <div class="page">
               <div class="header">
                 <div class="header-inner">
-                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
                 </div>
               </div>
@@ -1240,17 +1279,33 @@ export function RelatorioMedicaoModal({
                     <td>${obra.empresa_responsavel || '-'}</td>
                   </tr>
                   <tr>
-                    <th>Valor</th>
-                    <td>${formatMoney(totais.contrato)}</td>
+                    <th>Valor inicial</th>
+                    <td>${formatMoney(obra.valor_total)} (${formatMoneyExtenso(obra.valor_total)})</td>
                   </tr>
                   <tr>
-                    <th>Prazo</th>
+                    <th>Prazo inicial</th>
                     <td>${obra.tempo_obra ? `${obra.tempo_obra} dias` : '-'}</td>
                   </tr>
                   <tr>
                     <th>Data da medição</th>
                     <td>${format(new Date(dataRelatorio), "dd/MM/yyyy")}</td>
                   </tr>
+                  ${(obra.valor_aditivado && obra.valor_aditivado > 0) ? `
+                  <tr>
+                    <th>1º Aditivo de valor</th>
+                    <td>${formatMoney(obra.valor_aditivado)} (${formatMoneyExtenso(obra.valor_aditivado)})</td>
+                  </tr>
+                  <tr>
+                    <th>Valor do contrato após 1º Aditivo</th>
+                    <td>${formatMoney(obra.valor_total + obra.valor_aditivado)} (${formatMoneyExtenso(obra.valor_total + obra.valor_aditivado)})</td>
+                  </tr>
+                  ` : ''}
+                  ${(obra as any).aditivo_prazo ? `
+                  <tr>
+                    <th>Prazo final da obra Após 1º Aditivo de prazo</th>
+                    <td>${(obra as any).aditivo_prazo} (dias)</td>
+                  </tr>
+                  ` : ''}
                 </table>
                 <div class="table-caption">Tabela 1 - Informações gerais</div>
 
@@ -1268,14 +1323,14 @@ export function RelatorioMedicaoModal({
             <div class="page">
               <div class="header">
                 <div class="header-inner">
-                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
                 </div>
               </div>
               <div class="page-content">
                 <div class="section-title">4. DA MEDIÇÃO:</div>
                 <div class="section-content">
-                  O presente relatório tem por objetivo apresentar a ${medicaoAtual}ª medição do referido contrato. Durante o período indicado foram realizadas várias visitas à obra pelo Fiscal do Contrato para o acompanhamento dos serviços.
+                  O presente relatório tem por objetivo apresentar a ${medicaoAtual}ª medição do referido contrato. Ao longo do período de referência, foram realizadas visitas técnicas à obra pelo Fiscal do Contrato, a fim de acompanhar a execução dos serviços.
                 </div>
                 <div class="section-content">
                   Todos os serviços executados são apresentados na planilha de medição, que indica as quantidades realizadas de cada item.
@@ -1332,7 +1387,7 @@ export function RelatorioMedicaoModal({
             <div class="page">
               <div class="header">
                 <div class="header-inner">
-                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
                 </div>
               </div>
@@ -1367,7 +1422,7 @@ export function RelatorioMedicaoModal({
             <div class="page">
               <div class="header">
                 <div class="header-inner">
-                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
                 </div>
               </div>
@@ -1394,7 +1449,7 @@ export function RelatorioMedicaoModal({
             <div class="page">
               <div class="header">
                 <div class="header-inner">
-                  <img class="header-logo" src="/images/logo-dpe-mt.png" alt="DPE-MT" />
+                  <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
                   <div class="header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
                 </div>
               </div>
@@ -1405,7 +1460,7 @@ export function RelatorioMedicaoModal({
                 </div>
 
                 <div style="margin-top: 40px; text-align: right;">
-                  ${obra.municipio || 'Cuiabá'}/MT, ${dataAtual}.
+                  ${obra.municipio || 'Cuiabá'}/MT, ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}.
                 </div>
 
                 ${fiscalNome ? `
@@ -1423,7 +1478,7 @@ export function RelatorioMedicaoModal({
             </div>
 
             <!-- ANEXO 01: RELATÓRIO FOTOGRÁFICO -->
-            ${gerarPaginasAnexo()}
+            ${gerarPaginasAnexo(logoBase64 || '/images/logo-dpe-mt.png')}
           </body>
         </html>
       `;
