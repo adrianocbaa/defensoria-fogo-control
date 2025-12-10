@@ -45,6 +45,16 @@ interface Item {
   totalContrato: number;
   nivel: number;
   ehAdministracaoLocal: boolean;
+  origem?: string;
+}
+
+interface Aditivo {
+  id: number;
+  nome: string;
+  dados: { [itemId: number]: { qnt: number; percentual: number; total: number } };
+  sessionId?: string;
+  sequencia?: number;
+  bloqueada?: boolean;
 }
 
 interface Medicao {
@@ -85,6 +95,7 @@ interface RelatorioMedicaoModalProps {
   medicaoAtual: number;
   items: Item[];
   medicoes: Medicao[];
+  aditivos: Aditivo[];
   calcularValorAcumuladoItem: (itemId: number) => number;
   calcularTotalContratoComAditivos: (item: Item, medicaoId: number) => number;
   dadosHierarquicos: { [medicaoId: number]: { [itemId: number]: { qnt: number; percentual: number; total: number } } };
@@ -97,6 +108,7 @@ export function RelatorioMedicaoModal({
   medicaoAtual,
   items,
   medicoes,
+  aditivos,
   calcularValorAcumuladoItem,
   calcularTotalContratoComAditivos,
   dadosHierarquicos
@@ -512,7 +524,10 @@ export function RelatorioMedicaoModal({
   // Calcular totais
   const totais = useMemo(() => {
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
-    if (!medicaoAtualObj) return { executado: 0, executadoAcum: 0, contrato: 0, percentual: 0, valorInicial: 0, totalAditivo: 0 };
+    if (!medicaoAtualObj) return { 
+      executado: 0, executadoAcum: 0, contrato: 0, percentual: 0, 
+      valorInicial: 0, totalAditivo: 0, aditivosPorSessao: [] as { numero: number; valor: number }[]
+    };
 
     const ehItemFolha = (itemCode: string) => {
       return !items.some(other => 
@@ -526,11 +541,13 @@ export function RelatorioMedicaoModal({
     let totalExecutado = 0;
     let totalExecutadoAcum = 0;
 
-    items.filter(item => ehItemFolha(item.item)).forEach(item => {
-      // Valor Inicial = soma dos valorTotal originais da planilha (sem aditivos)
+    // Calcular valor inicial (apenas itens contratuais originais)
+    items.filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual').forEach(item => {
       valorInicial += item.valorTotal || 0;
-      
-      // Contrato = valor pós aditivos
+    });
+
+    // Calcular contrato total
+    items.filter(item => ehItemFolha(item.item)).forEach(item => {
       totalContrato += calcularTotalContratoComAditivos(item, medicaoAtual);
       
       const dadosMedicao = dadosHierarquicos[medicaoAtual]?.[item.id];
@@ -538,6 +555,28 @@ export function RelatorioMedicaoModal({
         totalExecutado += dadosMedicao.total;
       }
       totalExecutadoAcum += calcularValorAcumuladoItem(item.id);
+    });
+
+    // Calcular valor de cada sessão de aditivo separadamente
+    const aditivosBloqueados = aditivos.filter(a => a.bloqueada).sort((a, b) => a.id - b.id);
+    const aditivosPorSessao: { numero: number; valor: number }[] = [];
+
+    aditivosBloqueados.forEach((aditivo) => {
+      // Somar o valor total do aditivo (contratual + extracontratual)
+      let valorAditivo = 0;
+      items.forEach(item => {
+        const dadosAditivo = aditivo.dados[item.id];
+        if (dadosAditivo && dadosAditivo.total) {
+          valorAditivo += dadosAditivo.total;
+        }
+      });
+      
+      if (valorAditivo !== 0) {
+        aditivosPorSessao.push({
+          numero: aditivo.id,
+          valor: valorAditivo
+        });
+      }
     });
 
     const totalAditivo = totalContrato - valorInicial;
@@ -548,9 +587,10 @@ export function RelatorioMedicaoModal({
       contrato: totalContrato,
       percentual: totalContrato > 0 ? (totalExecutadoAcum / totalContrato) * 100 : 0,
       valorInicial,
-      totalAditivo
+      totalAditivo,
+      aditivosPorSessao
     };
-  }, [items, medicoes, medicaoAtual, dadosHierarquicos, calcularValorAcumuladoItem, calcularTotalContratoComAditivos]);
+  }, [items, medicoes, medicaoAtual, dadosHierarquicos, calcularValorAcumuladoItem, calcularTotalContratoComAditivos, aditivos]);
 
   const formatMoney = (valor: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -1300,16 +1340,33 @@ export function RelatorioMedicaoModal({
                     <th>Data da medição</th>
                     <td>${format(new Date(dataRelatorio), "dd/MM/yyyy")}</td>
                   </tr>
-                  ${totais.totalAditivo > 0 ? `
-                  <tr>
-                    <th>1º Aditivo de valor</th>
-                    <td>${formatMoney(totais.totalAditivo)} (${formatMoneyExtenso(totais.totalAditivo)})</td>
-                  </tr>
-                  <tr>
-                    <th>Valor do contrato após 1º Aditivo</th>
-                    <td>${formatMoney(totais.contrato)} (${formatMoneyExtenso(totais.contrato)})</td>
-                  </tr>
-                  ` : ''}
+                  ${(() => {
+                    // Gerar linhas para cada aditivo de valor
+                    let aditivoHtml = '';
+                    const numerosOrdinais: { [key: number]: string } = {
+                      1: '1º', 2: '2º', 3: '3º', 4: '4º', 5: '5º',
+                      6: '6º', 7: '7º', 8: '8º', 9: '9º', 10: '10º'
+                    };
+                    let valorAcumulado = totais.valorInicial;
+                    
+                    totais.aditivosPorSessao.forEach((aditivo, index) => {
+                      valorAcumulado += aditivo.valor;
+                      const ordinal = numerosOrdinais[aditivo.numero] || `${aditivo.numero}º`;
+                      
+                      aditivoHtml += `
+                        <tr>
+                          <th>${ordinal} Aditivo de valor</th>
+                          <td>${formatMoney(aditivo.valor)} (${formatMoneyExtenso(aditivo.valor)})</td>
+                        </tr>
+                        <tr>
+                          <th>Valor do contrato após ${ordinal} Aditivo</th>
+                          <td>${formatMoney(valorAcumulado)} (${formatMoneyExtenso(valorAcumulado)})</td>
+                        </tr>
+                      `;
+                    });
+                    
+                    return aditivoHtml;
+                  })()}
                   ${obra.aditivo_prazo && obra.aditivo_prazo > 0 ? `
                   <tr>
                     <th>1º Aditivo de prazo</th>
