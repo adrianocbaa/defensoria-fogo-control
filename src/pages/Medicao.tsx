@@ -3900,7 +3900,6 @@ const criarNovaMedicao = async () => {
                         size="sm"
                         className="h-8 rounded-full px-3"
                         onClick={() => setMedicaoAtual(m.id)}
-                        disabled={m.bloqueada && !isAdmin}
                         title={m.bloqueada && m.dataBloqueio ? relativeTimePTBR(m.dataBloqueio) : ''}
                       >
                         {label}
