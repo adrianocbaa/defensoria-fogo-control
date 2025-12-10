@@ -37,13 +37,9 @@ export function useCronogramaFinanceiro() {
         .eq('obra_id', obraId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (cronogramaError) {
-        if (cronogramaError.code === 'PGRST116') {
-          // No data found
-          return null;
-        }
         throw cronogramaError;
       }
 
