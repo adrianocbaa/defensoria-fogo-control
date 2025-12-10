@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -26,7 +26,7 @@ export interface CronogramaFinanceiro {
 export function useCronogramaFinanceiro() {
   const [loading, setLoading] = useState(false);
 
-  const fetchCronograma = async (obraId: string): Promise<CronogramaFinanceiro | null> => {
+  const fetchCronograma = useCallback(async (obraId: string): Promise<CronogramaFinanceiro | null> => {
     try {
       setLoading(true);
 
@@ -94,7 +94,7 @@ export function useCronogramaFinanceiro() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const saveCronograma = async (cronograma: CronogramaFinanceiro): Promise<boolean> => {
     try {
