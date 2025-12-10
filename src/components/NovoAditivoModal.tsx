@@ -3,13 +3,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface NovoAditivoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sequenciasDisponiveis: number[];
   defaultSequencia: number;
-  onConfirm: (options: { extracontratual: boolean; file?: File | null; sequenciaEfetiva: number }) => void;
+  onConfirm: (options: { 
+    extracontratual: boolean; 
+    file?: File | null; 
+    sequenciaEfetiva: number;
+    temAditivoPrazo: boolean;
+    diasAditivoPrazo: number;
+  }) => void;
 }
 
 const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange, sequenciasDisponiveis, defaultSequencia, onConfirm }) => {
@@ -17,6 +24,8 @@ const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange,
   const [file, setFile] = useState<File | null>(null);
   const [sequencia, setSequencia] = useState<number>(defaultSequencia);
   const [submitting, setSubmitting] = useState(false);
+  const [temAditivoPrazo, setTemAditivoPrazo] = useState(false);
+  const [diasAditivoPrazo, setDiasAditivoPrazo] = useState<number>(0);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null;
@@ -27,11 +36,19 @@ const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange,
     if (extracontratual && !file) return; // require file if selected
     setSubmitting(true);
     try {
-      onConfirm({ extracontratual, file, sequenciaEfetiva: sequencia });
+      onConfirm({ 
+        extracontratual, 
+        file, 
+        sequenciaEfetiva: sequencia,
+        temAditivoPrazo,
+        diasAditivoPrazo: temAditivoPrazo ? diasAditivoPrazo : 0
+      });
       onOpenChange(false);
       // reset state
       setExtracontratual(false);
       setFile(null);
+      setTemAditivoPrazo(false);
+      setDiasAditivoPrazo(0);
     } finally {
       setSubmitting(false);
     }
@@ -77,6 +94,36 @@ const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange,
             </div>
           )}
 
+          <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="aditivo-prazo" 
+                checked={temAditivoPrazo}
+                onCheckedChange={(checked) => setTemAditivoPrazo(checked === true)}
+              />
+              <Label htmlFor="aditivo-prazo" className="text-sm font-medium cursor-pointer">
+                Este aditivo inclui prorrogação de prazo
+              </Label>
+            </div>
+            
+            {temAditivoPrazo && (
+              <div className="space-y-2 pl-6">
+                <Label htmlFor="dias-prazo" className="text-sm">Dias a adicionar ao prazo</Label>
+                <Input 
+                  id="dias-prazo" 
+                  type="number" 
+                  min="1"
+                  placeholder="Ex: 30"
+                  value={diasAditivoPrazo || ''}
+                  onChange={(e) => setDiasAditivoPrazo(parseInt(e.target.value) || 0)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Os dias serão somados ao prazo atual da obra e a data de término será recalculada.
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label className="text-sm">Passa a valer a partir de:</Label>
             <select
@@ -93,7 +140,7 @@ const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange,
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={submitting || (extracontratual && !file)}>
+            <Button onClick={handleCreate} disabled={submitting || (extracontratual && !file) || (temAditivoPrazo && diasAditivoPrazo <= 0)}>
               {submitting ? 'Criando...' : 'Criar Aditivo'}
             </Button>
           </div>

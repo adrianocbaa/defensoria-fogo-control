@@ -43,6 +43,9 @@ interface Obra {
   n_contrato?: string;
   empresa_responsavel?: string;
   percentual_desconto?: number;
+  tempo_obra?: number;
+  aditivo_prazo?: number;
+  data_inicio?: string;
 }
 
 interface Item {
@@ -2169,10 +2172,35 @@ const criarNovaMedicao = async () => {
     }
   };
 
-  const confirmarNovoAditivo = async ({ extracontratual, file, sequenciaEfetiva }: { extracontratual: boolean; file?: File | null; sequenciaEfetiva: number; }) => {
+  const confirmarNovoAditivo = async ({ extracontratual, file, sequenciaEfetiva, temAditivoPrazo, diasAditivoPrazo }: { extracontratual: boolean; file?: File | null; sequenciaEfetiva: number; temAditivoPrazo: boolean; diasAditivoPrazo: number; }) => {
     if (!id) {
       toast.error('Obra inválida');
       return;
+    }
+
+    // Se tem aditivo de prazo, atualizar a obra
+    if (temAditivoPrazo && diasAditivoPrazo > 0) {
+      try {
+        const currentPrazo = obra?.aditivo_prazo || 0;
+        const novoPrazo = currentPrazo + diasAditivoPrazo;
+        
+        const { error } = await supabase
+          .from('obras')
+          .update({ aditivo_prazo: novoPrazo })
+          .eq('id', id);
+        
+        if (error) throw error;
+        
+        // Atualizar estado local da obra
+        if (obra) {
+          setObra({ ...obra, aditivo_prazo: novoPrazo });
+        }
+        
+        toast.success(`Aditivo de prazo: +${diasAditivoPrazo} dias adicionados ao prazo da obra.`);
+      } catch (error) {
+        console.error('Erro ao atualizar prazo:', error);
+        toast.error('Erro ao atualizar aditivo de prazo.');
+      }
     }
 
     // Criar sessão do aditivo no Supabase

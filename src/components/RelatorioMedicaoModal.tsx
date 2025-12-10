@@ -30,6 +30,7 @@ interface Obra {
   empresa_responsavel?: string;
   data_inicio?: string;
   tempo_obra?: number;
+  aditivo_prazo?: number;
 }
 
 interface Item {
@@ -1300,10 +1301,14 @@ export function RelatorioMedicaoModal({
                     <td>${formatMoney(obra.valor_total + obra.valor_aditivado)} (${formatMoneyExtenso(obra.valor_total + obra.valor_aditivado)})</td>
                   </tr>
                   ` : ''}
-                  ${(obra as any).aditivo_prazo ? `
+                  ${obra.aditivo_prazo && obra.aditivo_prazo > 0 ? `
                   <tr>
-                    <th>Prazo final da obra Após 1º Aditivo de prazo</th>
-                    <td>${(obra as any).aditivo_prazo} (dias)</td>
+                    <th>1º Aditivo de prazo</th>
+                    <td>${obra.aditivo_prazo} dias</td>
+                  </tr>
+                  <tr>
+                    <th>Prazo final após 1º Aditivo de prazo</th>
+                    <td>${(obra.tempo_obra || 0) + obra.aditivo_prazo} dias</td>
                   </tr>
                   ` : ''}
                 </table>
