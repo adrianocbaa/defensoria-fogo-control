@@ -512,7 +512,7 @@ export function RelatorioMedicaoModal({
   // Calcular totais
   const totais = useMemo(() => {
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
-    if (!medicaoAtualObj) return { executado: 0, executadoAcum: 0, contrato: 0, percentual: 0 };
+    if (!medicaoAtualObj) return { executado: 0, executadoAcum: 0, contrato: 0, percentual: 0, valorInicial: 0, totalAditivo: 0 };
 
     const ehItemFolha = (itemCode: string) => {
       return !items.some(other => 
@@ -522,10 +522,15 @@ export function RelatorioMedicaoModal({
     };
 
     let totalContrato = 0;
+    let valorInicial = 0;
     let totalExecutado = 0;
     let totalExecutadoAcum = 0;
 
     items.filter(item => ehItemFolha(item.item)).forEach(item => {
+      // Valor Inicial = soma dos valorTotal originais da planilha (sem aditivos)
+      valorInicial += item.valorTotal || 0;
+      
+      // Contrato = valor pós aditivos
       totalContrato += calcularTotalContratoComAditivos(item, medicaoAtual);
       
       const dadosMedicao = dadosHierarquicos[medicaoAtual]?.[item.id];
@@ -535,11 +540,15 @@ export function RelatorioMedicaoModal({
       totalExecutadoAcum += calcularValorAcumuladoItem(item.id);
     });
 
+    const totalAditivo = totalContrato - valorInicial;
+
     return {
       executado: totalExecutado,
       executadoAcum: totalExecutadoAcum,
       contrato: totalContrato,
-      percentual: totalContrato > 0 ? (totalExecutadoAcum / totalContrato) * 100 : 0
+      percentual: totalContrato > 0 ? (totalExecutadoAcum / totalContrato) * 100 : 0,
+      valorInicial,
+      totalAditivo
     };
   }, [items, medicoes, medicaoAtual, dadosHierarquicos, calcularValorAcumuladoItem, calcularTotalContratoComAditivos]);
 
@@ -1281,7 +1290,7 @@ export function RelatorioMedicaoModal({
                   </tr>
                   <tr>
                     <th>Valor inicial</th>
-                    <td>${formatMoney(obra.valor_total)} (${formatMoneyExtenso(obra.valor_total)})</td>
+                    <td>${formatMoney(totais.valorInicial)} (${formatMoneyExtenso(totais.valorInicial)})</td>
                   </tr>
                   <tr>
                     <th>Prazo inicial</th>
@@ -1291,14 +1300,14 @@ export function RelatorioMedicaoModal({
                     <th>Data da medição</th>
                     <td>${format(new Date(dataRelatorio), "dd/MM/yyyy")}</td>
                   </tr>
-                  ${(obra.valor_aditivado && obra.valor_aditivado > 0) ? `
+                  ${totais.totalAditivo > 0 ? `
                   <tr>
                     <th>1º Aditivo de valor</th>
-                    <td>${formatMoney(obra.valor_aditivado)} (${formatMoneyExtenso(obra.valor_aditivado)})</td>
+                    <td>${formatMoney(totais.totalAditivo)} (${formatMoneyExtenso(totais.totalAditivo)})</td>
                   </tr>
                   <tr>
                     <th>Valor do contrato após 1º Aditivo</th>
-                    <td>${formatMoney(obra.valor_total + obra.valor_aditivado)} (${formatMoneyExtenso(obra.valor_total + obra.valor_aditivado)})</td>
+                    <td>${formatMoney(totais.contrato)} (${formatMoneyExtenso(totais.contrato)})</td>
                   </tr>
                   ` : ''}
                   ${obra.aditivo_prazo && obra.aditivo_prazo > 0 ? `
