@@ -227,6 +227,24 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <span className="text-sm font-medium text-muted-foreground">Data prevista de término:</span>
                 <p className="text-sm">{obra.previsaoTermino ? formatDate(obra.previsaoTermino) : 'Não informado'}</p>
               </div>
+              {(obra as any).tempo_obra && (
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">Prazo inicial:</span>
+                  <p className="text-sm">{(obra as any).tempo_obra} dias</p>
+                </div>
+              )}
+              {(obra as any).aditivo_prazo && (obra as any).aditivo_prazo > 0 && (
+                <>
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Aditivo de prazo:</span>
+                    <p className="text-sm">{(obra as any).aditivo_prazo} dias</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">Prazo final:</span>
+                    <p className="text-sm font-medium text-primary">{((obra as any).tempo_obra || 0) + (obra as any).aditivo_prazo} dias</p>
+                  </div>
+                </>
+              )}
             </div>
           </AccordionContent>
         </AccordionItem>
