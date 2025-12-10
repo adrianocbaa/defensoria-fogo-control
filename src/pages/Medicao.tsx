@@ -4159,6 +4159,7 @@ const criarNovaMedicao = async () => {
         medicaoAtual={medicaoAtual}
         items={items}
         medicoes={medicoes}
+        aditivos={aditivos}
         calcularValorAcumuladoItem={calcularValorAcumuladoItem}
         calcularTotalContratoComAditivos={calcularTotalContratoComAditivos}
         dadosHierarquicos={dadosHierarquicosMemoizados}
