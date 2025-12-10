@@ -89,7 +89,7 @@ export function useCronogramaFinanceiro() {
       };
     } catch (error) {
       console.error('Erro ao buscar cronograma:', error);
-      toast.error('Erro ao carregar cronograma financeiro');
+      // Silently return null - no toast, as missing cronograma is expected for some obras
       return null;
     } finally {
       setLoading(false);
