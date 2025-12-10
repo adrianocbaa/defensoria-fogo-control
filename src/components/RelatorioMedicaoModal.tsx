@@ -127,6 +127,14 @@ export function RelatorioMedicaoModal({
     desvioPct: number;
     desvioAcumPct: number;
   }[]>([]);
+  // Dados históricos por medição para gráfico de linha
+  const [dadosHistoricoPorMedicao, setDadosHistoricoPorMedicao] = useState<{
+    sequencia: number;
+    previstoAcum: number;
+    executadoAcum: number;
+    pctPrevisto: number;
+    pctExecutado: number;
+  }[]>([]);
 
   // Função para converter número da medição em ordinal por extenso
   const numeroMedicaoExtenso = (num: number): string => {
@@ -264,7 +272,10 @@ export function RelatorioMedicaoModal({
           executadoPorMacroPorMedicao.set(session.sequencia, executadoMacro);
         }
 
-        // Gerar dados de comparativo
+        // Calcular valor total do contrato (soma de todos os previstos do cronograma)
+        const valorTotalContrato = cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
+
+        // Gerar dados de comparativo para a medição atual
         const comparativos = cronograma.items.map(itemCronograma => {
           const periodoAtual = medicaoAtual * 30;
           const periodoAtualData = itemCronograma.periodos.find(p => p.periodo === periodoAtual);
@@ -300,9 +311,46 @@ export function RelatorioMedicaoModal({
         });
 
         setDadosComparativo(comparativos);
+
+        // Calcular histórico acumulado por medição para o gráfico de linha
+        const historico: { sequencia: number; previstoAcum: number; executadoAcum: number; pctPrevisto: number; pctExecutado: number }[] = [];
+        
+        for (let seq = 1; seq <= medicaoAtual; seq++) {
+          const periodo = seq * 30;
+          
+          // Previsto acumulado até esta medição
+          let previstoAcumMed = 0;
+          cronograma.items.forEach(item => {
+            previstoAcumMed += item.periodos
+              .filter(p => p.periodo <= periodo)
+              .reduce((sum, p) => sum + p.valor, 0);
+          });
+          
+          // Executado acumulado até esta medição
+          let executadoAcumMed = 0;
+          for (let s = 1; s <= seq; s++) {
+            const execMap = executadoPorMacroPorMedicao.get(s);
+            if (execMap) {
+              execMap.forEach((val) => {
+                executadoAcumMed += val;
+              });
+            }
+          }
+          
+          historico.push({
+            sequencia: seq,
+            previstoAcum: previstoAcumMed,
+            executadoAcum: executadoAcumMed,
+            pctPrevisto: valorTotalContrato > 0 ? (previstoAcumMed / valorTotalContrato) * 100 : 0,
+            pctExecutado: valorTotalContrato > 0 ? (executadoAcumMed / valorTotalContrato) * 100 : 0
+          });
+        }
+        
+        setDadosHistoricoPorMedicao(historico);
       } catch (error) {
         console.error('Erro ao carregar dados de comparativo:', error);
         setDadosComparativo([]);
+        setDadosHistoricoPorMedicao([]);
       }
     };
 
@@ -795,23 +843,16 @@ export function RelatorioMedicaoModal({
           );
 
           // Gráfico de linha: Acumulado (Previsto x Executado por período)
-          // Calcular percentuais totais acumulados
-          const totalContrato = dadosComparativo.reduce((sum, d) => sum + d.previstoAcum, 0);
-          const totalPrevistoAcum = dadosComparativo.reduce((sum, d) => sum + d.previstoAcum, 0);
-          const totalExecutadoAcum = dadosComparativo.reduce((sum, d) => sum + d.executadoAcum, 0);
-          const pctPrevisto = totalContrato > 0 ? (totalPrevistoAcum / totalContrato) * 100 : 0;
-          const pctExecutado = totalContrato > 0 ? (totalExecutadoAcum / totalContrato) * 100 : 0;
-
-          // Criar pontos para o gráfico de linha (0 dias, 30 dias por medição)
+          // Usar dados históricos reais por medição
           const labelsLine = ['0 dias'];
           const dataPrevisto = [0];
           const dataExecutado = [0];
           
-          for (let i = 1; i <= medicaoAtual; i++) {
-            labelsLine.push(`${i * 30} dias`);
-            dataPrevisto.push(i === medicaoAtual ? pctPrevisto : (pctPrevisto / medicaoAtual) * i);
-            dataExecutado.push(i === medicaoAtual ? pctExecutado : (pctExecutado / medicaoAtual) * i);
-          }
+          dadosHistoricoPorMedicao.forEach(h => {
+            labelsLine.push(`${h.sequencia * 30} dias`);
+            dataPrevisto.push(h.pctPrevisto);
+            dataExecutado.push(h.pctExecutado);
+          });
 
           chartAcumulado = await generateChartImage(
             'line',
