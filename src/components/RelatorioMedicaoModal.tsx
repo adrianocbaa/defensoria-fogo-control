@@ -987,13 +987,13 @@ export function RelatorioMedicaoModal({
                 color: #000;
               }
               
-              /* Page structure with internal padding for margins */
+              /* Page structure with ABNT margins */
               .page { 
                 display: block;
                 box-sizing: border-box;
                 width: 210mm;
                 min-height: 297mm;
-                padding: 2cm 2.5cm 2cm 2.5cm;
+                padding: 3cm 2cm 2cm 3cm; /* top right bottom left - ABNT */
               }
               
               /* Content area */
