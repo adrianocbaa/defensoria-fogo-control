@@ -1001,8 +1001,43 @@ export function RelatorioMedicaoModal({
                 text-align: justify;
               }
               
-              /* Header - standardized */
-              /* Header - standardized across all pages */
+              /* Running header - repeats on each page */
+              .running-header {
+                position: fixed;
+                top: 0;
+                left: 3cm;
+                right: 2cm;
+                height: 2cm;
+                background: white;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border-bottom: 1px solid #D0D0D0;
+                padding-bottom: 4px;
+                z-index: 1000;
+              }
+              .running-header-inner {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+              }
+              .running-header-logo {
+                height: 1.2cm;
+                width: auto;
+                object-fit: contain;
+              }
+              .running-header-title {
+                font-family: Inter, Arial, sans-serif;
+                font-size: 9pt;
+                font-weight: bold;
+                color: #000000;
+                text-align: center;
+                line-height: 1.2;
+                margin-top: 2px;
+              }
+              
+              /* Regular header for pages that have it inline */
               .header {
                 width: 100%;
                 display: flex;
@@ -1035,6 +1070,10 @@ export function RelatorioMedicaoModal({
                 margin-top: 2px;
               }
               
+              /* Pages with running header need extra top margin */
+              .page-with-running-header {
+                padding-top: 5cm !important; /* 3cm ABNT + 2cm running header */
+              }
               
               /* Cover Page */
               .cover-content {
@@ -1046,7 +1085,7 @@ export function RelatorioMedicaoModal({
                 text-align: center;
               }
               
-              /* Page break class - use margin to force break without blank pages */
+              /* Page break class */
               .page-break {
                 break-before: page;
               }
@@ -1237,6 +1276,14 @@ export function RelatorioMedicaoModal({
             </style>
           </head>
           <body>
+            <!-- Running header that repeats on all pages -->
+            <div class="running-header">
+              <div class="running-header-inner">
+                <img class="running-header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
+                <div class="running-header-title">DIRETORIA DE INFRAESTRUTURA FÍSICA</div>
+              </div>
+            </div>
+            
             <!-- CAPA -->
             <div class="page">
               <div class="header">
