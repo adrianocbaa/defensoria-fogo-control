@@ -989,18 +989,16 @@ export function RelatorioMedicaoModal({
               
               /* Page structure - each page is exactly one A4 page */
               .page { 
-                display: flex;
-                flex-direction: column;
-                height: 29.7cm;
+                display: block;
+                min-height: 29.7cm;
                 box-sizing: border-box;
-                overflow: hidden;
                 padding-left: 2.5cm;
                 padding-right: 2.5cm;
+                padding-bottom: 2cm;
               }
               
-              /* Content area grows to push footer down */
+              /* Content area */
               .page-content {
-                flex: 1;
                 text-align: justify;
               }
               
@@ -1041,7 +1039,7 @@ export function RelatorioMedicaoModal({
               
               /* Cover Page */
               .cover-content {
-                flex: 1;
+                min-height: 22cm;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
