@@ -987,13 +987,14 @@ export function RelatorioMedicaoModal({
                 color: #000;
               }
               
-              /* Page structure with ABNT margins */
+              /* Page structure with ABNT margins - top includes space for running header */
               .page { 
                 display: block;
                 box-sizing: border-box;
                 width: 210mm;
                 min-height: 297mm;
-                padding: 3cm 2cm 2cm 3cm; /* top right bottom left - ABNT */
+                padding: 2.8cm 2cm 2cm 3cm; /* top accounts for running header, right, bottom, left - ABNT */
+                padding-top: 2.8cm; /* Space for running header (0.5cm + 1.8cm + gap) */
               }
               
               /* Content area */
@@ -1004,10 +1005,10 @@ export function RelatorioMedicaoModal({
               /* Running header - repeats on each page */
               .running-header {
                 position: fixed;
-                top: 0;
+                top: 0.5cm;
                 left: 3cm;
                 right: 2cm;
-                height: 2cm;
+                height: 1.8cm;
                 background: white;
                 display: flex;
                 flex-direction: column;
@@ -1023,7 +1024,7 @@ export function RelatorioMedicaoModal({
                 align-items: center;
               }
               .running-header-logo {
-                height: 1.2cm;
+                height: 1cm;
                 width: auto;
                 object-fit: contain;
               }
