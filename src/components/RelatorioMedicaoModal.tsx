@@ -994,10 +994,6 @@ export function RelatorioMedicaoModal({
                 padding-left: 2.5cm;
                 padding-right: 2.5cm;
                 padding-bottom: 1cm;
-                page-break-after: always;
-              }
-              .page:last-child {
-                page-break-after: avoid;
               }
               
               /* Content area */
