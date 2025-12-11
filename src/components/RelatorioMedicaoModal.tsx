@@ -977,7 +977,7 @@ export function RelatorioMedicaoModal({
             <style>
               @page { 
                 size: A4; 
-                margin: 2.5cm 2.5cm 2cm 2.5cm; 
+                margin: 0; 
               }
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { 
@@ -987,10 +987,13 @@ export function RelatorioMedicaoModal({
                 color: #000;
               }
               
-              /* Page structure - no padding as @page handles margins */
+              /* Page structure with internal padding for margins */
               .page { 
                 display: block;
                 box-sizing: border-box;
+                width: 210mm;
+                min-height: 297mm;
+                padding: 2cm 2.5cm 2cm 2.5cm;
               }
               
               /* Content area */
@@ -1502,14 +1505,16 @@ export function RelatorioMedicaoModal({
       document.body.appendChild(tempDiv);
 
       const opt = {
-        margin: [25, 25, 20, 25], // top, left, bottom, right in mm
+        margin: 0,
         filename: `Relatorio_Medicao_${medicaoAtual}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
           scale: 2,
           useCORS: true,
           letterRendering: true,
-          allowTaint: true
+          allowTaint: true,
+          width: 794, // A4 width in pixels at 96 DPI
+          windowWidth: 794
         },
         jsPDF: { 
           unit: 'mm', 
