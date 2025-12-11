@@ -993,12 +993,14 @@ export function RelatorioMedicaoModal({
                 box-sizing: border-box;
                 padding-left: 2.5cm;
                 padding-right: 2.5cm;
-                padding-bottom: 1cm;
+                padding-bottom: 2cm;
+                padding-top: 0.5cm;
               }
               
               /* Content area */
               .page-content {
                 text-align: justify;
+                padding-bottom: 1cm;
               }
               
               /* Header - standardized */
@@ -1046,9 +1048,9 @@ export function RelatorioMedicaoModal({
                 text-align: center;
               }
               
-              /* Page break class */
+              /* Page break class - use margin to force break without blank pages */
               .page-break {
-                page-break-before: always;
+                break-before: page;
               }
               .cover-title {
                 font-size: 18pt;
@@ -1519,7 +1521,7 @@ export function RelatorioMedicaoModal({
           format: 'a4', 
           orientation: 'portrait'
         },
-        pagebreak: { mode: ['css', 'legacy'], before: '.page-break', avoid: ['table', '.avoid-break'] }
+        pagebreak: { mode: 'css', before: '.page-break', avoid: ['table', 'tr', '.avoid-break'] }
       };
 
       await html2pdf().set(opt).from(tempDiv).save();
