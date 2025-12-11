@@ -691,7 +691,7 @@ export function RelatorioMedicaoModal({
     const startNewPage = (withHeader: boolean) => {
       if (withHeader) {
         return `
-          <div class="page">
+          <div class="page page-break">
             <div class="header">
               <div class="header-inner">
                 <img class="header-logo" src="${logoSrc}" alt="DPE-MT" />
@@ -720,7 +720,7 @@ export function RelatorioMedicaoModal({
         `;
       } else {
         return `
-          <div class="page">
+          <div class="page page-break">
             <div class="header">
               <div class="header-inner">
                 <img class="header-logo" src="${logoSrc}" alt="DPE-MT" />
@@ -987,14 +987,17 @@ export function RelatorioMedicaoModal({
                 color: #000;
               }
               
-              /* Page structure - each page is exactly one A4 page */
+              /* Page structure */
               .page { 
                 display: block;
-                min-height: 29.7cm;
                 box-sizing: border-box;
                 padding-left: 2.5cm;
                 padding-right: 2.5cm;
-                padding-bottom: 2cm;
+                padding-bottom: 1cm;
+                page-break-after: always;
+              }
+              .page:last-child {
+                page-break-after: avoid;
               }
               
               /* Content area */
@@ -1039,12 +1042,17 @@ export function RelatorioMedicaoModal({
               
               /* Cover Page */
               .cover-content {
-                min-height: 22cm;
+                height: 24cm;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
                 text-align: center;
+              }
+              
+              /* Page break class */
+              .page-break {
+                page-break-before: always;
               }
               .cover-title {
                 font-size: 18pt;
@@ -1253,7 +1261,7 @@ export function RelatorioMedicaoModal({
             </div>
 
             <!-- PÁGINA 2: INTRODUÇÃO -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-inner">
                   <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
@@ -1352,7 +1360,7 @@ export function RelatorioMedicaoModal({
             </div>
 
             <!-- PÁGINA 3: MEDIÇÃO -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-inner">
                   <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
@@ -1412,7 +1420,7 @@ export function RelatorioMedicaoModal({
 
             ${(chartPrevistoExecutado || chartAcumulado) ? `
             <!-- PÁGINA: GRÁFICOS COMPARATIVOS -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-inner">
                   <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
@@ -1438,7 +1446,7 @@ export function RelatorioMedicaoModal({
             ` : ''}
 
             <!-- PÁGINA 4: SERVIÇOS EXECUTADOS -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-inner">
                   <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
@@ -1461,7 +1469,7 @@ export function RelatorioMedicaoModal({
             </div>
 
             <!-- PÁGINA 5: CONCLUSÃO -->
-            <div class="page">
+            <div class="page page-break">
               <div class="header">
                 <div class="header-inner">
                   <img class="header-logo" src="${logoBase64 || '/images/logo-dpe-mt.png'}" alt="DPE-MT" />
@@ -1515,7 +1523,7 @@ export function RelatorioMedicaoModal({
           format: 'a4', 
           orientation: 'portrait'
         },
-        pagebreak: { mode: 'avoid-all', avoid: '.page' }
+        pagebreak: { mode: ['css', 'legacy'], before: '.page-break', avoid: ['table', '.avoid-break'] }
       };
 
       await html2pdf().set(opt).from(tempDiv).save();
