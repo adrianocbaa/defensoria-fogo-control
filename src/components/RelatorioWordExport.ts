@@ -132,8 +132,17 @@ const numeroMedicaoExtenso = (num: number): string => {
 // Função para carregar imagem como ArrayBuffer
 const loadImageAsArrayBuffer = async (url: string): Promise<ArrayBuffer | null> => {
   try {
-    const response = await fetch(url, { mode: 'cors' });
-    if (!response.ok) return null;
+    // Para URLs relativas (como /images/...), usar origin
+    let fullUrl = url;
+    if (url.startsWith('/')) {
+      fullUrl = window.location.origin + url;
+    }
+    
+    const response = await fetch(fullUrl, { mode: 'cors' });
+    if (!response.ok) {
+      console.error('Erro ao carregar imagem:', response.status, fullUrl);
+      return null;
+    }
     return await response.arrayBuffer();
   } catch (error) {
     console.error('Erro ao carregar imagem:', error);
@@ -171,11 +180,33 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
     console.error('Erro ao carregar logo:', error);
   }
 
-  // Criar cabeçalho padrão
+  // Criar cabeçalho padrão com logo
   const createHeader = () => {
-    const headerChildren: Paragraph[] = [
+    const headerChildren: Paragraph[] = [];
+    
+    // Adicionar logo se disponível
+    if (logoImage) {
+      headerChildren.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new ImageRun({
+              data: logoImage,
+              transformation: {
+                width: 180,
+                height: 50,
+              },
+              type: 'png',
+            }),
+          ],
+        })
+      );
+    }
+    
+    headerChildren.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
+        spacing: { before: 100 },
         children: [
           new TextRun({
             text: "DIRETORIA DE INFRAESTRUTURA FÍSICA",
@@ -184,8 +215,8 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
             font: "Arial",
           }),
         ],
-      }),
-    ];
+      })
+    );
 
     return new Header({
       children: headerChildren,
@@ -909,8 +940,16 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
     );
   }
 
-  // ANEXO: FOTOS
+  // ANEXO: FOTOS - Carregar imagens
   const anexoParagraphs: Paragraph[] = [];
+  const fotoImages: (ArrayBuffer | null)[] = [];
+  
+  // Carregar todas as fotos
+  for (const foto of fotosRelatorio) {
+    const imageData = await loadImageAsArrayBuffer(foto.url);
+    fotoImages.push(imageData);
+  }
+  
   if (fotosRelatorio.length > 0) {
     anexoParagraphs.push(
       new Paragraph({ children: [new PageBreak()] }),
@@ -976,27 +1015,56 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
       })
     );
 
-    // Adicionar fotos como texto (sem imagem real por limitação)
+    // Adicionar fotos com imagens reais
     fotosRelatorio.forEach((foto, index) => {
+      const imageData = fotoImages[index];
+      
+      if (imageData) {
+        // Determinar tipo de imagem pela URL
+        const isJpg = foto.url.toLowerCase().includes('.jpg') || foto.url.toLowerCase().includes('.jpeg');
+        const imageType = isJpg ? 'jpg' : 'png';
+        
+        anexoParagraphs.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 100 },
+            children: [
+              new ImageRun({
+                data: imageData,
+                transformation: {
+                  width: 450,
+                  height: 300,
+                },
+                type: imageType as 'jpg' | 'png' | 'gif' | 'bmp',
+              }),
+            ],
+          })
+        );
+      } else {
+        // Fallback se imagem não carregar
+        anexoParagraphs.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 100 },
+            children: [
+              new TextRun({
+                text: `[Foto ${index + 1} - não foi possível carregar]`,
+                size: 22,
+                font: "Arial",
+                color: "999999",
+              }),
+            ],
+          })
+        );
+      }
+      
       anexoParagraphs.push(
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 200, after: 100 },
-          children: [
-            new TextRun({
-              text: `[Foto ${index + 1}]`,
-              size: 22,
-              font: "Arial",
-              color: "666666",
-            }),
-          ],
-        }),
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 300 },
           children: [
             new TextRun({
-              text: `Foto ${index + 1} – ${foto.legenda || 'Sem descrição'}`,
+              text: `Foto ${index + 1}: ${foto.legenda || 'Sem legenda'}`,
               size: 20,
               font: "Arial",
             }),
