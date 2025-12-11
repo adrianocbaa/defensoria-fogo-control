@@ -737,10 +737,6 @@ export function RelatorioMedicaoModal({
       return `
               </div>
             </div>
-            <div class="footer">
-              <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
-              <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
-            </div>
           </div>`;
     };
 
@@ -1042,31 +1038,6 @@ export function RelatorioMedicaoModal({
                 margin-top: 2px;
               }
               
-              /* Footer - standardized across all pages */
-              .footer {
-                margin-top: auto;
-                height: 1.2cm;
-                max-height: 1.2cm;
-                overflow: hidden;
-                text-align: center;
-                font-size: 9pt;
-                line-height: 1.2;
-                color: #666;
-                padding: 0;
-                margin-bottom: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-              }
-              .footer-line1 {
-                margin: 0;
-                padding: 0;
-              }
-              .footer-line2 {
-                margin: 0;
-                padding: 0;
-              }
               
               /* Cover Page */
               .cover-content {
@@ -1281,10 +1252,6 @@ export function RelatorioMedicaoModal({
                 ${obra.n_contrato ? `<div class="cover-contrato">CONTRATO Nº ${obra.n_contrato}</div>` : ''}
                 <div class="cover-obra">${obra.nome.toUpperCase()}</div>
               </div>
-              <div class="footer">
-                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
-                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
-              </div>
             </div>
 
             <!-- PÁGINA 2: INTRODUÇÃO -->
@@ -1384,10 +1351,6 @@ export function RelatorioMedicaoModal({
                   O presente relatório tem por objetivo apresentar o resultado da ${medicaoAtual}ª medição. Esta verificação ocorre através da medição analisada no canteiro de obra por servidor desta Instituição.
                 </div>
               </div>
-              <div class="footer">
-                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
-                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
-              </div>
             </div>
 
             <!-- PÁGINA 3: MEDIÇÃO -->
@@ -1447,10 +1410,6 @@ export function RelatorioMedicaoModal({
                 </table>
                 <div class="table-caption">Tabela 2 – Medição Atual</div>
               </div>
-              <div class="footer">
-                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
-                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
-              </div>
             </div>
 
             ${(chartPrevistoExecutado || chartAcumulado) ? `
@@ -1463,28 +1422,19 @@ export function RelatorioMedicaoModal({
                 </div>
               </div>
               <div class="page-content">
-                <div class="section-title">GRÁFICOS COMPARATIVOS</div>
-                <div class="section-content">
-                  Os gráficos abaixo apresentam a análise visual comparativa entre o previsto no cronograma e o efetivamente executado.
-                </div>
-
+                <div class="section-title">COMPARATIVO: PREVISTO × EXECUTADO</div>
                 ${chartPrevistoExecutado ? `
-                <div class="chart-container">
-                  <div class="chart-title">Gráfico 1 – Previsto x Executado por MACRO</div>
-                  <img src="${chartPrevistoExecutado}" alt="Gráfico Previsto x Executado" style="width: 100%; max-width: 600px; height: auto; margin: 0 auto; display: block;" />
+                <div style="margin-bottom: 30px;">
+                  <div class="chart-title">Gráfico 1 – Previsto vs Executado por MACRO</div>
+                  <img src="${chartPrevistoExecutado}" alt="Gráfico Previsto vs Executado" style="width: 100%; max-width: 600px; height: auto; margin: 0 auto; display: block;" />
                 </div>
                 ` : ''}
-
                 ${chartAcumulado ? `
-                <div class="chart-container" style="margin-top: 30px;">
+                <div style="margin-bottom: 30px;">
                   <div class="chart-title">Gráfico 2 – Comparativo Acumulado por MACRO</div>
                   <img src="${chartAcumulado}" alt="Gráfico Acumulado" style="width: 100%; max-width: 600px; height: auto; margin: 0 auto; display: block;" />
                 </div>
                 ` : ''}
-              </div>
-              <div class="footer">
-                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
-                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
             ` : ''}
@@ -1509,10 +1459,6 @@ export function RelatorioMedicaoModal({
                 <div class="section-content" style="margin-top: 20px;">
                   Todos os serviços executados, assim como aqueles parcialmente executados, foram verificados pelo fiscal da obra. É válido informar que cada um destes serviços está em conformidade com os projetos apresentados e também de acordo com os padrões e especificações requeridos. O fiscal da obra atestou a qualidade e a precisão dos trabalhos realizados, garantindo que cada etapa do projeto atenda às expectativas de qualidade e segurança. No entanto, o atesto da qualidade durante inspeção realizada pelo fiscal não exime a responsabilidade da empresa na ocorrência de vícios ocultos ou não identificados.
                 </div>
-              </div>
-              <div class="footer">
-                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
-                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
 
@@ -1541,10 +1487,6 @@ export function RelatorioMedicaoModal({
                   <div class="signature-cargo">${fiscalCargo || 'Fiscal do Contrato'}</div>
                 </div>
                 ` : ''}
-              </div>
-              <div class="footer">
-                <span class="footer-line1">Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04, Centro Político Administrativo, Cep 78049-912, Cuiabá-MT.</span>
-                <span class="footer-line2">Site: www.defensoriapublica.mt.gov.br</span>
               </div>
             </div>
 
