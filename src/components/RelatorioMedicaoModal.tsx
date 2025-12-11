@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera } from 'lucide-react';
+import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera, FileIcon } from 'lucide-react';
+import { exportarWord } from './RelatorioWordExport';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import html2pdf from 'html2pdf.js';
@@ -1856,9 +1857,50 @@ export function RelatorioMedicaoModal({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="flex gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
+          </Button>
+          <Button 
+            variant="secondary"
+            onClick={async () => {
+              setGerando(true);
+              try {
+                await exportarWord({
+                  obra,
+                  medicaoAtual,
+                  totais,
+                  gruposParaRelatorio: gruposMedicao,
+                  servicosExecutados,
+                  periodoInicio,
+                  periodoFim,
+                  dataRelatorio,
+                  fiscalNome,
+                  fiscalCargo,
+                  fotosRelatorio,
+                  dataVistoria
+                });
+                toast.success('Relatório Word gerado com sucesso!');
+              } catch (error) {
+                console.error('Erro ao gerar Word:', error);
+                toast.error('Erro ao gerar relatório Word');
+              } finally {
+                setGerando(false);
+              }
+            }} 
+            disabled={gerando}
+          >
+            {gerando ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <FileIcon className="h-4 w-4 mr-2" />
+                Gerar Word
+              </>
+            )}
           </Button>
           <Button onClick={gerarPDF} disabled={gerando}>
             {gerando ? (
