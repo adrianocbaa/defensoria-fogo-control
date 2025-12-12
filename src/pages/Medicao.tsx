@@ -1233,6 +1233,11 @@ const criarNovaMedicao = async () => {
       return;
     }
 
+    if (!medicaoAtualObj.bloqueada) {
+      toast.error('Salve e bloqueie a medição antes de exportar a planilha');
+      return;
+    }
+
     try {
       // Preparar dados para exportação
       const exportData: any[] = [];
@@ -1787,6 +1792,11 @@ const criarNovaMedicao = async () => {
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
     if (!medicaoAtualObj) {
       toast.error('Medição não encontrada');
+      return;
+    }
+
+    if (!medicaoAtualObj.bloqueada) {
+      toast.error('Salve e bloqueie a medição antes de exportar a planilha');
       return;
     }
 
@@ -3471,7 +3481,14 @@ const criarNovaMedicao = async () => {
                           <FileText className="h-4 w-4 mr-2" />
                           Exportar Planilha PDF
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setModalRelatorioAberto(true)}>
+                        <DropdownMenuItem onClick={() => {
+                          const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
+                          if (!medicaoAtualObj?.bloqueada) {
+                            toast.error('Salve e bloqueie a medição antes de gerar o relatório');
+                            return;
+                          }
+                          setModalRelatorioAberto(true);
+                        }}>
                           <FileText className="h-4 w-4 mr-2" />
                           Relatório Técnico
                         </DropdownMenuItem>
