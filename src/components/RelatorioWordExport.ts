@@ -955,7 +955,7 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
       new Paragraph({ children: [new PageBreak()] }),
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { after: 400 },
+        spacing: { after: 200 },
         children: [
           new TextRun({
             text: "ANEXO 01",
@@ -966,24 +966,21 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
         ],
       }),
       new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        spacing: { after: 100 },
+        spacing: { after: 60 },
         children: [
           new TextRun({ text: "Obra: ", bold: true, size: 22, font: "Arial" }),
           new TextRun({ text: obra.nome, size: 22, font: "Arial" }),
         ],
       }),
       new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        spacing: { after: 100 },
+        spacing: { after: 60 },
         children: [
           new TextRun({ text: "Local: ", bold: true, size: 22, font: "Arial" }),
           new TextRun({ text: `${obra.municipio} - MT`, size: 22, font: "Arial" }),
         ],
       }),
       new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        spacing: { after: 100 },
+        spacing: { after: 60 },
         children: [
           new TextRun({ text: "Data da vistoria: ", bold: true, size: 22, font: "Arial" }),
           new TextRun({ text: dataVistoriaFormatada, size: 22, font: "Arial" }),
@@ -991,7 +988,7 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
       }),
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { after: 400 },
+        spacing: { after: 200 },
         children: [
           new TextRun({ text: "Objeto: ", bold: true, size: 22, font: "Arial" }),
           new TextRun({ 
@@ -1003,7 +1000,7 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
       }),
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { after: 400 },
+        spacing: { after: 200 },
         children: [
           new TextRun({
             text: "RELATÓRIO FOTOGRÁFICO",
@@ -1016,24 +1013,35 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
     );
 
     // Adicionar fotos com imagens reais
+    // Layout: 2 fotos na primeira página (tem cabeçalho do anexo), 3 fotos nas demais
     fotosRelatorio.forEach((foto, index) => {
       const imageData = fotoImages[index];
       
+      // Após 2 fotos (índice 2) e a cada 3 fotos (índice 5, 8, 11...), adicionar quebra de página
+      if (index === 2 || (index > 2 && (index - 2) % 3 === 0)) {
+        anexoParagraphs.push(new Paragraph({ children: [new PageBreak()] }));
+      }
+      
+      // Determinar tipo de imagem pela URL
+      const isJpg = foto.url.toLowerCase().includes('.jpg') || foto.url.toLowerCase().includes('.jpeg');
+      const imageType = isJpg ? 'jpg' : 'png';
+      
+      // Tamanho das fotos: largura fixa de 450pt (~15.9cm), altura proporcional
+      // Altura ~230pt para caber 2-3 fotos por página com legendas
+      const photoWidth = 450;
+      const photoHeight = 220;
+      
       if (imageData) {
-        // Determinar tipo de imagem pela URL
-        const isJpg = foto.url.toLowerCase().includes('.jpg') || foto.url.toLowerCase().includes('.jpeg');
-        const imageType = isJpg ? 'jpg' : 'png';
-        
         anexoParagraphs.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 100 },
+            spacing: { before: 100, after: 40 },
             children: [
               new ImageRun({
                 data: imageData,
                 transformation: {
-                  width: 450,
-                  height: 300,
+                  width: photoWidth,
+                  height: photoHeight,
                 },
                 type: imageType as 'jpg' | 'png' | 'gif' | 'bmp',
               }),
@@ -1045,7 +1053,7 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
         anexoParagraphs.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 100 },
+            spacing: { before: 100, after: 40 },
             children: [
               new TextRun({
                 text: `[Foto ${index + 1} - não foi possível carregar]`,
@@ -1061,7 +1069,7 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
       anexoParagraphs.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { after: 300 },
+          spacing: { after: 120 },
           children: [
             new TextRun({
               text: `Foto ${index + 1}: ${foto.legenda || 'Sem legenda'}`,
