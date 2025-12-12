@@ -1917,19 +1917,6 @@ export function RelatorioMedicaoModal({
               </>
             )}
           </Button>
-          <Button onClick={gerarPDF} disabled={gerando}>
-            {gerando ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Gerando...
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4 mr-2" />
-                Gerar PDF
-              </>
-            )}
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
