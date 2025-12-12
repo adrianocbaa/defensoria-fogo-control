@@ -252,7 +252,7 @@ export function AdminObras() {
           ) || [];
           const valorAcumulado = obraMedicaoItems.reduce((sum, item: any) => sum + Number(item.total || 0), 0);
           
-          progressos[obra.id] = valores[obra.id] > 0 ? (valorAcumulado / valores[obra.id]) * 100 : 0;
+          progressos[obra.id] = valores[obra.id] > 0 ? Math.min((valorAcumulado / valores[obra.id]) * 100, 100) : 0;
           
           // Calcular marcos para cada sessão de medição
           const valorPorSessao: Record<string, number> = {};
@@ -269,7 +269,7 @@ export function AdminObras() {
               sequencia: (session as any).sequencia,
               valorAcumulado: acumuladoMarco,
               valorMedicao: valorMedicao,
-              percentualAcumulado: valores[obra.id] > 0 ? (acumuladoMarco / valores[obra.id]) * 100 : 0
+              percentualAcumulado: valores[obra.id] > 0 ? Math.min((acumuladoMarco / valores[obra.id]) * 100, 100) : 0
             });
           }
           marcos[obra.id] = obraMarcos;
