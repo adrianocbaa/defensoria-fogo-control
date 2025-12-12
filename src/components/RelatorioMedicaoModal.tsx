@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera, FileIcon } from 'lucide-react';
+import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera, FileIcon, ZoomIn } from 'lucide-react';
 import { exportarWord } from './RelatorioWordExport';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -128,6 +128,7 @@ export function RelatorioMedicaoModal({
   const [selectedRdoIds, setSelectedRdoIds] = useState<Set<string>>(new Set());
   const [loadingRdoMedias, setLoadingRdoMedias] = useState(false);
   const [dataVistoria, setDataVistoria] = useState('');
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
   
   // Dados do cronograma financeiro para comparativo
   const { fetchCronograma } = useCronogramaFinanceiro();
@@ -1586,6 +1587,7 @@ export function RelatorioMedicaoModal({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -1810,11 +1812,22 @@ export function RelatorioMedicaoModal({
                         </Button>
                         <span className="text-xs text-center font-medium">{index + 1}</span>
                       </div>
-                      <img
-                        src={foto.url}
-                        alt=""
-                        className="w-16 h-16 object-cover rounded border"
-                      />
+                      <div className="relative group">
+                        <img
+                          src={foto.url}
+                          alt=""
+                          className="w-16 h-16 object-cover rounded border"
+                        />
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="absolute inset-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70"
+                          onClick={() => setZoomImageUrl(foto.url)}
+                          title="Ampliar imagem"
+                        >
+                          <ZoomIn className="h-5 w-5 text-white" />
+                        </Button>
+                      </div>
                       <div className="flex-1">
                         <Input
                           placeholder="Legenda da foto (ex: Execução de pintura em parede)"
@@ -1920,5 +1933,29 @@ export function RelatorioMedicaoModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Modal de Zoom da Imagem */}
+    <Dialog open={!!zoomImageUrl} onOpenChange={(open) => !open && setZoomImageUrl(null)}>
+      <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>Visualizar Foto</DialogTitle>
+        </DialogHeader>
+        <div className="flex items-center justify-center p-4">
+          {zoomImageUrl && (
+            <img
+              src={zoomImageUrl}
+              alt="Foto ampliada"
+              className="max-w-full max-h-[70vh] object-contain rounded-lg"
+            />
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setZoomImageUrl(null)}>
+            Fechar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
