@@ -41,6 +41,25 @@ interface TotaisData {
   aditivosPorSessao: { numero: number; valor: number }[];
 }
 
+interface DadosComparativo {
+  itemNumero: number;
+  descricao: string;
+  previsto: number;
+  previstoAcum: number;
+  executado: number;
+  executadoAcum: number;
+  desvioPct: number;
+  desvioAcumPct: number;
+}
+
+interface DadosHistorico {
+  sequencia: number;
+  previstoAcum: number;
+  executadoAcum: number;
+  pctPrevisto: number;
+  pctExecutado: number;
+}
+
 interface ExportWordParams {
   obra: Obra;
   medicaoAtual: number;
@@ -54,6 +73,8 @@ interface ExportWordParams {
   fiscalCargo: string;
   fotosRelatorio: FotoRelatorio[];
   dataVistoria: string;
+  dadosComparativo?: DadosComparativo[];
+  dadosHistoricoPorMedicao?: DadosHistorico[];
 }
 
 // Formatação de moeda
@@ -150,6 +171,101 @@ const loadImageAsArrayBuffer = async (url: string): Promise<ArrayBuffer | null> 
   }
 };
 
+// Função para gerar gráfico como imagem base64 para Word
+const generateChartForWord = async (
+  type: 'bar' | 'line',
+  labels: string[],
+  datasets: { label: string; data: number[]; backgroundColor?: string; borderColor?: string; fill?: boolean }[],
+  options: {
+    title?: string;
+    yAxisLabel?: string;
+    yAxisSuffix?: string;
+    stacked?: boolean;
+  } = {}
+): Promise<ArrayBuffer | null> => {
+  // Importar Chart.js dinamicamente
+  const { Chart, registerables } = await import('chart.js');
+  const ChartDataLabels = (await import('chartjs-plugin-datalabels')).default;
+  Chart.register(...registerables, ChartDataLabels);
+  
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      resolve(null);
+      return;
+    }
+
+    const chart = new Chart(ctx, {
+      type,
+      data: {
+        labels,
+        datasets: datasets.map(ds => ({
+          ...ds,
+          borderWidth: type === 'bar' ? 1 : 2,
+          tension: type === 'line' ? 0.4 : undefined,
+        })),
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          title: options.title ? {
+            display: true,
+            text: options.title,
+            font: { size: 14, weight: 'bold' },
+          } : undefined,
+          legend: {
+            display: true,
+            position: 'bottom',
+          },
+          datalabels: {
+            display: false,
+          },
+        },
+        scales: {
+          x: {
+            stacked: options.stacked,
+            grid: { display: false },
+          },
+          y: {
+            stacked: options.stacked,
+            beginAtZero: true,
+            max: options.yAxisSuffix === '%' ? 100 : undefined,
+            title: options.yAxisLabel ? {
+              display: true,
+              text: options.yAxisLabel,
+            } : undefined,
+            ticks: {
+              callback: (value) => options.yAxisSuffix 
+                ? `${value}${options.yAxisSuffix}` 
+                : `R$ ${Number(value).toLocaleString('pt-BR')}`,
+            },
+          },
+        },
+      },
+    });
+
+    // Aguardar renderização
+    setTimeout(() => {
+      const dataUrl = canvas.toDataURL('image/png');
+      chart.destroy();
+      
+      // Converter base64 para ArrayBuffer
+      const base64 = dataUrl.split(',')[1];
+      const binaryString = atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      resolve(bytes.buffer);
+    }, 100);
+  });
+};
+
 export async function exportarWord(params: ExportWordParams): Promise<void> {
   const {
     obra,
@@ -163,7 +279,9 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
     fiscalNome,
     fiscalCargo,
     fotosRelatorio,
-    dataVistoria
+    dataVistoria,
+    dadosComparativo,
+    dadosHistoricoPorMedicao
   } = params;
 
   const mesAno = format(new Date(dataRelatorio), "MMMM/yyyy", { locale: ptBR });
@@ -768,7 +886,132 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
           font: "Arial",
         }),
       ],
-    }),
+    })
+  );
+
+  // Gerar gráficos se houver dados comparativos
+  if (dadosComparativo && dadosComparativo.length > 0) {
+    // Gráfico de barras: Previsto vs Executado por item
+    const labelsBar = dadosComparativo.map(d => `${d.itemNumero}`);
+    const chartBarImage = await generateChartForWord(
+      'bar',
+      labelsBar,
+      [
+        {
+          label: 'Previsto',
+          data: dadosComparativo.map(d => d.previsto),
+          backgroundColor: 'rgba(59, 130, 246, 0.7)',
+          borderColor: 'rgb(59, 130, 246)',
+        },
+        {
+          label: 'Executado',
+          data: dadosComparativo.map(d => d.executado),
+          backgroundColor: 'rgba(34, 197, 94, 0.7)',
+          borderColor: 'rgb(34, 197, 94)',
+        },
+      ],
+      { title: 'Previsto x Executado por Etapa', yAxisLabel: 'Valor (R$)' }
+    );
+
+    if (chartBarImage) {
+      medicaoParagraphs.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 400, after: 200 },
+          children: [
+            new TextRun({
+              text: "Gráfico 1 – Previsto x Executado por Etapa",
+              bold: true,
+              size: 22,
+              font: "Arial",
+            }),
+          ],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+          children: [
+            new ImageRun({
+              data: chartBarImage,
+              transformation: {
+                width: 500,
+                height: 250,
+              },
+              type: 'png',
+            }),
+          ],
+        })
+      );
+    }
+  }
+
+  // Gráfico de linha: Curva S (acumulado)
+  if (dadosHistoricoPorMedicao && dadosHistoricoPorMedicao.length > 0) {
+    const labelsLine = ['0 dias'];
+    const dataPrevisto = [0];
+    const dataExecutado = [0];
+    
+    dadosHistoricoPorMedicao.forEach(h => {
+      labelsLine.push(`${h.sequencia * 30} dias`);
+      dataPrevisto.push(h.pctPrevisto);
+      dataExecutado.push(h.pctExecutado);
+    });
+
+    const chartLineImage = await generateChartForWord(
+      'line',
+      labelsLine,
+      [
+        {
+          label: 'Previsto Acumulado',
+          data: dataPrevisto,
+          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+          borderColor: 'rgb(59, 130, 246)',
+          fill: true,
+        },
+        {
+          label: 'Executado Acumulado',
+          data: dataExecutado,
+          backgroundColor: 'rgba(34, 197, 94, 0.2)',
+          borderColor: 'rgb(34, 197, 94)',
+          fill: true,
+        },
+      ],
+      { title: 'Curva S - Comparativo Acumulado', yAxisLabel: 'Percentual (%)', yAxisSuffix: '%' }
+    );
+
+    if (chartLineImage) {
+      medicaoParagraphs.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 400, after: 200 },
+          children: [
+            new TextRun({
+              text: "Gráfico 2 – Curva S (Comparativo Acumulado)",
+              bold: true,
+              size: 22,
+              font: "Arial",
+            }),
+          ],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+          children: [
+            new ImageRun({
+              data: chartLineImage,
+              transformation: {
+                width: 500,
+                height: 250,
+              },
+              type: 'png',
+            }),
+          ],
+        })
+      );
+    }
+  }
+
+  medicaoParagraphs.push(
     new Paragraph({ children: [new PageBreak()] })
   );
 

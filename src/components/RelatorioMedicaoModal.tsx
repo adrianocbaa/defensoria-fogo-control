@@ -1878,7 +1878,9 @@ export function RelatorioMedicaoModal({
                   fiscalNome,
                   fiscalCargo,
                   fotosRelatorio,
-                  dataVistoria
+                  dataVistoria,
+                  dadosComparativo,
+                  dadosHistoricoPorMedicao
                 });
                 toast.success('Relatório Word gerado com sucesso!');
               } catch (error) {
