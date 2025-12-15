@@ -48,6 +48,8 @@ interface MacroExecutado {
 interface MedicaoComparativo {
   sequencia: number;
   macros: MacroExecutado[];
+  valorTotalMedicao: number; // Valor total desta medição (soma de todos medicao_items.total)
+  valorTotalAcumulado: number; // Valor acumulado até esta medição
 }
 
 export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparativoProps) {
@@ -117,6 +119,9 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
       
       // Mapa para acumular valores progressivamente por MACRO
       const acumuladoProgressivoPorMacro = new Map<number, number>();
+      
+      // Variável para acumular o valor total progressivo
+      let valorAcumuladoProgressivo = 0;
 
       for (const session of medicaoSessions) {
         // Buscar itens desta medição específica
@@ -126,6 +131,12 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           .eq('medicao_id', session.id);
 
         if (itemsError) throw itemsError;
+
+        // Calcular valor total desta medição (soma de todos os totais)
+        const valorTotalMedicao = medicaoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
+        
+        // Atualizar acumulado progressivo
+        valorAcumuladoProgressivo += valorTotalMedicao;
 
         // Agregar valores executados por MACRO para esta medição
         const executadoPorMacro = new Map<number, number>();
@@ -180,6 +191,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         comparativos.push({
           sequencia: session.sequencia,
           macros: comparacoes,
+          valorTotalMedicao, // Valor total desta medição
+          valorTotalAcumulado: valorAcumuladoProgressivo, // Acumulado até esta medição
         });
       }
 
@@ -307,12 +320,10 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             // Calcular a sequência correspondente a este período
             const sequenciaPeriodo = dias / 30;
             
-            // Calcular acumulado progressivo: soma de todas as medições ATÉ este período
-            const execAcumulado = medicoesComparativo
-              .filter(m => m.sequencia <= sequenciaPeriodo)
-              .reduce((acc, m) => {
-                return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
-              }, 0);
+            // Usar o valor acumulado diretamente das medições (coluna TOTAL)
+            // Buscar a medição correspondente a este período
+            const medicaoAtePeriodo = medicoesComparativo.find(m => m.sequencia === sequenciaPeriodo);
+            const execAcumulado = medicaoAtePeriodo?.valorTotalAcumulado || 0;
             
             const prevAcumulado = cronograma.items.reduce((sum, item) => {
               const acumulado = item.periodos
