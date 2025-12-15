@@ -137,16 +137,11 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
         if (itemsError) throw itemsError;
 
-        // Calcular valor total desta medição (soma de todos os totais)
-        const valorTotalMedicao = medicaoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
-        
-        // Atualizar acumulado progressivo
-        valorAcumuladoProgressivo += valorTotalMedicao;
-
         // Agregar valores executados por MACRO para esta medição
         // IMPORTANTE: Evitar duplicação quando o mesmo item aparece com código de banco e hierárquico
         const executadoPorMacro = new Map<number, number>();
         const itensJaProcessados = new Set<string>(); // Rastreia itens hierárquicos já processados
+        let valorTotalMedicaoSemDuplicatas = 0;
         
         medicaoItems?.forEach(item => {
           // Obter o item hierárquico canônico para este código
@@ -158,6 +153,9 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           }
           itensJaProcessados.add(itemHierarquico);
           
+          // Somar ao total da medição (sem duplicatas)
+          valorTotalMedicaoSemDuplicatas += item.total || 0;
+          
           const macroInfo = codigoParaMacro.get(item.item_code);
           if (macroInfo) {
             const macroNum = parseInt(macroInfo.macro);
@@ -167,6 +165,12 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             }
           }
         });
+
+        // Usar o valor sem duplicatas para o total da medição
+        const valorTotalMedicao = valorTotalMedicaoSemDuplicatas;
+        
+        // Atualizar acumulado progressivo
+        valorAcumuladoProgressivo += valorTotalMedicao;
 
         // Atualizar acumulado progressivo com valores desta medição
         executadoPorMacro.forEach((valor, macroNum) => {
