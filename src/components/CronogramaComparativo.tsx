@@ -96,8 +96,10 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
       if (orcError) throw orcError;
 
-      // Criar mapa de código para MACRO
+      // Criar mapa de código para MACRO e mapa de código para item hierárquico canônico
       const codigoParaMacro = new Map<string, { macro: string; descricao: string }>();
+      const codigoParaItemHierarquico = new Map<string, string>(); // Mapeia qualquer código para o item hierárquico canônico
+      
       orcamentoItems?.forEach(item => {
         // Extrair o primeiro dígito do código do item (MACRO)
         const macro = item.item.split('.')[0];
@@ -108,10 +110,13 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             codigoParaMacro.set(macro, { macro, descricao: item.descricao });
           }
         }
-        // Mapear código de banco (ex: "93674") para o macro
+        // Mapear código de banco (ex: "CP.DPMT.0194") para o macro e item hierárquico
         codigoParaMacro.set(item.codigo, { macro, descricao: item.descricao });
-        // Mapear código hierárquico (ex: "9.31") para o macro
+        codigoParaItemHierarquico.set(item.codigo, item.item);
+        
+        // Mapear código hierárquico (ex: "2.1.1") para o macro e para si mesmo
         codigoParaMacro.set(item.item, { macro, descricao: item.descricao });
+        codigoParaItemHierarquico.set(item.item, item.item);
       });
 
       // Processar cada medição individualmente e calcular acumulado progressivo
@@ -139,8 +144,20 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         valorAcumuladoProgressivo += valorTotalMedicao;
 
         // Agregar valores executados por MACRO para esta medição
+        // IMPORTANTE: Evitar duplicação quando o mesmo item aparece com código de banco e hierárquico
         const executadoPorMacro = new Map<number, number>();
+        const itensJaProcessados = new Set<string>(); // Rastreia itens hierárquicos já processados
+        
         medicaoItems?.forEach(item => {
+          // Obter o item hierárquico canônico para este código
+          const itemHierarquico = codigoParaItemHierarquico.get(item.item_code) || item.item_code;
+          
+          // Se já processamos este item hierárquico, pular (evita duplicação)
+          if (itensJaProcessados.has(itemHierarquico)) {
+            return;
+          }
+          itensJaProcessados.add(itemHierarquico);
+          
           const macroInfo = codigoParaMacro.get(item.item_code);
           if (macroInfo) {
             const macroNum = parseInt(macroInfo.macro);
