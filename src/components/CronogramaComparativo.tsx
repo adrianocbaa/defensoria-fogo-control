@@ -280,12 +280,19 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         let chartData;
         
         if (isAcumulado) {
-          // Modo Acumulado: mostrar evolução ao longo de todos os períodos do cronograma
+          // Modo Acumulado: mostrar evolução APENAS até o período da medição selecionada
           
-          // Descobrir todos os períodos do cronograma
+          // Calcular o período máximo com base na medição selecionada (sequência * 30 dias)
+          const periodoMaximo = medicaoComp.sequencia * 30;
+          
+          // Descobrir todos os períodos do cronograma ATÉ o período máximo
           const periodosUnicos = new Set<number>();
           cronograma.items.forEach(item => {
-            item.periodos.forEach(p => periodosUnicos.add(p.periodo));
+            item.periodos.forEach(p => {
+              if (p.periodo <= periodoMaximo) {
+                periodosUnicos.add(p.periodo);
+              }
+            });
           });
           const todosPeriodos = Array.from(periodosUnicos).sort((a, b) => a - b);
           
@@ -293,37 +300,29 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           const dadosPrevisto: number[] = [0]; // Começar do zero
           const labels: string[] = ['0 dias']; // Ponto inicial
           
-          // Para cada período do cronograma
+          // Para cada período do cronograma ATÉ a medição selecionada
           todosPeriodos.forEach((dias) => {
             labels.push(`${dias} dias`);
             
-            // Verificar se há medição para este período
+            // Calcular a sequência correspondente a este período
             const sequenciaPeriodo = dias / 30;
-            const temMedicao = medicoesComparativo.some(m => m.sequencia === sequenciaPeriodo);
             
-            if (temMedicao || sequenciaPeriodo <= medicaoComp.sequencia) {
-              // Se tem medição para este período ou é anterior/igual à medição atual
-              // Calcular acumulado progressivo: soma de todas as medições ATÉ este período
-              const execAcumulado = medicoesComparativo
-                .filter(m => m.sequencia <= sequenciaPeriodo)
-                .reduce((acc, m) => {
-                  return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
-                }, 0);
-              
-              const prevAcumulado = cronograma.items.reduce((sum, item) => {
-                const acumulado = item.periodos
-                  .filter(p => p.periodo <= dias)
-                  .reduce((s, p) => s + p.valor, 0);
-                return sum + acumulado;
+            // Calcular acumulado progressivo: soma de todas as medições ATÉ este período
+            const execAcumulado = medicoesComparativo
+              .filter(m => m.sequencia <= sequenciaPeriodo)
+              .reduce((acc, m) => {
+                return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
               }, 0);
-              
-              dadosExecutado.push(totalObra > 0 ? (execAcumulado / totalObra) * 100 : 0);
-              dadosPrevisto.push(totalObra > 0 ? (prevAcumulado / totalObra) * 100 : 0);
-            } else {
-              // Período futuro sem medição - não mostrar nada
-              dadosExecutado.push(null as any);
-              dadosPrevisto.push(null as any);
-            }
+            
+            const prevAcumulado = cronograma.items.reduce((sum, item) => {
+              const acumulado = item.periodos
+                .filter(p => p.periodo <= dias)
+                .reduce((s, p) => s + p.valor, 0);
+              return sum + acumulado;
+            }, 0);
+            
+            dadosExecutado.push(totalObra > 0 ? (execAcumulado / totalObra) * 100 : 0);
+            dadosPrevisto.push(totalObra > 0 ? (prevAcumulado / totalObra) * 100 : 0);
           });
           
           chartData = {
@@ -334,20 +333,18 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 data: dadosExecutado,
                 backgroundColor: 'rgba(239, 68, 68, 0.7)',
                 borderColor: 'rgba(239, 68, 68, 1)',
-                borderWidth: chartType === 'line' ? 2 : 1,
-                fill: chartType === 'line' ? false : true,
+                borderWidth: 2,
+                fill: false,
                 tension: 0.4,
-                spanGaps: false,
               },
               {
                 label: 'Previsto (%)',
                 data: dadosPrevisto,
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                 borderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: chartType === 'line' ? 2 : 1,
-                fill: chartType === 'line' ? false : true,
+                borderWidth: 2,
+                fill: false,
                 tension: 0.4,
-                spanGaps: false,
               },
             ],
           };
@@ -372,8 +369,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 }),
                 backgroundColor: 'rgba(34, 197, 94, 0.7)',
                 borderColor: 'rgba(34, 197, 94, 1)',
-                borderWidth: chartType === 'line' ? 2 : 1,
-                fill: chartType === 'line' ? false : true,
+                borderWidth: 1,
+                fill: true,
                 tension: 0.4,
               },
               {
@@ -392,8 +389,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 }),
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                 borderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: chartType === 'line' ? 2 : 1,
-                fill: chartType === 'line' ? false : true,
+                borderWidth: 1,
+                fill: true,
                 tension: 0.4,
               },
             ],
