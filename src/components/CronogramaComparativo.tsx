@@ -42,6 +42,7 @@ interface MacroExecutado {
   totalPrevisto: number;
   desvio: number;
   desvioPercentual: number;
+  executadoAcumulado: number;
 }
 
 interface MedicaoComparativo {
@@ -93,6 +94,20 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
       if (orcError) throw orcError;
 
+      // Buscar dados acumulados da view medicao_acumulado_por_item
+      const { data: acumuladoItems, error: acumError } = await supabase
+        .from('medicao_acumulado_por_item')
+        .select('item_code, total_sum')
+        .eq('obra_id', obraId);
+
+      if (acumError) throw acumError;
+
+      // Criar mapa de item_code para total acumulado
+      const acumuladoPorItem = new Map<string, number>();
+      acumuladoItems?.forEach(item => {
+        acumuladoPorItem.set(item.item_code, item.total_sum || 0);
+      });
+
       // Criar mapa de código para MACRO
       const codigoParaMacro = new Map<string, { macro: string; descricao: string }>();
       orcamentoItems?.forEach(item => {
@@ -109,6 +124,21 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         codigoParaMacro.set(item.codigo, { macro, descricao: item.descricao });
         // Mapear código hierárquico (ex: "9.31") para o macro
         codigoParaMacro.set(item.item, { macro, descricao: item.descricao });
+      });
+
+      // Calcular acumulado por MACRO a partir da view
+      const acumuladoPorMacro = new Map<number, number>();
+      orcamentoItems?.forEach(item => {
+        const macroInfo = codigoParaMacro.get(item.item);
+        if (macroInfo) {
+          const macroNum = parseInt(macroInfo.macro);
+          if (!isNaN(macroNum)) {
+            // Buscar o total acumulado para este item
+            const totalAcumulado = acumuladoPorItem.get(item.item) || 0;
+            const current = acumuladoPorMacro.get(macroNum) || 0;
+            acumuladoPorMacro.set(macroNum, current + totalAcumulado);
+          }
+        }
       });
 
       // Processar cada medição individualmente
@@ -138,7 +168,6 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
         // Comparar com o período correspondente do cronograma
         // Medição 1 -> Período 1, Medição 2 -> Período 2, etc.
-        const periodoIndex = session.sequencia - 1;
 
         const comparacoes: MacroExecutado[] = cronograma.items.map(itemCronograma => {
           const executado = executadoPorMacro.get(itemCronograma.item_numero) || 0;
@@ -154,6 +183,9 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           const desvio = executado - previsto;
           const desvioPercentual = previsto > 0 ? (desvio / previsto) * 100 : 0;
 
+          // Obter o acumulado real da view
+          const executadoAcumulado = acumuladoPorMacro.get(itemCronograma.item_numero) || 0;
+
           return {
             itemNumero: itemCronograma.item_numero,
             descricao: itemCronograma.descricao,
@@ -161,6 +193,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             totalPrevisto: previsto,
             desvio,
             desvioPercentual,
+            executadoAcumulado, // Novo campo com valor real da view
           };
         });
 
@@ -501,7 +534,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                     </thead>
                     <tbody className="divide-y">
                       {macrosExecutados.map((macro) => {
-                        // Calcular acumulado até esta medição
+                        // Calcular acumulado previsto até esta medição
                         const acumuladoPrevisto = medicoesComparativo
                           .filter(m => m.sequencia <= medicaoComp.sequencia)
                           .reduce((sum, m) => {
@@ -509,12 +542,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                             return sum + (macroNaMedicao?.totalPrevisto || 0);
                           }, 0);
                         
-                        const acumuladoExecutado = medicoesComparativo
-                          .filter(m => m.sequencia <= medicaoComp.sequencia)
-                          .reduce((sum, m) => {
-                            const macroNaMedicao = m.macros.find(ma => ma.itemNumero === macro.itemNumero);
-                            return sum + (macroNaMedicao?.totalExecutado || 0);
-                          }, 0);
+                        // Usar o executadoAcumulado que vem diretamente da view medicao_acumulado_por_item
+                        const acumuladoExecutado = macro.executadoAcumulado;
                         
                         const desvioAcumulado = acumuladoExecutado - acumuladoPrevisto;
                         const desvioAcumuladoPct = acumuladoPrevisto > 0 ? (desvioAcumulado / acumuladoPrevisto) * 100 : 0;
