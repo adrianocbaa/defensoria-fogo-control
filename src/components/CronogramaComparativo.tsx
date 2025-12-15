@@ -94,20 +94,6 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
       if (orcError) throw orcError;
 
-      // Buscar dados acumulados da view medicao_acumulado_por_item
-      const { data: acumuladoItems, error: acumError } = await supabase
-        .from('medicao_acumulado_por_item')
-        .select('item_code, total_sum')
-        .eq('obra_id', obraId);
-
-      if (acumError) throw acumError;
-
-      // Criar mapa de item_code para total acumulado
-      const acumuladoPorItem = new Map<string, number>();
-      acumuladoItems?.forEach(item => {
-        acumuladoPorItem.set(item.item_code, item.total_sum || 0);
-      });
-
       // Criar mapa de código para MACRO
       const codigoParaMacro = new Map<string, { macro: string; descricao: string }>();
       orcamentoItems?.forEach(item => {
@@ -126,23 +112,11 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         codigoParaMacro.set(item.item, { macro, descricao: item.descricao });
       });
 
-      // Calcular acumulado por MACRO a partir da view
-      const acumuladoPorMacro = new Map<number, number>();
-      orcamentoItems?.forEach(item => {
-        const macroInfo = codigoParaMacro.get(item.item);
-        if (macroInfo) {
-          const macroNum = parseInt(macroInfo.macro);
-          if (!isNaN(macroNum)) {
-            // Buscar o total acumulado para este item
-            const totalAcumulado = acumuladoPorItem.get(item.item) || 0;
-            const current = acumuladoPorMacro.get(macroNum) || 0;
-            acumuladoPorMacro.set(macroNum, current + totalAcumulado);
-          }
-        }
-      });
-
-      // Processar cada medição individualmente
+      // Processar cada medição individualmente e calcular acumulado progressivo
       const comparativos: MedicaoComparativo[] = [];
+      
+      // Mapa para acumular valores progressivamente por MACRO
+      const acumuladoProgressivoPorMacro = new Map<number, number>();
 
       for (const session of medicaoSessions) {
         // Buscar itens desta medição específica
@@ -166,6 +140,12 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           }
         });
 
+        // Atualizar acumulado progressivo com valores desta medição
+        executadoPorMacro.forEach((valor, macroNum) => {
+          const acumuladoAnterior = acumuladoProgressivoPorMacro.get(macroNum) || 0;
+          acumuladoProgressivoPorMacro.set(macroNum, acumuladoAnterior + valor);
+        });
+
         // Comparar com o período correspondente do cronograma
         // Medição 1 -> Período 1, Medição 2 -> Período 2, etc.
 
@@ -183,8 +163,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           const desvio = executado - previsto;
           const desvioPercentual = previsto > 0 ? (desvio / previsto) * 100 : 0;
 
-          // Obter o acumulado real da view
-          const executadoAcumulado = acumuladoPorMacro.get(itemCronograma.item_numero) || 0;
+          // Usar o acumulado progressivo até esta medição
+          const executadoAcumulado = acumuladoProgressivoPorMacro.get(itemCronograma.item_numero) || 0;
 
           return {
             itemNumero: itemCronograma.item_numero,
@@ -193,7 +173,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             totalPrevisto: previsto,
             desvio,
             desvioPercentual,
-            executadoAcumulado, // Novo campo com valor real da view
+            executadoAcumulado, // Acumulado progressivo até esta medição
           };
         });
 
