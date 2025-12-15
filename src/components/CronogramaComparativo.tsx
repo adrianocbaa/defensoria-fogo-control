@@ -321,13 +321,17 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             const sequenciaPeriodo = dias / 30;
             const temMedicao = medicoesComparativo.some(m => m.sequencia === sequenciaPeriodo);
             
-            if (temMedicao || sequenciaPeriodo < medicaoComp.sequencia) {
-              // Se tem medição para este período ou é anterior à medição atual
-              const execAcumulado = medicoesComparativo
+            if (temMedicao || sequenciaPeriodo <= medicaoComp.sequencia) {
+              // Se tem medição para este período ou é anterior/igual à medição atual
+              // Usar o executadoAcumulado da view para a medição mais recente até este período
+              const medicaoNoPeriodo = medicoesComparativo
                 .filter(m => m.sequencia <= sequenciaPeriodo)
-                .reduce((acc, m) => {
-                  return acc + m.macros.reduce((sum, macro) => sum + macro.totalExecutado, 0);
-                }, 0);
+                .sort((a, b) => b.sequencia - a.sequencia)[0];
+              
+              // O executadoAcumulado já vem calculado corretamente da view medicao_acumulado_por_item
+              const execAcumulado = medicaoNoPeriodo 
+                ? medicaoNoPeriodo.macros.reduce((sum, macro) => sum + macro.executadoAcumulado, 0)
+                : 0;
               
               const prevAcumulado = cronograma.items.reduce((sum, item) => {
                 const acumulado = item.periodos
