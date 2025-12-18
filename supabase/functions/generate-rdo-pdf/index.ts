@@ -105,10 +105,31 @@ Deno.serve(async (req) => {
     const pageHeight = doc.internal.pageSize.height;
     let yPos = 15;
 
-    // Header with logo placeholder and info table
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DPMT', 14, yPos);
+    // Header with logo and info table
+    // Fetch and add logo image from Supabase Storage
+    const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
+    
+    try {
+      const logoResponse = await fetch(logoUrl);
+      if (logoResponse.ok) {
+        const logoBlob = await logoResponse.arrayBuffer();
+        const logoBase64 = btoa(
+          new Uint8Array(logoBlob).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        // Add logo - 25mm width, proportional height
+        doc.addImage(`data:image/jpeg;base64,${logoBase64}`, 'JPEG', 14, 8, 25, 25);
+      } else {
+        // Fallback to text if logo not available
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DIF-DPMT', 14, yPos);
+      }
+    } catch (logoError) {
+      console.error('Error loading logo:', logoError);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DIF-DPMT', 14, yPos);
+    }
     
     // Info table on the right
     (doc as any).autoTable({
@@ -128,7 +149,7 @@ Deno.serve(async (req) => {
       },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 10;
+    yPos = Math.max((doc as any).lastAutoTable.finalY, 35) + 10;
 
     // Title
     doc.setFontSize(14);
@@ -611,47 +632,83 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Signatures with validation timestamps - Fiscal only
-    if (rdoData.report.assinatura_fiscal_nome) {
-      if (yPos > 200) {
+    // Signatures with validation timestamps - Fiscal and Contratada
+    const hasFiscalSignature = rdoData.report.assinatura_fiscal_nome;
+    const hasContratadaSignature = rdoData.report.assinatura_contratada_nome;
+    
+    if (hasFiscalSignature || hasContratadaSignature) {
+      if (yPos > 180) {
         doc.addPage();
         yPos = 20;
       }
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Fiscal (DPE-MT)', 14, yPos);
-      yPos += 5;
+      // Fiscal signature
+      if (hasFiscalSignature) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Fiscal (DPE-MT)', 14, yPos);
+        yPos += 5;
 
-      const signaturesData = [];
-      
-      const validadoEm = rdoData.report.assinatura_fiscal_validado_em 
-        ? new Date(rdoData.report.assinatura_fiscal_validado_em).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })
-        : 'Pendente';
-      
-      signaturesData.push([
-        rdoData.report.assinatura_fiscal_nome,
-        rdoData.report.assinatura_fiscal_cargo || '-',
-        rdoData.report.assinatura_fiscal_documento || '-',
-        validadoEm
-      ]);
+        const fiscalValidadoEm = rdoData.report.assinatura_fiscal_validado_em 
+          ? new Date(rdoData.report.assinatura_fiscal_validado_em).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })
+          : 'Pendente';
 
-      (doc as any).autoTable({
-        startY: yPos,
-        head: [['Nome', 'Cargo', 'CREA/CAU', 'Validado em']],
-        body: signaturesData,
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-        columnStyles: {
-          0: { cellWidth: 50 },
-          1: { cellWidth: 40 },
-          2: { cellWidth: 40 },
-          3: { cellWidth: 45 }
-        },
-      });
+        (doc as any).autoTable({
+          startY: yPos,
+          head: [['Nome', 'Cargo', 'CREA/CAU', 'Validado em']],
+          body: [[
+            rdoData.report.assinatura_fiscal_nome,
+            rdoData.report.assinatura_fiscal_cargo || '-',
+            rdoData.report.assinatura_fiscal_documento || '-',
+            fiscalValidadoEm
+          ]],
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          columnStyles: {
+            0: { cellWidth: 50 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 40 },
+            3: { cellWidth: 45 }
+          },
+        });
 
-      yPos = (doc as any).lastAutoTable.finalY + 8;
+        yPos = (doc as any).lastAutoTable.finalY + 8;
+      }
+
+      // Contratada signature
+      if (hasContratadaSignature) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Contratada', 14, yPos);
+        yPos += 5;
+
+        const contratadaValidadoEm = rdoData.report.assinatura_contratada_validado_em 
+          ? new Date(rdoData.report.assinatura_contratada_validado_em).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })
+          : 'Pendente';
+
+        (doc as any).autoTable({
+          startY: yPos,
+          head: [['Nome', 'Cargo', 'CREA/CAU', 'Validado em']],
+          body: [[
+            rdoData.report.assinatura_contratada_nome,
+            rdoData.report.assinatura_contratada_cargo || '-',
+            rdoData.report.assinatura_contratada_documento || '-',
+            contratadaValidadoEm
+          ]],
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          columnStyles: {
+            0: { cellWidth: 50 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 40 },
+            3: { cellWidth: 45 }
+          },
+        });
+
+        yPos = (doc as any).lastAutoTable.finalY + 8;
+      }
     }
 
     // Footer with Cuiabá timezone - formato corrigido
