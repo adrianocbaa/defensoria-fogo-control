@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.5';
 import { jsPDF } from 'https://esm.sh/jspdf@2.5.2';
 import 'https://esm.sh/jspdf-autotable@3.8.4';
+import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,7 +80,7 @@ Deno.serve(async (req) => {
       supabase.from('rdo_equipment').select('*').eq('report_id', reportId),
       supabase.from('rdo_workforce').select('*').eq('report_id', reportId),
       supabase.from('rdo_comments').select('*').eq('report_id', reportId),
-      supabase.from('obras').select('*').eq('id', obraId).single(),
+      supabase.from('obras').select('*, empresa:empresas(razao_social, nome_fantasia)').eq('id', obraId).single(),
       supabase.from('rdo_media').select('*').eq('report_id', reportId).eq('tipo', 'foto').order('created_at'),
     ]);
 
@@ -105,11 +106,11 @@ Deno.serve(async (req) => {
     const pageHeight = doc.internal.pageSize.height;
     let yPos = 35;
 
-    // Fetch logo image from Supabase Storage and add using Uint8Array directly
+    // Fetch logo image for later use with pdf-lib (jsPDF doesn't work with images in Deno)
     const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
     console.log('Attempting to load logo from:', logoUrl);
     
-    let logoImageAdded = false;
+    let logoBytes: Uint8Array | null = null;
     
     try {
       const logoResponse = await fetch(logoUrl);
@@ -120,39 +121,18 @@ Deno.serve(async (req) => {
         console.log('Logo ArrayBuffer size:', logoArrayBuffer.byteLength);
         
         if (logoArrayBuffer.byteLength > 0) {
-          // Pass Uint8Array directly to jsPDF (supported format)
-          const logoUint8Array = new Uint8Array(logoArrayBuffer);
-          
-          try {
-            // Try with Uint8Array directly - jsPDF should accept it
-            doc.addImage(logoUint8Array, 'JPEG', 14, 8, 40, 25);
-            logoImageAdded = true;
-            console.log('Logo added successfully using Uint8Array');
-          } catch (err1) {
-            console.error('Uint8Array method failed:', err1);
-            
-            // Fallback: try with ArrayBuffer
-            try {
-              doc.addImage(logoArrayBuffer as any, 'JPEG', 14, 8, 40, 25);
-              logoImageAdded = true;
-              console.log('Logo added successfully using ArrayBuffer');
-            } catch (err2) {
-              console.error('ArrayBuffer method failed:', err2);
-            }
-          }
+          logoBytes = new Uint8Array(logoArrayBuffer);
+          console.log('Logo bytes loaded for pdf-lib embedding');
         }
       }
     } catch (fetchError) {
       console.error('Error fetching logo:', fetchError);
     }
 
-    // Fallback to text if logo wasn't added
+    // Add placeholder text for logo position (will be replaced by pdf-lib)
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    if (!logoImageAdded) {
-      doc.text('DIF-DPMT', 14, 20);
-      console.log('Using text fallback for logo');
-    }
+    // Leave space for logo - don't add text here
     
     // Info table on the right
     (doc as any).autoTable({
@@ -187,7 +167,7 @@ Deno.serve(async (req) => {
       body: [
         ['Obra', rdoData.obra.nome],
         ['Local', rdoData.obra.municipio],
-        ['Contratada', rdoData.obra.empresa_responsavel || '-'],
+        ['Contratada', rdoData.obra.empresa?.razao_social || rdoData.obra.empresa?.nome_fantasia || rdoData.obra.empresa_responsavel || '-'],
       ],
       theme: 'grid',
       styles: { fontSize: 9, cellPadding: 2 },
@@ -767,13 +747,59 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Save PDF to storage
-    const pdfBytes = doc.output('arraybuffer');
+    // Get jsPDF output and enhance with pdf-lib to add logo
+    const jsPdfBytes = doc.output('arraybuffer');
+    
+    // Use pdf-lib to add the logo image (jsPDF doesn't work with images in Deno)
+    let finalPdfBytes: Uint8Array;
+    
+    try {
+      const pdfDoc = await PDFDocument.load(jsPdfBytes);
+      
+      if (logoBytes) {
+        try {
+          // Embed the logo image
+          const logoImage = await pdfDoc.embedJpg(logoBytes);
+          
+          // Get the first page
+          const pages = pdfDoc.getPages();
+          if (pages.length > 0) {
+            const firstPage = pages[0];
+            const pageHeight = firstPage.getHeight();
+            
+            // Draw logo at top-left (adjust coordinates for PDF coordinate system - origin at bottom-left)
+            // Position: x=14, y from top = ~8, width=40, height=25 (in mm, but pdf-lib uses points)
+            // 1mm ≈ 2.83 points
+            const logoWidth = 40 * 2.83;
+            const logoHeight = 25 * 2.83;
+            const logoX = 14 * 2.83;
+            const logoY = pageHeight - (8 * 2.83) - logoHeight; // Convert from top to bottom origin
+            
+            firstPage.drawImage(logoImage, {
+              x: logoX,
+              y: logoY,
+              width: logoWidth,
+              height: logoHeight,
+            });
+            
+            console.log('Logo embedded successfully using pdf-lib');
+          }
+        } catch (embedError) {
+          console.error('Error embedding logo with pdf-lib:', embedError);
+        }
+      }
+      
+      finalPdfBytes = await pdfDoc.save();
+    } catch (pdfLibError) {
+      console.error('Error processing PDF with pdf-lib:', pdfLibError);
+      finalPdfBytes = new Uint8Array(jsPdfBytes);
+    }
+    
     const fileName = `${obraId}/${reportId}/RDO-${rdoData.report.numero_seq}-${rdoData.report.data}.pdf`;
 
     const { error: uploadError } = await supabase.storage
       .from('rdo-pdf')
-      .upload(fileName, pdfBytes, {
+      .upload(fileName, finalPdfBytes, {
         contentType: 'application/pdf',
         upsert: true,
       });
