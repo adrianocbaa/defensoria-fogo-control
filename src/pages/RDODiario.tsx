@@ -247,7 +247,7 @@ export default function RDODiario() {
               </div>
               {/* Action buttons */}
               <div className="flex flex-wrap gap-2">
-                {((readyForApproval || isApproved) || (canEdit && userHasConcluded) || (isContratada && userHasConcluded)) && (
+                {((readyForApproval || isApproved) || (canEdit && userHasConcluded) || (isContratada && (bothSignaturesValidated || isApproved))) && (
                   <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
                     <FileText className="h-4 w-4 mr-2" />
                     {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
