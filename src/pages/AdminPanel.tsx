@@ -49,6 +49,7 @@ export default function AdminPanel() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+  const [selectedSetorFilter, setSelectedSetorFilter] = useState<string | null>(null);
   const { toast } = useToast();
   const [tempPassDialog, setTempPassDialog] = useState<{ open: boolean; userName: string; password: string }>({ open: false, userName: '', password: '' });
   const [createUserDialog, setCreateUserDialog] = useState(false);
@@ -116,6 +117,16 @@ export default function AdminPanel() {
     { id: 'segunda_sub', label: '2ª SUB' },
     { id: 'contratada', label: 'Contratada' },
   ];
+
+  // Contagem de usuários por setor
+  const getSetorCount = (setorId: string) => {
+    return profiles.filter(p => (p.setores_atuantes || []).includes(setorId)).length;
+  };
+
+  // Filtrar usuários pelo setor selecionado
+  const filteredProfiles = selectedSetorFilter 
+    ? profiles.filter(p => (p.setores_atuantes || []).includes(selectedSetorFilter))
+    : profiles;
   
   const updateUserRole = (userId: string, newRole: UserRole) => {
     setPendingChanges(prev => ({
@@ -530,13 +541,38 @@ export default function AdminPanel() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Filtros por Setor Atuante */}
+            <div className="flex flex-wrap gap-2 mb-4 border-b pb-4">
+              <Button
+                variant={selectedSetorFilter === null ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedSetorFilter(null)}
+                className="gap-1.5"
+              >
+                <Users className="h-4 w-4" />
+                Todos ({profiles.length})
+              </Button>
+              {setoresAtuantesOptions.map((setor) => (
+                <Button
+                  key={setor.id}
+                  variant={selectedSetorFilter === setor.id ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedSetorFilter(setor.id)}
+                  className="gap-1.5"
+                >
+                  <FileText className="h-4 w-4" />
+                  {setor.label} ({getSetorCount(setor.id)})
+                </Button>
+              ))}
+            </div>
+
             {loading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
             ) : (
               <div className="space-y-3">
-                {profiles.map((profile) => {
+                {filteredProfiles.map((profile) => {
                   const currentSectors = pendingSectorChanges[profile.user_id] || profile.sectors || [];
                   const currentSetoresAtuantes = pendingSetorAtuanteChanges[profile.user_id] || profile.setores_atuantes || [];
                   const hasPendingChanges = !!pendingChanges[profile.user_id] || !!pendingSectorChanges[profile.user_id] || !!pendingSetorAtuanteChanges[profile.user_id];
