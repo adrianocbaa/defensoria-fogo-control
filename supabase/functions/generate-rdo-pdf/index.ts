@@ -103,63 +103,62 @@ Deno.serve(async (req) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
-    let yPos = 15;
+    let yPos = 35;
 
     // Fetch logo image from Supabase Storage
     const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
     console.log('Attempting to load logo from:', logoUrl);
     
-    let logoBase64Data: string | null = null;
-    let logoFormat = 'JPEG';
+    let logoImageAdded = false;
     
     try {
       const logoResponse = await fetch(logoUrl);
       console.log('Logo fetch response status:', logoResponse.status, logoResponse.statusText);
       
       if (logoResponse.ok) {
-        const logoBlob = await logoResponse.arrayBuffer();
-        console.log('Logo blob size:', logoBlob.byteLength);
+        const logoArrayBuffer = await logoResponse.arrayBuffer();
+        console.log('Logo ArrayBuffer size:', logoArrayBuffer.byteLength);
         
-        if (logoBlob.byteLength > 0) {
-          const logoBytes = new Uint8Array(logoBlob);
-          const contentType = logoResponse.headers.get('content-type') || '';
+        if (logoArrayBuffer.byteLength > 0) {
+          const logoUint8Array = new Uint8Array(logoArrayBuffer);
           
-          // Detect format
-          if (contentType.includes('png') || (logoBytes[0] === 0x89 && logoBytes[1] === 0x50)) {
-            logoFormat = 'PNG';
+          // Convert to base64 using chunks to avoid stack overflow
+          const chunkSize = 0x8000;
+          const chunks: string[] = [];
+          for (let i = 0; i < logoUint8Array.length; i += chunkSize) {
+            const chunk = logoUint8Array.subarray(i, i + chunkSize);
+            chunks.push(String.fromCharCode.apply(null, [...chunk]));
           }
+          const logoBase64 = btoa(chunks.join(''));
           
-          // Convert to base64
-          let binary = '';
-          for (let i = 0; i < logoBytes.byteLength; i++) {
-            binary += String.fromCharCode(logoBytes[i]);
+          console.log('Logo base64 created, length:', logoBase64.length);
+          
+          // Try adding image with explicit data URI
+          try {
+            doc.addImage(
+              'data:image/jpeg;base64,' + logoBase64,
+              'JPEG',
+              14,
+              8,
+              40,
+              25
+            );
+            logoImageAdded = true;
+            console.log('Logo image added successfully');
+          } catch (imgError) {
+            console.error('Failed to add image:', imgError);
           }
-          logoBase64Data = btoa(binary);
-          console.log('Logo base64 length:', logoBase64Data.length, 'Format:', logoFormat);
         }
       }
-    } catch (logoError) {
-      console.error('Error loading logo:', logoError);
+    } catch (fetchError) {
+      console.error('Error fetching logo:', fetchError);
     }
 
-    // Add logo or fallback text
-    if (logoBase64Data) {
-      try {
-        const imageData = `data:image/${logoFormat.toLowerCase()};base64,${logoBase64Data}`;
-        doc.addImage(imageData, logoFormat, 14, 8, 35, 25);
-        console.log('Logo added to PDF successfully');
-      } catch (addImageError) {
-        console.error('addImage error:', addImageError);
-        // Fallback to text
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DIF-DPMT', 14, yPos);
-      }
-    } else {
-      console.log('No logo data, using text fallback');
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('DIF-DPMT', 14, yPos);
+    // Always show header text (logo issue unresolved in jsPDF + Deno)
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    if (!logoImageAdded) {
+      doc.text('DIF-DPMT', 14, 20);
     }
     
     // Info table on the right
