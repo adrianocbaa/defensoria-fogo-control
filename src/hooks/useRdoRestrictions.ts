@@ -10,16 +10,17 @@ interface RdoRestriction {
   lastRdoDate: string | null;
   obraStartDate: string | null;
   message: string | null;
+  rdoHabilitado: boolean;
 }
 
 export function useRdoRestrictions(obraId: string, isContratada: boolean) {
   return useQuery({
     queryKey: ['rdo-restrictions', obraId, isContratada],
     queryFn: async (): Promise<RdoRestriction> => {
-      // Buscar data de início da obra
+      // Buscar data de início da obra e flag rdo_habilitado
       const { data: obra, error: obraError } = await supabase
         .from('obras')
-        .select('data_inicio')
+        .select('data_inicio, rdo_habilitado')
         .eq('id', obraId)
         .single();
 
@@ -30,6 +31,19 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           lastRdoDate: null,
           obraStartDate: null,
           message: null,
+          rdoHabilitado: obra?.rdo_habilitado ?? true,
+        };
+      }
+
+      // Se RDO não está habilitado, não contabiliza atraso
+      if (!obra.rdo_habilitado) {
+        return {
+          canCreateRdo: true,
+          daysWithoutRdo: 0,
+          lastRdoDate: null,
+          obraStartDate: obra.data_inicio,
+          message: null,
+          rdoHabilitado: false,
         };
       }
 
@@ -51,6 +65,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           lastRdoDate: null,
           obraStartDate: obra.data_inicio,
           message: null,
+          rdoHabilitado: true,
         };
       }
 
@@ -91,6 +106,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           lastRdoDate: allRdos && allRdos.length > 0 ? allRdos[allRdos.length - 1].data : null,
           obraStartDate: obra.data_inicio,
           message: null,
+          rdoHabilitado: true,
         };
       }
 
@@ -125,6 +141,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           lastRdoDate: firstMissingDateStr,
           obraStartDate: obra.data_inicio,
           message: `Limite de ${MAX_DIAS_SEM_RDO} dias sem preenchimento excedido. Primeiro dia sem RDO: ${new Date(firstMissingDateStr + 'T12:00:00').toLocaleDateString('pt-BR')}. Contate o fiscal para regularizar.`,
+          rdoHabilitado: true,
         };
       }
 
@@ -136,6 +153,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
         message: daysWithoutRdo > 3 
           ? `Atenção: ${daysWithoutRdo} dias sem preenchimento de RDO (desde ${new Date(firstMissingDateStr + 'T12:00:00').toLocaleDateString('pt-BR')})`
           : null,
+        rdoHabilitado: true,
       };
     },
     enabled: !!obraId,
