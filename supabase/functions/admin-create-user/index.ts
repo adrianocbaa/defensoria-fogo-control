@@ -46,7 +46,7 @@ serve(async (req) => {
       throw new Error('User is not an admin');
     }
 
-    const { email, displayName, role = 'viewer', empresaId } = await req.json();
+    const { email, displayName, role = 'viewer', empresaId, setoresAtuantes = [] } = await req.json();
 
     if (!email) {
       throw new Error('Email is required');
@@ -78,12 +78,14 @@ serve(async (req) => {
 
     console.log('User created successfully:', newUser.user.id);
 
-    // Set force_password_change flag and empresa_id for contratada
+    // Set force_password_change flag, empresa_id for contratada, and setores_atuantes
     const profileUpdate: Record<string, any> = { force_password_change: true };
     if (role === 'contratada' && empresaId) {
       profileUpdate.empresa_id = empresaId;
     }
-
+    if (setoresAtuantes && setoresAtuantes.length > 0) {
+      profileUpdate.setores_atuantes = setoresAtuantes;
+    }
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update(profileUpdate)
