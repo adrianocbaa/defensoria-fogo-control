@@ -767,21 +767,30 @@ Deno.serve(async (req) => {
             const firstPage = pages[0];
             const pageHeight = firstPage.getHeight();
             
-            // Draw logo at top-left (adjust coordinates for PDF coordinate system - origin at bottom-left)
-            // Position: x=14, y from top = ~8, square logo 25x25mm (in mm, but pdf-lib uses points)
+            // Get original image dimensions and calculate aspect ratio
+            const originalWidth = logoImage.width;
+            const originalHeight = logoImage.height;
+            const aspectRatio = originalWidth / originalHeight;
+            
+            console.log('Logo original dimensions:', originalWidth, 'x', originalHeight, 'aspect ratio:', aspectRatio);
+            
+            // Draw logo at top-left preserving aspect ratio
+            // Position: x=14, y from top = ~8 (in mm, pdf-lib uses points)
             // 1mm ≈ 2.83 points
-            const logoSize = 25 * 2.83; // Square logo
+            // Target height: 22mm, width calculated from aspect ratio
+            const logoHeight = 22 * 2.83;
+            const logoWidth = logoHeight * aspectRatio;
             const logoX = 14 * 2.83;
-            const logoY = pageHeight - (8 * 2.83) - logoSize; // Convert from top to bottom origin
+            const logoY = pageHeight - (8 * 2.83) - logoHeight; // Convert from top to bottom origin
             
             firstPage.drawImage(logoImage, {
               x: logoX,
               y: logoY,
-              width: logoSize,
-              height: logoSize,
+              width: logoWidth,
+              height: logoHeight,
             });
             
-            console.log('Logo embedded successfully using pdf-lib');
+            console.log('Logo embedded successfully using pdf-lib - size:', logoWidth / 2.83, 'x', logoHeight / 2.83, 'mm');
           }
         } catch (embedError) {
           console.error('Error embedding logo with pdf-lib:', embedError);
