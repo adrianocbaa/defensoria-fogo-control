@@ -100,14 +100,15 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     }
   });
 
-  // Buscar usuários com permissão de fiscal (admin, gm, editor)
+  // Buscar usuários do setor DIF para seleção de fiscal
   const { data: fiscais = [] } = useQuery({
-    queryKey: ['fiscais-obras'],
+    queryKey: ['fiscais-obras-dif'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, display_name, email')
+        .select('user_id, display_name, email, sectors')
         .eq('is_active', true)
+        .contains('sectors', ['dif'])
         .order('display_name');
       
       if (error) throw error;
