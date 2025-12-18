@@ -110,36 +110,47 @@ Deno.serve(async (req) => {
     const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
     console.log('Attempting to load logo from:', logoUrl);
     
+    let logoAdded = false;
     try {
       const logoResponse = await fetch(logoUrl);
       console.log('Logo fetch response status:', logoResponse.status, logoResponse.statusText);
+      const contentType = logoResponse.headers.get('content-type') || '';
+      console.log('Logo content-type:', contentType);
       
       if (logoResponse.ok) {
         const logoBlob = await logoResponse.arrayBuffer();
         console.log('Logo blob size:', logoBlob.byteLength);
         
         if (logoBlob.byteLength > 0) {
+          const logoBytes = new Uint8Array(logoBlob);
           const logoBase64 = btoa(
-            new Uint8Array(logoBlob).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            logoBytes.reduce((data, byte) => data + String.fromCharCode(byte), '')
           );
-          // Add logo - 25mm width, proportional height
-          doc.addImage(`data:image/jpeg;base64,${logoBase64}`, 'JPEG', 14, 8, 25, 25);
-          console.log('Logo added successfully');
-        } else {
-          console.log('Logo blob is empty, falling back to text');
-          doc.setFontSize(16);
-          doc.setFont('helvetica', 'bold');
-          doc.text('DIF-DPMT', 14, yPos);
+          
+          // Detect format from content type or file signature
+          let format = 'JPEG';
+          if (contentType.includes('png') || (logoBytes[0] === 0x89 && logoBytes[1] === 0x50)) {
+            format = 'PNG';
+          }
+          console.log('Detected format:', format);
+          
+          try {
+            // Add logo - 30mm width, auto height to maintain aspect ratio
+            doc.addImage(`data:image/${format.toLowerCase()};base64,${logoBase64}`, format, 14, 8, 30, 0);
+            logoAdded = true;
+            console.log('Logo added successfully with format:', format);
+          } catch (addImageError) {
+            console.error('addImage failed:', addImageError);
+          }
         }
-      } else {
-        // Fallback to text if logo not available
-        console.log('Logo fetch failed, falling back to text');
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DIF-DPMT', 14, yPos);
       }
     } catch (logoError) {
       console.error('Error loading logo:', logoError);
+    }
+    
+    // Fallback to text if logo was not added
+    if (!logoAdded) {
+      console.log('Falling back to text');
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('DIF-DPMT', 14, yPos);
