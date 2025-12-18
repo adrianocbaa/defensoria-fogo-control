@@ -106,9 +106,9 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, display_name, email, sectors')
+        .select('user_id, display_name, email, setores_atuantes')
         .eq('is_active', true)
-        .contains('sectors', ['dif'])
+        .contains('setores_atuantes', ['dif'])
         .order('display_name');
       
       if (error) throw error;

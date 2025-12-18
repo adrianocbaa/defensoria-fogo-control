@@ -1507,6 +1507,7 @@ export type Database = {
           position: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           sectors: Database["public"]["Enums"]["sector_type"][] | null
+          setores_atuantes: string[] | null
           theme: string | null
           updated_at: string
           user_id: string
@@ -1526,6 +1527,7 @@ export type Database = {
           position?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           sectors?: Database["public"]["Enums"]["sector_type"][] | null
+          setores_atuantes?: string[] | null
           theme?: string | null
           updated_at?: string
           user_id: string
@@ -1545,6 +1547,7 @@ export type Database = {
           position?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           sectors?: Database["public"]["Enums"]["sector_type"][] | null
+          setores_atuantes?: string[] | null
           theme?: string | null
           updated_at?: string
           user_id?: string

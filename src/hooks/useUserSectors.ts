@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado' | 'nucleos' | 'nucleos_central' | 'dif' | 'segunda_sub' | 'contratada';
+export type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado' | 'nucleos' | 'nucleos_central';
+
+// Setores atuantes (onde o usuário trabalha)
+export type SetorAtuante = 'dif' | 'segunda_sub' | 'contratada';
+
+// Lista de setores válidos para módulos
+const VALID_SECTORS: Sector[] = ['manutencao', 'obra', 'preventivos', 'ar_condicionado', 'projetos', 'almoxarifado', 'nucleos', 'nucleos_central'];
 
 export function useUserSectors() {
   const { user } = useAuth();
@@ -27,7 +33,12 @@ export function useUserSectors() {
         console.error('Error fetching user sectors:', error);
         setSectors([]); // Empty fallback - user needs sectors assigned
       } else {
-        setSectors(data?.sectors || []);
+        // Filtrar apenas setores válidos (módulos, não setores atuantes)
+        const rawSectors = data?.sectors || [];
+        const filteredSectors = rawSectors.filter((s: string) => 
+          VALID_SECTORS.includes(s as Sector)
+        ) as Sector[];
+        setSectors(filteredSectors);
       }
     } catch (error) {
       console.error('Error:', error);
