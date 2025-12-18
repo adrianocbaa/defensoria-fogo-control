@@ -177,12 +177,12 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="UTF-8">
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .header { background-color: #1e3a5f; color: white; padding: 20px; text-align: center; }
+    .header { background-color: #166534; color: white; padding: 20px; text-align: center; }
     .content { padding: 20px; }
-    .highlight { background-color: #f5f5f5; padding: 15px; margin: 15px 0; border-left: 4px solid #1e3a5f; }
+    .highlight { background-color: #f0fdf4; padding: 15px; margin: 15px 0; border-left: 4px solid #166534; }
     .footer { background-color: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #666; }
     h1 { margin: 0; font-size: 20px; }
-    h2 { color: #1e3a5f; }
+    h2 { color: #166534; }
     ul { padding-left: 20px; }
     li { margin-bottom: 10px; }
   </style>
@@ -194,9 +194,9 @@ const handler = async (req: Request): Promise<Response> => {
   </div>
   
   <div class="content">
-    <h2>NOTIFICAÇÃO</h2>
+    <h2>ADVERTÊNCIA</h2>
     
-    <p>A <strong>Diretoria de Infraestrutura Física da Defensoria Pública do Estado de Mato Grosso</strong>, no exercício de suas atribuições de fiscalização contratual, <strong>NOTIFICA</strong> a empresa <strong>${nomeEmpresa}</strong> acerca do que segue:</p>
+    <p>A <strong>Diretoria de Infraestrutura Física da Defensoria Pública do Estado de Mato Grosso</strong>, no exercício de suas atribuições de fiscalização contratual, <strong>ADVERTE</strong> a empresa <strong>${nomeEmpresa}</strong> acerca do que segue:</p>
     
     <div class="highlight">
       <p>Verificou-se que, há aproximadamente <strong>07 (sete) dias</strong>, não constam registros atualizados da execução dos serviços referentes à obra em andamento, circunstância que prejudica o acompanhamento, o controle e a fiscalização da execução contratual.</p>
@@ -207,7 +207,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     <p>Ressalta-se que, nos termos da Cláusula Décima do Contrato nº 187/2025, bem como do art. 117, §1º, da Lei nº 14.133/2021, a fiscalização do contrato deve manter registro formal das ocorrências relacionadas à execução, sendo dever da contratada colaborar plenamente com a fiscalização, prestando informações, esclarecimentos e dados necessários ao adequado acompanhamento da obra.</p>
     
-    <p>Dessa forma, <strong>NOTIFICA-SE</strong> a Contratada para que:</p>
+    <p>Dessa forma, <strong>ADVERTE-SE</strong> a Contratada para que:</p>
     
     <ul>
       <li>Regularize imediatamente o fornecimento das informações necessárias ao registro diário da execução dos serviços, inclusive quanto às atividades efetivamente realizadas no período;</li>
@@ -215,7 +215,7 @@ const handler = async (req: Request): Promise<Response> => {
     </ul>
     
     <div class="highlight">
-      <p><strong>O não atendimento à presente notificação poderá ensejar a adoção das medidas administrativas cabíveis, inclusive quanto à caracterização de descumprimento contratual, nos termos da legislação vigente e do contrato.</strong></p>
+      <p><strong>O não atendimento à presente ADVERTÊNCIA poderá ensejar a adoção das medidas administrativas cabíveis, inclusive quanto à caracterização de descumprimento contratual, nos termos da legislação vigente e do contrato.</strong></p>
     </div>
   </div>
   
@@ -232,7 +232,7 @@ const handler = async (req: Request): Promise<Response> => {
         const emailResponse = await resend.emails.send({
           from: 'DIF - DPE-MT <onboarding@resend.dev>',
           to: destinatarios,
-          subject: `NOTIFICAÇÃO - Ausência de Registros RDO - ${obra.nome}`,
+          subject: `ADVERTÊNCIA - Ausência de Registros RDO - ${obra.nome}`,
           html: htmlBody,
         });
 
