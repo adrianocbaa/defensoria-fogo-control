@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado' | 'nucleos' | 'nucleos_central';
+export type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado' | 'nucleos' | 'nucleos_central' | 'dif' | 'segunda_sub' | 'contratada';
 
 export function useUserSectors() {
   const { user } = useAuth();

@@ -3085,6 +3085,9 @@ export type Database = {
         | "almoxarifado"
         | "nucleos"
         | "nucleos_central"
+        | "dif"
+        | "segunda_sub"
+        | "contratada"
       unit_type: "KG" | "M" | "LITRO" | "PC" | "CX"
       user_role:
         | "admin"
@@ -3242,6 +3245,9 @@ export const Constants = {
         "almoxarifado",
         "nucleos",
         "nucleos_central",
+        "dif",
+        "segunda_sub",
+        "contratada",
       ],
       unit_type: ["KG", "M", "LITRO", "PC", "CX"],
       user_role: [

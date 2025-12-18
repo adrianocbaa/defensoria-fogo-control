@@ -22,7 +22,10 @@ import {
   FolderKanban, 
   Package, 
   Laptop,
-  Building2
+  Building2,
+  Building,
+  Users,
+  Briefcase
 } from 'lucide-react';
 
 export interface SectorInfo {
@@ -41,6 +44,9 @@ const sectorLabels: Record<string, string> = {
   'almoxarifado': 'Almoxarifado',
   'nucleos': 'Teletrabalho',
   'nucleos_central': 'Núcleos - Cadastro',
+  'dif': 'DIF',
+  'segunda_sub': '2ª SUB',
+  'contratada': 'Contratada',
 };
 
 // Adicione os ícones dos novos módulos aqui
@@ -53,6 +59,9 @@ const sectorIcons: Record<string, React.ComponentType<{ className?: string }>> =
   'almoxarifado': Package,
   'nucleos': Laptop,
   'nucleos_central': Building2,
+  'dif': Building,
+  'segunda_sub': Users,
+  'contratada': Briefcase,
 };
 
 export function useAvailableSectors() {
