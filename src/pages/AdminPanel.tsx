@@ -24,6 +24,7 @@ import { LicitacoesManagement } from '@/components/LicitacoesManagement';
 import { useEmpresas } from '@/hooks/useEmpresas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText } from 'lucide-react';
+import { formatName } from '@/lib/utils';
 
 // Setores válidos para módulos
 const VALID_MODULE_SECTORS: string[] = ['manutencao', 'obra', 'preventivos', 'ar_condicionado', 'projetos', 'almoxarifado', 'nucleos', 'nucleos_central'];
@@ -592,9 +593,9 @@ export default function AdminPanel() {
                               {getRoleIcon(pendingChanges[profile.user_id] || profile.role)}
                               <div className="text-left">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium">
-                                    {profile.display_name || 'Usuário sem nome'}
-                                  </p>
+                                                <p className="font-medium">
+                                                    {formatName(profile.display_name) || 'Usuário sem nome'}
+                                                  </p>
                                   {!profile.is_active && (
                                     <Badge variant="secondary" className="text-xs">Inativo</Badge>
                                   )}
