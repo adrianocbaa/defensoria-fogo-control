@@ -105,17 +105,16 @@ Deno.serve(async (req) => {
     const pageHeight = doc.internal.pageSize.height;
     let yPos = 15;
 
-    // Header with logo and info table
-    // Fetch and add logo image from Supabase Storage
+    // Fetch logo image from Supabase Storage
     const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
     console.log('Attempting to load logo from:', logoUrl);
     
-    let logoAdded = false;
+    let logoBase64Data: string | null = null;
+    let logoFormat = 'JPEG';
+    
     try {
       const logoResponse = await fetch(logoUrl);
       console.log('Logo fetch response status:', logoResponse.status, logoResponse.statusText);
-      const contentType = logoResponse.headers.get('content-type') || '';
-      console.log('Logo content-type:', contentType);
       
       if (logoResponse.ok) {
         const logoBlob = await logoResponse.arrayBuffer();
@@ -123,34 +122,41 @@ Deno.serve(async (req) => {
         
         if (logoBlob.byteLength > 0) {
           const logoBytes = new Uint8Array(logoBlob);
-          const logoBase64 = btoa(
-            logoBytes.reduce((data, byte) => data + String.fromCharCode(byte), '')
-          );
+          const contentType = logoResponse.headers.get('content-type') || '';
           
-          // Detect format from content type or file signature
-          let format = 'JPEG';
+          // Detect format
           if (contentType.includes('png') || (logoBytes[0] === 0x89 && logoBytes[1] === 0x50)) {
-            format = 'PNG';
+            logoFormat = 'PNG';
           }
-          console.log('Detected format:', format);
           
-          try {
-            // Add logo - 30mm width, 20mm height (explicit dimensions required in Deno)
-            doc.addImage(logoBase64, format, 14, 8, 30, 20);
-            logoAdded = true;
-            console.log('Logo added successfully with format:', format);
-          } catch (addImageError) {
-            console.error('addImage failed:', addImageError);
+          // Convert to base64
+          let binary = '';
+          for (let i = 0; i < logoBytes.byteLength; i++) {
+            binary += String.fromCharCode(logoBytes[i]);
           }
+          logoBase64Data = btoa(binary);
+          console.log('Logo base64 length:', logoBase64Data.length, 'Format:', logoFormat);
         }
       }
     } catch (logoError) {
       console.error('Error loading logo:', logoError);
     }
-    
-    // Fallback to text if logo was not added
-    if (!logoAdded) {
-      console.log('Falling back to text');
+
+    // Add logo or fallback text
+    if (logoBase64Data) {
+      try {
+        const imageData = `data:image/${logoFormat.toLowerCase()};base64,${logoBase64Data}`;
+        doc.addImage(imageData, logoFormat, 14, 8, 35, 25);
+        console.log('Logo added to PDF successfully');
+      } catch (addImageError) {
+        console.error('addImage error:', addImageError);
+        // Fallback to text
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DIF-DPMT', 14, yPos);
+      }
+    } else {
+      console.log('No logo data, using text fallback');
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('DIF-DPMT', 14, yPos);
