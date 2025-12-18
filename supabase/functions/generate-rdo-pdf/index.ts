@@ -768,18 +768,17 @@ Deno.serve(async (req) => {
             const pageHeight = firstPage.getHeight();
             
             // Draw logo at top-left (adjust coordinates for PDF coordinate system - origin at bottom-left)
-            // Position: x=14, y from top = ~8, width=40, height=25 (in mm, but pdf-lib uses points)
+            // Position: x=14, y from top = ~8, square logo 25x25mm (in mm, but pdf-lib uses points)
             // 1mm ≈ 2.83 points
-            const logoWidth = 40 * 2.83;
-            const logoHeight = 25 * 2.83;
+            const logoSize = 25 * 2.83; // Square logo
             const logoX = 14 * 2.83;
-            const logoY = pageHeight - (8 * 2.83) - logoHeight; // Convert from top to bottom origin
+            const logoY = pageHeight - (8 * 2.83) - logoSize; // Convert from top to bottom origin
             
             firstPage.drawImage(logoImage, {
               x: logoX,
               y: logoY,
-              width: logoWidth,
-              height: logoHeight,
+              width: logoSize,
+              height: logoSize,
             });
             
             console.log('Logo embedded successfully using pdf-lib');
