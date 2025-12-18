@@ -135,8 +135,8 @@ Deno.serve(async (req) => {
           console.log('Detected format:', format);
           
           try {
-            // Add logo - 30mm width, auto height to maintain aspect ratio
-            doc.addImage(`data:image/${format.toLowerCase()};base64,${logoBase64}`, format, 14, 8, 30, 0);
+            // Add logo - 30mm width, 20mm height (explicit dimensions required in Deno)
+            doc.addImage(logoBase64, format, 14, 8, 30, 20);
             logoAdded = true;
             console.log('Logo added successfully with format:', format);
           } catch (addImageError) {
