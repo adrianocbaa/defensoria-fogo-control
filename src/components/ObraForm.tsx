@@ -37,6 +37,7 @@ const obraSchema = z.object({
   empresa_responsavel: z.string().optional(),
   regiao: z.string().optional(),
   secretaria_responsavel: z.string().optional(),
+  fiscal_id: z.string().optional(),
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
 });
@@ -99,6 +100,21 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
     }
   });
 
+  // Buscar usuários com permissão de fiscal (admin, gm, editor)
+  const { data: fiscais = [] } = useQuery({
+    queryKey: ['fiscais-obras'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, email')
+        .eq('is_active', true)
+        .order('display_name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
   const [photos, setPhotos] = useState<Array<{url: string; uploadedAt: string; fileName: string; monthFolder?: string}>>(
@@ -140,6 +156,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
       empresa_responsavel: initialData?.empresa_responsavel || '',
       regiao: (initialData as any)?.regiao || '',
       secretaria_responsavel: initialData?.secretaria_responsavel || '',
+      fiscal_id: (initialData as any)?.fiscal_id || '',
       coordinates_lat: initialData?.coordinates_lat,
       coordinates_lng: initialData?.coordinates_lng,
     },
@@ -224,6 +241,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         empresa_responsavel: data.empresa_responsavel || null,
         regiao: data.regiao || null,
         secretaria_responsavel: data.secretaria_responsavel || null,
+        fiscal_id: data.fiscal_id || null,
         coordinates_lat: data.coordinates_lat || null,
         coordinates_lng: data.coordinates_lng || null,
         fotos: photos,
@@ -578,13 +596,27 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
 
             <FormField
               control={form.control}
-              name="secretaria_responsavel"
+              name="fiscal_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Fiscal do Contrato</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite o fiscal do contrato" {...field} />
-                  </FormControl>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o fiscal" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {fiscais.map((fiscal) => (
+                        <SelectItem key={fiscal.user_id} value={fiscal.user_id}>
+                          {fiscal.display_name || fiscal.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

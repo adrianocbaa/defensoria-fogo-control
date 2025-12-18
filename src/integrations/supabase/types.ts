@@ -1297,6 +1297,7 @@ export type Database = {
           documentos: Json | null
           empresa_id: string | null
           empresa_responsavel: string | null
+          fiscal_id: string | null
           fotos: Json | null
           id: string
           is_public: boolean
@@ -1331,6 +1332,7 @@ export type Database = {
           documentos?: Json | null
           empresa_id?: string | null
           empresa_responsavel?: string | null
+          fiscal_id?: string | null
           fotos?: Json | null
           id?: string
           is_public?: boolean
@@ -1365,6 +1367,7 @@ export type Database = {
           documentos?: Json | null
           empresa_id?: string | null
           empresa_responsavel?: string | null
+          fiscal_id?: string | null
           fotos?: Json | null
           id?: string
           is_public?: boolean
@@ -2010,6 +2013,38 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_notificacoes_enviadas: {
+        Row: {
+          data_referencia: string
+          destinatarios: string[]
+          enviado_em: string
+          id: string
+          obra_id: string
+        }
+        Insert: {
+          data_referencia: string
+          destinatarios: string[]
+          enviado_em?: string
+          id?: string
+          obra_id: string
+        }
+        Update: {
+          data_referencia?: string
+          destinatarios?: string[]
+          enviado_em?: string
+          id?: string
+          obra_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_notificacoes_enviadas_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
             referencedColumns: ["id"]
           },
         ]
