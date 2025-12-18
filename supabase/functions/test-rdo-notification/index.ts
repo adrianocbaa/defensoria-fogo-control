@@ -69,12 +69,12 @@ const handler = async (req: Request): Promise<Response> => {
   <meta charset="UTF-8">
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .header { background-color: #1e3a5f; color: white; padding: 20px; text-align: center; }
+    .header { background-color: #166534; color: white; padding: 20px; text-align: center; }
     .content { padding: 20px; }
-    .highlight { background-color: #f5f5f5; padding: 15px; margin: 15px 0; border-left: 4px solid #1e3a5f; }
+    .highlight { background-color: #f0fdf4; padding: 15px; margin: 15px 0; border-left: 4px solid #166534; }
     .footer { background-color: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #666; }
     h1 { margin: 0; font-size: 20px; }
-    h2 { color: #1e3a5f; }
+    h2 { color: #166534; }
     ul { padding-left: 20px; }
     li { margin-bottom: 10px; }
     .test-banner { background-color: #ffc107; color: #000; padding: 10px; text-align: center; font-weight: bold; }
