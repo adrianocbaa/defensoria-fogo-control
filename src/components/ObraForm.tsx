@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { MapPin, Upload } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
@@ -40,6 +41,7 @@ const obraSchema = z.object({
   fiscal_id: z.string().optional(),
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
+  rdo_habilitado: z.boolean().default(true),
 });
 
 type ObraFormData = z.infer<typeof obraSchema>;
@@ -160,6 +162,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
       fiscal_id: (initialData as any)?.fiscal_id || '',
       coordinates_lat: initialData?.coordinates_lat,
       coordinates_lng: initialData?.coordinates_lng,
+      rdo_habilitado: (initialData as any)?.rdo_habilitado ?? true,
     },
   });
 
@@ -248,6 +251,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
         fotos: photos,
         documentos: documents,
         created_by: user.id,
+        rdo_habilitado: data.rdo_habilitado,
       };
 
       if (obraId && obraId !== 'nova') {
@@ -619,6 +623,28 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                     </SelectContent>
                   </Select>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* RDO Habilitado Switch */}
+            <FormField
+              control={form.control}
+              name="rdo_habilitado"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 md:col-span-2">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">RDO Habilitado</FormLabel>
+                    <FormDescription>
+                      Se desabilitado, não exigirá preenchimento de RDO e não contabilizará dias de atraso.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />

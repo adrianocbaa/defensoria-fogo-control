@@ -30,8 +30,8 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = new Resend(resendApiKey);
 
-    // Buscar obras em andamento com empresa vinculada
-    console.log('Buscando obras em andamento...');
+    // Buscar obras em andamento com empresa vinculada e RDO habilitado
+    console.log('Buscando obras em andamento com RDO habilitado...');
     const { data: obras, error: obrasError } = await supabase
       .from('obras')
       .select(`
@@ -41,6 +41,7 @@ const handler = async (req: Request): Promise<Response> => {
         data_inicio,
         empresa_id,
         fiscal_id,
+        rdo_habilitado,
         empresas (
           id,
           razao_social,
@@ -48,6 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
         )
       `)
       .eq('status', 'em_andamento')
+      .eq('rdo_habilitado', true)
       .not('empresa_id', 'is', null)
       .not('data_inicio', 'is', null);
 
@@ -56,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw obrasError;
     }
 
-    console.log(`Encontradas ${obras?.length || 0} obras em andamento`);
+    console.log(`Encontradas ${obras?.length || 0} obras em andamento com RDO habilitado`);
 
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
