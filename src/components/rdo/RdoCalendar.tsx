@@ -46,9 +46,10 @@ interface RdoCalendarProps {
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
   obraStartDate?: string | null;
+  rdoHabilitado?: boolean;
 }
 
-export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange, obraStartDate }: RdoCalendarProps) {
+export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange, obraStartDate, rdoHabilitado = true }: RdoCalendarProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isContratada, isAdmin } = useUserRole();
@@ -277,8 +278,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
         </div>
       </CardHeader>
       <CardContent>
-        {/* Alerta de restrição para Contratada */}
-        {showRestrictionAlert && (
+        {/* Alerta de restrição para Contratada - só mostra se RDO estiver habilitado */}
+        {rdoHabilitado && showRestrictionAlert && (
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
@@ -288,8 +289,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
           </Alert>
         )}
         
-        {/* Alerta de atenção para dias sem RDO */}
-        {!showRestrictionAlert && daysWithoutRdo > 3 && obraStart && (
+        {/* Alerta de atenção para dias sem RDO - só mostra se RDO estiver habilitado */}
+        {rdoHabilitado && !showRestrictionAlert && daysWithoutRdo > 3 && obraStart && (
           <Alert className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-700 dark:text-amber-400">
@@ -339,12 +340,14 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                 const isAfterObraStart = obraStart && !isBefore(dayStart, startOfDay(obraStart));
                 const isWorkingDay = isAfterObraStart && !isAfter(dayStart, today);
                 // Se é fim de semana marcado como sem expediente, não é "missing"
-                const isMissingRdo = isWorkingDay && !rdo && !(isDayWeekend && isDayMarkedOff);
+                // Se RDO não está habilitado, não marcar como missing
+                const isMissingRdo = rdoHabilitado && isWorkingDay && !rdo && !(isDayWeekend && isDayMarkedOff);
                 
                 // Verificar se a contratada pode criar RDO neste dia (baseado no PRIMEIRO dia sem RDO)
                 // A referência é o primeiro gap na sequência de RDOs, não o último RDO preenchido
+                // Se RDO não está habilitado, não bloquear
                 const workingDaysSinceFirstMissing = firstMissingDate ? countWorkingDaysBetween(startOfDay(firstMissingDate), dayStart) : 0;
-                const isBlockedForContratada = isContratada && isWorkingDay && firstMissingDate && workingDaysSinceFirstMissing > MAX_DIAS_SEM_RDO && !(isDayWeekend && isDayMarkedOff);
+                const isBlockedForContratada = rdoHabilitado && isContratada && isWorkingDay && firstMissingDate && workingDaysSinceFirstMissing > MAX_DIAS_SEM_RDO && !(isDayWeekend && isDayMarkedOff);
                 const isApproved = rdo?.status === 'aprovado';
 
                 return (
