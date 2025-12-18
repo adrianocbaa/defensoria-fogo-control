@@ -27,7 +27,7 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = new Resend(resendApiKey);
 
-    // Buscar obra de Rondonópolis Criminal
+    // Buscar obra de Rondonópolis Criminal com dados completos
     console.log('Buscando obra de Rondonópolis Criminal...');
     const { data: obra, error: obraError } = await supabase
       .from('obras')
@@ -37,6 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
         n_contrato,
         data_inicio,
         empresa_id,
+        fiscal_id,
         empresas (
           id,
           razao_social,
@@ -53,10 +54,51 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Obra encontrada:', obra.nome);
 
-    // Email de teste fixo
-    const destinatarios = ['adriano.eng.mt@gmail.com'];
+    // Coletar destinatários reais (como seria em produção)
+    const EMAIL_FIXO = "dif@dp.mt.gov.br";
+    const destinatariosReais: string[] = [EMAIL_FIXO];
+    
+    // Email da empresa
+    const empresaEmail = (obra.empresas as any)?.email;
+    if (empresaEmail) {
+      destinatariosReais.push(empresaEmail);
+    }
 
-    console.log('Destinatários de teste:', destinatarios);
+    // Buscar usuários contratada vinculados à empresa
+    if (obra.empresa_id) {
+      const { data: usuariosContratada } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('empresa_id', obra.empresa_id)
+        .eq('is_active', true);
+      
+      if (usuariosContratada) {
+        for (const u of usuariosContratada) {
+          if (u.email && !destinatariosReais.includes(u.email)) {
+            destinatariosReais.push(u.email);
+          }
+        }
+      }
+    }
+
+    // Buscar email do fiscal
+    if (obra.fiscal_id) {
+      const { data: fiscal } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('user_id', obra.fiscal_id)
+        .single();
+      
+      if (fiscal?.email && !destinatariosReais.includes(fiscal.email)) {
+        destinatariosReais.push(fiscal.email);
+      }
+    }
+
+    console.log('Destinatários que receberiam em produção:', destinatariosReais);
+
+    // Para teste, enviar apenas para email verificado
+    const destinatariosTeste = ['adriano.eng.mt@gmail.com'];
+    console.log('Destinatários de teste (email verificado):', destinatariosTeste);
 
     // Montar corpo do email
     const nomeEmpresa = (obra.empresas as any)?.razao_social || 'Empresa não identificada';
@@ -132,7 +174,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Enviando email de teste...');
     const emailResponse = await resend.emails.send({
       from: 'DIF - DPE-MT <onboarding@resend.dev>',
-      to: destinatarios,
+      to: destinatariosTeste,
       subject: `[TESTE] ADVERTÊNCIA - Ausência de Registros RDO - ${obra.nome}`,
       html: htmlBody,
     });
@@ -143,8 +185,10 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({
         success: true,
         message: 'Email de teste enviado com sucesso!',
-        destinatario: destinatarios[0],
+        destinatariosTeste: destinatariosTeste,
+        destinatariosProducao: destinatariosReais,
         obra: obra.nome,
+        empresa: nomeEmpresa,
         emailResponse,
       }),
       {
