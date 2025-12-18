@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
 
     // Header with logo and info table
     // Fetch and add logo image from Supabase Storage
-    const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg.jpg`;
+    const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
     
     try {
       const logoResponse = await fetch(logoUrl);
