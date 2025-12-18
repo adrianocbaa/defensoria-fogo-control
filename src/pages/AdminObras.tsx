@@ -30,6 +30,7 @@ interface Obra {
   created_at: string;
   previsao_termino?: string;
   valor_calculado?: number;
+  rdo_habilitado?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -568,15 +569,17 @@ export function AdminObras() {
                         >
                           <Ruler className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/obras/${obra.id}/rdo/resumo`)}
-                          title="RDO - Relatório Diário de Obra"
-                          className="min-h-[44px] min-w-[44px]"
-                        >
-                          <ClipboardList className="h-4 w-4" />
-                        </Button>
+                        {obra.rdo_habilitado !== false && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/obras/${obra.id}/rdo/resumo`)}
+                            title="RDO - Relatório Diário de Obra"
+                            className="min-h-[44px] min-w-[44px]"
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                          </Button>
+                        )}
                         
                         <PermissionGuard requiresEdit showMessage={false}>
                           <Button
