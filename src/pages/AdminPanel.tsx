@@ -56,6 +56,7 @@ export default function AdminPanel() {
   const [newUserName, setNewUserName] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('viewer');
   const [newUserEmpresaId, setNewUserEmpresaId] = useState<string>('');
+  const [newUserSetoresAtuantes, setNewUserSetoresAtuantes] = useState<string[]>([]);
   const [creatingUser, setCreatingUser] = useState(false);
   const [deleteUserDialog, setDeleteUserDialog] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
@@ -317,6 +318,7 @@ export default function AdminPanel() {
           displayName: newUserName || newUserEmail.split('@')[0],
           role: newUserRole,
           empresaId: newUserRole === 'contratada' ? newUserEmpresaId || null : null,
+          setoresAtuantes: newUserSetoresAtuantes,
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
@@ -371,6 +373,7 @@ export default function AdminPanel() {
       setNewUserName('');
       setNewUserRole('viewer');
       setNewUserEmpresaId('');
+      setNewUserSetoresAtuantes([]);
       fetchProfiles(); // Recarregar lista
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -445,11 +448,13 @@ export default function AdminPanel() {
       case 'admin':
         return 'Administrador';
       case 'editor':
-        return 'Editor';
+        return 'Fiscal';
       case 'gm':
-        return 'GM';
+        return 'Manutenção';
+      case 'contratada':
+        return 'Contratada';
       default:
-        return 'Visualizador';
+        return 'Visitante';
     }
   };
 
@@ -517,11 +522,11 @@ export default function AdminPanel() {
             </div>
 
             <Card>
-          <CardHeader>
+        <CardHeader>
             <CardTitle>Usuários e Permissões</CardTitle>
             <CardDescription>
               Defina quem pode editar o sistema: Administradores têm acesso total, 
-              Editores podem modificar dados, Visualizadores só podem ver.
+              Fiscais podem modificar dados, Visitantes só podem ver.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -636,9 +641,9 @@ export default function AdminPanel() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="viewer">Visualizador</SelectItem>
-                                  <SelectItem value="editor">Editor</SelectItem>
-                                  <SelectItem value="gm">GM</SelectItem>
+                                  <SelectItem value="viewer">Visitante</SelectItem>
+                                  <SelectItem value="editor">Fiscal</SelectItem>
+                                  <SelectItem value="gm">Manutenção</SelectItem>
                                   <SelectItem value="contratada">Contratada</SelectItem>
                                   <SelectItem value="admin">Administrador</SelectItem>
                                 </SelectContent>
@@ -756,7 +761,7 @@ export default function AdminPanel() {
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Eye className="h-5 w-5 text-muted-foreground" />
-                  <h3 className="font-medium">Visualizador</h3>
+                  <h3 className="font-medium">Visitante</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Pode apenas visualizar dados do sistema
@@ -766,7 +771,7 @@ export default function AdminPanel() {
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Edit className="h-5 w-5 text-primary" />
-                  <h3 className="font-medium">Editor</h3>
+                  <h3 className="font-medium">Fiscal</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Pode criar, editar e excluir núcleos e equipamentos
@@ -776,7 +781,7 @@ export default function AdminPanel() {
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Wrench className="h-5 w-5 text-orange-500" />
-                  <h3 className="font-medium">GM</h3>
+                  <h3 className="font-medium">Manutenção</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Pode gerenciar tarefas de manutenção e atualizar status
@@ -887,15 +892,45 @@ export default function AdminPanel() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="viewer">Visualizador</SelectItem>
-                      <SelectItem value="editor">Editor</SelectItem>
-                      <SelectItem value="gm">GM</SelectItem>
+                      <SelectItem value="viewer">Visitante</SelectItem>
+                      <SelectItem value="editor">Fiscal</SelectItem>
+                      <SelectItem value="gm">Manutenção</SelectItem>
                       <SelectItem value="contratada">Contratada</SelectItem>
                       <SelectItem value="admin">Administrador</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Setores Atuantes */}
+                <div className="space-y-2">
+                  <Label>Setores Atuantes</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {setoresAtuantesOptions.map((setor) => (
+                      <div
+                        key={setor.id}
+                        className="flex items-center justify-between p-2 border rounded-md"
+                      >
+                        <Label
+                          htmlFor={`new-user-setor-${setor.id}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {setor.label}
+                        </Label>
+                        <Switch
+                          id={`new-user-setor-${setor.id}`}
+                          checked={newUserSetoresAtuantes.includes(setor.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setNewUserSetoresAtuantes([...newUserSetoresAtuantes, setor.id]);
+                            } else {
+                              setNewUserSetoresAtuantes(newUserSetoresAtuantes.filter(s => s !== setor.id));
+                            }
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 {newUserRole === 'contratada' && (
                   <div className="space-y-2">
                     <Label htmlFor="new-user-empresa">Empresa *</Label>
@@ -930,6 +965,7 @@ export default function AdminPanel() {
                     setNewUserName('');
                     setNewUserRole('viewer');
                     setNewUserEmpresaId('');
+                    setNewUserSetoresAtuantes([]);
                   }}
                   disabled={creatingUser}
                 >
