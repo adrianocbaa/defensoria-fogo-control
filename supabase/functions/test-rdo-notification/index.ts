@@ -93,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
   <div class="content">
     <h2>ADVERTÊNCIA</h2>
     
-    <p>A <strong>Diretoria de Infraestrutura Física da Defensoria Pública do Estado de Mato Grosso</strong>, no exercício de suas atribuições de fiscalização contratual, <strong>NOTIFICA</strong> a empresa <strong>${nomeEmpresa}</strong> acerca do que segue:</p>
+    <p>A <strong>Diretoria de Infraestrutura Física da Defensoria Pública do Estado de Mato Grosso</strong>, no exercício de suas atribuições de fiscalização contratual, <strong>ADVERTE</strong> a empresa <strong>${nomeEmpresa}</strong> acerca do que segue:</p>
     
     <div class="highlight">
       <p>Verificou-se que, há aproximadamente <strong>07 (sete) dias</strong>, não constam registros atualizados da execução dos serviços referentes à obra em andamento, circunstância que prejudica o acompanhamento, o controle e a fiscalização da execução contratual.</p>
@@ -104,7 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     <p>Ressalta-se que, nos termos da Cláusula Décima do Contrato nº 187/2025, bem como do art. 117, §1º, da Lei nº 14.133/2021, a fiscalização do contrato deve manter registro formal das ocorrências relacionadas à execução, sendo dever da contratada colaborar plenamente com a fiscalização, prestando informações, esclarecimentos e dados necessários ao adequado acompanhamento da obra.</p>
     
-    <p>Dessa forma, <strong>NOTIFICA-SE</strong> a Contratada para que:</p>
+    <p>Dessa forma, <strong>ADVERTE-SE</strong> a Contratada para que:</p>
     
     <ul>
       <li>Regularize imediatamente o fornecimento das informações necessárias ao registro diário da execução dos serviços, inclusive quanto às atividades efetivamente realizadas no período;</li>
@@ -112,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
     </ul>
     
     <div class="highlight">
-      <p><strong>O não atendimento à presente notificação poderá ensejar a adoção das medidas administrativas cabíveis, inclusive quanto à caracterização de descumprimento contratual, nos termos da legislação vigente e do contrato.</strong></p>
+      <p><strong>O não atendimento à presente ADVERTÊNCIA poderá ensejar a adoção das medidas administrativas cabíveis, inclusive quanto à caracterização de descumprimento contratual, nos termos da legislação vigente e do contrato.</strong></p>
     </div>
   </div>
   
