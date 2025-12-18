@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.notify-rdo-delay]
 verify_jwt = false
+
+[functions.test-rdo-notification]
+verify_jwt = false
