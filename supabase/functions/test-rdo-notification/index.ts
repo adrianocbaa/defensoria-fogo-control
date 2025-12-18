@@ -91,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
   </div>
   
   <div class="content">
-    <h2>NOTIFICAÇÃO</h2>
+    <h2>ADVERTÊNCIA</h2>
     
     <p>A <strong>Diretoria de Infraestrutura Física da Defensoria Pública do Estado de Mato Grosso</strong>, no exercício de suas atribuições de fiscalização contratual, <strong>NOTIFICA</strong> a empresa <strong>${nomeEmpresa}</strong> acerca do que segue:</p>
     
@@ -133,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: 'DIF - DPE-MT <onboarding@resend.dev>',
       to: destinatarios,
-      subject: `[TESTE] NOTIFICAÇÃO - Ausência de Registros RDO - ${obra.nome}`,
+      subject: `[TESTE] ADVERTÊNCIA - Ausência de Registros RDO - ${obra.nome}`,
       html: htmlBody,
     });
 
