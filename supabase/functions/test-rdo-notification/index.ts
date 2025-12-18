@@ -54,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Obra encontrada:', obra.nome);
 
     // Email de teste fixo
-    const destinatarios = ['adrianomelo@dp.mt.gov.br'];
+    const destinatarios = ['adriano.eng.mt@gmail.com'];
 
     console.log('Destinatários de teste:', destinatarios);
 
