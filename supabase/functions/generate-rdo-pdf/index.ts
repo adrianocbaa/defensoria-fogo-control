@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     const pageHeight = doc.internal.pageSize.height;
     let yPos = 35;
 
-    // Fetch logo image from Supabase Storage
+    // Fetch logo image from Supabase Storage and add using Uint8Array directly
     const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
     console.log('Attempting to load logo from:', logoUrl);
     
@@ -120,33 +120,25 @@ Deno.serve(async (req) => {
         console.log('Logo ArrayBuffer size:', logoArrayBuffer.byteLength);
         
         if (logoArrayBuffer.byteLength > 0) {
+          // Pass Uint8Array directly to jsPDF (supported format)
           const logoUint8Array = new Uint8Array(logoArrayBuffer);
           
-          // Convert to base64 using chunks to avoid stack overflow
-          const chunkSize = 0x8000;
-          const chunks: string[] = [];
-          for (let i = 0; i < logoUint8Array.length; i += chunkSize) {
-            const chunk = logoUint8Array.subarray(i, i + chunkSize);
-            chunks.push(String.fromCharCode.apply(null, [...chunk]));
-          }
-          const logoBase64 = btoa(chunks.join(''));
-          
-          console.log('Logo base64 created, length:', logoBase64.length);
-          
-          // Try adding image with explicit data URI
           try {
-            doc.addImage(
-              'data:image/jpeg;base64,' + logoBase64,
-              'JPEG',
-              14,
-              8,
-              40,
-              25
-            );
+            // Try with Uint8Array directly - jsPDF should accept it
+            doc.addImage(logoUint8Array, 'JPEG', 14, 8, 40, 25);
             logoImageAdded = true;
-            console.log('Logo image added successfully');
-          } catch (imgError) {
-            console.error('Failed to add image:', imgError);
+            console.log('Logo added successfully using Uint8Array');
+          } catch (err1) {
+            console.error('Uint8Array method failed:', err1);
+            
+            // Fallback: try with ArrayBuffer
+            try {
+              doc.addImage(logoArrayBuffer as any, 'JPEG', 14, 8, 40, 25);
+              logoImageAdded = true;
+              console.log('Logo added successfully using ArrayBuffer');
+            } catch (err2) {
+              console.error('ArrayBuffer method failed:', err2);
+            }
           }
         }
       }
@@ -154,11 +146,12 @@ Deno.serve(async (req) => {
       console.error('Error fetching logo:', fetchError);
     }
 
-    // Always show header text (logo issue unresolved in jsPDF + Deno)
+    // Fallback to text if logo wasn't added
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     if (!logoImageAdded) {
       doc.text('DIF-DPMT', 14, 20);
+      console.log('Using text fallback for logo');
     }
     
     // Info table on the right
