@@ -108,18 +108,32 @@ Deno.serve(async (req) => {
     // Header with logo and info table
     // Fetch and add logo image from Supabase Storage
     const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
+    console.log('Attempting to load logo from:', logoUrl);
     
     try {
       const logoResponse = await fetch(logoUrl);
+      console.log('Logo fetch response status:', logoResponse.status, logoResponse.statusText);
+      
       if (logoResponse.ok) {
         const logoBlob = await logoResponse.arrayBuffer();
-        const logoBase64 = btoa(
-          new Uint8Array(logoBlob).reduce((data, byte) => data + String.fromCharCode(byte), '')
-        );
-        // Add logo - 25mm width, proportional height
-        doc.addImage(`data:image/jpeg;base64,${logoBase64}`, 'JPEG', 14, 8, 25, 25);
+        console.log('Logo blob size:', logoBlob.byteLength);
+        
+        if (logoBlob.byteLength > 0) {
+          const logoBase64 = btoa(
+            new Uint8Array(logoBlob).reduce((data, byte) => data + String.fromCharCode(byte), '')
+          );
+          // Add logo - 25mm width, proportional height
+          doc.addImage(`data:image/jpeg;base64,${logoBase64}`, 'JPEG', 14, 8, 25, 25);
+          console.log('Logo added successfully');
+        } else {
+          console.log('Logo blob is empty, falling back to text');
+          doc.setFontSize(16);
+          doc.setFont('helvetica', 'bold');
+          doc.text('DIF-DPMT', 14, yPos);
+        }
       } else {
         // Fallback to text if logo not available
+        console.log('Logo fetch failed, falling back to text');
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.text('DIF-DPMT', 14, yPos);
