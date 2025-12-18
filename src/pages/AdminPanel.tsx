@@ -25,6 +25,9 @@ import { useEmpresas } from '@/hooks/useEmpresas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText } from 'lucide-react';
 
+// Setores válidos para módulos
+const VALID_MODULE_SECTORS: string[] = ['manutencao', 'obra', 'preventivos', 'ar_condicionado', 'projetos', 'almoxarifado', 'nucleos', 'nucleos_central'];
+
 interface Profile {
   id: string;
   user_id: string;
@@ -32,6 +35,7 @@ interface Profile {
   email: string;
   role: UserRole;
   sectors: Sector[];
+  setores_atuantes: string[];
   created_at: string;
   is_active: boolean;
   empresa_id: string | null;
@@ -67,18 +71,28 @@ export default function AdminPanel() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, display_name, email, role, sectors, created_at, is_active, empresa_id')
+        .select('id, user_id, display_name, email, role, sectors, setores_atuantes, created_at, is_active, empresa_id')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      setProfiles((data || []).map(profile => ({
-        ...profile,
-        email: profile.email || 'Email não disponível',
-        role: profile.role as UserRole,
-        is_active: profile.is_active ?? true,
-        empresa_id: (profile as any).empresa_id || null
-      })));
+      setProfiles((data || []).map(profile => {
+        // Filtrar apenas setores de módulo válidos
+        const rawSectors = (profile as any).sectors || [];
+        const filteredSectors = rawSectors.filter((s: string) => 
+          VALID_MODULE_SECTORS.includes(s)
+        ) as Sector[];
+        
+        return {
+          ...profile,
+          email: profile.email || 'Email não disponível',
+          role: profile.role as UserRole,
+          sectors: filteredSectors,
+          setores_atuantes: (profile as any).setores_atuantes || [],
+          is_active: profile.is_active ?? true,
+          empresa_id: (profile as any).empresa_id || null
+        };
+      }));
     } catch (error) {
       console.error('Error fetching profiles:', error);
       toast({
@@ -93,6 +107,14 @@ export default function AdminPanel() {
 
   const [pendingChanges, setPendingChanges] = useState<Record<string, UserRole>>({});
   const [pendingSectorChanges, setPendingSectorChanges] = useState<Record<string, Sector[]>>({});
+  const [pendingSetorAtuanteChanges, setPendingSetorAtuanteChanges] = useState<Record<string, string[]>>({});
+  
+  // Opções de setores atuantes
+  const setoresAtuantesOptions = [
+    { id: 'dif', label: 'DIF' },
+    { id: 'segunda_sub', label: '2ª SUB' },
+    { id: 'contratada', label: 'Contratada' },
+  ];
   
   const updateUserRole = (userId: string, newRole: UserRole) => {
     setPendingChanges(prev => ({
@@ -110,6 +132,18 @@ export default function AdminPanel() {
     setPendingSectorChanges(prev => ({
       ...prev,
       [userId]: newSectors
+    }));
+  };
+
+  const toggleSetorAtuante = (userId: string, setor: string, currentSetores: string[]) => {
+    const hasSetor = currentSetores.includes(setor);
+    const newSetores = hasSetor 
+      ? currentSetores.filter(s => s !== setor)
+      : [...currentSetores, setor];
+    
+    setPendingSetorAtuanteChanges(prev => ({
+      ...prev,
+      [userId]: newSetores
     }));
   };
 
@@ -131,8 +165,9 @@ export default function AdminPanel() {
   const saveChanges = async () => {
     const roleChanges = Object.entries(pendingChanges);
     const sectorChanges = Object.entries(pendingSectorChanges);
+    const setorAtuanteChanges = Object.entries(pendingSetorAtuanteChanges);
     
-    if (roleChanges.length === 0 && sectorChanges.length === 0) {
+    if (roleChanges.length === 0 && sectorChanges.length === 0 && setorAtuanteChanges.length === 0) {
       toast({
         title: 'Nenhuma alteração',
         description: 'Não há alterações para salvar',
@@ -161,9 +196,20 @@ export default function AdminPanel() {
         if (error) throw error;
       }
 
+      // Save setor atuante changes
+      for (const [userId, newSetores] of setorAtuanteChanges) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ setores_atuantes: newSetores })
+          .eq('user_id', userId);
+
+        if (error) throw error;
+      }
+
       await fetchProfiles();
       setPendingChanges({});
       setPendingSectorChanges({});
+      setPendingSetorAtuanteChanges({});
 
       toast({
         title: 'Sucesso',
@@ -487,7 +533,8 @@ export default function AdminPanel() {
               <div className="space-y-3">
                 {profiles.map((profile) => {
                   const currentSectors = pendingSectorChanges[profile.user_id] || profile.sectors || [];
-                  const hasPendingChanges = !!pendingChanges[profile.user_id] || !!pendingSectorChanges[profile.user_id];
+                  const currentSetoresAtuantes = pendingSetorAtuanteChanges[profile.user_id] || profile.setores_atuantes || [];
+                  const hasPendingChanges = !!pendingChanges[profile.user_id] || !!pendingSectorChanges[profile.user_id] || !!pendingSetorAtuanteChanges[profile.user_id];
                   const isExpanded = expandedUsers.has(profile.user_id);
                   
                   return (
@@ -602,6 +649,36 @@ export default function AdminPanel() {
 
                         <CollapsibleContent>
                           <div className="border-t p-4 bg-muted/20 space-y-4">
+                            {/* Setores Atuantes */}
+                            <div>
+                              <h4 className="text-sm font-medium mb-3">Setores Atuantes</h4>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {setoresAtuantesOptions.map((setor) => {
+                                  const isEnabled = currentSetoresAtuantes.includes(setor.id);
+                                  
+                                  return (
+                                    <div
+                                      key={setor.id}
+                                      className="flex items-center justify-between p-3 border rounded-md hover:bg-accent/50 transition-colors bg-background"
+                                    >
+                                      <Label
+                                        htmlFor={`${profile.user_id}-setor-${setor.id}`}
+                                        className="flex items-center gap-2 cursor-pointer flex-1"
+                                      >
+                                        <span className="text-sm">{setor.label}</span>
+                                      </Label>
+                                      <Switch
+                                        id={`${profile.user_id}-setor-${setor.id}`}
+                                        checked={isEnabled}
+                                        onCheckedChange={() => toggleSetorAtuante(profile.user_id, setor.id, currentSetoresAtuantes)}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Módulos Permitidos */}
                             <div>
                               <h4 className="text-sm font-medium mb-3">Módulos Permitidos</h4>
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
