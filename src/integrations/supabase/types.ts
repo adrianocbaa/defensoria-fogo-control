@@ -264,6 +264,63 @@ export type Database = {
         }
         Relationships: []
       }
+      base_composicoes: {
+        Row: {
+          codigo: string
+          composicao_itens: Json | null
+          created_at: string
+          created_by: string | null
+          descricao: string
+          eh_mao_de_obra: boolean | null
+          estado: string | null
+          fonte: string
+          grupo: string | null
+          id: string
+          observacao: string | null
+          preco_unitario: number
+          tipo: string
+          unidade: string
+          updated_at: string
+          versao: string | null
+        }
+        Insert: {
+          codigo: string
+          composicao_itens?: Json | null
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          eh_mao_de_obra?: boolean | null
+          estado?: string | null
+          fonte?: string
+          grupo?: string | null
+          id?: string
+          observacao?: string | null
+          preco_unitario?: number
+          tipo: string
+          unidade: string
+          updated_at?: string
+          versao?: string | null
+        }
+        Update: {
+          codigo?: string
+          composicao_itens?: Json | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          eh_mao_de_obra?: boolean | null
+          estado?: string | null
+          fonte?: string
+          grupo?: string | null
+          id?: string
+          observacao?: string | null
+          preco_unitario?: number
+          tipo?: string
+          unidade?: string
+          updated_at?: string
+          versao?: string | null
+        }
+        Relationships: []
+      }
       contratos_licitacao: {
         Row: {
           created_at: string
@@ -1464,6 +1521,177 @@ export type Database = {
           updated_at?: string
           valor_total?: number
           valor_unitario?: number
+        }
+        Relationships: []
+      }
+      orcamento_itens: {
+        Row: {
+          bdi_personalizado: number | null
+          codigo: string | null
+          codigo_base: string | null
+          created_at: string
+          descricao: string
+          eh_mao_de_obra: boolean | null
+          encargo_personalizado: number | null
+          fonte: string | null
+          id: string
+          item_numero: string
+          nivel: number
+          orcamento_id: string
+          ordem: number
+          parent_id: string | null
+          preco_unitario_base: number | null
+          preco_unitario_com_bdi: number | null
+          quantidade: number | null
+          tipo: string
+          unidade: string | null
+          updated_at: string
+          valor_total: number | null
+        }
+        Insert: {
+          bdi_personalizado?: number | null
+          codigo?: string | null
+          codigo_base?: string | null
+          created_at?: string
+          descricao: string
+          eh_mao_de_obra?: boolean | null
+          encargo_personalizado?: number | null
+          fonte?: string | null
+          id?: string
+          item_numero: string
+          nivel?: number
+          orcamento_id: string
+          ordem?: number
+          parent_id?: string | null
+          preco_unitario_base?: number | null
+          preco_unitario_com_bdi?: number | null
+          quantidade?: number | null
+          tipo: string
+          unidade?: string | null
+          updated_at?: string
+          valor_total?: number | null
+        }
+        Update: {
+          bdi_personalizado?: number | null
+          codigo?: string | null
+          codigo_base?: string | null
+          created_at?: string
+          descricao?: string
+          eh_mao_de_obra?: boolean | null
+          encargo_personalizado?: number | null
+          fonte?: string | null
+          id?: string
+          item_numero?: string
+          nivel?: number
+          orcamento_id?: string
+          ordem?: number
+          parent_id?: string | null
+          preco_unitario_base?: number | null
+          preco_unitario_com_bdi?: number | null
+          quantidade?: number | null
+          tipo?: string
+          unidade?: string | null
+          updated_at?: string
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_itens_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos: {
+        Row: {
+          arredondamento: string | null
+          bases_referencia: Json | null
+          bdi_incidencia: string | null
+          bdi_manual: number | null
+          bdi_percentual: number | null
+          categoria: string | null
+          cliente: string | null
+          codigo: string
+          created_at: string
+          created_by: string | null
+          data_abertura_licitacao: string | null
+          data_criacao: string
+          encargos_sociais_percentual: number | null
+          id: string
+          is_licitacao: boolean | null
+          nome: string
+          numero_processo_licitacao: string | null
+          prazo_entrega: string | null
+          status: string | null
+          tipo_encargo: string | null
+          tipo_licitacao: string | null
+          updated_at: string
+          valor_total: number | null
+          valor_total_bdi: number | null
+          valor_total_sem_bdi: number | null
+        }
+        Insert: {
+          arredondamento?: string | null
+          bases_referencia?: Json | null
+          bdi_incidencia?: string | null
+          bdi_manual?: number | null
+          bdi_percentual?: number | null
+          categoria?: string | null
+          cliente?: string | null
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          data_abertura_licitacao?: string | null
+          data_criacao?: string
+          encargos_sociais_percentual?: number | null
+          id?: string
+          is_licitacao?: boolean | null
+          nome: string
+          numero_processo_licitacao?: string | null
+          prazo_entrega?: string | null
+          status?: string | null
+          tipo_encargo?: string | null
+          tipo_licitacao?: string | null
+          updated_at?: string
+          valor_total?: number | null
+          valor_total_bdi?: number | null
+          valor_total_sem_bdi?: number | null
+        }
+        Update: {
+          arredondamento?: string | null
+          bases_referencia?: Json | null
+          bdi_incidencia?: string | null
+          bdi_manual?: number | null
+          bdi_percentual?: number | null
+          categoria?: string | null
+          cliente?: string | null
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          data_abertura_licitacao?: string | null
+          data_criacao?: string
+          encargos_sociais_percentual?: number | null
+          id?: string
+          is_licitacao?: boolean | null
+          nome?: string
+          numero_processo_licitacao?: string | null
+          prazo_entrega?: string | null
+          status?: string | null
+          tipo_encargo?: string | null
+          tipo_licitacao?: string | null
+          updated_at?: string
+          valor_total?: number | null
+          valor_total_bdi?: number | null
+          valor_total_sem_bdi?: number | null
         }
         Relationships: []
       }
