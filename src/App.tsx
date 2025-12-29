@@ -60,6 +60,7 @@ import { MedicaoComAbas } from "./pages/prototypes/MedicaoComAbas";
 import { MedicaoComSidebar } from "./pages/prototypes/MedicaoComSidebar";
 import { MedicaoComAccordion } from "./pages/prototypes/MedicaoComAccordion";
 import { MedicaoComModal } from "./pages/prototypes/MedicaoComModal";
+import Orcamento from "./pages/Orcamento";
 
 const queryClient = new QueryClient();
 
@@ -140,6 +141,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ProjetosPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/orcamento" 
+        element={
+          <ProtectedRoute>
+            <Orcamento />
           </ProtectedRoute>
         } 
       />

@@ -24,6 +24,7 @@ const sectorPaths: Record<string, string> = {
   'almoxarifado': '/inventory',
   'nucleos': '/nucleos',
   'nucleos_central': '/nucleos-central',
+  'orcamento': '/orcamento',
 };
 
 // Mapeamento de cores para cada módulo
@@ -36,6 +37,7 @@ const sectorColors: Record<string, { text: string; bg: string }> = {
   'almoxarifado': { text: 'text-green-600', bg: 'bg-green-50 hover:bg-green-100 border-green-200' },
   'nucleos': { text: 'text-amber-600', bg: 'bg-amber-50 hover:bg-amber-100 border-amber-200' },
   'nucleos_central': { text: 'text-indigo-600', bg: 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200' },
+  'orcamento': { text: 'text-emerald-600', bg: 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200' },
 };
 
 export default function Dashboard() {
