@@ -61,6 +61,9 @@ import { MedicaoComSidebar } from "./pages/prototypes/MedicaoComSidebar";
 import { MedicaoComAccordion } from "./pages/prototypes/MedicaoComAccordion";
 import { MedicaoComModal } from "./pages/prototypes/MedicaoComModal";
 import Orcamento from "./pages/Orcamento";
+import OrcamentoNovo from "./pages/OrcamentoNovo";
+import OrcamentoDetalhe from "./pages/OrcamentoDetalhe";
+import OrcamentoCurvaABC from "./pages/OrcamentoCurvaABC";
 
 const queryClient = new QueryClient();
 
@@ -149,6 +152,30 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Orcamento />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/orcamento/novo" 
+        element={
+          <ProtectedRoute>
+            <OrcamentoNovo />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/orcamento/:id" 
+        element={
+          <ProtectedRoute>
+            <OrcamentoDetalhe />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/orcamento/:id/curva-abc" 
+        element={
+          <ProtectedRoute>
+            <OrcamentoCurvaABC />
           </ProtectedRoute>
         } 
       />
