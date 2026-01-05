@@ -39,49 +39,49 @@ export function ImageGallery({ images, isOpen, onClose, initialIndex = 0 }: Imag
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0 bg-black/95 border-none"
+        className="!max-w-[98vw] !w-[98vw] !h-[98vh] !max-h-[98vh] p-0 bg-black border-none overflow-hidden"
         onKeyDown={handleKeyDown}
       >
-        <div className="relative w-full h-full flex flex-col">
-          {/* Header com contador e botão de fechar */}
-          <div className="flex items-center justify-between px-4 py-3 bg-black/50">
-            <div className="text-white text-sm">
+        <div className="w-full h-full flex flex-col bg-black">
+          {/* Header fixo com contador e botão de fechar */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-black/80 z-10">
+            <div className="text-white text-sm font-medium">
               {currentIndex + 1} de {images.length}
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 h-8 w-8 p-0"
             >
               <X className="h-5 w-5" />
             </Button>
           </div>
 
-          {/* Área principal da imagem */}
-          <div className="flex-1 relative flex items-center justify-center min-h-0">
+          {/* Área principal da imagem - ocupa o espaço restante */}
+          <div className="flex-1 relative flex items-center justify-center overflow-hidden min-h-0">
             {/* Previous button */}
             {images.length > 1 && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={prevImage}
-                className="absolute left-2 z-50 text-white hover:bg-white/20 h-12 w-12"
+                className="absolute left-2 z-20 text-white hover:bg-white/20 h-10 w-10 bg-black/40"
               >
-                <ChevronLeft className="h-8 w-8" />
+                <ChevronLeft className="h-6 w-6" />
               </Button>
             )}
 
-            {/* Current image - Container que preserva proporção */}
-            <div className="w-full h-full flex items-center justify-center p-4">
+            {/* Container da imagem */}
+            <div className="w-full h-full flex items-center justify-center px-14">
               <img
                 src={images[currentIndex]}
                 alt={`Foto ${currentIndex + 1}`}
                 className="max-w-full max-h-full object-contain"
-                loading="lazy"
-                style={{ 
-                  maxHeight: 'calc(95vh - 140px)', // Deixa espaço para header e thumbnails
+                style={{
+                  maxHeight: 'calc(98vh - 120px)', // Espaço para header (40px) e thumbnails (80px)
                 }}
+                loading="lazy"
               />
             </div>
 
@@ -89,27 +89,27 @@ export function ImageGallery({ images, isOpen, onClose, initialIndex = 0 }: Imag
             {images.length > 1 && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={nextImage}
-                className="absolute right-2 z-50 text-white hover:bg-white/20 h-12 w-12"
+                className="absolute right-2 z-20 text-white hover:bg-white/20 h-10 w-10 bg-black/40"
               >
-                <ChevronRight className="h-8 w-8" />
+                <ChevronRight className="h-6 w-6" />
               </Button>
             )}
           </div>
 
-          {/* Thumbnail navigation */}
+          {/* Thumbnails fixas na parte inferior */}
           {images.length > 1 && (
-            <div className="flex justify-center py-3 bg-black/50">
-              <div className="flex gap-2 px-4 overflow-x-auto max-w-full">
+            <div className="flex-shrink-0 bg-black/80 py-2 px-4 z-10">
+              <div className="flex gap-1 justify-center overflow-x-auto max-w-full">
                 {images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentIndex(index)}
-                    className={`flex-shrink-0 w-12 h-12 rounded overflow-hidden border-2 transition-all ${
+                    className={`flex-shrink-0 w-10 h-10 rounded overflow-hidden border-2 transition-all ${
                       index === currentIndex 
-                        ? 'border-white opacity-100 ring-2 ring-primary' 
-                        : 'border-transparent opacity-60 hover:opacity-80'
+                        ? 'border-primary opacity-100' 
+                        : 'border-transparent opacity-50 hover:opacity-80'
                     }`}
                   >
                     <img
