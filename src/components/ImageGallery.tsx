@@ -59,30 +59,32 @@ export function ImageGallery({ images, isOpen, onClose, initialIndex = 0 }: Imag
           </div>
 
           {/* Área principal da imagem - ocupa o espaço restante */}
-          <div className="flex-1 relative flex items-center justify-center min-h-0 p-4">
+          <div className="flex-1 relative flex items-center justify-center min-h-0 overflow-hidden">
             {/* Previous button */}
             {images.length > 1 && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={prevImage}
-                className="absolute left-4 z-20 text-white hover:bg-white/20 h-10 w-10 bg-black/50"
+                className="absolute left-4 z-20 text-white hover:bg-white/20 h-10 w-10 bg-black/50 flex-shrink-0"
               >
                 <ChevronLeft className="h-6 w-6" />
               </Button>
             )}
 
-            {/* Container da imagem */}
-            <img
-              src={images[currentIndex]}
-              alt={`Foto ${currentIndex + 1}`}
-              className="max-h-full max-w-full object-contain"
-              style={{
-                maxHeight: 'calc(98vh - 140px)', // header (40px) + thumbnails (60px) + padding (40px)
-                maxWidth: 'calc(100% - 100px)', // espaço para botões
-              }}
-              loading="lazy"
-            />
+            {/* Container da imagem com scroll se necessário */}
+            <div className="h-full w-full flex items-center justify-center overflow-auto px-16 py-2">
+              <img
+                src={images[currentIndex]}
+                alt={`Foto ${currentIndex + 1}`}
+                className="object-contain"
+                style={{
+                  maxHeight: '100%',
+                  maxWidth: '100%',
+                }}
+                loading="lazy"
+              />
+            </div>
 
             {/* Next button */}
             {images.length > 1 && (
@@ -90,7 +92,7 @@ export function ImageGallery({ images, isOpen, onClose, initialIndex = 0 }: Imag
                 variant="ghost"
                 size="icon"
                 onClick={nextImage}
-                className="absolute right-4 z-20 text-white hover:bg-white/20 h-10 w-10 bg-black/50"
+                className="absolute right-4 z-20 text-white hover:bg-white/20 h-10 w-10 bg-black/50 flex-shrink-0"
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>
