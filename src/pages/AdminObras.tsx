@@ -14,8 +14,7 @@ import { ProgressBarWithMarkers } from '@/components/ProgressBarWithMarkers';
 import { MedicaoMarco } from '@/hooks/useMedicoesFinanceiro';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, BarChart3 } from 'lucide-react';
-import { Map as MapIcon } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, BarChart3, Map as MapIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Obra {
