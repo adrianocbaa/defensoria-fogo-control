@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const EMAIL_FIXO = "dif@dp.mt.gov.br";
-const MAX_DIAS_SEM_RDO = 7;
+const MAX_DIAS_SEM_RDO = 7; // Dias corridos
 
 const handler = async (req: Request): Promise<Response> => {
   console.log('=== notify-rdo-delay function started ===');
@@ -80,50 +80,71 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
-      // Buscar último RDO preenchido (excluindo dias sem expediente)
+      // Buscar todos os RDOs da obra
       const { data: rdos, error: rdosError } = await supabase
         .from('rdo_reports')
         .select('data')
-        .eq('obra_id', obra.id)
-        .order('data', { ascending: false })
-        .limit(1);
+        .eq('obra_id', obra.id);
 
       if (rdosError) {
         console.error(`Erro ao buscar RDOs da obra ${obra.id}:`, rdosError);
         continue;
       }
 
-      // Calcular dias sem RDO
-      const dataInicio = new Date(obra.data_inicio);
-      dataInicio.setHours(0, 0, 0, 0);
-      
-      let ultimaDataPreenchida = dataInicio;
-      if (rdos && rdos.length > 0) {
-        ultimaDataPreenchida = new Date(rdos[0].data);
-        ultimaDataPreenchida.setHours(0, 0, 0, 0);
-      }
+      // Buscar dias sem expediente
+      const { data: diasSemExpediente, error: diasError } = await supabase
+        .from('rdo_dias_sem_expediente')
+        .select('data')
+        .eq('obra_id', obra.id);
 
-      // Contar dias úteis sem RDO (simplificado - não conta sábados e domingos)
-      let diasSemRdo = 0;
-      const dataIterator = new Date(ultimaDataPreenchida);
-      dataIterator.setDate(dataIterator.getDate() + 1);
-
-      while (dataIterator < hoje) {
-        const diaSemana = dataIterator.getDay();
-        if (diaSemana !== 0 && diaSemana !== 6) {
-          diasSemRdo++;
-        }
-        dataIterator.setDate(dataIterator.getDate() + 1);
-      }
-
-      console.log(`Dias sem RDO para obra ${obra.nome}: ${diasSemRdo}`);
-
-      // Se não atingiu o limite, pular
-      if (diasSemRdo < MAX_DIAS_SEM_RDO) {
+      if (diasError) {
+        console.error(`Erro ao buscar dias sem expediente da obra ${obra.id}:`, diasError);
         continue;
       }
 
-      console.log(`Obra ${obra.nome} atingiu ${MAX_DIAS_SEM_RDO} dias sem RDO. Preparando notificação...`);
+      // Criar sets para busca rápida
+      const rdoDates = new Set(rdos?.map(r => r.data) || []);
+      const semExpedienteDates = new Set(diasSemExpediente?.map(d => d.data) || []);
+
+      console.log(`RDOs preenchidos: ${rdoDates.size}, Dias sem expediente: ${semExpedienteDates.size}`);
+
+      // Calcular data de início e data de hoje
+      const dataInicio = new Date(obra.data_inicio);
+      dataInicio.setHours(0, 0, 0, 0);
+
+      // Encontrar a primeira lacuna (primeiro dia sem RDO e sem ser "sem expediente")
+      let primeiraLacuna: Date | null = null;
+      const dataIterator = new Date(dataInicio);
+
+      while (dataIterator < hoje) {
+        const dataStr = dataIterator.toISOString().split('T')[0];
+        
+        // Se não tem RDO e não é dia sem expediente, é uma lacuna
+        if (!rdoDates.has(dataStr) && !semExpedienteDates.has(dataStr)) {
+          primeiraLacuna = new Date(dataIterator);
+          break;
+        }
+        
+        dataIterator.setDate(dataIterator.getDate() + 1);
+      }
+
+      if (!primeiraLacuna) {
+        console.log(`Nenhuma lacuna encontrada para obra ${obra.nome}`);
+        continue;
+      }
+
+      // Calcular dias corridos desde a primeira lacuna até hoje
+      const diasCorridosSemRdo = Math.floor((hoje.getTime() - primeiraLacuna.getTime()) / (1000 * 60 * 60 * 24));
+      
+      console.log(`Primeira lacuna: ${primeiraLacuna.toISOString().split('T')[0]}, Dias corridos sem RDO: ${diasCorridosSemRdo}`);
+
+      // Se não atingiu o limite, pular
+      if (diasCorridosSemRdo < MAX_DIAS_SEM_RDO) {
+        console.log(`Obra ${obra.nome}: ${diasCorridosSemRdo} dias < ${MAX_DIAS_SEM_RDO} dias (limite)`);
+        continue;
+      }
+
+      console.log(`Obra ${obra.nome} atingiu ${diasCorridosSemRdo} dias corridos sem RDO (desde ${primeiraLacuna.toISOString().split('T')[0]}). Preparando notificação...`);
 
       // Coletar emails dos destinatários
       const destinatarios: string[] = [EMAIL_FIXO];
@@ -169,6 +190,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Montar corpo do email
       const nomeEmpresa = (obra.empresas as any)?.razao_social || 'Empresa não identificada';
       const numeroContrato = obra.n_contrato || 'Não informado';
+      const dataLacunaFormatada = primeiraLacuna.toLocaleDateString('pt-BR');
 
       const htmlBody = `
 <!DOCTYPE html>
@@ -199,7 +221,7 @@ const handler = async (req: Request): Promise<Response> => {
     <p>A <strong>Diretoria de Infraestrutura Física da Defensoria Pública do Estado de Mato Grosso</strong>, no exercício de suas atribuições de fiscalização contratual, <strong>ADVERTE</strong> a empresa <strong>${nomeEmpresa}</strong> acerca do que segue:</p>
     
     <div class="highlight">
-      <p>Verificou-se que, há aproximadamente <strong>07 (sete) dias</strong>, não constam registros atualizados da execução dos serviços referentes à obra em andamento, circunstância que prejudica o acompanhamento, o controle e a fiscalização da execução contratual.</p>
+      <p>Verificou-se que, desde o dia <strong>${dataLacunaFormatada}</strong> (há <strong>${diasCorridosSemRdo} dias corridos</strong>), não constam registros atualizados da execução dos serviços referentes à obra em andamento, circunstância que prejudica o acompanhamento, o controle e a fiscalização da execução contratual.</p>
     </div>
     
     <p><strong>Obra:</strong> ${obra.nome}</p>
