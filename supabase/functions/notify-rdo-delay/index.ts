@@ -252,7 +252,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Enviar email
       try {
         const emailResponse = await resend.emails.send({
-          from: 'DIF - DPE-MT <onboarding@resend.dev>',
+          from: 'DIF - DPE-MT <noreply@dif.app.br>',
           to: destinatarios,
           subject: `ADVERTÊNCIA - Ausência de Registros RDO - ${obra.nome}`,
           html: htmlBody,
