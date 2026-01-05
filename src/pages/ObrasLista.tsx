@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import * as LoadingStates from '@/components/LoadingStates';
-import { Map, List, Search } from 'lucide-react';
+import { Map as MapIcon, List, Search } from 'lucide-react';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 
 const statusColors: Record<string, string> = {
@@ -71,7 +71,7 @@ export function ObrasLista() {
           actions={
             <Button asChild variant="outline">
               <Link to="/obras">
-                <Map className="h-4 w-4 mr-2" />
+                <MapIcon className="h-4 w-4 mr-2" />
                 Ver como Mapa
               </Link>
             </Button>

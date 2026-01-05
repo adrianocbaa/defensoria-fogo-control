@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import * as LoadingStates from '@/components/LoadingStates';
-import { Map, List, Search, Eye, FileText, Link as LinkIcon, FileCheck } from 'lucide-react';
+import { Map as MapIcon, List, Search, Eye, FileText, Link as LinkIcon, FileCheck } from 'lucide-react';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { type Obra } from '@/data/mockObras';
@@ -124,7 +124,7 @@ export default function PublicObrasLista() {
           actions={
             <Button asChild variant="outline">
               <Link to="/public/obras">
-                <Map className="h-4 w-4 mr-2" />
+                <MapIcon className="h-4 w-4 mr-2" />
                 Mapa de Obras
               </Link>
             </Button>
