@@ -58,13 +58,13 @@ export default function PublicView() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img 
-                src="/images/logo-sidif.png" 
-                alt="SIDIF - Sistema Integrado Diretoria de Infraestrutura Física" 
+                src="/lovable-uploads/b1b86eb2-3439-4770-9572-77fb9dd247a3.png" 
+                alt="Defensoria Pública Logo" 
                 className="h-16 w-auto"
               />
               <div>
                 <h1 className="text-2xl font-bold">Sistema de Segurança Contra Incêndio</h1>
-                <p className="text-green-100">Visualização Pública - SIDIF</p>
+                <p className="text-green-100">Visualização Pública - Defensoria Pública</p>
               </div>
             </div>
             <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
