@@ -27,7 +27,7 @@ export function Layout({ children }: LayoutProps) {
               <img 
                 src="/images/logo-sidif.png" 
                 alt="SIDIF - Sistema Integrado Diretoria de Infraestrutura Física" 
-                className="h-12 w-auto"
+                className="h-16 w-auto"
               />
             </div>
             <div className="flex items-center gap-6">

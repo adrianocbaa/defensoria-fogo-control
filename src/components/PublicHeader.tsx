@@ -18,7 +18,7 @@ export function PublicHeader({ children }: PublicHeaderProps) {
               <img 
                 src="/images/logo-sidif.png" 
                 alt="SIDIF - Sistema Integrado Diretoria de Infraestrutura Física" 
-                className="h-12 w-auto"
+                className="h-16 w-auto"
               />
             </div>
             
