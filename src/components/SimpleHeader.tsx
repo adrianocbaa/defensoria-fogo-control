@@ -27,17 +27,17 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
       <header className="w-full bg-primary text-primary-foreground shadow-lg">
         <div className="w-full px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 bg-white/90 px-4 py-2 rounded-md">
               <img 
                 src={logoSidif} 
                 alt="SiDIF" 
-                className="h-10 object-contain"
+                className="h-8 object-contain"
               />
-              <div className="h-8 w-px bg-primary-foreground/40" />
+              <div className="h-6 w-px bg-primary/40" />
               <img 
                 src={logoDif} 
                 alt="DIF" 
-                className="h-10 object-contain"
+                className="h-8 object-contain"
               />
             </div>
             
