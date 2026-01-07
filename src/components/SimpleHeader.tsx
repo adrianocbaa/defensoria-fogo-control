@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Link, useLocation } from 'react-router-dom';
 import logoSidif from '@/assets/sidif-logo-oficial.png';
+import logoDif from '@/assets/logo-dif-transparente.png';
 
 interface SimpleHeaderProps {
   children: ReactNode;
@@ -30,6 +31,12 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
               <img 
                 src={logoSidif} 
                 alt="SiDIF" 
+                className="h-10 object-contain"
+              />
+              <div className="h-8 w-px bg-primary-foreground/40" />
+              <img 
+                src={logoDif} 
+                alt="DIF" 
                 className="h-10 object-contain"
               />
             </div>
