@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, User, AlertTriangle } from 'lucide-react';
-import logoDif from '@/assets/logo-dif-dpmt.jpg';
-import logoSidif from '@/assets/logo-sidif-new.png';
+import logoSidif from '@/assets/sidif-logo-oficial.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
