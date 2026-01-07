@@ -365,7 +365,7 @@ const AuthPage = () => {
         <Card className="shadow-lg border-t-4 border-t-primary">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex items-center justify-center gap-3">
-              <img src={logoSidif} alt="SiDIF" className="h-14 object-contain" />
+              <img src={logoSidif} alt="SiDIF" className="h-28 object-contain" />
               <img src={logoDif} alt="Logo DIF" className="h-16 w-16 object-contain rounded-full" />
             </div>
             <CardTitle className="text-lg font-semibold text-foreground">Sistema Integrado</CardTitle>
