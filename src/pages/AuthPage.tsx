@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Mail, Lock, User, AlertTriangle } from 'lucide-react';
+import { Mail, Lock, User, AlertTriangle } from 'lucide-react';
 import logoDif from '@/assets/logo-dif-dpmt.jpg';
+import logoSidif from '@/assets/logo-sidif.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -361,24 +362,15 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Back to Home Button */}
-        <div className="mb-6">
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Voltar ao Sistema
-            </Button>
-          </Link>
-        </div>
-
-        <Card className="shadow-lg">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center">
-              <img src={logoDif} alt="Logo DIF" className="h-20 w-20 object-contain" />
+        <Card className="shadow-lg border-t-4 border-t-primary">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto mb-4 flex items-center justify-center gap-3">
+              <img src={logoSidif} alt="SiDIF" className="h-14 object-contain" />
+              <img src={logoDif} alt="Logo DIF" className="h-16 w-16 object-contain rounded-full" />
             </div>
-            <CardTitle className="text-2xl">Sistema de Prevenção</CardTitle>
-            <CardDescription>
-              Acesse sua conta para gerenciar os núcleos
+            <CardTitle className="text-lg font-semibold text-foreground">Sistema Integrado</CardTitle>
+            <CardDescription className="text-sm">
+              Diretoria de Infraestrutura Física
             </CardDescription>
           </CardHeader>
           
