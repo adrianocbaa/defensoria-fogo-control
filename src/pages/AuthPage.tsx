@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Mail, Lock, User, AlertTriangle, Shield } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, User, AlertTriangle } from 'lucide-react';
+import logoDif from '@/assets/logo-dif-transparente.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -372,8 +373,8 @@ const AuthPage = () => {
 
         <Card className="shadow-lg">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Shield className="h-8 w-8 text-primary" />
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center">
+              <img src={logoDif} alt="Logo DIF" className="h-20 w-20 object-contain" />
             </div>
             <CardTitle className="text-2xl">Sistema de Prevenção</CardTitle>
             <CardDescription>
