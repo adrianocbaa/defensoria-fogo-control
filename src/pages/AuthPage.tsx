@@ -362,12 +362,16 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="shadow-lg border-t-4 border-t-primary">
+        <Card className="shadow-lg border-t-4 border-t-primary relative">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex items-center justify-center gap-1">
+            <div className="mx-auto mb-4 flex items-center justify-center">
               <img src={logoSidif} alt="SiDIF" className="h-56 object-contain" />
-              <img src={logoDif} alt="Logo DIF" className="h-16 w-16 object-contain rounded-full" />
             </div>
+            <img 
+              src={logoDif} 
+              alt="Logo DIF" 
+              className="absolute bottom-4 right-4 h-12 w-12 object-contain rounded-full shadow-md"
+            />
             <CardTitle className="text-lg font-semibold text-foreground">Sistema Integrado</CardTitle>
             <CardDescription className="text-sm">
               Diretoria de Infraestrutura Física
