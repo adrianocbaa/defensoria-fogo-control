@@ -37,7 +37,7 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
               <img 
                 src={logoDif} 
                 alt="DIF" 
-                className="h-8 object-contain"
+                className="h-8 object-contain contrast-125 saturate-150"
               />
             </div>
             
