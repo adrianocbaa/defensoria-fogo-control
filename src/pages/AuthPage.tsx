@@ -365,13 +365,12 @@ const AuthPage = () => {
         <Card className="shadow-lg border-t-4 border-t-primary">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-4 flex items-center justify-center gap-3">
-              <img src={logoSidif} alt="SiDIF" className="h-14 object-contain" />
+              <img src={logoSidif} alt="SiDIF" className="h-20 object-contain" />
               <img src={logoDif} alt="Logo DIF" className="h-16 w-16 object-contain rounded-full" />
             </div>
-            <CardTitle className="text-lg font-semibold text-foreground">Sistema Integrado</CardTitle>
-            <CardDescription className="text-sm">
-              Diretoria de Infraestrutura Física
-            </CardDescription>
+            <CardTitle className="text-base font-bold text-foreground">
+              Sistema Integrado Diretoria de Infraestrutura Física
+            </CardTitle>
           </CardHeader>
           
           <CardContent>
