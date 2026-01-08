@@ -67,13 +67,12 @@ export function RdoBatchPrintDialog({ obraId, obraNome }: RdoBatchPrintDialogPro
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-3 px-4 py-3 min-h-[44px]"
+        <button
+          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] w-full text-left"
         >
           <Printer className="h-5 w-5" />
           <span>Imprimir RDOs</span>
-        </Button>
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
