@@ -8,19 +8,10 @@ import { cn } from '@/lib/utils';
 import {
   Menu,
   LayoutDashboard,
-  Calendar,
-  Users,
-  Truck,
-  Package,
-  Cloud,
-  Camera,
-  AlertTriangle,
-  Shield,
-  Ruler,
-  FileSignature,
   Settings
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { RdoBatchPrintDialog } from '@/components/rdo/RdoBatchPrintDialog';
 
 interface MenuItem {
   id: string;
@@ -72,6 +63,10 @@ export function RDOSidebar() {
           </Link>
         );
       })}
+
+      <Separator className="my-3" />
+      
+      <RdoBatchPrintDialog obraId={obraId || ''} />
     </nav>
   );
 
