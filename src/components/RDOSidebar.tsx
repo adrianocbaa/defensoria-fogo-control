@@ -21,8 +21,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { id: 'resumo', label: 'Resumo', icon: LayoutDashboard, path: '/resumo' },
-  { id: 'config', label: 'Configurações', icon: Settings, path: '/config' }
+  { id: 'resumo', label: 'Resumo', icon: LayoutDashboard, path: '/resumo' }
 ];
 
 export function RDOSidebar() {
