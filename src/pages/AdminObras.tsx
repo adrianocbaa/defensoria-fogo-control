@@ -510,6 +510,7 @@ export function AdminObras() {
                             <Progress 
                               value={obraRdoProgressos[obra.id] || 0} 
                               className="w-[100px] h-2"
+                              color="blue"
                             />
                             <span className="text-sm font-medium whitespace-nowrap">
                               {obraRdoProgressos[obra.id]?.toFixed(1)}%
@@ -524,6 +525,7 @@ export function AdminObras() {
                               marcos={obraMarcos[obra.id]}
                               className="w-[100px]"
                               variant="subtle"
+                              color="green"
                             />
                             <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">
                               {obraProgressos[obra.id] !== undefined 

@@ -8,9 +8,10 @@ interface ProgressBarWithMarkersProps {
   marcos: MedicaoMarco[];
   className?: string;
   variant?: 'default' | 'subtle';
+  color?: 'default' | 'green' | 'blue';
 }
 
-export function ProgressBarWithMarkers({ value, marcos, className = '', variant = 'default' }: ProgressBarWithMarkersProps) {
+export function ProgressBarWithMarkers({ value, marcos, className = '', variant = 'default', color = 'default' }: ProgressBarWithMarkersProps) {
   const clampedValue = Math.min(Math.max(value, 0), 100);
   
   const isSubtle = variant === 'subtle';
@@ -18,12 +19,14 @@ export function ProgressBarWithMarkers({ value, marcos, className = '', variant 
     ? "absolute top-1/2 -translate-y-1/2 w-px h-4 bg-muted-foreground/70 cursor-pointer hover:bg-muted-foreground transition-colors z-10"
     : "absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-foreground/70 cursor-pointer hover:bg-foreground transition-colors z-10";
 
+  const colorClass = color === 'green' ? 'bg-green-600' : color === 'blue' ? 'bg-blue-600' : 'bg-primary';
+
   return (
     <TooltipProvider delayDuration={0}>
       <div className={`relative h-2 w-full overflow-visible rounded-full bg-secondary ${className}`}>
-        {/* Barra de progresso - usando bg-primary igual ao Progress padrão */}
+        {/* Barra de progresso */}
         <div
-          className="h-full rounded-full bg-primary transition-all duration-300"
+          className={`h-full rounded-full transition-all duration-300 ${colorClass}`}
           style={{ width: `${clampedValue}%` }}
         />
         
