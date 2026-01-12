@@ -303,7 +303,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                       <span className="text-sm font-medium text-muted-foreground">Andamento da Obra:</span>
                       <span className="text-lg font-semibold text-blue-600">{rdoProgress.toFixed(2)}%</span>
                     </div>
-                    <Progress value={Math.min(rdoProgress, 100)} className="h-2" />
+                    <Progress value={Math.min(rdoProgress, 100)} className="h-2" color="blue" />
                   </div>
                 )}
                 
@@ -316,6 +316,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                   <ProgressBarWithMarkers 
                     value={Math.min(percentualValorPago, 100)} 
                     marcos={dadosFinanceiros.marcos}
+                    color="green"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground pt-1">
                     <div>
