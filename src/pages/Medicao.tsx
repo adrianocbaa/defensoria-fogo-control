@@ -838,10 +838,17 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       }
     }
 
+    // Para itens extracontratuais, a quantidade já está definida em item.quantidade
+    // (vinda da planilha do aditivo), então NÃO devemos somar novamente qntAditivoAcum
+    const ehExtracontratual = item.origem === 'extracontratual';
+    
     // Considerar QNT adicionada pelos aditivos publicados anteriores a esta medição
-    const qntAditivoAcum = aditivos
-      .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
-      .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
+    // Apenas para itens contratuais originais (não extracontratuais)
+    const qntAditivoAcum = ehExtracontratual 
+      ? 0 
+      : aditivos
+          .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
+          .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
 
     const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
 
@@ -2530,9 +2537,13 @@ const criarNovaMedicao = async () => {
             qntAcumAnterior += dh[itemId].qnt || 0;
           }
         }
-        const qntAditivoAcum = aditivos
-          .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
-          .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
+        // Para itens extracontratuais, a quantidade já está definida em item.quantidade
+        const ehExtracontratual = item.origem === 'extracontratual';
+        const qntAditivoAcum = ehExtracontratual 
+          ? 0 
+          : aditivos
+              .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoId)
+              .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
         const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
         const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
         if (dados.qnt > disponivel + 1e-9) {
@@ -3167,19 +3178,27 @@ const criarNovaMedicao = async () => {
   };
 
   // Função para calcular valores acumulados até a medição atual com hierarquia
+  // INCLUINDO a medição atual em edição (não salva ainda)
   const calcularValorAcumuladoItem = (itemId: number) => {
     if (!medicaoAtual) return 0;
     
     let totalAcumulado = 0;
-    const sessionsParaSomar = medicoes.filter(m => m.bloqueada && m.id <= medicaoAtual);
+    
+    // Somar medições anteriores (bloqueadas)
+    const sessionsParaSomar = medicoes.filter(m => m.bloqueada && m.id < medicaoAtual);
     sessionsParaSomar.forEach(medicao => {
       const dadosHierarquicos = dadosHierarquicosMemoizados[medicao.id];
       if (dadosHierarquicos && dadosHierarquicos[itemId]) {
         totalAcumulado += dadosHierarquicos[itemId].total || 0;
       }
     });
-    // Não somar aditivos automaticamente ao valor acumulado por item
-    // Os aditivos só devem ser considerados quando efetivamente medidos/executados
+    
+    // Somar também a medição atual (em edição - não salva ainda)
+    const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
+    if (medicaoAtualObj && medicaoAtualObj.dados[itemId]) {
+      totalAcumulado += medicaoAtualObj.dados[itemId].total || 0;
+    }
+    
     return totalAcumulado;
   };
 
@@ -3228,19 +3247,27 @@ const criarNovaMedicao = async () => {
   };
 
   // Função para calcular quantidade acumulada com hierarquia
+  // INCLUINDO a medição atual em edição (não salva ainda)
   const calcularQuantidadeAcumulada = (itemId: number) => {
     if (!medicaoAtual) return 0;
     
     let qntAcumulada = 0;
-    const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
     
-    for (let i = 0; i <= medicaoAtualIndex; i++) {
-      const medicao = medicoes[i];
+    // Somar medições anteriores (bloqueadas)
+    const medicoesAnteriores = medicoes.filter(m => m.bloqueada && m.id < medicaoAtual);
+    medicoesAnteriores.forEach(medicao => {
       const dadosHierarquicos = dadosHierarquicosMemoizados[medicao.id];
       if (dadosHierarquicos && dadosHierarquicos[itemId]) {
         qntAcumulada += dadosHierarquicos[itemId].qnt || 0;
       }
+    });
+    
+    // Somar também a medição atual (em edição - não salva ainda)
+    const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
+    if (medicaoAtualObj && medicaoAtualObj.dados[itemId]) {
+      qntAcumulada += medicaoAtualObj.dados[itemId].qnt || 0;
     }
+    
     return qntAcumulada;
   };
 
