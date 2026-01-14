@@ -3496,7 +3496,7 @@ const criarNovaMedicao = async () => {
                           disabled={!medicaoAtual}
                         >
                           <Download className="h-4 w-4" />
-                          Exportar Planilha
+                          Exportar
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
