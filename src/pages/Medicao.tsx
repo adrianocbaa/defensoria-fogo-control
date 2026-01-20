@@ -153,11 +153,20 @@ const { upsertItems: upsertAditivoItems } = useAditivoItems();
       setLoading(true);
       const { data, error } = await supabase
         .from('obras')
-        .select('*')
+        .select('*, empresas(razao_social)')
         .eq('id', id)
         .maybeSingle();
 
       if (error) throw error;
+      
+      // Usar razao_social da empresa vinculada se não tiver empresa_responsavel
+      if (data) {
+        const empresaData = data.empresas as { razao_social: string } | null;
+        if (!data.empresa_responsavel && empresaData?.razao_social) {
+          data.empresa_responsavel = empresaData.razao_social;
+        }
+      }
+      
       setObra(data);
     } catch (error) {
       console.error('Erro ao carregar obra:', error);
