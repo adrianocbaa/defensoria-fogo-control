@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { RdoBatchPrintDialog } from '@/components/rdo/RdoBatchPrintDialog';
+import { RdoAtividadesReportDialog } from '@/components/rdo/RdoAtividadesReportDialog';
 
 interface MenuItem {
   id: string;
@@ -66,6 +67,8 @@ export function RDOSidebar() {
       <Separator className="my-3" />
       
       <RdoBatchPrintDialog obraId={obraId || ''} />
+      
+      <RdoAtividadesReportDialog obraId={obraId || ''} />
     </nav>
   );
 
