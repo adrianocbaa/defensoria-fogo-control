@@ -90,14 +90,29 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
         return;
       }
 
+      // Criar cabeçalho com informações da obra
+      const headerRows = [
+        [`Relatório de Atividades - RDO`],
+        [`Obra: ${obraNome || 'Não informada'}`],
+        [`Período: ${format(date.from, 'dd/MM/yyyy', { locale: ptBR })} a ${format(date.to, 'dd/MM/yyyy', { locale: ptBR })}`],
+        [], // Linha em branco
+        ['Data', 'Código', 'Descrição', 'Executado', 'Unidade'], // Cabeçalho da tabela
+      ];
+
+      // Adicionar dados
+      const dataRows = reportData.map(item => [
+        item.data,
+        item.codigo,
+        item.descricao,
+        item.executado,
+        item.unidade,
+      ]);
+
+      // Combinar cabeçalho e dados
+      const allRows = [...headerRows, ...dataRows];
+
       // Criar planilha Excel
-      const worksheet = XLSX.utils.json_to_sheet(reportData.map(item => ({
-        'Data': item.data,
-        'Código': item.codigo,
-        'Descrição': item.descricao,
-        'Executado': item.executado,
-        'Unidade': item.unidade,
-      })));
+      const worksheet = XLSX.utils.aoa_to_sheet(allRows);
 
       // Ajustar largura das colunas
       worksheet['!cols'] = [
@@ -108,11 +123,19 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
         { wch: 10 },  // Unidade
       ];
 
+      // Mesclar células do cabeçalho para melhor visualização
+      worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Título
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Obra
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } }, // Período
+      ];
+
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Atividades RDO');
 
-      // Gerar nome do arquivo
-      const fileName = `Atividades_RDO_${format(date.from, 'dd-MM-yyyy')}_a_${format(date.to, 'dd-MM-yyyy')}.xlsx`;
+      // Gerar nome do arquivo com nome da obra
+      const obraNomeSanitizado = (obraNome || 'Obra').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+      const fileName = `Atividades_${obraNomeSanitizado}_${format(date.from, 'dd-MM-yyyy')}_a_${format(date.to, 'dd-MM-yyyy')}.xlsx`;
 
       // Download
       XLSX.writeFile(workbook, fileName);
