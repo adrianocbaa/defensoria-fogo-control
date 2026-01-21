@@ -16,6 +16,7 @@ import { EvidenciasStep } from '@/components/rdo/steps/EvidenciasStep';
 import { AssinaturasStep } from '@/components/rdo/steps/AssinaturasStep';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCanEditObra } from '@/hooks/useCanEditObra';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -45,7 +46,10 @@ export default function RDODiario() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { canEdit, isAdmin, isContratada } = useUserRole();
+  const { canEdit: roleCanEdit, isAdmin, isContratada } = useUserRole();
+  const { canEditObra, loading: permissionLoading } = useCanEditObra(obraId);
+  // Permissão efetiva: admin sempre pode, contratada usa roleCanEdit, outros usam canEditObra
+  const canEdit = isAdmin || isContratada ? roleCanEdit : canEditObra;
   const queryClient = useQueryClient();
   const data = searchParams.get('data') || new Date().toISOString().split('T')[0];
   const initialStep = parseInt(searchParams.get('step') || '0', 10);
@@ -67,7 +71,7 @@ export default function RDODiario() {
     hasChanges,
   } = useRdoForm(obraId!, data);
 
-  if (isLoading) {
+  if (isLoading || permissionLoading) {
     return (
       <div className="container mx-auto p-4 space-y-4">
         <Skeleton className="h-12" />

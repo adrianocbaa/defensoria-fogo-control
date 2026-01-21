@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { SimpleHeader } from '@/components/SimpleHeader';
-import { PermissionGuard } from '@/components/PermissionGuard';
+import { ObraPermissionGuard } from '@/components/ObraPermissionGuard';
 import { ObraForm } from '@/components/ObraForm';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,8 @@ export function AdminObraEdit() {
 
   return (
     <SimpleHeader>
-      <PermissionGuard requiresEdit>
+      {/* Para nova obra, usar apenas verificação de role. Para edição, verificar permissão granular */}
+      <ObraPermissionGuard obraId={isNewObra ? undefined : id} roleCheckOnly={isNewObra}>
         <div className="container mx-auto py-6 space-y-6">
         <div className="flex items-center gap-4">
           <Button
@@ -118,7 +119,7 @@ export function AdminObraEdit() {
           />
         </div>
         </div>
-      </PermissionGuard>
+      </ObraPermissionGuard>
     </SimpleHeader>
   );
 }

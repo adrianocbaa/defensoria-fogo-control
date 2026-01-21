@@ -25,6 +25,7 @@ import { ImportarCronograma } from '@/components/ImportarCronograma';
 import { CronogramaView } from '@/components/CronogramaView';
 import * as LoadingStates from '@/components/LoadingStates';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCanEditObra } from '@/hooks/useCanEditObra';
 import { useMedicaoSessions } from '@/hooks/useMedicaoSessions';
 import { useMedicaoItems } from '@/hooks/useMedicaoItems';
 import { useAditivoSessions } from '@/hooks/useAditivoSessions';
@@ -109,11 +110,14 @@ const relativeTimePTBR = (iso?: string) => {
 export function Medicao() {
   const { id } = useParams();
   const navigate = useNavigate();
-const { isAdmin, canEdit } = useUserRole();
-const { createSession, blockSession, reopenSession, deleteSession } = useMedicaoSessions();
-const { createSession: createAditivoSession, reopenSession: reopenAditivoSession, deleteSession: deleteAditivoSession, fetchSessionsWithItems: fetchAditivoSessions, blockSession: blockAditivoSession } = useAditivoSessions();
-const { upsertItems } = useMedicaoItems();
-const { upsertItems: upsertAditivoItems } = useAditivoItems();
+  const { isAdmin, canEdit: roleCanEdit } = useUserRole();
+  const { canEditObra, loading: permissionLoading } = useCanEditObra(id);
+  // Permissão efetiva: admin sempre pode, outros usam canEditObra
+  const canEdit = isAdmin ? roleCanEdit : canEditObra;
+  const { createSession, blockSession, reopenSession, deleteSession } = useMedicaoSessions();
+  const { createSession: createAditivoSession, reopenSession: reopenAditivoSession, deleteSession: deleteAditivoSession, fetchSessionsWithItems: fetchAditivoSessions, blockSession: blockAditivoSession } = useAditivoSessions();
+  const { upsertItems } = useMedicaoItems();
+  const { upsertItems: upsertAditivoItems } = useAditivoItems();
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
