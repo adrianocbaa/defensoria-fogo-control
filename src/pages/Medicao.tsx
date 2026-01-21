@@ -2204,10 +2204,27 @@ const criarNovaMedicao = async () => {
       return;
     }
 
-    // Se tem aditivo de prazo, atualizar a obra
+    // PRIMEIRO criar sessão do aditivo no Supabase (evita duplicação por double-click)
+    let newSession;
+    try {
+      newSession = await createAditivoSession(id, sequenciaEfetiva);
+    } catch (e) {
+      console.error(e);
+      toast.error('Não foi possível criar a sessão do aditivo.');
+      return;
+    }
+
+    // DEPOIS atualizar aditivo de prazo (só executa se sessão foi criada com sucesso)
     if (temAditivoPrazo && diasAditivoPrazo > 0) {
       try {
-        const currentPrazo = obra?.aditivo_prazo || 0;
+        // Buscar valor atual do banco para evitar race condition com estado local
+        const { data: obraAtual } = await supabase
+          .from('obras')
+          .select('aditivo_prazo')
+          .eq('id', id)
+          .single();
+        
+        const currentPrazo = obraAtual?.aditivo_prazo || 0;
         const novoPrazo = currentPrazo + diasAditivoPrazo;
         
         const { error } = await supabase
@@ -2227,16 +2244,6 @@ const criarNovaMedicao = async () => {
         console.error('Erro ao atualizar prazo:', error);
         toast.error('Erro ao atualizar aditivo de prazo.');
       }
-    }
-
-    // Criar sessão do aditivo no Supabase
-    let newSession;
-    try {
-      newSession = await createAditivoSession(id, sequenciaEfetiva);
-    } catch (e) {
-      console.error(e);
-      toast.error('Não foi possível criar a sessão do aditivo.');
-      return;
     }
 
     // Determinar número sequencial do aditivo (independente da medição)

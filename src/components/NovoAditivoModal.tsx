@@ -34,23 +34,27 @@ const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange,
 
   const handleCreate = async () => {
     if (extracontratual && !file) return; // require file if selected
+    if (submitting) return; // Prevenir double-click
+    
     setSubmitting(true);
+    // Fechar modal imediatamente para evitar double-click
+    onOpenChange(false);
+    
     try {
-      onConfirm({ 
+      await onConfirm({ 
         extracontratual, 
         file, 
         sequenciaEfetiva: sequencia,
         temAditivoPrazo,
         diasAditivoPrazo: temAditivoPrazo ? diasAditivoPrazo : 0
       });
-      onOpenChange(false);
-      // reset state
+    } finally {
+      // reset state após execução
+      setSubmitting(false);
       setExtracontratual(false);
       setFile(null);
       setTemAditivoPrazo(false);
       setDiasAditivoPrazo(0);
-    } finally {
-      setSubmitting(false);
     }
   };
 
