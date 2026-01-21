@@ -56,7 +56,7 @@ export function UserObraAccessManager({ userId, userName, isContratada, isFiscal
       if (isContratada) {
         query = query.eq('status', 'em_andamento');
       } else if (isFiscal) {
-        query = query.neq('status', 'concluido');
+        query = query.neq('status', 'concluida');
       }
 
       const { data: obrasData, error: obrasError } = await query;
