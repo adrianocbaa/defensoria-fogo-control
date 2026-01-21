@@ -47,7 +47,7 @@ export function UserObraAccessManager({ userId, userName, isContratada, isFiscal
       setLoading(true);
 
       // Para contratadas: só obras em andamento
-      // Para fiscais: excluir obras concluídas (não faz sentido editar obras já finalizadas)
+      // Para fiscais: todas as obras
       let query = supabase
         .from('obras')
         .select('id, nome, municipio, status')
@@ -55,8 +55,6 @@ export function UserObraAccessManager({ userId, userName, isContratada, isFiscal
       
       if (isContratada) {
         query = query.eq('status', 'em_andamento');
-      } else if (isFiscal) {
-        query = query.neq('status', 'concluido');
       }
 
       const { data: obrasData, error: obrasError } = await query;
