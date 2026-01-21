@@ -30,6 +30,7 @@ import {
   Video
 } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCanEditObra } from '@/hooks/useCanEditObra';
 import { toast } from 'sonner';
 import { useRdoCounts, useRdoCalendar, useRdoRecentes, useFotosRecentes } from '@/hooks/useRdoData';
 import { format } from 'date-fns';
@@ -322,7 +323,10 @@ function RDOConfig() {
 export function RDO() {
   const { obraId } = useParams();
   const navigate = useNavigate();
-  const { canEditRDO } = useUserRole();
+  const { canEditRDO, isAdmin, isContratada } = useUserRole();
+  const { canEditObra, loading: permissionLoading } = useCanEditObra(obraId);
+  // Permissão efetiva: contratada usa roleCanEdit, outros usam canEditObra ou isAdmin
+  const hasEditPermission = isAdmin || isContratada ? canEditRDO : canEditObra;
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -351,7 +355,7 @@ export function RDO() {
     fetchObra();
   }, [obraId, navigate]);
 
-  if (loading) {
+  if (loading || permissionLoading) {
     return (
       <div className="min-h-screen">
         <div className="container mx-auto py-6 space-y-6">
@@ -389,7 +393,7 @@ export function RDO() {
     );
   }
 
-  if (!canEditRDO) {
+  if (!hasEditPermission) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -402,6 +406,7 @@ export function RDO() {
           <CardContent>
             <p className="text-muted-foreground mb-4">
               Você não tem permissão para acessar o RDO desta obra.
+              Apenas o fiscal responsável ou usuários com acesso atribuído podem editar.
             </p>
             <Button onClick={() => navigate('/admin/obras')} className="w-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
