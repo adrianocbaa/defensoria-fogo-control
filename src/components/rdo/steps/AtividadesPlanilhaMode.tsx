@@ -51,6 +51,32 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     enabled: !!reportId,
   });
 
+  // Buscar contagem de notas por atividade
+  const { data: activityNotesData = [] } = useQuery({
+    queryKey: ['rdo-activity-notes-count', reportId],
+    queryFn: async () => {
+      if (!reportId) return [];
+      const { data, error } = await supabase
+        .from('rdo_activity_notes')
+        .select('activity_id')
+        .eq('report_id', reportId);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!reportId,
+  });
+
+  // Criar mapa de contagem de notas por activityId
+  const activityNotesMap = useMemo(() => {
+    const map = new Map<string, number>();
+    activityNotesData.forEach((note: any) => {
+      const count = map.get(note.activity_id) || 0;
+      map.set(note.activity_id, count + 1);
+    });
+    return map;
+  }, [activityNotesData]);
+
   // Buscar status do RDO
   const { data: rdoReport } = useQuery({
     queryKey: ['rdo-report-status', reportId],
@@ -353,6 +379,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
               isUpdating={updateExecutadoMutation.isPending}
               isRdoApproved={isDisabled}
               isContratada={isContratada}
+              activityNotes={activityNotesMap}
             />
           )}
         </CardContent>

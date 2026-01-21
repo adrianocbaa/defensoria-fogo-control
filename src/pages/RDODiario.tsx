@@ -174,10 +174,15 @@ export default function RDODiario() {
   const isConcluded = formData.status === 'concluido';
   const hasSignatures = formData.assinatura_fiscal_url || formData.assinatura_contratada_url;
   
-  // Bloquear RDO se qualquer assinatura foi validada, aprovado ou concluído
+  // Bloquear RDO se FISCAL assinou (independente de Contratada) OU se já aprovado/concluído
+  // Quando Fiscal assina, bloqueamos edição de quantitativos, permitindo apenas:
+  // - Assinatura da Contratada
+  // - Comentários
+  const fiscalSigned = !!formData.assinatura_fiscal_validado_em;
   const hasValidatedSignature = !!(formData.assinatura_fiscal_validado_em || formData.assinatura_contratada_validado_em);
   const bothSignaturesValidated = !!(formData.assinatura_fiscal_validado_em && formData.assinatura_contratada_validado_em);
-  const isLocked = hasValidatedSignature || isApproved || isConcluded;
+  // isLocked: bloqueia edição de quantitativos quando Fiscal assina
+  const isLocked = fiscalSigned || isApproved || isConcluded;
   
   // Verificar se usuário atual já concluiu
   const userHasConcluded = isContratada 
