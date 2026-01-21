@@ -109,7 +109,8 @@ export default function GerenciarObras() {
                 <AccordionContent className="px-4 pb-4">
                   <FiscalSubstitutosManager 
                     obraId={obra.id} 
-                    obraNome={obra.nome} 
+                    obraNome={obra.nome}
+                    canManage={obra.role === 'titular'}
                   />
                 </AccordionContent>
               </AccordionItem>

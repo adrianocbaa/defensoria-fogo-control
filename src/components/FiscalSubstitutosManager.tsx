@@ -17,9 +17,10 @@ interface Profile {
 interface FiscalSubstitutosManagerProps {
   obraId: string;
   obraNome: string;
+  canManage?: boolean;
 }
 
-export function FiscalSubstitutosManager({ obraId, obraNome }: FiscalSubstitutosManagerProps) {
+export function FiscalSubstitutosManager({ obraId, obraNome, canManage = true }: FiscalSubstitutosManagerProps) {
   const { substitutos, loading, addSubstituto, removeSubstituto } = useObraSubstitutos(obraId);
   const [availableUsers, setAvailableUsers] = useState<Profile[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -79,37 +80,42 @@ export function FiscalSubstitutosManager({ obraId, obraNome }: FiscalSubstitutos
           Fiscais Substitutos
         </CardTitle>
         <CardDescription>
-          Gerencie os fiscais substitutos que podem editar esta obra
+          {canManage 
+            ? 'Gerencie os fiscais substitutos que podem editar esta obra'
+            : 'Visualize os fiscais substitutos desta obra'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Adicionar novo substituto */}
-        <div className="flex gap-2">
-          <Select value={selectedUserId} onValueChange={setSelectedUserId} disabled={loadingUsers}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder={loadingUsers ? 'Carregando...' : 'Selecione um fiscal'} />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredUsers.map(user => (
-                <SelectItem key={user.user_id} value={user.user_id}>
-                  {user.display_name || user.email || 'Sem nome'}
-                </SelectItem>
-              ))}
-              {filteredUsers.length === 0 && !loadingUsers && (
-                <SelectItem value="__none" disabled>
-                  Nenhum fiscal disponível
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-          <Button 
-            onClick={handleAdd} 
-            disabled={!selectedUserId || adding}
-            size="icon"
-          >
-            <UserPlus className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Adicionar novo substituto - apenas para titulares */}
+        {canManage && (
+          <div className="flex gap-2">
+            <Select value={selectedUserId} onValueChange={setSelectedUserId} disabled={loadingUsers}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder={loadingUsers ? 'Carregando...' : 'Selecione um fiscal'} />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredUsers.map(user => (
+                  <SelectItem key={user.user_id} value={user.user_id}>
+                    {user.display_name || user.email || 'Sem nome'}
+                  </SelectItem>
+                ))}
+                {filteredUsers.length === 0 && !loadingUsers && (
+                  <SelectItem value="__none" disabled>
+                    Nenhum fiscal disponível
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            <Button 
+              onClick={handleAdd} 
+              disabled={!selectedUserId || adding}
+              size="icon"
+            >
+              <UserPlus className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
         {/* Lista de substitutos */}
         <div className="space-y-2">
@@ -134,14 +140,16 @@ export function FiscalSubstitutosManager({ obraId, obraNome }: FiscalSubstitutos
                     {sub.profile?.display_name || sub.profile?.email || 'Usuário desconhecido'}
                   </span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                  onClick={() => handleRemove(sub.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {canManage && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => handleRemove(sub.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))
           )}
