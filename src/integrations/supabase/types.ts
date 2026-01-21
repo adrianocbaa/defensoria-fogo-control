@@ -3075,6 +3075,10 @@ export type Database = {
     }
     Functions: {
       can_edit: { Args: { user_uuid?: string }; Returns: boolean }
+      can_edit_obra: {
+        Args: { obra_uuid: string; user_uuid?: string }
+        Returns: boolean
+      }
       can_edit_rdo: { Args: { user_uuid?: string }; Returns: boolean }
       can_view_sensitive_data: {
         Args: { user_uuid?: string }

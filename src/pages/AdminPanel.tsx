@@ -792,6 +792,16 @@ export default function AdminPanel() {
                                 isContratada={true}
                               />
                             )}
+
+                            {/* User Obra Access Manager for Fiscal (editor/gm) users */}
+                            {(profile.role === 'editor' || profile.role === 'gm') && (
+                              <UserObraAccessManager 
+                                userId={profile.user_id}
+                                userName={profile.display_name}
+                                isContratada={false}
+                                isFiscal={true}
+                              />
+                            )}
                           </div>
                         </CollapsibleContent>
                       </div>

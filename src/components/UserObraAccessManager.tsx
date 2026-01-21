@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Building2, Save } from 'lucide-react';
+import { Building2, Save, User } from 'lucide-react';
 
 interface UserObraAccessManagerProps {
   userId: string;
   userName: string;
   isContratada: boolean;
+  isFiscal?: boolean; // editor ou gm
 }
 
 interface Obra {
@@ -24,7 +25,7 @@ interface ObraAccess {
   obra_id: string;
 }
 
-export function UserObraAccessManager({ userId, userName, isContratada }: UserObraAccessManagerProps) {
+export function UserObraAccessManager({ userId, userName, isContratada, isFiscal = false }: UserObraAccessManagerProps) {
   const [obras, setObras] = useState<Obra[]>([]);
   const [accessedObras, setAccessedObras] = useState<Set<string>>(new Set());
   const [pendingChanges, setPendingChanges] = useState<Set<string>>(new Set());
@@ -32,22 +33,31 @@ export function UserObraAccessManager({ userId, userName, isContratada }: UserOb
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
+  // Mostrar para contratadas OU fiscais
+  const shouldShow = isContratada || isFiscal;
+
   useEffect(() => {
-    if (isContratada) {
+    if (shouldShow) {
       fetchData();
     }
-  }, [userId, isContratada]);
+  }, [userId, shouldShow]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // Fetch only obras "Em andamento"
-      const { data: obrasData, error: obrasError } = await supabase
+      // Para contratadas: só obras em andamento
+      // Para fiscais: todas as obras
+      let query = supabase
         .from('obras')
         .select('id, nome, municipio, status')
-        .eq('status', 'em_andamento')
         .order('nome');
+      
+      if (isContratada) {
+        query = query.eq('status', 'em_andamento');
+      }
+
+      const { data: obrasData, error: obrasError } = await query;
 
       if (obrasError) throw obrasError;
       setObras(obrasData || []);
@@ -133,7 +143,7 @@ export function UserObraAccessManager({ userId, userName, isContratada }: UserOb
     }
   };
 
-  if (!isContratada) {
+  if (!shouldShow) {
     return null;
   }
 
@@ -141,16 +151,19 @@ export function UserObraAccessManager({ userId, userName, isContratada }: UserOb
     pendingChanges.size !== accessedObras.size ||
     Array.from(pendingChanges).some(id => !accessedObras.has(id));
 
+  const title = isFiscal ? 'Obras que o Fiscal pode Editar' : 'Controle de Acesso a Obras';
+  const description = isFiscal 
+    ? `Selecione as obras que ${userName} poderá editar (fiscais só editam obras atribuídas a eles)`
+    : `Selecione as obras que ${userName} poderá visualizar e editar diários`;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Building2 className="h-5 w-5" />
-          Controle de Acesso a Obras
+          {isFiscal ? <User className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
+          {title}
         </CardTitle>
-        <CardDescription>
-          Selecione as obras que {userName} poderá visualizar e editar diários
-        </CardDescription>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
