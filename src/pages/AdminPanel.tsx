@@ -189,14 +189,42 @@ export default function AdminPanel() {
     }
 
     try {
-      // Save role changes
+      // Save role changes - update both profiles and user_roles tables
       for (const [userId, newRole] of roleChanges) {
-        const { error } = await supabase
+        // Update profiles table for display purposes
+        const { error: profileError } = await supabase
           .from('profiles')
           .update({ role: newRole })
           .eq('user_id', userId);
 
-        if (error) throw error;
+        if (profileError) throw profileError;
+
+        // Update user_roles table (this is where permissions are actually checked)
+        // First try to update existing record
+        const { data: existingRole, error: checkError } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existingRole) {
+          // Update existing role
+          const { error: updateError } = await supabase
+            .from('user_roles')
+            .update({ role: newRole as any })
+            .eq('user_id', userId);
+
+          if (updateError) throw updateError;
+        } else {
+          // Insert new role if none exists
+          const { error: insertError } = await supabase
+            .from('user_roles')
+            .insert({ user_id: userId, role: newRole as any });
+
+          if (insertError) throw insertError;
+        }
       }
 
       // Save sector changes
