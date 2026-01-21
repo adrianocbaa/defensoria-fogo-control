@@ -29,6 +29,7 @@ interface PlanilhaTreeViewProps {
   isUpdating: boolean;
   isRdoApproved?: boolean;
   isContratada?: boolean;
+  activityNotes?: Map<string, number>; // Map de activityId -> contagem de notas
 }
 
 export function PlanilhaTreeView({
@@ -39,7 +40,8 @@ export function PlanilhaTreeView({
   onOpenNote,
   isUpdating,
   isRdoApproved = false,
-  isContratada = false
+  isContratada = false,
+  activityNotes = new Map()
 }: PlanilhaTreeViewProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
@@ -317,18 +319,38 @@ export function PlanilhaTreeView({
           {/* Obs. - apenas para MICRO */}
           <div className="w-12 flex-shrink-0">
             {!isMacro && node.activity && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onOpenNote(
-                  node.activity.id,
-                  node.id,
-                  `${node.item} - ${node.descricao}`
-                )}
-              >
-                <MessageSquare className="h-4 w-4" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "h-8 w-8 relative",
+                        activityNotes.has(node.activity.id) && "text-primary"
+                      )}
+                      onClick={() => onOpenNote(
+                        node.activity.id,
+                        node.id,
+                        `${node.item} - ${node.descricao}`
+                      )}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      {activityNotes.has(node.activity.id) && (
+                        <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[10px] font-bold bg-primary text-primary-foreground rounded-full">
+                          {activityNotes.get(node.activity.id)}
+                        </span>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {activityNotes.has(node.activity.id) 
+                      ? `${activityNotes.get(node.activity.id)} observação(ões) registrada(s)`
+                      : 'Adicionar observação'
+                    }
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </div>

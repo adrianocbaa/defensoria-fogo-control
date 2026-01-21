@@ -18,6 +18,7 @@ interface RDOData {
   comments: any[];
   obra: any;
   media: any[];
+  activityNotes: any[]; // Observações por item de atividade
 }
 
 Deno.serve(async (req) => {
@@ -73,7 +74,7 @@ Deno.serve(async (req) => {
       .eq('tipo', modoAtividades);
     
     // Fetch all other RDO data
-    const [activitiesRes, occurrencesRes, visitsRes, equipmentRes, laborRes, commentsRes, obraRes, mediaRes] = await Promise.all([
+    const [activitiesRes, occurrencesRes, visitsRes, equipmentRes, laborRes, commentsRes, obraRes, mediaRes, activityNotesRes] = await Promise.all([
       activitiesQuery,
       supabase.from('rdo_occurrences').select('*').eq('report_id', reportId),
       supabase.from('rdo_visits').select('*').eq('report_id', reportId),
@@ -82,6 +83,7 @@ Deno.serve(async (req) => {
       supabase.from('rdo_comments').select('*').eq('report_id', reportId),
       supabase.from('obras').select('*, empresa:empresas(razao_social, nome_fantasia)').eq('id', obraId).single(),
       supabase.from('rdo_media').select('*').eq('report_id', reportId).eq('tipo', 'foto').order('created_at'),
+      supabase.from('rdo_activity_notes').select('*').eq('report_id', reportId).order('created_at'),
     ]);
 
     if (obraRes.error) throw obraRes.error;
@@ -96,7 +98,16 @@ Deno.serve(async (req) => {
       comments: commentsRes.data || [],
       obra: obraRes.data,
       media: mediaRes.data || [],
+      activityNotes: activityNotesRes.data || [],
     };
+
+    // Criar mapa de notas por activityId
+    const notesByActivityId = new Map<string, string[]>();
+    rdoData.activityNotes.forEach((note: any) => {
+      const notes = notesByActivityId.get(note.activity_id) || [];
+      notes.push(note.texto);
+      notesByActivityId.set(note.activity_id, notes);
+    });
 
     console.log('Fetched RDO data - Modo:', modoAtividades, 'Activities:', rdoData.activities.length);
 
@@ -342,13 +353,14 @@ Deno.serve(async (req) => {
 
           filteredActivities = combined;
 
-          tableHead = ['Item', 'Descrição', 'Executado', 'Un.', 'Progresso'];
+          tableHead = ['Item', 'Descrição', 'Executado', 'Un.', 'Progresso', 'Obs.'];
           columnStyles = {
-            0: { cellWidth: 18 },
-            1: { cellWidth: 95 },
-            2: { cellWidth: 22 },
-            3: { cellWidth: 15 },
-            4: { cellWidth: 25 }
+            0: { cellWidth: 16 },
+            1: { cellWidth: 75 },
+            2: { cellWidth: 20 },
+            3: { cellWidth: 12 },
+            4: { cellWidth: 20 },
+            5: { cellWidth: 32 }
           };
           break;
         }
@@ -413,12 +425,19 @@ Deno.serve(async (req) => {
                 }
               }
               
+              // Buscar observações deste item
+              const activityNotes = notesByActivityId.get(a.id) || [];
+              const observacaoTexto = activityNotes.length > 0 
+                ? activityNotes.join('; ').substring(0, 100) + (activityNotes.join('; ').length > 100 ? '...' : '')
+                : '-';
+              
               return [
                 itemCode,
                 a.descricao,
                 a.executado_dia?.toFixed(2) || '0',
                 a.unidade || '-',
-                `${progressoReal}%`
+                `${progressoReal}%`,
+                observacaoTexto
               ];
             });
         } else {
