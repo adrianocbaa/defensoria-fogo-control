@@ -64,6 +64,7 @@ import Orcamento from "./pages/Orcamento";
 import OrcamentoNovo from "./pages/OrcamentoNovo";
 import OrcamentoDetalhe from "./pages/OrcamentoDetalhe";
 import OrcamentoCurvaABC from "./pages/OrcamentoCurvaABC";
+import GerenciarObras from "./pages/GerenciarObras";
 
 const queryClient = new QueryClient();
 
@@ -338,12 +339,20 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/gerenciar-obras" 
+        element={
+          <ProtectedRoute>
+            <GerenciarObras />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/obras" 
         element={
           <ProtectedRoute>
             <Obras />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route 
         path="/admin/obras" 
