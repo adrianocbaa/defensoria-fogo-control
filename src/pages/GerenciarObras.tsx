@@ -1,16 +1,14 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { FiscalSubstitutosManager } from '@/components/FiscalSubstitutosManager';
 import { useFiscalObras } from '@/hooks/useFiscalObras';
-import { useUserRole } from '@/hooks/useUserRole';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Building2, MapPin, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Building2, MapPin, ArrowLeft } from 'lucide-react';
 
 const statusLabels: Record<string, string> = {
   planejamento: 'Planejamento',
@@ -28,7 +26,6 @@ const statusColors: Record<string, string> = {
 
 export default function GerenciarObras() {
   const { obras, loading, error } = useFiscalObras();
-  const { isAdmin } = useUserRole();
 
   if (loading) {
     return (
@@ -74,9 +71,7 @@ export default function GerenciarObras() {
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">Nenhuma obra encontrada</h3>
               <p className="text-muted-foreground">
-                {isAdmin 
-                  ? 'Você ainda não foi cadastrado como fiscal de nenhuma obra.'
-                  : 'Você não é o fiscal titular de nenhuma obra ativa.'}
+                Você não é fiscal (titular ou substituto) de nenhuma obra ativa.
               </p>
             </CardContent>
           </Card>
@@ -98,9 +93,17 @@ export default function GerenciarObras() {
                         <span>{obra.municipio}</span>
                       </div>
                     </div>
-                    <Badge className={statusColors[obra.status] || 'bg-gray-100 text-gray-800'}>
-                      {statusLabels[obra.status] || obra.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={obra.role === 'titular' ? 'default' : 'secondary'}
+                        className={obra.role === 'titular' ? 'bg-primary' : ''}
+                      >
+                        {obra.role === 'titular' ? 'Titular' : 'Substituto'}
+                      </Badge>
+                      <Badge className={statusColors[obra.status] || 'bg-gray-100 text-gray-800'}>
+                        {statusLabels[obra.status] || obra.status}
+                      </Badge>
+                    </div>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
