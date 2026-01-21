@@ -58,15 +58,34 @@ export function AuditLogsPanel() {
   const fetchAuditLogs = async () => {
     setLoading(true);
     try {
-      // Fetch audit logs (focus on security-relevant tables)
-      const { data: audits, error: auditError } = await supabase
+      // Tabelas administrativas (criação/alteração)
+      const adminTables = ['profiles', 'user_roles', 'user_obra_access'];
+      
+      // Fetch admin actions (INSERT/UPDATE apenas em tabelas admin)
+      const { data: adminAudits, error: adminError } = await supabase
         .from('audit_logs')
         .select('*')
-        .in('table_name', ['profiles', 'user_roles', 'user_obra_access', 'obras'])
+        .in('table_name', adminTables)
+        .in('operation', ['INSERT', 'UPDATE'])
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
 
-      if (auditError) throw auditError;
+      if (adminError) throw adminError;
+
+      // Fetch ALL deletes (qualquer tabela)
+      const { data: deleteAudits, error: deleteError } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('operation', 'DELETE')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (deleteError) throw deleteError;
+
+      // Combinar e ordenar por data
+      const allAudits = [...(adminAudits || []), ...(deleteAudits || [])]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 200);
 
       // Fetch login attempts
       const { data: logins, error: loginError } = await supabase
@@ -77,7 +96,7 @@ export function AuditLogsPanel() {
 
       if (loginError) throw loginError;
 
-      setAuditLogs((audits || []).map(log => ({
+      setAuditLogs(allAudits.map(log => ({
         ...log,
         operation: log.operation as 'INSERT' | 'UPDATE' | 'DELETE',
         changed_fields: log.changed_fields || [],
@@ -113,6 +132,14 @@ export function AuditLogsPanel() {
       'user_roles': 'Permissões',
       'user_obra_access': 'Acesso a Obras',
       'obras': 'Obras',
+      'rdo_entries': 'RDO',
+      'orcamentos': 'Orçamentos',
+      'orcamento_items': 'Itens de Orçamento',
+      'medicoes': 'Medições',
+      'nucleos': 'Núcleos',
+      'nucleos_central': 'Núcleos Central',
+      'cronograma': 'Cronograma',
+      'aditiveitems': 'Itens de Aditivo',
     };
     return labels[tableName] || tableName;
   };
@@ -286,16 +313,16 @@ export function AuditLogsPanel() {
               />
             </div>
             <Select value={filterTable} onValueChange={setFilterTable}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[200px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Tabela" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as tabelas</SelectItem>
-                <SelectItem value="profiles">Perfis</SelectItem>
+                <SelectItem value="profiles">Perfis de Usuário</SelectItem>
                 <SelectItem value="user_roles">Permissões</SelectItem>
                 <SelectItem value="user_obra_access">Acesso a Obras</SelectItem>
-                <SelectItem value="obras">Obras</SelectItem>
+                <SelectItem value="exclusoes">--- Exclusões ---</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterOperation} onValueChange={setFilterOperation}>
