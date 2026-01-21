@@ -654,6 +654,37 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Comments Section (rdo_comments)
+    if (rdoData.comments.length > 0) {
+      if (yPos > 240) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Comentários (${rdoData.comments.length})`, 14, yPos);
+      yPos += 5;
+
+      (doc as any).autoTable({
+        startY: yPos,
+        head: [['Data/Hora', 'Comentário']],
+        body: rdoData.comments.map(c => [
+          new Date(c.created_at).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' }),
+          c.texto || '-'
+        ]),
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 135 }
+        },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 8;
+    }
+
     // Signatures with validation timestamps - Fiscal and Contratada
     const hasFiscalSignature = rdoData.report.assinatura_fiscal_nome;
     const hasContratadaSignature = rdoData.report.assinatura_contratada_nome;
