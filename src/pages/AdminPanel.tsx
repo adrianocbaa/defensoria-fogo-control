@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { UserObraAccessManager } from '@/components/UserObraAccessManager';
 import { EmpresasManagement } from '@/components/EmpresasManagement';
 import { LicitacoesManagement } from '@/components/LicitacoesManagement';
+import { AuditLogsPanel } from '@/components/AuditLogsPanel';
 import { useEmpresas } from '@/hooks/useEmpresas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText } from 'lucide-react';
@@ -532,6 +533,10 @@ export default function AdminPanel() {
               <FileText className="h-4 w-4" />
               ATAs/Contratos
             </TabsTrigger>
+            <TabsTrigger value="auditoria" className="gap-2">
+              <Shield className="h-4 w-4" />
+              Auditoria
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="usuarios" className="space-y-4">
@@ -883,6 +888,10 @@ export default function AdminPanel() {
 
           <TabsContent value="licitacoes">
             <LicitacoesManagement />
+          </TabsContent>
+
+          <TabsContent value="auditoria">
+            <AuditLogsPanel />
           </TabsContent>
         </Tabs>
 
