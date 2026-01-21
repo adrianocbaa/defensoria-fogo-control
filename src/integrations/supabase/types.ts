@@ -1342,6 +1342,38 @@ export type Database = {
           },
         ]
       }
+      obra_fiscal_substitutos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          obra_id: string
+          substitute_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          obra_id: string
+          substitute_user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          obra_id?: string
+          substitute_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_fiscal_substitutos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obras: {
         Row: {
           aditivo_prazo: number | null
@@ -3244,6 +3276,10 @@ export type Database = {
       }
       is_admin: { Args: { user_uuid?: string }; Returns: boolean }
       is_contratada: { Args: { user_uuid?: string }; Returns: boolean }
+      is_fiscal_of_obra: {
+        Args: { obra_uuid: string; user_uuid?: string }
+        Returns: boolean
+      }
       log_login_attempt: {
         Args: {
           p_identifier: string

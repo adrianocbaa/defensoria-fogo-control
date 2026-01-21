@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { User, LogOut, Settings, ArrowLeft, BarChart3, Shield } from 'lucide-react';
+import { User, LogOut, Settings, ArrowLeft, BarChart3, Shield, Building2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
@@ -74,9 +74,19 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
                     Meu Perfil
                   </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
+                {(isAdmin || canEdit) && (
                   <>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/gerenciar-obras">
+                        <Building2 className="mr-2 h-4 w-4" />
+                        Gerenciar Obras
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {isAdmin && (
+                  <>
                     <DropdownMenuItem asChild>
                       <Link to="/admin">
                         <Shield className="mr-2 h-4 w-4" />
