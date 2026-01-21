@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { PageHeader } from '@/components/PageHeader';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useObraActionPermissions } from '@/hooks/useObraActionPermissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -59,6 +60,10 @@ export function AdminObras() {
   const [obraMarcos, setObraMarcos] = useState<Record<string, MedicaoMarco[]>>({});
   const userRole = useUserRole();
   const navigate = useNavigate();
+
+  // Pegar IDs das obras para verificar permissões
+  const obraIds = useMemo(() => obras.map(o => o.id), [obras]);
+  const { getPermission, loading: permissionsLoading } = useObraActionPermissions(obraIds);
 
   const fetchObras = async () => {
     try {
@@ -583,26 +588,36 @@ export function AdminObras() {
                           </Button>
                         )}
                         
-                        <PermissionGuard requiresEdit showMessage={false}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/admin/obras/${obra.id}/editar`)}
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(obra.id, obra.nome)}
-                            className="text-destructive hover:text-destructive"
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </PermissionGuard>
+                        {/* Botão Editar - verifica permissão granular */}
+                        {(() => {
+                          const perm = getPermission(obra.id, obra.status);
+                          return perm.canEdit ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/admin/obras/${obra.id}/editar`)}
+                              title="Editar"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          ) : null;
+                        })()}
+                        
+                        {/* Botão Excluir - verifica permissão granular */}
+                        {(() => {
+                          const perm = getPermission(obra.id, obra.status);
+                          return perm.canDelete ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(obra.id, obra.nome)}
+                              className="text-destructive hover:text-destructive"
+                              title="Excluir"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : null;
+                        })()}
                       </div>
                     </TableCell>
                   </TableRow>
