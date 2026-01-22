@@ -14,6 +14,8 @@ interface UseObraActionPermissionsReturn {
   loading: boolean;
   error: string | null;
   getPermission: (obraId: string, obraStatus: string) => ObraPermission;
+  /** Indica se o usuário pertence ao setor DIF (pode editar obras) */
+  isSetorDif: boolean;
 }
 
 /**
@@ -21,9 +23,10 @@ interface UseObraActionPermissionsReturn {
  * 
  * Regras:
  * - Admin: pode editar e excluir qualquer obra
- * - Fiscal Titular: pode editar obras em andamento, pode excluir suas obras
- * - Fiscal Substituto: pode editar apenas obras "Em Andamento", NÃO pode excluir
- * - User com acesso (user_obra_access): pode editar obras em andamento, NÃO pode excluir
+ * - Fiscal Titular (setor DIF): pode editar obras em andamento, pode excluir suas obras
+ * - Fiscal Substituto (setor DIF): pode editar apenas obras "Em Andamento", NÃO pode excluir
+ * - User com acesso (user_obra_access, setor DIF): pode editar obras em andamento, NÃO pode excluir
+ * - Usuários do setor 2ª SUB: NÃO podem editar obras, apenas visualizar
  */
 export function useObraActionPermissions(obraIds: string[]): UseObraActionPermissionsReturn {
   const { user } = useAuth();
@@ -31,6 +34,7 @@ export function useObraActionPermissions(obraIds: string[]): UseObraActionPermis
   const [permissions, setPermissions] = useState<Record<string, ObraPermission>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSetorDif, setIsSetorDif] = useState(false);
 
   const fetchPermissions = useCallback(async () => {
     if (!user || obraIds.length === 0) {
@@ -52,6 +56,33 @@ export function useObraActionPermissions(obraIds: string[]): UseObraActionPermis
           adminPermissions[id] = { canEdit: true, canDelete: true, role: 'admin' };
         });
         setPermissions(adminPermissions);
+        setIsSetorDif(true); // Admin tem acesso completo
+        setLoading(false);
+        return;
+      }
+
+      // Buscar setor atuante do usuário
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('setores_atuantes')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Erro ao buscar setor do usuário:', profileError);
+      }
+
+      const setoresAtuantes = profileData?.setores_atuantes || [];
+      const userIsSetorDif = setoresAtuantes.includes('dif');
+      setIsSetorDif(userIsSetorDif);
+
+      // Se não for do setor DIF, não pode editar nenhuma obra
+      if (!userIsSetorDif) {
+        const noEditPermissions: Record<string, ObraPermission> = {};
+        obraIds.forEach(id => {
+          noEditPermissions[id] = { canEdit: false, canDelete: false, role: 'none' };
+        });
+        setPermissions(noEditPermissions);
         setLoading(false);
         return;
       }
@@ -157,5 +188,6 @@ export function useObraActionPermissions(obraIds: string[]): UseObraActionPermis
     loading,
     error,
     getPermission,
+    isSetorDif,
   };
 }
