@@ -32,7 +32,7 @@ export function useObras(): UseObrasReturn {
       
       const { data, error: supabaseError } = await supabase
         .from('obras')
-        .select('*, empresas(razao_social)')
+        .select('*, empresas(razao_social), fiscal_profile:profiles!fiscal_id(display_name), responsavel_projeto_profile:profiles!responsavel_projeto_id(display_name)')
         .order('created_at', { ascending: false });
       
       if (supabaseError) {
@@ -53,7 +53,8 @@ export function useObras(): UseObrasReturn {
         dataInicio: obra.data_inicio || '',
         previsaoTermino: obra.previsao_termino || '',
         empresaResponsavel: (obra.empresas as any)?.razao_social || obra.empresa_responsavel || 'Não informado',
-        secretariaResponsavel: obra.secretaria_responsavel || 'Não informado',
+        secretariaResponsavel: (obra.fiscal_profile as any)?.display_name || obra.secretaria_responsavel || 'Não informado',
+        responsavelProjeto: (obra.responsavel_projeto_profile as any)?.display_name || undefined,
         fotos: Array.isArray(obra.fotos) ? obra.fotos as any[] : [],
         documentos: Array.isArray(obra.documentos) ? obra.documentos.filter((doc): doc is { nome: string; tipo: string } => 
           typeof doc === 'object' && doc !== null && 'nome' in doc && 'tipo' in doc) : [],
