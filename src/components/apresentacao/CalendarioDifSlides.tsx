@@ -152,78 +152,31 @@ export function CalendarioDifDiretrizes() {
   );
 }
 
-// Mock do Google Calendar
-export function MockGoogleCalendar() {
-  const viagens = [
-    { dia: 10, servidor: 'João Silva', destino: 'Rondonópolis', cor: 'bg-blue-500' },
-    { dia: 15, servidor: 'Maria Santos', destino: 'Sinop', cor: 'bg-green-500' },
-    { dia: 15, servidor: 'Pedro Lima', destino: 'Cuiabá', cor: 'bg-purple-500' },
-    { dia: 22, servidor: 'Ana Costa', destino: 'Cáceres', cor: 'bg-orange-500' },
-  ];
+// Imagem real do Google Calendar
+import googleCalendarImage from '@/assets/apresentacao/google-calendar-viagens.png';
 
+export function GoogleCalendarReal() {
   return (
-    <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-      <div className="bg-white px-4 py-3 border-b flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-            <Calendar className="h-5 w-5 text-white" />
-          </div>
-          <span className="font-semibold text-lg">Google Calendar</span>
-        </div>
-        <Badge variant="secondary">Viagens DIF</Badge>
+    <div className="space-y-4">
+      <div className="bg-card border rounded-lg shadow-lg overflow-hidden">
+        <img 
+          src={googleCalendarImage} 
+          alt="Google Calendar - Viagens DIF" 
+          className="w-full h-auto"
+        />
       </div>
-      
-      <div className="p-4 bg-gray-50">
-        <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-medium text-muted-foreground">
-          <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+      <div className="grid md:grid-cols-3 gap-3 text-sm">
+        <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="w-4 h-4 rounded bg-orange-500" />
+          <span>Viagens Institucionais</span>
         </div>
-        
-        <div className="grid grid-cols-7 gap-1">
-          {[...Array(35)].map((_, i) => {
-            const day = i - 2; // Começa no dia 1 na quarta-feira
-            const isValidDay = day >= 1 && day <= 31;
-            const viagemDoDia = viagens.filter(v => v.dia === day);
-            
-            return (
-              <div 
-                key={i} 
-                className={`min-h-[60px] border rounded p-1 ${
-                  isValidDay ? 'bg-white' : 'bg-gray-100'
-                }`}
-              >
-                {isValidDay && (
-                  <>
-                    <span className="text-xs font-medium">{day}</span>
-                    <div className="space-y-0.5 mt-1">
-                      {viagemDoDia.map((v, j) => (
-                        <div 
-                          key={j} 
-                          className={`${v.cor} text-white text-[8px] px-1 py-0.5 rounded truncate`}
-                        >
-                          {v.destino}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
+        <div className="flex items-center gap-2 p-3 bg-cyan-50 border border-cyan-200 rounded-lg">
+          <div className="w-4 h-4 rounded bg-cyan-500" />
+          <span>Férias e Compensatórias</span>
         </div>
-      </div>
-
-      <div className="p-4 border-t bg-white">
-        <h4 className="font-semibold text-sm mb-3">Viagens Agendadas:</h4>
-        <div className="grid grid-cols-2 gap-2">
-          {viagens.map((v, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm">
-              <div className={`w-3 h-3 rounded ${v.cor}`} />
-              <span className="text-muted-foreground">Dia {v.dia}:</span>
-              <span className="font-medium">{v.servidor}</span>
-              <ChevronRight className="h-3 w-3 text-muted-foreground" />
-              <span>{v.destino}</span>
-            </div>
-          ))}
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="w-4 h-4 rounded bg-red-500" />
+          <span>Cursos e Eventos</span>
         </div>
       </div>
     </div>
