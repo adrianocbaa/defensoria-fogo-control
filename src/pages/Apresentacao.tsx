@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -14,15 +16,30 @@ import {
   Calendar,
   Shield,
   Eye,
-  Layers,
   FileSpreadsheet,
   TrendingUp,
-  Clock,
   CheckCircle2,
   PenLine,
-  FileCheck,
-  Settings,
-  Home
+  Home,
+  MapPin,
+  Image,
+  FileUp,
+  Plus,
+  Trash2,
+  FileX,
+  AlertTriangle,
+  Camera,
+  MessageSquare,
+  Download,
+  Printer,
+  XCircle,
+  History,
+  Lock,
+  Check,
+  Save,
+  UserPlus,
+  UserMinus,
+  ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,7 +50,641 @@ interface Slide {
   title: string;
   subtitle?: string;
   content: React.ReactNode;
-  background?: string;
+}
+
+// Componente simulando o formulário de cadastro de obras
+function MockObraForm() {
+  return (
+    <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
+        <Building2 className="h-5 w-5 text-primary" />
+        <span className="font-semibold">Cadastro de Obra</span>
+      </div>
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Nome da Obra *</label>
+            <Input value="Reforma da Defensoria Pública de Cuiabá" readOnly className="h-8 text-sm bg-muted/30" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Município *</label>
+            <Input value="Cuiabá" readOnly className="h-8 text-sm bg-muted/30" />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Nº do Contrato</label>
+            <Input value="CT-2024/0123" readOnly className="h-8 text-sm bg-muted/30" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Status</label>
+            <div className="h-8 px-3 flex items-center bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+              Em Andamento
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Tipo</label>
+            <div className="h-8 px-3 flex items-center bg-muted/30 rounded-md text-sm">
+              Reforma
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Valor do Contrato</label>
+            <Input value="R$ 1.250.000,00" readOnly className="h-8 text-sm bg-muted/30" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Data de Início</label>
+            <Input value="15/01/2024" readOnly className="h-8 text-sm bg-muted/30" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Prazo (dias)</label>
+            <Input value="180" readOnly className="h-8 text-sm bg-muted/30" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Empresa Responsável</label>
+            <Input value="Construtora ABC Ltda" readOnly className="h-8 text-sm bg-muted/30" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground font-medium">Fiscal do Contrato</label>
+            <Input value="João da Silva" readOnly className="h-8 text-sm bg-muted/30" />
+          </div>
+        </div>
+        <div className="flex gap-4 pt-2">
+          <Button variant="outline" size="sm" className="gap-2">
+            <MapPin className="h-4 w-4" />
+            Selecionar Localização
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Image className="h-4 w-4" />
+            Galeria de Fotos
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2">
+            <FileUp className="h-4 w-4" />
+            Documentos
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente simulando o calendário de RDO
+function MockRdoCalendar() {
+  const days = [
+    { day: 1, status: 'aprovado', photos: 5, hasOccurrence: true },
+    { day: 2, status: 'aprovado', photos: 3 },
+    { day: 3, status: 'aprovado', photos: 8 },
+    { day: 4, status: 'semExpediente' },
+    { day: 5, status: 'semExpediente' },
+    { day: 6, status: 'aprovado', photos: 4 },
+    { day: 7, status: 'aprovado', photos: 2, hasOccurrence: true },
+    { day: 8, status: 'concluido', pendingSignature: 'fiscal' },
+    { day: 9, status: 'concluido', pendingSignature: 'contratada' },
+    { day: 10, status: 'preenchendo', photos: 1 },
+    { day: 11, status: 'semExpediente' },
+    { day: 12, status: 'semExpediente' },
+    { day: 13, status: 'falta' },
+    { day: 14, status: 'falta' },
+    { day: 15, status: null },
+  ];
+
+  const getStatusStyle = (status: string | null) => {
+    switch(status) {
+      case 'aprovado': return 'bg-green-100 dark:bg-green-950/30 border-green-300 text-green-800';
+      case 'concluido': return 'bg-blue-100 dark:bg-blue-950/30 border-blue-300 text-blue-800';
+      case 'preenchendo': return 'bg-orange-100 dark:bg-orange-950/30 border-orange-300 text-orange-800';
+      case 'semExpediente': return 'bg-slate-100 dark:bg-slate-800/50 border-slate-300 text-slate-600';
+      case 'falta': return 'bg-amber-50 dark:bg-amber-950/20 border-amber-300';
+      default: return 'bg-card border-border hover:bg-accent/50';
+    }
+  };
+
+  return (
+    <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-muted/50 px-4 py-3 border-b flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Calendário de RDO</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ChevronLeft className="h-4 w-4" />
+          <span className="text-sm font-medium">Janeiro 2024</span>
+          <ChevronRight className="h-4 w-4" />
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-medium text-muted-foreground">
+          <div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div><div>Dom</div>
+        </div>
+        <div className="grid grid-cols-7 gap-2">
+          {days.map((d, i) => (
+            <div 
+              key={i} 
+              className={`aspect-square border rounded-lg p-1.5 relative transition-colors cursor-pointer text-center ${getStatusStyle(d.status)}`}
+            >
+              <span className="text-sm font-medium">{d.day}</span>
+              {d.photos && (
+                <div className="absolute bottom-1 left-1 flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                  <Camera className="h-2.5 w-2.5" />
+                  {d.photos}
+                </div>
+              )}
+              {d.hasOccurrence && (
+                <div className="absolute bottom-1 right-1">
+                  <MessageSquare className="h-2.5 w-2.5 text-orange-500" />
+                </div>
+              )}
+              {d.pendingSignature && (
+                <div className="absolute top-1 right-1">
+                  <AlertTriangle className="h-3 w-3 text-amber-500" />
+                </div>
+              )}
+              {d.status === 'falta' && (
+                <div className="absolute top-1 right-1">
+                  <AlertTriangle className="h-3 w-3 text-red-500" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3 mt-4 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-green-200 border border-green-400" />
+            <span>Aprovado</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-blue-200 border border-blue-400" />
+            <span>Concluído</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-orange-200 border border-orange-400" />
+            <span>Preenchendo</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-slate-200 border border-slate-400" />
+            <span>Sem Expediente</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <AlertTriangle className="h-3 w-3 text-amber-500" />
+            <span>Assinatura Pendente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Ícones de ação do RDO
+function MockRdoActions() {
+  const actions = [
+    { icon: Plus, label: 'Criar RDO', color: 'text-green-600', desc: 'Clique em um dia vazio' },
+    { icon: FileX, label: 'Sem Atividade', color: 'text-slate-600', desc: 'Dia sem expediente na obra' },
+    { icon: Eye, label: 'Visualizar', color: 'text-blue-600', desc: 'Ver detalhes do RDO' },
+    { icon: PenLine, label: 'Editar', color: 'text-orange-600', desc: 'Modificar informações' },
+    { icon: Download, label: 'Baixar PDF', color: 'text-red-600', desc: 'Exportar relatório' },
+    { icon: Printer, label: 'Imprimir Lote', color: 'text-purple-600', desc: 'Múltiplos RDOs' },
+    { icon: Trash2, label: 'Excluir', color: 'text-red-500', desc: 'Remover RDO (admin)' },
+  ];
+
+  return (
+    <div className="bg-card border rounded-lg p-4">
+      <h4 className="font-semibold mb-3 flex items-center gap-2">
+        <ClipboardCheck className="h-4 w-4 text-primary" />
+        Ações Disponíveis no Calendário
+      </h4>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {actions.map((a, i) => (
+          <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+            <a.icon className={`h-5 w-5 ${a.color}`} />
+            <div>
+              <p className="text-sm font-medium">{a.label}</p>
+              <p className="text-[10px] text-muted-foreground">{a.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Lista de serviços do RDO
+function MockServicesList() {
+  const services = [
+    { code: '01.01.01', desc: 'Demolição de alvenaria', unit: 'm³', qty: 15.50, total: 45.00 },
+    { code: '01.02.03', desc: 'Remoção de revestimento cerâmico', unit: 'm²', qty: 28.00, total: 120.00 },
+    { code: '02.01.01', desc: 'Alvenaria de tijolo cerâmico', unit: 'm²', qty: 35.00, total: 35.00 },
+    { code: '03.01.02', desc: 'Chapisco interno', unit: 'm²', qty: 42.00, total: 42.00 },
+    { code: '03.02.01', desc: 'Reboco interno', unit: 'm²', qty: 0, total: 0 },
+  ];
+
+  return (
+    <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-muted/50 px-4 py-3 border-b flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileSpreadsheet className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Atividades do Dia - RDO #042</span>
+        </div>
+        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+          Preenchendo
+        </Badge>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left">
+            <tr>
+              <th className="px-3 py-2 font-medium">Código</th>
+              <th className="px-3 py-2 font-medium">Descrição do Serviço</th>
+              <th className="px-3 py-2 font-medium text-center">Un.</th>
+              <th className="px-3 py-2 font-medium text-right">Qtd. Hoje</th>
+              <th className="px-3 py-2 font-medium text-right">Acumulado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {services.map((s, i) => (
+              <tr key={i} className="border-t hover:bg-muted/30">
+                <td className="px-3 py-2 font-mono text-xs">{s.code}</td>
+                <td className="px-3 py-2">{s.desc}</td>
+                <td className="px-3 py-2 text-center text-muted-foreground">{s.unit}</td>
+                <td className="px-3 py-2 text-right">
+                  <Input 
+                    value={s.qty > 0 ? s.qty.toFixed(2) : ''} 
+                    readOnly 
+                    className="h-7 w-20 text-right text-sm ml-auto bg-amber-50 border-amber-200" 
+                    placeholder="0,00"
+                  />
+                </td>
+                <td className="px-3 py-2 text-right font-medium">{s.total.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-4 py-3 bg-muted/30 border-t flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          <AlertTriangle className="h-3 w-3 inline mr-1 text-amber-500" />
+          A <strong>Contratada</strong> preenche os quantitativos executados no dia
+        </p>
+        <Button size="sm" className="gap-2">
+          <Save className="h-4 w-4" />
+          Salvar Atividades
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Simulação de assinaturas e histórico
+function MockSignaturesPanel() {
+  return (
+    <div className="space-y-4">
+      {/* Histórico de reprovações */}
+      <div className="bg-card border border-amber-200 rounded-lg overflow-hidden">
+        <div className="bg-amber-50 px-4 py-3 flex items-center gap-2 cursor-pointer">
+          <History className="h-5 w-5 text-amber-600" />
+          <span className="font-semibold text-amber-800">Histórico de Reprovações (2)</span>
+          <ChevronDown className="h-4 w-4 text-amber-600 ml-auto" />
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+            <XCircle className="h-5 w-5 text-red-500 shrink-0" />
+            <div className="text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-red-700">Reprovação #2</span>
+                <span className="text-muted-foreground">• 08/01/2024 14:32</span>
+              </div>
+              <p className="mt-1"><strong>Motivo:</strong> Faltam fotos das fundações concluídas</p>
+            </div>
+          </div>
+          <div className="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+            <XCircle className="h-5 w-5 text-red-500 shrink-0" />
+            <div className="text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-red-700">Reprovação #1</span>
+                <span className="text-muted-foreground">• 08/01/2024 10:15</span>
+              </div>
+              <p className="mt-1"><strong>Motivo:</strong> Quantidade do item 01.02.03 está incorreta</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Painel de assinaturas */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="border-green-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              Fiscal/Gestor (DPE-MT)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <p className="text-xs text-muted-foreground">Assinado por</p>
+              <p className="font-medium text-sm">João da Silva</p>
+              <p className="text-xs text-muted-foreground">Fiscal de Obras</p>
+              <p className="text-xs text-muted-foreground mt-1">08/01/2024 às 16:45</p>
+            </div>
+            <Badge className="bg-green-100 text-green-800 border-green-300">
+              ✓ Validado
+            </Badge>
+          </CardContent>
+        </Card>
+
+        <Card className="border-green-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              Responsável Técnico (Contratada)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <p className="text-xs text-muted-foreground">Assinado por</p>
+              <p className="font-medium text-sm">Maria Oliveira</p>
+              <p className="text-xs text-muted-foreground">Engenheira Civil - CREA 12345</p>
+              <p className="text-xs text-muted-foreground mt-1">08/01/2024 às 15:30</p>
+            </div>
+            <Badge className="bg-green-100 text-green-800 border-green-300">
+              ✓ Validado
+            </Badge>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Status final */}
+      <div className="flex items-center justify-center gap-2 p-4 bg-green-50 rounded-lg border border-green-200">
+        <Lock className="h-5 w-5 text-green-600" />
+        <span className="font-semibold text-green-800">RDO Aprovado e Bloqueado</span>
+      </div>
+    </div>
+  );
+}
+
+// Simulação de RDO impresso
+function MockPrintedRdo() {
+  return (
+    <div className="bg-white border-2 border-gray-300 rounded shadow-lg p-6 max-w-2xl mx-auto text-black text-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b-2 border-gray-400 pb-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+            LOGO
+          </div>
+          <div>
+            <h1 className="font-bold text-lg">RELATÓRIO DIÁRIO DE OBRA</h1>
+            <p className="text-xs text-gray-600">Defensoria Pública do Estado de Mato Grosso</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="font-bold text-2xl">RDO #042</p>
+          <p className="text-xs text-gray-600">08/01/2024</p>
+        </div>
+      </div>
+
+      {/* Info da Obra */}
+      <div className="grid grid-cols-2 gap-4 mb-4 text-xs">
+        <div>
+          <p className="text-gray-500">Obra:</p>
+          <p className="font-medium">Reforma da Defensoria Pública de Cuiabá</p>
+        </div>
+        <div>
+          <p className="text-gray-500">Contrato:</p>
+          <p className="font-medium">CT-2024/0123</p>
+        </div>
+        <div>
+          <p className="text-gray-500">Contratada:</p>
+          <p className="font-medium">Construtora ABC Ltda</p>
+        </div>
+        <div>
+          <p className="text-gray-500">Condições Climáticas:</p>
+          <p className="font-medium">☀️ Ensolarado - 32°C</p>
+        </div>
+      </div>
+
+      {/* Tabela de Atividades */}
+      <div className="border rounded mb-4">
+        <div className="bg-gray-100 px-3 py-2 font-bold text-xs border-b">
+          ATIVIDADES EXECUTADAS
+        </div>
+        <table className="w-full text-xs">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-2 py-1 text-left border-b">Código</th>
+              <th className="px-2 py-1 text-left border-b">Descrição</th>
+              <th className="px-2 py-1 text-center border-b">Un.</th>
+              <th className="px-2 py-1 text-right border-b">Qtd.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td className="px-2 py-1 border-b">01.01.01</td><td className="px-2 py-1 border-b">Demolição de alvenaria</td><td className="px-2 py-1 text-center border-b">m³</td><td className="px-2 py-1 text-right border-b">15,50</td></tr>
+            <tr><td className="px-2 py-1 border-b">01.02.03</td><td className="px-2 py-1 border-b">Remoção de revestimento cerâmico</td><td className="px-2 py-1 text-center border-b">m²</td><td className="px-2 py-1 text-right border-b">28,00</td></tr>
+            <tr><td className="px-2 py-1">02.01.01</td><td className="px-2 py-1">Alvenaria de tijolo cerâmico</td><td className="px-2 py-1 text-center">m²</td><td className="px-2 py-1 text-right">35,00</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mão de Obra e Equipamentos */}
+      <div className="grid grid-cols-2 gap-4 mb-4 text-xs">
+        <div className="border rounded p-2">
+          <p className="font-bold mb-1">MÃO DE OBRA</p>
+          <p>Pedreiro: 4 | Servente: 6 | Eletricista: 2</p>
+        </div>
+        <div className="border rounded p-2">
+          <p className="font-bold mb-1">EQUIPAMENTOS</p>
+          <p>Betoneira: 1 | Andaime: 3 conjuntos</p>
+        </div>
+      </div>
+
+      {/* Assinaturas */}
+      <div className="grid grid-cols-2 gap-6 mt-6 pt-4 border-t-2 border-gray-400">
+        <div className="text-center">
+          <div className="border-b border-gray-400 h-12 mb-1 flex items-end justify-center italic text-gray-400 text-xs">
+            [Assinatura Digital]
+          </div>
+          <p className="font-medium">João da Silva</p>
+          <p className="text-xs text-gray-500">Fiscal de Obras - DPE/MT</p>
+          <p className="text-xs text-gray-500">08/01/2024 16:45</p>
+        </div>
+        <div className="text-center">
+          <div className="border-b border-gray-400 h-12 mb-1 flex items-end justify-center italic text-gray-400 text-xs">
+            [Assinatura Digital]
+          </div>
+          <p className="font-medium">Maria Oliveira</p>
+          <p className="text-xs text-gray-500">Eng. Civil - CREA 12345</p>
+          <p className="text-xs text-gray-500">08/01/2024 15:30</p>
+        </div>
+      </div>
+
+      {/* QR Code placeholder */}
+      <div className="flex items-center justify-between mt-4 pt-4 border-t text-xs text-gray-500">
+        <div className="flex items-center gap-2">
+          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[8px]">
+            QR CODE
+          </div>
+          <div>
+            <p>Documento verificável em:</p>
+            <p className="font-mono">sidif.lovable.app/rdo/verify/abc123</p>
+          </div>
+        </div>
+        <p>Gerado em: 08/01/2024 17:00</p>
+      </div>
+    </div>
+  );
+}
+
+// Simulação do gerenciamento de permissões
+function MockPermissionsManager() {
+  const obras = [
+    { nome: 'Reforma DP Cuiabá', role: 'titular', substitutos: ['Ana Paula', 'Carlos Souza'] },
+    { nome: 'Construção DP Rondonópolis', role: 'titular', substitutos: [] },
+    { nome: 'Adequações DP Sinop', role: 'autorizado', substitutos: null },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
+          <Shield className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Minhas Obras - Gerenciar Acessos</span>
+        </div>
+        <div className="divide-y">
+          {obras.map((obra, i) => (
+            <div key={i} className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{obra.nome}</span>
+                </div>
+                <Badge variant={obra.role === 'titular' ? 'default' : 'secondary'}>
+                  {obra.role === 'titular' ? 'Fiscal Titular' : 'Autorizado'}
+                </Badge>
+              </div>
+              
+              {obra.role === 'titular' && (
+                <div className="ml-6 mt-3 p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Servidores Autorizados:</span>
+                    <Button variant="outline" size="sm" className="h-7 gap-1">
+                      <UserPlus className="h-3 w-3" />
+                      Adicionar
+                    </Button>
+                  </div>
+                  {obra.substitutos && obra.substitutos.length > 0 ? (
+                    <div className="space-y-2">
+                      {obra.substitutos.map((sub, j) => (
+                        <div key={j} className="flex items-center justify-between bg-card p-2 rounded border">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{sub}</span>
+                            <Badge variant="outline" className="text-xs">Autorizado</Badge>
+                          </div>
+                          <Button variant="ghost" size="sm" className="h-7 text-red-500 hover:text-red-700">
+                            <UserMinus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">Nenhum servidor autorizado</p>
+                  )}
+                </div>
+              )}
+              
+              {obra.role === 'autorizado' && (
+                <p className="ml-6 text-sm text-muted-foreground italic">
+                  Você tem permissão de edição nesta obra
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Regras de Permissão
+          </h4>
+          <ul className="text-sm text-blue-700 space-y-1">
+            <li>• <strong>Fiscal Titular:</strong> Acesso total + pode autorizar outros servidores</li>
+            <li>• <strong>Autorizado:</strong> Pode editar apenas obras "Em Andamento"</li>
+            <li>• <strong>Sem vínculo:</strong> Apenas visualização (sem edição)</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Tipos de medição
+function MockMedicaoTypes() {
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <Card className="border-2 border-orange-200 bg-orange-50/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <FileSpreadsheet className="h-5 w-5 text-orange-600" />
+            Medição Manual
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            O fiscal insere manualmente os quantitativos executados de cada serviço.
+          </p>
+          <ul className="text-sm space-y-1">
+            <li className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-600" />
+              Flexibilidade total
+            </li>
+            <li className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-600" />
+              Útil para ajustes pontuais
+            </li>
+            <li className="flex items-center gap-2 text-muted-foreground">
+              <XCircle className="h-4 w-4 text-red-400" />
+              Sem rastreabilidade diária
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card className="border-2 border-green-300 bg-green-50/50 ring-2 ring-green-400 ring-offset-2">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ClipboardCheck className="h-5 w-5 text-green-600" />
+              Medição por RDO
+            </CardTitle>
+            <Badge className="bg-green-600">Recomendado</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Sistema importa automaticamente os quantitativos dos RDOs aprovados no período.
+          </p>
+          <ul className="text-sm space-y-1">
+            <li className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-600" />
+              Rastreabilidade completa
+            </li>
+            <li className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-600" />
+              Dados validados por assinatura
+            </li>
+            <li className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-600" />
+              Obrigatório em novos contratos
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export default function Apresentacao() {
@@ -105,62 +756,94 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 3 - Módulo Obras
+    // SLIDE 3 - Cadastro de Obras (VISUAL)
     {
       id: 3,
-      title: 'Módulo de Obras',
-      subtitle: 'Cadastro e acompanhamento completo de obras públicas',
+      title: 'Cadastro de Obras',
+      subtitle: 'Formulário completo com todas as informações contratuais',
       content: (
-        <div className="grid md:grid-cols-2 gap-8 mt-6">
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              Informações Cadastrais
-            </h3>
-            <ul className="space-y-3">
-              {[
-                'Nome e localização da obra',
-                'Empresa contratada e contrato',
-                'Valores e prazos contratuais',
-                'Fiscal responsável e substitutos',
-                'Localização geográfica no mapa'
-              ].map((item, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-              <Eye className="h-5 w-5 text-primary" />
-              Acompanhamento Visual
-            </h3>
-            <ul className="space-y-3">
-              {[
-                'Galeria de fotos por período',
-                'Documentos anexados',
-                'Status em tempo real',
-                'Progresso de execução',
-                'Histórico de alterações'
-              ].map((item, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="mt-4">
+          <MockObraForm />
         </div>
       ),
     },
 
-    // SLIDE 4 - Gerenciar Obras
+    // SLIDE 4 - Acompanhamento Visual
     {
       id: 4,
+      title: 'Acompanhamento Visual',
+      subtitle: 'Fotos, documentos e progresso em tempo real',
+      content: (
+        <div className="grid md:grid-cols-2 gap-6 mt-6">
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Image className="h-4 w-4 text-primary" />
+                Galeria de Fotos por Período
+              </h4>
+              <div className="grid grid-cols-4 gap-2">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+                    <Camera className="h-6 w-6 text-muted-foreground/50" />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Fotos organizadas por mês de execução</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Progresso de Execução
+              </h4>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Execução Física</span>
+                    <span className="font-bold">68%</span>
+                  </div>
+                  <Progress value={68} className="h-3" />
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Execução Financeira</span>
+                    <span className="font-bold">62%</span>
+                  </div>
+                  <Progress value={62} className="h-3" />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
+                  <span>Valor Executado: R$ 850.000,00</span>
+                  <span>Total: R$ 1.250.000,00</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="md:col-span-2">
+            <CardContent className="p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <FileUp className="h-4 w-4 text-primary" />
+                Documentos Anexados
+              </h4>
+              <div className="grid grid-cols-4 gap-3">
+                {['Contrato.pdf', 'ART.pdf', 'Projeto.dwg', 'Planilha.xlsx'].map((doc, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                    <FileText className="h-4 w-4 text-red-500" />
+                    <span className="text-sm truncate">{doc}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ),
+    },
+
+    // SLIDE 5 - Gerenciar Obras (Simplificado)
+    {
+      id: 5,
       title: 'Gerenciar Obras',
-      subtitle: 'Visão consolidada de todas as obras sob sua responsabilidade',
+      subtitle: 'Visão consolidada para gestão administrativa',
       content: (
         <div className="space-y-6 mt-6">
           <div className="grid md:grid-cols-4 gap-4">
@@ -181,18 +864,18 @@ export default function Apresentacao() {
           </div>
           <Card>
             <CardContent className="p-4">
-              <h4 className="font-semibold mb-3">Funcionalidades da Página</h4>
+              <h4 className="font-semibold mb-3">Funcionalidades Principais</h4>
               <div className="grid md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-blue-500" />
-                  <span>Barra de progresso por obra</span>
+                  <BarChart3 className="h-4 w-4 text-blue-500" />
+                  <span>Mapa de obras por região</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-green-500" />
                   <span>Gestão de acessos autorizados</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Settings className="h-4 w-4 text-orange-500" />
+                  <Calendar className="h-4 w-4 text-orange-500" />
                   <span>Ações rápidas (RDO, Medição)</span>
                 </div>
               </div>
@@ -202,241 +885,19 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 5 - Sistema de Medições
-    {
-      id: 5,
-      title: 'Sistema de Medições',
-      subtitle: 'Controle financeiro preciso e transparente',
-      content: (
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
-          <Card className="border-2 border-primary/20">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-primary" />
-                Planilha Orçamentária
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li>• Importação de planilha Excel</li>
-                <li>• Itens organizados hierarquicamente</li>
-                <li>• Cálculo automático de totais</li>
-                <li>• Aplicação de desconto contratual</li>
-                <li>• Visualização por MACROs e itens</li>
-              </ul>
-            </CardContent>
-          </Card>
-          <Card className="border-2 border-primary/20">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Layers className="h-5 w-5 text-primary" />
-                Sessões de Medição
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li>• Medições sequenciais numeradas</li>
-                <li>• Inserção de quantitativos executados</li>
-                <li>• Acumulado automático</li>
-                <li>• Bloqueio após finalização</li>
-                <li>• Histórico completo de alterações</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      ),
-    },
-
-    // SLIDE 6 - Aditivos Contratuais
+    // SLIDE 6 - Tipos de Medição
     {
       id: 6,
-      title: 'Aditivos Contratuais',
-      subtitle: 'Gestão completa de aditivos de valor e prazo',
+      title: 'Sistema de Medições',
+      subtitle: 'Dois modos de trabalho: Manual ou via RDO',
       content: (
-        <div className="space-y-6 mt-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-3">Aditivo de Valor</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Inclusão de novos itens ou alteração de quantitativos contratuais
-                </p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Valor Original:</span>
-                    <span className="font-mono">R$ 1.500.000,00</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>+ 1º Aditivo:</span>
-                    <span className="font-mono">R$ 250.000,00</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-bold">
-                    <span>Valor Pós-Aditivo:</span>
-                    <span className="font-mono">R$ 1.750.000,00</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-3">Aditivo de Prazo</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Extensão do prazo contratual com atualização automática
-                </p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Prazo Original:</span>
-                    <span className="font-mono">180 dias</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-amber-600">
-                    <span>+ 1º Aditivo:</span>
-                    <span className="font-mono">60 dias</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-bold">
-                    <span>Prazo Final:</span>
-                    <span className="font-mono">240 dias</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      ),
-    },
-
-    // SLIDE 7 - Cronograma Físico-Financeiro
-    {
-      id: 7,
-      title: 'Cronograma Físico-Financeiro',
-      subtitle: 'Acompanhamento visual do planejado vs. executado',
-      content: (
-        <div className="space-y-6 mt-6">
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-bold mb-4 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                Gráfico Comparativo
-              </h3>
-              <div className="h-48 flex items-end justify-around gap-4 bg-muted/30 rounded-lg p-4">
-                {[
-                  { plan: 10, exec: 8 },
-                  { plan: 25, exec: 22 },
-                  { plan: 45, exec: 40 },
-                  { plan: 65, exec: 55 },
-                  { plan: 80, exec: 68 },
-                  { plan: 100, exec: 75 },
-                ].map((m, i) => (
-                  <div key={i} className="flex gap-1 items-end">
-                    <div 
-                      className="w-6 bg-blue-500 rounded-t" 
-                      style={{ height: `${m.plan * 1.5}px` }} 
-                      title={`Previsto: ${m.plan}%`}
-                    />
-                    <div 
-                      className="w-6 bg-green-500 rounded-t" 
-                      style={{ height: `${m.exec * 1.5}px` }} 
-                      title={`Executado: ${m.exec}%`}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-center gap-6 mt-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded" />
-                  <span>Previsto</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded" />
-                  <span>Executado</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <div className="grid md:grid-cols-3 gap-4 text-center">
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Importação</p>
-                <p className="font-semibold">Planilha Excel padrão</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Visualização</p>
-                <p className="font-semibold">Mensal ou Acumulado</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Análise</p>
-                <p className="font-semibold">Desvio Previsto x Real</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      ),
-    },
-
-    // SLIDE 8 - RDO Visão Geral
-    {
-      id: 8,
-      title: 'Relatório Diário de Obra (RDO)',
-      subtitle: 'Registro diário completo das atividades em campo',
-      content: (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          {[
-            { icon: Calendar, title: 'Calendário', desc: 'Visualização mensal de todos os RDOs' },
-            { icon: ClipboardCheck, title: 'Atividades', desc: 'Serviços executados no dia' },
-            { icon: Users, title: 'Mão de Obra', desc: 'Equipe presente (direta e indireta)' },
-            { icon: Settings, title: 'Equipamentos', desc: 'Máquinas e equipamentos utilizados' },
-            { icon: FileText, title: 'Ocorrências', desc: 'Registro de eventos e observações' },
-            { icon: PenLine, title: 'Assinaturas', desc: 'Validação por Fiscal e Contratada' },
-          ].map((item, i) => (
-            <Card key={i} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <item.icon className="h-8 w-8 text-primary mb-2" />
-                <h4 className="font-semibold">{item.title}</h4>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ),
-    },
-
-    // SLIDE 9 - Fluxo de Aprovação RDO
-    {
-      id: 9,
-      title: 'Fluxo de Aprovação do RDO',
-      subtitle: 'Processo de validação com assinaturas digitais',
-      content: (
-        <div className="mt-8">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-            {[
-              { step: 1, title: 'Preenchimento', desc: 'Contratada insere dados', color: 'bg-blue-500' },
-              { step: 2, title: 'Assinatura Contratada', desc: 'Validação inicial', color: 'bg-amber-500' },
-              { step: 3, title: 'Assinatura Fiscal', desc: 'Aprovação final', color: 'bg-green-500' },
-              { step: 4, title: 'RDO Aprovado', desc: 'Documento bloqueado', color: 'bg-primary' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center">
-                <Card className="w-48">
-                  <CardContent className="p-4 text-center">
-                    <div className={`w-10 h-10 rounded-full ${item.color} text-white flex items-center justify-center mx-auto mb-2 text-lg font-bold`}>
-                      {item.step}
-                    </div>
-                    <h4 className="font-semibold text-sm">{item.title}</h4>
-                    <p className="text-xs text-muted-foreground">{item.desc}</p>
-                  </CardContent>
-                </Card>
-                {i < 3 && (
-                  <ChevronRight className="h-6 w-6 text-muted-foreground mx-2 hidden md:block" />
-                )}
-              </div>
-            ))}
-          </div>
-          <Card className="mt-8 border-amber-200 bg-amber-50 dark:bg-amber-950">
+        <div className="mt-6 space-y-6">
+          <MockMedicaoTypes />
+          <Card className="bg-amber-50 border-amber-200">
             <CardContent className="p-4">
-              <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">
-                ⚠️ Importante
-              </h4>
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                Após ambas as assinaturas serem validadas, o RDO torna-se imutável. 
-                Nenhuma alteração pode ser feita após a aprovação final.
+              <p className="text-sm text-amber-800">
+                <strong>⚠️ Importante:</strong> A partir dos novos contratos, será obrigatório que a Contratada preencha o RDO diariamente. 
+                Isso garantirá rastreabilidade total dos quantitativos executados.
               </p>
             </CardContent>
           </Card>
@@ -444,114 +905,63 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 10 - Exportações e Relatórios
+    // SLIDE 7 - RDO Calendário Visual
     {
-      id: 10,
-      title: 'Exportações e Relatórios',
-      subtitle: 'Documentos gerados automaticamente pelo sistema',
+      id: 7,
+      title: 'Calendário de RDO',
+      subtitle: 'Visualização mensal com status e indicadores',
       content: (
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                <FileText className="h-5 w-5 text-red-500" />
-                Relatórios PDF
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  RDO individual ou em lote
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Relatório Técnico de Medição
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Planilha de Medição formatada
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Curva ABC de serviços
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-green-600" />
-                Planilhas Excel
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Relatório de Atividades do RDO
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Exportação da planilha orçamentária
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Cronograma físico-financeiro
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Dados para análise externa
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+        <div className="mt-4 space-y-4">
+          <MockRdoCalendar />
+          <MockRdoActions />
         </div>
       ),
     },
 
-    // SLIDE 11 - Permissões e Segurança
+    // SLIDE 8 - RDO Lista de Serviços
+    {
+      id: 8,
+      title: 'Preenchimento de Atividades',
+      subtitle: 'A Contratada insere os quantitativos executados no dia',
+      content: (
+        <div className="mt-4">
+          <MockServicesList />
+        </div>
+      ),
+    },
+
+    // SLIDE 9 - Assinaturas e Histórico
+    {
+      id: 9,
+      title: 'Assinaturas e Validação',
+      subtitle: 'Fluxo de aprovação com histórico de reprovações',
+      content: (
+        <div className="mt-4">
+          <MockSignaturesPanel />
+        </div>
+      ),
+    },
+
+    // SLIDE 10 - RDO Impresso
+    {
+      id: 10,
+      title: 'RDO Impresso',
+      subtitle: 'Documento gerado automaticamente pelo sistema',
+      content: (
+        <div className="mt-4 overflow-auto max-h-[500px]">
+          <MockPrintedRdo />
+        </div>
+      ),
+    },
+
+    // SLIDE 11 - Permissões
     {
       id: 11,
       title: 'Permissões e Segurança',
-      subtitle: 'Controle de acesso granular por obra',
+      subtitle: 'Como o fiscal gerencia suas obras e acessos autorizados',
       content: (
-        <div className="space-y-6 mt-6">
-          <div className="grid md:grid-cols-3 gap-4">
-            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
-              <CardContent className="p-4 text-center">
-                <Shield className="h-10 w-10 mx-auto mb-2 text-blue-600" />
-                <h4 className="font-bold">Fiscal Titular</h4>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Acesso total à obra. Pode autorizar outros servidores.
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-green-200 bg-green-50 dark:bg-green-950">
-              <CardContent className="p-4 text-center">
-                <Users className="h-10 w-10 mx-auto mb-2 text-green-600" />
-                <h4 className="font-bold">Acesso Autorizado</h4>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Edição permitida apenas em obras "Em Andamento".
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950">
-              <CardContent className="p-4 text-center">
-                <Eye className="h-10 w-10 mx-auto mb-2 text-orange-600" />
-                <h4 className="font-bold">Visualização</h4>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Outros fiscais podem visualizar, mas não editar.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-          <Card>
-            <CardContent className="p-4">
-              <h4 className="font-semibold mb-2">Histórico de Alterações</h4>
-              <p className="text-sm text-muted-foreground">
-                Todas as ações são registradas: salvamentos, reaberturas, importações, exportações e alterações de status.
-                O histórico completo fica disponível na página de medição de cada obra.
-              </p>
-            </CardContent>
-          </Card>
+        <div className="mt-4">
+          <MockPermissionsManager />
         </div>
       ),
     },
@@ -640,7 +1050,7 @@ export default function Apresentacao() {
       </div>
 
       {/* Conteúdo do Slide */}
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
         <div className="w-full max-w-5xl">
           <AnimatePresence mode="wait">
             <motion.div
