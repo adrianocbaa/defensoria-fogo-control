@@ -32,6 +32,7 @@ import { useAditivoSessions } from '@/hooks/useAditivoSessions';
 import { useAditivoItems } from '@/hooks/useAditivoItems';
 import { ResumoContrato } from '@/components/ResumoContrato';
 import { ObraAuditLogs } from '@/components/ObraAuditLogs';
+import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import * as XLSX from 'xlsx';
 import html2pdf from 'html2pdf.js';
 
@@ -119,6 +120,17 @@ export function Medicao() {
   const { createSession: createAditivoSession, reopenSession: reopenAditivoSession, deleteSession: deleteAditivoSession, fetchSessionsWithItems: fetchAditivoSessions, blockSession: blockAditivoSession } = useAditivoSessions();
   const { upsertItems } = useMedicaoItems();
   const { upsertItems: upsertAditivoItems } = useAditivoItems();
+  const { 
+    logMedicaoSalva, 
+    logMedicaoBloqueada, 
+    logMedicaoReaberta, 
+    logAditivoCriado, 
+    logAditivoBloqueado, 
+    logAditivoReaberto,
+    logPlanilhaImportada,
+    logCronogramaImportado,
+    logRelatorioExportado
+  } = useObraActionLogs();
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -1007,6 +1019,12 @@ export function Medicao() {
       await upsertAditivoItems(ad.sessionId, payload);
       await blockAditivoSession(ad.sessionId);
       setAditivos(prev => prev.map(a => a.id === aditivoLocalId ? { ...a, bloqueada: true } : a));
+      
+      // Registrar ação no log
+      if (obra) {
+        logAditivoBloqueado(obra.id, aditivoLocalId);
+      }
+      
       toast.success('Aditivo publicado.');
     } catch (e) {
       console.error(e);
@@ -1020,6 +1038,12 @@ export function Medicao() {
     try {
       await reopenAditivoSession(ad.sessionId);
       setAditivos(prev => prev.map(a => a.id === aditivoLocalId ? { ...a, bloqueada: false } : a));
+      
+      // Registrar ação no log
+      if (obra) {
+        logAditivoReaberto(obra.id, aditivoLocalId);
+      }
+      
       toast.success(`${ad.nome} liberado para edição.`);
     } catch (e) {
       console.error(e);
@@ -2274,6 +2298,10 @@ const criarNovaMedicao = async () => {
       localStorage.setItem(mapKey, JSON.stringify(current));
     } catch {}
 
+    // Registrar ação de criação de aditivo
+    if (obra) {
+      logAditivoCriado(obra.id, numeroAditivo);
+    }
 
     if (!extracontratual || !file) {
       toast.success(`Aditivo ${numeroAditivo} criado.`);
@@ -2654,6 +2682,11 @@ const criarNovaMedicao = async () => {
 
       await upsertItems(medicao.sessionId, payload, userId);
 
+      // Registrar ação no log
+      if (obra) {
+        logMedicaoSalva(obra.id, medicaoId);
+      }
+
       toast.success('Medição salva com sucesso.');
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
@@ -2696,6 +2729,9 @@ const criarNovaMedicao = async () => {
             : m
         )
       );
+
+      // Registrar ação no log
+      logMedicaoBloqueada(obra.id, medicaoId);
 
       toast.success('Medição bloqueada.');
       
@@ -2891,6 +2927,10 @@ const criarNovaMedicao = async () => {
             : m
         )
       );
+      // Registrar ação no log
+      if (obra) {
+        logMedicaoReaberta(obra.id, medicaoId);
+      }
       toast.success('Medição reaberta.');
     } catch (error) {
       console.error('Erro ao reabrir medição:', error);
@@ -3089,6 +3129,9 @@ const criarNovaMedicao = async () => {
         .insert(itemsParaSalvar);
 
       if (error) throw error;
+      
+      // Registrar ação no log
+      logPlanilhaImportada(id, dadosImportados.length);
       
       // Limpar dados de medições ao importar nova planilha
       setMedicoes(medicoes.map(medicao => ({ ...medicao, dados: {} })));
@@ -3967,6 +4010,7 @@ const criarNovaMedicao = async () => {
                     <ImportarCronograma 
                       obraId={obra.id} 
                       onSuccess={() => {
+                        logCronogramaImportado(obra.id, 0);
                         toast.success('Cronograma importado com sucesso!');
                       }}
                     />
