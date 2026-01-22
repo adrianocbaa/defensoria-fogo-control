@@ -709,9 +709,94 @@ export default function Apresentacao() {
   const navigate = useNavigate();
 
   const slides: Slide[] = [
-    // SLIDE 1 - Capa
+    // ============ CALENDÁRIO DIF ============
+    // SLIDE 1 - Capa Calendário DIF
     {
       id: 1,
+      title: '',
+      content: <CalendarioDifCapa />,
+    },
+
+    // SLIDE 2 - Objetivos
+    {
+      id: 2,
+      title: 'Objetivos',
+      subtitle: 'Registro de viagens institucionais no Google Agenda',
+      content: <CalendarioDifObjetivos />,
+    },
+
+    // SLIDE 3 - Diretrizes
+    {
+      id: 3,
+      title: 'Diretrizes de Preenchimento',
+      subtitle: 'Regras para registro de viagens',
+      content: <CalendarioDifDiretrizes />,
+    },
+
+    // SLIDE 4 - Google Calendar Visual
+    {
+      id: 4,
+      title: 'Agenda de Viagens DIF',
+      subtitle: 'Visualização real no Google Calendar',
+      content: (
+        <div className="mt-4">
+          <GoogleCalendarReal />
+        </div>
+      ),
+    },
+
+    // SLIDE 5 - Modelo de Preenchimento
+    {
+      id: 5,
+      title: 'Como Preencher',
+      subtitle: 'Modelo padrão para registro de viagens',
+      content: <ModeloPreenchimento />,
+    },
+
+    // ============ GESTÃO E FISCALIZAÇÃO DE CONTRATOS ============
+    // SLIDE 6 - Capa Gestão de Contratos
+    {
+      id: 6,
+      title: '',
+      content: <GestaoContratosCapa />,
+    },
+
+    // SLIDE 7 - Regras do Gestor
+    {
+      id: 7,
+      title: 'Função de Gestor de Contratos',
+      subtitle: 'Novas diretrizes para designação',
+      content: <GestorContratosRegras />,
+    },
+
+    // SLIDE 8 - Exceções e Continuidade
+    {
+      id: 8,
+      title: 'Exceções e Continuidade',
+      subtitle: 'Situações especiais e garantia de fluxo administrativo',
+      content: <GestorContratosExcecoes />,
+    },
+
+    // SLIDE 9 - Hierarquia
+    {
+      id: 9,
+      title: 'Gestor vs Fiscal',
+      subtitle: 'Diferenças de atribuições e responsabilidades',
+      content: <HierarquiaFuncoes />,
+    },
+
+    // SLIDE 10 - Resumo
+    {
+      id: 10,
+      title: 'Novas Diretrizes DIF',
+      subtitle: 'Resumo das principais mudanças',
+      content: <ResumoNovasDiretrizes />,
+    },
+
+    // ============ SISTEMA INTEGRADO DIF ============
+    // SLIDE 11 - Capa Sistema SIDIF
+    {
+      id: 11,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
@@ -735,94 +820,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // ============ CALENDÁRIO DIF ============
-    // SLIDE 2 - Capa Calendário DIF
-    {
-      id: 2,
-      title: '',
-      content: <CalendarioDifCapa />,
-    },
-
-    // SLIDE 3 - Objetivos
-    {
-      id: 3,
-      title: 'Objetivos',
-      subtitle: 'Registro de viagens institucionais no Google Agenda',
-      content: <CalendarioDifObjetivos />,
-    },
-
-    // SLIDE 4 - Diretrizes
-    {
-      id: 4,
-      title: 'Diretrizes de Preenchimento',
-      subtitle: 'Regras para registro de viagens',
-      content: <CalendarioDifDiretrizes />,
-    },
-
-    // SLIDE 5 - Google Calendar Visual
-    {
-      id: 5,
-      title: 'Agenda de Viagens DIF',
-      subtitle: 'Visualização real no Google Calendar',
-      content: (
-        <div className="mt-4">
-          <GoogleCalendarReal />
-        </div>
-      ),
-    },
-
-    // SLIDE 6 - Modelo de Preenchimento
-    {
-      id: 6,
-      title: 'Como Preencher',
-      subtitle: 'Modelo padrão para registro de viagens',
-      content: <ModeloPreenchimento />,
-    },
-
-    // ============ GESTÃO E FISCALIZAÇÃO DE CONTRATOS ============
-    // SLIDE 7 - Capa Gestão de Contratos
-    {
-      id: 7,
-      title: '',
-      content: <GestaoContratosCapa />,
-    },
-
-    // SLIDE 8 - Regras do Gestor
-    {
-      id: 8,
-      title: 'Função de Gestor de Contratos',
-      subtitle: 'Novas diretrizes para designação',
-      content: <GestorContratosRegras />,
-    },
-
-    // SLIDE 9 - Exceções e Continuidade
-    {
-      id: 9,
-      title: 'Exceções e Continuidade',
-      subtitle: 'Situações especiais e garantia de fluxo administrativo',
-      content: <GestorContratosExcecoes />,
-    },
-
-    // SLIDE 10 - Hierarquia
-    {
-      id: 10,
-      title: 'Gestor vs Fiscal',
-      subtitle: 'Diferenças de atribuições e responsabilidades',
-      content: <HierarquiaFuncoes />,
-    },
-
-    // SLIDE 11 - Resumo
+    // SLIDE 11 - Visão Geral
     {
       id: 11,
-      title: 'Novas Diretrizes DIF',
-      subtitle: 'Resumo das principais mudanças',
-      content: <ResumoNovasDiretrizes />,
-    },
-
-    // ============ SISTEMA INTEGRADO DIF ============
-    // SLIDE 12 - Visão Geral
-    {
-      id: 12,
       title: 'Visão Geral do Sistema',
       subtitle: 'Uma plataforma integrada para gestão de obras públicas',
       content: (
@@ -858,9 +858,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 13 - Cadastro de Obras (VISUAL)
+    // SLIDE 12 - Cadastro de Obras (VISUAL)
     {
-      id: 13,
+      id: 12,
       title: 'Cadastro de Obras',
       subtitle: 'Formulário completo com todas as informações contratuais',
       content: (
@@ -870,9 +870,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 14 - Acompanhamento Visual
+    // SLIDE 13 - Acompanhamento Visual
     {
-      id: 14,
+      id: 13,
       title: 'Acompanhamento Visual',
       subtitle: 'Fotos, documentos e progresso em tempo real',
       content: (
@@ -941,9 +941,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 15 - Gerenciar Obras (Simplificado)
+    // SLIDE 14 - Gerenciar Obras (Simplificado)
     {
-      id: 15,
+      id: 14,
       title: 'Gerenciar Obras',
       subtitle: 'Visão consolidada para gestão administrativa',
       content: (
@@ -987,9 +987,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 16 - Tipos de Medição
+    // SLIDE 15 - Tipos de Medição
     {
-      id: 16,
+      id: 15,
       title: 'Sistema de Medições',
       subtitle: 'Dois modos de trabalho: Manual ou via RDO',
       content: (
@@ -1007,9 +1007,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 17 - RDO Calendário Visual
+    // SLIDE 16 - RDO Calendário Visual
     {
-      id: 17,
+      id: 16,
       title: 'Calendário de RDO',
       subtitle: 'Visualização mensal com status e indicadores',
       content: (
@@ -1020,9 +1020,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 18 - RDO Lista de Serviços
+    // SLIDE 17 - RDO Lista de Serviços
     {
-      id: 18,
+      id: 17,
       title: 'Preenchimento de Atividades',
       subtitle: 'A Contratada insere os quantitativos executados no dia',
       content: (
@@ -1032,9 +1032,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 19 - Assinaturas e Histórico
+    // SLIDE 18 - Assinaturas e Histórico
     {
-      id: 19,
+      id: 18,
       title: 'Assinaturas e Validação',
       subtitle: 'Fluxo de aprovação com histórico de reprovações',
       content: (
@@ -1044,9 +1044,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 20 - RDO Impresso
+    // SLIDE 19 - RDO Impresso
     {
-      id: 20,
+      id: 19,
       title: 'RDO Impresso',
       subtitle: 'Documento gerado automaticamente pelo sistema',
       content: (
@@ -1056,9 +1056,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 21 - Permissões
+    // SLIDE 20 - Permissões
     {
-      id: 21,
+      id: 20,
       title: 'Permissões e Segurança',
       subtitle: 'Como o fiscal gerencia suas obras e acessos autorizados',
       content: (
@@ -1068,9 +1068,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 22 - Encerramento
+    // SLIDE 21 - Encerramento
     {
-      id: 22,
+      id: 21,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
