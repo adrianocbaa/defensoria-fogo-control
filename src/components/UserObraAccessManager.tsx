@@ -19,6 +19,7 @@ interface Obra {
   id: string;
   nome: string;
   municipio: string;
+  status?: string;
 }
 
 interface ObraAccess {
@@ -59,22 +60,36 @@ export function UserObraAccessManager({ userId, userName, isContratada, isFiscal
         query = query.neq('status', 'concluida');
       }
 
-      const { data: obrasData, error: obrasError } = await query;
+      const [{ data: obrasData, error: obrasError }, { data: accessData, error: accessError }] = await Promise.all([
+        query,
+        supabase.from('user_obra_access').select('obra_id').eq('user_id', userId),
+      ]);
 
       if (obrasError) throw obrasError;
-      setObras(obrasData || []);
-
-      // Fetch user's current obra access
-      const { data: accessData, error: accessError } = await supabase
-        .from('user_obra_access')
-        .select('obra_id')
-        .eq('user_id', userId);
-
       if (accessError) throw accessError;
-      
+
       const currentAccess = new Set((accessData || []).map(a => a.obra_id));
       setAccessedObras(currentAccess);
       setPendingChanges(new Set(currentAccess));
+
+      // Se houver acessos para obras que ficaram fora do filtro (ex: concluídas), buscar e incluir
+      const obrasList = (obrasData || []) as Obra[];
+      const obrasIds = new Set(obrasList.map((o) => o.id));
+      const missingIds = Array.from(currentAccess).filter((id) => !obrasIds.has(id));
+
+      let missingObras: Obra[] = [];
+      if (missingIds.length > 0) {
+        const { data: missingData, error: missingError } = await supabase
+          .from('obras')
+          .select('id, nome, municipio, status')
+          .in('id', missingIds)
+          .order('nome');
+        if (missingError) throw missingError;
+        missingObras = (missingData || []) as Obra[];
+      }
+
+      // Mostrar primeiro as obras "fora do filtro" (normalmente concluídas) para o usuário entender o que já está selecionado
+      setObras([...missingObras, ...obrasList]);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -184,7 +199,12 @@ export function UserObraAccessManager({ userId, userName, isContratada, isFiscal
                     htmlFor={`obra-${obra.id}`}
                     className="flex-1 cursor-pointer"
                   >
-                    <div className="font-medium">{obra.nome}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">{obra.nome}</div>
+                      {obra.status === 'concluida' && (
+                        <Badge variant="secondary">Concluída</Badge>
+                      )}
+                    </div>
                     <div className="text-sm text-muted-foreground">{obra.municipio}</div>
                   </Label>
                 </div>
