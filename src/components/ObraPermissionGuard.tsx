@@ -5,8 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 
+export type ObraPermissionRole = 'admin' | 'titular' | 'substituto' | 'access' | 'none';
+
 interface ObraPermissionGuardProps {
-  children: ReactNode;
+  children: ReactNode | ((permissionRole: ObraPermissionRole) => ReactNode);
   obraId: string | undefined;
   showMessage?: boolean;
   /** Se true, apenas verificar role, não a obra específica */
@@ -15,7 +17,7 @@ interface ObraPermissionGuardProps {
 
 interface ObraPermissionInfo {
   canEdit: boolean;
-  role: 'admin' | 'titular' | 'substituto' | 'access' | 'none';
+  role: ObraPermissionRole;
   obraStatus: string | null;
   loading: boolean;
 }
@@ -167,13 +169,9 @@ export function ObraPermissionGuard({
     );
   }
 
-  // Admin sempre pode editar
-  if (isAdmin) {
-    return <>{children}</>;
-  }
-
   // Se roleCheckOnly, usar apenas verificação por role
   const hasPermission = roleCheckOnly ? roleCanEdit : permissionInfo.canEdit;
+  const effectiveRole = isAdmin ? 'admin' : permissionInfo.role;
 
   if (!hasPermission) {
     if (showMessage) {
@@ -195,6 +193,11 @@ export function ObraPermissionGuard({
       );
     }
     return null;
+  }
+
+  // Suporte a render prop para expor o role
+  if (typeof children === 'function') {
+    return <>{children(effectiveRole)}</>;
   }
 
   return <>{children}</>;

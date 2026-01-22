@@ -60,6 +60,8 @@ interface ObraFormProps {
   };
   onSuccess: () => void;
   onCancel: () => void;
+  /** Se false, o campo Fiscal do Contrato será desabilitado. Default: true */
+  canChangeFiscal?: boolean;
 }
 
 const statusOptions = [
@@ -71,7 +73,7 @@ const statusOptions = [
 
 const tipoOptions = ['Reforma', 'Construção', 'Adequações'];
 
-export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormProps) {
+export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFiscal = true }: ObraFormProps) {
   const { user } = useAuth();
   const { empresas, loading: loadingEmpresas } = useEmpresas();
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<string>(
@@ -608,9 +610,10 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value || ''}
+                    disabled={!canChangeFiscal}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className={!canChangeFiscal ? 'bg-muted cursor-not-allowed' : ''}>
                         <SelectValue placeholder="Selecione o fiscal" />
                       </SelectTrigger>
                     </FormControl>
@@ -622,6 +625,11 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel }: ObraFormP
                       ))}
                     </SelectContent>
                   </Select>
+                  {!canChangeFiscal && (
+                    <FormDescription className="text-muted-foreground">
+                      Apenas o Fiscal Titular ou Administrador pode alterar este campo.
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
