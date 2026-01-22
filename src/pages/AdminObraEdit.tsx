@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { SimpleHeader } from '@/components/SimpleHeader';
-import { ObraPermissionGuard } from '@/components/ObraPermissionGuard';
+import { ObraPermissionGuard, ObraPermissionRole } from '@/components/ObraPermissionGuard';
 import { ObraForm } from '@/components/ObraForm';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Button } from '@/components/ui/button';
@@ -81,44 +81,52 @@ export function AdminObraEdit() {
     <SimpleHeader>
       {/* Para nova obra, usar apenas verificação de role. Para edição, verificar permissão granular */}
       <ObraPermissionGuard obraId={isNewObra ? undefined : id} roleCheckOnly={isNewObra}>
-        <div className="container mx-auto py-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/admin/obras')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">
-              {isNewObra ? 'Nova Obra' : 'Editar Obra'}
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              {isNewObra 
-                ? 'Cadastre uma nova obra pública' 
-                : 'Edite as informações da obra'
-              }
-            </p>
-          </div>
-        </div>
+        {(permissionRole: ObraPermissionRole) => {
+          // Apenas admin e titular podem alterar o fiscal do contrato
+          const canChangeFiscal = permissionRole === 'admin' || permissionRole === 'titular';
+          
+          return (
+            <div className="container mx-auto py-6 space-y-6">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/admin/obras')}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar
+                </Button>
+                <div>
+                  <h1 className="text-3xl font-bold">
+                    {isNewObra ? 'Nova Obra' : 'Editar Obra'}
+                  </h1>
+                  <p className="text-muted-foreground mt-2">
+                    {isNewObra 
+                      ? 'Cadastre uma nova obra pública' 
+                      : 'Edite as informações da obra'
+                    }
+                  </p>
+                </div>
+              </div>
 
-        <div className="max-w-4xl">
-          <ObraForm
-            obraId={id}
-            initialData={obra ? {
-              ...obra,
-              status: obra.status as any,
-              tipo: (obra.tipo === 'Reforma' || obra.tipo === 'Construção' || obra.tipo === 'Adequações') ? obra.tipo : 'Reforma',
-              fotos: Array.isArray(obra.fotos) ? obra.fotos : [],
-              documentos: Array.isArray(obra.documentos) ? obra.documentos : [],
-            } : undefined}
-            onSuccess={handleSuccess}
-            onCancel={handleCancel}
-          />
-        </div>
-        </div>
+              <div className="max-w-4xl">
+                <ObraForm
+                  obraId={id}
+                  initialData={obra ? {
+                    ...obra,
+                    status: obra.status as any,
+                    tipo: (obra.tipo === 'Reforma' || obra.tipo === 'Construção' || obra.tipo === 'Adequações') ? obra.tipo : 'Reforma',
+                    fotos: Array.isArray(obra.fotos) ? obra.fotos : [],
+                    documentos: Array.isArray(obra.documentos) ? obra.documentos : [],
+                  } : undefined}
+                  onSuccess={handleSuccess}
+                  onCancel={handleCancel}
+                  canChangeFiscal={canChangeFiscal}
+                />
+              </div>
+            </div>
+          );
+        }}
       </ObraPermissionGuard>
     </SimpleHeader>
   );
