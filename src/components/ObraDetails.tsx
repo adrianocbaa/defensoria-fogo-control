@@ -205,6 +205,10 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <span className="text-sm font-medium text-muted-foreground">Fiscal do Contrato:</span>
                 <p className="text-sm">{obra.secretariaResponsavel || 'Não informado'}</p>
               </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">Responsável pelo Projeto:</span>
+                <p className="text-sm">{obra.responsavelProjeto || 'Não informado'}</p>
+              </div>
             </div>
           </AccordionContent>
         </AccordionItem>
