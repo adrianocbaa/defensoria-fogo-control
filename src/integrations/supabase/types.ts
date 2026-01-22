@@ -1399,6 +1399,7 @@ export type Database = {
           previsao_termino: string | null
           rdo_habilitado: boolean
           regiao: string | null
+          responsavel_projeto_id: string | null
           secretaria_responsavel: string | null
           sem_previsao_inauguracao: boolean | null
           status: string
@@ -1435,6 +1436,7 @@ export type Database = {
           previsao_termino?: string | null
           rdo_habilitado?: boolean
           regiao?: string | null
+          responsavel_projeto_id?: string | null
           secretaria_responsavel?: string | null
           sem_previsao_inauguracao?: boolean | null
           status: string
@@ -1471,6 +1473,7 @@ export type Database = {
           previsao_termino?: string | null
           rdo_habilitado?: boolean
           regiao?: string | null
+          responsavel_projeto_id?: string | null
           secretaria_responsavel?: string | null
           sem_previsao_inauguracao?: boolean | null
           status?: string

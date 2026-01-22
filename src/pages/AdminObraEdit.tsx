@@ -27,6 +27,8 @@ interface ObraData {
   coordinates_lng: number | null;
   fotos: any;
   documentos: any;
+  fiscal_id: string | null;
+  responsavel_projeto_id: string | null;
 }
 
 export function AdminObraEdit() {

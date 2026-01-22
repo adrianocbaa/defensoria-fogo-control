@@ -39,6 +39,7 @@ const obraSchema = z.object({
   regiao: z.string().optional(),
   secretaria_responsavel: z.string().optional(),
   fiscal_id: z.string().optional(),
+  responsavel_projeto_id: z.string().optional(),
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
   rdo_habilitado: z.boolean().default(true),
@@ -120,6 +121,38 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
     }
   });
 
+  // Buscar arquitetos para seleção de responsável pelo projeto
+  const { data: arquitetos = [] } = useQuery({
+    queryKey: ['arquitetos-obras'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, email')
+        .eq('is_active', true)
+        .order('display_name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Verificar se existe planilha orçamentária importada (bloqueia campo valor_total)
+  const { data: hasPlanilhaImportada = false } = useQuery({
+    queryKey: ['planilha-importada', obraId],
+    queryFn: async () => {
+      if (!obraId || obraId === 'nova') return false;
+      
+      const { count, error } = await supabase
+        .from('orcamento_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('obra_id', obraId);
+      
+      if (error) return false;
+      return (count || 0) > 0;
+    },
+    enabled: !!obraId && obraId !== 'nova'
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
   const [photos, setPhotos] = useState<Array<{url: string; uploadedAt: string; fileName: string; monthFolder?: string}>>(
@@ -162,6 +195,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       regiao: (initialData as any)?.regiao || '',
       secretaria_responsavel: initialData?.secretaria_responsavel || '',
       fiscal_id: (initialData as any)?.fiscal_id || '',
+      responsavel_projeto_id: (initialData as any)?.responsavel_projeto_id || '',
       coordinates_lat: initialData?.coordinates_lat,
       coordinates_lng: initialData?.coordinates_lng,
       rdo_habilitado: (initialData as any)?.rdo_habilitado ?? true,
@@ -248,6 +282,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         regiao: data.regiao || null,
         secretaria_responsavel: data.secretaria_responsavel || null,
         fiscal_id: data.fiscal_id || null,
+        responsavel_projeto_id: data.responsavel_projeto_id || null,
         coordinates_lat: data.coordinates_lat || null,
         coordinates_lng: data.coordinates_lng || null,
         fotos: photos,
@@ -330,7 +365,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
               control={form.control}
               name="n_contrato"
               render={({ field }) => (
-                <FormItem className="md:col-span-2">
+                <FormItem>
                   <FormLabel>Número do Contrato *</FormLabel>
                   <FormControl>
                     <Input placeholder="Digite o número do contrato" {...field} />
@@ -403,8 +438,15 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                        placeholder="0,00" 
                        {...field}
                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                       disabled={hasPlanilhaImportada}
+                       className={hasPlanilhaImportada ? 'bg-muted cursor-not-allowed' : ''}
                      />
                   </FormControl>
+                  {hasPlanilhaImportada && (
+                    <FormDescription className="text-muted-foreground">
+                      Campo bloqueado: planilha orçamentária já foi importada na medição.
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -630,6 +672,34 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                       Apenas o Fiscal Titular ou Administrador pode alterar este campo.
                     </FormDescription>
                   )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="responsavel_projeto_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Responsável pelo Projeto</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o(a) arquiteto(a)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {arquitetos.map((arquiteto) => (
+                        <SelectItem key={arquiteto.user_id} value={arquiteto.user_id}>
+                          {arquiteto.display_name || arquiteto.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
