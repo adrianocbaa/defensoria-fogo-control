@@ -315,4 +315,143 @@ All colors MUST be HSL.
                       linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px);
     background-size: 50px 50px;
   }
+
+  /* ============ ESTILOS PARA APRESENTAÇÃO ============ */
+  /* Glassmorphism cards para apresentação institucional */
+  .presentation-content .bg-card,
+  .presentation-content [class*="Card"],
+  .presentation-content .rounded-lg.border {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(12px) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+  }
+
+  .presentation-content .bg-card *,
+  .presentation-content [class*="Card"] *,
+  .presentation-content .rounded-lg.border * {
+    color: inherit;
+  }
+
+  /* Cards coloridos específicos mantêm fundo translúcido */
+  .presentation-content [class*="bg-green-50"],
+  .presentation-content [class*="bg-blue-50"],
+  .presentation-content [class*="bg-amber-50"],
+  .presentation-content [class*="bg-orange-50"],
+  .presentation-content [class*="bg-red-50"],
+  .presentation-content [class*="bg-cyan-50"] {
+    background: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  /* Headers de cards */
+  .presentation-content [class*="CardHeader"] {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Textos na apresentação - tamanhos maiores para retroprojetor */
+  .presentation-content h1 {
+    font-size: 3.5rem !important;
+    font-weight: 800 !important;
+    color: white !important;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .presentation-content h2 {
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    color: white !important;
+  }
+
+  .presentation-content h3,
+  .presentation-content [class*="CardTitle"] {
+    font-size: 1.75rem !important;
+    font-weight: 600 !important;
+    color: white !important;
+  }
+
+  .presentation-content h4 {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    color: white !important;
+  }
+
+  .presentation-content p,
+  .presentation-content span,
+  .presentation-content li,
+  .presentation-content label,
+  .presentation-content td,
+  .presentation-content th {
+    font-size: 1.25rem !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .presentation-content .text-muted-foreground {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .presentation-content .text-xs {
+    font-size: 1rem !important;
+  }
+
+  .presentation-content .text-sm {
+    font-size: 1.125rem !important;
+  }
+
+  /* Badges na apresentação */
+  .presentation-content [class*="Badge"] {
+    font-size: 1rem !important;
+    padding: 0.5rem 1rem !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+
+  /* Ícones maiores */
+  .presentation-content svg:not(.w-3):not(.h-3):not(.w-2):not(.h-2) {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  .presentation-content .h-8.w-8,
+  .presentation-content .h-6.w-6,
+  .presentation-content .h-5.w-5 {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+
+  /* Imagens com borda suave */
+  .presentation-content img {
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Progress bar ajustada */
+  .presentation-content [class*="bg-muted"] {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Inputs em mock forms */
+  .presentation-content input {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+  }
+
+  /* Tabelas */
+  .presentation-content table {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .presentation-content thead {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .presentation-content tbody tr {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .presentation-content tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
 }
