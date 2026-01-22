@@ -48,8 +48,9 @@ export default function RDODiario() {
   const { user } = useAuth();
   const { canEdit: roleCanEdit, isAdmin, isContratada } = useUserRole();
   const { canEditObra, loading: permissionLoading } = useCanEditObra(obraId);
-  // Permissão efetiva: admin sempre pode, contratada usa roleCanEdit, outros usam canEditObra
+  // Permissão de edição: admin sempre pode, contratada usa roleCanEdit, fiscais editam apenas quando podem editar a obra
   const canEdit = isAdmin || isContratada ? roleCanEdit : canEditObra;
+  const readOnly = !canEdit;
   const queryClient = useQueryClient();
   const data = searchParams.get('data') || new Date().toISOString().split('T')[0];
   const initialStep = parseInt(searchParams.get('step') || '0', 10);
@@ -151,23 +152,39 @@ export default function RDODiario() {
   };
 
   const renderStep = () => {
+    const disabled = isLocked || readOnly;
+    const ensureOrWarn = readOnly
+      ? async () => {
+          toast.error('Acesso somente de visualização: não é possível criar/editar RDO.');
+          return null;
+        }
+      : ensureRdoExists;
+
     switch (currentStep) {
       case 0:
-        return <AnotacoesStep formData={formData} updateField={updateField} disabled={isLocked} />;
+        return <AnotacoesStep formData={formData} updateField={updateField} disabled={disabled} />;
       case 1:
-        return <AtividadesStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} ensureRdoExists={ensureRdoExists} />;
+        return <AtividadesStep reportId={formData.id} obraId={obraId!} data={data} disabled={disabled} ensureRdoExists={ensureOrWarn} />;
       case 2:
-        return <OcorrenciasStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
+        return <OcorrenciasStep reportId={formData.id} obraId={obraId!} disabled={disabled} />;
       case 3:
-        return <VisitasStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
+        return <VisitasStep reportId={formData.id} obraId={obraId!} disabled={disabled} />;
       case 4:
-        return <EquipamentosStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} />;
+        return <EquipamentosStep reportId={formData.id} obraId={obraId!} data={data} disabled={disabled} />;
       case 5:
-        return <MaoDeObraStep reportId={formData.id} obraId={obraId!} disabled={isLocked} />;
+        return <MaoDeObraStep reportId={formData.id} obraId={obraId!} disabled={disabled} />;
       case 6:
-        return <EvidenciasStep reportId={formData.id} obraId={obraId!} data={data} disabled={isLocked} />;
+        return <EvidenciasStep reportId={formData.id} obraId={obraId!} data={data} disabled={disabled} />;
       case 7:
-        return <AssinaturasStep reportId={formData.id} obraId={obraId!} reportData={formData} onUpdate={() => queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] })} />;
+        return (
+          <AssinaturasStep
+            reportId={formData.id}
+            obraId={obraId!}
+            reportData={formData}
+            readOnly={readOnly}
+            onUpdate={() => queryClient.invalidateQueries({ queryKey: ['rdo-report', obraId, data] })}
+          />
+        );
       default:
         return null;
     }
@@ -358,7 +375,7 @@ export default function RDODiario() {
             </div>
           )}
           
-          {!isLocked && !userHasConcluded && (
+           {!isLocked && !readOnly && !userHasConcluded && (
             <>
               <Button
                 variant="outline"

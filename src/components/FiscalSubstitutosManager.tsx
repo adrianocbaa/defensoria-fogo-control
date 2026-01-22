@@ -67,7 +67,7 @@ export function FiscalSubstitutosManager({ obraId, obraNome, canManage = true }:
   };
 
   const handleRemove = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja remover este fiscal substituto?')) {
+    if (window.confirm('Tem certeza que deseja remover este acesso autorizado?')) {
       await removeSubstituto(id);
     }
   };
@@ -77,12 +77,12 @@ export function FiscalSubstitutosManager({ obraId, obraNome, canManage = true }:
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5" />
-          Fiscais Substitutos
+          Acessos Autorizados
         </CardTitle>
         <CardDescription>
           {canManage 
-            ? 'Gerencie os fiscais substitutos que podem editar esta obra'
-            : 'Visualize os fiscais substitutos desta obra'
+            ? 'Autorize servidores a editar esta obra'
+            : 'Visualize os servidores autorizados para esta obra'
           }
         </CardDescription>
       </CardHeader>
@@ -92,7 +92,7 @@ export function FiscalSubstitutosManager({ obraId, obraNome, canManage = true }:
           <div className="flex gap-2">
             <Select value={selectedUserId} onValueChange={setSelectedUserId} disabled={loadingUsers}>
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder={loadingUsers ? 'Carregando...' : 'Selecione um fiscal'} />
+                <SelectValue placeholder={loadingUsers ? 'Carregando...' : 'Selecione um servidor'} />
               </SelectTrigger>
               <SelectContent>
                 {filteredUsers.map(user => (
@@ -102,7 +102,7 @@ export function FiscalSubstitutosManager({ obraId, obraNome, canManage = true }:
                 ))}
                 {filteredUsers.length === 0 && !loadingUsers && (
                   <SelectItem value="__none" disabled>
-                    Nenhum fiscal disponível
+                    Nenhum servidor disponível
                   </SelectItem>
                 )}
               </SelectContent>
@@ -126,7 +126,7 @@ export function FiscalSubstitutosManager({ obraId, obraNome, canManage = true }:
             </>
           ) : substitutos.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Nenhum fiscal substituto cadastrado
+              Nenhum servidor autorizado cadastrado
             </p>
           ) : (
             substitutos.map(sub => (
@@ -135,7 +135,7 @@ export function FiscalSubstitutosManager({ obraId, obraNome, canManage = true }:
                 className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
               >
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">Substituto</Badge>
+                  <Badge variant="secondary">Autorizado</Badge>
                   <span className="text-sm font-medium">
                     {sub.profile?.display_name || sub.profile?.email || 'Usuário desconhecido'}
                   </span>

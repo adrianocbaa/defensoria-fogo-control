@@ -323,10 +323,12 @@ function RDOConfig() {
 export function RDO() {
   const { obraId } = useParams();
   const navigate = useNavigate();
-  const { canEditRDO, isAdmin, isContratada } = useUserRole();
+  const { canEditRDO, canEdit: roleCanEdit, isAdmin, isContratada } = useUserRole();
   const { canEditObra, loading: permissionLoading } = useCanEditObra(obraId);
-  // Permissão efetiva: contratada usa roleCanEdit, outros usam canEditObra ou isAdmin
+  // Permissão de edição: contratada/admin seguem regra atual; fiscais editam apenas quando podem editar a obra
   const hasEditPermission = isAdmin || isContratada ? canEditRDO : canEditObra;
+  // Permissão de visualização: fiscal (editor/gm) pode visualizar mesmo sem vínculo com a obra
+  const hasViewPermission = isAdmin || isContratada ? canEditRDO : roleCanEdit;
   const [obra, setObra] = useState<Obra | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -393,7 +395,7 @@ export function RDO() {
     );
   }
 
-  if (!hasEditPermission) {
+  if (!hasViewPermission) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">

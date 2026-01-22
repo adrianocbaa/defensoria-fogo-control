@@ -46,7 +46,7 @@ export default function GerenciarObras() {
       <div className="container mx-auto py-6 space-y-6">
         <PageHeader
           title="Gerenciar Obras"
-          subtitle="Gerencie os fiscais substitutos das obras sob sua responsabilidade"
+          subtitle="Autorize servidores a editar as obras sob sua responsabilidade"
           actions={
             <Link to="/">
               <Button variant="outline" size="sm" className="gap-2">
@@ -98,7 +98,7 @@ export default function GerenciarObras() {
                         variant={obra.role === 'titular' ? 'default' : 'secondary'}
                         className={obra.role === 'titular' ? 'bg-primary' : ''}
                       >
-                        {obra.role === 'titular' ? 'Titular' : 'Substituto'}
+                        {obra.role === 'titular' ? 'Titular' : 'Autorizado'}
                       </Badge>
                       <Badge className={statusColors[obra.status] || 'bg-gray-100 text-gray-800'}>
                         {statusLabels[obra.status] || obra.status}
