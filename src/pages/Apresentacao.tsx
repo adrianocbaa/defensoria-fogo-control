@@ -200,7 +200,7 @@ function MockRdoCalendar() {
               )}
               {d.pendingSignature && (
                 <div className="absolute top-1 right-1">
-                  <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  <PenLine className="h-3 w-3 text-amber-500" />
                 </div>
               )}
               {d.status === 'falta' && (
@@ -229,7 +229,7 @@ function MockRdoCalendar() {
             <span>Sem Expediente</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <AlertTriangle className="h-3 w-3 text-amber-500" />
+            <PenLine className="h-3 w-3 text-amber-500" />
             <span>Assinatura Pendente</span>
           </div>
         </div>
