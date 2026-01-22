@@ -32,11 +32,31 @@ export function useObras(): UseObrasReturn {
       
       const { data, error: supabaseError } = await supabase
         .from('obras')
-        .select('*, empresas(razao_social), fiscal_profile:profiles!fiscal_id(display_name), responsavel_projeto_profile:profiles!responsavel_projeto_id(display_name)')
+        .select('*, empresas(razao_social)')
         .order('created_at', { ascending: false });
       
       if (supabaseError) {
         throw new Error('Erro ao carregar obras: ' + supabaseError.message);
+      }
+
+      // Buscar todos os profiles para fazer o mapeamento
+      const userIds = (data || [])
+        .flatMap(obra => [obra.fiscal_id, obra.responsavel_projeto_id])
+        .filter(Boolean) as string[];
+      
+      const uniqueUserIds = [...new Set(userIds)];
+      
+      let profilesMap: Record<string, string> = {};
+      if (uniqueUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', uniqueUserIds);
+        
+        profilesMap = (profiles || []).reduce((acc, p) => {
+          acc[p.user_id] = p.display_name || '';
+          return acc;
+        }, {} as Record<string, string>);
       }
       
       // Converter dados do Supabase para o formato esperado
@@ -53,8 +73,8 @@ export function useObras(): UseObrasReturn {
         dataInicio: obra.data_inicio || '',
         previsaoTermino: obra.previsao_termino || '',
         empresaResponsavel: (obra.empresas as any)?.razao_social || obra.empresa_responsavel || 'Não informado',
-        secretariaResponsavel: (obra.fiscal_profile as any)?.display_name || obra.secretaria_responsavel || 'Não informado',
-        responsavelProjeto: (obra.responsavel_projeto_profile as any)?.display_name || undefined,
+        secretariaResponsavel: (obra.fiscal_id && profilesMap[obra.fiscal_id]) || obra.secretaria_responsavel || 'Não informado',
+        responsavelProjeto: (obra.responsavel_projeto_id && profilesMap[obra.responsavel_projeto_id]) || undefined,
         fotos: Array.isArray(obra.fotos) ? obra.fotos as any[] : [],
         documentos: Array.isArray(obra.documentos) ? obra.documentos.filter((doc): doc is { nome: string; tipo: string } => 
           typeof doc === 'object' && doc !== null && 'nome' in doc && 'tipo' in doc) : [],
