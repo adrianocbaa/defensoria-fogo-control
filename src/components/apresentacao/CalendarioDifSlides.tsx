@@ -152,8 +152,10 @@ export function CalendarioDifDiretrizes() {
   );
 }
 
-// Imagem real do Google Calendar
+// Imagens do Google Calendar
 import googleCalendarImage from '@/assets/apresentacao/google-calendar-viagens.png';
+import googleCalendarPasso1 from '@/assets/apresentacao/google-calendar-passo1.png';
+import googleCalendarPasso2 from '@/assets/apresentacao/google-calendar-passo2.png';
 
 export function GoogleCalendarReal() {
   return (
@@ -183,46 +185,11 @@ export function GoogleCalendarReal() {
   );
 }
 
-// Modelo de preenchimento
+// Modelo de preenchimento com imagens reais
 export function ModeloPreenchimento() {
   return (
     <div className="space-y-6">
-      <Card className="border-2 border-blue-200">
-        <CardHeader className="bg-blue-50 pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileText className="h-5 w-5 text-blue-600" />
-            Modelo de Preenchimento do Evento
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-xs text-muted-foreground font-medium">Título do Evento</p>
-                <p className="font-medium">VIAGEM - João Silva - Rondonópolis</p>
-              </div>
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-xs text-muted-foreground font-medium">Data/Hora</p>
-                <p className="font-medium">15/01/2024 - 07:00 às 18:00</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-xs text-muted-foreground font-medium">Local</p>
-                <p className="font-medium flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  Rondonópolis - MT
-                </p>
-              </div>
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-xs text-muted-foreground font-medium">Descrição</p>
-                <p className="text-sm">Vistoria na obra da Defensoria Pública</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
+      {/* 3 Cards de regras */}
       <div className="grid md:grid-cols-3 gap-4">
         <Card className="bg-green-50 border-green-200">
           <CardContent className="p-4 text-center">
@@ -243,6 +210,41 @@ export function ModeloPreenchimento() {
             <User className="h-8 w-8 text-blue-600 mx-auto mb-2" />
             <p className="font-medium text-blue-800">Limite Diário</p>
             <p className="text-xs text-blue-700 mt-1">Máximo 3 viagens por data</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Imagens reais de preenchimento */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-blue-50 py-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+              Adicionar ao calendário "VIAGENS - DIF"
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <img 
+              src={googleCalendarPasso1} 
+              alt="Passo 1 - Selecionar calendário VIAGENS DIF" 
+              className="w-full h-auto"
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-blue-50 py-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+              Confirmar agenda pessoal vinculada
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <img 
+              src={googleCalendarPasso2} 
+              alt="Passo 2 - Confirmar agenda pessoal" 
+              className="w-full h-auto"
+            />
           </CardContent>
         </Card>
       </div>
