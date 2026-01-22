@@ -50,7 +50,7 @@ import {
   CalendarioDifCapa,
   CalendarioDifObjetivos,
   CalendarioDifDiretrizes,
-  MockGoogleCalendar,
+  GoogleCalendarReal,
   ModeloPreenchimento
 } from '@/components/apresentacao/CalendarioDifSlides';
 
@@ -1011,10 +1011,10 @@ export default function Apresentacao() {
     {
       id: 16,
       title: 'Agenda de Viagens DIF',
-      subtitle: 'Visualização no Google Calendar',
+      subtitle: 'Visualização real no Google Calendar',
       content: (
         <div className="mt-4">
-          <MockGoogleCalendar />
+          <GoogleCalendarReal />
         </div>
       ),
     },
