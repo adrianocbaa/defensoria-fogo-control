@@ -34,6 +34,7 @@ interface AssinaturasStepProps {
   reportId: string;
   obraId: string;
   reportData: any;
+  readOnly?: boolean;
   onUpdate: () => void;
 }
 
@@ -41,6 +42,7 @@ export function AssinaturasStep({
   reportId,
   obraId,
   reportData,
+  readOnly = false,
   onUpdate,
 }: AssinaturasStepProps) {
   const { user } = useAuth();
@@ -49,8 +51,8 @@ export function AssinaturasStep({
   const [isSaving, setIsSaving] = useState(false);
   const [newComment, setNewComment] = useState('');
   
-  const canValidateFiscal = canEdit || isAdmin;
-  const canValidateContratada = isContratada;
+  const canValidateFiscal = (canEdit || isAdmin) && !readOnly;
+  const canValidateContratada = isContratada && !readOnly;
   
   const isApproved = reportData?.status === "aprovado";
   
@@ -366,6 +368,7 @@ export function AssinaturasStep({
   const isPendingApproval = bothValidated && !isApproved;
   const showValidationFields = !isApproved && (!fiscalValidado || !contratadaValidado);
   const isLocked = bothValidated || isApproved;
+  const isInteractionDisabled = isLocked || readOnly;
 
   return (
     <div className="space-y-6 pb-20">
@@ -701,7 +704,7 @@ export function AssinaturasStep({
                                 {roleLabel}
                               </Badge>
                             </div>
-                            {!isLocked && comment.created_by === user?.id && (
+                            {!isInteractionDisabled && comment.created_by === user?.id && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -724,7 +727,7 @@ export function AssinaturasStep({
               </div>
 
               {/* Campo de novo comentário */}
-              {!isLocked && (
+              {!isInteractionDisabled && (
                 <div className="space-y-2 pt-3 border-t">
                   <Textarea
                     placeholder="Escreva um comentário..."
