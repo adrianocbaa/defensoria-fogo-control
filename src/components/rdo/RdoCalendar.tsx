@@ -47,9 +47,10 @@ interface RdoCalendarProps {
   onMonthChange: (date: Date) => void;
   obraStartDate?: string | null;
   rdoHabilitado?: boolean;
+  canEditRdo?: boolean; // Se o usuário pode criar/editar/excluir RDOs
 }
 
-export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange, obraStartDate, rdoHabilitado = true }: RdoCalendarProps) {
+export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange, obraStartDate, rdoHabilitado = true, canEditRdo = true }: RdoCalendarProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isContratada, isAdmin } = useUserRole();
@@ -397,8 +398,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                               #{rdo.numero_seq}
                             </Badge>
                           </button>
-                          {/* Botão excluir: RDOs aprovados só podem ser excluídos por admin */}
-                          {(rdo.status !== 'aprovado' || isAdmin) && (
+                          {/* Botão excluir: RDOs aprovados só podem ser excluídos por admin, e somente quem pode editar pode excluir */}
+                          {canEditRdo && (rdo.status !== 'aprovado' || isAdmin) && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -511,8 +512,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             </Tooltip>
                           </TooltipProvider>
                         )}
-                        {/* Não mostrar botões de criar RDO se estiver bloqueado */}
-                        {!isBlockedForContratada && isAfterObraStart && !isAfter(dayStart, today) && (
+                        {/* Não mostrar botões de criar RDO se estiver bloqueado ou se não tem permissão */}
+                        {canEditRdo && !isBlockedForContratada && isAfterObraStart && !isAfter(dayStart, today) && (
                           <div className="flex gap-0.5">
                             {/* Botão RDO Sem Atividade */}
                             <TooltipProvider>
