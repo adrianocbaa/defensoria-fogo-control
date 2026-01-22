@@ -45,6 +45,23 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import sidifLogo from '@/assets/sidif-logo-oficial.png';
 
+// Componentes dos novos slides
+import {
+  CalendarioDifCapa,
+  CalendarioDifObjetivos,
+  CalendarioDifDiretrizes,
+  MockGoogleCalendar,
+  ModeloPreenchimento
+} from '@/components/apresentacao/CalendarioDifSlides';
+
+import {
+  GestaoContratosCapa,
+  GestorContratosRegras,
+  GestorContratosExcecoes,
+  HierarquiaFuncoes,
+  ResumoNovasDiretrizes
+} from '@/components/apresentacao/GestaoContratosSlides';
+
 interface Slide {
   id: number;
   title: string;
@@ -966,9 +983,93 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 12 - Encerramento
+    // ============ CALENDÁRIO DIF ============
+    // SLIDE 13 - Capa Calendário DIF
     {
-      id: 12,
+      id: 13,
+      title: '',
+      content: <CalendarioDifCapa />,
+    },
+
+    // SLIDE 14 - Objetivos
+    {
+      id: 14,
+      title: 'Objetivos',
+      subtitle: 'Registro de viagens institucionais no Google Agenda',
+      content: <CalendarioDifObjetivos />,
+    },
+
+    // SLIDE 15 - Diretrizes
+    {
+      id: 15,
+      title: 'Diretrizes de Preenchimento',
+      subtitle: 'Regras para registro de viagens',
+      content: <CalendarioDifDiretrizes />,
+    },
+
+    // SLIDE 16 - Google Calendar Visual
+    {
+      id: 16,
+      title: 'Agenda de Viagens DIF',
+      subtitle: 'Visualização no Google Calendar',
+      content: (
+        <div className="mt-4">
+          <MockGoogleCalendar />
+        </div>
+      ),
+    },
+
+    // SLIDE 17 - Modelo de Preenchimento
+    {
+      id: 17,
+      title: 'Como Preencher',
+      subtitle: 'Modelo padrão para registro de viagens',
+      content: <ModeloPreenchimento />,
+    },
+
+    // ============ GESTÃO E FISCALIZAÇÃO DE CONTRATOS ============
+    // SLIDE 18 - Capa Gestão de Contratos
+    {
+      id: 18,
+      title: '',
+      content: <GestaoContratosCapa />,
+    },
+
+    // SLIDE 19 - Regras do Gestor
+    {
+      id: 19,
+      title: 'Função de Gestor de Contratos',
+      subtitle: 'Novas diretrizes para designação',
+      content: <GestorContratosRegras />,
+    },
+
+    // SLIDE 20 - Exceções e Continuidade
+    {
+      id: 20,
+      title: 'Exceções e Continuidade',
+      subtitle: 'Situações especiais e garantia de fluxo administrativo',
+      content: <GestorContratosExcecoes />,
+    },
+
+    // SLIDE 21 - Hierarquia
+    {
+      id: 21,
+      title: 'Gestor vs Fiscal',
+      subtitle: 'Diferenças de atribuições e responsabilidades',
+      content: <HierarquiaFuncoes />,
+    },
+
+    // SLIDE 22 - Resumo
+    {
+      id: 22,
+      title: 'Novas Diretrizes DIF',
+      subtitle: 'Resumo das principais mudanças',
+      content: <ResumoNovasDiretrizes />,
+    },
+
+    // SLIDE 23 - Encerramento
+    {
+      id: 23,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
