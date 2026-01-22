@@ -715,20 +715,20 @@ export default function Apresentacao() {
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
-          <img src={sidifLogo} alt="SIDIF Logo" className="h-40 object-contain brightness-0 invert drop-shadow-lg" />
+          <img src={sidifLogo} alt="SIDIF Logo" className="h-32 object-contain" />
           <div>
-            <h1 className="text-6xl font-bold text-white mb-4 drop-shadow-lg">
+            <h1 className="text-5xl font-bold text-primary mb-4">
               Sistema Integrado DIF
             </h1>
-            <p className="text-3xl text-white/80">
+            <p className="text-2xl text-muted-foreground">
               Diretoria de Infraestrutura Física
             </p>
           </div>
-          <div className="mt-8 space-y-3">
-            <p className="text-2xl font-medium text-white">Apresentação de Funcionalidades</p>
-            <p className="text-xl text-white/70">Módulos: Obras, Medições e RDO</p>
+          <div className="mt-8 space-y-2">
+            <p className="text-xl font-medium">Apresentação de Funcionalidades</p>
+            <p className="text-lg text-muted-foreground">Módulos: Obras, Medições e RDO</p>
           </div>
-          <Badge variant="outline" className="text-lg px-6 py-3 mt-8 bg-white/10 border-white/30 text-white">
+          <Badge variant="outline" className="text-base px-4 py-2 mt-8">
             Público: Fiscais de Obras
           </Badge>
         </div>
@@ -1073,25 +1073,25 @@ export default function Apresentacao() {
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
-          <img src={sidifLogo} alt="SIDIF Logo" className="h-32 object-contain brightness-0 invert drop-shadow-lg" />
+          <img src={sidifLogo} alt="SIDIF Logo" className="h-24 object-contain" />
           <div>
-            <h1 className="text-6xl font-bold text-white mb-4 drop-shadow-lg">
+            <h1 className="text-4xl font-bold text-primary mb-4">
               Obrigado!
             </h1>
-            <p className="text-2xl text-white/80">
+            <p className="text-xl text-muted-foreground">
               Sistema Integrado DIF
             </p>
           </div>
           <div className="flex gap-4 mt-8">
-            <Button size="lg" onClick={() => navigate('/dashboard')} className="bg-white text-[#1a4a3a] hover:bg-white/90 text-lg px-8 py-4">
-              <Home className="h-6 w-6 mr-2" />
+            <Button size="lg" onClick={() => navigate('/dashboard')}>
+              <Home className="h-5 w-5 mr-2" />
               Acessar o Sistema
             </Button>
-            <Button size="lg" variant="outline" onClick={() => setCurrentSlide(0)} className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-lg px-8 py-4">
+            <Button size="lg" variant="outline" onClick={() => setCurrentSlide(0)}>
               Reiniciar Apresentação
             </Button>
           </div>
-          <p className="text-xl text-white/60 mt-8">
+          <p className="text-sm text-muted-foreground mt-8">
             Diretoria de Infraestrutura Física - DPE/MT
           </p>
         </div>
@@ -1118,32 +1118,31 @@ export default function Apresentacao() {
 
   return (
     <div 
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: '#1a4a3a' }}
+      className="min-h-screen bg-background flex flex-col"
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      {/* Header com progresso - estilo institucional */}
-      <div className="border-b border-white/10 bg-white/5 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+      {/* Header com progresso */}
+      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-white/80 hover:text-white hover:bg-white/10">
-              <Home className="h-5 w-5" />
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+              <Home className="h-4 w-4" />
             </Button>
-            <span className="text-lg text-white/80 font-medium">
+            <span className="text-sm text-muted-foreground">
               Slide {currentSlide + 1} de {totalSlides}
             </span>
           </div>
-          <div className="flex-1 max-w-md mx-6">
-            <Progress value={progress} className="h-2 bg-white/20" />
+          <div className="flex-1 max-w-xs mx-4">
+            <Progress value={progress} className="h-1" />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => goToSlide(i)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  i === currentSlide ? 'bg-white scale-125' : 'bg-white/30 hover:bg-white/50'
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  i === currentSlide ? 'bg-primary' : 'bg-muted hover:bg-muted-foreground/50'
                 }`}
               />
             ))}
@@ -1152,8 +1151,8 @@ export default function Apresentacao() {
       </div>
 
       {/* Conteúdo do Slide */}
-      <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
-        <div className="w-full max-w-6xl">
+      <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
+        <div className="w-full max-w-5xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentSlide}
@@ -1164,45 +1163,41 @@ export default function Apresentacao() {
               className="min-h-[500px]"
             >
               {slides[currentSlide].title && (
-                <div className="text-center mb-8">
-                  <h2 className="text-5xl font-bold text-white drop-shadow-lg">{slides[currentSlide].title}</h2>
+                <div className="text-center mb-6">
+                  <h2 className="text-3xl font-bold">{slides[currentSlide].title}</h2>
                   {slides[currentSlide].subtitle && (
-                    <p className="text-2xl text-white/80 mt-3 font-light">
+                    <p className="text-lg text-muted-foreground mt-2">
                       {slides[currentSlide].subtitle}
                     </p>
                   )}
                 </div>
               )}
-              <div className="presentation-content">
-                {slides[currentSlide].content}
-              </div>
+              {slides[currentSlide].content}
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
 
       {/* Navegação */}
-      <div className="border-t border-white/10 bg-white/5 backdrop-blur-md sticky bottom-0">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="border-t bg-card/50 backdrop-blur-sm sticky bottom-0">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button
             variant="outline"
             onClick={() => goToSlide(currentSlide - 1)}
             disabled={currentSlide === 0}
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white text-lg px-6 py-3"
           >
-            <ChevronLeft className="h-5 w-5 mr-2" />
+            <ChevronLeft className="h-4 w-4 mr-2" />
             Anterior
           </Button>
-          <p className="text-lg text-white/60">
+          <p className="text-sm text-muted-foreground">
             Use as setas ← → ou barra de espaço para navegar
           </p>
           <Button
             onClick={() => goToSlide(currentSlide + 1)}
             disabled={currentSlide === totalSlides - 1}
-            className="bg-white text-[#1a4a3a] hover:bg-white/90 text-lg px-6 py-3"
           >
             Próximo
-            <ChevronRight className="h-5 w-5 ml-2" />
+            <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
       </div>
