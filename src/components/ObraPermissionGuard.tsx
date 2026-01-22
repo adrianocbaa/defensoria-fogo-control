@@ -20,6 +20,7 @@ interface ObraPermissionInfo {
   role: ObraPermissionRole;
   obraStatus: string | null;
   loading: boolean;
+  isSetorRestricted: boolean;
 }
 
 /**
@@ -27,9 +28,11 @@ interface ObraPermissionInfo {
  * 
  * Verifica se o usuário pode editar considerando:
  * - Administradores podem editar qualquer obra
+ * - Apenas usuários do setor DIF podem editar obras
  * - Editores/GMs podem editar apenas obras com acesso explícito
  * - Fiscal primário pode editar sua obra
  * - Fiscais substitutos podem editar obras "Em Andamento" atribuídas
+ * - Usuários do setor 2ª SUB NÃO podem editar obras
  */
 export function ObraPermissionGuard({ 
   children, 
@@ -44,6 +47,7 @@ export function ObraPermissionGuard({
     role: 'none',
     obraStatus: null,
     loading: true,
+    isSetorRestricted: false,
   });
 
   useEffect(() => {
@@ -53,6 +57,7 @@ export function ObraPermissionGuard({
         role: isAdmin ? 'admin' : 'none',
         obraStatus: null,
         loading: false,
+        isSetorRestricted: false,
       });
       return;
     }
@@ -72,6 +77,7 @@ export function ObraPermissionGuard({
             role: 'none',
             obraStatus: null,
             loading: false,
+            isSetorRestricted: false,
           });
           return;
         }
@@ -83,6 +89,29 @@ export function ObraPermissionGuard({
             role: 'admin',
             obraStatus: obra.status,
             loading: false,
+            isSetorRestricted: false,
+          });
+          return;
+        }
+
+        // Verificar setor atuante do usuário
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('setores_atuantes')
+          .eq('user_id', user.id)
+          .single();
+
+        const setoresAtuantes = profileData?.setores_atuantes || [];
+        const isSetorDif = setoresAtuantes.includes('dif');
+
+        // Se não for do setor DIF, não pode editar
+        if (!isSetorDif) {
+          setPermissionInfo({
+            canEdit: false,
+            role: 'none',
+            obraStatus: obra.status,
+            loading: false,
+            isSetorRestricted: true,
           });
           return;
         }
@@ -94,6 +123,7 @@ export function ObraPermissionGuard({
             role: 'titular',
             obraStatus: obra.status,
             loading: false,
+            isSetorRestricted: false,
           });
           return;
         }
@@ -114,6 +144,7 @@ export function ObraPermissionGuard({
             role: 'substituto',
             obraStatus: obra.status,
             loading: false,
+            isSetorRestricted: false,
           });
           return;
         }
@@ -134,6 +165,7 @@ export function ObraPermissionGuard({
             role: 'access',
             obraStatus: obra.status,
             loading: false,
+            isSetorRestricted: false,
           });
           return;
         }
@@ -144,6 +176,7 @@ export function ObraPermissionGuard({
           role: 'none',
           obraStatus: obra.status,
           loading: false,
+          isSetorRestricted: false,
         });
       } catch (err) {
         console.error('Erro ao verificar permissão:', err);
@@ -152,6 +185,7 @@ export function ObraPermissionGuard({
           role: 'none',
           obraStatus: null,
           loading: false,
+          isSetorRestricted: false,
         });
       }
     };
@@ -175,6 +209,18 @@ export function ObraPermissionGuard({
 
   if (!hasPermission) {
     if (showMessage) {
+      // Mensagem específica para restrição de setor
+      if (permissionInfo.isSetorRestricted) {
+        return (
+          <Alert className="my-4">
+            <Lock className="h-4 w-4" />
+            <AlertDescription>
+              Você não pode editar obras porque não pertence ao setor DIF. Apenas usuários do setor DIF podem editar obras.
+            </AlertDescription>
+          </Alert>
+        );
+      }
+
       // Mensagem específica para substitutos tentando editar obra fora de "em_andamento"
       const isStatusRestriction = 
         (permissionInfo.role === 'substituto' || permissionInfo.role === 'access') && 

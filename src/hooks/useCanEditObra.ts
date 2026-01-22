@@ -14,6 +14,8 @@ interface UseCanEditObraReturn {
   obraStatus: string | null;
   /** Se a restrição é por status (substituto/access tentando editar obra fora de "em_andamento") */
   isStatusRestricted: boolean;
+  /** Se a restrição é por setor (usuário não é do setor DIF) */
+  isSetorRestricted: boolean;
 }
 
 /**
@@ -21,9 +23,11 @@ interface UseCanEditObraReturn {
  * 
  * A permissão é calculada considerando:
  * - Administradores podem editar qualquer obra
+ * - Apenas usuários do setor DIF podem editar obras
  * - Fiscal titular pode editar sua obra
  * - Fiscais substitutos podem editar apenas obras "Em Andamento"
  * - Usuários com acesso explícito (user_obra_access) podem editar apenas obras "Em Andamento"
+ * - Usuários do setor 2ª SUB NÃO podem editar obras
  */
 export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn {
   const { user } = useAuth();
@@ -34,6 +38,7 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
   const [role, setRole] = useState<'admin' | 'titular' | 'substituto' | 'access' | 'none'>('none');
   const [obraStatus, setObraStatus] = useState<string | null>(null);
   const [isStatusRestricted, setIsStatusRestricted] = useState(false);
+  const [isSetorRestricted, setIsSetorRestricted] = useState(false);
 
   const fetchPermission = useCallback(async () => {
     if (!user || !obraId) {
@@ -42,6 +47,7 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
       setRole('none');
       setObraStatus(null);
       setIsStatusRestricted(false);
+      setIsSetorRestricted(false);
       return;
     }
 
@@ -63,6 +69,7 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
         setRole('none');
         setObraStatus(null);
         setIsStatusRestricted(false);
+        setIsSetorRestricted(false);
         setLoading(false);
         return;
       }
@@ -74,6 +81,27 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
         setCanEditObra(true);
         setRole('admin');
         setIsStatusRestricted(false);
+        setIsSetorRestricted(false);
+        setLoading(false);
+        return;
+      }
+
+      // Verificar setor atuante do usuário
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('setores_atuantes')
+        .eq('user_id', user.id)
+        .single();
+
+      const setoresAtuantes = profileData?.setores_atuantes || [];
+      const isSetorDif = setoresAtuantes.includes('dif');
+
+      // Se não for do setor DIF, não pode editar
+      if (!isSetorDif) {
+        setCanEditObra(false);
+        setRole('none');
+        setIsStatusRestricted(false);
+        setIsSetorRestricted(true);
         setLoading(false);
         return;
       }
@@ -83,6 +111,7 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
         setCanEditObra(true);
         setRole('titular');
         setIsStatusRestricted(false);
+        setIsSetorRestricted(false);
         setLoading(false);
         return;
       }
@@ -101,6 +130,7 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
         setCanEditObra(canEdit);
         setRole('substituto');
         setIsStatusRestricted(!canEdit);
+        setIsSetorRestricted(false);
         setLoading(false);
         return;
       }
@@ -119,6 +149,7 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
         setCanEditObra(canEdit);
         setRole('access');
         setIsStatusRestricted(!canEdit);
+        setIsSetorRestricted(false);
         setLoading(false);
         return;
       }
@@ -127,6 +158,7 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
       setCanEditObra(false);
       setRole('none');
       setIsStatusRestricted(false);
+      setIsSetorRestricted(false);
     } catch (err) {
       console.error('Erro ao verificar permissão de edição:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -134,6 +166,7 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
       setRole('none');
       setObraStatus(null);
       setIsStatusRestricted(false);
+      setIsSetorRestricted(false);
     } finally {
       setLoading(false);
     }
@@ -151,5 +184,6 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
     role,
     obraStatus,
     isStatusRestricted,
+    isSetorRestricted,
   };
 }
