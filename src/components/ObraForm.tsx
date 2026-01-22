@@ -121,14 +121,15 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
     }
   });
 
-  // Buscar arquitetos para seleção de responsável pelo projeto
+  // Buscar arquitetos para seleção de responsável pelo projeto (somente do setor DIF)
   const { data: arquitetos = [] } = useQuery({
-    queryKey: ['arquitetos-obras'],
+    queryKey: ['arquitetos-obras-dif'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, display_name, email')
         .eq('is_active', true)
+        .contains('setores_atuantes', ['dif'])
         .order('display_name');
       
       if (error) throw error;
