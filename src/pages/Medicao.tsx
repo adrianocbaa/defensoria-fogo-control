@@ -31,6 +31,7 @@ import { useMedicaoItems } from '@/hooks/useMedicaoItems';
 import { useAditivoSessions } from '@/hooks/useAditivoSessions';
 import { useAditivoItems } from '@/hooks/useAditivoItems';
 import { ResumoContrato } from '@/components/ResumoContrato';
+import { ObraAuditLogs } from '@/components/ObraAuditLogs';
 import * as XLSX from 'xlsx';
 import html2pdf from 'html2pdf.js';
 
@@ -4211,6 +4212,9 @@ const criarNovaMedicao = async () => {
             </CardContent>
           )}
         </Card>
+
+        {/* Histórico de Alterações */}
+        <ObraAuditLogs obraId={obra.id} />
       </TabsContent>
     </Tabs>
 

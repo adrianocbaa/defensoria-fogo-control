@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { UserObraAccessManager } from '@/components/UserObraAccessManager';
 import { EmpresasManagement } from '@/components/EmpresasManagement';
 import { LicitacoesManagement } from '@/components/LicitacoesManagement';
-import { AuditLogsPanel } from '@/components/AuditLogsPanel';
+import { LoginAttemptsPanel } from '@/components/LoginAttemptsPanel';
 import { useEmpresas } from '@/hooks/useEmpresas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText } from 'lucide-react';
@@ -902,7 +902,7 @@ export default function AdminPanel() {
           </TabsContent>
 
           <TabsContent value="auditoria">
-            <AuditLogsPanel />
+            <LoginAttemptsPanel />
           </TabsContent>
         </Tabs>
 
