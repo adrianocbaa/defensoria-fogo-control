@@ -65,6 +65,7 @@ import OrcamentoNovo from "./pages/OrcamentoNovo";
 import OrcamentoDetalhe from "./pages/OrcamentoDetalhe";
 import OrcamentoCurvaABC from "./pages/OrcamentoCurvaABC";
 import GerenciarObras from "./pages/GerenciarObras";
+import Apresentacao from "./pages/Apresentacao";
 
 const queryClient = new QueryClient();
 
@@ -92,7 +93,8 @@ const AppRoutes = () => {
       <Route path="/public/preventivos/:id" element={<PublicPreventivosDetails />} />
       <Route path="/public/nucleos" element={<PublicNucleos />} />
       <Route path="/rdo/verify/:hash" element={<RdoVerify />} />
-      <Route path="/apresentacao" element={<LandingPage />} />
+      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/apresentacao" element={<Apresentacao />} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/medicao/:id" element={<ProtectedRoute><Medicao /></ProtectedRoute>} />
       <Route path="/dashboard" element={<Dashboard />} />
