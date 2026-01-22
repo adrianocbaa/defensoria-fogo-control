@@ -6,29 +6,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   History, 
-  UserPlus, 
-  UserCog, 
-  AlertTriangle, 
   RefreshCw,
   Clock,
+  Save,
+  FolderOpen,
+  Lock,
+  FilePlus,
+  FileSpreadsheet,
+  Download,
   FileText,
-  Calculator,
-  Pencil,
-  Trash2
+  Calendar,
+  CheckCircle,
+  Trash2,
+  Edit,
+  User
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-interface AuditLog {
+interface ActionLog {
   id: string;
-  table_name: string;
-  record_id: string;
-  operation: 'INSERT' | 'UPDATE' | 'DELETE';
-  old_values: any;
-  new_values: any;
-  changed_fields: string[];
+  obra_id: string;
   user_id: string;
   user_email: string;
+  action_type: string;
+  action_description: string;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 
@@ -37,71 +40,24 @@ interface ObraAuditLogsProps {
 }
 
 export function ObraAuditLogs({ obraId }: ObraAuditLogsProps) {
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Tabelas relacionadas a medição e obra
-  const relevantTables = [
-    'orcamento_items',
-    'medicao_sessions',
-    'medicao_items',
-    'aditivo_sessions',
-    'aditivo_items',
-    'aditivos',
-    'medicoes',
-    'obras',
-    'cronograma_financeiro',
-    'cronograma_items',
-    'cronograma_periodos',
-    'rdo_activities',
-    'rdo_reports'
-  ];
-
-  const fetchAuditLogs = async () => {
+  const fetchActionLogs = async () => {
     setLoading(true);
     try {
-      // Buscar logs de auditoria relacionados à obra
-      const { data: logs, error } = await supabase
-        .from('audit_logs')
+      // Use explicit typing to bypass generated types (table was just created)
+      const { data: logs, error } = await (supabase as any)
+        .from('obra_action_logs')
         .select('*')
-        .in('table_name', relevantTables)
+        .eq('obra_id', obraId)
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
 
       if (error) throw error;
-
-      // Filtrar logs que pertencem a esta obra específica
-      const filteredLogs = (logs || []).filter(log => {
-        // Verificar se o registro pertence a esta obra
-        const values = log.new_values || log.old_values;
-        
-        // Values pode ser null/undefined ou não ser objeto
-        if (!values || typeof values !== 'object' || Array.isArray(values)) {
-          return false;
-        }
-        
-        const valuesObj = values as Record<string, unknown>;
-        
-        // Verificar campos que referenciam a obra
-        if (valuesObj.obra_id === obraId) return true;
-        if (valuesObj.id === obraId && log.table_name === 'obras') return true;
-        
-        // Para itens de medição/aditivo, verificar a sessão
-        if (log.table_name === 'medicao_items' || log.table_name === 'aditivo_items') {
-          // Esses registros não têm obra_id diretamente, verificação parcial
-          return false; // Ignorar sem obra_id para evitar mostrar logs de outras obras
-        }
-        
-        return false;
-      });
-
-      setAuditLogs(filteredLogs.map(log => ({
-        ...log,
-        operation: log.operation as 'INSERT' | 'UPDATE' | 'DELETE',
-        changed_fields: log.changed_fields || [],
-      })));
+      setActionLogs((logs || []) as ActionLog[]);
     } catch (error) {
-      console.error('Error fetching audit logs:', error);
+      console.error('Error fetching action logs:', error);
     } finally {
       setLoading(false);
     }
@@ -109,115 +65,62 @@ export function ObraAuditLogs({ obraId }: ObraAuditLogsProps) {
 
   useEffect(() => {
     if (obraId) {
-      fetchAuditLogs();
+      fetchActionLogs();
     }
   }, [obraId]);
 
-  const getOperationBadge = (operation: string) => {
-    switch (operation) {
-      case 'INSERT':
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Criação</Badge>;
-      case 'UPDATE':
-        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">Alteração</Badge>;
-      case 'DELETE':
-        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20">Exclusão</Badge>;
-      default:
-        return <Badge variant="outline">{operation}</Badge>;
-    }
-  };
-
-  const getTableLabel = (tableName: string) => {
-    const labels: Record<string, string> = {
-      'orcamento_items': 'Itens do Orçamento',
-      'medicao_sessions': 'Sessão de Medição',
-      'medicao_items': 'Itens de Medição',
-      'aditivo_sessions': 'Sessão de Aditivo',
-      'aditivo_items': 'Itens de Aditivo',
-      'aditivos': 'Aditivos',
-      'medicoes': 'Medições',
-      'obras': 'Obra',
-      'cronograma_financeiro': 'Cronograma',
-      'cronograma_items': 'Itens do Cronograma',
-      'cronograma_periodos': 'Períodos do Cronograma',
-      'rdo_activities': 'Atividades RDO',
-      'rdo_reports': 'Relatórios RDO',
+  const getActionIcon = (actionType: string) => {
+    const icons: Record<string, React.ReactNode> = {
+      'medicao_salva': <Save className="h-4 w-4 text-green-600" />,
+      'medicao_reaberta': <FolderOpen className="h-4 w-4 text-amber-600" />,
+      'medicao_bloqueada': <Lock className="h-4 w-4 text-blue-600" />,
+      'aditivo_criado': <FilePlus className="h-4 w-4 text-purple-600" />,
+      'aditivo_bloqueado': <Lock className="h-4 w-4 text-purple-600" />,
+      'aditivo_reaberto': <FolderOpen className="h-4 w-4 text-purple-600" />,
+      'cronograma_atualizado': <Calendar className="h-4 w-4 text-blue-600" />,
+      'cronograma_importado': <FileSpreadsheet className="h-4 w-4 text-blue-600" />,
+      'planilha_importada': <FileSpreadsheet className="h-4 w-4 text-green-600" />,
+      'planilha_exportada': <Download className="h-4 w-4 text-gray-600" />,
+      'relatorio_exportado': <FileText className="h-4 w-4 text-gray-600" />,
+      'rdo_criado': <Calendar className="h-4 w-4 text-green-600" />,
+      'rdo_aprovado': <CheckCircle className="h-4 w-4 text-green-600" />,
+      'rdo_excluido': <Trash2 className="h-4 w-4 text-red-600" />,
+      'itens_alterados': <Edit className="h-4 w-4 text-amber-600" />,
     };
-    return labels[tableName] || tableName;
+    return icons[actionType] || <History className="h-4 w-4" />;
   };
 
-  const getOperationIcon = (operation: string) => {
-    switch (operation) {
-      case 'INSERT':
-        return <UserPlus className="h-4 w-4 text-green-600" />;
-      case 'UPDATE':
-        return <Pencil className="h-4 w-4 text-blue-600" />;
-      case 'DELETE':
-        return <Trash2 className="h-4 w-4 text-red-600" />;
-      default:
-        return <History className="h-4 w-4" />;
-    }
+  const getActionBadge = (actionType: string) => {
+    const badges: Record<string, { label: string; className: string }> = {
+      'medicao_salva': { label: 'Medição', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+      'medicao_reaberta': { label: 'Medição', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
+      'medicao_bloqueada': { label: 'Medição', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+      'aditivo_criado': { label: 'Aditivo', className: 'bg-purple-500/10 text-purple-600 border-purple-500/20' },
+      'aditivo_bloqueado': { label: 'Aditivo', className: 'bg-purple-500/10 text-purple-600 border-purple-500/20' },
+      'aditivo_reaberto': { label: 'Aditivo', className: 'bg-purple-500/10 text-purple-600 border-purple-500/20' },
+      'cronograma_atualizado': { label: 'Cronograma', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+      'cronograma_importado': { label: 'Cronograma', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+      'planilha_importada': { label: 'Planilha', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+      'planilha_exportada': { label: 'Exportação', className: 'bg-gray-500/10 text-gray-600 border-gray-500/20' },
+      'relatorio_exportado': { label: 'Relatório', className: 'bg-gray-500/10 text-gray-600 border-gray-500/20' },
+      'rdo_criado': { label: 'RDO', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+      'rdo_aprovado': { label: 'RDO', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+      'rdo_excluido': { label: 'RDO', className: 'bg-red-500/10 text-red-600 border-red-500/20' },
+      'itens_alterados': { label: 'Itens', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
+    };
+    const badge = badges[actionType] || { label: 'Ação', className: '' };
+    return <Badge className={badge.className}>{badge.label}</Badge>;
   };
 
-  const getTableIcon = (tableName: string) => {
-    if (tableName.includes('medicao') || tableName.includes('medicoes')) {
-      return <Calculator className="h-3 w-3" />;
+  // Agrupar logs por data
+  const groupedLogs = actionLogs.reduce((groups, log) => {
+    const date = format(new Date(log.created_at), 'yyyy-MM-dd');
+    if (!groups[date]) {
+      groups[date] = [];
     }
-    if (tableName.includes('aditivo')) {
-      return <FileText className="h-3 w-3" />;
-    }
-    if (tableName.includes('orcamento')) {
-      return <FileText className="h-3 w-3" />;
-    }
-    return <FileText className="h-3 w-3" />;
-  };
-
-  const formatChanges = (log: AuditLog) => {
-    if (log.operation === 'INSERT') {
-      if (log.table_name === 'medicao_sessions') {
-        return `Nova medição #${log.new_values?.sequencia || ''}`;
-      }
-      if (log.table_name === 'aditivo_sessions') {
-        return `Novo aditivo #${log.new_values?.sequencia || ''}`;
-      }
-      if (log.table_name === 'orcamento_items') {
-        return `Novo item: ${log.new_values?.descricao?.substring(0, 50) || log.new_values?.item || 'N/A'}`;
-      }
-      return 'Novo registro criado';
-    }
-
-    if (log.operation === 'UPDATE' && log.changed_fields?.length > 0) {
-      const changes = log.changed_fields
-        .filter(field => !['updated_at', 'created_at'].includes(field))
-        .slice(0, 3)
-        .map(field => {
-          const oldVal = log.old_values?.[field];
-          const newVal = log.new_values?.[field];
-          
-          // Formatar valores numéricos
-          if (typeof newVal === 'number') {
-            return `${field}: ${oldVal} → ${newVal}`;
-          }
-          
-          return `${field}`;
-        });
-      
-      return changes.length > 0 
-        ? `Campos alterados: ${changes.join(', ')}` 
-        : 'Campos atualizados';
-    }
-
-    if (log.operation === 'DELETE') {
-      if (log.table_name === 'orcamento_items') {
-        return `Item removido: ${log.old_values?.descricao?.substring(0, 50) || log.old_values?.item || log.record_id}`;
-      }
-      if (log.table_name === 'medicao_sessions') {
-        return `Medição #${log.old_values?.sequencia || ''} removida`;
-      }
-      return `Registro removido: ${log.record_id.substring(0, 8)}...`;
-    }
-
-    return '-';
-  };
+    groups[date].push(log);
+    return groups;
+  }, {} as Record<string, ActionLog[]>);
 
   return (
     <Card>
@@ -226,62 +129,73 @@ export function ObraAuditLogs({ obraId }: ObraAuditLogsProps) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              Histórico de Alterações
+              Histórico de Ações
             </CardTitle>
             <CardDescription>
               Registro de ações realizadas nesta obra
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchAuditLogs} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={fetchActionLogs} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[350px]">
+        <ScrollArea className="h-[400px]">
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
             </div>
-          ) : auditLogs.length === 0 ? (
+          ) : actionLogs.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nenhuma alteração registrada para esta obra
+              <History className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p>Nenhuma ação registrada para esta obra</p>
+              <p className="text-sm mt-1">As ações serão registradas conforme você utiliza o sistema</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {auditLogs.map((log) => (
-                <div 
-                  key={log.id} 
-                  className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="mt-1">
-                    {getOperationIcon(log.operation)}
+            <div className="space-y-6">
+              {Object.entries(groupedLogs).map(([date, logs]) => (
+                <div key={date}>
+                  <div className="sticky top-0 bg-background py-2 mb-2">
+                    <Badge variant="outline" className="text-xs">
+                      {format(new Date(date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    </Badge>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {getOperationBadge(log.operation)}
-                      <Badge variant="outline" className="text-xs flex items-center gap-1">
-                        {getTableIcon(log.table_name)}
-                        {getTableLabel(log.table_name)}
-                      </Badge>
-                    </div>
-                    <p className="text-sm mt-1 text-foreground">
-                      {formatChanges(log)}
-                    </p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <UserCog className="h-3 w-3" />
-                        {log.user_email || 'Sistema'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(log.created_at), { 
-                          addSuffix: true, 
-                          locale: ptBR 
-                        })}
-                      </span>
-                    </div>
+                  <div className="space-y-2 pl-2 border-l-2 border-muted">
+                    {logs.map((log) => (
+                      <div 
+                        key={log.id} 
+                        className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors ml-2"
+                      >
+                        <div className="mt-0.5">
+                          {getActionIcon(log.action_type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {getActionBadge(log.action_type)}
+                          </div>
+                          <p className="text-sm mt-1 font-medium text-foreground">
+                            {log.action_description}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {log.user_email || 'Usuário'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(new Date(log.created_at), 'HH:mm')}
+                              {' · '}
+                              {formatDistanceToNow(new Date(log.created_at), { 
+                                addSuffix: true, 
+                                locale: ptBR 
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
