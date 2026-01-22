@@ -793,8 +793,9 @@ export default function AdminPanel() {
                               />
                             )}
 
-                            {/* User Obra Access Manager for Fiscal (editor/gm) users */}
-                            {(profile.role === 'editor' || profile.role === 'gm') && (
+                            {/* User Obra Access Manager for Fiscal (editor/gm) users - only for DIF sector */}
+                            {(profile.role === 'editor' || profile.role === 'gm') && 
+                             (profile.setores_atuantes || []).includes('dif') && (
                               <UserObraAccessManager 
                                 userId={profile.user_id}
                                 userName={profile.display_name}
