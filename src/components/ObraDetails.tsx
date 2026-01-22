@@ -207,7 +207,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
               </div>
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Responsável pelo Projeto:</span>
-                <p className="text-sm">{obra.responsavelProjeto || 'Não informado'}</p>
+                <p className="text-sm">{obra.responsavelProjeto || '-'}</p>
               </div>
             </div>
           </AccordionContent>
