@@ -82,7 +82,7 @@ function PlaceholderSection({
   );
 }
 
-function RDOResumo({ obraStartDate, rdoHabilitado = true }: { obraStartDate?: string | null; rdoHabilitado?: boolean }) {
+function RDOResumo({ obraStartDate, rdoHabilitado = true, canEditRdo = true }: { obraStartDate?: string | null; rdoHabilitado?: boolean; canEditRdo?: boolean }) {
   const { obraId } = useParams();
   const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -141,6 +141,7 @@ function RDOResumo({ obraStartDate, rdoHabilitado = true }: { obraStartDate?: st
         onMonthChange={setCurrentMonth}
         obraStartDate={obraStartDate}
         rdoHabilitado={rdoHabilitado}
+        canEditRdo={canEditRdo}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -495,7 +496,7 @@ export function RDO() {
         <main className="flex-1 container mx-auto py-6 px-4 lg:px-6">
           <Routes>
             <Route index element={<Navigate to="resumo" replace />} />
-            <Route path="resumo" element={<RDOResumo obraStartDate={obra.data_inicio} rdoHabilitado={obra.rdo_habilitado} />} />
+            <Route path="resumo" element={<RDOResumo obraStartDate={obra.data_inicio} rdoHabilitado={obra.rdo_habilitado} canEditRdo={hasEditPermission} />} />
             <Route path="equipe" element={<RDOEquipe />} />
             <Route path="equipamentos" element={<RDOEquipamentos />} />
             <Route path="materiais" element={<RDOMateriais />} />
