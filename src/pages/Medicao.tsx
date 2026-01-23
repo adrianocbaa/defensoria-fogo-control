@@ -2552,13 +2552,13 @@ const criarNovaMedicao = async () => {
       // Preencher APENAS os itens novos que foram importados na planilha do aditivo E são do último nível
       novos.forEach(item => {
         if (item.quantidade > 0 && ehUltimoNivel(item, novos)) {
-          // Calcular total do aditivo usando o valor unitário já com desconto aplicado
-          // Usar truncamento para manter consistência com a importação inicial
-          const totalAditivo = Math.trunc(item.valorUnitario * item.quantidade * 100) / 100;
+          // Usar valorTotal diretamente - já foi calculado com truncamento na importação
+          // NÃO recalcular usando valorUnitario * quantidade pois valorUnitario já foi truncado
+          // e isso causaria divergência de centavos
           dadosAditivo[item.id] = {
             qnt: item.quantidade,
             percentual: 0, // Deixar percentual em 0
-            total: totalAditivo
+            total: item.valorTotal // Usar o total já calculado na importação
           };
         }
       });
