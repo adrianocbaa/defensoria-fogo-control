@@ -46,10 +46,10 @@ export default function RDODiario() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { canEdit: roleCanEdit, isAdmin, isContratada } = useUserRole();
+  const { canEdit: roleCanEdit, canEditRDO, isAdmin, isContratada } = useUserRole();
   const { canEditObra, loading: permissionLoading } = useCanEditObra(obraId);
-  // Permissão de edição: admin sempre pode, contratada usa roleCanEdit, fiscais editam apenas quando podem editar a obra
-  const canEdit = isAdmin || isContratada ? roleCanEdit : canEditObra;
+  // Permissão de edição: admin sempre pode, contratada usa canEditRDO, fiscais editam apenas quando podem editar a obra
+  const canEdit = isAdmin || isContratada ? canEditRDO : canEditObra;
   const readOnly = !canEdit;
   const queryClient = useQueryClient();
   const data = searchParams.get('data') || new Date().toISOString().split('T')[0];
