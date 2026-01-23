@@ -2552,13 +2552,27 @@ const criarNovaMedicao = async () => {
       // Preencher APENAS os itens novos que foram importados na planilha do aditivo E são do último nível
       novos.forEach(item => {
         if (item.quantidade > 0 && ehUltimoNivel(item, novos)) {
-          // Usar valorTotal diretamente - já foi calculado com truncamento na importação
-          // NÃO recalcular usando valorUnitario * quantidade pois valorUnitario já foi truncado
-          // e isso causaria divergência de centavos
+          // Para itens extracontratuais (novos), usar o valorTotal calculado na importação
+          // Para itens contratuais (já existentes), precisamos buscar o valorUnitario original
+          // e calcular o total usando ele para manter consistência
+          
+          // Verificar se o item já existe no contrato original
+          const itemOriginal = items.find(i => i.item === item.item);
+          
+          let totalAditivo: number;
+          if (itemOriginal && item.origem === 'contratual') {
+            // Para itens contratuais, usar o valor unitário original do contrato
+            // Isso garante que quantidade igual = valor igual
+            totalAditivo = Math.trunc(itemOriginal.valorUnitario * item.quantidade * 100) / 100;
+          } else {
+            // Para itens extracontratuais (novos), usar o valorTotal já calculado na importação
+            totalAditivo = item.valorTotal;
+          }
+          
           dadosAditivo[item.id] = {
             qnt: item.quantidade,
             percentual: 0, // Deixar percentual em 0
-            total: item.valorTotal // Usar o total já calculado na importação
+            total: totalAditivo
           };
         }
       });
