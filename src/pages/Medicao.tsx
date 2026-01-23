@@ -601,10 +601,10 @@ export function Medicao() {
           item.aditivo.total = filhos.reduce((sum, filho) => sum + filho.aditivo.total, 0);
           item.totalContrato = filhos.reduce((sum, filho) => sum + filho.totalContrato, 0);
           
-          // Calcular valor unitário médio ponderado
+          // Calcular valor unitário médio ponderado (truncado para 2 casas decimais)
           if (item.quantidade > 0) {
             // Usar o valorTotal atual (importado para nível 1 ou somado para demais)
-            item.valorUnitario = item.valorTotal / item.quantidade;
+            item.valorUnitario = Math.trunc((item.valorTotal / item.quantidade) * 100) / 100;
           }
         }
       });
@@ -734,9 +734,9 @@ export function Medicao() {
     } catch {}
   }, [obra?.id, items, aditivos, medicoes, medicaoAtual]);
 
-  // Função para calcular total baseado na quantidade e valor unitário
+  // Função para calcular total baseado na quantidade e valor unitário (truncado para 2 casas decimais)
   const calcularTotal = (quantidade: number, valorUnitario: number) => {
-    return quantidade * valorUnitario;
+    return Math.trunc(quantidade * valorUnitario * 100) / 100;
   };
 
   // Função para calcular e distribuir Administração Local
@@ -2443,8 +2443,9 @@ const criarNovaMedicao = async () => {
         const totalSemDesconto = parseNumber(idx.totalSemDesconto >= 0 ? r[idx.totalSemDesconto] : 0);
         // Aplicar desconto: TRUNCAR(totalSemDesconto - (totalSemDesconto * desconto%), 2)
         const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
-        // Calcular valor unitário com desconto
-        const valorUnitComDesconto = quant > 0 ? valorTotalComDesconto / quant : 0;
+        // Calcular valor unitário com desconto (também truncado para 2 casas decimais)
+        const valorUnitComDescontoRaw = quant > 0 ? valorTotalComDesconto / quant : 0;
+        const valorUnitComDesconto = Math.trunc(valorUnitComDescontoRaw * 100) / 100;
 
         // Ignorar linhas completamente vazias
         const hasAnyContent = code || descricao || und || codigoBanco || quant > 0 || totalSemDesconto > 0;

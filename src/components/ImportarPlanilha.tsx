@@ -130,8 +130,9 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         // Aplicar desconto: TRUNCAR(I - (I * desconto%), 2)
         const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * desconto)) * 100) / 100
         
-        // Calcular valor unitário com desconto
-        const valorUnitarioComDesconto = quantidade > 0 ? valorTotalComDesconto / quantidade : 0
+        // Calcular valor unitário com desconto (também truncado para 2 casas decimais)
+        const valorUnitarioComDescontoRaw = quantidade > 0 ? valorTotalComDesconto / quantidade : 0
+        const valorUnitarioComDesconto = Math.trunc(valorUnitarioComDescontoRaw * 100) / 100
         
         const item: Item = {
           id: Date.now() + i, // ID único
