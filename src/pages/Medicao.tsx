@@ -2249,26 +2249,48 @@ const criarNovaMedicao = async () => {
         // Buscar valor atual do banco para evitar race condition com estado local
         const { data: obraAtual } = await supabase
           .from('obras')
-          .select('aditivo_prazo')
+          .select('aditivo_prazo, data_inicio, tempo_obra')
           .eq('id', id)
           .single();
         
         const currentPrazo = obraAtual?.aditivo_prazo || 0;
         const novoPrazo = currentPrazo + diasAditivoPrazo;
         
+        // Calcular nova data de término
+        let novaPrevisaoTermino: string | null = null;
+        if (obraAtual?.data_inicio) {
+          const dataInicio = new Date(obraAtual.data_inicio);
+          const tempoObra = obraAtual.tempo_obra || 0;
+          const prazoTotal = tempoObra + novoPrazo;
+          if (prazoTotal > 0) {
+            const dataTermino = new Date(dataInicio);
+            dataTermino.setDate(dataTermino.getDate() + prazoTotal);
+            novaPrevisaoTermino = dataTermino.toISOString().split('T')[0];
+          }
+        }
+        
+        const updateData: { aditivo_prazo: number; previsao_termino?: string } = { aditivo_prazo: novoPrazo };
+        if (novaPrevisaoTermino) {
+          updateData.previsao_termino = novaPrevisaoTermino;
+        }
+        
         const { error } = await supabase
           .from('obras')
-          .update({ aditivo_prazo: novoPrazo })
+          .update(updateData)
           .eq('id', id);
         
         if (error) throw error;
         
         // Atualizar estado local da obra
         if (obra) {
-          setObra({ ...obra, aditivo_prazo: novoPrazo });
+          setObra({ 
+            ...obra, 
+            aditivo_prazo: novoPrazo,
+            ...(novaPrevisaoTermino && { previsao_termino: novaPrevisaoTermino })
+          });
         }
         
-        toast.success(`Aditivo de prazo: +${diasAditivoPrazo} dias adicionados ao prazo da obra.`);
+        toast.success(`Aditivo de prazo: +${diasAditivoPrazo} dias adicionados. Nova data de término: ${novaPrevisaoTermino ? new Date(novaPrevisaoTermino + 'T00:00:00').toLocaleDateString('pt-BR') : 'não calculada'}.`);
       } catch (error) {
         console.error('Erro ao atualizar prazo:', error);
         toast.error('Erro ao atualizar aditivo de prazo.');
