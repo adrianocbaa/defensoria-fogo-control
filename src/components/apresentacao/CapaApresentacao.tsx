@@ -86,14 +86,14 @@ export function CapaApresentacao() {
         <div className="w-24 h-1 bg-gradient-to-r from-emerald-500 to-blue-500 mx-auto mb-6 rounded-full" />
 
         {/* Subtítulo */}
-        <p className="text-lg md:text-xl text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto">
+        <p className="text-base md:text-lg text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto">
           Padronização de procedimentos, gestão de contratos
           <br />
           e uso do Sistema <span className="text-emerald-700 font-semibold">SiDIF</span>
         </p>
 
         {/* Elementos decorativos laterais */}
-        <div className="flex justify-center gap-3 mt-8 opacity-40">
+        <div className="flex justify-center gap-3 mt-4 opacity-40">
           <div className="w-2 h-2 rounded-full bg-emerald-500" />
           <div className="w-2 h-2 rounded-full bg-slate-400" />
           <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -101,7 +101,7 @@ export function CapaApresentacao() {
       </div>
 
       {/* Rodapé institucional */}
-      <div className="absolute bottom-6 left-0 right-0 px-8">
+      <div className="absolute bottom-8 left-0 right-0 px-8">
         <div className="flex flex-col items-center gap-1 text-center">
           <p className="text-sm font-semibold text-slate-700">
             Defensoria Pública do Estado de Mato Grosso
