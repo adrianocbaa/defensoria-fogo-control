@@ -1094,9 +1094,9 @@ export default function Apresentacao() {
       content: (
         <div className="border rounded-lg overflow-hidden bg-card shadow-lg">
           {/* Simulação do painel lateral */}
-          <div className="flex h-[360px]">
+          <div className="flex h-[420px]">
             {/* Mapa reduzido */}
-            <div className="w-2/5 relative bg-[#e8f0e8] border-r">
+            <div className="w-1/3 relative bg-[#e8f0e8] border-r">
               <div className="absolute inset-0 opacity-50" style={{ 
                 backgroundImage: 'linear-gradient(rgba(200,220,200,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(200,220,200,0.3) 1px, transparent 1px)',
                 backgroundSize: '40px 40px'
@@ -1111,7 +1111,7 @@ export default function Apresentacao() {
             </div>
             
             {/* Painel de detalhes */}
-            <div className="w-3/5 p-3 space-y-2">
+            <div className="w-2/3 p-2.5 space-y-1.5 overflow-hidden">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-sm">Almoxarifado Santa Cruz - Reforma 02</h3>
@@ -1131,12 +1131,12 @@ export default function Apresentacao() {
               </div>
               
               {/* Informações Gerais */}
-              <div className="border rounded p-2 space-y-1">
-                <div className="flex items-center gap-1.5 font-medium text-xs">
-                  <Building2 className="h-3 w-3" />
+              <div className="border rounded p-1.5 space-y-0.5">
+                <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                  <Building2 className="h-2.5 w-2.5" />
                   <span>Informações Gerais</span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
+                <div className="grid grid-cols-2 gap-x-3 text-[10px]">
                   <div>
                     <span className="text-muted-foreground">Contrato:</span>
                     <span className="font-medium ml-1">111/2025</span>
@@ -1153,9 +1153,9 @@ export default function Apresentacao() {
               </div>
               
               {/* Prazos */}
-              <div className="border rounded p-2 space-y-1">
-                <div className="flex items-center gap-1.5 font-medium text-xs">
-                  <Calendar className="h-3 w-3" />
+              <div className="border rounded p-1.5 space-y-0.5">
+                <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                  <Calendar className="h-2.5 w-2.5" />
                   <span>Prazos de Execução</span>
                 </div>
                 <div className="grid grid-cols-2 gap-x-3 text-[10px]">
@@ -1171,12 +1171,12 @@ export default function Apresentacao() {
               </div>
               
               {/* Financeiro */}
-              <div className="border rounded p-2 space-y-1.5">
-                <div className="flex items-center gap-1.5 font-medium text-xs">
-                  <TrendingUp className="h-3 w-3" />
+              <div className="border rounded p-1.5 space-y-1">
+                <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                  <TrendingUp className="h-2.5 w-2.5" />
                   <span>Informações Financeiras</span>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                <div className="grid grid-cols-3 gap-1 text-[10px]">
                   <div>
                     <span className="text-muted-foreground block">Valor Inicial:</span>
                     <span className="font-semibold">R$ 73.766,43</span>
@@ -1202,21 +1202,43 @@ export default function Apresentacao() {
               </div>
               
               {/* Álbum de Fotos */}
-              <div className="border rounded p-2 space-y-1">
-                <div className="flex items-center gap-1.5 font-medium text-xs">
-                  <Image className="h-3 w-3" />
+              <div className="border rounded p-1.5 space-y-0.5">
+                <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                  <Image className="h-2.5 w-2.5" />
                   <span>Álbum de Fotos (17)</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {[1,2,3,4].map((i) => (
-                      <div key={i} className="w-7 h-7 bg-muted rounded flex items-center justify-center">
-                        <Camera className="h-2.5 w-2.5 text-muted-foreground/50" />
-                      </div>
-                    ))}
-                    <div className="w-7 h-7 bg-muted rounded flex items-center justify-center text-[10px] text-muted-foreground">
-                      +13
+                <div className="flex gap-1">
+                  {[1,2,3,4].map((i) => (
+                    <div key={i} className="w-6 h-6 bg-muted rounded flex items-center justify-center">
+                      <Camera className="h-2 w-2 text-muted-foreground/50" />
                     </div>
+                  ))}
+                  <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-[9px] text-muted-foreground">
+                    +13
+                  </div>
+                </div>
+              </div>
+              
+              {/* Documentação (Anexos) */}
+              <div className="border rounded p-1.5 space-y-0.5">
+                <div className="flex items-center gap-1.5 font-medium text-[11px]">
+                  <FileText className="h-2.5 w-2.5" />
+                  <span>Documentação (5)</span>
+                </div>
+                <div className="space-y-0.5">
+                  {[
+                    { name: 'Contrato_111_2025.pdf', type: 'PDF' },
+                    { name: 'Planilha_Orcamentaria.xlsx', type: 'Excel' },
+                    { name: 'ART_Responsavel.pdf', type: 'PDF' },
+                  ].map((doc, i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-[9px] bg-muted/30 rounded px-1.5 py-0.5">
+                      <FileUp className="h-2.5 w-2.5 text-muted-foreground" />
+                      <span className="truncate flex-1">{doc.name}</span>
+                      <Badge variant="outline" className="text-[8px] px-1 py-0">{doc.type}</Badge>
+                    </div>
+                  ))}
+                  <div className="text-[9px] text-muted-foreground pl-1">
+                    +2 outros documentos
                   </div>
                 </div>
               </div>
