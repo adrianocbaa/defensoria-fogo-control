@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   FileCheck,
   Users,
@@ -12,8 +13,18 @@ import {
   ArrowRight,
   Briefcase,
   LayoutDashboard,
-  Calendar
+  Calendar,
+  ChevronDown,
+  Info,
+  MapPin,
+  FileUp
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Capa da seção Gestão de Contratos
 export function GestaoContratosCapa() {
@@ -436,6 +447,270 @@ export function ResumoNovasDiretrizes() {
           </p>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Slide: Cadastro de Obras - Mock com balões indicativos
+export function CadastroObrasSlide() {
+  return (
+    <div className="space-y-4">
+      {/* Aviso de padronização */}
+      <Card className="bg-amber-50 border-amber-200">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-800 mb-2">Padronização do Nome da Obra</p>
+              <p className="text-sm text-amber-700 mb-2">
+                O nome da obra deve seguir o padrão: <strong>"Unidade - Tipo de Serviço"</strong>
+              </p>
+              <div className="space-y-1 text-sm text-amber-900">
+                <p>✓ <code className="bg-amber-100 px-1.5 py-0.5 rounded">Núcleo Criminal de Rondonópolis - Cobertura</code></p>
+                <p>✓ <code className="bg-amber-100 px-1.5 py-0.5 rounded">Núcleo de Sinop - Ampliação</code></p>
+                <p>✓ <code className="bg-amber-100 px-1.5 py-0.5 rounded">Núcleo de Barra do Garças - Sala de Estagiários</code></p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Mock do formulário */}
+      <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
+          <Building2 className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Nova Obra</span>
+        </div>
+        
+        <TooltipProvider delayDuration={0}>
+          <div className="p-4 space-y-4">
+            {/* Linha 1: Nome e Município */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Nome da Obra *</label>
+                <Input 
+                  value="Núcleo Criminal de Rondonópolis - Cobertura" 
+                  readOnly 
+                  className="h-9 text-sm bg-green-50 border-green-300" 
+                />
+              </div>
+              <div className="space-y-1 relative">
+                <label className="text-xs text-muted-foreground font-medium">Município *</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <Input value="Rondonópolis" readOnly className="h-9 text-sm bg-muted/30 pr-8" />
+                      <Info className="h-4 w-4 text-blue-500 absolute right-2 top-1/2 -translate-y-1/2 cursor-help" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-xs">Lista de municípios do Mato Grosso</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+
+            {/* Linha 2: Contrato e Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Número do Contrato *</label>
+                <Input value="CT-2024/0456" readOnly className="h-9 text-sm bg-muted/30" />
+              </div>
+              <div className="space-y-1 relative">
+                <label className="text-xs text-muted-foreground font-medium">Status *</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <div className="h-9 px-3 flex items-center justify-between bg-blue-100 text-blue-800 rounded-md text-sm font-medium border border-blue-200">
+                        Planejamento
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                      <div className="absolute -right-2 -top-2">
+                        <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5">Lista</Badge>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <p className="text-xs font-semibold mb-1">Opções disponíveis:</p>
+                    <ul className="text-xs space-y-0.5">
+                      <li>• Planejamento</li>
+                      <li>• Em andamento</li>
+                      <li>• Paralisado</li>
+                      <li>• Concluído</li>
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+
+            {/* Linha 3: Tipo e Valor */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1 relative">
+                <label className="text-xs text-muted-foreground font-medium">Tipo *</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <div className="h-9 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border">
+                        Reforma
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                      <div className="absolute -right-2 -top-2">
+                        <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5">Lista</Badge>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <p className="text-xs font-semibold mb-1">Opções disponíveis:</p>
+                    <ul className="text-xs space-y-0.5">
+                      <li>• Reforma</li>
+                      <li>• Construção</li>
+                      <li>• Adequações</li>
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Valor Inicial do Contrato (R$) *</label>
+                <Input value="450.000,00" readOnly className="h-9 text-sm bg-muted/30" />
+              </div>
+            </div>
+
+            {/* Linha 4: Datas e Prazo */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Data de Início</label>
+                <Input value="15/01/2025" readOnly className="h-9 text-sm bg-muted/30" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Tempo de Obra (dias)</label>
+                <Input value="120" readOnly className="h-9 text-sm bg-muted/30" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Previsão de Término</label>
+                <div className="h-9 px-3 flex items-center bg-slate-100 rounded-md text-sm text-muted-foreground border">
+                  15/05/2025 <span className="text-xs ml-1">(calculado)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Linha 5: Empresa e Região */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1 relative">
+                <label className="text-xs text-muted-foreground font-medium">Empresa Responsável</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <div className="h-9 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border">
+                        Construtora ABC Ltda
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                      <div className="absolute -right-2 -top-2">
+                        <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">Cadastro</Badge>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <p className="text-xs">Empresas cadastradas no sistema (ATAs e Contratos de Licitação)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="space-y-1 relative">
+                <label className="text-xs text-muted-foreground font-medium">Região</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <div className="h-9 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border">
+                        Polo Sul
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                      <div className="absolute -right-2 -top-2">
+                        <Badge className="bg-purple-500 text-white text-[10px] px-1.5 py-0.5">Filtrado</Badge>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="text-xs">Regiões disponíveis para a empresa selecionada (baseado nas ATAs)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+
+            {/* Linha 6: Fiscal e Responsável */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1 relative">
+                <label className="text-xs text-muted-foreground font-medium">Fiscal do Contrato</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <div className="h-9 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border">
+                        João da Silva
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                      <div className="absolute -right-2 -top-2">
+                        <Badge className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5">Usuários</Badge>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <p className="text-xs">Usuários com perfil de Engenheiro ou Técnico cadastrados no sistema</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="space-y-1 relative">
+                <label className="text-xs text-muted-foreground font-medium">Responsável pelo Projeto</label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <div className="h-9 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border">
+                        Maria Arquiteta
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                      <div className="absolute -right-2 -top-2">
+                        <Badge className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5">Usuários</Badge>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="text-xs">Usuários com perfil de Arquiteto cadastrados no sistema (será o Gestor do Contrato)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+
+            {/* Botões de ação */}
+            <div className="flex gap-3 pt-2 border-t">
+              <div className="h-8 px-3 flex items-center gap-2 bg-muted/30 rounded-md text-sm border cursor-pointer hover:bg-muted/50">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                Selecionar no Mapa
+              </div>
+              <div className="h-8 px-3 flex items-center gap-2 bg-muted/30 rounded-md text-sm border cursor-pointer hover:bg-muted/50">
+                <FileUp className="h-4 w-4 text-muted-foreground" />
+                Documentos
+              </div>
+            </div>
+          </div>
+        </TooltipProvider>
+      </div>
+
+      {/* Legenda dos badges */}
+      <div className="flex flex-wrap gap-3 text-xs">
+        <div className="flex items-center gap-1.5">
+          <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5">Lista</Badge>
+          <span className="text-muted-foreground">Opções fixas do sistema</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">Cadastro</Badge>
+          <span className="text-muted-foreground">Dados cadastrados (Empresas)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Badge className="bg-purple-500 text-white text-[10px] px-1.5 py-0.5">Filtrado</Badge>
+          <span className="text-muted-foreground">Depende de outro campo</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Badge className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5">Usuários</Badge>
+          <span className="text-muted-foreground">Usuários do sistema</span>
+        </div>
+      </div>
     </div>
   );
 }
