@@ -400,7 +400,7 @@ export function ResumoNovasDiretrizes() {
             </div>
             <ul className="text-sm space-y-2 text-emerald-900">
               <li>✓ Gestor: nível Coordenador</li>
-              <li>✓ Fiscal: técnicos capacitados</li>
+              <li>✓ Fiscais e Fiscais Substituto</li>
               <li>✓ Designação por cargo, não pessoa</li>
               <li>✓ Continuidade em afastamentos</li>
             </ul>
