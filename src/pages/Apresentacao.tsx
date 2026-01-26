@@ -28,6 +28,7 @@ import {
   Trash2,
   FileX,
   AlertTriangle,
+  AlertCircle,
   Camera,
   MessageSquare,
   Download,
@@ -72,79 +73,190 @@ interface Slide {
 }
 
 // Componente simulando o formulário de cadastro de obras
+// Componente de balão explicativo
+function TooltipBalloon({ children, position = 'right' }: { children: React.ReactNode; position?: 'right' | 'left' | 'top' }) {
+  const positionClasses = {
+    right: 'left-full ml-2 top-1/2 -translate-y-1/2',
+    left: 'right-full mr-2 top-1/2 -translate-y-1/2',
+    top: 'bottom-full mb-2 left-1/2 -translate-x-1/2'
+  };
+  
+  const arrowClasses = {
+    right: 'right-full top-1/2 -translate-y-1/2 border-r-amber-500 border-t-transparent border-b-transparent border-l-transparent',
+    left: 'left-full top-1/2 -translate-y-1/2 border-l-amber-500 border-t-transparent border-b-transparent border-r-transparent',
+    top: 'top-full left-1/2 -translate-x-1/2 border-t-amber-500 border-l-transparent border-r-transparent border-b-transparent'
+  };
+
+  return (
+    <div className={`absolute ${positionClasses[position]} z-10 w-max max-w-[200px]`}>
+      <div className="bg-amber-500 text-white text-xs px-2 py-1.5 rounded-md shadow-lg font-medium relative">
+        {children}
+        <div className={`absolute w-0 h-0 border-[6px] ${arrowClasses[position]}`} />
+      </div>
+    </div>
+  );
+}
+
 function MockObraForm() {
   return (
-    <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-      <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
-        <Building2 className="h-5 w-5 text-primary" />
-        <span className="font-semibold">Cadastro de Obra</span>
+    <div className="space-y-4">
+      {/* Card de Padronização de Nomenclatura */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="bg-amber-500 text-white p-2 rounded-full">
+            <AlertCircle className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-amber-800 mb-2">Padronização do Nome da Obra</h4>
+            <p className="text-sm text-amber-700 mb-3">
+              O nome da obra deve seguir o padrão: <strong>"Núcleo/Unidade + Cidade - Tipo de Serviço"</strong>
+            </p>
+            <div className="bg-white rounded-md p-3 border border-amber-200">
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Exemplos corretos:</p>
+              <ul className="space-y-1 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Núcleo Criminal de Rondonópolis - Cobertura</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Núcleo de Sinop - Ampliação</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Núcleo de Barra do Garças - Sala de Estagiários</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="p-4 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Nome da Obra *</label>
-            <Input value="Reforma da Defensoria Pública de Cuiabá" readOnly className="h-8 text-sm bg-muted/30" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Município *</label>
-            <Input value="Cuiabá" readOnly className="h-8 text-sm bg-muted/30" />
-          </div>
+
+      {/* Formulário com balões */}
+      <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
+          <Building2 className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Nova Obra</span>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Nº do Contrato</label>
-            <Input value="CT-2024/0123" readOnly className="h-8 text-sm bg-muted/30" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Status</label>
-            <div className="h-8 px-3 flex items-center bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
-              Em Andamento
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Nome da Obra *</label>
+              <Input value="Núcleo Criminal de Rondonópolis - Cobertura" readOnly className="h-8 text-sm bg-muted/30" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Município *</label>
+              <Input value="Rondonópolis" readOnly className="h-8 text-sm bg-muted/30" />
             </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Tipo</label>
-            <div className="h-8 px-3 flex items-center bg-muted/30 rounded-md text-sm">
-              Reforma
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Número do Contrato *</label>
+              <Input value="CT-2024/0123" readOnly className="h-8 text-sm bg-muted/30" />
+            </div>
+            <div className="space-y-1 relative">
+              <label className="text-xs text-muted-foreground font-medium">Status *</label>
+              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
+                <span>Planejamento</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <TooltipBalloon position="right">
+                Planejamento, Em Andamento, Paralisada, Concluída
+              </TooltipBalloon>
             </div>
           </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Valor do Contrato</label>
-            <Input value="R$ 1.250.000,00" readOnly className="h-8 text-sm bg-muted/30" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1 relative">
+              <label className="text-xs text-muted-foreground font-medium">Tipo *</label>
+              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
+                <span>Reforma</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <TooltipBalloon position="left">
+                Construção, Reforma, Ampliação, Manutenção
+              </TooltipBalloon>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Valor Inicial do Contrato (R$) *</label>
+              <Input value="1.250.000,00" readOnly className="h-8 text-sm bg-muted/30" />
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Data de Início</label>
-            <Input value="15/01/2024" readOnly className="h-8 text-sm bg-muted/30" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Data de Início</label>
+              <Input value="15/01/2024" readOnly className="h-8 text-sm bg-muted/30" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Tempo de Obra (dias)</label>
+              <Input value="180" readOnly className="h-8 text-sm bg-muted/30" />
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Prazo (dias)</label>
-            <Input value="180" readOnly className="h-8 text-sm bg-muted/30" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1 relative">
+              <label className="text-xs text-muted-foreground font-medium">Empresa Responsável</label>
+              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
+                <span>Selecione a empresa</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <TooltipBalloon position="left">
+                Lista de empresas cadastradas no sistema
+              </TooltipBalloon>
+            </div>
+            <div className="space-y-1 relative">
+              <label className="text-xs text-muted-foreground font-medium">Região</label>
+              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer text-muted-foreground">
+                <span>Selecione primeiro a empresa</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <TooltipBalloon position="right">
+                Filtrado conforme regiões da ATA da empresa
+              </TooltipBalloon>
+            </div>
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Empresa Responsável</label>
-            <Input value="Construtora ABC Ltda" readOnly className="h-8 text-sm bg-muted/30" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1 relative">
+              <label className="text-xs text-muted-foreground font-medium">Fiscal do Contrato</label>
+              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
+                <span>Selecione o fiscal</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <TooltipBalloon position="left">
+                Usuários com perfil Fiscal/DIF
+              </TooltipBalloon>
+            </div>
+            <div className="space-y-1 relative">
+              <label className="text-xs text-muted-foreground font-medium">Responsável pelo Projeto</label>
+              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
+                <span>Selecione o(a) arquiteto(a)</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <TooltipBalloon position="right">
+                Arquitetos do setor DIF
+              </TooltipBalloon>
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground font-medium">Fiscal do Contrato</label>
-            <Input value="João da Silva" readOnly className="h-8 text-sm bg-muted/30" />
+
+          <div className="bg-muted/30 rounded-md p-3 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">RDO Habilitado</p>
+              <p className="text-xs text-muted-foreground">Se desabilitado, não exigirá preenchimento de RDO</p>
+            </div>
+            <div className="w-10 h-5 bg-primary rounded-full relative">
+              <div className="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow" />
+            </div>
           </div>
-        </div>
-        <div className="flex gap-4 pt-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <MapPin className="h-4 w-4" />
-            Selecionar Localização
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Image className="h-4 w-4" />
-            Galeria de Fotos
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <FileUp className="h-4 w-4" />
-            Documentos
-          </Button>
+
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" size="sm" className="gap-2">
+              <MapPin className="h-4 w-4" />
+              Selecionar no Mapa
+            </Button>
+          </div>
         </div>
       </div>
     </div>
