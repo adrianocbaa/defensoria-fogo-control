@@ -1444,14 +1444,14 @@ export default function Apresentacao() {
       id: 23,
       title: '',
       content: (
-        <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
-          <img src={sidifLogo} alt="SIDIF Logo" className="h-24 object-contain" />
+        <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+          <img src="/images/logo-dif-dpmt.jpg" alt="Logo DIF" className="h-28 object-contain" />
           <div>
             <h1 className="text-4xl font-bold text-primary mb-4">
               Obrigado!
             </h1>
             <p className="text-xl text-muted-foreground">
-              Sistema Integrado DIF
+              Diretoria de Infraestrutura Física
             </p>
           </div>
           <div className="flex gap-4 mt-8">
@@ -1464,7 +1464,7 @@ export default function Apresentacao() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-8">
-            Diretoria de Infraestrutura Física - DPE/MT
+            DPE/MT
           </p>
         </div>
       ),

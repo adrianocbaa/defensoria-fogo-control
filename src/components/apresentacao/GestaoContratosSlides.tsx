@@ -376,7 +376,15 @@ export function HierarquiaFuncoes() {
 export function ResumoNovasDiretrizes() {
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
+      {/* Logo DIF como capa */}
+      <div className="flex justify-center mb-4">
+        <img 
+          src="/images/logo-dif-dpmt.jpg" 
+          alt="Logo DIF" 
+          className="h-20 object-contain"
+        />
+      </div>
+      <div className="text-center mb-4">
         <h3 className="text-xl font-bold text-primary">Resumo das Novas Diretrizes</h3>
       </div>
 
@@ -404,7 +412,7 @@ export function ResumoNovasDiretrizes() {
             </div>
             <ul className="text-sm space-y-2 text-emerald-900">
               <li>✓ Gestor: nível Coordenador</li>
-              <li>✓ Fiscal: técnicos capacitados</li>
+              <li>✓ Fiscais e Fiscais Substitutos</li>
               <li>✓ Designação por cargo, não pessoa</li>
               <li>✓ Continuidade em afastamentos</li>
             </ul>
