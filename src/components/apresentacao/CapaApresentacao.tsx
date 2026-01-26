@@ -32,68 +32,68 @@ export function CapaApresentacao() {
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-blue-500" />
 
       {/* Conteúdo principal */}
-      <div className="relative z-10 text-center px-8 max-w-4xl">
+      <div className="relative z-10 text-center px-8 max-w-4xl flex-1 flex flex-col justify-center">
         {/* Logo DIF */}
-        <div className="mb-8">
+        <div className="mb-6">
           <img 
             src="/images/logo-dif-dpmt.jpg" 
             alt="Logo DIF" 
-            className="h-20 mx-auto object-contain rounded-lg shadow-sm"
+            className="h-16 mx-auto object-contain rounded-lg shadow-sm"
           />
         </div>
 
         {/* Ícones representativos */}
-        <div className="flex justify-center gap-6 mb-8">
-          <div className="flex flex-col items-center gap-2 opacity-60">
-            <div className="p-3 bg-emerald-100/80 rounded-xl">
-              <FileText className="h-6 w-6 text-emerald-700" />
+        <div className="flex justify-center gap-4 mb-6">
+          <div className="flex flex-col items-center gap-1 opacity-60">
+            <div className="p-2 bg-emerald-100/80 rounded-xl">
+              <FileText className="h-5 w-5 text-emerald-700" />
             </div>
-            <span className="text-[10px] text-slate-500 font-medium">Contratos</span>
+            <span className="text-[9px] text-slate-500 font-medium">Contratos</span>
           </div>
-          <div className="flex flex-col items-center gap-2 opacity-60">
-            <div className="p-3 bg-blue-100/80 rounded-xl">
-              <Building2 className="h-6 w-6 text-blue-700" />
+          <div className="flex flex-col items-center gap-1 opacity-60">
+            <div className="p-2 bg-blue-100/80 rounded-xl">
+              <Building2 className="h-5 w-5 text-blue-700" />
             </div>
-            <span className="text-[10px] text-slate-500 font-medium">Obras</span>
+            <span className="text-[9px] text-slate-500 font-medium">Obras</span>
           </div>
-          <div className="flex flex-col items-center gap-2 opacity-60">
-            <div className="p-3 bg-slate-100/80 rounded-xl">
-              <Monitor className="h-6 w-6 text-slate-700" />
+          <div className="flex flex-col items-center gap-1 opacity-60">
+            <div className="p-2 bg-slate-100/80 rounded-xl">
+              <Monitor className="h-5 w-5 text-slate-700" />
             </div>
-            <span className="text-[10px] text-slate-500 font-medium">Sistema</span>
+            <span className="text-[9px] text-slate-500 font-medium">Sistema</span>
           </div>
-          <div className="flex flex-col items-center gap-2 opacity-60">
-            <div className="p-3 bg-emerald-100/80 rounded-xl">
-              <ClipboardCheck className="h-6 w-6 text-emerald-700" />
+          <div className="flex flex-col items-center gap-1 opacity-60">
+            <div className="p-2 bg-emerald-100/80 rounded-xl">
+              <ClipboardCheck className="h-5 w-5 text-emerald-700" />
             </div>
-            <span className="text-[10px] text-slate-500 font-medium">Fiscalização</span>
+            <span className="text-[9px] text-slate-500 font-medium">Fiscalização</span>
           </div>
-          <div className="flex flex-col items-center gap-2 opacity-60">
-            <div className="p-3 bg-blue-100/80 rounded-xl">
-              <BarChart3 className="h-6 w-6 text-blue-700" />
+          <div className="flex flex-col items-center gap-1 opacity-60">
+            <div className="p-2 bg-blue-100/80 rounded-xl">
+              <BarChart3 className="h-5 w-5 text-blue-700" />
             </div>
-            <span className="text-[10px] text-slate-500 font-medium">Medições</span>
+            <span className="text-[9px] text-slate-500 font-medium">Medições</span>
           </div>
         </div>
 
         {/* Título principal */}
-        <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4 tracking-tight">
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-3 tracking-tight">
           Novas Diretrizes{' '}
           <span className="text-emerald-700">DIF</span>
         </h1>
 
         {/* Linha decorativa */}
-        <div className="w-24 h-1 bg-gradient-to-r from-emerald-500 to-blue-500 mx-auto mb-6 rounded-full" />
+        <div className="w-20 h-1 bg-gradient-to-r from-emerald-500 to-blue-500 mx-auto mb-4 rounded-full" />
 
         {/* Subtítulo */}
-        <p className="text-base md:text-lg text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto">
+        <p className="text-sm md:text-base text-slate-600 font-medium leading-relaxed max-w-xl mx-auto">
           Padronização de procedimentos, gestão de contratos
           <br />
           e uso do Sistema <span className="text-emerald-700 font-semibold">SiDIF</span>
         </p>
 
         {/* Elementos decorativos laterais */}
-        <div className="flex justify-center gap-3 mt-4 opacity-40">
+        <div className="flex justify-center gap-3 mt-3 opacity-40">
           <div className="w-2 h-2 rounded-full bg-emerald-500" />
           <div className="w-2 h-2 rounded-full bg-slate-400" />
           <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -101,7 +101,7 @@ export function CapaApresentacao() {
       </div>
 
       {/* Rodapé institucional */}
-      <div className="absolute bottom-8 left-0 right-0 px-8">
+      <div className="relative z-10 pb-6 pt-4 px-8">
         <div className="flex flex-col items-center gap-1 text-center">
           <p className="text-sm font-semibold text-slate-700">
             Defensoria Pública do Estado de Mato Grosso
