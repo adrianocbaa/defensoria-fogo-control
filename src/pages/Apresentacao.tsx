@@ -40,7 +40,8 @@ import {
   Save,
   UserPlus,
   UserMinus,
-  ChevronDown
+  ChevronDown,
+  Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1001,80 +1002,298 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 13 - Acompanhamento Visual
+    // SLIDE 13 - Mapa de Obras Públicas
     {
       id: 13,
-      title: 'Acompanhamento Visual',
-      subtitle: 'Fotos, documentos e progresso em tempo real',
+      title: 'Mapa de Obras Públicas',
+      subtitle: 'Visualização geográfica de todas as obras do estado',
       content: (
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
-          <Card>
-            <CardContent className="p-4">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <Image className="h-4 w-4 text-primary" />
-                Galeria de Fotos por Período
-              </h4>
-              <div className="grid grid-cols-4 gap-2">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                    <Camera className="h-6 w-6 text-muted-foreground/50" />
-                  </div>
-                ))}
+        <div className="mt-4 border rounded-lg overflow-hidden bg-card shadow-lg">
+          {/* Header do mapa */}
+          <div className="bg-primary px-4 py-2 flex items-center gap-3">
+            <div className="flex items-center gap-2 text-primary-foreground">
+              <img src={sidifLogo} alt="SiDIF" className="h-6" />
+            </div>
+          </div>
+          
+          <div className="flex h-[400px]">
+            {/* Sidebar de Filtros */}
+            <div className="w-56 border-r bg-card p-4 space-y-4 overflow-y-auto">
+              <div>
+                <h4 className="font-semibold text-sm mb-2">Mapa de Obras Públicas</h4>
+                <p className="text-xs text-muted-foreground">Visualize e acompanhe o andamento das obras públicas no estado</p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Fotos organizadas por mês de execução</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                Progresso de Execução
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Execução Física</span>
-                    <span className="font-bold">68%</span>
-                  </div>
-                  <Progress value={68} className="h-3" />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Execução Financeira</span>
-                    <span className="font-bold">62%</span>
-                  </div>
-                  <Progress value={62} className="h-3" />
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
-                  <span>Valor Executado: R$ 850.000,00</span>
-                  <span>Total: R$ 1.250.000,00</span>
+              
+              <div className="border-t pt-4">
+                <p className="text-xs font-medium mb-2 flex items-center gap-1">
+                  <Eye className="h-3 w-3" /> Filtros
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-xs font-medium mb-2">Status da Obra</p>
+                <div className="space-y-1.5">
+                  {[
+                    { label: 'Concluída', color: 'bg-green-500', checked: false },
+                    { label: 'Em Andamento', color: 'bg-blue-500', checked: true },
+                    { label: 'Planejada', color: 'bg-amber-500', checked: false },
+                    { label: 'Paralisada', color: 'bg-red-500', checked: false },
+                  ].map((status, i) => (
+                    <label key={i} className="flex items-center gap-2 text-xs cursor-pointer">
+                      <div className={`w-3 h-3 rounded border ${status.checked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+                        {status.checked && <Check className="h-3 w-3 text-primary-foreground" />}
+                      </div>
+                      <span className={`w-2 h-2 rounded-full ${status.color}`} />
+                      <span>{status.label}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          <Card className="md:col-span-2">
-            <CardContent className="p-4">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <FileUp className="h-4 w-4 text-primary" />
-                Documentos Anexados
-              </h4>
-              <div className="grid grid-cols-4 gap-3">
-                {['Contrato.pdf', 'ART.pdf', 'Projeto.dwg', 'Planilha.xlsx'].map((doc, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                    <FileText className="h-4 w-4 text-red-500" />
-                    <span className="text-sm truncate">{doc}</span>
-                  </div>
-                ))}
+              
+              <div>
+                <p className="text-xs font-medium mb-2">Tipo de Obra</p>
+                <div className="space-y-1.5">
+                  {['Reforma', 'Construção', 'Adequações'].map((tipo, i) => (
+                    <label key={i} className="flex items-center gap-2 text-xs cursor-pointer">
+                      <div className="w-3 h-3 rounded border border-muted-foreground/30" />
+                      <span>{tipo}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+              
+              <div>
+                <p className="text-xs font-medium mb-2">Município</p>
+                <div className="flex items-center gap-2 border rounded-md px-2 py-1.5 bg-muted/30">
+                  <Search className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Buscar por município...</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Área do Mapa */}
+            <div className="flex-1 relative bg-[#e8f0e8]">
+              {/* Simulação do mapa */}
+              <div className="absolute inset-0 opacity-50" style={{ 
+                backgroundImage: 'linear-gradient(rgba(200,220,200,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(200,220,200,0.3) 1px, transparent 1px)',
+                backgroundSize: '40px 40px'
+              }} />
+              
+              {/* Pins no mapa */}
+              <div className="absolute top-[20%] left-[30%]">
+                <div className="bg-blue-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white">2</div>
+              </div>
+              <div className="absolute top-[35%] right-[25%]">
+                <div className="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <MapPin className="h-3 w-3" />
+                </div>
+              </div>
+              <div className="absolute top-[50%] left-[45%]">
+                <div className="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <MapPin className="h-3 w-3" />
+                </div>
+              </div>
+              <div className="absolute top-[65%] right-[35%]">
+                <div className="bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <MapPin className="h-3 w-3" />
+                </div>
+              </div>
+              <div className="absolute bottom-[15%] left-[55%]">
+                <div className="bg-green-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <MapPin className="h-3 w-3" />
+                </div>
+              </div>
+              <div className="absolute bottom-[25%] right-[15%]">
+                <div className="bg-blue-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white">4</div>
+              </div>
+              
+              {/* Contador de resultados */}
+              <div className="absolute top-3 right-3 bg-background/95 backdrop-blur-sm px-3 py-1.5 rounded-lg border shadow-sm">
+                <span className="text-xs font-medium">8 obras encontradas</span>
+              </div>
+              
+              {/* Nomes de cidades fictícios */}
+              <span className="absolute top-[15%] left-[20%] text-[10px] text-muted-foreground/70">Porto Velho</span>
+              <span className="absolute top-[30%] left-[50%] text-[10px] text-muted-foreground/70">Ariquemes</span>
+              <span className="absolute top-[45%] left-[35%] text-[10px] text-muted-foreground/70">Ji-Paraná</span>
+              <span className="absolute top-[60%] right-[30%] text-[10px] text-muted-foreground/70">Tangará da Serra</span>
+              <span className="absolute bottom-[20%] right-[20%] text-[10px] text-muted-foreground/70">Rondonópolis</span>
+              <span className="absolute bottom-[35%] left-[60%] text-[10px] text-muted-foreground/70">Cuiabá</span>
+            </div>
+          </div>
         </div>
       ),
     },
 
-    // SLIDE 14 - Gerenciar Obras (Simplificado)
+    // SLIDE 14 - Detalhes da Obra (Painel Lateral)
     {
       id: 14,
+      title: 'Visualização Externa',
+      subtitle: 'Ao clicar em uma obra no mapa, o painel de detalhes é exibido',
+      content: (
+        <div className="mt-4 border rounded-lg overflow-hidden bg-card shadow-lg">
+          {/* Simulação do painel lateral */}
+          <div className="flex">
+            {/* Mapa reduzido */}
+            <div className="w-1/2 h-[420px] relative bg-[#e8f0e8] border-r">
+              <div className="absolute inset-0 opacity-50" style={{ 
+                backgroundImage: 'linear-gradient(rgba(200,220,200,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(200,220,200,0.3) 1px, transparent 1px)',
+                backgroundSize: '40px 40px'
+              }} />
+              {/* Pin selecionado */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="bg-blue-500 text-white text-xs w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-pulse">
+                  <MapPin className="h-5 w-5" />
+                </div>
+              </div>
+              <span className="absolute top-1/2 left-1/2 translate-x-4 -translate-y-4 text-xs text-muted-foreground bg-white/80 px-1 rounded">Cuiabá</span>
+            </div>
+            
+            {/* Painel de detalhes */}
+            <div className="w-1/2 h-[420px] overflow-y-auto p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-base">Almoxarifado Santa Cruz - Reforma 02</h3>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                    <MapPin className="h-3 w-3" />
+                    <span>Cuiabá</span>
+                  </div>
+                </div>
+                <button className="text-muted-foreground hover:text-foreground">
+                  <XCircle className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="flex gap-2">
+                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Em Andamento</Badge>
+                <Badge variant="outline">Reforma</Badge>
+              </div>
+              
+              {/* Informações Gerais */}
+              <div className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Building2 className="h-4 w-4" />
+                  <span>Informações Gerais</span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Contrato:</span>
+                    <p className="font-medium">111/2025</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Objeto:</span>
+                    <p className="font-medium">Almoxarifado Santa Cruz - Reforma 02</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Fiscal do Contrato:</span>
+                    <p className="font-medium">Adriano Augusto</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Empresa Responsável:</span>
+                    <p className="font-medium">A M I CONSTRUÇÕES LTDA</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Prazos */}
+              <div className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Calendar className="h-4 w-4" />
+                  <span>Prazos de Execução</span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Data de início:</span>
+                    <p className="font-medium">28/09/2025</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Data prevista de término:</span>
+                    <p className="font-medium">13/10/2025</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Financeiro */}
+              <div className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Informações Financeiras</span>
+                </div>
+                <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded flex items-center gap-1">
+                  <Check className="h-3 w-3" />
+                  Dados atualizados com base nas medições registradas
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Valor Inicial:</span>
+                    <p className="font-semibold">R$ 73.766,43</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Valor Aditivado:</span>
+                    <p className="font-medium">R$ 0,00</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Valor Final:</span>
+                    <p className="font-semibold text-primary">R$ 73.766,43</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Valor Pago:</span>
+                    <span className="font-bold text-green-600">23.31%</span>
+                  </div>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="absolute h-full bg-green-500 rounded-full" style={{ width: '23.31%' }}>
+                      <div className="absolute right-0 top-0 h-full w-0.5 bg-green-700" />
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
+                    <span>Valor Executado: R$ 17.194,37</span>
+                    <span>Valor Final: R$ 73.766,43</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Álbum de Fotos */}
+              <div className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Image className="h-4 w-4" />
+                  <span>Álbum de Fotos (17)</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  <span>Álbum de Fotos</span>
+                  <Badge variant="secondary" className="text-[10px]">17 fotos em 1 pasta</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-muted p-2 rounded">
+                    <Camera className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-medium">NOV. DE 2025</p>
+                    <p className="text-muted-foreground">17 fotos</p>
+                  </div>
+                  <div className="flex gap-1 ml-auto">
+                    {[1,2,3].map((i) => (
+                      <div key={i} className="w-8 h-8 bg-muted rounded flex items-center justify-center">
+                        <Camera className="h-3 w-3 text-muted-foreground/50" />
+                      </div>
+                    ))}
+                    <div className="w-8 h-8 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                      +14
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // SLIDE 15 - Gerenciar Obras (Simplificado)
+    {
+      id: 15,
       title: 'Gerenciar Obras',
       subtitle: 'Visão consolidada para gestão administrativa',
       content: (
@@ -1118,9 +1337,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 15 - Tipos de Medição
+    // SLIDE 16 - Tipos de Medição
     {
-      id: 15,
+      id: 16,
       title: 'Sistema de Medições',
       subtitle: 'Dois modos de trabalho: Manual ou via RDO',
       content: (
@@ -1138,9 +1357,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 16 - RDO Calendário Visual
+    // SLIDE 17 - RDO Calendário Visual
     {
-      id: 16,
+      id: 17,
       title: 'Calendário de RDO',
       subtitle: 'Visualização mensal com status e indicadores',
       content: (
@@ -1151,9 +1370,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 17 - RDO Lista de Serviços
+    // SLIDE 18 - RDO Lista de Serviços
     {
-      id: 17,
+      id: 18,
       title: 'Preenchimento de Atividades',
       subtitle: 'A Contratada insere os quantitativos executados no dia',
       content: (
@@ -1163,9 +1382,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 18 - Assinaturas e Histórico
+    // SLIDE 19 - Assinaturas e Histórico
     {
-      id: 18,
+      id: 19,
       title: 'Assinaturas e Validação',
       subtitle: 'Fluxo de aprovação com histórico de reprovações',
       content: (
@@ -1175,9 +1394,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 19 - RDO Impresso
+    // SLIDE 20 - RDO Impresso
     {
-      id: 19,
+      id: 20,
       title: 'RDO Impresso',
       subtitle: 'Documento gerado automaticamente pelo sistema',
       content: (
@@ -1187,9 +1406,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 20 - Permissões
+    // SLIDE 21 - Permissões
     {
-      id: 20,
+      id: 21,
       title: 'Permissões e Segurança',
       subtitle: 'Como o fiscal gerencia suas obras e acessos autorizados',
       content: (
@@ -1199,9 +1418,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 21 - Encerramento
+    // SLIDE 22 - Encerramento
     {
-      id: 21,
+      id: 22,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
