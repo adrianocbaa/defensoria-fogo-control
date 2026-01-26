@@ -791,33 +791,40 @@ export default function Apresentacao() {
       content: <CapaApresentacao />,
     },
 
-    // ============ CALENDÁRIO DIF ============
-    // SLIDE 2 - Capa Calendário DIF
+    // SLIDE 2 - Resumo das Novas Diretrizes
     {
       id: 2,
+      title: 'Resumo das Novas Diretrizes',
+      content: <ResumoNovasDiretrizes />,
+    },
+
+    // ============ CALENDÁRIO DIF ============
+    // SLIDE 3 - Capa Calendário DIF
+    {
+      id: 3,
       title: '',
       content: <CalendarioDifCapa />,
     },
 
-    // SLIDE 3 - Objetivos
+    // SLIDE 4 - Objetivos
     {
-      id: 3,
+      id: 4,
       title: 'Objetivos',
       subtitle: 'Registro de viagens institucionais no Google Agenda',
       content: <CalendarioDifObjetivos />,
     },
 
-    // SLIDE 4 - Diretrizes
+    // SLIDE 5 - Diretrizes
     {
-      id: 4,
+      id: 5,
       title: 'Diretrizes de Preenchimento',
       subtitle: 'Regras para registro de viagens',
       content: <CalendarioDifDiretrizes />,
     },
 
-    // SLIDE 5 - Google Calendar Visual
+    // SLIDE 6 - Google Calendar Visual
     {
-      id: 5,
+      id: 6,
       title: 'Agenda de Viagens DIF',
       subtitle: 'Visualização real no Google Calendar',
       content: (
@@ -827,66 +834,66 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 6 - Modelo de Preenchimento
+    // SLIDE 7 - Modelo de Preenchimento
     {
-      id: 6,
+      id: 7,
       title: 'Como Preencher',
       subtitle: 'Modelo padrão para registro de viagens',
       content: <ModeloPreenchimento />,
     },
 
     // ============ GESTÃO E FISCALIZAÇÃO DE CONTRATOS ============
-    // SLIDE 7 - Capa Gestão de Contratos
+    // SLIDE 8 - Capa Gestão de Contratos
     {
-      id: 7,
+      id: 8,
       title: '',
       content: <GestaoContratosCapa />,
     },
 
-    // SLIDE 8 - Diretrizes Internas - Fiscalização e Gestão de Contratos
+    // SLIDE 9 - Diretrizes Internas - Fiscalização e Gestão de Contratos
     {
-      id: 8,
+      id: 9,
       title: 'Diretrizes Internas',
       subtitle: 'Fiscalização e Gestão de Contratos - SEI n° 2025.0.000019210-4',
       content: <DiretrizesInternasFiscalizacao />,
     },
 
-    // SLIDE 9 - Atribuições do Gestor de Contratos
+    // SLIDE 10 - Atribuições do Gestor de Contratos
     {
-      id: 9,
+      id: 10,
       title: 'Atribuições do Gestor de Contratos',
       subtitle: 'Função, atribuições e responsabilidades',
       content: <AtribuicoesGestorContratos />,
     },
 
-    // SLIDE 10 - Regras do Gestor
+    // SLIDE 11 - Regras do Gestor
     {
-      id: 10,
+      id: 11,
       title: 'Função de Gestor de Contratos',
       subtitle: 'Novas diretrizes para designação',
       content: <GestorContratosRegras />,
     },
 
-    // SLIDE 11 - Exceções e Continuidade
+    // SLIDE 12 - Exceções e Continuidade
     {
-      id: 11,
+      id: 12,
       title: 'Exceções e Continuidade',
       subtitle: 'Situações especiais e garantia de fluxo administrativo',
       content: <GestorContratosExcecoes />,
     },
 
-    // SLIDE 12 - Hierarquia
+    // SLIDE 13 - Hierarquia
     {
-      id: 12,
+      id: 13,
       title: 'Gestor vs Fiscal',
       subtitle: 'Diferenças de atribuições e responsabilidades',
       content: <HierarquiaFuncoes />,
     },
 
     // ============ SISTEMA INTEGRADO DIF ============
-    // SLIDE 11 - Capa Sistema SIDIF
+    // SLIDE 14 - Capa Sistema SIDIF
     {
-      id: 11,
+      id: 14,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
@@ -910,9 +917,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 11 - Visão Geral
+    // SLIDE 15 - Visão Geral
     {
-      id: 11,
+      id: 15,
       title: 'Visão Geral do Sistema',
       subtitle: 'Uma plataforma integrada para gestão de obras públicas',
       content: (
@@ -948,9 +955,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 12 - Cadastro de Obras (VISUAL)
+    // SLIDE 16 - Cadastro de Obras (VISUAL)
     {
-      id: 12,
+      id: 16,
       title: 'Cadastro de Obras',
       subtitle: 'Formulário completo com todas as informações contratuais',
       content: (
@@ -960,9 +967,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 13 - Mapa de Obras Públicas
+    // SLIDE 17 - Mapa de Obras Públicas
     {
-      id: 13,
+      id: 17,
       title: 'Mapa de Obras Públicas',
       subtitle: 'Visualização geográfica de todas as obras do estado',
       content: (
@@ -1082,9 +1089,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 14 - Detalhes da Obra (Painel Lateral)
+    // SLIDE 18 - Detalhes da Obra (Painel Lateral)
     {
-      id: 14,
+      id: 18,
       title: 'Visualização Externa',
       subtitle: 'Ao clicar em uma obra no mapa, o painel de detalhes é exibido',
       content: (
@@ -1244,9 +1251,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 15 - Documentação Obrigatória
+    // SLIDE 19 - Documentação Obrigatória
     {
-      id: 15,
+      id: 19,
       title: 'Documentação Obrigatória',
       subtitle: 'Documentos que devem ser anexados no sistema',
       content: (
@@ -1325,9 +1332,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 16 - Gerenciar Obras (Simplificado)
+    // SLIDE 20 - Gerenciar Obras (Simplificado)
     {
-      id: 16,
+      id: 20,
       title: 'Gerenciar Obras',
       subtitle: 'Visão consolidada para gestão administrativa',
       content: (
@@ -1371,9 +1378,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 17 - Tipos de Medição
+    // SLIDE 21 - Tipos de Medição
     {
-      id: 17,
+      id: 21,
       title: 'Sistema de Medições',
       subtitle: 'Dois modos de trabalho: Manual ou via RDO',
       content: (
@@ -1391,9 +1398,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 18 - RDO Calendário Visual
+    // SLIDE 22 - RDO Calendário Visual
     {
-      id: 18,
+      id: 22,
       title: 'Calendário de RDO',
       subtitle: 'Visualização mensal com status e indicadores',
       content: (
@@ -1404,9 +1411,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 19 - RDO Lista de Serviços
+    // SLIDE 23 - RDO Lista de Serviços
     {
-      id: 19,
+      id: 23,
       title: 'Preenchimento de Atividades',
       subtitle: 'A Contratada insere os quantitativos executados no dia',
       content: (
@@ -1416,33 +1423,33 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 20 - Assinaturas e Histórico
+    // SLIDE 24 - Assinaturas e Histórico
     {
-      id: 20,
+      id: 24,
       title: 'Assinaturas e Validação',
       subtitle: 'Fluxo de aprovação com histórico de reprovações',
       content: <MockSignaturesPanel />,
     },
 
-    // SLIDE 21 - RDO Impresso
+    // SLIDE 25 - RDO Impresso
     {
-      id: 21,
+      id: 25,
       title: 'RDO Impresso',
       subtitle: 'Documento gerado automaticamente pelo sistema',
       content: <MockPrintedRdo />,
     },
 
-    // SLIDE 22 - Permissões
+    // SLIDE 26 - Permissões
     {
-      id: 22,
+      id: 26,
       title: 'Permissões e Segurança',
       subtitle: 'Como o fiscal gerencia suas obras e acessos autorizados',
       content: <MockPermissionsManager />,
     },
 
-    // SLIDE 23 - Encerramento
+    // SLIDE 27 - Encerramento
     {
-      id: 23,
+      id: 27,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
