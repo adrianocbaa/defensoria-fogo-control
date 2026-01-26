@@ -101,7 +101,7 @@ export function CapaApresentacao() {
       </div>
 
       {/* Rodapé institucional */}
-      <div className="absolute bottom-0 left-0 right-0 py-6 px-8">
+      <div className="absolute bottom-6 left-0 right-0 px-8">
         <div className="flex flex-col items-center gap-1 text-center">
           <p className="text-sm font-semibold text-slate-700">
             Defensoria Pública do Estado de Mato Grosso
@@ -110,10 +110,10 @@ export function CapaApresentacao() {
             Diretoria de Infraestrutura Física
           </p>
         </div>
-        
-        {/* Linha decorativa inferior */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 via-emerald-500 to-blue-500" />
       </div>
+      
+      {/* Linha decorativa inferior */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 via-emerald-500 to-blue-500" />
     </div>
   );
 }
