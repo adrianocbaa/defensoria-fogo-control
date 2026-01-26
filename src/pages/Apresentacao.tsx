@@ -56,6 +56,8 @@ import {
 
 import {
   GestaoContratosCapa,
+  DiretrizesInternasFiscalizacao,
+  AtribuicoesGestorContratos,
   GestorContratosRegras,
   GestorContratosExcecoes,
   HierarquiaFuncoes,
@@ -761,33 +763,49 @@ export default function Apresentacao() {
       content: <GestaoContratosCapa />,
     },
 
-    // SLIDE 7 - Regras do Gestor
+    // SLIDE 7 - Diretrizes Internas - Fiscalização e Gestão de Contratos
     {
       id: 7,
+      title: 'Diretrizes Internas',
+      subtitle: 'Fiscalização e Gestão de Contratos - SEI n° 2025.0.000019210-4',
+      content: <DiretrizesInternasFiscalizacao />,
+    },
+
+    // SLIDE 8 - Atribuições do Gestor de Contratos
+    {
+      id: 8,
+      title: 'Atribuições do Gestor de Contratos',
+      subtitle: 'Função, atribuições e responsabilidades',
+      content: <AtribuicoesGestorContratos />,
+    },
+
+    // SLIDE 9 - Regras do Gestor
+    {
+      id: 9,
       title: 'Função de Gestor de Contratos',
       subtitle: 'Novas diretrizes para designação',
       content: <GestorContratosRegras />,
     },
 
-    // SLIDE 8 - Exceções e Continuidade
+    // SLIDE 10 - Exceções e Continuidade
     {
-      id: 8,
+      id: 10,
       title: 'Exceções e Continuidade',
       subtitle: 'Situações especiais e garantia de fluxo administrativo',
       content: <GestorContratosExcecoes />,
     },
 
-    // SLIDE 9 - Hierarquia
+    // SLIDE 11 - Hierarquia
     {
-      id: 9,
+      id: 11,
       title: 'Gestor vs Fiscal',
       subtitle: 'Diferenças de atribuições e responsabilidades',
       content: <HierarquiaFuncoes />,
     },
 
-    // SLIDE 10 - Resumo
+    // SLIDE 12 - Resumo
     {
-      id: 10,
+      id: 12,
       title: 'Novas Diretrizes DIF',
       subtitle: 'Resumo das principais mudanças',
       content: <ResumoNovasDiretrizes />,

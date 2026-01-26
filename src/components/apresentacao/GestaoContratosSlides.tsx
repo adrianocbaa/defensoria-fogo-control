@@ -35,7 +35,158 @@ export function GestaoContratosCapa() {
   );
 }
 
-// Determinação sobre Gestor de Contratos
+// Diretrizes Internas - Fiscalização e Gestão de Contratos
+export function DiretrizesInternasFiscalizacao() {
+  return (
+    <div className="space-y-6">
+      <Card className="border-2 border-blue-200">
+        <CardHeader className="bg-blue-50">
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-blue-600" />
+            Diretrizes Internas - Fiscalização e Gestão de Contratos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-900">
+              Foram estabelecidas novas diretrizes para a atuação do Gestor de Contratos no âmbito da Defensoria Pública do Estado de Mato Grosso no procedimento SEI n° <strong>2025.0.000019210-4</strong>
+            </p>
+          </div>
+
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-900 mb-3">
+              No âmbito da Diretoria de Infraestrutura Física, por determinação do Diretor de Infraestrutura Física, fica estabelecido que:
+            </p>
+            <ul className="space-y-2 text-sm text-green-800">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                <span>Todos os contratos deverão contar com <strong>fiscal, fiscal substituto e gestor do contrato</strong></span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                <span>Nas comunicações internas inaugurais dos procedimentos que venham a gerar contratos (obras, projetos e aquisições), deverão ser expressamente indicados os fiscais e o gestor do contrato</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                <span>Para as obras e reformas, preferencialmente, será indicado como <strong>Gestor do Contrato o Arquiteto responsável</strong> pela elaboração dos projetos executivos</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                <span>O gestor de contratos será responsável pelo <strong>recebimento definitivo</strong> do objeto contratual</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                <span>O fiscal substituto deverá realizar a <strong>conferência das medições</strong> realizadas pelo fiscal, atentando-se à conformidade dos serviços executados, bem como assinando, em conjunto, o respectivo procedimento de medição</span>
+              </li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Atribuições do Gestor de Contratos (detalhado)
+export function AtribuicoesGestorContratos() {
+  return (
+    <div className="space-y-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="border-2 border-blue-200">
+          <CardHeader className="bg-blue-50 pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <UserCog className="h-5 w-5 text-blue-600" />
+              Função do Gestor
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">
+              Responsável pela <strong>gestão global do contrato</strong>, assegurando a articulação entre a fiscalização, 
+              a instrução processual e os procedimentos administrativos ao longo da execução contratual.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-green-200">
+          <CardHeader className="bg-green-50 pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ClipboardList className="h-5 w-5 text-green-600" />
+              Atribuições
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-start gap-2">
+                <ArrowRight className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                <span>Coordenar e acompanhar as atividades de fiscalização contratual</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <ArrowRight className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                <span>Analisar relatórios, medições e documentação técnica e administrativa</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-2 border-amber-200">
+        <CardHeader className="bg-amber-50 pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Briefcase className="h-5 w-5 text-amber-600" />
+            Instruir e Encaminhar Processos de:
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>Prorrogação, alteração e reequilíbrio</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>Pagamento</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>Extinção contratual</span>
+              </li>
+            </ul>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>Promover processo administrativo de responsabilização e aplicação de sanções</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>Realizar o recebimento definitivo do objeto</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>Encaminhar documentação para liquidação da despesa e pagamento</span>
+              </li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <p className="text-xs text-blue-800 text-center">
+            <strong>Fonte:</strong> TCU – Gestão do Contrato e Recebimento Definitivo (Lei nº 14.133/2021)
+            <br />
+            <a href="https://licitacoesecontratos.tcu.gov.br/6-1-6-gestao-do-contrato-e-recebimento-definitivo-2/" 
+               target="_blank" 
+               className="underline">
+              https://licitacoesecontratos.tcu.gov.br/6-1-6-gestao-do-contrato-e-recebimento-definitivo-2/
+            </a>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Determinação sobre Gestor de Contratos (mantido para compatibilidade)
 export function GestorContratosRegras() {
   return (
     <div className="space-y-6">
