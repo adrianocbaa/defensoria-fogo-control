@@ -376,10 +376,6 @@ export function HierarquiaFuncoes() {
 export function ResumoNovasDiretrizes() {
   return (
     <div className="space-y-6">
-      <div className="text-center mb-2">
-        <h3 className="text-2xl font-bold text-slate-800">Resumo das Novas Diretrizes</h3>
-      </div>
-
       <div className="grid md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-5">
