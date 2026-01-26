@@ -100,32 +100,32 @@ function TooltipBalloon({ children, position = 'right' }: { children: React.Reac
 
 function MockObraForm() {
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-3">
       {/* Card de Padronização de Nomenclatura */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="bg-amber-500 text-white p-2 rounded-full">
-            <AlertCircle className="h-5 w-5" />
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <div className="flex items-start gap-2">
+          <div className="bg-amber-500 text-white p-1.5 rounded-full shrink-0">
+            <AlertCircle className="h-4 w-4" />
           </div>
           <div>
-            <h4 className="font-semibold text-amber-800 mb-2">Padronização do Nome da Obra</h4>
-            <p className="text-sm text-amber-700 mb-3">
-              O nome da obra deve seguir o padrão: <strong>"Núcleo/Unidade + Cidade - Tipo de Serviço"</strong>
+            <h4 className="font-semibold text-amber-800 text-sm mb-1">Padronização do Nome</h4>
+            <p className="text-xs text-amber-700 mb-2">
+              Padrão: <strong>"Núcleo + Cidade - Serviço"</strong>
             </p>
-            <div className="bg-white rounded-md p-3 border border-amber-200">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Exemplos corretos:</p>
-              <ul className="space-y-1 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <span>Núcleo Criminal de Rondonópolis - Cobertura</span>
+            <div className="bg-white rounded p-2 border border-amber-200">
+              <p className="text-[10px] text-muted-foreground mb-1 font-medium">Exemplos:</p>
+              <ul className="space-y-0.5 text-xs">
+                <li className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                  <span>Núcleo Criminal Rondonópolis - Cobertura</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <li className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-600" />
                   <span>Núcleo de Sinop - Ampliação</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <span>Núcleo de Barra do Garças - Sala de Estagiários</span>
+                <li className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                  <span>Núcleo de Barra do Garças - Sala Estagiários</span>
                 </li>
               </ul>
             </div>
@@ -134,33 +134,33 @@ function MockObraForm() {
       </div>
 
       {/* Formulário com balões */}
-      <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-primary" />
-          <span className="font-semibold">Nova Obra</span>
+      <div className="bg-card border rounded-lg shadow-sm overflow-hidden row-span-2">
+        <div className="bg-muted/50 px-3 py-2 border-b flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-sm">Nova Obra</span>
         </div>
-        <div className="p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Nome da Obra *</label>
-              <Input value="Núcleo Criminal de Rondonópolis - Cobertura" readOnly className="h-8 text-sm bg-muted/30" />
+        <div className="p-3 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5">
+              <label className="text-[10px] text-muted-foreground font-medium">Nome da Obra *</label>
+              <Input value="Núcleo Criminal Rondonópolis - Cobertura" readOnly className="h-7 text-xs bg-muted/30" />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Município *</label>
-              <Input value="Rondonópolis" readOnly className="h-8 text-sm bg-muted/30" />
+            <div className="space-y-0.5">
+              <label className="text-[10px] text-muted-foreground font-medium">Município *</label>
+              <Input value="Rondonópolis" readOnly className="h-7 text-xs bg-muted/30" />
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Número do Contrato *</label>
-              <Input value="CT-2024/0123" readOnly className="h-8 text-sm bg-muted/30" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5">
+              <label className="text-[10px] text-muted-foreground font-medium">Nº Contrato *</label>
+              <Input value="CT-2024/0123" readOnly className="h-7 text-xs bg-muted/30" />
             </div>
-            <div className="space-y-1 relative">
-              <label className="text-xs text-muted-foreground font-medium">Status *</label>
-              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
+            <div className="space-y-0.5 relative">
+              <label className="text-[10px] text-muted-foreground font-medium">Status *</label>
+              <div className="h-7 px-2 flex items-center justify-between bg-muted/30 rounded text-xs border">
                 <span>Planejamento</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </div>
               <TooltipBalloon position="right">
                 Planejamento, Em Andamento, Paralisada, Concluída
@@ -168,97 +168,105 @@ function MockObraForm() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1 relative">
-              <label className="text-xs text-muted-foreground font-medium">Tipo *</label>
-              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5 relative">
+              <label className="text-[10px] text-muted-foreground font-medium">Tipo *</label>
+              <div className="h-7 px-2 flex items-center justify-between bg-muted/30 rounded text-xs border">
                 <span>Reforma</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </div>
               <TooltipBalloon position="left">
-                Construção, Reforma, Ampliação, Manutenção
+                Construção, Reforma, Ampliação
               </TooltipBalloon>
             </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Valor Inicial do Contrato (R$) *</label>
-              <Input value="1.250.000,00" readOnly className="h-8 text-sm bg-muted/30" />
+            <div className="space-y-0.5">
+              <label className="text-[10px] text-muted-foreground font-medium">Valor (R$) *</label>
+              <Input value="1.250.000,00" readOnly className="h-7 text-xs bg-muted/30" />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Data de Início</label>
-              <Input value="15/01/2024" readOnly className="h-8 text-sm bg-muted/30" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Tempo de Obra (dias)</label>
-              <Input value="180" readOnly className="h-8 text-sm bg-muted/30" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1 relative">
-              <label className="text-xs text-muted-foreground font-medium">Empresa Responsável</label>
-              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
-                <span>Selecione a empresa</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5 relative">
+              <label className="text-[10px] text-muted-foreground font-medium">Empresa</label>
+              <div className="h-7 px-2 flex items-center justify-between bg-muted/30 rounded text-xs border">
+                <span className="text-muted-foreground">Selecione...</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </div>
               <TooltipBalloon position="left">
-                Lista de empresas cadastradas no sistema
+                Empresas cadastradas
               </TooltipBalloon>
             </div>
-            <div className="space-y-1 relative">
-              <label className="text-xs text-muted-foreground font-medium">Região</label>
-              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer text-muted-foreground">
-                <span>Selecione primeiro a empresa</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <div className="space-y-0.5 relative">
+              <label className="text-[10px] text-muted-foreground font-medium">Região</label>
+              <div className="h-7 px-2 flex items-center justify-between bg-muted/30 rounded text-xs border text-muted-foreground">
+                <span>Filtrado pela ATA</span>
+                <ChevronDown className="h-3 w-3" />
               </div>
               <TooltipBalloon position="right">
-                Filtrado conforme regiões da ATA da empresa
+                Regiões da ATA
               </TooltipBalloon>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1 relative">
-              <label className="text-xs text-muted-foreground font-medium">Fiscal do Contrato</label>
-              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
-                <span>Selecione o fiscal</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5 relative">
+              <label className="text-[10px] text-muted-foreground font-medium">Fiscal</label>
+              <div className="h-7 px-2 flex items-center justify-between bg-muted/30 rounded text-xs border">
+                <span className="text-muted-foreground">Selecione...</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </div>
               <TooltipBalloon position="left">
-                Usuários com perfil Fiscal/DIF
+                Perfil Fiscal/DIF
               </TooltipBalloon>
             </div>
-            <div className="space-y-1 relative">
-              <label className="text-xs text-muted-foreground font-medium">Responsável pelo Projeto</label>
-              <div className="h-8 px-3 flex items-center justify-between bg-muted/30 rounded-md text-sm border cursor-pointer">
-                <span>Selecione o(a) arquiteto(a)</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <div className="space-y-0.5 relative">
+              <label className="text-[10px] text-muted-foreground font-medium">Arquiteto</label>
+              <div className="h-7 px-2 flex items-center justify-between bg-muted/30 rounded text-xs border">
+                <span className="text-muted-foreground">Selecione...</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </div>
               <TooltipBalloon position="right">
-                Arquitetos do setor DIF
+                Arquitetos DIF
               </TooltipBalloon>
             </div>
           </div>
 
-          <div className="bg-muted/30 rounded-md p-3 flex items-center justify-between">
+          <div className="bg-muted/30 rounded p-2 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">RDO Habilitado</p>
-              <p className="text-xs text-muted-foreground">Se desabilitado, não exigirá preenchimento de RDO</p>
+              <p className="text-xs font-medium">RDO Habilitado</p>
+              <p className="text-[10px] text-muted-foreground">Exigir preenchimento</p>
             </div>
-            <div className="w-10 h-5 bg-primary rounded-full relative">
-              <div className="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow" />
+            <div className="w-8 h-4 bg-primary rounded-full relative">
+              <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow" />
             </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <MapPin className="h-4 w-4" />
-              Selecionar no Mapa
-            </Button>
           </div>
         </div>
+      </div>
+
+      {/* Card informativo sobre campos obrigatórios */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <h4 className="font-semibold text-blue-800 text-sm mb-2 flex items-center gap-1.5">
+          <Building2 className="h-4 w-4" />
+          Campos com Lista
+        </h4>
+        <ul className="text-xs text-blue-700 space-y-1">
+          <li className="flex items-center gap-1.5">
+            <ChevronDown className="h-3 w-3" />
+            <strong>Status:</strong> Opções do ciclo de vida
+          </li>
+          <li className="flex items-center gap-1.5">
+            <ChevronDown className="h-3 w-3" />
+            <strong>Tipo:</strong> Categoria da obra
+          </li>
+          <li className="flex items-center gap-1.5">
+            <ChevronDown className="h-3 w-3" />
+            <strong>Empresa/Região:</strong> Vinculados à ATA
+          </li>
+          <li className="flex items-center gap-1.5">
+            <ChevronDown className="h-3 w-3" />
+            <strong>Fiscal/Arquiteto:</strong> Usuários do sistema
+          </li>
+        </ul>
       </div>
     </div>
   );
@@ -267,102 +275,86 @@ function MockObraForm() {
 // Componente simulando o calendário de RDO
 function MockRdoCalendar() {
   const days = [
-    { day: 1, status: 'aprovado', photos: 5, hasOccurrence: true },
+    { day: 1, status: 'aprovado', photos: 5 },
     { day: 2, status: 'aprovado', photos: 3 },
     { day: 3, status: 'aprovado', photos: 8 },
     { day: 4, status: 'semExpediente' },
     { day: 5, status: 'semExpediente' },
     { day: 6, status: 'aprovado', photos: 4 },
-    { day: 7, status: 'aprovado', photos: 2, hasOccurrence: true },
-    { day: 8, status: 'concluido', pendingSignature: 'fiscal' },
-    { day: 9, status: 'concluido', pendingSignature: 'contratada' },
-    { day: 10, status: 'preenchendo', photos: 1 },
+    { day: 7, status: 'aprovado', photos: 2 },
+    { day: 8, status: 'concluido' },
+    { day: 9, status: 'concluido' },
+    { day: 10, status: 'preenchendo' },
     { day: 11, status: 'semExpediente' },
     { day: 12, status: 'semExpediente' },
     { day: 13, status: 'falta' },
-    { day: 14, status: 'falta' },
-    { day: 15, status: null },
+    { day: 14, status: null },
   ];
 
   const getStatusStyle = (status: string | null) => {
     switch(status) {
-      case 'aprovado': return 'bg-green-100 dark:bg-green-950/30 border-green-300 text-green-800';
-      case 'concluido': return 'bg-blue-100 dark:bg-blue-950/30 border-blue-300 text-blue-800';
-      case 'preenchendo': return 'bg-orange-100 dark:bg-orange-950/30 border-orange-300 text-orange-800';
-      case 'semExpediente': return 'bg-slate-100 dark:bg-slate-800/50 border-slate-300 text-slate-600';
-      case 'falta': return 'bg-amber-50 dark:bg-amber-950/20 border-amber-300';
-      default: return 'bg-card border-border hover:bg-accent/50';
+      case 'aprovado': return 'bg-green-100 border-green-300 text-green-800';
+      case 'concluido': return 'bg-blue-100 border-blue-300 text-blue-800';
+      case 'preenchendo': return 'bg-orange-100 border-orange-300 text-orange-800';
+      case 'semExpediente': return 'bg-slate-100 border-slate-300 text-slate-600';
+      case 'falta': return 'bg-amber-50 border-amber-300';
+      default: return 'bg-card border-border';
     }
   };
 
   return (
     <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-      <div className="bg-muted/50 px-4 py-3 border-b flex items-center justify-between">
+      <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
-          <span className="font-semibold">Calendário de RDO</span>
+          <Calendar className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-sm">Calendário de RDO</span>
         </div>
-        <div className="flex items-center gap-2">
-          <ChevronLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Janeiro 2024</span>
-          <ChevronRight className="h-4 w-4" />
+        <div className="flex items-center gap-1.5 text-xs">
+          <ChevronLeft className="h-3 w-3" />
+          <span className="font-medium">Janeiro 2024</span>
+          <ChevronRight className="h-3 w-3" />
         </div>
       </div>
-      <div className="p-4">
-        <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-medium text-muted-foreground">
+      <div className="p-3">
+        <div className="grid grid-cols-7 gap-1.5 mb-1.5 text-center text-[10px] font-medium text-muted-foreground">
           <div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div><div>Dom</div>
         </div>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1.5">
           {days.map((d, i) => (
             <div 
               key={i} 
-              className={`aspect-square border rounded-lg p-1.5 relative transition-colors cursor-pointer text-center ${getStatusStyle(d.status)}`}
+              className={`aspect-square border rounded p-1 relative text-center ${getStatusStyle(d.status)}`}
             >
-              <span className="text-sm font-medium">{d.day}</span>
+              <span className="text-xs font-medium">{d.day}</span>
               {d.photos && (
-                <div className="absolute bottom-1 left-1 flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                  <Camera className="h-2.5 w-2.5" />
+                <div className="absolute bottom-0.5 left-0.5 text-[8px] text-muted-foreground flex items-center gap-0.5">
+                  <Camera className="h-2 w-2" />
                   {d.photos}
-                </div>
-              )}
-              {d.hasOccurrence && (
-                <div className="absolute bottom-1 right-1">
-                  <MessageSquare className="h-2.5 w-2.5 text-orange-500" />
-                </div>
-              )}
-              {d.pendingSignature && (
-                <div className="absolute top-1 right-1">
-                  <PenLine className="h-3 w-3 text-amber-500" />
-                </div>
-              )}
-              {d.status === 'falta' && (
-                <div className="absolute top-1 right-1">
-                  <AlertTriangle className="h-3 w-3 text-red-500" />
                 </div>
               )}
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap gap-3 mt-4 text-xs">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-green-200 border border-green-400" />
+        <div className="flex flex-wrap gap-2 mt-2 text-[10px]">
+          <div className="flex items-center gap-1">
+            <div className="w-2.5 h-2.5 rounded bg-green-200 border border-green-400" />
             <span>Aprovado</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-blue-200 border border-blue-400" />
+          <div className="flex items-center gap-1">
+            <div className="w-2.5 h-2.5 rounded bg-blue-200 border border-blue-400" />
             <span>Concluído</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-orange-200 border border-orange-400" />
+          <div className="flex items-center gap-1">
+            <div className="w-2.5 h-2.5 rounded bg-orange-200 border border-orange-400" />
             <span>Preenchendo</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-slate-200 border border-slate-400" />
+          <div className="flex items-center gap-1">
+            <div className="w-2.5 h-2.5 rounded bg-slate-200 border border-slate-400" />
             <span>Sem Expediente</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <PenLine className="h-3 w-3 text-amber-500" />
-            <span>Assinatura Pendente</span>
+          <div className="flex items-center gap-1">
+            <PenLine className="h-2.5 w-2.5 text-amber-500" />
+            <span>Pendente</span>
           </div>
         </div>
       </div>
@@ -373,29 +365,25 @@ function MockRdoCalendar() {
 // Ícones de ação do RDO
 function MockRdoActions() {
   const actions = [
-    { icon: Plus, label: 'Criar RDO', color: 'text-green-600', desc: 'Clique em um dia vazio' },
-    { icon: FileX, label: 'Sem Atividade', color: 'text-slate-600', desc: 'Dia sem expediente na obra' },
-    { icon: Eye, label: 'Visualizar', color: 'text-blue-600', desc: 'Ver detalhes do RDO' },
-    { icon: PenLine, label: 'Editar', color: 'text-orange-600', desc: 'Modificar informações' },
-    { icon: Download, label: 'Baixar PDF', color: 'text-red-600', desc: 'Exportar relatório' },
-    { icon: Printer, label: 'Imprimir Lote', color: 'text-purple-600', desc: 'Múltiplos RDOs' },
-    { icon: Trash2, label: 'Excluir', color: 'text-red-500', desc: 'Remover RDO (admin)' },
+    { icon: Plus, label: 'Criar RDO', color: 'text-green-600' },
+    { icon: FileX, label: 'Sem Atividade', color: 'text-slate-600' },
+    { icon: Eye, label: 'Visualizar', color: 'text-blue-600' },
+    { icon: PenLine, label: 'Editar', color: 'text-orange-600' },
+    { icon: Download, label: 'Baixar PDF', color: 'text-red-600' },
+    { icon: Printer, label: 'Imprimir Lote', color: 'text-purple-600' },
   ];
 
   return (
-    <div className="bg-card border rounded-lg p-4">
-      <h4 className="font-semibold mb-3 flex items-center gap-2">
+    <div className="bg-card border rounded-lg p-3">
+      <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
         <ClipboardCheck className="h-4 w-4 text-primary" />
-        Ações Disponíveis no Calendário
+        Ações Disponíveis
       </h4>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
         {actions.map((a, i) => (
-          <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-            <a.icon className={`h-5 w-5 ${a.color}`} />
-            <div>
-              <p className="text-sm font-medium">{a.label}</p>
-              <p className="text-[10px] text-muted-foreground">{a.desc}</p>
-            </div>
+          <div key={i} className="flex items-center gap-1.5 p-1.5 rounded bg-muted/30 text-xs">
+            <a.icon className={`h-4 w-4 ${a.color}`} />
+            <span className="font-medium">{a.label}</span>
           </div>
         ))}
       </div>
@@ -410,59 +398,56 @@ function MockServicesList() {
     { code: '01.02.03', desc: 'Remoção de revestimento cerâmico', unit: 'm²', qty: 28.00, total: 120.00 },
     { code: '02.01.01', desc: 'Alvenaria de tijolo cerâmico', unit: 'm²', qty: 35.00, total: 35.00 },
     { code: '03.01.02', desc: 'Chapisco interno', unit: 'm²', qty: 42.00, total: 42.00 },
-    { code: '03.02.01', desc: 'Reboco interno', unit: 'm²', qty: 0, total: 0 },
   ];
 
   return (
     <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-      <div className="bg-muted/50 px-4 py-3 border-b flex items-center justify-between">
+      <div className="bg-muted/50 px-3 py-2 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileSpreadsheet className="h-5 w-5 text-primary" />
-          <span className="font-semibold">Atividades do Dia - RDO #042</span>
+          <FileSpreadsheet className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-sm">Atividades do Dia - RDO #042</span>
         </div>
-        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 text-[10px]">
           Preenchendo
         </Badge>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left">
-            <tr>
-              <th className="px-3 py-2 font-medium">Código</th>
-              <th className="px-3 py-2 font-medium">Descrição do Serviço</th>
-              <th className="px-3 py-2 font-medium text-center">Un.</th>
-              <th className="px-3 py-2 font-medium text-right">Qtd. Hoje</th>
-              <th className="px-3 py-2 font-medium text-right">Acumulado</th>
+      <table className="w-full text-xs">
+        <thead className="bg-muted/50 text-left">
+          <tr>
+            <th className="px-2 py-1.5 font-medium">Código</th>
+            <th className="px-2 py-1.5 font-medium">Descrição do Serviço</th>
+            <th className="px-2 py-1.5 font-medium text-center">Un.</th>
+            <th className="px-2 py-1.5 font-medium text-right">Qtd. Hoje</th>
+            <th className="px-2 py-1.5 font-medium text-right">Acumulado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {services.map((s, i) => (
+            <tr key={i} className="border-t">
+              <td className="px-2 py-1.5 font-mono text-[10px]">{s.code}</td>
+              <td className="px-2 py-1.5">{s.desc}</td>
+              <td className="px-2 py-1.5 text-center text-muted-foreground">{s.unit}</td>
+              <td className="px-2 py-1.5 text-right">
+                <Input 
+                  value={s.qty > 0 ? s.qty.toFixed(2) : ''} 
+                  readOnly 
+                  className="h-6 w-16 text-right text-xs ml-auto bg-amber-50 border-amber-200" 
+                  placeholder="0,00"
+                />
+              </td>
+              <td className="px-2 py-1.5 text-right font-medium">{s.total.toFixed(2)}</td>
             </tr>
-          </thead>
-          <tbody>
-            {services.map((s, i) => (
-              <tr key={i} className="border-t hover:bg-muted/30">
-                <td className="px-3 py-2 font-mono text-xs">{s.code}</td>
-                <td className="px-3 py-2">{s.desc}</td>
-                <td className="px-3 py-2 text-center text-muted-foreground">{s.unit}</td>
-                <td className="px-3 py-2 text-right">
-                  <Input 
-                    value={s.qty > 0 ? s.qty.toFixed(2) : ''} 
-                    readOnly 
-                    className="h-7 w-20 text-right text-sm ml-auto bg-amber-50 border-amber-200" 
-                    placeholder="0,00"
-                  />
-                </td>
-                <td className="px-3 py-2 text-right font-medium">{s.total.toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="px-4 py-3 bg-muted/30 border-t flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
+          ))}
+        </tbody>
+      </table>
+      <div className="px-3 py-2 bg-muted/30 border-t flex items-center justify-between">
+        <p className="text-[10px] text-muted-foreground">
           <AlertTriangle className="h-3 w-3 inline mr-1 text-amber-500" />
           A <strong>Contratada</strong> preenche os quantitativos executados no dia
         </p>
-        <Button size="sm" className="gap-2">
-          <Save className="h-4 w-4" />
-          Salvar Atividades
+        <Button size="sm" className="gap-1.5 h-7 text-xs">
+          <Save className="h-3 w-3" />
+          Salvar
         </Button>
       </div>
     </div>
@@ -472,75 +457,63 @@ function MockServicesList() {
 // Simulação de assinaturas e histórico
 function MockSignaturesPanel() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Histórico de reprovações */}
       <div className="bg-card border border-amber-200 rounded-lg overflow-hidden">
-        <div className="bg-amber-50 px-4 py-3 flex items-center gap-2 cursor-pointer">
-          <History className="h-5 w-5 text-amber-600" />
-          <span className="font-semibold text-amber-800">Histórico de Reprovações (2)</span>
-          <ChevronDown className="h-4 w-4 text-amber-600 ml-auto" />
+        <div className="bg-amber-50 px-3 py-2 flex items-center gap-2">
+          <History className="h-4 w-4 text-amber-600" />
+          <span className="font-semibold text-amber-800 text-sm">Histórico de Reprovações (2)</span>
+          <ChevronDown className="h-3 w-3 text-amber-600 ml-auto" />
         </div>
-        <div className="p-4 space-y-3">
-          <div className="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
-            <XCircle className="h-5 w-5 text-red-500 shrink-0" />
-            <div className="text-sm">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-red-700">Reprovação #2</span>
-                <span className="text-muted-foreground">• 08/01/2024 14:32</span>
-              </div>
-              <p className="mt-1"><strong>Motivo:</strong> Faltam fotos das fundações concluídas</p>
+        <div className="p-3 space-y-2">
+          <div className="flex gap-2 p-2 bg-red-50 rounded border border-red-100">
+            <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+            <div className="text-xs">
+              <span className="font-medium text-red-700">Reprovação #2</span>
+              <span className="text-muted-foreground ml-1">• 08/01/2024</span>
+              <p className="mt-0.5">Faltam fotos das fundações</p>
             </div>
           </div>
-          <div className="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
-            <XCircle className="h-5 w-5 text-red-500 shrink-0" />
-            <div className="text-sm">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-red-700">Reprovação #1</span>
-                <span className="text-muted-foreground">• 08/01/2024 10:15</span>
-              </div>
-              <p className="mt-1"><strong>Motivo:</strong> Quantidade do item 01.02.03 está incorreta</p>
+          <div className="flex gap-2 p-2 bg-red-50 rounded border border-red-100">
+            <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+            <div className="text-xs">
+              <span className="font-medium text-red-700">Reprovação #1</span>
+              <span className="text-muted-foreground ml-1">• 08/01/2024</span>
+              <p className="mt-0.5">Quantidade incorreta item 01.02.03</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Painel de assinaturas */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <Card className="border-green-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-medium">
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
               Fiscal/Gestor (DPE-MT)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-              <p className="text-xs text-muted-foreground">Assinado por</p>
-              <p className="font-medium text-sm">João da Silva</p>
-              <p className="text-xs text-muted-foreground">Fiscal de Obras</p>
-              <p className="text-xs text-muted-foreground mt-1">08/01/2024 às 16:45</p>
             </div>
-            <Badge className="bg-green-100 text-green-800 border-green-300">
+            <div className="bg-green-50 p-2 rounded border border-green-200">
+              <p className="font-medium text-xs">João da Silva</p>
+              <p className="text-[10px] text-muted-foreground">Fiscal • 08/01/2024 16:45</p>
+            </div>
+            <Badge className="bg-green-100 text-green-800 border-green-300 text-[10px]">
               ✓ Validado
             </Badge>
           </CardContent>
         </Card>
 
         <Card className="border-green-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              Responsável Técnico (Contratada)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-              <p className="text-xs text-muted-foreground">Assinado por</p>
-              <p className="font-medium text-sm">Maria Oliveira</p>
-              <p className="text-xs text-muted-foreground">Engenheira Civil - CREA 12345</p>
-              <p className="text-xs text-muted-foreground mt-1">08/01/2024 às 15:30</p>
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-medium">
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+              Responsável Técnico
             </div>
-            <Badge className="bg-green-100 text-green-800 border-green-300">
+            <div className="bg-green-50 p-2 rounded border border-green-200">
+              <p className="font-medium text-xs">Maria Oliveira</p>
+              <p className="text-[10px] text-muted-foreground">Eng. Civil • 08/01/2024 15:30</p>
+            </div>
+            <Badge className="bg-green-100 text-green-800 border-green-300 text-[10px]">
               ✓ Validado
             </Badge>
           </CardContent>
@@ -548,9 +521,9 @@ function MockSignaturesPanel() {
       </div>
 
       {/* Status final */}
-      <div className="flex items-center justify-center gap-2 p-4 bg-green-50 rounded-lg border border-green-200">
-        <Lock className="h-5 w-5 text-green-600" />
-        <span className="font-semibold text-green-800">RDO Aprovado e Bloqueado</span>
+      <div className="flex items-center justify-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+        <Lock className="h-4 w-4 text-green-600" />
+        <span className="font-semibold text-green-800 text-sm">RDO Aprovado e Bloqueado</span>
       </div>
     </div>
   );
@@ -559,29 +532,29 @@ function MockSignaturesPanel() {
 // Simulação de RDO impresso
 function MockPrintedRdo() {
   return (
-    <div className="bg-white border-2 border-gray-300 rounded shadow-lg p-6 max-w-2xl mx-auto text-black text-sm">
+    <div className="bg-white border-2 border-gray-300 rounded shadow-lg p-4 max-w-3xl mx-auto text-black text-xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b-2 border-gray-400 pb-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+      <div className="flex items-center justify-between border-b-2 border-gray-400 pb-2 mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-[8px] text-gray-500">
             LOGO
           </div>
           <div>
-            <h1 className="font-bold text-lg">RELATÓRIO DIÁRIO DE OBRA</h1>
-            <p className="text-xs text-gray-600">Defensoria Pública do Estado de Mato Grosso</p>
+            <h1 className="font-bold text-sm">RELATÓRIO DIÁRIO DE OBRA</h1>
+            <p className="text-[10px] text-gray-600">Defensoria Pública do Estado de Mato Grosso</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="font-bold text-2xl">RDO #042</p>
-          <p className="text-xs text-gray-600">08/01/2024</p>
+          <p className="font-bold text-lg">RDO #042</p>
+          <p className="text-[10px] text-gray-600">08/01/2024</p>
         </div>
       </div>
 
       {/* Info da Obra */}
-      <div className="grid grid-cols-2 gap-4 mb-4 text-xs">
+      <div className="grid grid-cols-4 gap-2 mb-2 text-[10px]">
         <div>
           <p className="text-gray-500">Obra:</p>
-          <p className="font-medium">Reforma da Defensoria Pública de Cuiabá</p>
+          <p className="font-medium">Reforma DP Cuiabá</p>
         </div>
         <div>
           <p className="text-gray-500">Contrato:</p>
@@ -589,80 +562,75 @@ function MockPrintedRdo() {
         </div>
         <div>
           <p className="text-gray-500">Contratada:</p>
-          <p className="font-medium">Construtora ABC Ltda</p>
+          <p className="font-medium">Construtora ABC</p>
         </div>
         <div>
-          <p className="text-gray-500">Condições Climáticas:</p>
-          <p className="font-medium">☀️ Ensolarado - 32°C</p>
+          <p className="text-gray-500">Clima:</p>
+          <p className="font-medium">☀️ Ensolarado</p>
         </div>
       </div>
 
       {/* Tabela de Atividades */}
-      <div className="border rounded mb-4">
-        <div className="bg-gray-100 px-3 py-2 font-bold text-xs border-b">
+      <div className="border rounded mb-2">
+        <div className="bg-gray-100 px-2 py-1 font-bold text-[10px] border-b">
           ATIVIDADES EXECUTADAS
         </div>
-        <table className="w-full text-xs">
+        <table className="w-full text-[10px]">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-2 py-1 text-left border-b">Código</th>
-              <th className="px-2 py-1 text-left border-b">Descrição</th>
-              <th className="px-2 py-1 text-center border-b">Un.</th>
-              <th className="px-2 py-1 text-right border-b">Qtd.</th>
+              <th className="px-1.5 py-0.5 text-left border-b">Código</th>
+              <th className="px-1.5 py-0.5 text-left border-b">Descrição</th>
+              <th className="px-1.5 py-0.5 text-center border-b">Un.</th>
+              <th className="px-1.5 py-0.5 text-right border-b">Qtd.</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td className="px-2 py-1 border-b">01.01.01</td><td className="px-2 py-1 border-b">Demolição de alvenaria</td><td className="px-2 py-1 text-center border-b">m³</td><td className="px-2 py-1 text-right border-b">15,50</td></tr>
-            <tr><td className="px-2 py-1 border-b">01.02.03</td><td className="px-2 py-1 border-b">Remoção de revestimento cerâmico</td><td className="px-2 py-1 text-center border-b">m²</td><td className="px-2 py-1 text-right border-b">28,00</td></tr>
-            <tr><td className="px-2 py-1">02.01.01</td><td className="px-2 py-1">Alvenaria de tijolo cerâmico</td><td className="px-2 py-1 text-center">m²</td><td className="px-2 py-1 text-right">35,00</td></tr>
+            <tr><td className="px-1.5 py-0.5 border-b">01.01.01</td><td className="px-1.5 py-0.5 border-b">Demolição de alvenaria</td><td className="px-1.5 py-0.5 text-center border-b">m³</td><td className="px-1.5 py-0.5 text-right border-b">15,50</td></tr>
+            <tr><td className="px-1.5 py-0.5 border-b">01.02.03</td><td className="px-1.5 py-0.5 border-b">Remoção de revestimento cerâmico</td><td className="px-1.5 py-0.5 text-center border-b">m²</td><td className="px-1.5 py-0.5 text-right border-b">28,00</td></tr>
+            <tr><td className="px-1.5 py-0.5">02.01.01</td><td className="px-1.5 py-0.5">Alvenaria de tijolo cerâmico</td><td className="px-1.5 py-0.5 text-center">m²</td><td className="px-1.5 py-0.5 text-right">35,00</td></tr>
           </tbody>
         </table>
       </div>
 
       {/* Mão de Obra e Equipamentos */}
-      <div className="grid grid-cols-2 gap-4 mb-4 text-xs">
-        <div className="border rounded p-2">
-          <p className="font-bold mb-1">MÃO DE OBRA</p>
+      <div className="grid grid-cols-2 gap-2 mb-2 text-[10px]">
+        <div className="border rounded p-1.5">
+          <p className="font-bold mb-0.5">MÃO DE OBRA</p>
           <p>Pedreiro: 4 | Servente: 6 | Eletricista: 2</p>
         </div>
-        <div className="border rounded p-2">
-          <p className="font-bold mb-1">EQUIPAMENTOS</p>
+        <div className="border rounded p-1.5">
+          <p className="font-bold mb-0.5">EQUIPAMENTOS</p>
           <p>Betoneira: 1 | Andaime: 3 conjuntos</p>
         </div>
       </div>
 
       {/* Assinaturas */}
-      <div className="grid grid-cols-2 gap-6 mt-6 pt-4 border-t-2 border-gray-400">
+      <div className="grid grid-cols-2 gap-4 pt-2 border-t-2 border-gray-400">
         <div className="text-center">
-          <div className="border-b border-gray-400 h-12 mb-1 flex items-end justify-center italic text-gray-400 text-xs">
+          <div className="border-b border-gray-400 h-8 mb-0.5 flex items-end justify-center italic text-gray-400 text-[8px]">
             [Assinatura Digital]
           </div>
-          <p className="font-medium">João da Silva</p>
-          <p className="text-xs text-gray-500">Fiscal de Obras - DPE/MT</p>
-          <p className="text-xs text-gray-500">08/01/2024 16:45</p>
+          <p className="font-medium text-[10px]">João da Silva</p>
+          <p className="text-[9px] text-gray-500">Fiscal - DPE/MT • 08/01/2024</p>
         </div>
         <div className="text-center">
-          <div className="border-b border-gray-400 h-12 mb-1 flex items-end justify-center italic text-gray-400 text-xs">
+          <div className="border-b border-gray-400 h-8 mb-0.5 flex items-end justify-center italic text-gray-400 text-[8px]">
             [Assinatura Digital]
           </div>
-          <p className="font-medium">Maria Oliveira</p>
-          <p className="text-xs text-gray-500">Eng. Civil - CREA 12345</p>
-          <p className="text-xs text-gray-500">08/01/2024 15:30</p>
+          <p className="font-medium text-[10px]">Maria Oliveira</p>
+          <p className="text-[9px] text-gray-500">Eng. Civil • 08/01/2024</p>
         </div>
       </div>
 
-      {/* QR Code placeholder */}
-      <div className="flex items-center justify-between mt-4 pt-4 border-t text-xs text-gray-500">
-        <div className="flex items-center gap-2">
-          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[8px]">
-            QR CODE
+      {/* QR Code */}
+      <div className="flex items-center justify-between mt-2 pt-2 border-t text-[9px] text-gray-500">
+        <div className="flex items-center gap-1.5">
+          <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-[6px]">
+            QR
           </div>
-          <div>
-            <p>Documento verificável em:</p>
-            <p className="font-mono">sidif.lovable.app/rdo/verify/abc123</p>
-          </div>
+          <span className="font-mono">sidif.lovable.app/rdo/verify/abc123</span>
         </div>
-        <p>Gerado em: 08/01/2024 17:00</p>
+        <p>Gerado: 08/01/2024 17:00</p>
       </div>
     </div>
   );
@@ -671,82 +639,80 @@ function MockPrintedRdo() {
 // Simulação do gerenciamento de permissões
 function MockPermissionsManager() {
   const obras = [
-    { nome: 'Reforma DP Cuiabá', role: 'titular', substitutos: ['Ana Paula', 'Carlos Souza'] },
+    { nome: 'Reforma DP Cuiabá', role: 'titular', substitutos: ['Ana Paula'] },
     { nome: 'Construção DP Rondonópolis', role: 'titular', substitutos: [] },
-    { nome: 'Adequações DP Sinop', role: 'autorizado', substitutos: null },
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-3">
       <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
-          <Shield className="h-5 w-5 text-primary" />
-          <span className="font-semibold">Minhas Obras - Gerenciar Acessos</span>
+        <div className="bg-muted/50 px-3 py-2 border-b flex items-center gap-2">
+          <Shield className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-sm">Minhas Obras - Acessos</span>
         </div>
         <div className="divide-y">
           {obras.map((obra, i) => (
-            <div key={i} className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{obra.nome}</span>
+            <div key={i} className="p-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-medium text-xs">{obra.nome}</span>
                 </div>
-                <Badge variant={obra.role === 'titular' ? 'default' : 'secondary'}>
-                  {obra.role === 'titular' ? 'Fiscal Titular' : 'Autorizado'}
+                <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                  Fiscal Titular
                 </Badge>
               </div>
               
-              {obra.role === 'titular' && (
-                <div className="ml-6 mt-3 p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Servidores Autorizados:</span>
-                    <Button variant="outline" size="sm" className="h-7 gap-1">
-                      <UserPlus className="h-3 w-3" />
-                      Adicionar
-                    </Button>
-                  </div>
-                  {obra.substitutos && obra.substitutos.length > 0 ? (
-                    <div className="space-y-2">
-                      {obra.substitutos.map((sub, j) => (
-                        <div key={j} className="flex items-center justify-between bg-card p-2 rounded border">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{sub}</span>
-                            <Badge variant="outline" className="text-xs">Autorizado</Badge>
-                          </div>
-                          <Button variant="ghost" size="sm" className="h-7 text-red-500 hover:text-red-700">
-                            <UserMinus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">Nenhum servidor autorizado</p>
-                  )}
+              <div className="ml-5 mt-2 p-2 bg-muted/30 rounded text-xs">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-muted-foreground text-[10px]">Autorizados:</span>
+                  <Button variant="outline" size="sm" className="h-5 gap-1 text-[10px] px-1.5">
+                    <UserPlus className="h-2.5 w-2.5" />
+                    Adicionar
+                  </Button>
                 </div>
-              )}
-              
-              {obra.role === 'autorizado' && (
-                <p className="ml-6 text-sm text-muted-foreground italic">
-                  Você tem permissão de edição nesta obra
-                </p>
-              )}
+                {obra.substitutos && obra.substitutos.length > 0 ? (
+                  <div className="flex items-center justify-between bg-card p-1.5 rounded border">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[10px]">{obra.substitutos[0]}</span>
+                    </div>
+                    <UserMinus className="h-3 w-3 text-red-500" />
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground italic">Nenhum autorizado</p>
+                )}
+              </div>
             </div>
           ))}
         </div>
       </div>
       
       <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+        <CardContent className="p-3">
+          <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-1.5 text-sm">
             <Shield className="h-4 w-4" />
             Regras de Permissão
           </h4>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• <strong>Fiscal Titular:</strong> Acesso total + pode autorizar outros servidores</li>
-            <li>• <strong>Autorizado:</strong> Pode editar apenas obras "Em Andamento"</li>
-            <li>• <strong>Sem vínculo:</strong> Apenas visualização (sem edição)</li>
+          <ul className="text-xs text-blue-700 space-y-1.5">
+            <li className="flex items-start gap-1.5">
+              <CheckCircle2 className="h-3 w-3 text-blue-600 mt-0.5 shrink-0" />
+              <span><strong>Fiscal Titular:</strong> Acesso total + pode autorizar servidores</span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <CheckCircle2 className="h-3 w-3 text-blue-600 mt-0.5 shrink-0" />
+              <span><strong>Autorizado:</strong> Pode editar obras "Em Andamento"</span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <CheckCircle2 className="h-3 w-3 text-blue-600 mt-0.5 shrink-0" />
+              <span><strong>Sem vínculo:</strong> Apenas visualização</span>
+            </li>
           </ul>
+          <div className="mt-3 p-2 bg-blue-100 rounded border border-blue-200">
+            <p className="text-[10px] text-blue-800">
+              <strong>💡 Dica:</strong> Use o botão "Adicionar" para autorizar colegas a editar suas obras durante ausências.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -756,29 +722,27 @@ function MockPermissionsManager() {
 // Tipos de medição
 function MockMedicaoTypes() {
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="grid md:grid-cols-2 gap-4">
       <Card className="border-2 border-orange-200 bg-orange-50/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileSpreadsheet className="h-5 w-5 text-orange-600" />
-            Medição Manual
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            O fiscal insere manualmente os quantitativos executados de cada serviço.
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4 text-orange-600" />
+            <span className="font-semibold text-sm">Medição Manual</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            O fiscal insere manualmente os quantitativos executados.
           </p>
-          <ul className="text-sm space-y-1">
-            <li className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-green-600" />
+          <ul className="text-xs space-y-0.5">
+            <li className="flex items-center gap-1.5">
+              <Check className="h-3 w-3 text-green-600" />
               Flexibilidade total
             </li>
-            <li className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-green-600" />
+            <li className="flex items-center gap-1.5">
+              <Check className="h-3 w-3 text-green-600" />
               Útil para ajustes pontuais
             </li>
-            <li className="flex items-center gap-2 text-muted-foreground">
-              <XCircle className="h-4 w-4 text-red-400" />
+            <li className="flex items-center gap-1.5 text-muted-foreground">
+              <XCircle className="h-3 w-3 text-red-400" />
               Sem rastreabilidade diária
             </li>
           </ul>
@@ -786,30 +750,28 @@ function MockMedicaoTypes() {
       </Card>
 
       <Card className="border-2 border-green-300 bg-green-50/50 ring-2 ring-green-400 ring-offset-2">
-        <CardHeader className="pb-2">
+        <CardContent className="p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ClipboardCheck className="h-5 w-5 text-green-600" />
-              Medição por RDO
-            </CardTitle>
-            <Badge className="bg-green-600">Recomendado</Badge>
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4 text-green-600" />
+              <span className="font-semibold text-sm">Medição por RDO</span>
+            </div>
+            <Badge className="bg-green-600 text-[10px]">Recomendado</Badge>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Sistema importa automaticamente os quantitativos dos RDOs aprovados no período.
+          <p className="text-xs text-muted-foreground">
+            Importa automaticamente dos RDOs aprovados no período.
           </p>
-          <ul className="text-sm space-y-1">
-            <li className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-green-600" />
+          <ul className="text-xs space-y-0.5">
+            <li className="flex items-center gap-1.5">
+              <Check className="h-3 w-3 text-green-600" />
               Rastreabilidade completa
             </li>
-            <li className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-green-600" />
+            <li className="flex items-center gap-1.5">
+              <Check className="h-3 w-3 text-green-600" />
               Dados validados por assinatura
             </li>
-            <li className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-green-600" />
+            <li className="flex items-center gap-1.5">
+              <Check className="h-3 w-3 text-green-600" />
               Obrigatório em novos contratos
             </li>
           </ul>
@@ -1008,42 +970,41 @@ export default function Apresentacao() {
       title: 'Mapa de Obras Públicas',
       subtitle: 'Visualização geográfica de todas as obras do estado',
       content: (
-        <div className="mt-4 border rounded-lg overflow-hidden bg-card shadow-lg">
+        <div className="border rounded-lg overflow-hidden bg-card shadow-lg">
           {/* Header do mapa */}
-          <div className="bg-primary px-4 py-2 flex items-center gap-3">
+          <div className="bg-primary px-3 py-1.5 flex items-center gap-3">
             <div className="flex items-center gap-2 text-primary-foreground">
-              <img src={sidifLogo} alt="SiDIF" className="h-6" />
+              <img src={sidifLogo} alt="SiDIF" className="h-5" />
             </div>
           </div>
           
-          <div className="flex h-[400px]">
+          <div className="flex h-[320px]">
             {/* Sidebar de Filtros */}
-            <div className="w-56 border-r bg-card p-4 space-y-4 overflow-y-auto">
+            <div className="w-48 border-r bg-card p-3 space-y-3">
               <div>
-                <h4 className="font-semibold text-sm mb-2">Mapa de Obras Públicas</h4>
-                <p className="text-xs text-muted-foreground">Visualize e acompanhe o andamento das obras públicas no estado</p>
+                <h4 className="font-semibold text-xs mb-1">Mapa de Obras Públicas</h4>
+                <p className="text-[10px] text-muted-foreground">Visualize o andamento das obras</p>
               </div>
               
-              <div className="border-t pt-4">
-                <p className="text-xs font-medium mb-2 flex items-center gap-1">
-                  <Eye className="h-3 w-3" /> Filtros
+              <div className="border-t pt-2">
+                <p className="text-[10px] font-medium mb-1.5 flex items-center gap-1">
+                  <Eye className="h-2.5 w-2.5" /> Filtros
                 </p>
               </div>
               
               <div>
-                <p className="text-xs font-medium mb-2">Status da Obra</p>
-                <div className="space-y-1.5">
+                <p className="text-[10px] font-medium mb-1.5">Status</p>
+                <div className="space-y-1">
                   {[
                     { label: 'Concluída', color: 'bg-green-500', checked: false },
                     { label: 'Em Andamento', color: 'bg-blue-500', checked: true },
-                    { label: 'Planejada', color: 'bg-amber-500', checked: false },
                     { label: 'Paralisada', color: 'bg-red-500', checked: false },
                   ].map((status, i) => (
-                    <label key={i} className="flex items-center gap-2 text-xs cursor-pointer">
-                      <div className={`w-3 h-3 rounded border ${status.checked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
-                        {status.checked && <Check className="h-3 w-3 text-primary-foreground" />}
+                    <label key={i} className="flex items-center gap-1.5 text-[10px] cursor-pointer">
+                      <div className={`w-2.5 h-2.5 rounded border ${status.checked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+                        {status.checked && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
                       </div>
-                      <span className={`w-2 h-2 rounded-full ${status.color}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${status.color}`} />
                       <span>{status.label}</span>
                     </label>
                   ))}
@@ -1051,11 +1012,11 @@ export default function Apresentacao() {
               </div>
               
               <div>
-                <p className="text-xs font-medium mb-2">Tipo de Obra</p>
-                <div className="space-y-1.5">
-                  {['Reforma', 'Construção', 'Adequações'].map((tipo, i) => (
-                    <label key={i} className="flex items-center gap-2 text-xs cursor-pointer">
-                      <div className="w-3 h-3 rounded border border-muted-foreground/30" />
+                <p className="text-[10px] font-medium mb-1.5">Tipo</p>
+                <div className="space-y-1">
+                  {['Reforma', 'Construção'].map((tipo, i) => (
+                    <label key={i} className="flex items-center gap-1.5 text-[10px] cursor-pointer">
+                      <div className="w-2.5 h-2.5 rounded border border-muted-foreground/30" />
                       <span>{tipo}</span>
                     </label>
                   ))}
@@ -1063,10 +1024,10 @@ export default function Apresentacao() {
               </div>
               
               <div>
-                <p className="text-xs font-medium mb-2">Município</p>
-                <div className="flex items-center gap-2 border rounded-md px-2 py-1.5 bg-muted/30">
-                  <Search className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Buscar por município...</span>
+                <p className="text-[10px] font-medium mb-1.5">Município</p>
+                <div className="flex items-center gap-1.5 border rounded px-2 py-1 bg-muted/30">
+                  <Search className="h-2.5 w-2.5 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Buscar...</span>
                 </div>
               </div>
             </div>
@@ -1131,156 +1092,130 @@ export default function Apresentacao() {
       title: 'Visualização Externa',
       subtitle: 'Ao clicar em uma obra no mapa, o painel de detalhes é exibido',
       content: (
-        <div className="mt-4 border rounded-lg overflow-hidden bg-card shadow-lg">
+        <div className="border rounded-lg overflow-hidden bg-card shadow-lg">
           {/* Simulação do painel lateral */}
-          <div className="flex">
+          <div className="flex h-[360px]">
             {/* Mapa reduzido */}
-            <div className="w-1/2 h-[420px] relative bg-[#e8f0e8] border-r">
+            <div className="w-2/5 relative bg-[#e8f0e8] border-r">
               <div className="absolute inset-0 opacity-50" style={{ 
                 backgroundImage: 'linear-gradient(rgba(200,220,200,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(200,220,200,0.3) 1px, transparent 1px)',
                 backgroundSize: '40px 40px'
               }} />
               {/* Pin selecionado */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="bg-blue-500 text-white text-xs w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-pulse">
-                  <MapPin className="h-5 w-5" />
+                <div className="bg-blue-500 text-white text-xs w-7 h-7 rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-pulse">
+                  <MapPin className="h-4 w-4" />
                 </div>
               </div>
-              <span className="absolute top-1/2 left-1/2 translate-x-4 -translate-y-4 text-xs text-muted-foreground bg-white/80 px-1 rounded">Cuiabá</span>
+              <span className="absolute top-1/2 left-1/2 translate-x-3 -translate-y-3 text-[10px] text-muted-foreground bg-white/80 px-1 rounded">Cuiabá</span>
             </div>
             
             {/* Painel de detalhes */}
-            <div className="w-1/2 h-[420px] overflow-y-auto p-4 space-y-3">
+            <div className="w-3/5 p-3 space-y-2">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-base">Almoxarifado Santa Cruz - Reforma 02</h3>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                    <MapPin className="h-3 w-3" />
+                  <h3 className="font-semibold text-sm">Almoxarifado Santa Cruz - Reforma 02</h3>
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <MapPin className="h-2.5 w-2.5" />
                     <span>Cuiabá</span>
                   </div>
                 </div>
                 <button className="text-muted-foreground hover:text-foreground">
-                  <XCircle className="h-5 w-5" />
+                  <XCircle className="h-4 w-4" />
                 </button>
               </div>
               
-              <div className="flex gap-2">
-                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Em Andamento</Badge>
-                <Badge variant="outline">Reforma</Badge>
+              <div className="flex gap-1.5">
+                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-[10px] px-1.5 py-0">Em Andamento</Badge>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">Reforma</Badge>
               </div>
               
               {/* Informações Gerais */}
-              <div className="border rounded-lg p-3 space-y-2">
-                <div className="flex items-center gap-2 font-medium text-sm">
-                  <Building2 className="h-4 w-4" />
+              <div className="border rounded p-2 space-y-1">
+                <div className="flex items-center gap-1.5 font-medium text-xs">
+                  <Building2 className="h-3 w-3" />
                   <span>Informações Gerais</span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
                   <div>
                     <span className="text-muted-foreground">Contrato:</span>
-                    <p className="font-medium">111/2025</p>
+                    <span className="font-medium ml-1">111/2025</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Objeto:</span>
-                    <p className="font-medium">Almoxarifado Santa Cruz - Reforma 02</p>
+                    <span className="text-muted-foreground">Fiscal:</span>
+                    <span className="font-medium ml-1">Adriano Augusto</span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Fiscal do Contrato:</span>
-                    <p className="font-medium">Adriano Augusto</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Empresa Responsável:</span>
-                    <p className="font-medium">A M I CONSTRUÇÕES LTDA</p>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Empresa:</span>
+                    <span className="font-medium ml-1">A M I CONSTRUÇÕES LTDA</span>
                   </div>
                 </div>
               </div>
               
               {/* Prazos */}
-              <div className="border rounded-lg p-3 space-y-2">
-                <div className="flex items-center gap-2 font-medium text-sm">
-                  <Calendar className="h-4 w-4" />
+              <div className="border rounded p-2 space-y-1">
+                <div className="flex items-center gap-1.5 font-medium text-xs">
+                  <Calendar className="h-3 w-3" />
                   <span>Prazos de Execução</span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-4 text-xs">
+                <div className="grid grid-cols-2 gap-x-3 text-[10px]">
                   <div>
-                    <span className="text-muted-foreground">Data de início:</span>
-                    <p className="font-medium">28/09/2025</p>
+                    <span className="text-muted-foreground">Início:</span>
+                    <span className="font-medium ml-1">28/09/2025</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Data prevista de término:</span>
-                    <p className="font-medium">13/10/2025</p>
+                    <span className="text-muted-foreground">Término:</span>
+                    <span className="font-medium ml-1">13/10/2025</span>
                   </div>
                 </div>
               </div>
               
               {/* Financeiro */}
-              <div className="border rounded-lg p-3 space-y-2">
-                <div className="flex items-center gap-2 font-medium text-sm">
-                  <TrendingUp className="h-4 w-4" />
+              <div className="border rounded p-2 space-y-1.5">
+                <div className="flex items-center gap-1.5 font-medium text-xs">
+                  <TrendingUp className="h-3 w-3" />
                   <span>Informações Financeiras</span>
                 </div>
-                <div className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded flex items-center gap-1">
-                  <Check className="h-3 w-3" />
-                  Dados atualizados com base nas medições registradas
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-3 gap-1.5 text-[10px]">
                   <div>
-                    <span className="text-muted-foreground">Valor Inicial:</span>
-                    <p className="font-semibold">R$ 73.766,43</p>
+                    <span className="text-muted-foreground block">Valor Inicial:</span>
+                    <span className="font-semibold">R$ 73.766,43</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Valor Aditivado:</span>
-                    <p className="font-medium">R$ 0,00</p>
+                    <span className="text-muted-foreground block">Aditivado:</span>
+                    <span className="font-medium">R$ 0,00</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Valor Final:</span>
-                    <p className="font-semibold text-primary">R$ 73.766,43</p>
+                    <span className="text-muted-foreground block">Final:</span>
+                    <span className="font-semibold text-primary">R$ 73.766,43</span>
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>Valor Pago:</span>
+                  <div className="flex justify-between text-[10px] mb-0.5">
+                    <span>Execução:</span>
                     <span className="font-bold text-green-600">23.31%</span>
                   </div>
-                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="absolute h-full bg-green-500 rounded-full" style={{ width: '23.31%' }}>
-                      <div className="absolute right-0 top-0 h-full w-0.5 bg-green-700" />
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-                    <span>Valor Executado: R$ 17.194,37</span>
-                    <span>Valor Final: R$ 73.766,43</span>
+                  <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="absolute h-full bg-green-500 rounded-full" style={{ width: '23.31%' }} />
                   </div>
                 </div>
               </div>
               
               {/* Álbum de Fotos */}
-              <div className="border rounded-lg p-3 space-y-2">
-                <div className="flex items-center gap-2 font-medium text-sm">
-                  <Image className="h-4 w-4" />
+              <div className="border rounded p-2 space-y-1">
+                <div className="flex items-center gap-1.5 font-medium text-xs">
+                  <Image className="h-3 w-3" />
                   <span>Álbum de Fotos (17)</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  <span>Álbum de Fotos</span>
-                  <Badge variant="secondary" className="text-[10px]">17 fotos em 1 pasta</Badge>
-                </div>
                 <div className="flex items-center gap-2">
-                  <div className="bg-muted p-2 rounded">
-                    <Camera className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="text-xs">
-                    <p className="font-medium">NOV. DE 2025</p>
-                    <p className="text-muted-foreground">17 fotos</p>
-                  </div>
-                  <div className="flex gap-1 ml-auto">
-                    {[1,2,3].map((i) => (
-                      <div key={i} className="w-8 h-8 bg-muted rounded flex items-center justify-center">
-                        <Camera className="h-3 w-3 text-muted-foreground/50" />
+                  <div className="flex gap-1">
+                    {[1,2,3,4].map((i) => (
+                      <div key={i} className="w-7 h-7 bg-muted rounded flex items-center justify-center">
+                        <Camera className="h-2.5 w-2.5 text-muted-foreground/50" />
                       </div>
                     ))}
-                    <div className="w-8 h-8 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                      +14
+                    <div className="w-7 h-7 bg-muted rounded flex items-center justify-center text-[10px] text-muted-foreground">
+                      +13
                     </div>
                   </div>
                 </div>
@@ -1343,11 +1278,11 @@ export default function Apresentacao() {
       title: 'Sistema de Medições',
       subtitle: 'Dois modos de trabalho: Manual ou via RDO',
       content: (
-        <div className="mt-6 space-y-6">
+        <div className="space-y-3">
           <MockMedicaoTypes />
           <Card className="bg-amber-50 border-amber-200">
-            <CardContent className="p-4">
-              <p className="text-sm text-amber-800">
+            <CardContent className="p-3">
+              <p className="text-xs text-amber-800">
                 <strong>⚠️ Importante:</strong> A partir dos novos contratos, será obrigatório que a Contratada preencha o RDO diariamente. 
                 Isso garantirá rastreabilidade total dos quantitativos executados.
               </p>
@@ -1363,7 +1298,7 @@ export default function Apresentacao() {
       title: 'Calendário de RDO',
       subtitle: 'Visualização mensal com status e indicadores',
       content: (
-        <div className="mt-4 space-y-4">
+        <div className="space-y-3">
           <MockRdoCalendar />
           <MockRdoActions />
         </div>
@@ -1376,7 +1311,7 @@ export default function Apresentacao() {
       title: 'Preenchimento de Atividades',
       subtitle: 'A Contratada insere os quantitativos executados no dia',
       content: (
-        <div className="mt-4">
+        <div>
           <MockServicesList />
         </div>
       ),
@@ -1387,11 +1322,7 @@ export default function Apresentacao() {
       id: 19,
       title: 'Assinaturas e Validação',
       subtitle: 'Fluxo de aprovação com histórico de reprovações',
-      content: (
-        <div className="mt-4">
-          <MockSignaturesPanel />
-        </div>
-      ),
+      content: <MockSignaturesPanel />,
     },
 
     // SLIDE 20 - RDO Impresso
@@ -1399,11 +1330,7 @@ export default function Apresentacao() {
       id: 20,
       title: 'RDO Impresso',
       subtitle: 'Documento gerado automaticamente pelo sistema',
-      content: (
-        <div className="mt-4 overflow-auto max-h-[500px]">
-          <MockPrintedRdo />
-        </div>
-      ),
+      content: <MockPrintedRdo />,
     },
 
     // SLIDE 21 - Permissões
@@ -1411,11 +1338,7 @@ export default function Apresentacao() {
       id: 21,
       title: 'Permissões e Segurança',
       subtitle: 'Como o fiscal gerencia suas obras e acessos autorizados',
-      content: (
-        <div className="mt-4">
-          <MockPermissionsManager />
-        </div>
-      ),
+      content: <MockPermissionsManager />,
     },
 
     // SLIDE 22 - Encerramento
