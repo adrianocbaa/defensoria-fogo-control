@@ -66,6 +66,8 @@ import {
   ResumoNovasDiretrizes
 } from '@/components/apresentacao/GestaoContratosSlides';
 
+import { CapaApresentacao } from '@/components/apresentacao/CapaApresentacao';
+
 interface Slide {
   id: number;
   title: string;
@@ -781,13 +783,12 @@ export default function Apresentacao() {
   const navigate = useNavigate();
 
   const slides: Slide[] = [
-    // ============ RESUMO DAS NOVAS DIRETRIZES (PRIMEIRO SLIDE) ============
-    // SLIDE 1 - Novas Diretrizes DIF
+    // ============ CAPA INSTITUCIONAL ============
+    // SLIDE 1 - Capa da Apresentação
     {
       id: 1,
-      title: 'Novas Diretrizes DIF',
-      subtitle: 'Resumo das principais mudanças',
-      content: <ResumoNovasDiretrizes />,
+      title: '',
+      content: <CapaApresentacao />,
     },
 
     // ============ CALENDÁRIO DIF ============
