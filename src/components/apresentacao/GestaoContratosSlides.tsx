@@ -10,7 +10,9 @@ import {
   Building2,
   ClipboardList,
   ArrowRight,
-  Briefcase
+  Briefcase,
+  LayoutDashboard,
+  Calendar
 } from 'lucide-react';
 
 // Capa da seção Gestão de Contratos
@@ -378,11 +380,11 @@ export function ResumoNovasDiretrizes() {
         <h3 className="text-xl font-bold text-primary">Resumo das Novas Diretrizes</h3>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-5">
             <div className="flex items-center gap-3 mb-3">
-              <Building2 className="h-8 w-8 text-blue-600" />
+              <Calendar className="h-8 w-8 text-blue-600" />
               <h4 className="font-bold text-blue-800">Calendário DIF</h4>
             </div>
             <ul className="text-sm space-y-2 text-blue-900">
@@ -405,6 +407,21 @@ export function ResumoNovasDiretrizes() {
               <li>✓ Fiscal: técnicos capacitados</li>
               <li>✓ Designação por cargo, não pessoa</li>
               <li>✓ Continuidade em afastamentos</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <LayoutDashboard className="h-8 w-8 text-orange-600" />
+              <h4 className="font-bold text-orange-800">Sistema SiDIF</h4>
+            </div>
+            <ul className="text-sm space-y-2 text-orange-900">
+              <li>✓ Cadastro e acompanhamento de obras</li>
+              <li>✓ Medições e aditivos contratuais</li>
+              <li>✓ RDO com assinaturas digitais</li>
+              <li>✓ Controle de permissões por obra</li>
             </ul>
           </CardContent>
         </Card>
