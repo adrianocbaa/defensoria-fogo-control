@@ -61,8 +61,7 @@ import {
   GestorContratosRegras,
   GestorContratosExcecoes,
   HierarquiaFuncoes,
-  ResumoNovasDiretrizes,
-  CadastroObrasSlide
+  ResumoNovasDiretrizes
 } from '@/components/apresentacao/GestaoContratosSlides';
 
 interface Slide {
@@ -814,41 +813,7 @@ export default function Apresentacao() {
     },
 
     // ============ SISTEMA INTEGRADO DIF ============
-    // SLIDE 13 - Capa Sistema SIDIF
-    {
-      id: 13,
-      title: '',
-      content: (
-        <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
-          <img src={sidifLogo} alt="SIDIF Logo" className="h-32 object-contain" />
-          <div>
-            <h1 className="text-5xl font-bold text-primary mb-4">
-              Sistema Integrado DIF
-            </h1>
-            <p className="text-2xl text-muted-foreground">
-              Diretoria de Infraestrutura Física
-            </p>
-          </div>
-          <div className="mt-8 space-y-2">
-            <p className="text-xl font-medium">Apresentação de Funcionalidades</p>
-            <p className="text-lg text-muted-foreground">Módulos: Obras, Medições e RDO</p>
-          </div>
-          <Badge variant="outline" className="text-base px-4 py-2 mt-8">
-            Público: Fiscais de Obras
-          </Badge>
-        </div>
-      ),
-    },
-
-    // SLIDE 14 - Cadastro de Obras
-    {
-      id: 14,
-      title: 'Cadastro de Obras',
-      subtitle: 'Formulário de cadastro e campos obrigatórios',
-      content: <CadastroObrasSlide />,
-    },
-
-    // SLIDE 15 - Visão Geral
+    // SLIDE 11 - Capa Sistema SIDIF
     {
       id: 11,
       title: '',
@@ -874,9 +839,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 15 - Visão Geral
+    // SLIDE 11 - Visão Geral
     {
-      id: 15,
+      id: 11,
       title: 'Visão Geral do Sistema',
       subtitle: 'Uma plataforma integrada para gestão de obras públicas',
       content: (
