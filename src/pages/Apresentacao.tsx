@@ -1243,9 +1243,90 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 15 - Gerenciar Obras (Simplificado)
+    // SLIDE 15 - Documentação Obrigatória
     {
       id: 15,
+      title: 'Documentação Obrigatória',
+      subtitle: 'Documentos que devem ser anexados no sistema',
+      content: (
+        <div className="space-y-6">
+          {/* Alerta principal */}
+          <Card className="bg-amber-50 border-amber-300 border-2">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-4">
+                <div className="bg-amber-500 text-white p-3 rounded-full shrink-0">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-amber-800 text-lg mb-2">Atenção: Anexos Obrigatórios</h3>
+                  <p className="text-sm text-amber-700">
+                    Para cada obra cadastrada no sistema, os seguintes documentos <strong>devem ser anexados</strong> na seção de Documentação:
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Lista de documentos obrigatórios */}
+          <div className="grid md:grid-cols-2 gap-4">
+            {[
+              { 
+                icon: FileText, 
+                title: 'Contrato', 
+                description: 'Contrato original da obra assinado',
+                color: 'bg-blue-500'
+              },
+              { 
+                icon: FileSpreadsheet, 
+                title: 'Contrato de Aditivos', 
+                description: 'Todos os termos aditivos celebrados',
+                color: 'bg-purple-500'
+              },
+              { 
+                icon: ClipboardCheck, 
+                title: 'Medições Assinadas', 
+                description: 'Após cada medição, anexar documento assinado',
+                color: 'bg-green-500'
+              },
+              { 
+                icon: Shield, 
+                title: 'ARTs', 
+                description: 'Anotações de Responsabilidade Técnica',
+                color: 'bg-orange-500'
+              },
+            ].map((doc, i) => (
+              <Card key={i} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4 flex items-start gap-4">
+                  <div className={`${doc.color} text-white p-2.5 rounded-lg shrink-0`}>
+                    <doc.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-base">{doc.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{doc.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Nota sobre medições */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
+                <p className="text-sm text-blue-800">
+                  <strong>Importante:</strong> Após cada medição aprovada, o documento de medição assinado deve ser anexado ao sistema para manter o histórico completo da obra.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ),
+    },
+
+    // SLIDE 16 - Gerenciar Obras (Simplificado)
+    {
+      id: 16,
       title: 'Gerenciar Obras',
       subtitle: 'Visão consolidada para gestão administrativa',
       content: (
@@ -1289,9 +1370,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 16 - Tipos de Medição
+    // SLIDE 17 - Tipos de Medição
     {
-      id: 16,
+      id: 17,
       title: 'Sistema de Medições',
       subtitle: 'Dois modos de trabalho: Manual ou via RDO',
       content: (
@@ -1309,9 +1390,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 17 - RDO Calendário Visual
+    // SLIDE 18 - RDO Calendário Visual
     {
-      id: 17,
+      id: 18,
       title: 'Calendário de RDO',
       subtitle: 'Visualização mensal com status e indicadores',
       content: (
@@ -1322,9 +1403,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 18 - RDO Lista de Serviços
+    // SLIDE 19 - RDO Lista de Serviços
     {
-      id: 18,
+      id: 19,
       title: 'Preenchimento de Atividades',
       subtitle: 'A Contratada insere os quantitativos executados no dia',
       content: (
@@ -1334,33 +1415,33 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 19 - Assinaturas e Histórico
+    // SLIDE 20 - Assinaturas e Histórico
     {
-      id: 19,
+      id: 20,
       title: 'Assinaturas e Validação',
       subtitle: 'Fluxo de aprovação com histórico de reprovações',
       content: <MockSignaturesPanel />,
     },
 
-    // SLIDE 20 - RDO Impresso
+    // SLIDE 21 - RDO Impresso
     {
-      id: 20,
+      id: 21,
       title: 'RDO Impresso',
       subtitle: 'Documento gerado automaticamente pelo sistema',
       content: <MockPrintedRdo />,
     },
 
-    // SLIDE 21 - Permissões
+    // SLIDE 22 - Permissões
     {
-      id: 21,
+      id: 22,
       title: 'Permissões e Segurança',
       subtitle: 'Como o fiscal gerencia suas obras e acessos autorizados',
       content: <MockPermissionsManager />,
     },
 
-    // SLIDE 22 - Encerramento
+    // SLIDE 23 - Encerramento
     {
-      id: 22,
+      id: 23,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
