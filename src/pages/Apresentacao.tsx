@@ -711,33 +711,42 @@ export default function Apresentacao() {
   const navigate = useNavigate();
 
   const slides: Slide[] = [
-    // ============ CALENDÁRIO DIF ============
-    // SLIDE 1 - Capa Calendário DIF
+    // ============ RESUMO DAS NOVAS DIRETRIZES (PRIMEIRO SLIDE) ============
+    // SLIDE 1 - Novas Diretrizes DIF
     {
       id: 1,
+      title: 'Novas Diretrizes DIF',
+      subtitle: 'Resumo das principais mudanças',
+      content: <ResumoNovasDiretrizes />,
+    },
+
+    // ============ CALENDÁRIO DIF ============
+    // SLIDE 2 - Capa Calendário DIF
+    {
+      id: 2,
       title: '',
       content: <CalendarioDifCapa />,
     },
 
-    // SLIDE 2 - Objetivos
+    // SLIDE 3 - Objetivos
     {
-      id: 2,
+      id: 3,
       title: 'Objetivos',
       subtitle: 'Registro de viagens institucionais no Google Agenda',
       content: <CalendarioDifObjetivos />,
     },
 
-    // SLIDE 3 - Diretrizes
+    // SLIDE 4 - Diretrizes
     {
-      id: 3,
+      id: 4,
       title: 'Diretrizes de Preenchimento',
       subtitle: 'Regras para registro de viagens',
       content: <CalendarioDifDiretrizes />,
     },
 
-    // SLIDE 4 - Google Calendar Visual
+    // SLIDE 5 - Google Calendar Visual
     {
-      id: 4,
+      id: 5,
       title: 'Agenda de Viagens DIF',
       subtitle: 'Visualização real no Google Calendar',
       content: (
@@ -747,68 +756,60 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 5 - Modelo de Preenchimento
+    // SLIDE 6 - Modelo de Preenchimento
     {
-      id: 5,
+      id: 6,
       title: 'Como Preencher',
       subtitle: 'Modelo padrão para registro de viagens',
       content: <ModeloPreenchimento />,
     },
 
     // ============ GESTÃO E FISCALIZAÇÃO DE CONTRATOS ============
-    // SLIDE 6 - Capa Gestão de Contratos
+    // SLIDE 7 - Capa Gestão de Contratos
     {
-      id: 6,
+      id: 7,
       title: '',
       content: <GestaoContratosCapa />,
     },
 
-    // SLIDE 7 - Diretrizes Internas - Fiscalização e Gestão de Contratos
+    // SLIDE 8 - Diretrizes Internas - Fiscalização e Gestão de Contratos
     {
-      id: 7,
+      id: 8,
       title: 'Diretrizes Internas',
       subtitle: 'Fiscalização e Gestão de Contratos - SEI n° 2025.0.000019210-4',
       content: <DiretrizesInternasFiscalizacao />,
     },
 
-    // SLIDE 8 - Atribuições do Gestor de Contratos
+    // SLIDE 9 - Atribuições do Gestor de Contratos
     {
-      id: 8,
+      id: 9,
       title: 'Atribuições do Gestor de Contratos',
       subtitle: 'Função, atribuições e responsabilidades',
       content: <AtribuicoesGestorContratos />,
     },
 
-    // SLIDE 9 - Regras do Gestor
+    // SLIDE 10 - Regras do Gestor
     {
-      id: 9,
+      id: 10,
       title: 'Função de Gestor de Contratos',
       subtitle: 'Novas diretrizes para designação',
       content: <GestorContratosRegras />,
     },
 
-    // SLIDE 10 - Exceções e Continuidade
+    // SLIDE 11 - Exceções e Continuidade
     {
-      id: 10,
+      id: 11,
       title: 'Exceções e Continuidade',
       subtitle: 'Situações especiais e garantia de fluxo administrativo',
       content: <GestorContratosExcecoes />,
     },
 
-    // SLIDE 11 - Hierarquia
+    // SLIDE 12 - Hierarquia
     {
-      id: 11,
+      id: 12,
       title: 'Gestor vs Fiscal',
       subtitle: 'Diferenças de atribuições e responsabilidades',
       content: <HierarquiaFuncoes />,
-    },
-
-    // SLIDE 12 - Resumo
-    {
-      id: 12,
-      title: 'Novas Diretrizes DIF',
-      subtitle: 'Resumo das principais mudanças',
-      content: <ResumoNovasDiretrizes />,
     },
 
     // ============ SISTEMA INTEGRADO DIF ============
