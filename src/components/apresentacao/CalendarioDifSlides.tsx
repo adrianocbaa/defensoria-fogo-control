@@ -96,12 +96,12 @@ export function CalendarioDifDiretrizes() {
     },
     {
       icon: AlertTriangle,
-      text: 'Observar prazo mínimo de 8 (oito) dias úteis para solicitação de diárias, excluídos finais de semana e feriados',
+      text: 'O solicitante deverá observar o prazo mínimo de 8 (oito) dias úteis para a solicitação das diárias, excluídos da contagem os finais de semana e feriados',
       tipo: 'critico'
     },
     {
       icon: Target,
-      text: 'Verificar se na data da viagem não há mais de 3 (três) viagens agendadas',
+      text: 'O solicitante deverá verificar se na data da viagem não há mais de 3 (três) viagens agendadas',
       tipo: 'importante'
     }
   ];
