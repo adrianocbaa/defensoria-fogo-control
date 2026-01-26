@@ -293,8 +293,7 @@ function MockRdoCalendar() {
 
   const getStatusStyle = (status: string | null) => {
     switch(status) {
-      case 'aprovado': return 'bg-green-100 border-green-300 text-green-800';
-      case 'concluido': return 'bg-blue-100 border-blue-300 text-blue-800';
+      case 'aprovado': return 'bg-blue-100 border-blue-300 text-blue-800';
       case 'preenchendo': return 'bg-orange-100 border-orange-300 text-orange-800';
       case 'semExpediente': return 'bg-slate-100 border-slate-300 text-slate-600';
       case 'falta': return 'bg-amber-50 border-amber-300';
@@ -337,12 +336,8 @@ function MockRdoCalendar() {
         </div>
         <div className="flex flex-wrap gap-2 mt-2 text-[10px]">
           <div className="flex items-center gap-1">
-            <div className="w-2.5 h-2.5 rounded bg-green-200 border border-green-400" />
-            <span>Aprovado</span>
-          </div>
-          <div className="flex items-center gap-1">
             <div className="w-2.5 h-2.5 rounded bg-blue-200 border border-blue-400" />
-            <span>Concluído</span>
+            <span>Aprovado</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2.5 h-2.5 rounded bg-orange-200 border border-orange-400" />
