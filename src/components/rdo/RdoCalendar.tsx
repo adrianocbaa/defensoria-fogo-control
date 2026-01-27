@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee, FileX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee, FileX, XCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -425,6 +425,21 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             <span className="text-[8px] bg-red-100 text-red-700 px-1 rounded">
                               {rdo.occurrence_count} ocor
                             </span>
+                          )}
+                          {/* Indicador de RDO reprovado anteriormente */}
+                          {rdo.was_rejected && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center justify-center">
+                                    <XCircle className="h-3 w-3 text-red-600" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">RDO foi reprovado anteriormente pela fiscalização</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                           {/* Indicador de pendência de assinatura */}
                           {((rdo.assinatura_fiscal_validado_em && !rdo.assinatura_contratada_validado_em) || 

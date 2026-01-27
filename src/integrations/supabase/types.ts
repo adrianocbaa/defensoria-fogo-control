@@ -2829,6 +2829,27 @@ export type Database = {
           },
         ]
       }
+      user_read_notifications: {
+        Row: {
+          id: string
+          notification_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          notification_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          notification_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3162,6 +3183,7 @@ export type Database = {
       }
       cleanup_expired_reset_codes: { Args: never; Returns: undefined }
       cleanup_old_login_attempts: { Args: never; Returns: undefined }
+      cleanup_old_read_notifications: { Args: never; Returns: undefined }
       create_attachment: {
         Args: {
           p_kind: string
