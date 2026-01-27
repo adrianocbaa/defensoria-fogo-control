@@ -195,7 +195,7 @@ export function ModeloPreenchimento() {
           <CardContent className="p-4 text-center">
             <CheckCircle2 className="h-8 w-8 text-green-600 mx-auto mb-2" />
             <p className="font-medium text-green-800">Formato Correto</p>
-            <p className="text-xs text-green-700 mt-1">VIAGEM - [Nome] - [Destino]</p>
+            <p className="text-xs text-green-700 mt-1">[Nome] - Viagem - [Destino]</p>
           </CardContent>
         </Card>
         <Card className="bg-amber-50 border-amber-200">
