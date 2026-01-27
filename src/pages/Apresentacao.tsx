@@ -1594,9 +1594,6 @@ export default function Apresentacao() {
             <ChevronLeft className="h-4 w-4 mr-2" />
             Anterior
           </Button>
-          <p className="text-sm text-muted-foreground">
-            Use as setas ← → ou barra de espaço para navegar
-          </p>
           <Button
             onClick={() => goToSlide(currentSlide + 1)}
             disabled={currentSlide === totalSlides - 1}
