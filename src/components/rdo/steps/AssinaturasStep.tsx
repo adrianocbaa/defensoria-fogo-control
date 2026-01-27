@@ -287,6 +287,9 @@ export function AssinaturasStep({
       setRejectObservation("");
       setShowRejectInput(false);
 
+      // Invalidar histórico de reprovações para atualizar imediatamente
+      queryClient.invalidateQueries({ queryKey: ['rdo-rejection-history', reportId] });
+      
       toast.success("RDO reprovado e reaberto para edição");
       onUpdate();
     } catch (error: any) {

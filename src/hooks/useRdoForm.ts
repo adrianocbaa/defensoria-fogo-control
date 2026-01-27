@@ -68,23 +68,23 @@ export function useRdoForm(obraId: string, data: string) {
     },
   });
 
-  // Resetar formData quando a data mudar
+  // Atualizar formData quando a data mudar OU quando carregar o RDO existente
   useEffect(() => {
-    setFormData({
-      obra_id: obraId,
-      data,
-      status: 'rascunho',
-    });
-    setHasChanges(false);
-  }, [obraId, data]);
-
-  // Atualizar formData quando carregar o RDO existente
-  useEffect(() => {
+    if (isLoading) return; // Aguardar carregamento
+    
     if (rdoReport) {
+      // RDO existente encontrado
       setFormData(rdoReport as RdoFormData);
-      setHasChanges(false);
+    } else {
+      // Nenhum RDO para esta data - resetar para rascunho
+      setFormData({
+        obra_id: obraId,
+        data,
+        status: 'rascunho',
+      });
     }
-  }, [rdoReport?.id]);
+    setHasChanges(false);
+  }, [obraId, data, rdoReport, isLoading]);
 
   // Mutation para salvar/atualizar
   const saveMutation = useMutation({
