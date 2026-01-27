@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,6 +67,18 @@ export function AssinaturasStep({
   const [contratadaValidadoLocal, setContratadaValidadoLocal] = useState<string | null>(reportData?.assinatura_contratada_validado_em || null);
   const [rejectObservation, setRejectObservation] = useState("");
   const [showRejectInput, setShowRejectInput] = useState(false);
+  
+  // Sincronizar estados locais quando reportData mudar (ex: após reprovação ou refresh)
+  useEffect(() => {
+    setFiscalNome(reportData?.assinatura_fiscal_nome || "");
+    setFiscalCargo(reportData?.assinatura_fiscal_cargo || "");
+    setFiscalDocumento(reportData?.assinatura_fiscal_documento || "");
+    setFiscalValidadoLocal(reportData?.assinatura_fiscal_validado_em || null);
+    setContratadaNome(reportData?.assinatura_contratada_nome || "");
+    setContratadaCargo(reportData?.assinatura_contratada_cargo || "");
+    setContratadaDocumento(reportData?.assinatura_contratada_documento || "");
+    setContratadaValidadoLocal(reportData?.assinatura_contratada_validado_em || null);
+  }, [reportData?.id, reportData?.assinatura_fiscal_validado_em, reportData?.assinatura_contratada_validado_em]);
   
   const fiscalValidado = fiscalValidadoLocal;
   const contratadaValidado = contratadaValidadoLocal;
