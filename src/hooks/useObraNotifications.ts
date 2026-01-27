@@ -50,8 +50,25 @@ export function useObraNotifications() {
         obrasSubstituto = data || [];
       }
 
-      // Combinar e criar mapa de obras
-      const allObras = [...(obrasTitular || []), ...obrasSubstituto];
+      // Buscar obras onde o usuário tem acesso (contratadas)
+      const { data: acessoObras } = await supabase
+        .from('user_obra_access')
+        .select('obra_id')
+        .eq('user_id', user.id);
+
+      const acessoIds = acessoObras?.map(a => a.obra_id) || [];
+      
+      let obrasAcesso: { id: string; nome: string }[] = [];
+      if (acessoIds.length > 0) {
+        const { data } = await supabase
+          .from('obras')
+          .select('id, nome')
+          .in('id', acessoIds);
+        obrasAcesso = data || [];
+      }
+
+      // Combinar e criar mapa de obras (titular + substituto + acesso contratada)
+      const allObras = [...(obrasTitular || []), ...obrasSubstituto, ...obrasAcesso];
       const obraIds = [...new Set(allObras.map(o => o.id))];
       const obraMap = new Map(allObras.map(o => [o.id, o.nome]));
 
