@@ -1447,9 +1447,34 @@ export default function Apresentacao() {
       content: <MockPermissionsManager />,
     },
 
-    // SLIDE 27 - Encerramento
+    // SLIDE 27 - Demonstração Medição via RDO
     {
       id: 27,
+      title: 'Demonstração: Medição via RDO',
+      subtitle: 'Veja na prática como funciona o processo de medição utilizando o RDO',
+      content: (
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="w-full max-w-3xl bg-card rounded-lg overflow-hidden shadow-lg border">
+            <video 
+              controls 
+              className="w-full aspect-video"
+              poster="/images/logo-dif-dpmt.jpg"
+            >
+              <source src="/videos/demo-medicao-rdo.mp4" type="video/mp4" />
+              Seu navegador não suporta a reprodução de vídeos.
+            </video>
+          </div>
+          <p className="text-sm text-muted-foreground text-center max-w-xl">
+            Este vídeo demonstra o fluxo completo de medição utilizando os dados registrados no RDO, 
+            desde a seleção do período até a geração do relatório final.
+          </p>
+        </div>
+      ),
+    },
+
+    // SLIDE 28 - Encerramento
+    {
+      id: 28,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
