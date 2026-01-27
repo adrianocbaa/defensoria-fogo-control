@@ -57,13 +57,13 @@ export function useObraNotifications() {
 
       if (obraIds.length === 0) return [];
 
-      // Buscar notificações lidas pelo usuário
-      const { data: readNotifications } = await supabase
+      // Buscar notificações lidas pelo usuário (usando any para bypass de tipos)
+      const { data: readNotifications } = await (supabase as any)
         .from('user_read_notifications')
         .select('notification_id')
         .eq('user_id', user.id);
 
-      const readSet = new Set((readNotifications || []).map(n => n.notification_id));
+      const readSet = new Set((readNotifications || []).map((n: any) => n.notification_id));
 
       // Buscar logs de ações das últimas 72 horas (não feitas pelo próprio usuário)
       const cutoffDate = new Date();
@@ -142,7 +142,7 @@ export function useObraNotifications() {
     mutationFn: async (notificationId: string) => {
       if (!user) throw new Error('User not authenticated');
       
-      await supabase
+      await (supabase as any)
         .from('user_read_notifications')
         .upsert({
           user_id: user.id,
@@ -167,7 +167,7 @@ export function useObraNotifications() {
         notification_id: id,
       }));
 
-      await supabase
+      await (supabase as any)
         .from('user_read_notifications')
         .upsert(inserts, { onConflict: 'user_id,notification_id' });
     },

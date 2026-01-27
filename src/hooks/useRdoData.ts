@@ -24,6 +24,7 @@ export interface RdoCalendarDay {
   contratada_concluido_em: string | null;
   assinatura_fiscal_validado_em: string | null;
   assinatura_contratada_validado_em: string | null;
+  was_rejected: boolean;
 }
 
 export interface RdoRecente {
@@ -143,6 +144,16 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
       if (error) throw error;
       if (!reports) return [];
 
+      // Buscar IDs dos RDOs que já foram reprovados
+      const reportIds = reports.map(r => r.id);
+      const { data: rejections } = await supabase
+        .from('rdo_audit_log')
+        .select('report_id')
+        .in('report_id', reportIds)
+        .eq('acao', 'REPROVAR');
+      
+      const rejectedSet = new Set((rejections || []).map(r => r.report_id));
+
       // Get counts for each report
       const enrichedReports = await Promise.all(
         reports.map(async (report) => {
@@ -179,6 +190,7 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
             contratada_concluido_em: report.contratada_concluido_em,
             assinatura_fiscal_validado_em: report.assinatura_fiscal_validado_em,
             assinatura_contratada_validado_em: report.assinatura_contratada_validado_em,
+            was_rejected: rejectedSet.has(report.id),
           };
         })
       );

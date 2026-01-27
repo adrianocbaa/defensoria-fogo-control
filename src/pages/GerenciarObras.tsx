@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { FiscalSubstitutosManager } from '@/components/FiscalSubstitutosManager';
 import { useFiscalObras } from '@/hooks/useFiscalObras';
-import { Card, CardContent } from '@/components/ui/card';
+import { useObraNotifications, ObraNotification } from '@/hooks/useObraNotifications';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Building2, MapPin, ArrowLeft } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Building2, MapPin, ArrowLeft, Bell, Clock, User, FileText, XCircle, CheckCircle, RotateCcw } from 'lucide-react';
 
 const statusLabels: Record<string, string> = {
   planejamento: 'Planejamento',
@@ -24,8 +28,45 @@ const statusColors: Record<string, string> = {
   paralisada: 'bg-red-100 text-red-800',
 };
 
+const actionTypeIcons: Record<string, React.ReactNode> = {
+  rdo_reprovar: <XCircle className="h-4 w-4 text-red-500" />,
+  rdo_aprovar: <CheckCircle className="h-4 w-4 text-green-500" />,
+  rdo_reabrir: <RotateCcw className="h-4 w-4 text-amber-500" />,
+};
+
+function NotificationItem({ notification }: { notification: ObraNotification }) {
+  const Icon = actionTypeIcons[notification.action_type] || <FileText className="h-4 w-4 text-muted-foreground" />;
+  
+  return (
+    <div className={`flex items-start gap-3 p-3 rounded-lg border ${notification.is_read ? 'bg-background' : 'bg-primary/5 border-primary/20'}`}>
+      <div className="flex-shrink-0 mt-0.5">
+        {Icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-medium text-sm truncate">{notification.obra_nome}</span>
+          {!notification.is_read && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary">
+              Novo
+            </Badge>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">{notification.action_description}</p>
+        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+          <User className="h-3 w-3" />
+          <span>{notification.user_email}</span>
+          <span>•</span>
+          <Clock className="h-3 w-3" />
+          <span>{format(new Date(notification.created_at), "dd/MM HH:mm", { locale: ptBR })}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function GerenciarObras() {
   const { obras, loading, error } = useFiscalObras();
+  const { notifications, unreadCount, isLoading: loadingNotifications, markAllAsRead } = useObraNotifications();
 
   if (loading) {
     return (
@@ -56,6 +97,46 @@ export default function GerenciarObras() {
             </Link>
           }
         />
+
+        {/* Painel de Notificações */}
+        {notifications.length > 0 && (
+          <Card>
+            <CardHeader className="py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Alterações Recentes
+                  {unreadCount > 0 && (
+                    <Badge variant="destructive" className="ml-2">
+                      {unreadCount} nova{unreadCount > 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                </CardTitle>
+                {unreadCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => markAllAsRead()}>
+                    Marcar todas como lidas
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ScrollArea className="max-h-80">
+                <div className="space-y-2">
+                  {loadingNotifications ? (
+                    <>
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                    </>
+                  ) : (
+                    notifications.slice(0, 10).map((notification) => (
+                      <NotificationItem key={notification.id} notification={notification} />
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
 
         {error && (
           <Card className="border-destructive">

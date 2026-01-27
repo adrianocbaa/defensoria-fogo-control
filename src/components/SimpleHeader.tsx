@@ -1,12 +1,14 @@
 import { ReactNode } from 'react';
-import { User, LogOut, Settings, ArrowLeft, BarChart3, Shield, Building2 } from 'lucide-react';
+import { User, LogOut, Settings, ArrowLeft, BarChart3, Shield, Building2, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
+import { useObraNotifications } from '@/hooks/useObraNotifications';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Link, useLocation } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logoSidif from '@/assets/sidif-logo-oficial.png';
 import logoDif from '@/assets/logo-dif-transparente.png';
 
@@ -18,8 +20,15 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
   const { user, signOut } = useAuth();
   const { isAdmin, canEdit } = useUserRole();
   const { profile } = useProfile();
+  const { unreadCount, markAllAsRead } = useObraNotifications();
   const location = useLocation();
+  const navigate = useNavigate();
   const isDashboard = location.pathname === '/';
+
+  const handleNotificationClick = () => {
+    markAllAsRead();
+    navigate('/gerenciar-obras');
+  };
 
   return (
     <div className="w-full bg-background">
@@ -46,7 +55,25 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
                 </Link>
               )}
               
-              {/* User Menu */}
+              {/* Notifications Button */}
+              {(isAdmin || canEdit) && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="relative gap-2 text-primary-foreground hover:bg-primary-foreground/10"
+                  onClick={handleNotificationClick}
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1.5 text-[10px] font-bold"
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
