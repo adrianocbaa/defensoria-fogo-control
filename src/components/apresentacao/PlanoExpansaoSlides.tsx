@@ -103,3 +103,15 @@ export function PlanoExpansaoMonitoramento() {
 export function PlanoExpansaoConsideracoes() {
   return <SlideImagem src={planoExpansaoConsideracoes} alt="Considerações Finais" />;
 }
+
+// Slide 17
+import planoExpansaoSlide17 from '@/assets/apresentacao/plano-expansao-slide-17.jpg';
+export function PlanoExpansaoSlide17() {
+  return <SlideImagem src={planoExpansaoSlide17} alt="Plano de Expansão - Slide 17" />;
+}
+
+// Slide 18
+import planoExpansaoSlide18 from '@/assets/apresentacao/plano-expansao-slide-18.jpg';
+export function PlanoExpansaoSlide18() {
+  return <SlideImagem src={planoExpansaoSlide18} alt="Plano de Expansão - Slide 18" />;
+}
