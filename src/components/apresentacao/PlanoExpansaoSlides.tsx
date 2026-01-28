@@ -8,6 +8,11 @@ import planoExpansaoIntervencoes from '@/assets/apresentacao/plano-expansao-inte
 import planoExpansaoEconucleos from '@/assets/apresentacao/plano-expansao-econucleos.jpg';
 import planoExpansaoEconucleos2 from '@/assets/apresentacao/plano-expansao-econucleos-2.jpg';
 import planoExpansaoEconucleosTabela from '@/assets/apresentacao/plano-expansao-econucleos-tabela.jpg';
+import planoExpansaoCronograma1 from '@/assets/apresentacao/plano-expansao-cronograma-1.jpg';
+import planoExpansaoCronograma2 from '@/assets/apresentacao/plano-expansao-cronograma-2.jpg';
+import planoExpansaoConstrucoes from '@/assets/apresentacao/plano-expansao-construcoes.jpg';
+import planoExpansaoMonitoramento from '@/assets/apresentacao/plano-expansao-monitoramento.jpg';
+import planoExpansaoConsideracoes from '@/assets/apresentacao/plano-expansao-consideracoes.jpg';
 
 // Componente base para slides de imagem
 function SlideImagem({ src, alt }: { src: string; alt: string }) {
@@ -72,4 +77,29 @@ export function PlanoExpansaoEconucleos2() {
 // Slide 11 - Tabela Econúcleos
 export function PlanoExpansaoEconucleosTabela() {
   return <SlideImagem src={planoExpansaoEconucleosTabela} alt="Tabela de Econúcleos - Situação Atual" />;
+}
+
+// Slide 12 - Cronograma 1
+export function PlanoExpansaoCronograma1() {
+  return <SlideImagem src={planoExpansaoCronograma1} alt="Cronograma de Execução - Parte 1" />;
+}
+
+// Slide 13 - Cronograma 2
+export function PlanoExpansaoCronograma2() {
+  return <SlideImagem src={planoExpansaoCronograma2} alt="Cronograma de Execução - Parte 2" />;
+}
+
+// Slide 14 - Construções
+export function PlanoExpansaoConstrucoes() {
+  return <SlideImagem src={planoExpansaoConstrucoes} alt="Status das Construções" />;
+}
+
+// Slide 15 - Monitoramento e Avaliação
+export function PlanoExpansaoMonitoramento() {
+  return <SlideImagem src={planoExpansaoMonitoramento} alt="Monitoramento e Avaliação" />;
+}
+
+// Slide 16 - Considerações Finais
+export function PlanoExpansaoConsideracoes() {
+  return <SlideImagem src={planoExpansaoConsideracoes} alt="Considerações Finais" />;
 }

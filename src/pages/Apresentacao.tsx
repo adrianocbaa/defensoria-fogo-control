@@ -78,7 +78,12 @@ import {
   PlanoExpansaoIntervencoes,
   PlanoExpansaoEconucleos,
   PlanoExpansaoEconucleos2,
-  PlanoExpansaoEconucleosTabela
+  PlanoExpansaoEconucleosTabela,
+  PlanoExpansaoCronograma1,
+  PlanoExpansaoCronograma2,
+  PlanoExpansaoConstrucoes,
+  PlanoExpansaoMonitoramento,
+  PlanoExpansaoConsideracoes
 } from '@/components/apresentacao/PlanoExpansaoSlides';
 
 interface Slide {
@@ -1555,9 +1560,44 @@ export default function Apresentacao() {
       content: <PlanoExpansaoEconucleosTabela />,
     },
 
-    // SLIDE 38 - Encerramento
+    // SLIDE 38 - Plano de Expansão - Cronograma 1
     {
       id: 38,
+      title: '',
+      content: <PlanoExpansaoCronograma1 />,
+    },
+
+    // SLIDE 39 - Plano de Expansão - Cronograma 2
+    {
+      id: 39,
+      title: '',
+      content: <PlanoExpansaoCronograma2 />,
+    },
+
+    // SLIDE 40 - Plano de Expansão - Construções
+    {
+      id: 40,
+      title: '',
+      content: <PlanoExpansaoConstrucoes />,
+    },
+
+    // SLIDE 41 - Plano de Expansão - Monitoramento
+    {
+      id: 41,
+      title: '',
+      content: <PlanoExpansaoMonitoramento />,
+    },
+
+    // SLIDE 42 - Plano de Expansão - Considerações Finais
+    {
+      id: 42,
+      title: '',
+      content: <PlanoExpansaoConsideracoes />,
+    },
+
+    // SLIDE 43 - Encerramento
+    {
+      id: 43,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
