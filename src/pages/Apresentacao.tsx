@@ -74,7 +74,11 @@ import {
   PlanoExpansaoApresentacao,
   PlanoExpansaoObjetivos,
   PlanoExpansaoJustificativas,
-  PlanoExpansaoDiretrizes
+  PlanoExpansaoDiretrizes,
+  PlanoExpansaoIntervencoes,
+  PlanoExpansaoEconucleos,
+  PlanoExpansaoEconucleos2,
+  PlanoExpansaoEconucleosTabela
 } from '@/components/apresentacao/PlanoExpansaoSlides';
 
 interface Slide {
@@ -1523,9 +1527,37 @@ export default function Apresentacao() {
       content: <PlanoExpansaoDiretrizes />,
     },
 
-    // SLIDE 34 - Encerramento
+    // SLIDE 34 - Plano de Expansão - Intervenções (25 comarcas)
     {
       id: 34,
+      title: '',
+      content: <PlanoExpansaoIntervencoes />,
+    },
+
+    // SLIDE 35 - Plano de Expansão - Econúcleos
+    {
+      id: 35,
+      title: '',
+      content: <PlanoExpansaoEconucleos />,
+    },
+
+    // SLIDE 36 - Plano de Expansão - Econúcleos 2
+    {
+      id: 36,
+      title: '',
+      content: <PlanoExpansaoEconucleos2 />,
+    },
+
+    // SLIDE 37 - Plano de Expansão - Tabela Econúcleos
+    {
+      id: 37,
+      title: '',
+      content: <PlanoExpansaoEconucleosTabela />,
+    },
+
+    // SLIDE 38 - Encerramento
+    {
+      id: 38,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
