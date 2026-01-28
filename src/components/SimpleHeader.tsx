@@ -18,7 +18,7 @@ interface SimpleHeaderProps {
 
 export function SimpleHeader({ children }: SimpleHeaderProps) {
   const { user, signOut } = useAuth();
-  const { isAdmin, canEdit } = useUserRole();
+  const { isAdmin, canEdit, isContratada } = useUserRole();
   const { profile } = useProfile();
   const { unreadCount, markAllAsRead } = useObraNotifications();
   const location = useLocation();
@@ -56,7 +56,7 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
               )}
               
               {/* Notifications Button */}
-              {(isAdmin || canEdit) && (
+              {(isAdmin || canEdit || isContratada) && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
