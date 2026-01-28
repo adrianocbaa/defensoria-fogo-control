@@ -69,7 +69,12 @@ import {
 import { CapaApresentacao } from '@/components/apresentacao/CapaApresentacao';
 
 import {
-  PlanoExpansaoCapa
+  PlanoExpansaoCapa,
+  PlanoExpansaoExpediente,
+  PlanoExpansaoApresentacao,
+  PlanoExpansaoObjetivos,
+  PlanoExpansaoJustificativas,
+  PlanoExpansaoDiretrizes
 } from '@/components/apresentacao/PlanoExpansaoSlides';
 
 interface Slide {
@@ -1483,9 +1488,44 @@ export default function Apresentacao() {
       content: <PlanoExpansaoCapa />,
     },
 
-    // SLIDE 29 - Encerramento
+    // SLIDE 29 - Plano de Expansão - Expediente
     {
       id: 29,
+      title: '',
+      content: <PlanoExpansaoExpediente />,
+    },
+
+    // SLIDE 30 - Plano de Expansão - Apresentação
+    {
+      id: 30,
+      title: '',
+      content: <PlanoExpansaoApresentacao />,
+    },
+
+    // SLIDE 31 - Plano de Expansão - Objetivos
+    {
+      id: 31,
+      title: '',
+      content: <PlanoExpansaoObjetivos />,
+    },
+
+    // SLIDE 32 - Plano de Expansão - Justificativas
+    {
+      id: 32,
+      title: '',
+      content: <PlanoExpansaoJustificativas />,
+    },
+
+    // SLIDE 33 - Plano de Expansão - Diretrizes
+    {
+      id: 33,
+      title: '',
+      content: <PlanoExpansaoDiretrizes />,
+    },
+
+    // SLIDE 34 - Encerramento
+    {
+      id: 34,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
