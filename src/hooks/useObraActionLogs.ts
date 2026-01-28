@@ -18,6 +18,9 @@ export type ActionType =
   | 'rdo_criado'
   | 'rdo_aprovado'
   | 'rdo_excluido'
+  | 'rdo_comentario'
+  | 'rdo_assinado'
+  | 'rdo_reprovado'
   | 'itens_alterados';
 
 interface LogActionParams {
@@ -217,6 +220,34 @@ export function useObraActionLogs() {
     });
   };
 
+  const logRdoComentario = (obraId: string, data: string) => {
+    return logAction({
+      obraId,
+      actionType: 'rdo_comentario',
+      description: `Comentário adicionado no RDO de ${data}`,
+      metadata: { data }
+    });
+  };
+
+  const logRdoAssinado = (obraId: string, data: string, tipoAssinante: 'fiscal' | 'contratada') => {
+    const label = tipoAssinante === 'fiscal' ? 'Fiscal/Gestor' : 'Contratada';
+    return logAction({
+      obraId,
+      actionType: 'rdo_assinado',
+      description: `RDO de ${data} assinado pelo ${label}`,
+      metadata: { data, tipoAssinante }
+    });
+  };
+
+  const logRdoReprovado = (obraId: string, data: string, motivo: string) => {
+    return logAction({
+      obraId,
+      actionType: 'rdo_reprovado',
+      description: `RDO de ${data} reprovado`,
+      metadata: { data, motivo }
+    });
+  };
+
   return {
     logAction,
     logMedicaoSalva,
@@ -234,6 +265,9 @@ export function useObraActionLogs() {
     logRdoCriado,
     logRdoAprovado,
     logRdoExcluido,
+    logRdoComentario,
+    logRdoAssinado,
+    logRdoReprovado,
     logItensAlterados
   };
 }
