@@ -68,6 +68,10 @@ import {
 
 import { CapaApresentacao } from '@/components/apresentacao/CapaApresentacao';
 
+import {
+  PlanoExpansaoCapa
+} from '@/components/apresentacao/PlanoExpansaoSlides';
+
 interface Slide {
   id: number;
   title: string;
@@ -1472,9 +1476,16 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 28 - Encerramento
+    // SLIDE 28 - Plano de Expansão - Capa
     {
       id: 28,
+      title: '',
+      content: <PlanoExpansaoCapa />,
+    },
+
+    // SLIDE 29 - Encerramento
+    {
+      id: 29,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
