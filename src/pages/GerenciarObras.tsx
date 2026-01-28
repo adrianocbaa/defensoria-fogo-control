@@ -122,8 +122,8 @@ export default function GerenciarObras() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <ScrollArea className="max-h-80">
-                <div className="space-y-2">
+              <ScrollArea className="h-80">
+                <div className="space-y-2 pr-4">
                   {loadingNotifications ? (
                     <>
                       <Skeleton className="h-16 w-full" />
