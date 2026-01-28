@@ -5,6 +5,7 @@ import { SimpleHeader } from '@/components/SimpleHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { FiscalSubstitutosManager } from '@/components/FiscalSubstitutosManager';
 import { useFiscalObras } from '@/hooks/useFiscalObras';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useObraNotifications, ObraNotification } from '@/hooks/useObraNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ function NotificationItem({ notification }: { notification: ObraNotification }) 
 export default function GerenciarObras() {
   const { obras, loading, error } = useFiscalObras();
   const { notifications, unreadCount, isLoading: loadingNotifications, markAllAsRead } = useObraNotifications();
+  const { isContratada } = useUserRole();
 
   if (loading) {
     return (
@@ -146,7 +148,7 @@ export default function GerenciarObras() {
           </Card>
         )}
 
-        {obras.length === 0 ? (
+        {obras.length === 0 && !isContratada ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -156,7 +158,7 @@ export default function GerenciarObras() {
               </p>
             </CardContent>
           </Card>
-        ) : (
+        ) : obras.length > 0 ? (
           <Accordion type="single" collapsible className="space-y-4">
             {obras.map(obra => (
               <AccordionItem
@@ -197,7 +199,7 @@ export default function GerenciarObras() {
               </AccordionItem>
             ))}
           </Accordion>
-        )}
+        ) : null}
       </div>
     </SimpleHeader>
   );
