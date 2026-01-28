@@ -142,36 +142,24 @@ export function AtribuicoesGestorContratos() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                <span>Prorrogação, alteração e reequilíbrio</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                <span>Pagamento</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                <span>Extinção contratual</span>
-              </li>
-            </ul>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                <span>Promover processo administrativo de responsabilização e aplicação de sanções</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                <span>Realizar o recebimento definitivo do objeto</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                <span>Encaminhar documentação para liquidação da despesa e pagamento</span>
-              </li>
-            </ul>
-          </div>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <span>Prorrogação, alteração e reequilíbrio do contrato</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <span>Promover processo administrativo de responsabilização e aplicação de sanções</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <span>Realizar o recebimento definitivo do objeto</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <span>Acompanhar procedimento para liquidação da despesa e pagamento</span>
+            </li>
+          </ul>
         </CardContent>
       </Card>
 
