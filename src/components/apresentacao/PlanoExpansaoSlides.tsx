@@ -4,6 +4,10 @@ import planoExpansaoApresentacao from '@/assets/apresentacao/plano-expansao-apre
 import planoExpansaoObjetivos from '@/assets/apresentacao/plano-expansao-objetivos.jpg';
 import planoExpansaoJustificativas from '@/assets/apresentacao/plano-expansao-justificativas.jpg';
 import planoExpansaoDiretrizes from '@/assets/apresentacao/plano-expansao-diretrizes.jpg';
+import planoExpansaoIntervencoes from '@/assets/apresentacao/plano-expansao-intervencoes.jpg';
+import planoExpansaoEconucleos from '@/assets/apresentacao/plano-expansao-econucleos.jpg';
+import planoExpansaoEconucleos2 from '@/assets/apresentacao/plano-expansao-econucleos-2.jpg';
+import planoExpansaoEconucleosTabela from '@/assets/apresentacao/plano-expansao-econucleos-tabela.jpg';
 
 // Componente base para slides de imagem
 function SlideImagem({ src, alt }: { src: string; alt: string }) {
@@ -48,4 +52,24 @@ export function PlanoExpansaoJustificativas() {
 // Slide 6 - Diretrizes e Metodologia
 export function PlanoExpansaoDiretrizes() {
   return <SlideImagem src={planoExpansaoDiretrizes} alt="Diretrizes e Metodologia" />;
+}
+
+// Slide 8 - Intervenções Estruturais (25 comarcas)
+export function PlanoExpansaoIntervencoes() {
+  return <SlideImagem src={planoExpansaoIntervencoes} alt="Intervenções estruturais nas 25 comarcas prioritárias" />;
+}
+
+// Slide 9 - Construção de 18 Econúcleos
+export function PlanoExpansaoEconucleos() {
+  return <SlideImagem src={planoExpansaoEconucleos} alt="Construção de 18 Econúcleos" />;
+}
+
+// Slide 10 - Econúcleos continuação
+export function PlanoExpansaoEconucleos2() {
+  return <SlideImagem src={planoExpansaoEconucleos2} alt="Econúcleos - Cronograma de Implantação" />;
+}
+
+// Slide 11 - Tabela Econúcleos
+export function PlanoExpansaoEconucleosTabela() {
+  return <SlideImagem src={planoExpansaoEconucleosTabela} alt="Tabela de Econúcleos - Situação Atual" />;
 }
