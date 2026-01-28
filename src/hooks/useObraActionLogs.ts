@@ -6,6 +6,7 @@ export type ActionType =
   | 'medicao_salva'
   | 'medicao_reaberta'
   | 'medicao_bloqueada'
+  | 'medicao_excluida'
   | 'aditivo_criado'
   | 'aditivo_bloqueado'
   | 'aditivo_reaberto'
@@ -96,6 +97,15 @@ export function useObraActionLogs() {
       obraId,
       actionType: 'medicao_bloqueada',
       description: `Medição #${sequencia} bloqueada`,
+      metadata: { sequencia }
+    });
+  };
+
+  const logMedicaoExcluida = (obraId: string, sequencia: number) => {
+    return logAction({
+      obraId,
+      actionType: 'medicao_excluida',
+      description: `Medição #${sequencia} excluída`,
       metadata: { sequencia }
     });
   };
@@ -212,6 +222,7 @@ export function useObraActionLogs() {
     logMedicaoSalva,
     logMedicaoReaberta,
     logMedicaoBloqueada,
+    logMedicaoExcluida,
     logAditivoCriado,
     logAditivoBloqueado,
     logAditivoReaberto,

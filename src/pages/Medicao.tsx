@@ -123,7 +123,8 @@ export function Medicao() {
   const { 
     logMedicaoSalva, 
     logMedicaoBloqueada, 
-    logMedicaoReaberta, 
+    logMedicaoReaberta,
+    logMedicaoExcluida, 
     logAditivoCriado, 
     logAditivoBloqueado, 
     logAditivoReaberto,
@@ -2981,6 +2982,11 @@ const criarNovaMedicao = async () => {
       }
 
       await deleteSession(medicao.sessionId);
+
+      // Registrar log de ação
+      if (id) {
+        await logMedicaoExcluida(id, medicaoId);
+      }
 
       // Remover do estado local
       setMedicoes(prevMedicoes => prevMedicoes.filter(m => m.id !== medicaoId));
