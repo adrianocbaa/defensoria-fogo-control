@@ -1023,7 +1023,7 @@ export function Medicao() {
       
       // Registrar ação no log
       if (obra) {
-        logAditivoBloqueado(obra.id, aditivoLocalId);
+        await logAditivoBloqueado(obra.id, aditivoLocalId);
       }
       
       toast.success('Aditivo publicado.');
@@ -1042,7 +1042,7 @@ export function Medicao() {
       
       // Registrar ação no log
       if (obra) {
-        logAditivoReaberto(obra.id, aditivoLocalId);
+        await logAditivoReaberto(obra.id, aditivoLocalId);
       }
       
       toast.success(`${ad.nome} liberado para edição.`);
@@ -2323,7 +2323,7 @@ const criarNovaMedicao = async () => {
 
     // Registrar ação de criação de aditivo
     if (obra) {
-      logAditivoCriado(obra.id, numeroAditivo);
+      await logAditivoCriado(obra.id, numeroAditivo);
     }
 
     if (!extracontratual || !file) {
@@ -2712,7 +2712,7 @@ const criarNovaMedicao = async () => {
 
       // Registrar ação no log
       if (obra) {
-        logMedicaoSalva(obra.id, medicaoId);
+        await logMedicaoSalva(obra.id, medicaoId);
       }
 
       toast.success('Medição salva com sucesso.');
@@ -2759,7 +2759,7 @@ const criarNovaMedicao = async () => {
       );
 
       // Registrar ação no log
-      logMedicaoBloqueada(obra.id, medicaoId);
+      await logMedicaoBloqueada(obra.id, medicaoId);
 
       toast.success('Medição bloqueada.');
       
@@ -3164,7 +3164,7 @@ const criarNovaMedicao = async () => {
       if (error) throw error;
       
       // Registrar ação no log
-      logPlanilhaImportada(id, dadosImportados.length);
+      await logPlanilhaImportada(id, dadosImportados.length);
       
       // Limpar dados de medições ao importar nova planilha
       setMedicoes(medicoes.map(medicao => ({ ...medicao, dados: {} })));
@@ -4042,8 +4042,8 @@ const criarNovaMedicao = async () => {
                   <>
                     <ImportarCronograma 
                       obraId={obra.id} 
-                      onSuccess={() => {
-                        logCronogramaImportado(obra.id, 0);
+                      onSuccess={async () => {
+                        await logCronogramaImportado(obra.id, 0);
                         toast.success('Cronograma importado com sucesso!');
                       }}
                     />
