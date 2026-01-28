@@ -78,7 +78,11 @@ export function DiretrizesInternasFiscalizacao() {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
-                <span>O fiscal substituto deverá realizar a <strong>conferência das medições</strong> realizadas pelo fiscal, atentando-se à conformidade dos serviços executados, bem como assinando, em conjunto, o respectivo procedimento de medição</span>
+                <span>O fiscal substituto deverá realizar a <strong>conferência das medições</strong> elaboradas pelo fiscal, atentando-se à conformidade dos serviços executados, bem como assinar a C.I em conjunto com Fiscal</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                <span>A <strong>planilha de medição</strong> será assinada apenas pelo fiscal do contrato</span>
               </li>
             </ul>
           </div>
