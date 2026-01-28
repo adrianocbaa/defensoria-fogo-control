@@ -2894,6 +2894,9 @@ const criarNovaMedicao = async () => {
         )
       );
 
+      // Registrar ação no log
+      await logMedicaoBloqueada(obra.id, medicaoId);
+
       toast.success('Medição publicada.');
       // Calcular valores financeiros corretos
       const valorTotalOriginalCorreto = items
@@ -2957,7 +2960,7 @@ const criarNovaMedicao = async () => {
       );
       // Registrar ação no log
       if (obra) {
-        logMedicaoReaberta(obra.id, medicaoId);
+        await logMedicaoReaberta(obra.id, medicaoId);
       }
       toast.success('Medição reaberta.');
     } catch (error) {
