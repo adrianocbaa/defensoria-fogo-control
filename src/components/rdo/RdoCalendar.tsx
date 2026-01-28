@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useDiasSemExpediente } from '@/hooks/useDiasSemExpediente';
+import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -54,6 +55,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isContratada, isAdmin } = useUserRole();
+  const { logRdoExcluido } = useObraActionLogs();
   const today = startOfDay(new Date());
   const obraStart = obraStartDate ? parseISO(obraStartDate) : null;
   
@@ -242,6 +244,12 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
         .eq('id', deleteDialog.reportId);
 
       if (deleteError) throw deleteError;
+
+      // Registrar log para notificação
+      if (deleteDialog.date) {
+        const rdoData = format(new Date(deleteDialog.date + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR });
+        await logRdoExcluido(obraId, rdoData);
+      }
 
       queryClient.invalidateQueries({ queryKey: ['rdo-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['rdo-report'] });

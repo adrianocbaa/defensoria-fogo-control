@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useObraActionLogs } from "@/hooks/useObraActionLogs";
 
 interface Comment {
   id: string;
@@ -48,6 +49,7 @@ export function AssinaturasStep({
   const { user } = useAuth();
   const { canEdit, isAdmin, isContratada } = useUserRole();
   const queryClient = useQueryClient();
+  const { logRdoComentario, logRdoAssinado, logRdoReprovado } = useObraActionLogs();
   const [isSaving, setIsSaving] = useState(false);
   const [newComment, setNewComment] = useState('');
   
@@ -158,6 +160,13 @@ export function AssinaturasStep({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-comments', reportId] });
       setNewComment('');
+      
+      // Registrar log para notificação
+      const rdoData = reportData?.data 
+        ? format(new Date(reportData.data + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR })
+        : 'data desconhecida';
+      logRdoComentario(obraId, rdoData);
+      
       toast.success('Comentário adicionado');
     },
     onError: (error) => {
@@ -247,6 +256,12 @@ export function AssinaturasStep({
         actorNome: fiscalNome,
       });
 
+      // Registrar log para notificação (apenas para contratada ver)
+      const rdoData = reportData?.data 
+        ? format(new Date(reportData.data + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR })
+        : 'data desconhecida';
+      await logRdoAssinado(obraId, rdoData, 'fiscal');
+
       setFiscalValidadoLocal(validatedAt);
       
       if (contratadaJaValidou) {
@@ -293,6 +308,12 @@ export function AssinaturasStep({
         detalhes: { observacao: rejectObservation },
         actorId: user?.id,
       });
+
+      // Registrar log para notificação (contratada recebe)
+      const rdoData = reportData?.data 
+        ? format(new Date(reportData.data + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR })
+        : 'data desconhecida';
+      await logRdoReprovado(obraId, rdoData, rejectObservation);
 
       setFiscalValidadoLocal(null);
       setContratadaValidadoLocal(null);
@@ -353,6 +374,12 @@ export function AssinaturasStep({
         actorId: user?.id,
         actorNome: contratadaNome,
       });
+
+      // Registrar log para notificação (fiscal recebe)
+      const rdoData = reportData?.data 
+        ? format(new Date(reportData.data + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR })
+        : 'data desconhecida';
+      await logRdoAssinado(obraId, rdoData, 'contratada');
 
       setContratadaValidadoLocal(validatedAt);
       
