@@ -83,7 +83,9 @@ import {
   PlanoExpansaoCronograma2,
   PlanoExpansaoConstrucoes,
   PlanoExpansaoMonitoramento,
-  PlanoExpansaoConsideracoes
+  PlanoExpansaoConsideracoes,
+  PlanoExpansaoSlide17,
+  PlanoExpansaoSlide18
 } from '@/components/apresentacao/PlanoExpansaoSlides';
 
 interface Slide {
@@ -1595,9 +1597,23 @@ export default function Apresentacao() {
       content: <PlanoExpansaoConsideracoes />,
     },
 
-    // SLIDE 43 - Encerramento
+    // SLIDE 43 - Plano de Expansão - Slide 17
     {
       id: 43,
+      title: '',
+      content: <PlanoExpansaoSlide17 />,
+    },
+
+    // SLIDE 44 - Plano de Expansão - Slide 18
+    {
+      id: 44,
+      title: '',
+      content: <PlanoExpansaoSlide18 />,
+    },
+
+    // SLIDE 45 - Encerramento
+    {
+      id: 45,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
