@@ -68,15 +68,6 @@ import {
 
 import { CapaApresentacao } from '@/components/apresentacao/CapaApresentacao';
 
-import {
-  PlanoExpansaoCapa,
-  PlanoExpansaoObjetivosImg,
-  PlanoExpansaoJustificativasImg,
-  PlanoExpansaoDiretrizesImg,
-  PlanoExpansaoIntervencoesImg,
-  PlanoExpansaoEconucleosImg
-} from '@/components/apresentacao/PlanoExpansaoSlides';
-
 interface Slide {
   id: number;
   title: string;
@@ -1481,51 +1472,9 @@ export default function Apresentacao() {
       ),
     },
 
-    // SLIDE 28 - Plano de Expansão - Capa
+    // SLIDE 28 - Encerramento
     {
       id: 28,
-      title: '',
-      content: <PlanoExpansaoCapa />,
-    },
-
-    // SLIDE 29 - Plano de Expansão - Objetivos
-    {
-      id: 29,
-      title: '',
-      content: <PlanoExpansaoObjetivosImg />,
-    },
-
-    // SLIDE 30 - Plano de Expansão - Justificativas
-    {
-      id: 30,
-      title: '',
-      content: <PlanoExpansaoJustificativasImg />,
-    },
-
-    // SLIDE 31 - Plano de Expansão - Diretrizes e Metodologia
-    {
-      id: 31,
-      title: '',
-      content: <PlanoExpansaoDiretrizesImg />,
-    },
-
-    // SLIDE 32 - Plano de Expansão - Intervenções nas 25 Comarcas
-    {
-      id: 32,
-      title: '',
-      content: <PlanoExpansaoIntervencoesImg />,
-    },
-
-    // SLIDE 33 - Plano de Expansão - Econúcleos
-    {
-      id: 33,
-      title: '',
-      content: <PlanoExpansaoEconucleosImg />,
-    },
-
-    // SLIDE 34 - Encerramento
-    {
-      id: 34,
       title: '',
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
