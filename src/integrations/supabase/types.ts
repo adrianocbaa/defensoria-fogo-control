@@ -1556,6 +1556,7 @@ export type Database = {
           unidade: string
           updated_at: string
           valor_total: number
+          valor_total_sem_desconto: number | null
           valor_unitario: number
         }
         Insert: {
@@ -1576,6 +1577,7 @@ export type Database = {
           unidade: string
           updated_at?: string
           valor_total?: number
+          valor_total_sem_desconto?: number | null
           valor_unitario?: number
         }
         Update: {
@@ -1596,6 +1598,7 @@ export type Database = {
           unidade?: string
           updated_at?: string
           valor_total?: number
+          valor_total_sem_desconto?: number | null
           valor_unitario?: number
         }
         Relationships: []

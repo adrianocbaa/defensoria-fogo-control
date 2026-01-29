@@ -16,6 +16,7 @@ interface Item {
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
+  valorTotalSemDesconto: number; // Valor original da planilha (coluna I - Total sem Desconto)
   aditivo: { qnt: number; percentual: number; total: number };
   totalContrato: number;
   importado: boolean;
@@ -144,6 +145,7 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
           quantidade: quantidade,
           valorUnitario: valorUnitarioComDesconto,
           valorTotal: valorTotalComDesconto,
+          valorTotalSemDesconto: totalSemDesconto, // Valor original da coluna I para cálculos de aditivo
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: valorTotalComDesconto,
           importado: true,

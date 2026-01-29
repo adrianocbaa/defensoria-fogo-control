@@ -62,6 +62,7 @@ interface Item {
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
+  valorTotalSemDesconto: number; // Valor original da planilha (coluna I - Total sem Desconto)
   aditivo: { qnt: number; percentual: number; total: number };
   totalContrato: number;
   importado: boolean;
@@ -229,6 +230,7 @@ export function Medicao() {
             quantidade: item.quantidade,
             valorUnitario: item.valor_unitario,
             valorTotal: item.valor_total,
+            valorTotalSemDesconto: (item as any).valor_total_sem_desconto || 0,
             aditivo: { qnt: 0, percentual: 0, total: 0 },
             totalContrato: item.total_contrato,
             importado: true,
@@ -978,18 +980,25 @@ export function Medicao() {
             if (item) {
               novosDados[itemId].percentual = calcularPercentual(valorNumerico, item.quantidade);
               
-              // Cálculo proporcional: preserva a relação quantidade/total original
-              // Se quantidade == original: usar valorTotal exato
-              // Senão: (qtdNova / qtdOriginal) × totalOriginal com arredondamento matemático
+              // Cálculo conforme planilha oficial: =TRUNCAR(I - (I * desconto%), 2)
+              // I = valor total sem desconto (proporcional à quantidade informada)
+              // desconto% = percentual da obra
               const quantidadeIgual = item.quantidade > 0 && Math.abs(valorNumerico - item.quantidade) < 1e-6;
               
               if (quantidadeIgual && item.valorTotal > 0) {
                 // Quantidade idêntica: usar total original sem recálculo
                 novosDados[itemId].total = item.valorTotal;
-              } else if (item.quantidade > 0 && item.valorTotal > 0) {
-                // Proporcional com arredondamento matemático (aproxima melhor os valores da planilha)
+              } else if (item.quantidade > 0 && item.valorTotalSemDesconto > 0 && obra?.percentual_desconto) {
+                // Usar fórmula da planilha: proporcional do valor sem desconto → aplicar desconto
                 const proporcao = valorNumerico / item.quantidade;
-                novosDados[itemId].total = Math.round(proporcao * item.valorTotal * 100) / 100;
+                const totalSemDescontoProporcional = proporcao * item.valorTotalSemDesconto;
+                const desconto = obra.percentual_desconto / 100;
+                // TRUNCAR(totalSemDesconto - totalSemDesconto * desconto%, 2)
+                novosDados[itemId].total = Math.trunc((totalSemDescontoProporcional - (totalSemDescontoProporcional * desconto)) * 100) / 100;
+              } else if (item.quantidade > 0 && item.valorTotal > 0) {
+                // Fallback: cálculo proporcional simples (para dados antigos sem valorTotalSemDesconto)
+                const proporcao = valorNumerico / item.quantidade;
+                novosDados[itemId].total = Math.trunc(proporcao * item.valorTotal * 100) / 100;
               } else {
                 novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
               }
@@ -1136,6 +1145,7 @@ export function Medicao() {
       quantidade: 0,
       valorUnitario: 0,
       valorTotal: 0,
+      valorTotalSemDesconto: 0,
       aditivo: { qnt: 0, percentual: 0, total: 0 },
       totalContrato: 0,
       importado: false,
@@ -2252,6 +2262,7 @@ const criarNovaMedicao = async () => {
           quantidade: (nivel === 1 ? 0 : quant),
           valorUnitario: (nivel === 1 ? 0 : valorUnitComDesconto),
           valorTotal: valorTotalComDesconto,
+          valorTotalSemDesconto: totalSemDesconto, // Valor original para cálculos de aditivo
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: 0,
           importado: true,
@@ -2879,6 +2890,7 @@ const criarNovaMedicao = async () => {
         quantidade: item.quantidade,
         valorUnitario: item.valorUnitario,
         valorTotal: item.valorTotal,
+        valorTotalSemDesconto: item.valorTotalSemDesconto || 0,
         aditivo: { qnt: 0, percentual: 0, total: 0 },
         totalContrato: item.valorTotal,
         importado: true,
@@ -2901,6 +2913,7 @@ const criarNovaMedicao = async () => {
         quantidade: item.quantidade,
         valor_unitario: item.valorUnitario,
         valor_total: item.valorTotal,
+        valor_total_sem_desconto: item.valorTotalSemDesconto,
         total_contrato: item.totalContrato,
         nivel: item.nivel,
         eh_administracao_local: item.ehAdministracaoLocal,
