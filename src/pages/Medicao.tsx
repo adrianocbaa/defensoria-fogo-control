@@ -978,18 +978,18 @@ export function Medicao() {
             if (item) {
               novosDados[itemId].percentual = calcularPercentual(valorNumerico, item.quantidade);
               
-              // Usar cálculo proporcional para preservar precisão:
-              // Se quantidade digitada == quantidade original (tolerância), usar valorTotal original exatamente
-              // Caso contrário, calcular proporcional com arredondamento matemático (como Excel ARRED)
+              // Cálculo conforme planilha oficial: TRUNCAR(valor, 2)
+              // Se quantidade == original: usar valorTotal exato
+              // Senão: calcular proporcional com TRUNCAR
               const quantidadeIgual = item.quantidade > 0 && Math.abs(valorNumerico - item.quantidade) < 1e-6;
               
               if (quantidadeIgual && item.valorTotal > 0) {
-                // Quantidade igual: usar total original importado
+                // Quantidade idêntica: usar total original sem recálculo
                 novosDados[itemId].total = item.valorTotal;
               } else if (item.quantidade > 0 && item.valorTotal > 0) {
-                // Quantidade proporcional: calcular com arredondamento matemático (como planilha XLS)
+                // Proporcional: total = TRUNCAR((qnt/qntOriginal) * totalOriginal, 2)
                 const proporcao = valorNumerico / item.quantidade;
-                novosDados[itemId].total = Math.round(proporcao * item.valorTotal * 100) / 100;
+                novosDados[itemId].total = Math.trunc(proporcao * item.valorTotal * 100) / 100;
               } else {
                 novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
               }
