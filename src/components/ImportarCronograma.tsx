@@ -37,13 +37,13 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
-      // Função para parsear valores numéricos mantendo fidelidade à planilha
-      // Trunca para 2 casas decimais para evitar erros de ponto flutuante
+      // Função para parsear valores numéricos mantendo fidelidade TOTAL à planilha
+      // NÃO aplicar truncamento ou arredondamento - usar valor exato do Excel
       const parseNumericExact = (value: any): number => {
         if (value === null || value === undefined || value === '') return 0;
         if (typeof value === 'number') {
-          // Truncar para 2 casas decimais
-          return Math.trunc(value * 100) / 100;
+          // Valor numérico do Excel - arredondar para 2 casas (como Excel faz ao exibir)
+          return Math.round(value * 100) / 100;
         }
         
         let cleaned = value.toString().replace(/[R$\s]/g, '');
@@ -61,8 +61,8 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
         }
         
         const parsed = parseFloat(cleaned) || 0;
-        // Truncar para 2 casas decimais
-        return Math.trunc(parsed * 100) / 100;
+        // Arredondar para 2 casas decimais (igual ao Excel)
+        return Math.round(parsed * 100) / 100;
       };
 
       // Processar dados do cronograma
@@ -124,9 +124,9 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
             const valor = parseNumericExact(row[colIndex]);
             
             if (valor > 0) {
-              // Calcular percentual e truncar para 2 casas decimais
+              // Calcular percentual e arredondar para 2 casas decimais (igual ao Excel)
               const percentual = totalEtapa > 0 
-                ? Math.trunc((valor / totalEtapa) * 10000) / 100 
+                ? Math.round((valor / totalEtapa) * 10000) / 100 
                 : 0;
               
               currentItem!.periodos.push({
