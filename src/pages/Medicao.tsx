@@ -978,13 +978,12 @@ export function Medicao() {
             if (item) {
               novosDados[itemId].percentual = calcularPercentual(valorNumerico, item.quantidade);
               
-              // Para itens extracontratuais: se a quantidade digitada é igual à quantidade do item,
-              // usar o valorTotal original (importado) para evitar divergências de truncamento
-              const ehExtracontratual = item.origem === 'extracontratual';
-              const quantidadeIgualAoItem = Math.abs(valorNumerico - item.quantidade) < 1e-9;
-              
-              if (ehExtracontratual && quantidadeIgualAoItem && item.valorTotal > 0) {
-                novosDados[itemId].total = item.valorTotal;
+              // Usar cálculo proporcional para evitar truncamento duplo:
+              // total = (qtdDigitada / qtdItem) × valorTotalItem
+              // Isso preserva a precisão do valor original importado
+              if (item.quantidade > 0 && item.valorTotal > 0) {
+                const proporcao = valorNumerico / item.quantidade;
+                novosDados[itemId].total = Math.trunc(proporcao * item.valorTotal * 100) / 100;
               } else {
                 novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
               }
