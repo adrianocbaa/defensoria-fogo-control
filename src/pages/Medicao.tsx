@@ -1369,8 +1369,8 @@ const criarNovaMedicao = async () => {
         const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
         row['TOTAL_CONTRATO'] = totalContrato;
 
-        // Dados da medição atual
-        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+        // Dados da medição atual - usar dados hierárquicos para incluir MACROs
+        const medicaoData = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 };
         row[`Medicao${medicaoAtual}_QNT`] = medicaoData.qnt;
         row[`Medicao${medicaoAtual}_PCT`] = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
         row[`Medicao${medicaoAtual}_TOTAL`] = medicaoData.total;
