@@ -42,8 +42,8 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
       const parseNumericExact = (value: any): number => {
         if (value === null || value === undefined || value === '') return 0;
         if (typeof value === 'number') {
-          // Valor numérico do Excel - arredondar para 2 casas (como Excel faz ao exibir)
-          return Math.round(value * 100) / 100;
+          // Valor numérico do Excel - retornar exatamente como está
+          return value;
         }
         
         let cleaned = value.toString().replace(/[R$\s]/g, '');
@@ -60,9 +60,8 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
           cleaned = cleaned.replace(/,/g, '');
         }
         
-        const parsed = parseFloat(cleaned) || 0;
-        // Arredondar para 2 casas decimais (igual ao Excel)
-        return Math.round(parsed * 100) / 100;
+        // Retornar valor exato sem arredondamento ou truncamento
+        return parseFloat(cleaned) || 0;
       };
 
       // Processar dados do cronograma
@@ -124,9 +123,9 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
             const valor = parseNumericExact(row[colIndex]);
             
             if (valor > 0) {
-              // Calcular percentual e arredondar para 2 casas decimais (igual ao Excel)
+              // Calcular percentual sem arredondamento - valor exato
               const percentual = totalEtapa > 0 
-                ? Math.round((valor / totalEtapa) * 10000) / 100 
+                ? (valor / totalEtapa) * 100 
                 : 0;
               
               currentItem!.periodos.push({
