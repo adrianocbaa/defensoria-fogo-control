@@ -43,19 +43,19 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
       
       // Encontrar linha de cabeçalho com os períodos
       let headerRowIndex = -1;
-      let periodoColumns: number[] = [];
+      let periodoColumns: { colIndex: number; dias: number }[] = [];
       
       for (let i = 0; i < jsonData.length; i++) {
         const row = jsonData[i];
         if (row[0] === 'Item' || row[0] === 'ITEM') {
           headerRowIndex = i;
-          // Identificar colunas de períodos (30 DIAS, 60 DIAS, etc.)
+          // Identificar colunas de períodos (30 DIAS, 60 DIAS, 75 DIAS, etc.)
           for (let j = 2; j < row.length; j++) {
             const cellValue = row[j]?.toString().toUpperCase();
             if (cellValue && cellValue.includes('DIAS')) {
               const match = cellValue.match(/(\d+)\s*DIAS/);
               if (match) {
-                periodoColumns.push(j);
+                periodoColumns.push({ colIndex: j, dias: parseInt(match[1]) });
               }
             }
           }
@@ -91,17 +91,16 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
             periodos: [],
           };
 
-          // Extrair valores dos períodos
-          periodoColumns.forEach((colIndex, periodIndex) => {
+          // Extrair valores dos períodos usando o valor real do cabeçalho
+          periodoColumns.forEach(({ colIndex, dias }) => {
             const valorStr = row[colIndex]?.toString() || '0';
             const valor = parseFloat(valorStr.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
             
             if (valor > 0) {
-              const periodo = (periodIndex + 1) * 30; // 30, 60, 90, etc.
               const percentual = totalEtapa > 0 ? (valor / totalEtapa) * 100 : 0;
               
               currentItem.periodos.push({
-                periodo: periodo,
+                periodo: dias, // Usa o valor real do cabeçalho (30, 60, 75, etc.)
                 valor: valor,
                 percentual: parseFloat(percentual.toFixed(2)),
               });
