@@ -65,18 +65,16 @@ export function useCronogramaFinanceiro() {
 
           if (periodosError) throw periodosError;
 
-          // Arredondar valores para 2 casas decimais (igual ao Excel)
-          const round2 = (val: number) => Math.round(val * 100) / 100;
-
+          // Manter valores exatos sem arredondamento ou truncamento
           return {
             id: item.id,
             item_numero: item.item_numero,
             descricao: item.descricao,
-            total_etapa: round2(parseFloat(item.total_etapa.toString())),
+            total_etapa: parseFloat(item.total_etapa.toString()),
             periodos: (periodos || []).map((p) => ({
               periodo: p.periodo,
-              valor: round2(parseFloat(p.valor.toString())),
-              percentual: round2(parseFloat(p.percentual.toString())),
+              valor: parseFloat(p.valor.toString()),
+              percentual: parseFloat(p.percentual.toString()),
             })),
           };
         })
