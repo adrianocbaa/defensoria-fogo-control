@@ -614,6 +614,16 @@ export function Medicao() {
     return itemsComTotais;
   };
 
+  // Filtrar apenas aditivos que alteram valor do contrato (têm itens com total > 0)
+  // Aditivos apenas de prazo não devem aparecer nas colunas da planilha
+  const aditivosComValor = useMemo(() => {
+    return aditivos.filter(aditivo => {
+      // Verificar se o aditivo tem algum item com valor > 0
+      const temValor = Object.values(aditivo.dados).some((d: any) => (d.total || 0) > 0 || (d.qnt || 0) > 0);
+      return temValor;
+    });
+  }, [aditivos]);
+
   // Memoizar dados hierárquicos para performance usando mapa de filhos
   const dadosHierarquicosMemoizados = useMemo(() => {
     const cache: { [medicaoId: number]: { [itemId: number]: { qnt: number; percentual: number; total: number } } } = {};
@@ -1288,8 +1298,11 @@ const criarNovaMedicao = async () => {
       // Preparar dados para exportação
       const exportData: any[] = [];
 
-      // Adicionar colunas de aditivos bloqueados
-      const aditivosBloqueados = aditivos.filter(a => a.bloqueada).sort((a, b) => a.id - b.id);
+      // Adicionar colunas de aditivos bloqueados que alterem valor (excluir aditivos apenas de prazo)
+      const aditivosBloqueados = aditivos
+        .filter(a => a.bloqueada)
+        .filter(a => Object.values(a.dados).some((d: any) => (d.total || 0) > 0 || (d.qnt || 0) > 0))
+        .sort((a, b) => a.id - b.id);
 
       // PRIMEIRA LINHA: Títulos dos agrupamentos
       const headerRow1: any = {
@@ -1302,8 +1315,10 @@ const criarNovaMedicao = async () => {
         'Total com BDI e Desconto': '',
       };
 
+      // Título do grupo de aditivos (apenas na primeira coluna, com colspan visual)
+      const tituloAditivos = aditivosBloqueados.map(a => `ADITIVO ${a.id}`).join(' | ');
       aditivosBloqueados.forEach((aditivo, idx) => {
-        headerRow1[`Aditivo${aditivo.id}_QNT`] = idx === 0 ? `${aditivo.id}º ADITIVO` : '';
+        headerRow1[`Aditivo${aditivo.id}_QNT`] = idx === 0 ? tituloAditivos : '';
         headerRow1[`Aditivo${aditivo.id}_PCT`] = '';
         headerRow1[`Aditivo${aditivo.id}_TOTAL`] = '';
       });
@@ -1847,7 +1862,11 @@ const criarNovaMedicao = async () => {
     }
 
     try {
-      const aditivosBloqueados = aditivos.filter(a => a.bloqueada).sort((a, b) => a.id - b.id);
+      // Filtrar apenas aditivos bloqueados que alteram valor (excluir aditivos apenas de prazo)
+      const aditivosBloqueados = aditivos
+        .filter(a => a.bloqueada)
+        .filter(a => Object.values(a.dados).some((d: any) => (d.total || 0) > 0 || (d.qnt || 0) > 0))
+        .sort((a, b) => a.id - b.id);
       const dataAtual = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
       
       // Formatador de moeda
@@ -3686,7 +3705,7 @@ const criarNovaMedicao = async () => {
                     <col style={{ width: '80px' }} />
                     <col style={{ width: '90px' }} />
                     <col style={{ width: '120px' }} />
-                     {mostrarAditivos && aditivos.map((ad) => (
+                     {mostrarAditivos && aditivosComValor.map((ad) => (
                        <React.Fragment key={`col-${ad.id}`}>
                          <col style={{ width: '70px' }} />
                          <col style={{ width: '50px' }} />
@@ -3708,13 +3727,11 @@ const criarNovaMedicao = async () => {
                       <TableHead colSpan={7} className="font-bold text-center border border-gray-300 px-1 py-2 text-xs">
                         Planilha Orçamentária
                       </TableHead>
-                      {mostrarAditivos && aditivos.map((aditivo, idx) => (
-                        idx === 0 ? (
-                          <TableHead key={`title-${aditivo.id}`} colSpan={aditivos.length * 3} className="bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">
-                            {aditivo.nome}
-                          </TableHead>
-                        ) : null
-                      ))}
+                      {mostrarAditivos && aditivosComValor.length > 0 && (
+                        <TableHead colSpan={aditivosComValor.length * 3} className="bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">
+                          {aditivosComValor.map(a => a.nome).join(' | ')}
+                        </TableHead>
+                      )}
                       <TableHead className="bg-green-100 font-bold text-center border border-green-300 px-1 py-2 text-xs">
                         TOTAL CONTRATO
                       </TableHead>
@@ -3738,7 +3755,7 @@ const criarNovaMedicao = async () => {
                       <TableHead className="w-[80px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Quant.</TableHead>
                       <TableHead className="w-[90px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor unit com BDI e Desc.</TableHead>
                       <TableHead className="w-[120px] font-bold text-center border border-gray-300 px-1 py-2 text-xs">Valor total com BDI e Desconto</TableHead>
-                      {mostrarAditivos && aditivos.map(aditivo => (
+                      {mostrarAditivos && aditivosComValor.map(aditivo => (
                         <React.Fragment key={`subheader-${aditivo.id}`}>
                           <TableHead className="w-[70px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">QNT</TableHead>
                           <TableHead className="w-[50px] bg-blue-100 font-bold text-center border border-blue-300 px-1 py-2 text-xs">%</TableHead>
@@ -3835,7 +3852,7 @@ const criarNovaMedicao = async () => {
                               })()}
                             </div>
                           </TableCell>
-                           {mostrarAditivos && aditivos.map(aditivo => {
+                           {mostrarAditivos && aditivosComValor.map(aditivo => {
                              const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
                              return (
                                <React.Fragment key={`aditivo-${aditivo.id}-${item.id}`}>
