@@ -597,10 +597,8 @@ export function Medicao() {
           const somaQuantidade = filhos.reduce((sum, filho) => sum + filho.quantidade, 0);
           const somaValorTotal = filhos.reduce((sum, filho) => sum + filho.valorTotal, 0);
           item.quantidade = somaQuantidade;
-          // Não substituir o Valor Total do nível 1; manter o valor importado da planilha
-          if (determinarNivel(item.item) !== 1) {
-            item.valorTotal = somaValorTotal;
-          }
+          // Sempre usar a soma dos filhos truncados para garantir consistência
+          item.valorTotal = somaValorTotal;
           item.aditivo.total = filhos.reduce((sum, filho) => sum + filho.aditivo.total, 0);
           item.totalContrato = filhos.reduce((sum, filho) => sum + filho.totalContrato, 0);
           
