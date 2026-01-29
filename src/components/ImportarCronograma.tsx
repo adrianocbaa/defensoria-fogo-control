@@ -37,6 +37,34 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
+      // Função para parsear valores numéricos mantendo fidelidade à planilha
+      // Trunca para 2 casas decimais para evitar erros de ponto flutuante
+      const parseNumericExact = (value: any): number => {
+        if (value === null || value === undefined || value === '') return 0;
+        if (typeof value === 'number') {
+          // Truncar para 2 casas decimais
+          return Math.trunc(value * 100) / 100;
+        }
+        
+        let cleaned = value.toString().replace(/[R$\s]/g, '');
+        
+        // Detectar formato: verificar qual separador vem por último
+        const lastComma = cleaned.lastIndexOf(',');
+        const lastDot = cleaned.lastIndexOf('.');
+        
+        if (lastComma > lastDot) {
+          // Formato brasileiro: 1.234,56 (vírgula é decimal)
+          cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (lastDot > lastComma) {
+          // Formato americano: 1,234.56 (ponto é decimal)
+          cleaned = cleaned.replace(/,/g, '');
+        }
+        
+        const parsed = parseFloat(cleaned) || 0;
+        // Truncar para 2 casas decimais
+        return Math.trunc(parsed * 100) / 100;
+      };
+
       // Processar dados do cronograma
       const items: CronogramaItem[] = [];
       let currentItem: CronogramaItem | null = null;
@@ -75,7 +103,7 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
         if (row[0] && !isNaN(row[0])) {
           const itemNumero = parseInt(row[0].toString());
           const descricao = row[1]?.toString() || '';
-          const totalEtapa = parseFloat(row[2]?.toString().replace(/[^\d.,]/g, '').replace(',', '.') || '0');
+          const totalEtapa = parseNumericExact(row[2]);
           
           // Pular linhas de totais/porcentagem
           if (descricao.toUpperCase().includes('PORCENTAGEM') || 
@@ -93,16 +121,18 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
 
           // Extrair valores dos períodos usando o valor real do cabeçalho
           periodoColumns.forEach(({ colIndex, dias }) => {
-            const valorStr = row[colIndex]?.toString() || '0';
-            const valor = parseFloat(valorStr.replace(/[^\d.,]/g, '').replace(',', '.') || '0');
+            const valor = parseNumericExact(row[colIndex]);
             
             if (valor > 0) {
-              const percentual = totalEtapa > 0 ? (valor / totalEtapa) * 100 : 0;
+              // Calcular percentual e truncar para 2 casas decimais
+              const percentual = totalEtapa > 0 
+                ? Math.trunc((valor / totalEtapa) * 10000) / 100 
+                : 0;
               
-              currentItem.periodos.push({
+              currentItem!.periodos.push({
                 periodo: dias, // Usa o valor real do cabeçalho (30, 60, 75, etc.)
                 valor: valor,
-                percentual: parseFloat(percentual.toFixed(2)),
+                percentual: percentual,
               });
             }
           });
