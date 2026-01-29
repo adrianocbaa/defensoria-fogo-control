@@ -958,6 +958,12 @@ export function Medicao() {
       prevAditivos.map(aditivo => {
         if (aditivo.id === aditivoId) {
           const dadosAtuais = aditivo.dados[itemId] || { qnt: 0, percentual: 0, total: 0 };
+          
+          // Se o valor não mudou, não fazer nada (evita recálculos desnecessários no TAB)
+          if (campo === 'qnt' && Math.abs(dadosAtuais.qnt - valorNumerico) < 1e-9) {
+            return aditivo;
+          }
+          
           const novosDados = {
             ...aditivo.dados,
             [itemId]: {
@@ -971,7 +977,17 @@ export function Medicao() {
             const item = items.find(i => i.id === itemId);
             if (item) {
               novosDados[itemId].percentual = calcularPercentual(valorNumerico, item.quantidade);
-              novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
+              
+              // Para itens extracontratuais: se a quantidade digitada é igual à quantidade do item,
+              // usar o valorTotal original (importado) para evitar divergências de truncamento
+              const ehExtracontratual = item.origem === 'extracontratual';
+              const quantidadeIgualAoItem = Math.abs(valorNumerico - item.quantidade) < 1e-9;
+              
+              if (ehExtracontratual && quantidadeIgualAoItem && item.valorTotal > 0) {
+                novosDados[itemId].total = item.valorTotal;
+              } else {
+                novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
+              }
             }
           }
           
