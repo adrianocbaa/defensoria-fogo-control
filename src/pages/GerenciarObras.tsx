@@ -100,46 +100,6 @@ export default function GerenciarObras() {
           }
         />
 
-        {/* Painel de Notificações */}
-        {notifications.length > 0 && (
-          <Card>
-            <CardHeader className="py-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Alterações Recentes
-                  {unreadCount > 0 && (
-                    <Badge variant="destructive" className="ml-2">
-                      {unreadCount} nova{unreadCount > 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                </CardTitle>
-                {unreadCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={() => markAllAsRead()}>
-                    Marcar todas como lidas
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <ScrollArea className="h-80">
-                <div className="space-y-2 pr-4">
-                  {loadingNotifications ? (
-                    <>
-                      <Skeleton className="h-16 w-full" />
-                      <Skeleton className="h-16 w-full" />
-                    </>
-                  ) : (
-                    notifications.slice(0, 10).map((notification) => (
-                      <NotificationItem key={notification.id} notification={notification} />
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        )}
-
         {error && (
           <Card className="border-destructive">
             <CardContent className="py-4">
@@ -200,6 +160,46 @@ export default function GerenciarObras() {
             ))}
           </Accordion>
         ) : null}
+
+        {/* Painel de Notificações - Movido para baixo */}
+        {notifications.length > 0 && (
+          <Card>
+            <CardHeader className="py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Alterações Recentes
+                  {unreadCount > 0 && (
+                    <Badge variant="destructive" className="ml-2">
+                      {unreadCount} nova{unreadCount > 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                </CardTitle>
+                {unreadCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => markAllAsRead()}>
+                    Marcar todas como lidas
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ScrollArea className="h-80">
+                <div className="space-y-2 pr-4">
+                  {loadingNotifications ? (
+                    <>
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                    </>
+                  ) : (
+                    notifications.slice(0, 10).map((notification) => (
+                      <NotificationItem key={notification.id} notification={notification} />
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </SimpleHeader>
   );
