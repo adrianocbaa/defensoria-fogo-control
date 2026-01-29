@@ -57,8 +57,10 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
       return
     }
 
-    if (!percentualDesconto || parseFloat(percentualDesconto) < 0 || parseFloat(percentualDesconto) > 100) {
-      setErro('Por favor, informe um percentual de desconto válido (0-100)')
+    // Percentual de desconto é opcional - usado apenas para cálculos futuros de aditivos
+    const descontoValue = percentualDesconto ? parseFloat(percentualDesconto) : 0
+    if (percentualDesconto && (descontoValue < 0 || descontoValue > 100)) {
+      setErro('Percentual de desconto deve ser entre 0 e 100')
       return
     }
 
@@ -136,7 +138,6 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
 
       // Processar os dados a partir da linha seguinte ao cabeçalho
       const dadosProcessados: Item[] = []
-      const desconto = parseFloat(percentualDesconto) / 100
       
       for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
         const row = jsonData[i]
@@ -161,28 +162,36 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         const valorUnitCol = columnMap['valorUnitBdi'] ?? columnMap['valorUnit'] ?? 5
         const totalCol = columnMap['total'] ?? 6
         
-        // Função para parsear valores numéricos com formatação brasileira
+        // Função para parsear valores numéricos - detecta formato automaticamente
         const parseNumeric = (value: any): number => {
           if (value === null || value === undefined || value === '') return 0
           if (typeof value === 'number') return value
           
           let cleaned = value.toString().replace(/\s/g, '').replace(/[R$]/g, '')
-          // Formato brasileiro: 1.234,56 -> 1234.56
-          if (cleaned.includes(',')) {
+          
+          // Detectar formato: verificar qual separador vem por último
+          const lastComma = cleaned.lastIndexOf(',')
+          const lastDot = cleaned.lastIndexOf('.')
+          
+          if (lastComma > lastDot) {
+            // Formato brasileiro: 1.234,56 (vírgula é decimal)
             cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+          } else if (lastDot > lastComma) {
+            // Formato americano: 1,234.56 (ponto é decimal)
+            cleaned = cleaned.replace(/,/g, '')
           }
+          // Se só tem um tipo de separador, parseFloat lida corretamente
+          
           return parseFloat(cleaned) || 0
         }
         
         const quantidade = parseNumeric(row[quantidadeCol])
-        const totalSemDesconto = parseNumeric(row[totalCol])
+        const valorUnitarioOriginal = parseNumeric(row[valorUnitCol])
+        const totalOriginal = parseNumeric(row[totalCol])
         
-        // Aplicar desconto: TRUNCAR(Total - (Total * desconto%), 2)
-        const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * desconto)) * 100) / 100
-        
-        // Calcular valor unitário com desconto (também truncado para 2 casas decimais)
-        const valorUnitarioComDescontoRaw = quantidade > 0 ? valorTotalComDesconto / quantidade : 0
-        const valorUnitarioComDesconto = Math.trunc(valorUnitarioComDescontoRaw * 100) / 100
+        // MANTER OS VALORES FIÉIS DA PLANILHA - não recalcular
+        // Os valores da planilha já vêm com BDI e desconto aplicados pelo responsável
+        // Apenas armazenar exatamente como estão nas células
         
         const item: Item = {
           id: Date.now() + i, // ID único
@@ -192,11 +201,11 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
           descricao: row[descricaoCol] ? row[descricaoCol].toString().trim() : '',
           und: row[undCol] ? row[undCol].toString().trim() : '',
           quantidade: quantidade,
-          valorUnitario: valorUnitarioComDesconto,
-          valorTotal: valorTotalComDesconto,
-          valorTotalSemDesconto: totalSemDesconto, // Valor original para cálculos de aditivo
+          valorUnitario: valorUnitarioOriginal, // Valor exato da célula "Valor Unit"
+          valorTotal: totalOriginal, // Valor exato da célula "Total"
+          valorTotalSemDesconto: totalOriginal, // Guardamos o mesmo para referência futura
           aditivo: { qnt: 0, percentual: 0, total: 0 },
-          totalContrato: valorTotalComDesconto,
+          totalContrato: totalOriginal, // Valor exato da planilha
           importado: true,
           nivel: 3,
           ehAdministracaoLocal: false,
@@ -215,7 +224,8 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
       }
 
       // Chamar a função de callback para importar os dados e percentual de desconto
-      onImportar(dadosProcessados, parseFloat(percentualDesconto))
+      const descontoFinal = percentualDesconto ? parseFloat(percentualDesconto) : 0
+      onImportar(dadosProcessados, descontoFinal)
       setSucesso(`${dadosProcessados.length} itens importados com sucesso!`)
       
       // Fechar o modal após 2 segundos
@@ -254,7 +264,7 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
 
         <div>
           <label className="block text-sm font-medium mb-2">
-            Percentual de Desconto (%)
+            Percentual de Desconto (%) <span className="text-muted-foreground font-normal">(opcional)</span>
           </label>
           <Input
             type="number"
@@ -267,7 +277,7 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
             className="w-full"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Informe o percentual de desconto ofertado pela empresa (0-100%)
+            Usado apenas para cálculos futuros de aditivos. Os valores importados serão mantidos exatamente como estão na planilha.
           </p>
         </div>
 
@@ -293,18 +303,18 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
             <li>• Descrição</li>
             <li>• Und</li>
             <li>• Quant.</li>
-            <li>• Valor Unit (ou Valor Unit com BDI)</li>
-            <li>• Total (ou Total sem Desconto)</li>
+            <li>• Valor Unit</li>
+            <li>• Total</li>
           </ul>
-          <p className="text-xs mt-2 italic">
-            O sistema detecta automaticamente a posição das colunas. O desconto será aplicado sobre o valor Total.
+          <p className="text-xs mt-2 italic text-green-600 dark:text-green-400">
+            ✓ Os valores serão importados exatamente como estão nas células da planilha (Valor Unit e Total).
           </p>
         </div>
 
         <div className="flex gap-2">
           <Button 
             onClick={processarPlanilha} 
-            disabled={!arquivo || !percentualDesconto || carregando}
+            disabled={!arquivo || carregando}
             className="flex-1"
           >
             {carregando ? (
