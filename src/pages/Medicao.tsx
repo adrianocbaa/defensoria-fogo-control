@@ -978,16 +978,25 @@ export function Medicao() {
             if (item) {
               novosDados[itemId].percentual = calcularPercentual(valorNumerico, item.quantidade);
               
-              // Cálculo conforme planilha oficial: TRUNCAR(valor, 2)
-              // Se quantidade == original: usar valorTotal exato
-              // Senão: calcular proporcional com TRUNCAR
+              // Cálculo conforme planilha oficial: =TRUNCAR(I7-(I7*$H$2);2)
+              // Onde I7 = Total sem desconto, H2 = percentual de desconto
+              // Lógica: qtd × precoSemDesconto, depois TRUNCAR(total - total*desconto%, 2)
               const quantidadeIgual = item.quantidade > 0 && Math.abs(valorNumerico - item.quantidade) < 1e-6;
               
               if (quantidadeIgual && item.valorTotal > 0) {
                 // Quantidade idêntica: usar total original sem recálculo
                 novosDados[itemId].total = item.valorTotal;
+              } else if (obra?.percentual_desconto && obra.percentual_desconto > 0) {
+                // Usar fórmula da planilha: qtd × precoSemDesconto → aplicar desconto
+                const desconto = obra.percentual_desconto / 100;
+                // Recuperar preço sem desconto (arredondado para 2 casas como na planilha)
+                const precoSemDesconto = Math.round((item.valorUnitario / (1 - desconto)) * 100) / 100;
+                // Total sem desconto
+                const totalSemDesconto = valorNumerico * precoSemDesconto;
+                // Aplicar desconto e truncar: TRUNCAR(total - total*desconto%, 2)
+                novosDados[itemId].total = Math.trunc((totalSemDesconto - totalSemDesconto * desconto) * 100) / 100;
               } else if (item.quantidade > 0 && item.valorTotal > 0) {
-                // Proporcional: total = TRUNCAR((qnt/qntOriginal) * totalOriginal, 2)
+                // Fallback: cálculo proporcional
                 const proporcao = valorNumerico / item.quantidade;
                 novosDados[itemId].total = Math.trunc(proporcao * item.valorTotal * 100) / 100;
               } else {
