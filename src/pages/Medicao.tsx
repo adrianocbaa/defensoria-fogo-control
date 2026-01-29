@@ -2114,7 +2114,7 @@ const criarNovaMedicao = async () => {
           quant: header.findIndex(h => h && h.startsWith('quant')),
           valorUnit: header.findIndex(h => h && h === 'valor unit'),
           valorUnitBDI: header.findIndex(h => h && h.includes('valor unit com bdi')),
-          totalSemDesconto: header.findIndex(h => h && h.includes('total sem desconto')),
+          totalSemDesconto: header.findIndex(h => h && (h.includes('total sem desconto') || h === 'total')),
         };
         
         // Validar cabeçalhos obrigatórios
