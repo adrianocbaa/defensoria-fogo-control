@@ -32,6 +32,7 @@ import { useAditivoSessions } from '@/hooks/useAditivoSessions';
 import { useAditivoItems } from '@/hooks/useAditivoItems';
 import { ResumoContrato } from '@/components/ResumoContrato';
 import { ObraAuditLogs } from '@/components/ObraAuditLogs';
+import { ExportMedicaoDialog } from '@/components/ExportMedicaoDialog';
 import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import * as XLSX from 'xlsx';
 import html2pdf from 'html2pdf.js';
@@ -150,6 +151,7 @@ export function Medicao() {
   const [editandoDesconto, setEditandoDesconto] = useState(false);
   const [novoDesconto, setNovoDesconto] = useState('');
   const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
+  const [exportDialogAberto, setExportDialogAberto] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -1276,29 +1278,34 @@ const criarNovaMedicao = async () => {
 
 
   // Confirmação do modal de Novo Aditivo
-  // Função para exportar planilha de medição em XLS
-  const exportarPlanilhaXLS = () => {
-    if (!obra || !medicaoAtual) {
-      toast.error('Selecione uma medição para exportar');
+  // Função para exportar planilha de medição em XLS com seleção de medições
+  const handleExportarPlanilhaXLS = (selectedMedicoes: number[], apenasItensAcima: boolean) => {
+    if (!obra || selectedMedicoes.length === 0) {
+      toast.error('Selecione ao menos uma medição para exportar');
       return;
     }
 
-    const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
-    if (!medicaoAtualObj) {
-      toast.error('Medição não encontrada');
+    // Verificar se todas as medições selecionadas estão bloqueadas
+    const medicoesParaExportar = medicoes.filter(m => selectedMedicoes.includes(m.id)).sort((a, b) => a.id - b.id);
+    const todasBloqueadas = medicoesParaExportar.every(m => m.bloqueada);
+    if (!todasBloqueadas) {
+      toast.error('Todas as medições selecionadas devem estar bloqueadas');
       return;
     }
 
-    if (!medicaoAtualObj.bloqueada) {
-      toast.error('Salve e bloqueie a medição antes de exportar a planilha');
-      return;
-    }
+    // Filtrar itens: se apenasItensAcima (macros), pegar apenas nível 1
+    const itensParaExportar = apenasItensAcima 
+      ? items.filter(item => item.nivel === 1)
+      : items;
+
+    // Usar a maior medição selecionada como referência para acumulados
+    const maiorMedicaoId = Math.max(...selectedMedicoes);
 
     try {
       // Preparar dados para exportação
       const exportData: any[] = [];
 
-      // Adicionar colunas de aditivos bloqueados que alterem valor (excluir aditivos apenas de prazo)
+      // Adicionar colunas de aditivos bloqueados que alterem valor
       const aditivosBloqueados = aditivos
         .filter(a => a.bloqueada)
         .filter(a => Object.values(a.dados).some((d: any) => (d.total || 0) > 0 || (d.qnt || 0) > 0))
@@ -1315,7 +1322,7 @@ const criarNovaMedicao = async () => {
         'Total com BDI e Desconto': '',
       };
 
-      // Título do grupo de aditivos (apenas na primeira coluna, com colspan visual)
+      // Título do grupo de aditivos
       const tituloAditivos = aditivosBloqueados.map(a => `ADITIVO ${a.id}`).join(' | ');
       aditivosBloqueados.forEach((aditivo, idx) => {
         headerRow1[`Aditivo${aditivo.id}_QNT`] = idx === 0 ? tituloAditivos : '';
@@ -1324,9 +1331,14 @@ const criarNovaMedicao = async () => {
       });
 
       headerRow1['TOTAL_CONTRATO'] = 'TOTAL CONTRATO';
-      headerRow1[`Medicao${medicaoAtual}_QNT`] = `${medicaoAtual}ª MEDIÇÃO`;
-      headerRow1[`Medicao${medicaoAtual}_PCT`] = '';
-      headerRow1[`Medicao${medicaoAtual}_TOTAL`] = '';
+      
+      // Adicionar coluna para cada medição selecionada
+      medicoesParaExportar.forEach(med => {
+        headerRow1[`Medicao${med.id}_QNT`] = `${med.id}ª MEDIÇÃO`;
+        headerRow1[`Medicao${med.id}_PCT`] = '';
+        headerRow1[`Medicao${med.id}_TOTAL`] = '';
+      });
+      
       headerRow1['Acum_QNT'] = 'ACUMULADA';
       headerRow1['Acum_PCT'] = '';
       headerRow1['Acum_TOTAL'] = '';
@@ -1345,15 +1357,19 @@ const criarNovaMedicao = async () => {
       };
 
       aditivosBloqueados.forEach(aditivo => {
-        headerRow2[`Aditivo${aditivo.id}_QNT`] = `QNT`;
-        headerRow2[`Aditivo${aditivo.id}_PCT`] = `%`;
-        headerRow2[`Aditivo${aditivo.id}_TOTAL`] = `TOTAL`;
+        headerRow2[`Aditivo${aditivo.id}_QNT`] = 'QNT';
+        headerRow2[`Aditivo${aditivo.id}_PCT`] = '%';
+        headerRow2[`Aditivo${aditivo.id}_TOTAL`] = 'TOTAL';
       });
 
       headerRow2['TOTAL_CONTRATO'] = '';
-      headerRow2[`Medicao${medicaoAtual}_QNT`] = 'QNT';
-      headerRow2[`Medicao${medicaoAtual}_PCT`] = '%';
-      headerRow2[`Medicao${medicaoAtual}_TOTAL`] = 'TOTAL';
+      
+      medicoesParaExportar.forEach(med => {
+        headerRow2[`Medicao${med.id}_QNT`] = 'QNT';
+        headerRow2[`Medicao${med.id}_PCT`] = '%';
+        headerRow2[`Medicao${med.id}_TOTAL`] = 'TOTAL';
+      });
+      
       headerRow2['Acum_QNT'] = 'QNT';
       headerRow2['Acum_PCT'] = '%';
       headerRow2['Acum_TOTAL'] = 'TOTAL';
@@ -1361,7 +1377,7 @@ const criarNovaMedicao = async () => {
       exportData.push(headerRow2);
 
       // Adicionar dados dos itens
-      items.forEach(item => {
+      itensParaExportar.forEach(item => {
         const row: any = {
           'Item': item.item,
           'Código': item.codigo,
@@ -1381,16 +1397,18 @@ const criarNovaMedicao = async () => {
         });
 
         // Total contrato com aditivos
-        const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
+        const totalContrato = calcularTotalContratoComAditivos(item, maiorMedicaoId);
         row['TOTAL_CONTRATO'] = totalContrato;
 
-        // Dados da medição atual - usar dados hierárquicos para incluir MACROs
-        const medicaoData = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 };
-        row[`Medicao${medicaoAtual}_QNT`] = medicaoData.qnt;
-        row[`Medicao${medicaoAtual}_PCT`] = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
-        row[`Medicao${medicaoAtual}_TOTAL`] = medicaoData.total;
+        // Dados de cada medição selecionada - usar dados hierárquicos
+        medicoesParaExportar.forEach(med => {
+          const medicaoData = dadosHierarquicosMemoizados[med.id]?.[item.id] || { qnt: 0, percentual: 0, total: 0 };
+          row[`Medicao${med.id}_QNT`] = medicaoData.qnt;
+          row[`Medicao${med.id}_PCT`] = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
+          row[`Medicao${med.id}_TOTAL`] = medicaoData.total;
+        });
 
-        // Dados acumulados
+        // Dados acumulados (até a maior medição)
         row['Acum_QNT'] = calcularQuantidadeAcumulada(item.id);
         row['Acum_PCT'] = calcularPercentualAcumulado(item.id);
         row['Acum_TOTAL'] = calcularValorAcumuladoItem(item.id);
@@ -1399,42 +1417,50 @@ const criarNovaMedicao = async () => {
       });
 
       // Calcular totais (apenas itens folha/MICRO, excluindo MACROS)
-      const totalTotalContrato = items
-        .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0);
-      const totalMedicaoAtual = items
-        .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => {
-          const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-          return sum + medicaoData.total;
+      const itensParaTotais = apenasItensAcima ? itensParaExportar : itensParaExportar.filter(item => ehItemFolha(item.item));
+      
+      const totalTotalContrato = itensParaTotais
+        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, maiorMedicaoId), 0);
+      
+      // Totais por medição
+      const totaisPorMedicao: Record<number, number> = {};
+      medicoesParaExportar.forEach(med => {
+        totaisPorMedicao[med.id] = itensParaTotais.reduce((sum, item) => {
+          const medicaoData = apenasItensAcima 
+            ? (dadosHierarquicosMemoizados[med.id]?.[item.id] || { total: 0 })
+            : (med.dados[item.id] || { total: 0 });
+          return sum + (medicaoData.total || 0);
         }, 0);
-      const totalAcumulado = items
-        .filter(item => ehItemFolha(item.item))
+      });
+
+      const totalAcumulado = itensParaTotais
         .reduce((sum, item) => sum + calcularValorAcumuladoItem(item.id), 0);
 
       // Adicionar linha de totais
       const totalRow: any = {
         'Item': '',
         'Código': '',
-        'Descrição': '',
+        'Descrição': 'TOTAL',
         'Und': '',
         'Quant.': '',
         'Valor unit com BDI e Desc.': '',
         'Total com BDI e Desconto': '',
       };
 
-      // Preencher colunas de aditivos com vazio
       aditivosBloqueados.forEach(aditivo => {
         totalRow[`Aditivo${aditivo.id}_QNT`] = '';
         totalRow[`Aditivo${aditivo.id}_PCT`] = '';
         totalRow[`Aditivo${aditivo.id}_TOTAL`] = '';
       });
 
-      // Adicionar totais nas colunas pertinentes
       totalRow['TOTAL_CONTRATO'] = totalTotalContrato;
-      totalRow[`Medicao${medicaoAtual}_QNT`] = '';
-      totalRow[`Medicao${medicaoAtual}_PCT`] = '';
-      totalRow[`Medicao${medicaoAtual}_TOTAL`] = totalMedicaoAtual;
+      
+      medicoesParaExportar.forEach(med => {
+        totalRow[`Medicao${med.id}_QNT`] = '';
+        totalRow[`Medicao${med.id}_PCT`] = '';
+        totalRow[`Medicao${med.id}_TOTAL`] = totaisPorMedicao[med.id];
+      });
+      
       totalRow['Acum_QNT'] = '';
       totalRow['Acum_PCT'] = '';
       totalRow['Acum_TOTAL'] = totalAcumulado;
@@ -1446,10 +1472,10 @@ const criarNovaMedicao = async () => {
       const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
 
       // Calcular o número de colunas
-      let numCols = 7; // Planilha Orçamentária base (Item, Código, Descrição, Und, Quant, Valor unit, Total)
+      let numCols = 7; // Planilha Orçamentária base
       numCols += aditivosBloqueados.length * 3; // 3 colunas por aditivo
       numCols += 1; // Total Contrato
-      numCols += 3; // Medição atual
+      numCols += medicoesParaExportar.length * 3; // 3 colunas por medição
       numCols += 3; // Acumulada
 
       // Definir o range da planilha
@@ -1471,336 +1497,18 @@ const criarNovaMedicao = async () => {
         colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 });
       });
 
-      // Larguras para TOTAL CONTRATO, MEDIÇÃO e ACUMULADA
-      colWidths.push({ wch: 14 }); // Total Contrato
-      colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 }); // Medição
-      colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 }); // Acumulada
+      // Largura para TOTAL CONTRATO
+      colWidths.push({ wch: 14 });
+      
+      // Larguras para cada medição
+      medicoesParaExportar.forEach(() => {
+        colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 });
+      });
+      
+      // Larguras para ACUMULADA
+      colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 });
 
       ws['!cols'] = colWidths;
-
-      // Estilos para as células
-      // Primeira linha - cabeçalhos de agrupamento
-      const headerPlanilhaStyle = {
-        fill: { fgColor: { rgb: "E2E8F0" } }, // bg-slate-200
-        font: { bold: true, sz: 11 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "CBD5E0" } },
-          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
-          left: { style: "thin", color: { rgb: "CBD5E0" } },
-          right: { style: "thin", color: { rgb: "CBD5E0" } }
-        }
-      };
-
-      const headerAditivoStyle = {
-        fill: { fgColor: { rgb: "DBEAFE" } }, // bg-blue-100
-        font: { bold: true, sz: 11 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "93C5FD" } },
-          bottom: { style: "thin", color: { rgb: "93C5FD" } },
-          left: { style: "thin", color: { rgb: "93C5FD" } },
-          right: { style: "thin", color: { rgb: "93C5FD" } }
-        }
-      };
-
-      const headerTotalContratoStyle = {
-        fill: { fgColor: { rgb: "DCFCE7" } }, // bg-green-100
-        font: { bold: true, sz: 11 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "86EFAC" } },
-          bottom: { style: "thin", color: { rgb: "86EFAC" } },
-          left: { style: "thin", color: { rgb: "86EFAC" } },
-          right: { style: "thin", color: { rgb: "86EFAC" } }
-        }
-      };
-
-      const headerMedicaoStyle = {
-        fill: { fgColor: { rgb: "FEF3C7" } }, // bg-yellow-100
-        font: { bold: true, sz: 11 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "FDE047" } },
-          bottom: { style: "thin", color: { rgb: "FDE047" } },
-          left: { style: "thin", color: { rgb: "FDE047" } },
-          right: { style: "thin", color: { rgb: "FDE047" } }
-        }
-      };
-
-      const headerAcumuladaStyle = {
-        fill: { fgColor: { rgb: "F3E8FF" } }, // bg-purple-100
-        font: { bold: true, sz: 11 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "DDD6FE" } },
-          bottom: { style: "thin", color: { rgb: "DDD6FE" } },
-          left: { style: "thin", color: { rgb: "DDD6FE" } },
-          right: { style: "thin", color: { rgb: "DDD6FE" } }
-        }
-      };
-
-      // Segunda linha - subcolunas
-      const subHeaderPlanilhaStyle = {
-        fill: { fgColor: { rgb: "F1F5F9" } }, // bg-slate-100
-        font: { bold: true, sz: 10 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "CBD5E0" } },
-          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
-          left: { style: "thin", color: { rgb: "CBD5E0" } },
-          right: { style: "thin", color: { rgb: "CBD5E0" } }
-        }
-      };
-
-      const subHeaderAditivoStyle = {
-        fill: { fgColor: { rgb: "DBEAFE" } }, // bg-blue-100
-        font: { bold: true, sz: 10 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "93C5FD" } },
-          bottom: { style: "thin", color: { rgb: "93C5FD" } },
-          left: { style: "thin", color: { rgb: "93C5FD" } },
-          right: { style: "thin", color: { rgb: "93C5FD" } }
-        }
-      };
-
-      const subHeaderTotalContratoStyle = {
-        fill: { fgColor: { rgb: "DCFCE7" } }, // bg-green-100
-        font: { bold: true, sz: 10 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "86EFAC" } },
-          bottom: { style: "thin", color: { rgb: "86EFAC" } },
-          left: { style: "thin", color: { rgb: "86EFAC" } },
-          right: { style: "thin", color: { rgb: "86EFAC" } }
-        }
-      };
-
-      const subHeaderMedicaoStyle = {
-        fill: { fgColor: { rgb: "FEF3C7" } }, // bg-yellow-100
-        font: { bold: true, sz: 10 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "FDE047" } },
-          bottom: { style: "thin", color: { rgb: "FDE047" } },
-          left: { style: "thin", color: { rgb: "FDE047" } },
-          right: { style: "thin", color: { rgb: "FDE047" } }
-        }
-      };
-
-      const subHeaderAcumuladaStyle = {
-        fill: { fgColor: { rgb: "F3E8FF" } }, // bg-purple-100
-        font: { bold: true, sz: 10 },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "DDD6FE" } },
-          bottom: { style: "thin", color: { rgb: "DDD6FE" } },
-          left: { style: "thin", color: { rgb: "DDD6FE" } },
-          right: { style: "thin", color: { rgb: "DDD6FE" } }
-        }
-      };
-
-      // Estilos de dados com background
-      const dataAditivoStyle = {
-        fill: { fgColor: { rgb: "DBEAFE" } }, // bg-blue-100
-        alignment: { horizontal: "right", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "93C5FD" } },
-          bottom: { style: "thin", color: { rgb: "93C5FD" } },
-          left: { style: "thin", color: { rgb: "93C5FD" } },
-          right: { style: "thin", color: { rgb: "93C5FD" } }
-        }
-      };
-
-      const dataTotalContratoStyle = {
-        fill: { fgColor: { rgb: "DCFCE7" } }, // bg-green-100
-        alignment: { horizontal: "right", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "86EFAC" } },
-          bottom: { style: "thin", color: { rgb: "86EFAC" } },
-          left: { style: "thin", color: { rgb: "86EFAC" } },
-          right: { style: "thin", color: { rgb: "86EFAC" } }
-        }
-      };
-
-      const dataMedicaoStyle = {
-        fill: { fgColor: { rgb: "FEF3C7" } }, // bg-yellow-100
-        alignment: { horizontal: "right", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "FDE047" } },
-          bottom: { style: "thin", color: { rgb: "FDE047" } },
-          left: { style: "thin", color: { rgb: "FDE047" } },
-          right: { style: "thin", color: { rgb: "FDE047" } }
-        }
-      };
-
-      const dataAcumuladaStyle = {
-        fill: { fgColor: { rgb: "F3E8FF" } }, // bg-purple-100
-        alignment: { horizontal: "right", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "DDD6FE" } },
-          bottom: { style: "thin", color: { rgb: "DDD6FE" } },
-          left: { style: "thin", color: { rgb: "DDD6FE" } },
-          right: { style: "thin", color: { rgb: "DDD6FE" } }
-        }
-      };
-
-      const dataStyle = {
-        alignment: { horizontal: "right", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "CBD5E0" } },
-          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
-          left: { style: "thin", color: { rgb: "CBD5E0" } },
-          right: { style: "thin", color: { rgb: "CBD5E0" } }
-        }
-      };
-
-      const textStyle = {
-        alignment: { horizontal: "left", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "CBD5E0" } },
-          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
-          left: { style: "thin", color: { rgb: "CBD5E0" } },
-          right: { style: "thin", color: { rgb: "CBD5E0" } }
-        }
-      };
-
-      const textCenterStyle = {
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "CBD5E0" } },
-          bottom: { style: "thin", color: { rgb: "CBD5E0" } },
-          left: { style: "thin", color: { rgb: "CBD5E0" } },
-          right: { style: "thin", color: { rgb: "CBD5E0" } }
-        }
-      };
-
-      // Aplicar estilos às células do cabeçalho (linhas 0 e 1)
-      for (let C = 0; C <= range.e.c; ++C) {
-        const cellAddress1 = XLSX.utils.encode_cell({ r: 0, c: C });
-        const cellAddress2 = XLSX.utils.encode_cell({ r: 1, c: C });
-        
-        if (!ws[cellAddress1]) ws[cellAddress1] = { t: 's', v: '' };
-        if (!ws[cellAddress2]) ws[cellAddress2] = { t: 's', v: '' };
-        
-        // Determinar estilo da primeira linha baseado na coluna
-        if (C <= 6) {
-          ws[cellAddress1].s = headerPlanilhaStyle;
-        } else {
-          const colAfterPlanilha = C - 7;
-          const totalAditivoCols = aditivosBloqueados.length * 3;
-          
-          if (colAfterPlanilha < totalAditivoCols) {
-            ws[cellAddress1].s = headerAditivoStyle;
-          } else if (colAfterPlanilha === totalAditivoCols) {
-            ws[cellAddress1].s = headerTotalContratoStyle;
-          } else if (colAfterPlanilha > totalAditivoCols && colAfterPlanilha <= totalAditivoCols + 3) {
-            ws[cellAddress1].s = headerMedicaoStyle;
-          } else {
-            ws[cellAddress1].s = headerAcumuladaStyle;
-          }
-        }
-        
-        // Determinar estilo da segunda linha baseado na coluna
-        if (C <= 6) {
-          ws[cellAddress2].s = subHeaderPlanilhaStyle;
-        } else {
-          const colAfterPlanilha = C - 7;
-          const totalAditivoCols = aditivosBloqueados.length * 3;
-          
-          if (colAfterPlanilha < totalAditivoCols) {
-            ws[cellAddress2].s = subHeaderAditivoStyle;
-          } else if (colAfterPlanilha === totalAditivoCols) {
-            ws[cellAddress2].s = subHeaderTotalContratoStyle;
-          } else if (colAfterPlanilha > totalAditivoCols && colAfterPlanilha <= totalAditivoCols + 3) {
-            ws[cellAddress2].s = subHeaderMedicaoStyle;
-          } else {
-            ws[cellAddress2].s = subHeaderAcumuladaStyle;
-          }
-        }
-      }
-
-      // Estilo para linha de totais
-      const totalRowStyle = {
-        fill: { fgColor: { rgb: "FFD966" } }, // amarelo claro
-        font: { bold: true, sz: 11 },
-        alignment: { horizontal: "right", vertical: "center" },
-        border: {
-          top: { style: "medium", color: { rgb: "000000" } },
-          bottom: { style: "medium", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "CBD5E0" } },
-          right: { style: "thin", color: { rgb: "CBD5E0" } }
-        }
-      };
-
-      // Aplicar estilos às células de dados
-      for (let R = 2; R <= range.e.r; ++R) {
-        const isLastRow = R === range.e.r; // Linha de totais
-        
-        for (let C = 0; C <= range.e.c; ++C) {
-          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!ws[cellAddress]) continue;
-
-          // Se for linha de totais, aplicar estilo especial
-          if (isLastRow) {
-            ws[cellAddress].s = totalRowStyle;
-            
-            // Formatar números como moeda nas colunas de total
-            if (typeof ws[cellAddress].v === 'number') {
-              ws[cellAddress].z = 'R$ #,##0.00';
-            }
-            continue;
-          }
-
-          // Item (coluna 0) - centro
-          if (C === 0) {
-            ws[cellAddress].s = textCenterStyle;
-          }
-          // Código (coluna 1) - centro  
-          else if (C === 1) {
-            ws[cellAddress].s = textCenterStyle;
-          }
-          // Descrição (coluna 2) - esquerda
-          else if (C === 2) {
-            ws[cellAddress].s = textStyle;
-          }
-          // Und (coluna 3) - centro
-          else if (C === 3) {
-            ws[cellAddress].s = textCenterStyle;
-          }
-          // Quant, Valor unit, Valor total (colunas 4-6) - direita
-          else if (C <= 6) {
-            ws[cellAddress].s = dataStyle;
-          } else {
-            // Determinar estilo baseado na seção
-            const colAfterPlanilha = C - 7;
-            const totalAditivoCols = aditivosBloqueados.length * 3;
-            
-            if (colAfterPlanilha < totalAditivoCols) {
-              ws[cellAddress].s = dataAditivoStyle;
-            } else if (colAfterPlanilha === totalAditivoCols) {
-              ws[cellAddress].s = dataTotalContratoStyle;
-            } else if (colAfterPlanilha > totalAditivoCols && colAfterPlanilha <= totalAditivoCols + 3) {
-              ws[cellAddress].s = dataMedicaoStyle;
-            } else {
-              ws[cellAddress].s = dataAcumuladaStyle;
-            }
-          }
-          
-          // Formatar números como moeda, percentual ou contábil
-          const colName = Object.keys(exportData[0])[C];
-          if (colName?.includes('PCT') || colName?.includes('%')) {
-            ws[cellAddress].z = '0.00"%"';
-          } else if (colName?.includes('QNT') || colName === 'Quant.') {
-            // Colunas de quantidade devem ser contábil (sem cifrão)
-            ws[cellAddress].z = '#,##0.00';
-          } else if (typeof ws[cellAddress].v === 'number' && C > 3) {
-            // Colunas de valor devem ser moeda
-            ws[cellAddress].z = 'R$ #,##0.00';
-          }
-        }
-      }
 
       // Definir merges para o cabeçalho
       const merges: any[] = [];
@@ -1816,13 +1524,15 @@ const criarNovaMedicao = async () => {
         currentCol += 3;
       });
       
-      // "TOTAL CONTRATO" não precisa mesclar (1 coluna, mas precisa mesclar linha 0-1)
+      // "TOTAL CONTRATO" - mesclar linha 0-1
       merges.push({ s: { r: 0, c: currentCol }, e: { r: 1, c: currentCol } });
       currentCol += 1;
       
-      // Mesclar "Xª MEDIÇÃO" (3 colunas)
-      merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
-      currentCol += 3;
+      // Mesclar cada medição (3 colunas)
+      medicoesParaExportar.forEach(() => {
+        merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
+        currentCol += 3;
+      });
       
       // Mesclar "ACUMULADA" (3 colunas)
       merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
@@ -1830,13 +1540,20 @@ const criarNovaMedicao = async () => {
       ws['!merges'] = merges;
 
       // Adicionar worksheet ao workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Medição');
+      const nomeAba = medicoesParaExportar.length === 1 
+        ? `Medição ${medicoesParaExportar[0].id}`
+        : `Medições ${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
+      XLSX.utils.book_append_sheet(wb, ws, nomeAba.substring(0, 31));
 
       // Gerar e fazer download do arquivo
-      const fileName = `Medicao_${medicaoAtual}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.xlsx`;
+      const tipoItens = apenasItensAcima ? 'Macros' : 'Completa';
+      const medicoesLabel = medicoesParaExportar.length === 1 
+        ? `Med${medicoesParaExportar[0].id}` 
+        : `Med${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
+      const fileName = `Medicao_${medicoesLabel}_${tipoItens}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
-      toast.success('Planilha exportada com sucesso!');
+      toast.success(`Planilha exportada com ${medicoesParaExportar.length} medição(ões)!`);
     } catch (error) {
       console.error('Erro ao exportar planilha:', error);
       toast.error('Erro ao exportar planilha');
@@ -3619,7 +3336,7 @@ const criarNovaMedicao = async () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={exportarPlanilhaXLS}>
+                        <DropdownMenuItem onClick={() => setExportDialogAberto(true)}>
                           <FileText className="h-4 w-4 mr-2" />
                           Exportar Planilha XLS
                         </DropdownMenuItem>
@@ -4330,6 +4047,15 @@ const criarNovaMedicao = async () => {
         dadosHierarquicos={dadosHierarquicosMemoizados}
       />
     )}
+
+    {/* Modal Exportar XLS com seleção de medições */}
+    <ExportMedicaoDialog
+      open={exportDialogAberto}
+      onOpenChange={setExportDialogAberto}
+      medicoes={medicoes}
+      medicaoAtual={medicaoAtual}
+      onExport={handleExportarPlanilhaXLS}
+    />
 
     {/* Confirmações - Movido para fora das Tabs para aparecer em qualquer aba */}
     <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
