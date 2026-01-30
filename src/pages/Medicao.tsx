@@ -1097,6 +1097,15 @@ export function Medicao() {
     if (!ad || !ad.sessionId) return;
     
     try {
+      // Buscar prazo_dias da sessão do aditivo ANTES de excluir
+      const { data: sessaoAditivo } = await supabase
+        .from('aditivo_sessions')
+        .select('prazo_dias')
+        .eq('id', ad.sessionId)
+        .single();
+      
+      const prazoDias = sessaoAditivo?.prazo_dias || 0;
+      
       // Excluir sessão do aditivo e seus itens
       await deleteAditivoSession(ad.sessionId);
       
@@ -1111,6 +1120,52 @@ export function Medicao() {
         if (deleteItemsError) {
           console.error('Erro ao excluir itens do aditivo:', deleteItemsError);
           throw deleteItemsError;
+        }
+        
+        // Se o aditivo tinha prazo, remover os dias do aditivo_prazo da obra
+        if (prazoDias > 0) {
+          const { data: obraAtual } = await supabase
+            .from('obras')
+            .select('aditivo_prazo, data_inicio, tempo_obra')
+            .eq('id', id)
+            .single();
+          
+          const currentPrazo = obraAtual?.aditivo_prazo || 0;
+          const novoPrazo = Math.max(0, currentPrazo - prazoDias);
+          
+          // Recalcular data de término
+          let novaPrevisaoTermino: string | null = null;
+          if (obraAtual?.data_inicio) {
+            const dataInicio = new Date(obraAtual.data_inicio);
+            const tempoObra = obraAtual.tempo_obra || 0;
+            const prazoTotal = tempoObra + novoPrazo;
+            if (prazoTotal > 0) {
+              const dataTermino = new Date(dataInicio);
+              dataTermino.setDate(dataTermino.getDate() + prazoTotal);
+              novaPrevisaoTermino = dataTermino.toISOString().split('T')[0];
+            }
+          }
+          
+          const updateData: { aditivo_prazo: number; previsao_termino?: string } = { aditivo_prazo: novoPrazo };
+          if (novaPrevisaoTermino) {
+            updateData.previsao_termino = novaPrevisaoTermino;
+          }
+          
+          await supabase
+            .from('obras')
+            .update(updateData)
+            .eq('id', id);
+          
+          // Atualizar estado local
+          if (obra) {
+            setObra({ 
+              ...obra, 
+              aditivo_prazo: novoPrazo,
+              ...(novaPrevisaoTermino && { previsao_termino: novaPrevisaoTermino })
+            });
+          }
+          
+          toast.info(`Prazo do aditivo removido: -${prazoDias} dias.`);
         }
         
         // Recarregar os itens da obra do banco para garantir consistência
@@ -2030,6 +2085,12 @@ const criarNovaMedicao = async () => {
     // DEPOIS atualizar aditivo de prazo (só executa se sessão foi criada com sucesso)
     if (temAditivoPrazo && diasAditivoPrazo > 0) {
       try {
+        // Salvar prazo_dias na sessão do aditivo para poder remover depois
+        await supabase
+          .from('aditivo_sessions')
+          .update({ prazo_dias: diasAditivoPrazo })
+          .eq('id', newSession.id);
+        
         // Buscar valor atual do banco para evitar race condition com estado local
         const { data: obraAtual } = await supabase
           .from('obras')
