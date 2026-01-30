@@ -1297,9 +1297,27 @@ const criarNovaMedicao = async () => {
     if (v == null) return 0;
     const str = String(v).toString().trim();
     if (!str) return 0;
-    // remove thousands and fix decimal
-    const n = str.replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.-]/g, '');
-    const parsed = parseFloat(n);
+    
+    // Remove símbolos de moeda e espaços
+    let cleaned = str.replace(/[R$\s]/g, '');
+    
+    // Detectar formato automaticamente baseado na posição dos separadores
+    const lastComma = cleaned.lastIndexOf(',');
+    const lastDot = cleaned.lastIndexOf('.');
+    
+    if (lastComma > lastDot) {
+      // Formato brasileiro: 1.234,56 (vírgula é decimal)
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else if (lastDot > lastComma) {
+      // Formato americano: 1,234.56 (ponto é decimal)
+      cleaned = cleaned.replace(/,/g, '');
+    }
+    // Se só tem um tipo de separador, parseFloat lida corretamente
+    
+    // Remove qualquer caractere não numérico restante (exceto ponto e sinal)
+    cleaned = cleaned.replace(/[^0-9.-]/g, '');
+    
+    const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
   };
 
