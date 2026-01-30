@@ -51,6 +51,11 @@ export function ObraPermissionGuard({
   });
 
   useEffect(() => {
+    // Aguardar carregamento do papel do usuário antes de verificar permissões
+    if (roleLoading) {
+      return;
+    }
+
     if (roleCheckOnly || !obraId || !user) {
       setPermissionInfo({
         canEdit: roleCanEdit,
@@ -191,7 +196,7 @@ export function ObraPermissionGuard({
     };
 
     checkPermission();
-  }, [user?.id, obraId, isAdmin, roleCanEdit, roleCheckOnly]);
+  }, [user?.id, obraId, isAdmin, roleCanEdit, roleCheckOnly, roleLoading]);
 
   const loading = roleLoading || permissionInfo.loading;
   
