@@ -63,6 +63,7 @@ export type Database = {
           created_at: string
           id: string
           obra_id: string
+          prazo_dias: number | null
           sequencia: number
           status: string
           updated_at: string
@@ -72,6 +73,7 @@ export type Database = {
           created_at?: string
           id?: string
           obra_id: string
+          prazo_dias?: number | null
           sequencia: number
           status?: string
           updated_at?: string
@@ -81,6 +83,7 @@ export type Database = {
           created_at?: string
           id?: string
           obra_id?: string
+          prazo_dias?: number | null
           sequencia?: number
           status?: string
           updated_at?: string
