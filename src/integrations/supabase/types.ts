@@ -25,6 +25,7 @@ export type Database = {
           total: number
           updated_at: string
           user_id: string | null
+          valor_unitario: number | null
         }
         Insert: {
           aditivo_id: string
@@ -36,6 +37,7 @@ export type Database = {
           total?: number
           updated_at?: string
           user_id?: string | null
+          valor_unitario?: number | null
         }
         Update: {
           aditivo_id?: string
@@ -47,6 +49,7 @@ export type Database = {
           total?: number
           updated_at?: string
           user_id?: string | null
+          valor_unitario?: number | null
         }
         Relationships: [
           {
