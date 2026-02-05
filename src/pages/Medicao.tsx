@@ -153,6 +153,8 @@ export function Medicao() {
   const [novoDesconto, setNovoDesconto] = useState('');
   const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
   const [exportDialogAberto, setExportDialogAberto] = useState(false);
+  const [reimportarAditivoId, setReimportarAditivoId] = useState<number | null>(null);
+  const fileInputReimportRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -2502,6 +2504,280 @@ const criarNovaMedicao = async () => {
         }
       }
   };
+
+  // Função para reimportar planilha de um aditivo existente (sem criar novo)
+  const reimportarPlanilhaAditivo = async (file: File, aditivoId: number) => {
+    if (!id || !obra) {
+      toast.error('Obra inválida');
+      return;
+    }
+
+    const aditivo = aditivos.find(a => a.id === aditivoId);
+    if (!aditivo) {
+      toast.error('Aditivo não encontrado');
+      return;
+    }
+
+    if (aditivo.bloqueada) {
+      toast.error('Não é possível reimportar planilha de um aditivo bloqueado');
+      return;
+    }
+
+    const sessionId = aditivo.sessionId;
+    if (!sessionId) {
+      toast.error('Sessão do aditivo não encontrada');
+      return;
+    }
+
+    try {
+      // 1) Limpar itens do aditivo existentes no banco
+      const { error: deleteAditivoItemsErr } = await supabase
+        .from('aditivo_items')
+        .delete()
+        .eq('aditivo_id', sessionId);
+      if (deleteAditivoItemsErr) throw deleteAditivoItemsErr;
+
+      // 2) Limpar itens extracontratuais do orcamento_items associados a este aditivo
+      const { error: deleteOrcamentoItemsErr } = await supabase
+        .from('orcamento_items')
+        .delete()
+        .eq('obra_id', id)
+        .eq('aditivo_num', aditivo.sequencia)
+        .eq('origem', 'extracontratual');
+      if (deleteOrcamentoItemsErr) throw deleteOrcamentoItemsErr;
+
+      // 3) Ler planilha
+      let workbook: XLSX.WorkBook;
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text = await file.text();
+        workbook = XLSX.read(text, { type: 'string' });
+      } else {
+        const buf = await file.arrayBuffer();
+        workbook = XLSX.read(buf, { type: 'array' });
+      }
+      const sheetName = workbook.SheetNames[0];
+      const ws = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+      if (!rows || rows.length < 2) throw new Error('Planilha vazia');
+
+      // 4) Detectar cabeçalhos (mesma lógica de confirmarNovoAditivo)
+      const primeiraLinha = rows[0];
+      let headerRowIndex = 0;
+      let hasHeader = false;
+      
+      if (primeiraLinha && primeiraLinha.length > 0) {
+        const primeiroItem = String(primeiraLinha[0] || '').toLowerCase().trim();
+        const segundoItem = String(primeiraLinha[1] || '').toLowerCase().trim();
+        hasHeader = primeiroItem.includes('item') || primeiroItem.includes('codigo') || 
+                   segundoItem.includes('descricao') || segundoItem.includes('descrição');
+      }
+      
+      const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
+      
+      let idx;
+      if (hasHeader) {
+        const header = rows[0].map(h => normalizeHeader(h));
+        idx = {
+          item: header.findIndex(h => h && h === 'item'),
+          codigo: header.findIndex(h => h && h === 'codigo'),
+          banco: header.findIndex(h => h && h === 'banco'),
+          descricao: header.findIndex(h => h && h === 'descricao'),
+          und: header.findIndex(h => h && (h === 'und' || h === 'unidade')),
+          quant: header.findIndex(h => h && h.startsWith('quant')),
+          valorUnit: header.findIndex(h => h && h === 'valor unit'),
+          valorUnitBDI: header.findIndex(h => h && (h.includes('valor unit com bdi') || h.includes('valor unitario com bdi'))),
+          totalSemDesconto: header.findIndex(h => h && (h.includes('total sem desconto') || h.includes('valor total') || h === 'total')),
+        };
+        
+        const camposObrigatorios = ['item', 'codigo', 'descricao', 'und', 'quant', 'totalSemDesconto'];
+        const camposFaltantes = camposObrigatorios.filter(campo => idx[campo as keyof typeof idx] === -1);
+        
+        if (camposFaltantes.length > 0) {
+          const cabecalhosDetectados = header.filter(h => h && h.trim()).join(', ');
+          throw new Error(`Cabeçalho inválido. Faltando: ${camposFaltantes.join(', ')}. Encontrado: ${cabecalhosDetectados || 'nenhum'}.`);
+        }
+        headerRowIndex = 1;
+      } else {
+        idx = {
+          item: 0, codigo: 1, banco: 2, descricao: 3, und: 4, quant: 5,
+          valorUnit: 6, valorUnitBDI: 7, totalSemDesconto: 8,
+        };
+        const candidateIndex = rows.findIndex(r => Array.isArray(r) && r.length >= 9);
+        if (candidateIndex === -1) {
+          throw new Error(`Não foi possível localizar linhas de itens com 9 colunas.`);
+        }
+        headerRowIndex = 0;
+      }
+
+      const body = rows.slice(headerRowIndex);
+      const baseOrdem = items.reduce((m, it) => Math.max(m, it.ordem || 0), 0);
+      const existentes = new Set(items.filter(it => it.origem !== 'extracontratual').map(it => (it.item || '').trim()));
+      const novos: Item[] = [];
+      const vistosNoArquivo = new Set<string>();
+      const itensContratuaisDoAditivo: { id: number; qnt: number; total: number; valorUnitario: number }[] = [];
+
+      body.forEach((r, i) => {
+        const code = idx.item >= 0 ? String(r[idx.item] ?? '').trim() : '';
+        const descricao = idx.descricao >= 0 ? String(r[idx.descricao] ?? '').trim() : '';
+        const und = idx.und >= 0 ? String(r[idx.und] ?? '').trim() : '';
+        const codigoBanco = idx.codigo >= 0 ? String(r[idx.codigo] ?? '').trim() : '';
+        const banco = idx.banco >= 0 ? String(r[idx.banco] ?? '').trim() : '';
+        const quant = parseNumber(idx.quant >= 0 ? r[idx.quant] : 0);
+        const totalSemDesconto = parseNumber(idx.totalSemDesconto >= 0 ? r[idx.totalSemDesconto] : 0);
+        const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
+        const valorUnitBDI = parseNumber(idx.valorUnitBDI >= 0 ? r[idx.valorUnitBDI] : 0);
+
+        const hasAnyContent = code || descricao || und || codigoBanco || quant > 0 || totalSemDesconto > 0;
+        if (!hasAnyContent) return;
+
+        const ehCabecalhoGenerico = !code && !codigoBanco && quant <= 0 && totalSemDesconto <= 0 && 
+                                   descricao && (descricao.toUpperCase().includes('SINAPI') || descricao.toUpperCase().includes('ITEM'));
+        if (ehCabecalhoGenerico) return;
+
+        if (!code && (quant > 0 || totalSemDesconto > 0)) return;
+
+        const nivel = code.split('.').length;
+
+        // Verificar se é item contratual ou extracontratual
+        if (existentes.has(code)) {
+          if (!vistosNoArquivo.has(code)) {
+            vistosNoArquivo.add(code);
+            const itemExistente = items.find(it => it.item.trim() === code);
+            if (itemExistente && quant > 0 && nivel > 1) {
+              const valorUnitarioComDesconto = valorUnitBDI > 0 
+                ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
+                : (quant > 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
+              
+              itensContratuaisDoAditivo.push({
+                id: itemExistente.id,
+                qnt: quant,
+                total: valorTotalComDesconto,
+                valorUnitario: valorUnitarioComDesconto
+              });
+            }
+          }
+          return;
+        }
+
+        if (vistosNoArquivo.has(code)) return;
+        vistosNoArquivo.add(code);
+
+        const valorUnitComDescontoRaw = quant > 0 ? valorTotalComDesconto / quant : 0;
+        const valorUnitComDesconto = Math.trunc(valorUnitComDescontoRaw * 100) / 100;
+        const valorUnitarioParaAditivo = valorUnitBDI > 0 
+          ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
+          : valorUnitComDesconto;
+
+        const ordemVal = baseOrdem + i + 1;
+        const novo: Item = {
+          id: stableIdForRow(code, codigoBanco, ordemVal),
+          item: code,
+          codigo: codigoBanco,
+          banco: banco,
+          descricao,
+          und,
+          quantidade: quant,
+          valorUnitario: valorUnitComDesconto,
+          valorTotal: 0,
+          valorTotalSemDesconto: totalSemDesconto,
+          aditivo: { qnt: 0, percentual: 0, total: 0 },
+          totalContrato: valorTotalComDesconto,
+          importado: true,
+          nivel,
+          ehAdministracaoLocal: false,
+          ordem: ordemVal,
+          origem: 'extracontratual',
+        };
+        // Armazenar valorUnitarioAditivo temporariamente para uso posterior
+        (novo as any).valorUnitarioAditivo = valorUnitarioParaAditivo;
+        novos.push(novo);
+      });
+
+      // 5) Inserir novos itens extracontratuais no banco
+      if (novos.length > 0) {
+        const rowsToInsert = novos.map((it) => ({
+          obra_id: id,
+          item: it.item,
+          codigo: it.codigo,
+          banco: it.banco,
+          descricao: it.descricao,
+          unidade: it.und,
+          quantidade: it.quantidade,
+          valor_unitario: it.valorUnitario,
+          valor_total: it.valorTotal,
+          total_contrato: it.totalContrato,
+          nivel: it.nivel,
+          eh_administracao_local: it.ehAdministracaoLocal,
+          ordem: it.ordem,
+          origem: it.origem,
+          aditivo_num: aditivo.sequencia,
+        } as any));
+
+        const { error: insertErr } = await supabase.from('orcamento_items').insert(rowsToInsert as any);
+        if (insertErr) throw insertErr;
+      }
+
+      // 6) Atualizar dados do aditivo em memória
+      const dadosAditivo: { [itemId: number]: { qnt: number; percentual: number; total: number; valorUnitario?: number } } = {};
+      
+      const ehUltimoNivel = (item: Item, todosItens: Item[]): boolean => {
+        const prefixo = item.item + '.';
+        return !todosItens.some(outroItem => outroItem.item.startsWith(prefixo));
+      };
+
+      itensContratuaisDoAditivo.forEach(itemContratual => {
+        dadosAditivo[itemContratual.id] = {
+          qnt: itemContratual.qnt,
+          percentual: 0,
+          total: itemContratual.total,
+          valorUnitario: itemContratual.valorUnitario
+        };
+      });
+      
+      novos.forEach(item => {
+        if (item.quantidade > 0 && ehUltimoNivel(item, novos)) {
+          const valorUnitarioAditivo = (item as any).valorUnitarioAditivo || item.valorUnitario;
+          dadosAditivo[item.id] = {
+            qnt: item.quantidade,
+            percentual: 0,
+            total: item.valorTotal,
+            valorUnitario: valorUnitarioAditivo
+          };
+        }
+      });
+
+      // Atualizar aditivo em memória
+      setAditivos(prev => prev.map(a => 
+        a.id === aditivoId 
+          ? { ...a, dados: dadosAditivo }
+          : a
+      ));
+
+      // Recarregar itens do orçamento para incluir os novos extracontratuais
+      await fetchMedicoesSalvas();
+
+      const totalItens = novos.length + itensContratuaisDoAditivo.length;
+      toast.success(`Planilha reimportada. ${totalItens} itens processados (${itensContratuaisDoAditivo.length} contratuais, ${novos.length} extracontratuais).`);
+
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || 'Erro ao reimportar planilha. Verifique o layout.');
+    }
+  };
+
+  // Handler para quando o arquivo é selecionado
+  const handleReimportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && reimportarAditivoId !== null) {
+      await reimportarPlanilhaAditivo(file, reimportarAditivoId);
+    }
+    // Limpar input e estado
+    if (fileInputReimportRef.current) {
+      fileInputReimportRef.current.value = '';
+    }
+    setReimportarAditivoId(null);
+  };
+
   // Função para salvar medição (sem bloquear - para editores)
   const salvarMedicao = async (medicaoId: number) => {
     const medicao = medicoes.find(m => m.id === medicaoId);
@@ -4176,6 +4452,15 @@ const criarNovaMedicao = async () => {
                                 <DropdownMenuItem
                                   onSelect={(e) => {
                                     e.preventDefault();
+                                    setReimportarAditivoId(a.id);
+                                    fileInputReimportRef.current?.click();
+                                  }}
+                                >
+                                  📥 Importar Planilha
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={(e) => {
+                                    e.preventDefault();
                                     salvarAditivo(a.id);
                                   }}
                                 >
@@ -4282,6 +4567,15 @@ const criarNovaMedicao = async () => {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+        {/* Input oculto para reimportar planilha de aditivo */}
+        <input
+          ref={fileInputReimportRef}
+          type="file"
+          accept=".xlsx,.csv"
+          onChange={handleReimportFileChange}
+          style={{ display: 'none' }}
+        />
         </div>
       </div>
     </SimpleHeader>
