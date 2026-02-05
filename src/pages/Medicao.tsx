@@ -2356,18 +2356,18 @@ const criarNovaMedicao = async () => {
             const itemExistente = items.find(it => it.item.trim() === code);
             if (itemExistente && quant > 0 && nivel > 1) {
               // Salvar valores para processar depois no dadosAditivo
-              // Usamos o valorUnitBDI se disponível, senão calculamos a partir do total
-              const valorUnitarioParaAditivo = valorUnitBDI > 0 
-                ? Math.trunc(valorUnitBDI * 100) / 100
+              // Aplicar desconto da obra ao valor unitário com BDI
+              const valorUnitarioComDesconto = valorUnitBDI > 0 
+                ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
                 : (quant > 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
                 qnt: quant,
                 total: valorTotalComDesconto,
-                valorUnitario: valorUnitarioParaAditivo
+                valorUnitario: valorUnitarioComDesconto
               });
-              console.log(`Linha ${i + 1} - Item CONTRATUAL no aditivo: item=${code}, qnt=${quant}, VU_BDI=${valorUnitBDI}, total=${valorTotalComDesconto}`);
+              console.log(`Linha ${i + 1} - Item CONTRATUAL no aditivo: item=${code}, qnt=${quant}, VU_BDI=${valorUnitBDI}, VU_Desconto=${valorUnitarioComDesconto}, total=${valorTotalComDesconto}`);
             }
           }
           return; // Não adicionar aos novos
