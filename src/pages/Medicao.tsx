@@ -2717,6 +2717,46 @@ const criarNovaMedicao = async () => {
         if (insertErr) throw insertErr;
       }
 
+      // 5.1) Inserir itens do aditivo no banco (aditivo_items) - CORREÇÃO: faltava salvar no banco!
+      const aditivoItemsToInsert: any[] = [];
+      
+      // Itens contratuais
+      itensContratuaisDoAditivo.forEach(itemContratual => {
+        const itemOriginal = items.find(it => it.id === itemContratual.id);
+        if (itemOriginal) {
+          aditivoItemsToInsert.push({
+            aditivo_id: sessionId,
+            item_code: itemOriginal.item.trim(),
+            qtd: itemContratual.qnt,
+            pct: 0,
+            total: itemContratual.total,
+            valor_unitario: itemContratual.valorUnitario,
+          });
+        }
+      });
+      
+      // Itens extracontratuais
+      novos.forEach(item => {
+        if (item.quantidade > 0 && item.nivel > 1) {
+          const valorUnitarioAditivo = (item as any).valorUnitarioAditivo || item.valorUnitario;
+          aditivoItemsToInsert.push({
+            aditivo_id: sessionId,
+            item_code: item.item.trim(),
+            qtd: item.quantidade,
+            pct: 0,
+            total: item.totalContrato,
+            valor_unitario: valorUnitarioAditivo,
+          });
+        }
+      });
+      
+      if (aditivoItemsToInsert.length > 0) {
+        const { error: insertAditivoItemsErr } = await supabase
+          .from('aditivo_items')
+          .insert(aditivoItemsToInsert);
+        if (insertAditivoItemsErr) throw insertAditivoItemsErr;
+      }
+
       // 6) Atualizar dados do aditivo em memória
       const dadosAditivo: { [itemId: number]: { qnt: number; percentual: number; total: number; valorUnitario?: number } } = {};
       
