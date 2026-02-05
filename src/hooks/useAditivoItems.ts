@@ -5,6 +5,7 @@ export interface AditivoItemUpsertInput {
   qtd: number;
   pct: number;
   total: number;
+  valor_unitario?: number; // Valor unitário específico do aditivo
 }
 
 export function useAditivoItems() {
@@ -13,7 +14,7 @@ export function useAditivoItems() {
     items: AditivoItemUpsertInput[],
     userId?: string | null
   ): Promise<void> => {
-    const aggregated = new Map<string, { item_code: string; qtd: number; pct: number; total: number }>();
+    const aggregated = new Map<string, { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number }>();
     for (const it of items) {
       const key = it.item_code.trim();
       const existing = aggregated.get(key);
@@ -21,8 +22,18 @@ export function useAditivoItems() {
         existing.qtd += it.qtd;
         existing.total += it.total;
         existing.pct = it.pct;
+        // Manter valor_unitario se já existir
+        if (it.valor_unitario && it.valor_unitario > 0) {
+          existing.valor_unitario = it.valor_unitario;
+        }
       } else {
-        aggregated.set(key, { item_code: it.item_code, qtd: it.qtd, pct: it.pct, total: it.total });
+        aggregated.set(key, { 
+          item_code: it.item_code, 
+          qtd: it.qtd, 
+          pct: it.pct, 
+          total: it.total,
+          valor_unitario: it.valor_unitario || 0
+        });
       }
     }
 
@@ -32,6 +43,7 @@ export function useAditivoItems() {
       qtd: it.qtd,
       pct: it.pct,
       total: it.total,
+      valor_unitario: it.valor_unitario || 0,
       user_id: userId ?? null,
     }));
 

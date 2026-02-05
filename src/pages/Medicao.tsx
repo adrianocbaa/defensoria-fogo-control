@@ -85,7 +85,7 @@ interface Medicao {
 interface Aditivo {
   id: number; // local UI id
   nome: string;
-  dados: { [itemId: number]: { qnt: number; percentual: number; total: number } };
+  dados: { [itemId: number]: { qnt: number; percentual: number; total: number; valorUnitario?: number } };
   sessionId?: string; // Supabase aditivo_sessions.id
   sequencia?: number;
   bloqueada?: boolean;
@@ -304,10 +304,10 @@ export function Medicao() {
         setMedicaoAtual(medicoesConvertidas[0]?.id ?? null);
       }
 
-      // Buscar sessões de aditivo e itens
+      // Buscar sessões de aditivo e itens (incluindo valor_unitario específico do aditivo)
       const { data: adSessions, error: adSessionsError } = await supabase
         .from('aditivo_sessions')
-        .select('id, sequencia, status, created_at, aditivo_items ( item_code, qtd, pct, total )')
+        .select('id, sequencia, status, created_at, aditivo_items ( item_code, qtd, pct, total, valor_unitario )')
         .eq('obra_id', id)
         .order('created_at', { ascending: true });
       if (adSessionsError) throw adSessionsError;
@@ -356,6 +356,7 @@ export function Medicao() {
               qnt: Number(it.qtd) || 0,
               percentual: Number(it.pct) || 0,
               total: Number(it.total) || 0,
+              valorUnitario: Number(it.valor_unitario) || 0, // Valor unitário específico do aditivo
             };
           });
           return a;
@@ -959,7 +960,7 @@ export function Medicao() {
     setAditivos(prevAditivos =>
       prevAditivos.map(aditivo => {
         if (aditivo.id === aditivoId) {
-          const dadosAtuais = aditivo.dados[itemId] || { qnt: 0, percentual: 0, total: 0 };
+          const dadosAtuais = aditivo.dados[itemId] || { qnt: 0, percentual: 0, total: 0, valorUnitario: 0 };
           
           // Se o valor não mudou, não fazer nada (evita recálculos desnecessários no TAB)
           if (campo === 'qnt' && Math.abs(dadosAtuais.qnt - valorNumerico) < 1e-9) {
@@ -980,27 +981,38 @@ export function Medicao() {
             if (item) {
               novosDados[itemId].percentual = calcularPercentual(valorNumerico, item.quantidade);
               
-              // Cálculo conforme planilha oficial: =TRUNCAR(I - (I * desconto%), 2)
-              // I = valor total sem desconto (proporcional à quantidade informada)
-              // desconto% = percentual da obra
-              const quantidadeIgual = item.quantidade > 0 && Math.abs(valorNumerico - item.quantidade) < 1e-6;
+              // PRIORIDADE 1: Se o aditivo tem valor unitário específico, usar ele
+              // Isso acontece quando a planilha do aditivo é importada com seus próprios valores
+              const valorUnitarioAditivo = dadosAtuais.valorUnitario || 0;
               
-              if (quantidadeIgual && item.valorTotal > 0) {
-                // Quantidade idêntica: usar total original sem recálculo
-                novosDados[itemId].total = item.valorTotal;
-              } else if (item.quantidade > 0 && item.valorTotalSemDesconto > 0 && obra?.percentual_desconto) {
-                // Usar fórmula da planilha: proporcional do valor sem desconto → aplicar desconto
-                const proporcao = valorNumerico / item.quantidade;
-                const totalSemDescontoProporcional = proporcao * item.valorTotalSemDesconto;
-                const desconto = obra.percentual_desconto / 100;
-                // TRUNCAR(totalSemDesconto - totalSemDesconto * desconto%, 2)
-                novosDados[itemId].total = Math.trunc((totalSemDescontoProporcional - (totalSemDescontoProporcional * desconto)) * 100) / 100;
-              } else if (item.quantidade > 0 && item.valorTotal > 0) {
-                // Fallback: cálculo proporcional simples (para dados antigos sem valorTotalSemDesconto)
-                const proporcao = valorNumerico / item.quantidade;
-                novosDados[itemId].total = Math.trunc(proporcao * item.valorTotal * 100) / 100;
+              if (valorUnitarioAditivo > 0) {
+                // Usar valor unitário específico do aditivo
+                novosDados[itemId].total = Math.trunc(valorNumerico * valorUnitarioAditivo * 100) / 100;
+                novosDados[itemId].valorUnitario = valorUnitarioAditivo; // Preservar
               } else {
-                novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
+                // PRIORIDADE 2: Usar lógica baseada no orçamento base
+                // Cálculo conforme planilha oficial: =TRUNCAR(I - (I * desconto%), 2)
+                // I = valor total sem desconto (proporcional à quantidade informada)
+                // desconto% = percentual da obra
+                const quantidadeIgual = item.quantidade > 0 && Math.abs(valorNumerico - item.quantidade) < 1e-6;
+                
+                if (quantidadeIgual && item.valorTotal > 0) {
+                  // Quantidade idêntica: usar total original sem recálculo
+                  novosDados[itemId].total = item.valorTotal;
+                } else if (item.quantidade > 0 && item.valorTotalSemDesconto > 0 && obra?.percentual_desconto) {
+                  // Usar fórmula da planilha: proporcional do valor sem desconto → aplicar desconto
+                  const proporcao = valorNumerico / item.quantidade;
+                  const totalSemDescontoProporcional = proporcao * item.valorTotalSemDesconto;
+                  const desconto = obra.percentual_desconto / 100;
+                  // TRUNCAR(totalSemDesconto - totalSemDesconto * desconto%, 2)
+                  novosDados[itemId].total = Math.trunc((totalSemDescontoProporcional - (totalSemDescontoProporcional * desconto)) * 100) / 100;
+                } else if (item.quantidade > 0 && item.valorTotal > 0) {
+                  // Fallback: cálculo proporcional simples (para dados antigos sem valorTotalSemDesconto)
+                  const proporcao = valorNumerico / item.quantidade;
+                  novosDados[itemId].total = Math.trunc(proporcao * item.valorTotal * 100) / 100;
+                } else {
+                  novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
+                }
               }
             }
           }
@@ -1028,9 +1040,15 @@ export function Medicao() {
         if (!d) return arr;
         const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
         if (!hasData) return arr;
-        arr.push({ item_code: it.item.trim(), qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
+        arr.push({ 
+          item_code: it.item.trim(), 
+          qtd: d.qnt || 0, 
+          pct: d.percentual || 0, 
+          total: d.total || 0,
+          valor_unitario: d.valorUnitario || 0 // Valor unitário específico do aditivo
+        });
         return arr;
-      }, [] as { item_code: string; qtd: number; pct: number; total: number }[]);
+      }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number }[]);
 
       await upsertAditivoItems(ad.sessionId, payload);
       toast.success(`${ad.nome} salvo com sucesso!`);
@@ -1053,9 +1071,15 @@ export function Medicao() {
         if (!d) return arr;
         const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
         if (!hasData) return arr;
-        arr.push({ item_code: it.item.trim(), qtd: d.qnt || 0, pct: d.percentual || 0, total: d.total || 0 });
+        arr.push({ 
+          item_code: it.item.trim(), 
+          qtd: d.qnt || 0, 
+          pct: d.percentual || 0, 
+          total: d.total || 0,
+          valor_unitario: d.valorUnitario || 0 // Valor unitário específico do aditivo
+        });
         return arr;
-      }, [] as { item_code: string; qtd: number; pct: number; total: number }[]);
+      }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number }[]);
 
       await upsertAditivoItems(ad.sessionId, payload);
       await blockAditivoSession(ad.sessionId);
@@ -2275,6 +2299,8 @@ const criarNovaMedicao = async () => {
       const novos: Item[] = [];
       const duplicados: string[] = [];
       const vistosNoArquivo = new Set<string>();
+      // Array para armazenar itens contratuais que aparecem na planilha do aditivo
+      const itensContratuaisDoAditivo: { id: number; qnt: number; total: number; valorUnitario: number }[] = [];
       
       body.forEach((r, i) => {
         const code = idx.item >= 0 ? String(r[idx.item] ?? '').trim() : '';
@@ -2316,8 +2342,38 @@ const criarNovaMedicao = async () => {
         }
 
         const nivel = code.split('.').length;
-
-        if (existentes.has(code) || vistosNoArquivo.has(code)) {
+        
+        // Extrair valor unitário com BDI da planilha (para uso no cálculo do aditivo)
+        const valorUnitBDI = parseNumber(idx.valorUnitBDI >= 0 ? r[idx.valorUnitBDI] : 0);
+        
+        // Verificar se é item contratual (já existe) ou extracontratual (novo)
+        if (existentes.has(code)) {
+          // Item CONTRATUAL - já existe no orçamento base
+          // Não criar novo, mas registrar valores para o aditivo
+          if (!vistosNoArquivo.has(code)) {
+            vistosNoArquivo.add(code);
+            // Encontrar o item existente para obter o ID
+            const itemExistente = items.find(it => it.item.trim() === code);
+            if (itemExistente && quant > 0 && nivel > 1) {
+              // Salvar valores para processar depois no dadosAditivo
+              // Usamos o valorUnitBDI se disponível, senão calculamos a partir do total
+              const valorUnitarioParaAditivo = valorUnitBDI > 0 
+                ? Math.trunc(valorUnitBDI * 100) / 100
+                : (quant > 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
+              
+              itensContratuaisDoAditivo.push({
+                id: itemExistente.id,
+                qnt: quant,
+                total: valorTotalComDesconto,
+                valorUnitario: valorUnitarioParaAditivo
+              });
+              console.log(`Linha ${i + 1} - Item CONTRATUAL no aditivo: item=${code}, qnt=${quant}, VU_BDI=${valorUnitBDI}, total=${valorTotalComDesconto}`);
+            }
+          }
+          return; // Não adicionar aos novos
+        }
+        
+        if (vistosNoArquivo.has(code)) {
           duplicados.push(code);
           return;
         }
@@ -2325,12 +2381,17 @@ const criarNovaMedicao = async () => {
 
         console.log(`Linha ${i + 1} processada: item=${code}, descricao=${descricao}, quant=${quant}, desconto=${descontoObra * 100}%`);
 
-        // Verificar se o item já existe no contrato original para definir a origem correta
-        const itemJaExiste = existentes.has(code);
-        const origemItem = itemJaExiste ? 'contratual' : 'extracontratual';
+        // Item EXTRACONTRATUAL - não existe no orçamento base, criar novo
+        const origemItem = 'extracontratual';
         
         // Usar ordem sequencial baseada na posição no arquivo, mantendo numeração original
         const ordemVal = baseOrdem + i + 1;
+        
+        // Salvar valor unitário com BDI para usar no cálculo do aditivo
+        const valorUnitarioParaAditivo = valorUnitBDI > 0 
+          ? Math.trunc(valorUnitBDI * 100) / 100
+          : valorUnitComDesconto;
+        
         const novo: Item = {
           id: stableIdForRow(code, codigoBanco, ordemVal),
           item: code, // Manter código original da planilha
@@ -2350,6 +2411,8 @@ const criarNovaMedicao = async () => {
           ordem: ordemVal,
           origem: origemItem,
         };
+        // Guardar valorUnitario do aditivo para referência posterior
+        (novo as any).valorUnitarioAditivo = valorUnitarioParaAditivo;
         novos.push(novo);
       });
 
@@ -2387,7 +2450,7 @@ const criarNovaMedicao = async () => {
       if (insertErr) throw insertErr;
 
       // 6) Preencher automaticamente a coluna "QNT ADITIVO 1" apenas para os itens importados na planilha do aditivo
-      const dadosAditivo: { [itemId: number]: { qnt: number; percentual: number; total: number } } = {};
+      const dadosAditivo: { [itemId: number]: { qnt: number; percentual: number; total: number; valorUnitario?: number } } = {};
       
       // Função para verificar se um item é do último nível (não tem filhos)
       const ehUltimoNivel = (item: Item, todosItens: Item[]): boolean => {
@@ -2395,17 +2458,26 @@ const criarNovaMedicao = async () => {
         return !todosItens.some(outroItem => outroItem.item.startsWith(prefixo));
       };
 
-      // Preencher APENAS os itens novos que foram importados na planilha do aditivo E são do último nível
+      // 1) Preencher dados do aditivo para itens CONTRATUAIS (que já existem mas têm valores diferentes no aditivo)
+      itensContratuaisDoAditivo.forEach(itemContratual => {
+        dadosAditivo[itemContratual.id] = {
+          qnt: itemContratual.qnt,
+          percentual: 0,
+          total: itemContratual.total,
+          valorUnitario: itemContratual.valorUnitario // Valor unitário específico do aditivo
+        };
+      });
+      
+      // 2) Preencher dados do aditivo para itens EXTRACONTRATUAIS (novos) do último nível
       novos.forEach(item => {
         if (item.quantidade > 0 && ehUltimoNivel(item, novos)) {
-          // Para itens CONTRATUAIS: usar valorTotal da importação (já veio correto da planilha)
-          // Para itens EXTRACONTRATUAIS: também usar valorTotal (calculado na importação)
-          // A lógica é a mesma - sempre usar o valorTotal que veio da importação
-          // pois a planilha do aditivo foi gerada com os mesmos valores do contrato original
+          // Usar o valorUnitario específico do aditivo se disponível
+          const valorUnitarioAditivo = (item as any).valorUnitarioAditivo || item.valorUnitario;
           dadosAditivo[item.id] = {
             qnt: item.quantidade,
             percentual: 0,
-            total: item.valorTotal
+            total: item.valorTotal,
+            valorUnitario: valorUnitarioAditivo // Valor unitário específico do aditivo
           };
         }
       });
@@ -2417,7 +2489,8 @@ const criarNovaMedicao = async () => {
           : aditivo
       ));
 
-      toast.success(`Aditivo ${numeroAditivo} criado com planilha anexada. Quantidades preenchidas para ${novos.length} itens importados.`);
+      const totalItens = novos.length + itensContratuaisDoAditivo.length;
+      toast.success(`Aditivo ${numeroAditivo} criado com planilha anexada. ${totalItens} itens processados (${itensContratuaisDoAditivo.length} contratuais, ${novos.length} extracontratuais).`);
 
       } catch (e: any) {
         console.error(e);
