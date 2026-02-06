@@ -189,9 +189,18 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         const valorUnitarioOriginal = parseNumeric(row[valorUnitCol])
         const totalOriginal = parseNumeric(row[totalCol])
         
-        // MANTER OS VALORES FIÉIS DA PLANILHA - não recalcular
-        // Os valores da planilha já vêm com BDI e desconto aplicados pelo responsável
-        // Apenas armazenar exatamente como estão nas células
+        // Aplicar desconto se informado
+        // O desconto é aplicado sobre os valores originais da planilha (Total sem Desconto)
+        const descontoFator = descontoValue > 0 ? (1 - descontoValue / 100) : 1
+        
+        // Calcular valores com desconto aplicado usando truncamento (2 casas decimais)
+        const valorUnitarioComDesconto = descontoValue > 0 
+          ? Math.trunc(valorUnitarioOriginal * descontoFator * 100) / 100
+          : valorUnitarioOriginal
+        
+        const valorTotalComDesconto = descontoValue > 0
+          ? Math.trunc(totalOriginal * descontoFator * 100) / 100
+          : totalOriginal
         
         const item: Item = {
           id: Date.now() + i, // ID único
@@ -201,11 +210,11 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
           descricao: row[descricaoCol] ? row[descricaoCol].toString().trim() : '',
           und: row[undCol] ? row[undCol].toString().trim() : '',
           quantidade: quantidade,
-          valorUnitario: valorUnitarioOriginal, // Valor exato da célula "Valor Unit"
-          valorTotal: totalOriginal, // Valor exato da célula "Total"
-          valorTotalSemDesconto: totalOriginal, // Guardamos o mesmo para referência futura
+          valorUnitario: valorUnitarioComDesconto, // Valor com desconto aplicado
+          valorTotal: valorTotalComDesconto, // Valor com desconto aplicado
+          valorTotalSemDesconto: totalOriginal, // Valor original da planilha para referência
           aditivo: { qnt: 0, percentual: 0, total: 0 },
-          totalContrato: totalOriginal, // Valor exato da planilha
+          totalContrato: valorTotalComDesconto, // Valor com desconto para o contrato
           importado: true,
           nivel: 3,
           ehAdministracaoLocal: false,
@@ -277,7 +286,7 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
             className="w-full"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Usado apenas para cálculos futuros de aditivos. Os valores importados serão mantidos exatamente como estão na planilha.
+            Se informado, o desconto será aplicado aos valores unitários e totais usando TRUNCAR(valor × (1 - desconto%), 2).
           </p>
         </div>
 
@@ -307,7 +316,7 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
             <li>• Total</li>
           </ul>
           <p className="text-xs mt-2 italic text-green-600 dark:text-green-400">
-            ✓ Os valores serão importados exatamente como estão nas células da planilha (Valor Unit e Total).
+            ✓ Se informado desconto, será aplicado usando TRUNCAR. Valores originais ficam salvos em "Total sem Desconto".
           </p>
         </div>
 
