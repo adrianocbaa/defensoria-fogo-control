@@ -2330,11 +2330,11 @@ const criarNovaMedicao = async () => {
         // Aplicar desconto: TRUNCAR(totalSemDesconto - (totalSemDesconto * desconto%), 2)
         const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
         // Calcular valor unitário com desconto (também truncado para 2 casas decimais)
-        const valorUnitComDescontoRaw = quant > 0 ? valorTotalComDesconto / quant : 0;
+        const valorUnitComDescontoRaw = quant !== 0 ? valorTotalComDesconto / quant : 0;
         const valorUnitComDesconto = Math.trunc(valorUnitComDescontoRaw * 100) / 100;
 
-        // Ignorar linhas completamente vazias
-        const hasAnyContent = code || descricao || und || codigoBanco || quant > 0 || totalSemDesconto > 0;
+        // Ignorar linhas completamente vazias (considerar valores negativos como conteúdo para supressões)
+        const hasAnyContent = code || descricao || und || codigoBanco || quant !== 0 || totalSemDesconto !== 0;
         if (!hasAnyContent) {
           console.log(`Linha ${i + 1} ignorada: vazia`);
           return;
@@ -2342,7 +2342,7 @@ const criarNovaMedicao = async () => {
 
         // Ignorar apenas linhas que são cabeçalhos genéricos (sem código de item)
         // Mas permitir linhas de estrutura que têm código de item (ex: "4", "4.1")
-        const ehCabecalhoGenerico = !code && !codigoBanco && quant <= 0 && totalSemDesconto <= 0 && 
+        const ehCabecalhoGenerico = !code && !codigoBanco && quant === 0 && totalSemDesconto === 0 && 
                                    descricao && (descricao.toUpperCase().includes('SINAPI') || descricao.toUpperCase().includes('ITEM'));
         if (ehCabecalhoGenerico) {
           console.log(`Linha ${i + 1} ignorada: cabeçalho genérico`);
@@ -2350,8 +2350,8 @@ const criarNovaMedicao = async () => {
         }
 
         // Para itens de estrutura/categoria (que têm código mas sem valor), permitir importação
-        // Para itens com valores, exigir código obrigatoriamente
-        if (!code && (quant > 0 || totalSemDesconto > 0)) {
+        // Para itens com valores (positivos ou negativos), exigir código obrigatoriamente
+        if (!code && (quant !== 0 || totalSemDesconto !== 0)) {
           console.log(`Linha ${i + 1} ignorada: item com valores mas sem código`);
           return;
         }
@@ -2369,12 +2369,12 @@ const criarNovaMedicao = async () => {
             vistosNoArquivo.add(code);
             // Encontrar o item existente para obter o ID
             const itemExistente = items.find(it => it.item.trim() === code);
-            if (itemExistente && quant > 0 && nivel > 1) {
+            if (itemExistente && quant !== 0 && nivel > 1) {
               // Salvar valores para processar depois no dadosAditivo
               // Aplicar desconto da obra ao valor unitário com BDI
               const valorUnitarioComDesconto = valorUnitBDI > 0 
                 ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
-                : (quant > 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
+                : (quant !== 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
@@ -2484,8 +2484,9 @@ const criarNovaMedicao = async () => {
       });
       
       // 2) Preencher dados do aditivo para itens EXTRACONTRATUAIS (novos) do último nível
+      // Incluir valores negativos (supressões)
       novos.forEach(item => {
-        if (item.quantidade > 0 && ehUltimoNivel(item, novos)) {
+        if (item.quantidade !== 0 && ehUltimoNivel(item, novos)) {
           // Usar o valorUnitario específico do aditivo se disponível
           const valorUnitarioAditivo = (item as any).valorUnitarioAditivo || item.valorUnitario;
           dadosAditivo[item.id] = {
@@ -2640,14 +2641,14 @@ const criarNovaMedicao = async () => {
         const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
         const valorUnitBDI = parseNumber(idx.valorUnitBDI >= 0 ? r[idx.valorUnitBDI] : 0);
 
-        const hasAnyContent = code || descricao || und || codigoBanco || quant > 0 || totalSemDesconto > 0;
+        const hasAnyContent = code || descricao || und || codigoBanco || quant !== 0 || totalSemDesconto !== 0;
         if (!hasAnyContent) return;
 
-        const ehCabecalhoGenerico = !code && !codigoBanco && quant <= 0 && totalSemDesconto <= 0 && 
+        const ehCabecalhoGenerico = !code && !codigoBanco && quant === 0 && totalSemDesconto === 0 && 
                                    descricao && (descricao.toUpperCase().includes('SINAPI') || descricao.toUpperCase().includes('ITEM'));
         if (ehCabecalhoGenerico) return;
 
-        if (!code && (quant > 0 || totalSemDesconto > 0)) return;
+        if (!code && (quant !== 0 || totalSemDesconto !== 0)) return;
 
         const nivel = code.split('.').length;
 
@@ -2656,10 +2657,10 @@ const criarNovaMedicao = async () => {
           if (!vistosNoArquivo.has(code)) {
             vistosNoArquivo.add(code);
             const itemExistente = items.find(it => it.item.trim() === code);
-            if (itemExistente && quant > 0 && nivel > 1) {
+            if (itemExistente && quant !== 0 && nivel > 1) {
               const valorUnitarioComDesconto = valorUnitBDI > 0 
                 ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
-                : (quant > 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
+                : (quant !== 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
@@ -2675,7 +2676,7 @@ const criarNovaMedicao = async () => {
         if (vistosNoArquivo.has(code)) return;
         vistosNoArquivo.add(code);
 
-        const valorUnitComDescontoRaw = quant > 0 ? valorTotalComDesconto / quant : 0;
+        const valorUnitComDescontoRaw = quant !== 0 ? valorTotalComDesconto / quant : 0;
         const valorUnitComDesconto = Math.trunc(valorUnitComDescontoRaw * 100) / 100;
         const valorUnitarioParaAditivo = valorUnitBDI > 0 
           ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
@@ -2748,9 +2749,9 @@ const criarNovaMedicao = async () => {
         }
       });
       
-      // Itens extracontratuais
+      // Itens extracontratuais (incluir valores negativos para supressões)
       novos.forEach(item => {
-        if (item.quantidade > 0 && item.nivel > 1) {
+        if (item.quantidade !== 0 && item.nivel > 1) {
           const valorUnitarioAditivo = (item as any).valorUnitarioAditivo || item.valorUnitario;
           aditivoItemsToInsert.push({
             aditivo_id: sessionId,
@@ -2788,7 +2789,7 @@ const criarNovaMedicao = async () => {
       });
       
       novos.forEach(item => {
-        if (item.quantidade > 0 && ehUltimoNivel(item, novos)) {
+        if (item.quantidade !== 0 && ehUltimoNivel(item, novos)) {
           const valorUnitarioAditivo = (item as any).valorUnitarioAditivo || item.valorUnitario;
           dadosAditivo[item.id] = {
             qnt: item.quantidade,
