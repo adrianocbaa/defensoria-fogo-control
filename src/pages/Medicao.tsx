@@ -619,11 +619,14 @@ export function Medicao() {
     return itemsComTotais;
   };
 
-  // Filtrar apenas aditivos que alteram valor do contrato (têm itens com total > 0)
-  // Aditivos apenas de prazo não devem aparecer nas colunas da planilha
+  // Filtrar aditivos que devem aparecer na planilha:
+  // 1) Aditivos que já têm itens com valor > 0 (aditivos de valor já preenchidos)
+  // 2) OU aditivos não bloqueados (em edição, para permitir inserção manual de quantitativos)
   const aditivosComValor = useMemo(() => {
     return aditivos.filter(aditivo => {
-      // Verificar se o aditivo tem algum item com valor > 0
+      // Aditivos não bloqueados sempre aparecem para permitir inserção manual
+      if (!aditivo.bloqueada) return true;
+      // Aditivos bloqueados: só mostrar se tiverem itens com valor
       const temValor = Object.values(aditivo.dados).some((d: any) => (d.total || 0) > 0 || (d.qnt || 0) > 0);
       return temValor;
     });
