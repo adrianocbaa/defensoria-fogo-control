@@ -774,15 +774,16 @@ export function Medicao() {
       }
     });
 
-    // 2. Calcular Total do Contrato considerando apenas itens folha (evita dupla contagem)
+    // 2. Calcular Total do Contrato considerando aditivos/supressões bloqueados (apenas itens folha)
+    // IMPORTANTE: Usar calcularTotalContratoComAditivos para considerar supressões
     const totalDoContrato = items
       .filter(item => ehItemFolha(item.item))
-      .reduce((sum, item) => sum + item.totalContrato, 0);
+      .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0);
 
-    // 3. Calcular Total da Administração Local considerando apenas itens folha selecionados como AL
+    // 3. Calcular Total da Administração Local considerando aditivos/supressões (apenas itens folha selecionados como AL)
     const totalAdministracaoLocal = items
       .filter(item => item.ehAdministracaoLocal && ehItemFolha(item.item))
-      .reduce((sum, item) => sum + item.totalContrato, 0);
+      .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0);
     if (totalServicosExecutados === 0) {
       if (!silent) toast.error('Nenhum serviço foi medido ainda. Insira valores de medição antes de calcular a administração local.');
       return;
@@ -807,11 +808,20 @@ export function Medicao() {
               // % (coluna 2): Inserir a porcentagem calculada
               const percentualCalculado = porcentagemExecucao * 100;
 
-              // QNT (coluna 1): % × Quantitativo do item
-              const quantidadeCalculada = porcentagemExecucao * item.quantidade;
+              // Calcular quantidade e total considerando aditivos/supressões
+              const totalContratoAjustado = calcularTotalContratoComAditivos(item);
+              
+              // Calcular quantidade ajustada com base nos aditivos bloqueados
+              const qntAditivoAcum = aditivos
+                .filter(a => a.bloqueada)
+                .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
+              const quantidadeAjustada = item.quantidade + qntAditivoAcum;
 
-              // TOTAL (coluna 3): % × Total Contrato do item
-              const totalCalculado = porcentagemExecucao * item.totalContrato;
+              // QNT (coluna 1): % × Quantitativo ajustado (com aditivos/supressões)
+              const quantidadeCalculada = porcentagemExecucao * quantidadeAjustada;
+
+              // TOTAL (coluna 3): % × Total Contrato ajustado (com aditivos/supressões)
+              const totalCalculado = porcentagemExecucao * totalContratoAjustado;
 
               novosDados[item.id] = {
                 qnt: quantidadeCalculada,
