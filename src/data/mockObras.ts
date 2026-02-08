@@ -20,6 +20,9 @@ export interface Obra {
   fotos: (string | any)[];
   documentos: { nome: string; tipo: string }[];
   valor_aditivado?: number;
+  data_termino_real?: string;
+  tempo_obra?: number;
+  aditivo_prazo?: number;
 }
 
 // Obras de exemplo demonstrativas - apenas para visitantes não autenticados

@@ -80,7 +80,10 @@ export function useObras(): UseObrasReturn {
           typeof doc === 'object' && doc !== null && 'nome' in doc && 'tipo' in doc) : [],
         // Incluir campos específicos do banco
         n_contrato: obra.n_contrato,
-        valor_aditivado: Number(obra.valor_aditivado || 0)
+        valor_aditivado: Number(obra.valor_aditivado || 0),
+        data_termino_real: obra.data_termino_real || undefined,
+        tempo_obra: obra.tempo_obra || undefined,
+        aditivo_prazo: obra.aditivo_prazo || undefined
       }));
       
       setObras(obrasFormatadas);
