@@ -165,6 +165,52 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
     enabled: !!obraId && obraId !== 'nova'
   });
 
+  // Buscar valores financeiros calculados quando há planilha importada
+  const { data: valoresCalculados } = useQuery({
+    queryKey: ['valores-calculados-obra', obraId],
+    queryFn: async () => {
+      if (!obraId || obraId === 'nova') return null;
+      
+      // 1. Buscar aditivos bloqueados
+      const { data: aditivoSessions } = await supabase
+        .from('aditivo_sessions')
+        .select('id')
+        .eq('obra_id', obraId)
+        .eq('status', 'bloqueada');
+      
+      let totalAditivo = 0;
+      if (aditivoSessions && aditivoSessions.length > 0) {
+        const sessionIds = aditivoSessions.map(s => s.id);
+        const { data: aditivoItems } = await supabase
+          .from('aditivo_items')
+          .select('total')
+          .in('aditivo_id', sessionIds);
+        
+        totalAditivo = aditivoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
+      }
+      
+      // 2. Buscar todas as medições
+      const { data: medicaoSessions } = await supabase
+        .from('medicao_sessions')
+        .select('id')
+        .eq('obra_id', obraId);
+      
+      let valorPago = 0;
+      if (medicaoSessions && medicaoSessions.length > 0) {
+        const sessionIds = medicaoSessions.map(s => s.id);
+        const { data: medicaoItems } = await supabase
+          .from('medicao_items')
+          .select('total')
+          .in('medicao_id', sessionIds);
+        
+        valorPago = medicaoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
+      }
+      
+      return { totalAditivo, valorPago };
+    },
+    enabled: !!obraId && obraId !== 'nova' && hasPlanilhaImportada
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
   const [showConclusaoDialog, setShowConclusaoDialog] = useState(false);
@@ -498,9 +544,17 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                        step="0.01"
                        placeholder="0,00" 
                        {...field}
+                       value={hasPlanilhaImportada && valoresCalculados ? valoresCalculados.totalAditivo : field.value}
                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                       disabled={hasPlanilhaImportada}
+                       className={hasPlanilhaImportada ? 'bg-muted cursor-not-allowed' : ''}
                      />
                   </FormControl>
+                  {hasPlanilhaImportada && (
+                    <FormDescription className="text-xs text-muted-foreground">
+                      Calculado automaticamente a partir dos aditivos bloqueados.
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -518,9 +572,17 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                        step="0.01"
                        placeholder="0,00" 
                        {...field}
+                       value={hasPlanilhaImportada && valoresCalculados ? valoresCalculados.valorPago : field.value}
                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                       disabled={hasPlanilhaImportada}
+                       className={hasPlanilhaImportada ? 'bg-muted cursor-not-allowed' : ''}
                      />
                   </FormControl>
+                  {hasPlanilhaImportada && (
+                    <FormDescription className="text-xs text-muted-foreground">
+                      Calculado automaticamente a partir das medições.
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
