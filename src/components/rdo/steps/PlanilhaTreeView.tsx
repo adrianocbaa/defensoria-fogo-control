@@ -18,6 +18,9 @@ interface TreeNode extends OrcamentoItem {
   disponivel: number;
   excedeuLimite: boolean;
   activity?: any;
+  quantidadeOriginal?: number;
+  quantidadeAjustada?: number;
+  ajusteAditivo?: number;
 }
 
 interface PlanilhaTreeViewProps {
@@ -175,6 +178,8 @@ export function PlanilhaTreeView({
     const isUnderAdministracao = !isMacro && hasAdministracaoAncestor(node, allFlatNodes);
     // Bloquear edição de itens de Administração APENAS para Contratada
     const isBlockedByAdministracao = isUnderAdministracao && isContratada;
+    // Bloquear edição de itens totalmente suprimidos (quantidade ajustada = 0)
+    const isFullySuppressed = (node.quantidadeAjustada ?? node.quantidade) <= 0;
 
     const elements: JSX.Element[] = [];
 
@@ -240,14 +245,37 @@ export function PlanilhaTreeView({
             {node.unidade}
           </div>
 
-          {/* Quantidade Total */}
+          {/* Quantidade Total (ajustada se houver aditivo) */}
           <div className="w-24 flex-shrink-0 text-sm text-right">
-            {isMacro ? '—' : node.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {isMacro ? '—' : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className={cn(
+                      node.ajusteAditivo && node.ajusteAditivo !== 0 && (
+                        node.ajusteAditivo < 0 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
+                      )
+                    )}>
+                      {(node.quantidadeAjustada ?? node.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </TooltipTrigger>
+                  {node.ajusteAditivo && node.ajusteAditivo !== 0 && (
+                    <TooltipContent>
+                      <p className="text-xs">
+                        Original: {node.quantidadeOriginal?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        <br />
+                        {node.ajusteAditivo < 0 ? 'Supressão' : 'Acréscimo'}: {node.ajusteAditivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, signDisplay: 'always' })}
+                      </p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
 
           {/* Executado (RDO) - apenas para MICRO */}
           <div className="w-32 flex-shrink-0">
-            {!isMacro && node.activity && !isBlockedByAdministracao ? (
+            {!isMacro && node.activity && !isBlockedByAdministracao && !isFullySuppressed ? (
               isRdoApproved ? (
                 <TooltipProvider>
                   <Tooltip>
@@ -267,6 +295,7 @@ export function PlanilhaTreeView({
                   type="number"
                   min="0"
                   step="0.01"
+                  max={(node.quantidadeAjustada ?? node.quantidade) - node.executadoAcumulado}
                   value={node.executadoDia}
                   onChange={(e) => onExecutadoChange(
                     node.id,
@@ -285,6 +314,20 @@ export function PlanilhaTreeView({
                   disabled={isUpdating}
                 />
               )
+            ) : isFullySuppressed ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="h-8 flex items-center justify-center gap-1 text-destructive">
+                      <Lock className="h-3 w-3" />
+                      <span className="text-xs">Suprimido</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Item totalmente suprimido por aditivo</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             ) : (isAdministracaoMacro || isBlockedByAdministracao) ? (
               <TooltipProvider>
                 <Tooltip>
@@ -436,7 +479,7 @@ export function PlanilhaTreeView({
                 <div className="w-24 flex-shrink-0">Código</div>
                 <div className="flex-1 min-w-[200px]">Descrição</div>
                 <div className="w-16 flex-shrink-0 text-center">Und</div>
-                <div className="w-24 flex-shrink-0 text-right">Quant. Total</div>
+                <div className="w-24 flex-shrink-0 text-right" title="Quantidade ajustada conforme aditivos">Quant. Atual</div>
                 <div className="w-32 flex-shrink-0 text-center">Executado (RDO)</div>
                 <div className="w-24 flex-shrink-0 text-right">Acumulado</div>
                 <div className="w-24 flex-shrink-0 text-right">Restante</div>
