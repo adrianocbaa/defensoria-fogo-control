@@ -239,29 +239,29 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <p className="text-sm">{obra.previsaoTermino ? formatDate(obra.previsaoTermino) : 'Não informado'}</p>
               </div>
               {/* Término da Obra - exibida apenas quando obra está concluída */}
-              {obra.status === 'concluida' && (obra as any).data_termino_real && (
+              {obra.status === 'concluida' && obra.data_termino_real && (
                 <div>
                   <span className="text-sm font-medium text-green-600 dark:text-green-400">Término da obra:</span>
                   <p className="text-sm font-semibold text-green-700 dark:text-green-300">
-                    {formatDate((obra as any).data_termino_real)}
+                    {formatDate(obra.data_termino_real)}
                   </p>
                 </div>
               )}
-              {(obra as any).tempo_obra && (
+              {obra.tempo_obra && (
                 <div>
                   <span className="text-sm font-medium text-muted-foreground">Prazo inicial:</span>
-                  <p className="text-sm">{(obra as any).tempo_obra} dias</p>
+                  <p className="text-sm">{obra.tempo_obra} dias</p>
                 </div>
               )}
-              {(obra as any).aditivo_prazo && (obra as any).aditivo_prazo > 0 && (
+              {obra.aditivo_prazo && obra.aditivo_prazo > 0 && (
                 <>
                   <div>
                     <span className="text-sm font-medium text-muted-foreground">Aditivo de prazo:</span>
-                    <p className="text-sm">{(obra as any).aditivo_prazo} dias</p>
+                    <p className="text-sm">{obra.aditivo_prazo} dias</p>
                   </div>
                   <div>
                     <span className="text-sm font-medium text-muted-foreground">Prazo final:</span>
-                    <p className="text-sm font-medium text-primary">{((obra as any).tempo_obra || 0) + (obra as any).aditivo_prazo} dias</p>
+                    <p className="text-sm font-medium text-primary">{(obra.tempo_obra || 0) + obra.aditivo_prazo} dias</p>
                   </div>
                 </>
               )}
