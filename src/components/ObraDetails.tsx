@@ -231,6 +231,15 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <span className="text-sm font-medium text-muted-foreground">Data prevista de término:</span>
                 <p className="text-sm">{obra.previsaoTermino ? formatDate(obra.previsaoTermino) : 'Não informado'}</p>
               </div>
+              {/* Data Real de Término - exibida apenas quando obra está concluída */}
+              {obra.status === 'concluida' && (obra as any).data_termino_real && (
+                <div className="col-span-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200">
+                  <span className="text-sm font-medium text-green-700 dark:text-green-400">Data de Término Real:</span>
+                  <p className="text-sm font-bold text-green-800 dark:text-green-300">
+                    {formatDate((obra as any).data_termino_real)}
+                  </p>
+                </div>
+              )}
               {(obra as any).tempo_obra && (
                 <div>
                   <span className="text-sm font-medium text-muted-foreground">Prazo inicial:</span>

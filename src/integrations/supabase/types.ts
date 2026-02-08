@@ -1430,6 +1430,7 @@ export type Database = {
           created_by: string | null
           data_inicio: string | null
           data_prevista_inauguracao: string | null
+          data_termino_real: string | null
           documentos: Json | null
           empresa_id: string | null
           empresa_responsavel: string | null
@@ -1467,6 +1468,7 @@ export type Database = {
           created_by?: string | null
           data_inicio?: string | null
           data_prevista_inauguracao?: string | null
+          data_termino_real?: string | null
           documentos?: Json | null
           empresa_id?: string | null
           empresa_responsavel?: string | null
@@ -1504,6 +1506,7 @@ export type Database = {
           created_by?: string | null
           data_inicio?: string | null
           data_prevista_inauguracao?: string | null
+          data_termino_real?: string | null
           documentos?: Json | null
           empresa_id?: string | null
           empresa_responsavel?: string | null
