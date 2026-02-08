@@ -634,8 +634,8 @@ export function Medicao() {
     return aditivos.filter(aditivo => {
       // Aditivos não bloqueados sempre aparecem para permitir inserção manual
       if (!aditivo.bloqueada) return true;
-      // Aditivos bloqueados: só mostrar se tiverem itens com valor
-      const temValor = Object.values(aditivo.dados).some((d: any) => (d.total || 0) > 0 || (d.qnt || 0) > 0);
+      // Aditivos bloqueados: só mostrar se tiverem itens com valor (positivo OU negativo para supressões)
+      const temValor = Object.values(aditivo.dados).some((d: any) => (d.total || 0) !== 0 || (d.qnt || 0) !== 0);
       return temValor;
     });
   }, [aditivos]);
@@ -1061,7 +1061,8 @@ export function Medicao() {
       const payload = items.reduce((arr, it) => {
         const d = ad.dados[it.id];
         if (!d) return arr;
-        const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
+        // CORREÇÃO: Considerar valores diferentes de zero (positivos OU negativos para supressões)
+        const hasData = (d.qnt ?? 0) !== 0 || (d.percentual ?? 0) !== 0 || (d.total ?? 0) !== 0;
         if (!hasData) return arr;
         arr.push({ 
           item_code: it.item.trim(), 
@@ -1092,7 +1093,8 @@ export function Medicao() {
       const payload = items.reduce((arr, it) => {
         const d = ad.dados[it.id];
         if (!d) return arr;
-        const hasData = (d.qnt ?? 0) > 0 || (d.percentual ?? 0) > 0 || (d.total ?? 0) > 0;
+        // CORREÇÃO: Considerar valores diferentes de zero (positivos OU negativos para supressões)
+        const hasData = (d.qnt ?? 0) !== 0 || (d.percentual ?? 0) !== 0 || (d.total ?? 0) !== 0;
         if (!hasData) return arr;
         arr.push({ 
           item_code: it.item.trim(), 
@@ -1457,7 +1459,7 @@ const criarNovaMedicao = async () => {
       // Adicionar colunas de aditivos bloqueados que alterem valor
       const aditivosBloqueados = aditivos
         .filter(a => a.bloqueada)
-        .filter(a => Object.values(a.dados).some((d: any) => (d.total || 0) > 0 || (d.qnt || 0) > 0))
+        .filter(a => Object.values(a.dados).some((d: any) => (d.total || 0) !== 0 || (d.qnt || 0) !== 0))
         .sort((a, b) => a.id - b.id);
 
       // PRIMEIRA LINHA: Títulos dos agrupamentos
@@ -1731,7 +1733,7 @@ const criarNovaMedicao = async () => {
       // Filtrar apenas aditivos bloqueados que alteram valor (excluir aditivos apenas de prazo)
       const aditivosBloqueados = aditivos
         .filter(a => a.bloqueada)
-        .filter(a => Object.values(a.dados).some((d: any) => (d.total || 0) > 0 || (d.qnt || 0) > 0))
+        .filter(a => Object.values(a.dados).some((d: any) => (d.total || 0) !== 0 || (d.qnt || 0) !== 0))
         .sort((a, b) => a.id - b.id);
       const dataAtual = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
       
