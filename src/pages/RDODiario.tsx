@@ -17,7 +17,7 @@ import { AssinaturasStep } from '@/components/rdo/steps/AssinaturasStep';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useCanEditObra } from '@/hooks/useCanEditObra';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { createAuditLog } from '@/hooks/useRdoAuditLog';
@@ -48,9 +48,6 @@ export default function RDODiario() {
   const { user } = useAuth();
   const { canEdit: roleCanEdit, canEditRDO, isAdmin, isContratada } = useUserRole();
   const { canEditObra, loading: permissionLoading } = useCanEditObra(obraId);
-  // Permissão de edição: admin sempre pode, contratada usa canEditRDO, fiscais editam apenas quando podem editar a obra
-  const canEdit = isAdmin || isContratada ? canEditRDO : canEditObra;
-  const readOnly = !canEdit;
   const queryClient = useQueryClient();
   const data = searchParams.get('data') || new Date().toISOString().split('T')[0];
   const initialStep = parseInt(searchParams.get('step') || '0', 10);
@@ -58,6 +55,28 @@ export default function RDODiario() {
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [reopenDialog, setReopenDialog] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // Buscar status da obra para verificar se está concluída
+  const { data: obraData, isLoading: obraLoading } = useQuery({
+    queryKey: ['obra-status', obraId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('obras')
+        .select('status')
+        .eq('id', obraId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!obraId,
+  });
+
+  const obraConcluida = obraData?.status === 'concluida';
+  
+  // Permissão de edição: admin sempre pode, contratada usa canEditRDO, fiscais editam apenas quando podem editar a obra
+  // Obra concluída bloqueia edição para todos
+  const canEdit = obraConcluida ? false : (isAdmin || isContratada ? canEditRDO : canEditObra);
+  const readOnly = !canEdit;
 
   const {
     formData,
@@ -72,7 +91,7 @@ export default function RDODiario() {
     hasChanges,
   } = useRdoForm(obraId!, data);
 
-  if (isLoading || permissionLoading) {
+  if (isLoading || permissionLoading || obraLoading) {
     return (
       <div className="container mx-auto p-4 space-y-4">
         <Skeleton className="h-12" />
@@ -286,8 +305,8 @@ export default function RDODiario() {
                     Reabrir RDO
                   </Button>
                 )}
-                {/* RDOs aprovados só podem ser excluídos por admin */}
-                {formData.id && (!isApproved || isAdmin) && !hasValidatedSignature && (canEdit || isAdmin) && (
+                {/* RDOs aprovados só podem ser excluídos por admin. Obra concluída bloqueia exclusão. */}
+                {formData.id && !obraConcluida && (!isApproved || isAdmin) && !hasValidatedSignature && (canEdit || isAdmin) && (
                   <Button variant="destructive" size="sm" onClick={() => setDeleteDialog(true)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Excluir RDO
@@ -298,6 +317,23 @@ export default function RDODiario() {
           </div>
         </div>
       </div>
+
+      {/* Alerta de obra concluída */}
+      {obraConcluida && (
+        <div className="container mx-auto px-4 mt-4">
+          <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-950/20 border-green-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="font-medium text-green-700 dark:text-green-400">Obra Concluída</p>
+                <p className="text-sm text-green-600 dark:text-green-500">
+                  Este RDO está disponível apenas para consulta. Não é possível editar ou excluir registros de obras concluídas.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Dialog */}
       <AlertDialog open={deleteDialog} onOpenChange={setDeleteDialog}>

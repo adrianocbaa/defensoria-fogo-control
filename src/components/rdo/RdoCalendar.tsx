@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee, FileX, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee, FileX, XCircle, CheckCircle2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,9 +49,10 @@ interface RdoCalendarProps {
   obraStartDate?: string | null;
   rdoHabilitado?: boolean;
   canEditRdo?: boolean; // Se o usuário pode criar/editar/excluir RDOs
+  obraStatus?: string; // Status da obra (concluida, em_andamento, etc.)
 }
 
-export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange, obraStartDate, rdoHabilitado = true, canEditRdo = true }: RdoCalendarProps) {
+export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthChange, obraStartDate, rdoHabilitado = true, canEditRdo = true, obraStatus }: RdoCalendarProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isContratada, isAdmin } = useUserRole();
@@ -287,8 +288,19 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
         </div>
       </CardHeader>
       <CardContent>
-        {/* Alerta de restrição para Contratada - só mostra se RDO estiver habilitado */}
-        {rdoHabilitado && showRestrictionAlert && (
+        {/* Alerta de obra concluída */}
+        {obraStatus === 'concluida' && (
+          <Alert className="mb-4 border-green-200 bg-green-50 dark:bg-green-950/20">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-700 dark:text-green-400">
+              <strong>Obra Concluída.</strong> Não é possível criar ou editar RDOs. 
+              Todos os registros estão disponíveis para consulta.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Alerta de restrição para Contratada - só mostra se RDO estiver habilitado e obra não concluída */}
+        {obraStatus !== 'concluida' && rdoHabilitado && showRestrictionAlert && (
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
@@ -298,8 +310,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
           </Alert>
         )}
         
-        {/* Alerta de atenção para dias sem RDO - só mostra se RDO estiver habilitado */}
-        {rdoHabilitado && !showRestrictionAlert && daysWithoutRdo > 3 && obraStart && (
+        {/* Alerta de atenção para dias sem RDO - só mostra se RDO estiver habilitado e obra não concluída */}
+        {obraStatus !== 'concluida' && rdoHabilitado && !showRestrictionAlert && daysWithoutRdo > 3 && obraStart && (
           <Alert className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-700 dark:text-amber-400">
@@ -406,8 +418,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                               #{rdo.numero_seq}
                             </Badge>
                           </button>
-                          {/* Botão excluir: RDOs aprovados só podem ser excluídos por admin, e somente quem pode editar pode excluir */}
-                          {canEditRdo && (rdo.status !== 'aprovado' || isAdmin) && (
+                          {/* Botão excluir: RDOs aprovados só podem ser excluídos por admin, e somente quem pode editar pode excluir. Obra concluída bloqueia exclusão */}
+                          {canEditRdo && obraStatus !== 'concluida' && (rdo.status !== 'aprovado' || isAdmin) && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -500,7 +512,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                        {isContratada && !isAfter(dayStart, today) && (
+                        {isContratada && obraStatus !== 'concluida' && !isAfter(dayStart, today) && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -515,7 +527,7 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                     ) : (
                       <div className="flex flex-col items-end justify-end h-full gap-1">
                         {/* Botão "Sem Expediente" para fins de semana (apenas Contratada) */}
-                        {isDayWeekend && isContratada && !isAfter(dayStart, today) && isAfterObraStart && (
+                        {isDayWeekend && isContratada && obraStatus !== 'concluida' && !isAfter(dayStart, today) && isAfterObraStart && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -535,8 +547,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             </Tooltip>
                           </TooltipProvider>
                         )}
-                        {/* Não mostrar botões de criar RDO se estiver bloqueado ou se não tem permissão */}
-                        {canEditRdo && !isBlockedForContratada && isAfterObraStart && !isAfter(dayStart, today) && (
+                        {/* Não mostrar botões de criar RDO se estiver bloqueado, se não tem permissão, ou se obra está concluída */}
+                        {canEditRdo && obraStatus !== 'concluida' && !isBlockedForContratada && isAfterObraStart && !isAfter(dayStart, today) && (
                           <div className="flex gap-0.5">
                             {/* Botão RDO Sem Atividade */}
                             <TooltipProvider>
