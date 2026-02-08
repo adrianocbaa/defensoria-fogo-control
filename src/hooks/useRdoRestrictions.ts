@@ -11,16 +11,18 @@ interface RdoRestriction {
   obraStartDate: string | null;
   message: string | null;
   rdoHabilitado: boolean;
+  /** Se a obra está concluída (status = 'concluida') */
+  obraConcluida: boolean;
 }
 
 export function useRdoRestrictions(obraId: string, isContratada: boolean) {
   return useQuery({
     queryKey: ['rdo-restrictions', obraId, isContratada],
     queryFn: async (): Promise<RdoRestriction> => {
-      // Buscar data de início da obra e flag rdo_habilitado
+      // Buscar data de início da obra, flag rdo_habilitado e status
       const { data: obra, error: obraError } = await supabase
         .from('obras')
-        .select('data_inicio, rdo_habilitado')
+        .select('data_inicio, rdo_habilitado, status')
         .eq('id', obraId)
         .single();
 
@@ -32,6 +34,20 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           obraStartDate: null,
           message: null,
           rdoHabilitado: obra?.rdo_habilitado ?? true,
+          obraConcluida: obra?.status === 'concluida',
+        };
+      }
+
+      // Se a obra está concluída, não exigir mais RDO e não contabilizar atraso
+      if (obra.status === 'concluida') {
+        return {
+          canCreateRdo: false, // Não pode criar novos RDOs
+          daysWithoutRdo: 0,
+          lastRdoDate: null,
+          obraStartDate: obra.data_inicio,
+          message: 'Obra concluída. Não é possível criar novos RDOs.',
+          rdoHabilitado: obra.rdo_habilitado,
+          obraConcluida: true,
         };
       }
 
@@ -44,6 +60,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           obraStartDate: obra.data_inicio,
           message: null,
           rdoHabilitado: false,
+          obraConcluida: false,
         };
       }
 
@@ -66,6 +83,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           obraStartDate: obra.data_inicio,
           message: null,
           rdoHabilitado: true,
+          obraConcluida: false,
         };
       }
 
@@ -107,6 +125,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           obraStartDate: obra.data_inicio,
           message: null,
           rdoHabilitado: true,
+          obraConcluida: false,
         };
       }
 
@@ -142,6 +161,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           obraStartDate: obra.data_inicio,
           message: `Limite de ${MAX_DIAS_SEM_RDO} dias sem preenchimento excedido. Primeiro dia sem RDO: ${new Date(firstMissingDateStr + 'T12:00:00').toLocaleDateString('pt-BR')}. Contate o fiscal para regularizar.`,
           rdoHabilitado: true,
+          obraConcluida: false,
         };
       }
 
@@ -154,6 +174,7 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
           ? `Atenção: ${daysWithoutRdo} dias sem preenchimento de RDO (desde ${new Date(firstMissingDateStr + 'T12:00:00').toLocaleDateString('pt-BR')})`
           : null,
         rdoHabilitado: true,
+        obraConcluida: false,
       };
     },
     enabled: !!obraId,
