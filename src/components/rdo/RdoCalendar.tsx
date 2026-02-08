@@ -461,22 +461,31 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          {/* Indicador de pendência de assinatura */}
-                          {((rdo.assinatura_fiscal_validado_em && !rdo.assinatura_contratada_validado_em) || 
-                            (!rdo.assinatura_fiscal_validado_em && rdo.assinatura_contratada_validado_em)) && (
+                          {/* Indicador de pendência de assinatura - cores diferentes para Fiscal e Contratada */}
+                          {rdo.assinatura_contratada_validado_em && !rdo.assinatura_fiscal_validado_em && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="inline-flex items-center justify-center">
-                                    <PenLine className="h-3 w-3 text-amber-600" />
+                                    <PenLine className="h-3 w-3 text-blue-600" />
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p className="text-xs">
-                                    {rdo.assinatura_contratada_validado_em && !rdo.assinatura_fiscal_validado_em 
-                                      ? 'Aguardando assinatura do Fiscal'
-                                      : 'Aguardando assinatura da Contratada'}
-                                  </p>
+                                  <p className="text-xs">Aguardando assinatura do Fiscal</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {rdo.assinatura_fiscal_validado_em && !rdo.assinatura_contratada_validado_em && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center justify-center">
+                                    <PenLine className="h-3 w-3 text-orange-500" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Aguardando assinatura da Contratada</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
