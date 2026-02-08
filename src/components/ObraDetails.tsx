@@ -45,7 +45,14 @@ const getStatusLabel = (status: ObraStatus) => {
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('pt-BR');
+  // Parse date string as local date to avoid timezone issues
+  if (dateString.includes('T')) {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  }
+  // For YYYY-MM-DD format, parse as local date
+  const [year, month, day] = dateString.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day);
+  return localDate.toLocaleDateString('pt-BR');
 };
 
 function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: () => void; loading?: boolean }) {
