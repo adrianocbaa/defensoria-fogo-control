@@ -425,11 +425,19 @@ export function Medicao() {
 
     const idsParaSomar = [item.id, ...coletarDescendentesIds(item.item)];
 
-    // TOTAL CONTRATO = Valor total com BDI e Desconto + TOTAL ADITIVO 1 + TOTAL ADITIVO 2
-    // Usar totalContrato (valor com desconto) ao invés de valorTotal (sem desconto)
+    // TOTAL CONTRATO = Valor total com BDI e Desconto + soma de TODOS os aditivos bloqueados
+    // Se seqLimit for informado, considera apenas aditivos com sequência <= seqLimit
+    // Caso contrário, considera TODOS os aditivos bloqueados
     const valorOriginal = item.totalContrato;
     const totalAditivos = aditivos
-      .filter(a => a.bloqueada && (a.sequencia === 1 || a.sequencia === 2))
+      .filter(a => {
+        if (!a.bloqueada) return false;
+        // Se houver limite de sequência, filtrar; caso contrário, incluir todos os bloqueados
+        if (seqLimit !== undefined && a.sequencia !== undefined) {
+          return a.sequencia <= seqLimit;
+        }
+        return true; // Incluir todos os aditivos bloqueados
+      })
       .reduce((sum, aditivo) => {
         const subtotal = idsParaSomar.reduce((acc, id) => acc + (aditivo.dados[id]?.total || 0), 0);
         return sum + subtotal;
@@ -4590,9 +4598,21 @@ const criarNovaMedicao = async () => {
             {confirm.type === 'excluir-aditivo' && 'Excluir aditivo?'}
             {confirm.type === 'limpar-planilha' && 'Excluir planilha orçamentária?'}
           </AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogDescription className="space-y-2">
             {confirm.type === 'reabrir-medicao' && 'A medição voltará para edição.'}
-            {confirm.type === 'limpar-planilha' && 'Todos os dados da planilha orçamentária serão excluídos. Esta ação não pode ser desfeita.'}
+            {confirm.type === 'limpar-planilha' && (
+              <div className="space-y-2">
+                <p className="font-semibold text-destructive">⚠️ Atenção: Esta ação é irreversível!</p>
+                <p>Todos os dados da planilha orçamentária serão excluídos.</p>
+                <p className="text-destructive font-medium">
+                  As atividades do RDO (Diário de Obra) vinculadas a esta planilha também serão perdidas permanentemente, 
+                  incluindo todos os quantitativos executados lançados nos relatórios diários.
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  Os relatórios (capas do RDO) permanecerão, mas as atividades precisarão ser preenchidas novamente após reimportar a planilha.
+                </p>
+              </div>
+            )}
             {(confirm.type === 'excluir-medicao' || confirm.type === 'excluir-aditivo') && 'Esta ação não pode ser desfeita.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
