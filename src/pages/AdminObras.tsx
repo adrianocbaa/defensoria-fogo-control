@@ -157,10 +157,10 @@ export function AdminObras() {
           .in('obra_id', obraIds)
           .not('orcamento_item_id', 'is', null),
         
-        // Buscar orcamento_items para cálculo do RDO (excluindo administração)
+        // Buscar orcamento_items para cálculo do RDO (excluindo administração) - incluindo item para cruzar com aditivos
         supabase
           .from('orcamento_items_hierarquia')
-          .select('id, obra_id, quantidade, eh_administracao_local, is_macro, origem')
+          .select('id, obra_id, item, quantidade, eh_administracao_local, is_macro, origem')
           .in('obra_id', obraIds)
           .eq('eh_administracao_local', false)
           .or('is_macro.is.null,is_macro.eq.false')
@@ -175,7 +175,7 @@ export function AdminObras() {
         const aditivoSessionIds = aditivoData.data.map(s => s.id);
         aditivoItemsData = await supabase
           .from('aditivo_items')
-          .select('aditivo_id, total')
+          .select('aditivo_id, total, item_code, qtd')
           .in('aditivo_id', aditivoSessionIds);
       }
       
@@ -194,15 +194,32 @@ export function AdminObras() {
       const marcos: Record<string, MedicaoMarco[]> = {};
       
       for (const obra of sortedObras) {
-        // Calcular Andamento da Obra (baseado em RDO)
-        const obraOrcamentoRdo = orcamentoForRdoData.data?.filter(item => item.obra_id === obra.id) || [];
+        // Calcular Andamento da Obra (baseado em RDO) - considerando aditivos
+        const obraOrcamentoRdo = orcamentoForRdoData.data?.filter((item: any) => item.obra_id === obra.id) || [];
         const obraRdoActivities = rdoActivitiesData.data?.filter(a => a.obra_id === obra.id) || [];
         
         if (obraOrcamentoRdo.length > 0 && obraRdoActivities.length > 0) {
-          // Criar mapa de quantidade por item do orçamento
-          const orcamentoMap = new Map<string, number>();
-          obraOrcamentoRdo.forEach(item => {
-            orcamentoMap.set(item.id, item.quantidade);
+          // Buscar aditivos bloqueados desta obra e calcular ajustes por item_code
+          const obraAditivoSessions = aditivoData.data?.filter(s => s.obra_id === obra.id) || [];
+          const aditivoSessionIds = obraAditivoSessions.map(s => s.id);
+          const obraAditivoItems = aditivoItemsData.data?.filter((item: any) => 
+            aditivoSessionIds.includes(item.aditivo_id)
+          ) || [];
+          
+          // Acumular ajustes por item_code
+          const aditivoAjustes = new Map<string, number>();
+          obraAditivoItems.forEach((item: any) => {
+            const code = (item.item_code || '').trim();
+            const current = aditivoAjustes.get(code) || 0;
+            aditivoAjustes.set(code, current + (item.qtd || 0));
+          });
+          
+          // Criar mapa de quantidade AJUSTADA por item do orçamento
+          const orcamentoMap = new Map<string, { quantidade: number; itemCode: string }>();
+          obraOrcamentoRdo.forEach((item: any) => {
+            const ajuste = aditivoAjustes.get(item.item) || 0;
+            const quantidadeAjustada = Math.max(0, item.quantidade + ajuste);
+            orcamentoMap.set(item.id, { quantidade: quantidadeAjustada, itemCode: item.item });
           });
           
           // Agrupar execução por item
@@ -215,16 +232,20 @@ export function AdminObras() {
             }
           });
           
-          // Calcular percentual médio ponderado
+          // Calcular percentual médio ponderado usando quantidades ajustadas
           let somaPercentuais = 0;
           let somaQuantidades = 0;
           
-          orcamentoMap.forEach((quantidadeOrcamento, itemId) => {
+          orcamentoMap.forEach((itemData, itemId) => {
+            const quantidadeAjustada = itemData.quantidade;
             const executadoAcumulado = executadoMap.get(itemId) || 0;
-            if (quantidadeOrcamento > 0) {
-              const percentual = Math.min((executadoAcumulado / quantidadeOrcamento) * 100, 100);
-              somaPercentuais += percentual * quantidadeOrcamento;
-              somaQuantidades += quantidadeOrcamento;
+            
+            if (quantidadeAjustada > 0) {
+              // Limitar executado ao máximo permitido pela quantidade ajustada
+              const executadoLimitado = Math.min(executadoAcumulado, quantidadeAjustada);
+              const percentual = (executadoLimitado / quantidadeAjustada) * 100;
+              somaPercentuais += percentual * quantidadeAjustada;
+              somaQuantidades += quantidadeAjustada;
             }
           });
           
