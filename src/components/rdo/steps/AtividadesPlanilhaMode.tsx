@@ -6,12 +6,12 @@ import { toast } from "sonner";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useOrcamentoItems } from "@/hooks/useOrcamentoItems";
 import { useRdoActivitiesAcumulado } from "@/hooks/useRdoActivitiesAcumulado";
+import { useAditivosParaRdo, calcularAjusteAditivos } from "@/hooks/useAditivosParaRdo";
 import { ActivityNoteDialog } from "@/components/rdo/ActivityNoteDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaveIndicator } from "@/components/ui/save-indicator";
 import { PlanilhaTreeView } from "./PlanilhaTreeView";
 import { useUserRole } from "@/hooks/useUserRole";
-
 interface AtividadesPlanilhaModeProps {
   reportId?: string;
   obraId: string;
@@ -34,6 +34,19 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
 
   const { data: orcamentoItems = [], isLoading: loadingOrcamento } = useOrcamentoItems(obraId);
   const { data: acumulados = [], isLoading: loadingAcumulados } = useRdoActivitiesAcumulado(obraId, dataRdo);
+  const { data: aditivos = [], isLoading: loadingAditivos } = useAditivosParaRdo(obraId);
+
+  // Criar mapas para correspondência de códigos de aditivos
+  const codigoToItemCode = useMemo(() => {
+    const map = new Map<string, string>();
+    orcamentoItems.forEach(item => {
+      // Mapear código de banco (SINAPI, etc) para o item code hierárquico
+      if (item.codigo) {
+        map.set(item.codigo.trim(), item.item);
+      }
+    });
+    return map;
+  }, [orcamentoItems]);
 
   const { data: rdoActivities = [], isLoading: loadingActivities } = useQuery({
     queryKey: ['rdo-activities-planilha', reportId],
@@ -187,12 +200,15 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       const item = orcamentoItems.find(i => i.id === orcamentoItemId);
       const acumulado = acumulados.find(a => a.orcamento_item_id === orcamentoItemId);
       const executadoAcumulado = acumulado?.executado_acumulado || 0;
-      const quantidadeTotal = item?.quantidade || 0;
       
-      // Calcular progresso real: (acumulado + dia) / total * 100
+      // Calcular ajuste de aditivos para usar quantidade ajustada
+      const ajusteAditivo = item ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+      const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
+      
+      // Calcular progresso real: (acumulado + dia) / total ajustado * 100
       const totalExecutado = executadoAcumulado + value;
-      const progresso = quantidadeTotal > 0 
-        ? Math.min(100, Math.round((totalExecutado / quantidadeTotal) * 100))
+      const progresso = quantidadeAjustada > 0 
+        ? Math.min(100, Math.round((totalExecutado / quantidadeAjustada) * 100))
         : 0;
       
       const { error } = await supabase
@@ -306,7 +322,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     }
   }, [reportId, loadingActivities, orcamentoItems.length, hasSynced, syncMutation.isPending]);
 
-  if (loadingOrcamento || loadingAcumulados || loadingActivities) {
+  if (loadingOrcamento || loadingAcumulados || loadingActivities || loadingAditivos) {
     return (
       <Card className="rounded-2xl shadow-sm">
         <CardHeader>
@@ -324,10 +340,17 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     const acumulado = acumulados.find(a => a.orcamento_item_id === item.id);
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
     const executadoDia = localExecutado[item.id] ?? (activity?.executado_dia || 0);
+    
+    // Calcular ajuste de aditivos (supressões são negativas, acréscimos positivos)
+    const ajusteAditivo = calcularAjusteAditivos(item.item, aditivos, codigoToItemCode);
+    
+    // Quantidade ajustada = quantidade original + ajustes de aditivos
+    const quantidadeAjustada = Math.max(0, item.quantidade + ajusteAditivo);
+    
     const totalExecutado = executadoAcumulado + executadoDia;
-    const percentualExecutado = item.quantidade > 0 ? (totalExecutado / item.quantidade * 100) : 0;
-    const disponivel = Math.max(0, item.quantidade - executadoAcumulado);
-    const excedeuLimite = totalExecutado > item.quantidade;
+    const percentualExecutado = quantidadeAjustada > 0 ? (totalExecutado / quantidadeAjustada * 100) : 0;
+    const disponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
+    const excedeuLimite = totalExecutado > quantidadeAjustada;
 
     return {
       ...item,
@@ -338,6 +361,9 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       percentualExecutado,
       disponivel,
       excedeuLimite,
+      quantidadeOriginal: item.quantidade,
+      quantidadeAjustada,
+      ajusteAditivo,
     };
   });
 
