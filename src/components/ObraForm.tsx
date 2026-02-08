@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addDays, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmpresas } from '@/hooks/useEmpresas';
@@ -14,12 +15,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { MapPin, Upload } from 'lucide-react';
+import { MapPin, Upload, CheckCircle2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { MapSelector } from './MapSelector';
 import { PhotoUpload } from './PhotoUpload';
 import { DocumentsUpload } from './DocumentsUpload';
 import { PhotoGalleryCollapsible } from './PhotoGalleryCollapsible';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -34,6 +44,7 @@ const obraSchema = z.object({
   tempo_obra: z.number().min(0, 'Tempo de obra deve ser positivo').optional(),
   aditivo_prazo: z.number().min(0).optional(),
   previsao_termino: z.string().optional(),
+  data_termino_real: z.string().optional(), // Data real de término da obra
   empresa_id: z.string().optional(),
   empresa_responsavel: z.string().optional(),
   regiao: z.string().optional(),
@@ -156,6 +167,11 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMapSelector, setShowMapSelector] = useState(false);
+  const [showConclusaoDialog, setShowConclusaoDialog] = useState(false);
+  const [dataTerminoReal, setDataTerminoReal] = useState<string>(
+    (initialData as any)?.data_termino_real || format(new Date(), 'yyyy-MM-dd')
+  );
+  const [pendingStatusChange, setPendingStatusChange] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Array<{url: string; uploadedAt: string; fileName: string; monthFolder?: string}>>(
     initialData?.fotos?.map(photo => {
       // Se já é um objeto completo, retorna ele mesmo
@@ -191,6 +207,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       tempo_obra: (initialData as any)?.tempo_obra || undefined,
       aditivo_prazo: (initialData as any)?.aditivo_prazo || undefined,
       previsao_termino: initialData?.previsao_termino || '',
+      data_termino_real: (initialData as any)?.data_termino_real || '',
       empresa_id: (initialData as any)?.empresa_id || '',
       empresa_responsavel: initialData?.empresa_responsavel || '',
       regiao: (initialData as any)?.regiao || '',
@@ -278,6 +295,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         tempo_obra: data.tempo_obra || null,
         aditivo_prazo: data.aditivo_prazo || null,
         previsao_termino: data.previsao_termino || null,
+        data_termino_real: data.status === 'concluida' ? (data.data_termino_real || dataTerminoReal || null) : null,
         empresa_id: data.empresa_id || null,
         empresa_responsavel: data.empresa_responsavel || null,
         regiao: data.regiao || null,
@@ -382,7 +400,22 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select 
+                    onValueChange={(value) => {
+                      // Se está mudando para "concluída" e não estava concluída antes, mostrar dialog
+                      if (value === 'concluida' && field.value !== 'concluida') {
+                        setPendingStatusChange(value);
+                        setShowConclusaoDialog(true);
+                      } else {
+                        field.onChange(value);
+                        // Se estiver saindo de "concluída", limpar a data de término real
+                        if (field.value === 'concluida' && value !== 'concluida') {
+                          form.setValue('data_termino_real', '');
+                        }
+                      }
+                    }} 
+                    value={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o status" />
@@ -800,6 +833,84 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
           />
         </div>
       )}
+
+      {/* Dialog de Confirmação de Conclusão da Obra */}
+      <Dialog open={showConclusaoDialog} onOpenChange={setShowConclusaoDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              Concluir Obra
+            </DialogTitle>
+            <DialogDescription>
+              Informe a data real de término da obra. Esta data será exibida no resumo da obra 
+              junto com o prazo contratual previsto.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="data_termino_real">Data de Término da Obra *</Label>
+              <Input
+                id="data_termino_real"
+                type="date"
+                value={dataTerminoReal}
+                onChange={(e) => setDataTerminoReal(e.target.value)}
+                max={format(new Date(), 'yyyy-MM-dd')}
+              />
+              <p className="text-xs text-muted-foreground">
+                Data em que a obra foi efetivamente concluída
+              </p>
+            </div>
+            
+            {/* Mostrar comparativo com previsão */}
+            {form.getValues('previsao_termino') && (
+              <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+                <p className="text-sm font-medium">Comparativo:</p>
+                <p className="text-xs text-muted-foreground">
+                  Prazo previsto: {format(new Date(form.getValues('previsao_termino') + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
+                {dataTerminoReal && (
+                  <p className="text-xs text-muted-foreground">
+                    Término real: {format(new Date(dataTerminoReal + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowConclusaoDialog(false);
+                setPendingStatusChange(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (!dataTerminoReal) {
+                  toast.error('Informe a data de término da obra');
+                  return;
+                }
+                // Confirmar a mudança de status
+                form.setValue('status', 'concluida');
+                form.setValue('data_termino_real', dataTerminoReal);
+                setShowConclusaoDialog(false);
+                setPendingStatusChange(null);
+                toast.success('Status alterado para Concluída. Salve para confirmar.');
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Confirmar Conclusão
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
