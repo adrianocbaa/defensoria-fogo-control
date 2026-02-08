@@ -136,10 +136,16 @@ const NovoAditivoModal: React.FC<NovoAditivoModalProps> = ({ open, onOpenChange,
               onChange={(e) => setSequencia(Number(e.target.value))}
             >
               {sequenciasDisponiveis.map((n) => (
-                <option key={n} value={n}>Medição {n}</option>
+                <option key={n} value={n}>
+                  {n === 0 ? 'Antes da 1ª Medição' : `Medição ${n}`}
+                </option>
               ))}
             </select>
-            <p className="text-xs text-muted-foreground">Percentuais a partir desta medição usarão o contrato atualizado.</p>
+            <p className="text-xs text-muted-foreground">
+              {sequencia === 0 
+                ? 'O aditivo será considerado desde o início, afetando todas as medições.' 
+                : 'Percentuais a partir desta medição usarão o contrato atualizado.'}
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

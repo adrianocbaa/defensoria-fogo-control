@@ -4459,8 +4459,16 @@ const criarNovaMedicao = async () => {
                   open={novoAditivoAberto}
                   onOpenChange={setNovoAditivoAberto}
                   onConfirm={confirmarNovoAditivo}
-                  sequenciasDisponiveis={(() => { const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; return Array.from({ length: maxSeq + 1 }, (_, i) => i + 1); })()}
-                  defaultSequencia={(() => { const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; return maxSeq + 1; })()}
+                  sequenciasDisponiveis={(() => { 
+                    const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; 
+                    // Incluir opção 0 (Antes da 1ª Medição) + todas as medições existentes + próxima
+                    return [0, ...Array.from({ length: maxSeq + 1 }, (_, i) => i + 1)]; 
+                  })()}
+                  defaultSequencia={(() => { 
+                    // Se não há medições, sugerir 0 (antes da 1ª medição)
+                    const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; 
+                    return maxSeq === 0 ? 0 : maxSeq + 1; 
+                  })()}
                 />
               </div>
             </div>
