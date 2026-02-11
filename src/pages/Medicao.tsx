@@ -1009,13 +1009,12 @@ export function Medicao() {
               const valorUnitarioAditivo = dadosAtuais.valorUnitario || 0;
               
               if (valorUnitarioAditivo > 0) {
-                // Usar valor unitário específico do aditivo
-                novosDados[itemId].total = Math.trunc(valorNumerico * valorUnitarioAditivo * 100) / 100;
+                // Usar valor unitário específico do aditivo (sem truncamento)
+                novosDados[itemId].total = valorNumerico * valorUnitarioAditivo;
                 novosDados[itemId].valorUnitario = valorUnitarioAditivo; // Preservar
               } else {
-                // Para itens contratuais no aditivo: QNT × Valor Unit com BDI e Desc.
-                // O valorUnitario do item já contém BDI e desconto aplicados na planilha original
-                novosDados[itemId].total = Math.trunc(valorNumerico * item.valorUnitario * 100) / 100;
+                // Para itens contratuais no aditivo: QNT × Valor Unit com BDI e Desc. (sem truncamento)
+                novosDados[itemId].total = valorNumerico * item.valorUnitario;
               }
             }
           }
