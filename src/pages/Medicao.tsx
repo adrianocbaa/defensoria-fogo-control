@@ -615,10 +615,9 @@ export function Medicao() {
           item.aditivo.total = filhos.reduce((sum, filho) => sum + filho.aditivo.total, 0);
           item.totalContrato = filhos.reduce((sum, filho) => sum + filho.totalContrato, 0);
           
-          // Calcular valor unitário médio ponderado (truncado para 2 casas decimais)
+          // Calcular valor unitário sem truncamento para preservar precisão nos aditivos
           if (item.quantidade > 0) {
-            // Usar o valorTotal atual (importado para nível 1 ou somado para demais)
-            item.valorUnitario = Math.trunc((item.valorTotal / item.quantidade) * 100) / 100;
+            item.valorUnitario = item.valorTotal / item.quantidade;
           }
         }
       });
