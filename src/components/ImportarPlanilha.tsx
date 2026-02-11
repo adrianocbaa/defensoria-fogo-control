@@ -193,9 +193,9 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         // O desconto é aplicado sobre os valores originais da planilha (Total sem Desconto)
         const descontoFator = descontoValue > 0 ? (1 - descontoValue / 100) : 1
         
-        // Calcular valores com desconto aplicado usando truncamento (2 casas decimais)
+        // Calcular valor unitário com desconto SEM truncamento para preservar precisão nos aditivos
         const valorUnitarioComDesconto = descontoValue > 0 
-          ? Math.trunc(valorUnitarioOriginal * descontoFator * 100) / 100
+          ? valorUnitarioOriginal * descontoFator
           : valorUnitarioOriginal
         
         const valorTotalComDesconto = descontoValue > 0

@@ -760,9 +760,9 @@ export function Medicao() {
     } catch {}
   }, [obra?.id, items, aditivos, medicoes, medicaoAtual]);
 
-  // Função para calcular total baseado na quantidade e valor unitário (truncado para 2 casas decimais)
+  // Função para calcular total baseado na quantidade e valor unitário (sem truncamento para preservar precisão)
   const calcularTotal = (quantidade: number, valorUnitario: number) => {
-    return Math.trunc(quantidade * valorUnitario * 100) / 100;
+    return quantidade * valorUnitario;
   };
 
   // Função para calcular e distribuir Administração Local
@@ -2364,13 +2364,13 @@ const criarNovaMedicao = async () => {
               // NÃO aplicar desconto - itens contratuais já tiveram desconto aplicado na planilha original
               // Itens extracontratuais de aditivos anteriores também já tiveram desconto aplicado
               const valorUnitarioFinal = valorUnitBDI > 0 
-                ? Math.trunc(valorUnitBDI * 100) / 100
-                : (quant !== 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
+                ? valorUnitBDI
+                : (quant !== 0 ? valorTotalComDesconto / quant : 0);
               
               // Para itens contratuais, o total também deve usar o valor SEM reaplicar desconto
-              // O totalSemDesconto da planilha do aditivo já é o valor correto (com desconto já embutido da planilha original)
+              // Sem truncamento para preservar precisão
               const totalFinal = valorUnitarioFinal > 0 
-                ? Math.trunc(valorUnitarioFinal * quant * 100) / 100
+                ? valorUnitarioFinal * quant
                 : valorTotalComDesconto;
               
               itensContratuaisDoAditivo.push({
@@ -2658,11 +2658,11 @@ const criarNovaMedicao = async () => {
             if (itemExistente && quant !== 0 && nivel > 1) {
               // NÃO aplicar desconto - itens contratuais/extracontratuais anteriores já tiveram desconto
               const valorUnitarioFinal = valorUnitBDI > 0 
-                ? Math.trunc(valorUnitBDI * 100) / 100
-                : (quant !== 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
+                ? valorUnitBDI
+                : (quant !== 0 ? valorTotalComDesconto / quant : 0);
               
               const totalFinal = valorUnitarioFinal > 0 
-                ? Math.trunc(valorUnitarioFinal * quant * 100) / 100
+                ? valorUnitarioFinal * quant
                 : valorTotalComDesconto;
               
               itensContratuaisDoAditivo.push({
