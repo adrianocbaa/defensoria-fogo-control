@@ -1013,24 +1013,18 @@ export function Medicao() {
                 novosDados[itemId].total = Math.trunc(valorNumerico * valorUnitarioAditivo * 100) / 100;
                 novosDados[itemId].valorUnitario = valorUnitarioAditivo; // Preservar
               } else {
-                // PRIORIDADE 2: Usar lógica baseada no orçamento base
-                // Cálculo conforme planilha oficial: =TRUNCAR(I - (I * desconto%), 2)
-                // I = valor total sem desconto (proporcional à quantidade informada)
-                // desconto% = percentual da obra
+                // PRIORIDADE 2: Calcular com base no valor unitário já com desconto do item
+                // Para itens contratuais e extracontratuais de aditivos anteriores,
+                // o desconto JÁ está aplicado no valorTotal/valorUnitario do item.
+                // NÃO devemos reaplicar o desconto via valorTotalSemDesconto.
                 const quantidadeIgual = item.quantidade > 0 && Math.abs(valorNumerico - item.quantidade) < 1e-6;
                 
                 if (quantidadeIgual && item.valorTotal > 0) {
                   // Quantidade idêntica: usar total original sem recálculo
                   novosDados[itemId].total = item.valorTotal;
-                } else if (item.quantidade > 0 && item.valorTotalSemDesconto > 0 && obra?.percentual_desconto) {
-                  // Usar fórmula da planilha: proporcional do valor sem desconto → aplicar desconto
-                  const proporcao = valorNumerico / item.quantidade;
-                  const totalSemDescontoProporcional = proporcao * item.valorTotalSemDesconto;
-                  const desconto = obra.percentual_desconto / 100;
-                  // TRUNCAR(totalSemDesconto - totalSemDesconto * desconto%, 2)
-                  novosDados[itemId].total = Math.trunc((totalSemDescontoProporcional - (totalSemDescontoProporcional * desconto)) * 100) / 100;
                 } else if (item.quantidade > 0 && item.valorTotal > 0) {
-                  // Fallback: cálculo proporcional simples (para dados antigos sem valorTotalSemDesconto)
+                  // Cálculo proporcional usando valorTotal (que já tem desconto embutido)
+                  // Isso evita aplicar o desconto duas vezes em itens contratuais
                   const proporcao = valorNumerico / item.quantidade;
                   novosDados[itemId].total = Math.trunc(proporcao * item.valorTotal * 100) / 100;
                 } else {
