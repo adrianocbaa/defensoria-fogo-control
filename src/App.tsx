@@ -66,6 +66,7 @@ import OrcamentoDetalhe from "./pages/OrcamentoDetalhe";
 import OrcamentoCurvaABC from "./pages/OrcamentoCurvaABC";
 import GerenciarObras from "./pages/GerenciarObras";
 import Apresentacao from "./pages/Apresentacao";
+import FluxogramaObras from "./pages/FluxogramaObras";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,7 @@ const AppRoutes = () => {
       <Route path="/rdo/verify/:hash" element={<RdoVerify />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/apresentacao" element={<Apresentacao />} />
+      <Route path="/fluxograma-obras" element={<ProtectedRoute><FluxogramaObras /></ProtectedRoute>} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/medicao/:id" element={<ProtectedRoute><Medicao /></ProtectedRoute>} />
       <Route path="/dashboard" element={<Dashboard />} />
