@@ -1013,23 +1013,9 @@ export function Medicao() {
                 novosDados[itemId].total = Math.trunc(valorNumerico * valorUnitarioAditivo * 100) / 100;
                 novosDados[itemId].valorUnitario = valorUnitarioAditivo; // Preservar
               } else {
-                // PRIORIDADE 2: Calcular com base no valor unitário já com desconto do item
-                // Para itens contratuais e extracontratuais de aditivos anteriores,
-                // o desconto JÁ está aplicado no valorTotal/valorUnitario do item.
-                // NÃO devemos reaplicar o desconto via valorTotalSemDesconto.
-                const quantidadeIgual = item.quantidade > 0 && Math.abs(valorNumerico - item.quantidade) < 1e-6;
-                
-                if (quantidadeIgual && item.valorTotal > 0) {
-                  // Quantidade idêntica: usar total original sem recálculo
-                  novosDados[itemId].total = item.valorTotal;
-                } else if (item.quantidade > 0 && item.valorTotal > 0) {
-                  // Cálculo proporcional usando valorTotal (que já tem desconto embutido)
-                  // Isso evita aplicar o desconto duas vezes em itens contratuais
-                  const proporcao = valorNumerico / item.quantidade;
-                  novosDados[itemId].total = Math.trunc(proporcao * item.valorTotal * 100) / 100;
-                } else {
-                  novosDados[itemId].total = calcularTotal(valorNumerico, item.valorUnitario);
-                }
+                // Para itens contratuais no aditivo: QNT × Valor Unit com BDI e Desc.
+                // O valorUnitario do item já contém BDI e desconto aplicados na planilha original
+                novosDados[itemId].total = Math.trunc(valorNumerico * item.valorUnitario * 100) / 100;
               }
             }
           }
