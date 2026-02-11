@@ -2320,7 +2320,9 @@ const criarNovaMedicao = async () => {
       const body = rows.slice(headerRowIndex);
       const baseOrdem = items.reduce((m, it) => Math.max(m, it.ordem || 0), 0);
 
-      const existentes = new Set(items.filter(it => it.origem !== 'extracontratual').map(it => (it.item || '').trim()));
+      // Incluir TODOS os itens existentes (contratuais E extracontratuais de aditivos anteriores)
+      // pois itens extracontratuais de aditivos anteriores já fazem parte do contrato
+      const existentes = new Set(items.map(it => (it.item || '').trim()));
       const novos: Item[] = [];
       const duplicados: string[] = [];
       const vistosNoArquivo = new Set<string>();
@@ -2381,18 +2383,25 @@ const criarNovaMedicao = async () => {
             const itemExistente = items.find(it => it.item.trim() === code);
             if (itemExistente && quant !== 0 && nivel > 1) {
               // Salvar valores para processar depois no dadosAditivo
-              // Aplicar desconto da obra ao valor unitário com BDI
-              const valorUnitarioComDesconto = valorUnitBDI > 0 
-                ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
+              // NÃO aplicar desconto - itens contratuais já tiveram desconto aplicado na planilha original
+              // Itens extracontratuais de aditivos anteriores também já tiveram desconto aplicado
+              const valorUnitarioFinal = valorUnitBDI > 0 
+                ? Math.trunc(valorUnitBDI * 100) / 100
                 : (quant !== 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
+              
+              // Para itens contratuais, o total também deve usar o valor SEM reaplicar desconto
+              // O totalSemDesconto da planilha do aditivo já é o valor correto (com desconto já embutido da planilha original)
+              const totalFinal = valorUnitarioFinal > 0 
+                ? Math.trunc(valorUnitarioFinal * quant * 100) / 100
+                : valorTotalComDesconto;
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
                 qnt: quant,
-                total: valorTotalComDesconto,
-                valorUnitario: valorUnitarioComDesconto
+                total: totalFinal,
+                valorUnitario: valorUnitarioFinal
               });
-              console.log(`Linha ${i + 1} - Item CONTRATUAL no aditivo: item=${code}, qnt=${quant}, VU_BDI=${valorUnitBDI}, VU_Desconto=${valorUnitarioComDesconto}, total=${valorTotalComDesconto}`);
+              console.log(`Linha ${i + 1} - Item CONTRATUAL no aditivo (sem desconto): item=${code}, qnt=${quant}, VU_BDI=${valorUnitBDI}, VU_Final=${valorUnitarioFinal}, total=${totalFinal}`);
             }
           }
           return; // Não adicionar aos novos
@@ -2635,7 +2644,8 @@ const criarNovaMedicao = async () => {
 
       const body = rows.slice(headerRowIndex);
       const baseOrdem = items.reduce((m, it) => Math.max(m, it.ordem || 0), 0);
-      const existentes = new Set(items.filter(it => it.origem !== 'extracontratual').map(it => (it.item || '').trim()));
+      // Incluir TODOS os itens existentes (contratuais E extracontratuais de aditivos anteriores)
+      const existentes = new Set(items.map(it => (it.item || '').trim()));
       const novos: Item[] = [];
       const vistosNoArquivo = new Set<string>();
       const itensContratuaisDoAditivo: { id: number; qnt: number; total: number; valorUnitario: number }[] = [];
@@ -2668,15 +2678,20 @@ const criarNovaMedicao = async () => {
             vistosNoArquivo.add(code);
             const itemExistente = items.find(it => it.item.trim() === code);
             if (itemExistente && quant !== 0 && nivel > 1) {
-              const valorUnitarioComDesconto = valorUnitBDI > 0 
-                ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
+              // NÃO aplicar desconto - itens contratuais/extracontratuais anteriores já tiveram desconto
+              const valorUnitarioFinal = valorUnitBDI > 0 
+                ? Math.trunc(valorUnitBDI * 100) / 100
                 : (quant !== 0 ? Math.trunc((valorTotalComDesconto / quant) * 100) / 100 : 0);
+              
+              const totalFinal = valorUnitarioFinal > 0 
+                ? Math.trunc(valorUnitarioFinal * quant * 100) / 100
+                : valorTotalComDesconto;
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
                 qnt: quant,
-                total: valorTotalComDesconto,
-                valorUnitario: valorUnitarioComDesconto
+                total: totalFinal,
+                valorUnitario: valorUnitarioFinal
               });
             }
           }
