@@ -89,11 +89,8 @@ export function ResumoContrato({
       // TOTAL GERAL DO ADITIVO = ACRESCIDOS - DECRESCIDOS + EXTRACONTRATUAIS
       const totalGeral = acrescidos - decrescidos + extracontratuais;
       
-      // Só soma ao acumulado se o aditivo foi medido (sequência <= medição atual)
-      const foiMedido = medicaoAtual ? ((aditivo.sequencia ?? 0) <= medicaoAtual) : false;
-      if (foiMedido) {
-        acumulado += totalGeral;
-      }
+      // Todos os aditivos bloqueados (publicados) contribuem para o valor acumulado
+      acumulado += totalGeral;
 
       linhas.push({
         aditivo,
@@ -254,10 +251,10 @@ export function ResumoContrato({
                       {linhas.map((linha) => (
                         <React.Fragment key={`decresc-${linha.aditivo.id}`}>
                           <TableCell className="text-center font-bold text-red-600 border-l border-gray-200">
-                            {formatCurrency(linha.decrescidos)}
+                            {linha.decrescidos > 0 ? `-${formatCurrency(linha.decrescidos)}` : formatCurrency(0)}
                           </TableCell>
                           <TableCell className="text-center text-red-500">
-                            {valorTotalOriginal ? ((linha.decrescidos / valorTotalOriginal) * 100).toFixed(2) : '0.00'}%
+                            {valorTotalOriginal ? `-${((linha.decrescidos / valorTotalOriginal) * 100).toFixed(2)}` : '0.00'}%
                           </TableCell>
                         </React.Fragment>
                       ))}
