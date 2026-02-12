@@ -3532,9 +3532,19 @@ const criarNovaMedicao = async () => {
 
   // Função para calcular valores acumulados até a medição atual com hierarquia
   // INCLUINDO a medição atual em edição (não salva ainda)
-  const calcularValorAcumuladoItem = (itemId: number) => {
+  const calcularValorAcumuladoItem = (itemId: number): number => {
     if (!medicaoAtual) return 0;
     
+    // Para itens MACRO (que têm filhos), somar o acumulado dos filhos
+    const item = items.find(i => i.id === itemId);
+    if (item) {
+      const filhos = childrenByCode.get(item.item.trim()) || [];
+      if (filhos.length > 0) {
+        return filhos.reduce((sum, filho) => sum + calcularValorAcumuladoItem(filho.id), 0);
+      }
+    }
+    
+    // Para itens MICRO (folhas), somar medições
     let totalAcumulado = 0;
     
     // Somar medições anteriores (bloqueadas)
