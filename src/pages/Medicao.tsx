@@ -4143,10 +4143,13 @@ const criarNovaMedicao = async () => {
                               {(() => {
                                 // Para itens folha, mostrar valor próprio
                                 if (ehItemFolha(item.item)) {
-                                  const somaAditivosSelecionados = aditivos
-                                    .filter(a => a.bloqueada && (a.sequencia === 1 || a.sequencia === 2))
+                                  const somaAditivosBloqueados = aditivos
+                                    .filter(a => a.bloqueada)
                                     .reduce((sumA, a) => sumA + ((a.dados[item.id]?.total) || 0), 0);
-                                  const totalContratoVisual = item.valorTotal + somaAditivosSelecionados;
+                                  // Para itens extracontratuais, o valorTotal já vem do aditivo, então usar apenas o aditivo
+                                  // Para itens contratuais, somar valorTotal (contrato original) + aditivos
+                                  const valorBase = item.origem === 'extracontratual' ? 0 : item.valorTotal;
+                                  const totalContratoVisual = valorBase + somaAditivosBloqueados;
                                   return `R$ ${totalContratoVisual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                                 }
                                 
@@ -4158,9 +4161,11 @@ const criarNovaMedicao = async () => {
                                 
                                 const somaFilhos = filhosDirectos.reduce((sum, filho) => {
                                   const somaAditivosFilho = aditivos
-                                    .filter(a => a.bloqueada && (a.sequencia === 1 || a.sequencia === 2))
+                                    .filter(a => a.bloqueada)
                                     .reduce((sumA, a) => sumA + ((a.dados[filho.id]?.total) || 0), 0);
-                                  return sum + filho.valorTotal + somaAditivosFilho;
+                                  // Para itens extracontratuais, não somar valorTotal (já está no aditivo)
+                                  const valorBaseFilho = filho.origem === 'extracontratual' ? 0 : filho.valorTotal;
+                                  return sum + valorBaseFilho + somaAditivosFilho;
                                 }, 0);
                                 
                                 return `R$ ${somaFilhos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
