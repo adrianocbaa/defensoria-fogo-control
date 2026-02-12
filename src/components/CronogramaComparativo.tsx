@@ -360,18 +360,26 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                 data: dadosExecutado,
                 backgroundColor: 'rgba(239, 68, 68, 0.7)',
                 borderColor: 'rgba(239, 68, 68, 1)',
-                borderWidth: 2,
+                borderWidth: 3,
                 fill: false,
                 tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                order: 1, // drawn on top
               },
               {
                 label: 'Previsto (%)',
                 data: dadosPrevisto,
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                 borderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: 2,
+                borderWidth: 3,
+                borderDash: [8, 4], // dashed line to distinguish from Executado
                 fill: false,
                 tension: 0.4,
+                pointRadius: 5,
+                pointStyle: 'rectRot' as const, // diamond shape to differentiate
+                pointHoverRadius: 7,
+                order: 2, // drawn behind
               },
             ],
           };
@@ -447,8 +455,33 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             },
             datalabels: {
               display: chartType === 'line',
-              align: 'top' as const,
-              anchor: 'end' as const,
+              align: function(context: any) {
+                // When values overlap (Executado ≈ Previsto), offset the Previsto label below
+                const datasetIndex = context.datasetIndex;
+                const dataIndex = context.dataIndex;
+                const datasets = context.chart.data.datasets;
+                if (datasetIndex === 1 && datasets.length > 1) {
+                  const execVal = datasets[0].data[dataIndex];
+                  const prevVal = datasets[1].data[dataIndex];
+                  if (Math.abs(execVal - prevVal) < 3) {
+                    return 'bottom';
+                  }
+                }
+                return 'top';
+              } as any,
+              anchor: function(context: any) {
+                const datasetIndex = context.datasetIndex;
+                const dataIndex = context.dataIndex;
+                const datasets = context.chart.data.datasets;
+                if (datasetIndex === 1 && datasets.length > 1) {
+                  const execVal = datasets[0].data[dataIndex];
+                  const prevVal = datasets[1].data[dataIndex];
+                  if (Math.abs(execVal - prevVal) < 3) {
+                    return 'start';
+                  }
+                }
+                return 'end';
+              } as any,
               backgroundColor: function(context: any) {
                 return context.dataset.borderColor;
               },
