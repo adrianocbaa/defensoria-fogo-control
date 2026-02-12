@@ -184,12 +184,10 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         const comparacoes: MacroExecutado[] = cronograma.items.map(itemCronograma => {
           const executado = executadoPorMacro.get(itemCronograma.item_numero) || 0;
           
-          // Calcular os dias do período baseado na sequência da medição
-          // Sequência 1 = 30 dias, Sequência 2 = 60 dias, etc.
-          const periodoDias = session.sequencia * 30;
-          
-          // Buscar o período correspondente aos dias calculados
-          const periodo = itemCronograma.periodos.find(p => p.periodo === periodoDias);
+          // Mapear medição por posição ordinal: medição 1 -> 1º período, medição 2 -> 2º período, etc.
+          const periodosOrdenados = [...itemCronograma.periodos].sort((a, b) => a.periodo - b.periodo);
+          const periodoIndex = session.sequencia - 1; // sequência 1 = índice 0
+          const periodo = periodoIndex < periodosOrdenados.length ? periodosOrdenados[periodoIndex] : null;
           const previsto = periodo?.valor || 0;
           
           const desvio = executado - previsto;
@@ -316,33 +314,30 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         if (isAcumulado) {
           // Modo Acumulado: mostrar evolução APENAS até o período da medição selecionada
           
-          // Calcular o período máximo com base na medição selecionada (sequência * 30 dias)
-          const periodoMaximo = medicaoComp.sequencia * 30;
-          
-          // Descobrir todos os períodos do cronograma ATÉ o período máximo
+          // Descobrir todos os períodos únicos do cronograma, ordenados
           const periodosUnicos = new Set<number>();
           cronograma.items.forEach(item => {
             item.periodos.forEach(p => {
-              if (p.periodo <= periodoMaximo) {
-                periodosUnicos.add(p.periodo);
-              }
+              periodosUnicos.add(p.periodo);
             });
           });
-          const todosPeriodos = Array.from(periodosUnicos).sort((a, b) => a - b);
+          const todosPeriodosOrdenados = Array.from(periodosUnicos).sort((a, b) => a - b);
+          
+          // Filtrar apenas os períodos até a medição selecionada (por posição ordinal)
+          const todosPeriodos = todosPeriodosOrdenados.slice(0, medicaoComp.sequencia);
           
           const dadosExecutado: number[] = [0]; // Começar do zero
           const dadosPrevisto: number[] = [0]; // Começar do zero
           const labels: string[] = ['0 dias']; // Ponto inicial
           
-          // Para cada período do cronograma ATÉ a medição selecionada
-          todosPeriodos.forEach((dias) => {
+          // Para cada período do cronograma até a medição selecionada
+          todosPeriodos.forEach((dias, index) => {
             labels.push(`${dias} dias`);
             
-            // Calcular a sequência correspondente a este período
-            const sequenciaPeriodo = dias / 30;
+            // A sequência correspondente é index + 1 (posição ordinal)
+            const sequenciaPeriodo = index + 1;
             
-            // Usar o valor acumulado diretamente das medições (coluna TOTAL)
-            // Buscar a medição correspondente a este período
+            // Buscar a medição correspondente a esta posição
             const medicaoAtePeriodo = medicoesComparativo.find(m => m.sequencia === sequenciaPeriodo);
             const execAcumulado = medicaoAtePeriodo?.valorTotalAcumulado || 0;
             
