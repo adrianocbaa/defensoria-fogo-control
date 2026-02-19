@@ -3344,6 +3344,14 @@ export type Database = {
           zoning: string
         }[]
       }
+      get_rdo_progress_batch: {
+        Args: { p_obra_ids: string[] }
+        Returns: {
+          obra_id: string
+          progress: number
+        }[]
+      }
+      get_rdo_progress_by_obra: { Args: { p_obra_id: string }; Returns: number }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
       has_role: {
         Args: {

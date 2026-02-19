@@ -127,16 +127,10 @@ export function AdminObras() {
       // Calcular valores e progressos em paralelo para TODAS as obras de uma vez
       const obraIds = sortedObras.map(o => o.id);
       
-      // Buscar todos os dados de uma vez
-      const [orcamentoData, aditivoData, medicaoData, rdoActivitiesData, orcamentoForRdoData, orcamentoFinanceiroData] = await Promise.all([
-        // Buscar orcamento_items de todas as obras (hierarquia para compatibilidade)
-        supabase
-          .from('orcamento_items_hierarquia')
-          .select('obra_id, valor_total, is_macro, origem')
-          .in('obra_id', obraIds)
-          .or('is_macro.is.null,is_macro.eq.false')
-          .neq('origem', 'extracontratual')
-          .limit(10000),
+      // Buscar dados financeiros e progresso RDO via RPC em paralelo
+      const [rdoProgressData, aditivoData, medicaoData, orcamentoFinanceiroData] = await Promise.all([
+        // Calcular progresso RDO via função do banco (evita limite de 1000 linhas)
+        supabase.rpc('get_rdo_progress_batch', { p_obra_ids: obraIds }),
         
         // Buscar aditivo_sessions bloqueadas de todas as obras
         supabase
@@ -151,24 +145,6 @@ export function AdminObras() {
           .select('id, obra_id, sequencia')
           .in('obra_id', obraIds),
         
-        // Buscar rdo_activities de todas as obras (para Andamento da Obra)
-        supabase
-          .from('rdo_activities')
-          .select('obra_id, orcamento_item_id, executado_dia')
-          .in('obra_id', obraIds)
-          .not('orcamento_item_id', 'is', null)
-          .limit(10000),
-        
-        // Buscar orcamento_items para cálculo do RDO (excluindo administração)
-        supabase
-          .from('orcamento_items_hierarquia')
-          .select('id, obra_id, item, quantidade, eh_administracao_local, is_macro, origem')
-          .in('obra_id', obraIds)
-          .eq('eh_administracao_local', false)
-          .or('is_macro.is.null,is_macro.eq.false')
-          .neq('origem', 'extracontratual')
-          .limit(10000),
-        
         // Buscar orcamento_items para cálculo financeiro (com total_contrato e item para filtro de folha)
         supabase
           .from('orcamento_items')
@@ -178,8 +154,8 @@ export function AdminObras() {
       ]);
 
       // Buscar aditivo_items e medicao_items se houver sessões
-      let aditivoItemsData = { data: [], error: null };
-      let medicaoItemsData = { data: [], error: null };
+      let aditivoItemsData: any = { data: [], error: null };
+      let medicaoItemsData: any = { data: [], error: null };
       
       if (aditivoData.data && aditivoData.data.length > 0) {
         const aditivoSessionIds = aditivoData.data.map(s => s.id);
@@ -197,6 +173,14 @@ export function AdminObras() {
           .in('medicao_id', medicaoSessionIds);
       }
 
+      // Mapear progresso RDO retornado pelo banco
+      const rdoProgressMap = new Map<string, number>();
+      if (rdoProgressData.data) {
+        (rdoProgressData.data as any[]).forEach((row: any) => {
+          rdoProgressMap.set(row.obra_id, Number(row.progress));
+        });
+      }
+
       // Processar dados para cada obra
       const valores: Record<string, number> = {};
       const progressos: Record<string, number> = {};
@@ -204,65 +188,9 @@ export function AdminObras() {
       const marcos: Record<string, MedicaoMarco[]> = {};
       
       for (const obra of sortedObras) {
-        // Calcular Andamento da Obra (baseado em RDO) - considerando aditivos
-        const obraOrcamentoRdo = orcamentoForRdoData.data?.filter((item: any) => item.obra_id === obra.id) || [];
-        const obraRdoActivities = rdoActivitiesData.data?.filter(a => a.obra_id === obra.id) || [];
-        
-        if (obraOrcamentoRdo.length > 0 && obraRdoActivities.length > 0) {
-          // Buscar aditivos bloqueados desta obra e calcular ajustes por item_code
-          const obraAditivoSessions = aditivoData.data?.filter(s => s.obra_id === obra.id) || [];
-          const aditivoSessionIds = obraAditivoSessions.map(s => s.id);
-          const obraAditivoItems = aditivoItemsData.data?.filter((item: any) => 
-            aditivoSessionIds.includes(item.aditivo_id)
-          ) || [];
-          
-          // Acumular ajustes por item_code
-          const aditivoAjustes = new Map<string, number>();
-          obraAditivoItems.forEach((item: any) => {
-            const code = (item.item_code || '').trim();
-            const current = aditivoAjustes.get(code) || 0;
-            aditivoAjustes.set(code, current + (item.qtd || 0));
-          });
-          
-          // Criar mapa de quantidade AJUSTADA por item do orçamento
-          const orcamentoMap = new Map<string, { quantidade: number; itemCode: string }>();
-          obraOrcamentoRdo.forEach((item: any) => {
-            const ajuste = aditivoAjustes.get(item.item) || 0;
-            const quantidadeAjustada = Math.max(0, item.quantidade + ajuste);
-            orcamentoMap.set(item.id, { quantidade: quantidadeAjustada, itemCode: item.item });
-          });
-          
-          // Agrupar execução por item
-          const executadoMap = new Map<string, number>();
-          obraRdoActivities.forEach(activity => {
-            const itemId = activity.orcamento_item_id;
-            if (orcamentoMap.has(itemId)) {
-              const current = executadoMap.get(itemId) || 0;
-              executadoMap.set(itemId, current + (activity.executado_dia || 0));
-            }
-          });
-          
-          // Calcular percentual médio ponderado usando quantidades ajustadas
-          let somaPercentuais = 0;
-          let somaQuantidades = 0;
-          
-          orcamentoMap.forEach((itemData, itemId) => {
-            const quantidadeAjustada = itemData.quantidade;
-            const executadoAcumulado = executadoMap.get(itemId) || 0;
-            
-            if (quantidadeAjustada > 0) {
-              // Limitar executado ao máximo permitido pela quantidade ajustada
-              const executadoLimitado = Math.min(executadoAcumulado, quantidadeAjustada);
-              const percentual = (executadoLimitado / quantidadeAjustada) * 100;
-              somaPercentuais += percentual * quantidadeAjustada;
-              somaQuantidades += quantidadeAjustada;
-            }
-          });
-          
-          rdoProgressos[obra.id] = somaQuantidades > 0 ? somaPercentuais / somaQuantidades : null;
-        } else {
-          rdoProgressos[obra.id] = null;
-        }
+        // Andamento da Obra (RDO) - calculado pelo banco via RPC
+        const rdoProgress = rdoProgressMap.get(obra.id);
+        rdoProgressos[obra.id] = rdoProgress !== undefined ? rdoProgress : null;
         
         // Calcular valor da obra e Valor Pago (medição) - usando mesma lógica de useMedicoesFinanceiro
         const obraOrcamentoFinanceiro = orcamentoFinanceiroData.data?.filter((item: any) => item.obra_id === obra.id) || [];
