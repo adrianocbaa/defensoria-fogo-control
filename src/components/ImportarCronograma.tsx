@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { readExcelFile } from '@/lib/excelUtils';
 import { useCronogramaFinanceiro, CronogramaFinanceiro, CronogramaItem } from '@/hooks/useCronogramaFinanceiro';
 
 interface ImportarCronogramaProps {
@@ -33,9 +33,7 @@ export function ImportarCronograma({ obraId, onSuccess }: ImportarCronogramaProp
 
     try {
       const data = await selectedFile.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      const jsonData = await readExcelFile(data);
 
       // Função para parsear valores numéricos mantendo fidelidade TOTAL à planilha
       // NÃO aplicar truncamento ou arredondamento - usar valor exato do Excel

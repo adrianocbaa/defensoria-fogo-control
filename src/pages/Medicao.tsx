@@ -34,8 +34,8 @@ import { ResumoContrato } from '@/components/ResumoContrato';
 import { ObraAuditLogs } from '@/components/ObraAuditLogs';
 import { ExportMedicaoDialog } from '@/components/ExportMedicaoDialog';
 import { useObraActionLogs } from '@/hooks/useObraActionLogs';
-import * as XLSX from 'xlsx';
-import html2pdf from 'html2pdf.js';
+import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
+import { generatePdfFromElement } from '@/lib/pdfExport';
 
 interface Obra {
   id: string;
@@ -1408,7 +1408,7 @@ const criarNovaMedicao = async () => {
 
   // Confirmação do modal de Novo Aditivo
   // Função para exportar planilha de medição em XLS com seleção de medições
-  const handleExportarPlanilhaXLS = (selectedMedicoes: number[], apenasItensAcima: boolean) => {
+  const handleExportarPlanilhaXLS = async (selectedMedicoes: number[], apenasItensAcima: boolean) => {
     if (!obra || selectedMedicoes.length === 0) {
       toast.error('Selecione ao menos uma medição para exportar');
       return;
@@ -1596,91 +1596,47 @@ const criarNovaMedicao = async () => {
 
       exportData.push(totalRow);
 
-      // Criar workbook e worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
+      // Criar dados como array de arrays para excelUtils
+      const exportRows: any[][] = exportData.map(row => Object.values(row));
 
-      // Calcular o número de colunas
-      let numCols = 7; // Planilha Orçamentária base
-      numCols += aditivosBloqueados.length * 3; // 3 colunas por aditivo
-      numCols += 1; // Total Contrato
-      numCols += medicoesParaExportar.length * 3; // 3 colunas por medição
-      numCols += 3; // Acumulada
-
-      // Definir o range da planilha
-      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-      
       // Ajustar largura das colunas
-      const colWidths = [
-        { wch: 8 },  // Item
-        { wch: 12 }, // Código
-        { wch: 40 }, // Descrição
-        { wch: 6 },  // Und
-        { wch: 10 }, // Quant.
-        { wch: 12 }, // Valor unit
-        { wch: 12 }, // Total
-      ];
-
-      // Adicionar larguras para aditivos
-      aditivosBloqueados.forEach(() => {
-        colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 });
-      });
-
-      // Largura para TOTAL CONTRATO
-      colWidths.push({ wch: 14 });
-      
-      // Larguras para cada medição
-      medicoesParaExportar.forEach(() => {
-        colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 });
-      });
-      
-      // Larguras para ACUMULADA
-      colWidths.push({ wch: 10 }, { wch: 8 }, { wch: 12 });
-
-      ws['!cols'] = colWidths;
+      const colWidthValues = [8, 12, 40, 6, 10, 12, 12];
+      aditivosBloqueados.forEach(() => { colWidthValues.push(10, 8, 12); });
+      colWidthValues.push(14);
+      medicoesParaExportar.forEach(() => { colWidthValues.push(10, 8, 12); });
+      colWidthValues.push(10, 8, 12);
 
       // Definir merges para o cabeçalho
       const merges: any[] = [];
-      
-      // Mesclar "Planilha Orçamentária" (colunas 0-6)
       merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
-      
       let currentCol = 7;
-      
-      // Mesclar cada aditivo (3 colunas cada)
       aditivosBloqueados.forEach(() => {
         merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
         currentCol += 3;
       });
-      
-      // "TOTAL CONTRATO" - mesclar linha 0-1
       merges.push({ s: { r: 0, c: currentCol }, e: { r: 1, c: currentCol } });
       currentCol += 1;
-      
-      // Mesclar cada medição (3 colunas)
       medicoesParaExportar.forEach(() => {
         merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
         currentCol += 3;
       });
-      
-      // Mesclar "ACUMULADA" (3 colunas)
       merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
 
-      ws['!merges'] = merges;
-
-      // Adicionar worksheet ao workbook
+      // Gerar e fazer download do arquivo
       const nomeAba = medicoesParaExportar.length === 1 
         ? `Medição ${medicoesParaExportar[0].id}`
         : `Medições ${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
-      XLSX.utils.book_append_sheet(wb, ws, nomeAba.substring(0, 31));
-
-      // Gerar e fazer download do arquivo
       const tipoItens = apenasItensAcima ? 'Macros' : 'Completa';
       const medicoesLabel = medicoesParaExportar.length === 1 
         ? `Med${medicoesParaExportar[0].id}` 
         : `Med${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
       const fileName = `Medicao_${medicoesLabel}_${tipoItens}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+
+      await writeExcelFile(exportData, fileName, {
+        sheetName: nomeAba.substring(0, 31),
+        columns: colWidthValues.map(w => ({ width: w })),
+        merges,
+      });
 
       toast.success(`Planilha exportada com ${medicoesParaExportar.length} medição(ões)!`);
     } catch (error) {
@@ -2070,13 +2026,13 @@ const criarNovaMedicao = async () => {
         jsPDF: { 
           unit: 'mm', 
           format: 'a4', 
-          orientation: 'landscape',
+          orientation: 'landscape' as const,
           compress: true
         },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      html2pdf().set(opt).from(tempDiv).save().then(() => {
+      generatePdfFromElement(tempDiv, opt).then(() => {
         document.body.removeChild(tempDiv);
         toast.success('PDF exportado com sucesso!');
       }).catch((error: any) => {
@@ -2205,17 +2161,14 @@ const criarNovaMedicao = async () => {
 
     try {
       // 2) Ler planilha (.xlsx ou .csv)
-      let workbook: XLSX.WorkBook;
+      let rows: any[][];
       if (file.name.toLowerCase().endsWith('.csv')) {
         const text = await file.text();
-        workbook = XLSX.read(text, { type: 'string' });
+        rows = await readCsvAsExcel(text);
       } else {
         const buf = await file.arrayBuffer();
-        workbook = XLSX.read(buf, { type: 'array' });
+        rows = await readExcelFile(buf);
       }
-      const sheetName = workbook.SheetNames[0];
-      const ws = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
       if (!rows || rows.length < 2) throw new Error('Planilha vazia');
 
       // 3) Detectar se primeira linha é cabeçalho ou dados
@@ -2558,17 +2511,14 @@ const criarNovaMedicao = async () => {
       if (deleteOrcamentoItemsErr) throw deleteOrcamentoItemsErr;
 
       // 3) Ler planilha
-      let workbook: XLSX.WorkBook;
+      let rows: any[][];
       if (file.name.toLowerCase().endsWith('.csv')) {
         const text = await file.text();
-        workbook = XLSX.read(text, { type: 'string' });
+        rows = await readCsvAsExcel(text);
       } else {
         const buf = await file.arrayBuffer();
-        workbook = XLSX.read(buf, { type: 'array' });
+        rows = await readExcelFile(buf);
       }
-      const sheetName = workbook.SheetNames[0];
-      const ws = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
       if (!rows || rows.length < 2) throw new Error('Planilha vazia');
 
       // 4) Detectar cabeçalhos (mesma lógica de confirmarNovoAditivo)

@@ -11,7 +11,7 @@ import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera, Fi
 import { exportarWord } from './RelatorioWordExport';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import html2pdf from 'html2pdf.js';
+import { generatePdfFromElement } from '@/lib/pdfExport';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
@@ -1563,18 +1563,18 @@ export function RelatorioMedicaoModal({
           useCORS: true,
           letterRendering: true,
           allowTaint: true,
-          width: 794, // A4 width in pixels at 96 DPI
+          width: 794,
           windowWidth: 794
         },
         jsPDF: { 
           unit: 'mm', 
           format: 'a4', 
-          orientation: 'portrait'
+          orientation: 'portrait' as const
         },
         pagebreak: { mode: 'css', before: '.page-break', avoid: ['table', 'tr', '.avoid-break'] }
       };
 
-      await html2pdf().set(opt).from(tempDiv).save();
+      await generatePdfFromElement(tempDiv, opt);
       document.body.removeChild(tempDiv);
       toast.success('Relatório gerado com sucesso!');
       onOpenChange(false);

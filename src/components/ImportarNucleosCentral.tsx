@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FileSpreadsheet, Upload, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import * as XLSX from 'xlsx';
+import { readExcelFile } from '@/lib/excelUtils';
 
 interface NucleoImportado {
   nome: string;
@@ -55,10 +55,7 @@ export function ImportarNucleosCentral({ onImportar, onFechar }: ImportarNucleos
 
     try {
       const data = await arquivo.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      const jsonData = await readExcelFile(data);
 
       if (jsonData.length < 2) {
         throw new Error('A planilha está vazia ou não contém dados');

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
-import * as XLSX from 'xlsx'
+import { readExcelFile } from '@/lib/excelUtils'
 
 interface Item {
   id: number;
@@ -70,14 +70,7 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
 
     try {
       const data = await arquivo.arrayBuffer()
-      const workbook = XLSX.read(data, { type: 'array' })
-      
-      // Pegar a primeira planilha
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-      
-      // Converter para JSON
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
+      const jsonData = await readExcelFile(data)
       
       // Encontrar a linha de cabeçalho e mapear colunas dinamicamente
       let headerRowIndex = -1
