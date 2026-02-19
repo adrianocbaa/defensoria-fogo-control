@@ -14,8 +14,8 @@ import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Download, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { writeExcelFromArrays } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
-import * as XLSX from 'xlsx';
 
 interface RdoAtividadesReportDialogProps {
   obraId: string;
@@ -111,34 +111,20 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
       // Combinar cabeçalho e dados
       const allRows = [...headerRows, ...dataRows];
 
-      // Criar planilha Excel
-      const worksheet = XLSX.utils.aoa_to_sheet(allRows);
-
-      // Ajustar largura das colunas
-      worksheet['!cols'] = [
-        { wch: 12 },  // Data
-        { wch: 15 },  // Código
-        { wch: 60 },  // Descrição
-        { wch: 12 },  // Executado
-        { wch: 10 },  // Unidade
-      ];
-
-      // Mesclar células do cabeçalho para melhor visualização
-      worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Título
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Obra
-        { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } }, // Período
-      ];
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Atividades RDO');
-
       // Gerar nome do arquivo com nome da obra
       const obraNomeSanitizado = (obraNome || 'Obra').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
       const fileName = `Atividades_${obraNomeSanitizado}_${format(date.from, 'dd-MM-yyyy')}_a_${format(date.to, 'dd-MM-yyyy')}.xlsx`;
 
-      // Download
-      XLSX.writeFile(workbook, fileName);
+      // Exportar Excel
+      await writeExcelFromArrays(allRows, fileName, {
+        sheetName: 'Atividades RDO',
+        columnWidths: [12, 15, 60, 12, 10],
+        merges: [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+          { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+          { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } },
+        ],
+      });
 
       toast.success(`${reportData.length} atividade(s) exportada(s) com sucesso!`);
       setOpen(false);
