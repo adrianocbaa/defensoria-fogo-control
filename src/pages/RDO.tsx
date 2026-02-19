@@ -45,6 +45,7 @@ interface Obra {
   status: string;
   valor_total: number;
   data_inicio: string | null;
+  data_termino_real: string | null;
   rdo_habilitado: boolean;
 }
 
@@ -82,10 +83,14 @@ function PlaceholderSection({
   );
 }
 
-function RDOResumo({ obraStartDate, rdoHabilitado = true, canEditRdo = true, obraStatus }: { obraStartDate?: string | null; rdoHabilitado?: boolean; canEditRdo?: boolean; obraStatus?: string }) {
+function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEditRdo = true, obraStatus }: { obraStartDate?: string | null; obraTerminoReal?: string | null; rdoHabilitado?: boolean; canEditRdo?: boolean; obraStatus?: string }) {
   const { obraId } = useParams();
   const navigate = useNavigate();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  // Se a obra está concluída e tem data de término real, iniciar no mês da conclusão
+  const initialMonth = obraStatus === 'concluida' && obraTerminoReal
+    ? new Date(obraTerminoReal + 'T12:00:00')
+    : new Date();
+  const [currentMonth, setCurrentMonth] = useState(initialMonth);
 
   const { data: counts, isLoading: countsLoading } = useRdoCounts(obraId!, currentMonth);
   const { data: calendarData, isLoading: calendarLoading } = useRdoCalendar(obraId!, currentMonth);
@@ -342,7 +347,7 @@ export function RDO() {
         setLoading(true);
         const { data, error } = await supabase
           .from('obras')
-          .select('id, nome, municipio, tipo, status, valor_total, data_inicio, rdo_habilitado')
+          .select('id, nome, municipio, tipo, status, valor_total, data_inicio, data_termino_real, rdo_habilitado')
           .eq('id', obraId)
           .single();
 
@@ -497,7 +502,7 @@ export function RDO() {
         <main className="flex-1 container mx-auto py-6 px-4 lg:px-6">
           <Routes>
             <Route index element={<Navigate to="resumo" replace />} />
-            <Route path="resumo" element={<RDOResumo obraStartDate={obra.data_inicio} rdoHabilitado={obra.rdo_habilitado} canEditRdo={hasEditPermission} obraStatus={obra.status} />} />
+            <Route path="resumo" element={<RDOResumo obraStartDate={obra.data_inicio} obraTerminoReal={obra.data_termino_real} rdoHabilitado={obra.rdo_habilitado} canEditRdo={hasEditPermission} obraStatus={obra.status} />} />
             <Route path="equipe" element={<RDOEquipe />} />
             <Route path="equipamentos" element={<RDOEquipamentos />} />
             <Route path="materiais" element={<RDOMateriais />} />
