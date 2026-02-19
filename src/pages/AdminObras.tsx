@@ -480,8 +480,8 @@ export function AdminObras() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1.5 min-w-[160px]">
-                        {/* Andamento da Obra (RDO) - só mostra se tiver dados */}
-                        {obraRdoProgressos[obra.id] !== null && obraRdoProgressos[obra.id] !== undefined && (
+                        {/* Andamento da Obra (RDO) - só mostra se RDO habilitado e tiver dados */}
+                        {obra.rdo_habilitado && obraRdoProgressos[obra.id] !== null && obraRdoProgressos[obra.id] !== undefined && (
                           <div className="flex items-center gap-2">
                             <Progress 
                               value={obraRdoProgressos[obra.id] || 0} 
