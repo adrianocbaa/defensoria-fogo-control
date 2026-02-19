@@ -128,8 +128,8 @@ export function AdminObras() {
       const obraIds = sortedObras.map(o => o.id);
       
       // Buscar todos os dados de uma vez
-      const [orcamentoData, aditivoData, medicaoData, rdoActivitiesData, orcamentoForRdoData] = await Promise.all([
-        // Buscar orcamento_items de todas as obras
+      const [orcamentoData, aditivoData, medicaoData, rdoActivitiesData, orcamentoForRdoData, orcamentoFinanceiroData] = await Promise.all([
+        // Buscar orcamento_items de todas as obras (hierarquia para compatibilidade)
         supabase
           .from('orcamento_items_hierarquia')
           .select('obra_id, valor_total, is_macro, origem')
@@ -157,14 +157,20 @@ export function AdminObras() {
           .in('obra_id', obraIds)
           .not('orcamento_item_id', 'is', null),
         
-        // Buscar orcamento_items para cálculo do RDO (excluindo administração) - incluindo item para cruzar com aditivos
+        // Buscar orcamento_items para cálculo do RDO (excluindo administração)
         supabase
           .from('orcamento_items_hierarquia')
           .select('id, obra_id, item, quantidade, eh_administracao_local, is_macro, origem')
           .in('obra_id', obraIds)
           .eq('eh_administracao_local', false)
           .or('is_macro.is.null,is_macro.eq.false')
-          .neq('origem', 'extracontratual')
+          .neq('origem', 'extracontratual'),
+        
+        // Buscar orcamento_items para cálculo financeiro (com total_contrato e item para filtro de folha)
+        supabase
+          .from('orcamento_items')
+          .select('obra_id, total_contrato, item')
+          .in('obra_id', obraIds)
       ]);
 
       // Buscar aditivo_items e medicao_items se houver sessões
@@ -254,21 +260,33 @@ export function AdminObras() {
           rdoProgressos[obra.id] = null;
         }
         
-        // Calcular valor da obra e Valor Pago (medição)
-        const obraOrcamento = orcamentoData.data?.filter(item => item.obra_id === obra.id) || [];
+        // Calcular valor da obra e Valor Pago (medição) - usando mesma lógica de useMedicoesFinanceiro
+        const obraOrcamentoFinanceiro = orcamentoFinanceiroData.data?.filter((item: any) => item.obra_id === obra.id) || [];
         
-        if (obraOrcamento.length > 0) {
-          const valorInicial = obraOrcamento.reduce((sum, item) => sum + Number(item.valor_total || 0), 0);
-          
+        // Função para verificar se é item folha (não tem filhos)
+        const ehItemFolha = (itemCode: string): boolean => {
+          const prefix = itemCode + '.';
+          return !obraOrcamentoFinanceiro.some((other: any) => other.item.startsWith(prefix));
+        };
+        
+        // Filtrar apenas itens folha e somar total_contrato
+        const totalContratoOrcamento = obraOrcamentoFinanceiro.reduce((sum: number, item: any) => {
+          if (ehItemFolha(item.item)) {
+            return sum + Number(item.total_contrato || 0);
+          }
+          return sum;
+        }, 0);
+        
+        if (totalContratoOrcamento > 0) {
           // Buscar aditivos da obra
           const obraAditivoSessions = aditivoData.data?.filter(s => s.obra_id === obra.id) || [];
           const aditivoSessionIds = obraAditivoSessions.map(s => s.id);
-          const obraAditivoItems = aditivoItemsData.data?.filter(item => 
+          const obraAditivoItems = aditivoItemsData.data?.filter((item: any) => 
             aditivoSessionIds.includes(item.aditivo_id)
           ) || [];
-          const aditivos = obraAditivoItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
+          const aditivos = obraAditivoItems.reduce((sum: number, item: any) => sum + Number(item.total || 0), 0);
           
-          valores[obra.id] = valorInicial + aditivos;
+          valores[obra.id] = totalContratoOrcamento + aditivos;
           
           // Calcular progresso e marcos
           const obraMedicaoSessions = (medicaoData.data?.filter(s => s.obra_id === obra.id) || [])
@@ -277,7 +295,7 @@ export function AdminObras() {
           const obraMedicaoItems = medicaoItemsData.data?.filter((item: any) => 
             medicaoSessionIds.includes(item.medicao_id)
           ) || [];
-          const valorAcumulado = obraMedicaoItems.reduce((sum, item: any) => sum + Number(item.total || 0), 0);
+          const valorAcumulado = obraMedicaoItems.reduce((sum: number, item: any) => sum + Number(item.total || 0), 0);
           
           progressos[obra.id] = valores[obra.id] > 0 ? Math.min((valorAcumulado / valores[obra.id]) * 100, 100) : 0;
           
