@@ -238,9 +238,23 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const handleExecutadoChange = (orcamentoItemId: string, activityId: string, value: number) => {
-    setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: value }));
+    // Calcular saldo disponível para impedir que ultrapasse o limite contratual
+    const item = orcamentoItems.find(i => i.id === orcamentoItemId);
+    const acumulado = acumulados.find(a => a.orcamento_item_id === orcamentoItemId);
+    const executadoAcumulado = acumulado?.executado_acumulado || 0;
+    const ajusteAditivo = item ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+    const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
+    const saldoDisponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
+
+    // Bloquear valor que ultrapasse o saldo disponível
+    const clampedValue = Math.min(value, saldoDisponivel);
+    if (value > saldoDisponivel && saldoDisponivel >= 0) {
+      toast.warning(`Quantidade máxima permitida: ${saldoDisponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. O valor foi ajustado automaticamente.`);
+    }
+
+    setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: clampedValue }));
     // Agendar auto-save
-    pendingUpdatesRef.current.set(orcamentoItemId, { activityId, value });
+    pendingUpdatesRef.current.set(orcamentoItemId, { activityId, value: clampedValue });
   };
 
   // Auto-save com debounce
@@ -270,12 +284,25 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   }, [localExecutado]);
 
   const handleExecutadoBlur = (orcamentoItemId: string, activityId: string, value: number) => {
+    // Recalcular saldo no blur também para garantir consistência
+    const item = orcamentoItems.find(i => i.id === orcamentoItemId);
+    const acumulado = acumulados.find(a => a.orcamento_item_id === orcamentoItemId);
+    const executadoAcumulado = acumulado?.executado_acumulado || 0;
+    const ajusteAditivo = item ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+    const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
+    const saldoDisponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
+    const clampedValue = Math.min(value, saldoDisponivel);
+
+    if (clampedValue !== value) {
+      setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: clampedValue }));
+    }
+
     // Salvar imediatamente no blur (caso o usuário saia do campo)
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     pendingUpdatesRef.current.delete(orcamentoItemId);
-    updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
+    updateExecutadoMutation.mutate({ activityId, value: clampedValue, orcamentoItemId });
   };
 
   // Salvar pendências programaticamente (chamado pelo botão "Salvar")
