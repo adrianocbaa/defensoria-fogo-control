@@ -1,0 +1,1 @@
+DELETE FROM rdo_activities WHERE id = '85bf22ed-8ff7-4c8e-965e-16ba4a86fb3a';
