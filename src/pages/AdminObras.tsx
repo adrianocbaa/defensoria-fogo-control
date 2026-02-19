@@ -135,7 +135,8 @@ export function AdminObras() {
           .select('obra_id, valor_total, is_macro, origem')
           .in('obra_id', obraIds)
           .or('is_macro.is.null,is_macro.eq.false')
-          .neq('origem', 'extracontratual'),
+          .neq('origem', 'extracontratual')
+          .limit(10000),
         
         // Buscar aditivo_sessions bloqueadas de todas as obras
         supabase
@@ -155,7 +156,8 @@ export function AdminObras() {
           .from('rdo_activities')
           .select('obra_id, orcamento_item_id, executado_dia')
           .in('obra_id', obraIds)
-          .not('orcamento_item_id', 'is', null),
+          .not('orcamento_item_id', 'is', null)
+          .limit(10000),
         
         // Buscar orcamento_items para cálculo do RDO (excluindo administração)
         supabase
@@ -164,13 +166,15 @@ export function AdminObras() {
           .in('obra_id', obraIds)
           .eq('eh_administracao_local', false)
           .or('is_macro.is.null,is_macro.eq.false')
-          .neq('origem', 'extracontratual'),
+          .neq('origem', 'extracontratual')
+          .limit(10000),
         
         // Buscar orcamento_items para cálculo financeiro (com total_contrato e item para filtro de folha)
         supabase
           .from('orcamento_items')
           .select('obra_id, total_contrato, item')
           .in('obra_id', obraIds)
+          .limit(10000)
       ]);
 
       // Buscar aditivo_items e medicao_items se houver sessões
