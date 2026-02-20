@@ -91,10 +91,10 @@ export default function PublicPreventivosDetails() {
     try {
       setLoading(true);
 
-      // Buscar informações básicas do núcleo da tabela nuclei
+      // Buscar informações básicas do núcleo via view pública (sem dados sensíveis)
       const { data: basicData, error: basicError } = await supabase
-        .from('nuclei')
-        .select('id, name, address, city, contact_phone, contact_email')
+        .from('nuclei_public')
+        .select('id, name, address, city, fire_department_license_valid_until, fire_department_license_document_url')
         .eq('id', id)
         .maybeSingle();
 
@@ -106,20 +106,14 @@ export default function PublicPreventivosDetails() {
           nome: basicData.name,
           endereco: basicData.address,
           cidade: basicData.city,
-          telefones: basicData.contact_phone,
-          email: basicData.contact_email
+          telefones: null,
+          email: null
+        });
+        setDadosPreventivos({
+          fire_department_license_valid_until: basicData.fire_department_license_valid_until,
+          fire_department_license_document_url: basicData.fire_department_license_document_url
         });
       }
-
-      // Buscar dados específicos de preventivos (nuclei)
-      const { data: prevData, error: prevError } = await supabase
-        .from('nuclei')
-        .select('fire_department_license_valid_until, fire_department_license_document_url')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (prevError && prevError.code !== 'PGRST116') throw prevError;
-      setDadosPreventivos(prevData);
 
       // Buscar extintores
       const { data: extData, error: extError } = await supabase
