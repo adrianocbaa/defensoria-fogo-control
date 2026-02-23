@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NucleoCentral } from '@/hooks/useNucleosCentral';
@@ -65,7 +67,7 @@ interface MapViewPreventivosProps {
 
 export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: MapViewPreventivosProps) {
   const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
+  const hasFittedBounds = useRef(false);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [nucleusStatus, setNucleusStatus] = useState<Record<string, NucleusStatus>>({});
@@ -160,74 +162,25 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
     }
   }, [nucleos]);
 
+  // Fit bounds once when nucleos are loaded
   useEffect(() => {
-    const initMap = () => {
-      if (mapRef.current) return;
-      const container = document.getElementById('map-preventivos');
-      if (!container) return;
-
-      const map = L.map(container as HTMLElement, {
-        center: [-15.601411, -56.097892],
-        zoom: 7,
-        zoomControl: true,
-      });
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-      }).addTo(map);
-
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 0);
-
-      mapRef.current = map;
-    };
-
-    initMap();
-    const t = setTimeout(initMap, 150);
-
-    return () => {
-      clearTimeout(t);
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = [];
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = [];
-
+    if (!mapRef.current || hasFittedBounds.current) return;
     const validNucleos = nucleos.filter((n) => n.lat && n.lng);
-
     if (validNucleos.length === 0) return;
 
-    validNucleos.forEach((nucleus) => {
-      const status = nucleusStatus[nucleus.id];
-      const pinColor = status?.pinColor || 'green';
-      const icon = createPinIcon(pinColor);
+    const bounds = L.latLngBounds(validNucleos.map((n) => [n.lat!, n.lng!]));
+    mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+    hasFittedBounds.current = true;
+  }, [nucleos, nucleusStatus]);
 
-      const marker = L.marker([nucleus.lat!, nucleus.lng!], { icon })
-        .addTo(mapRef.current!);
-
-      marker.on('click', () => {
-        setSelectedNucleus(nucleus);
-        if (isMobile) {
-          setShowMobileModal(true);
-        }
-      });
-
-      markersRef.current.push(marker);
-    });
-
-    if (validNucleos.length > 0) {
-      const bounds = L.latLngBounds(
-        validNucleos.map((n) => [n.lat!, n.lng!])
-      );
-      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+  const handleMarkerClick = useCallback((nucleus: NucleoCentral) => {
+    setSelectedNucleus(nucleus);
+    if (isMobile) {
+      setShowMobileModal(true);
     }
-  }, [nucleos, isMobile, nucleusStatus]);
+  }, [isMobile]);
+
+  const matogrossoCenter: [number, number] = [-15.601411, -56.097892];
 
   const NucleusDetailsContent = ({ nucleus }: { nucleus: NucleoCentral }) => {
     const status = nucleusStatus[nucleus.id];
@@ -339,9 +292,104 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
     );
   };
 
+  const validNucleos = nucleos.filter((n) => n.lat && n.lng);
+
   return (
     <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
-      <div id="map-preventivos" className="absolute inset-0" />
+      <MapContainer
+        center={matogrossoCenter}
+        zoom={7}
+        className="absolute inset-0 h-full w-full"
+        ref={mapRef}
+        zoomControl={true}
+        scrollWheelZoom={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        <MarkerClusterGroup
+          chunkedLoading
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+          zoomToBoundsOnClick={true}
+          maxClusterRadius={50}
+          iconCreateFunction={(cluster) => {
+            const count = cluster.getChildCount();
+            let size = 'small';
+            if (count >= 10) size = 'large';
+            else if (count >= 5) size = 'medium';
+
+            return L.divIcon({
+              html: `<div class="cluster-marker-prev cluster-prev-${size}"><span>${count}</span></div>`,
+              className: 'custom-cluster-icon-prev',
+              iconSize: size === 'large' ? [50, 50] : size === 'medium' ? [40, 40] : [30, 30],
+            });
+          }}
+        >
+          {validNucleos.map((nucleus) => {
+            const status = nucleusStatus[nucleus.id];
+            const pinColor = status?.pinColor || 'green';
+            const icon = createPinIcon(pinColor);
+
+            return (
+              <Marker
+                key={nucleus.id}
+                position={[nucleus.lat!, nucleus.lng!]}
+                icon={icon}
+                eventHandlers={{
+                  click: () => handleMarkerClick(nucleus),
+                }}
+              >
+                <Tooltip
+                  permanent={false}
+                  direction="top"
+                  offset={[0, -40]}
+                  opacity={0.95}
+                  className="prev-tooltip"
+                >
+                  <div className="p-2 min-w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <h3 className="font-semibold text-sm mb-1 text-gray-900 truncate">{nucleus.nome}</h3>
+                    <p className="text-xs text-gray-500">{nucleus.cidade}</p>
+                    {status && (
+                      <div className="mt-1 text-xs">
+                        <span className={`font-medium ${pinColor === 'green' ? 'text-green-600' : pinColor === 'orange' ? 'text-amber-600' : 'text-red-600'}`}>
+                          {pinColor === 'green' ? '✅ Regularizado' : pinColor === 'orange' ? '⚠️ Atenção' : '🔴 Irregular'}
+                        </span>
+                      </div>
+                    )}
+                    <p className="mt-1 text-xs text-gray-400">Clique para detalhes</p>
+                  </div>
+                </Tooltip>
+              </Marker>
+            );
+          })}
+        </MarkerClusterGroup>
+      </MapContainer>
+
+      {/* Cluster styles */}
+      <style>{`
+        .custom-cluster-icon-prev { background: transparent !important; border: none !important; }
+        .cluster-marker-prev {
+          background: rgba(59, 130, 246, 0.8);
+          border: 3px solid white;
+          border-radius: 50%;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          transition: all 0.2s ease;
+        }
+        .cluster-marker-prev:hover { background: rgba(59, 130, 246, 1); transform: scale(1.1); }
+        .cluster-prev-small { width: 30px; height: 30px; font-size: 12px; }
+        .cluster-prev-medium { width: 40px; height: 40px; font-size: 14px; }
+        .cluster-prev-large { width: 50px; height: 50px; font-size: 16px; }
+        .prev-tooltip .leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+        .prev-tooltip .leaflet-tooltip:before { display: none !important; }
+      `}</style>
 
       {/* Desktop Sidebar */}
       {!isMobile && selectedNucleus && (
