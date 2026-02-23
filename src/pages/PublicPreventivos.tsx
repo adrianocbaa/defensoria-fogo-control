@@ -8,9 +8,10 @@ import { normalizeText } from '@/lib/utils';
 import { 
   Search, 
   Building2,
-  Shield
+  CheckCircle,
+  AlertTriangle
 } from 'lucide-react';
-import { MapViewPreventivos } from '@/components/MapViewPreventivos';
+import { MapViewPreventivos, PreventivosStatusSummary } from '@/components/MapViewPreventivos';
 
 interface NucleusPreventivos {
   id: string;
@@ -30,6 +31,7 @@ const PublicPreventivos = () => {
   const [nucleos, setNucleos] = useState<NucleusPreventivos[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusSummary, setStatusSummary] = useState<PreventivosStatusSummary>({ regularizados: 0, atencao: 0, urgente: 0 });
 
   useEffect(() => {
     const fetchNucleos = async () => {
@@ -114,18 +116,18 @@ const PublicPreventivos = () => {
 
           <div className="bg-card rounded-lg border p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Shield className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium text-muted-foreground">Com Prevenção</span>
+              <CheckCircle className="h-5 w-5 text-success" />
+              <span className="text-sm font-medium text-muted-foreground">Regularizados</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
+            <div className="text-2xl font-bold text-foreground">{statusSummary.regularizados}</div>
           </div>
 
           <div className="bg-card rounded-lg border p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Search className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">Busca Ativa</span>
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <span className="text-sm font-medium text-muted-foreground">Irregulares</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{filteredNucleos.length}</div>
+            <div className="text-2xl font-bold text-foreground">{statusSummary.atencao + statusSummary.urgente}</div>
           </div>
         </div>
 
@@ -150,7 +152,7 @@ const PublicPreventivos = () => {
         </div>
 
         {/* Mapa dos Núcleos */}
-        {!loading && <MapViewPreventivos nucleos={filteredNucleos} onViewDetails={(id) => navigate(`/public/preventivos/${id}`)} />}
+        {!loading && <MapViewPreventivos nucleos={filteredNucleos} onViewDetails={(id) => navigate(`/public/preventivos/${id}`)} onStatusLoaded={setStatusSummary} />}
 
         {/* Loading State */}
         {loading && (
