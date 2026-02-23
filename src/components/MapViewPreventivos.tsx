@@ -115,8 +115,10 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
         }).length;
 
         // Determine pin color
+        const hasNoExtinguishers = (extinguishers?.length || 0) === 0;
+        const hasNoLicense = !nucleiData?.fire_department_license_valid_until;
         let pinColor: 'green' | 'orange' | 'red' = 'green';
-        if (expiredCount > 0 || licenseStatus === 'expired') {
+        if (expiredCount > 0 || licenseStatus === 'expired' || hasNoExtinguishers || hasNoLicense) {
           pinColor = 'red';
         } else if (expiringSoonCount > 0 || licenseStatus === 'expiring-soon') {
           pinColor = 'orange';
