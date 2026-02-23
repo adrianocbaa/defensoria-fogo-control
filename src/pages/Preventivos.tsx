@@ -12,16 +12,17 @@ import {
   Search, 
   Building2,
   AlertTriangle,
-  Shield
+  Shield,
+  CheckCircle
 } from 'lucide-react';
-import { MapViewPreventivos } from '@/components/MapViewPreventivos';
+import { MapViewPreventivos, PreventivosStatusSummary } from '@/components/MapViewPreventivos';
 
 const Preventivos = () => {
   const navigate = useNavigate();
   const { nucleos, loading } = useNucleosByModule('preventivos');
   const { canEdit } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [statusSummary, setStatusSummary] = useState<PreventivosStatusSummary>({ regularizados: 0, atencao: 0, urgente: 0 });
   const filteredNucleos = nucleos.filter(nucleo => {
     const normalizedSearchTerm = normalizeText(searchTerm);
     return normalizeText(nucleo.nome).includes(normalizedSearchTerm) ||
@@ -57,18 +58,18 @@ const Preventivos = () => {
 
           <div className="bg-card rounded-lg border p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Shield className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium text-muted-foreground">Com Prevenção</span>
+              <CheckCircle className="h-5 w-5 text-success" />
+              <span className="text-sm font-medium text-muted-foreground">Regularizados</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">{nucleos.length}</div>
+            <div className="text-2xl font-bold text-foreground">{statusSummary.regularizados}</div>
           </div>
 
           <div className="bg-card rounded-lg border p-4">
             <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
-              <span className="text-sm font-medium text-muted-foreground">Atenção</span>
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <span className="text-sm font-medium text-muted-foreground">Irregulares</span>
             </div>
-            <div className="text-2xl font-bold text-foreground">0</div>
+            <div className="text-2xl font-bold text-foreground">{statusSummary.atencao + statusSummary.urgente}</div>
           </div>
         </div>
 
@@ -93,7 +94,7 @@ const Preventivos = () => {
         </div>
 
         {/* Mapa dos Núcleos */}
-        {!loading && <MapViewPreventivos nucleos={filteredNucleos} onViewDetails={handleViewDetails} />}
+        {!loading && <MapViewPreventivos nucleos={filteredNucleos} onViewDetails={handleViewDetails} onStatusLoaded={setStatusSummary} />}
 
         {/* Empty State */}
         {filteredNucleos.length === 0 && !loading && (

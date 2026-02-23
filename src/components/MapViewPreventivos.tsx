@@ -51,12 +51,19 @@ interface NucleusStatus {
   pinColor: 'green' | 'orange' | 'red';
 }
 
+export interface PreventivosStatusSummary {
+  regularizados: number;
+  atencao: number;
+  urgente: number;
+}
+
 interface MapViewPreventivosProps {
   nucleos: NucleoCentral[];
   onViewDetails: (nucleusId: string) => void;
+  onStatusLoaded?: (summary: PreventivosStatusSummary) => void;
 }
 
-export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivosProps) {
+export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: MapViewPreventivosProps) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
@@ -136,6 +143,16 @@ export function MapViewPreventivos({ nucleos, onViewDetails }: MapViewPreventivo
       }
 
       setNucleusStatus(statusMap);
+
+      // Calculate summary
+      if (onStatusLoaded) {
+        const values = Object.values(statusMap);
+        onStatusLoaded({
+          regularizados: values.filter(s => s.pinColor === 'green').length,
+          atencao: values.filter(s => s.pinColor === 'orange').length,
+          urgente: values.filter(s => s.pinColor === 'red').length,
+        });
+      }
     };
 
     if (nucleos.length > 0) {
