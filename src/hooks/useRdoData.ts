@@ -20,6 +20,7 @@ export interface RdoCalendarDay {
   occurrence_count: number;
   photo_count: number;
   comment_count: number;
+  quantitativo_count: number; // atividades com executado_dia > 0
   fiscal_concluido_em: string | null;
   contratada_concluido_em: string | null;
   assinatura_fiscal_validado_em: string | null;
@@ -157,7 +158,7 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
       // Get counts for each report
       const enrichedReports = await Promise.all(
         reports.map(async (report) => {
-          const [activities, occurrences, photos, comments] = await Promise.all([
+          const [activities, occurrences, photos, comments, quantitativos] = await Promise.all([
             supabase
               .from('rdo_activities')
               .select('*', { count: 'exact', head: true })
@@ -175,6 +176,11 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
               .from('rdo_comments')
               .select('*', { count: 'exact', head: true })
               .eq('report_id', report.id),
+            supabase
+              .from('rdo_activities')
+              .select('*', { count: 'exact', head: true })
+              .eq('report_id', report.id)
+              .gt('executado_dia', 0),
           ]);
 
           return {
@@ -186,6 +192,7 @@ export function useRdoCalendar(obraId: string, currentMonth: Date) {
             occurrence_count: occurrences.count || 0,
             photo_count: photos.count || 0,
             comment_count: comments.count || 0,
+            quantitativo_count: quantitativos.count || 0,
             fiscal_concluido_em: report.fiscal_concluido_em,
             contratada_concluido_em: report.contratada_concluido_em,
             assinatura_fiscal_validado_em: report.assinatura_fiscal_validado_em,
