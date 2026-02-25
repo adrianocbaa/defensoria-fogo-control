@@ -295,7 +295,7 @@ export function PlanilhaTreeView({
                   type="number"
                   min="0"
                   step="0.01"
-                  max={(node.quantidadeAjustada ?? node.quantidade) - node.executadoAcumulado}
+                  max={Math.round(Math.max(0, (node.quantidadeAjustada ?? node.quantidade) - node.executadoAcumulado) * 100) / 100}
                   value={node.executadoDia}
                   onChange={(e) => onExecutadoChange(
                     node.id,
