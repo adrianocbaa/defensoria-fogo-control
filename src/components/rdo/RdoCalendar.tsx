@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, startOfDay, isAfter, isBefore, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee, FileX, XCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, PenLine, AlertTriangle, Ban, Coffee, FileX, XCircle, CheckCircle2, BarChart2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -445,6 +445,22 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                             <span className="text-[8px] bg-red-100 text-red-700 px-1 rounded">
                               {rdo.occurrence_count} ocor
                             </span>
+                          )}
+                          {/* Indicador de quantitativos inseridos pela contratada */}
+                          {rdo.quantitativo_count > 0 && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-0.5 text-[8px] bg-purple-100 text-purple-700 px-1 rounded">
+                                    <BarChart2 className="h-2 w-2" />
+                                    {rdo.quantitativo_count}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">{rdo.quantitativo_count} atividade{rdo.quantitativo_count > 1 ? 's' : ''} com quantitativo inserido pela contratada</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                           {/* Indicador de RDO reprovado anteriormente */}
                           {rdo.was_rejected && (
