@@ -44,12 +44,15 @@ export function useRdoActivitiesAcumulado(obraId: string, dataAtual: string, cur
         acumuladoMap.set(itemId, current);
       });
 
-      // Converter para array
-      const result: ActivityAcumulado[] = Array.from(acumuladoMap.entries()).map(([itemId, data]) => ({
-        orcamento_item_id: itemId,
-        executado_acumulado: data.total,
-        percentual_acumulado: data.quantidade > 0 ? (data.total / data.quantidade * 100) : 0,
-      }));
+      // Converter para array, arredondando para evitar imprecisão de ponto flutuante
+      const result: ActivityAcumulado[] = Array.from(acumuladoMap.entries()).map(([itemId, data]) => {
+        const executado = Math.round(data.total * 10000) / 10000;
+        return {
+          orcamento_item_id: itemId,
+          executado_acumulado: executado,
+          percentual_acumulado: data.quantidade > 0 ? Math.round((executado / data.quantidade * 100) * 10000) / 10000 : 0,
+        };
+      });
 
       return result;
     },
