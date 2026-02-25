@@ -370,6 +370,8 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                 const workingDaysSinceFirstMissing = firstMissingDate ? countWorkingDaysBetween(startOfDay(firstMissingDate), dayStart) : 0;
                 const isBlockedForContratada = rdoHabilitado && isContratada && isWorkingDay && firstMissingDate && workingDaysSinceFirstMissing > MAX_DIAS_SEM_RDO && !(isDayWeekend && isDayMarkedOff);
                 const isApproved = rdo?.status === 'aprovado';
+                // Assinado por ambos = fiscal E contratada assinaram
+                const isSignedByBoth = !!(rdo?.assinatura_fiscal_validado_em && rdo?.assinatura_contratada_validado_em);
 
                 return (
                   <div
@@ -378,10 +380,10 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                       "relative aspect-square border rounded-lg p-2 transition-colors",
                       isToday && "ring-2 ring-primary",
                       isDayMarkedOff && "bg-slate-100 dark:bg-slate-800/50 border-slate-300",
-                      isApproved && !isDayMarkedOff && "bg-green-100 dark:bg-green-950/30 border-green-300",
-                      !isApproved && !isDayMarkedOff && isMissingRdo && "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200",
-                      !isApproved && !isDayMarkedOff && isBlockedForContratada && "bg-red-50/50 dark:bg-red-950/20 border-red-200",
-                      !isApproved && !isDayMarkedOff && !isBlockedForContratada && "hover:bg-accent/50"
+                      (isApproved || isSignedByBoth) && !isDayMarkedOff && "bg-green-100 dark:bg-green-950/30 border-green-300",
+                      !isApproved && !isSignedByBoth && !isDayMarkedOff && isMissingRdo && "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200",
+                      !isApproved && !isSignedByBoth && !isDayMarkedOff && isBlockedForContratada && "bg-red-50/50 dark:bg-red-950/20 border-red-200",
+                      !isApproved && !isSignedByBoth && !isDayMarkedOff && !isBlockedForContratada && "hover:bg-accent/50"
                     )}
                   >
                     {/* Número do dia + indicador de alerta */}
