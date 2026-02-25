@@ -134,17 +134,21 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     setLocalExecutado({});
   }, [reportId]);
 
-  // Inicializar valores locais apenas uma vez quando as atividades carregarem
+  // Inicializar valores locais quando as atividades carregarem (ou recarregarem do servidor)
   useEffect(() => {
-    if (!isInitialized && !loadingActivities && rdoActivities.length > 0) {
+    if (!loadingActivities && rdoActivities.length > 0) {
       const initialValues: Record<string, number> = {};
       activitiesByItem.forEach((act, key) => {
         initialValues[key] = Number(act.executado_dia || 0);
       });
-      setLocalExecutado(initialValues);
-      setIsInitialized(true);
+      // Só sobrescrever se ainda não inicializou (primeira carga)
+      // ou se não há pendências no ref (ou seja, usuário não está digitando)
+      if (!isInitialized || pendingUpdatesRef.current.size === 0) {
+        setLocalExecutado(initialValues);
+        setIsInitialized(true);
+      }
     }
-  }, [activitiesByItem, isInitialized, loadingActivities, rdoActivities.length]);
+  }, [rdoActivities, loadingActivities]);
 
   const syncMutation = useMutation({
     mutationFn: async () => {
