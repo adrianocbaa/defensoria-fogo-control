@@ -244,10 +244,11 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
     const ajusteAditivo = (item && item.origem !== 'extracontratual') ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
     const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
-    const saldoDisponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
+    // Arredondar saldo para 2 casas decimais para evitar imprecisão de ponto flutuante na medição
+    const saldoDisponivel = Math.round(Math.max(0, quantidadeAjustada - executadoAcumulado) * 100) / 100;
 
     // Bloquear valor que ultrapasse o saldo disponível
-    const clampedValue = Math.min(value, saldoDisponivel);
+    const clampedValue = Math.round(Math.min(value, saldoDisponivel) * 100) / 100;
     if (value > saldoDisponivel && saldoDisponivel >= 0) {
       toast.warning(`Quantidade máxima permitida: ${saldoDisponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. O valor foi ajustado automaticamente.`);
     }
@@ -290,8 +291,8 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
     const ajusteAditivo = (item && item.origem !== 'extracontratual') ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
     const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
-    const saldoDisponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
-    const clampedValue = Math.min(value, saldoDisponivel);
+    const saldoDisponivel = Math.round(Math.max(0, quantidadeAjustada - executadoAcumulado) * 100) / 100;
+    const clampedValue = Math.round(Math.min(value, saldoDisponivel) * 100) / 100;
 
     if (clampedValue !== value) {
       setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: clampedValue }));
