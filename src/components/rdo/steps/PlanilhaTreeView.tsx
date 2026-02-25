@@ -311,7 +311,6 @@ export function PlanilhaTreeView({
                     "h-8 text-sm",
                     node.excedeuLimite && 'border-destructive focus-visible:ring-destructive'
                   )}
-                  disabled={isUpdating}
                 />
               )
             ) : isFullySuppressed ? (
