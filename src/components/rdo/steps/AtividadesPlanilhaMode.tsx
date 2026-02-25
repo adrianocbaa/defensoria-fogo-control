@@ -202,7 +202,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       const executadoAcumulado = acumulado?.executado_acumulado || 0;
       
       // Calcular ajuste de aditivos para usar quantidade ajustada
-      const ajusteAditivo = item ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+      const ajusteAditivo = (item && item.origem !== 'extracontratual') ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
       const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
       
       // Calcular progresso real: (acumulado + dia) / total ajustado * 100
@@ -242,7 +242,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     const item = orcamentoItems.find(i => i.id === orcamentoItemId);
     const acumulado = acumulados.find(a => a.orcamento_item_id === orcamentoItemId);
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
-    const ajusteAditivo = item ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+    const ajusteAditivo = (item && item.origem !== 'extracontratual') ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
     const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
     const saldoDisponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
 
@@ -288,7 +288,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     const item = orcamentoItems.find(i => i.id === orcamentoItemId);
     const acumulado = acumulados.find(a => a.orcamento_item_id === orcamentoItemId);
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
-    const ajusteAditivo = item ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+    const ajusteAditivo = (item && item.origem !== 'extracontratual') ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
     const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
     const saldoDisponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
     const clampedValue = Math.min(value, saldoDisponivel);
@@ -368,8 +368,11 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
     const executadoDia = localExecutado[item.id] ?? (activity?.executado_dia || 0);
     
-    // Calcular ajuste de aditivos (supressões são negativas, acréscimos positivos)
-    const ajusteAditivo = calcularAjusteAditivos(item.item, aditivos, codigoToItemCode);
+    // Itens extracontratuais já têm a quantidade correta do aditivo — não somar novamente.
+    // O ajuste de aditivos só se aplica a itens do contrato original (folha) com supressões/acréscimos.
+    const ajusteAditivo = item.origem === 'extracontratual'
+      ? 0
+      : calcularAjusteAditivos(item.item, aditivos, codigoToItemCode);
     
     // Quantidade ajustada = quantidade original + ajustes de aditivos
     const quantidadeAjustada = Math.max(0, item.quantidade + ajusteAditivo);
