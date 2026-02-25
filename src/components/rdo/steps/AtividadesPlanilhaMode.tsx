@@ -33,7 +33,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   }>({ open: false });
 
   const { data: orcamentoItems = [], isLoading: loadingOrcamento } = useOrcamentoItems(obraId);
-  const { data: acumulados = [], isLoading: loadingAcumulados } = useRdoActivitiesAcumulado(obraId, dataRdo);
+  const { data: acumulados = [], isLoading: loadingAcumulados } = useRdoActivitiesAcumulado(obraId, dataRdo, reportId);
   const { data: aditivos = [], isLoading: loadingAditivos } = useAditivosParaRdo(obraId);
 
   // Criar mapas para correspondência de códigos de aditivos
