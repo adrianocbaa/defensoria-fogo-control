@@ -151,40 +151,21 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
         return;
       }
 
-      // Itens que precisam ser criados (não têm atividade ainda)
-      const itemsParaCriar = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
-
-      if (itemsParaCriar.length > 0) {
-        // Inserir todos de uma vez em batch para evitar timeouts
-        const { error } = await supabase.from('rdo_activities').insert(
-          itemsParaCriar.map(item => ({
-            obra_id: obraId,
-            report_id: reportId,
-            tipo: 'planilha',
-            orcamento_item_id: item.id,
-            item_code: item.item,
-            descricao: item.descricao,
-            unidade: item.unidade,
-            quantidade_total: item.quantidade,
-            executado_dia: 0,
-            progresso: 0,
-            status: 'em_andamento',
-          }))
-        );
-        if (error) throw error;
-      }
-
-      // Atualizar quantidade_total dos que mudaram (batch por chunks de 10)
-      const itemsParaAtualizar = orcamentoItems.filter(item => {
-        const existing = activitiesByItem.get(item.id as string);
-        return existing && existing.quantidade_total !== item.quantidade;
+      // Usar edge function para evitar timeouts com muitos inserts paralelos
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rdo-sync-activities`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ reportId, obraId }),
       });
-      for (const item of itemsParaAtualizar) {
-        const existing = activitiesByItem.get(item.id as string)!;
-        await supabase
-          .from('rdo_activities')
-          .update({ quantidade_total: item.quantidade })
-          .eq('id', existing.id);
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Erro ao sincronizar');
       }
     },
     onSuccess: () => {
