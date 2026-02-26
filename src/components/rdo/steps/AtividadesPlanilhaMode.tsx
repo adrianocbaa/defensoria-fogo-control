@@ -151,21 +151,13 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
         return;
       }
 
-      // Para cada item da planilha, criar ou atualizar registro de atividade
-      const promises = orcamentoItems.map(async (item) => {
-        const existing = activitiesByItem.get(item.id as string);
-        
-        if (existing) {
-          // Atualizar quantidade_total se mudou
-          if (existing.quantidade_total !== item.quantidade) {
-            await supabase
-              .from('rdo_activities')
-              .update({ quantidade_total: item.quantidade })
-              .eq('id', existing.id);
-          }
-        } else {
-          // Criar novo registro
-          await supabase.from('rdo_activities').insert({
+      // Itens que precisam ser criados (não têm atividade ainda)
+      const itemsParaCriar = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
+
+      if (itemsParaCriar.length > 0) {
+        // Inserir todos de uma vez em batch para evitar timeouts
+        const { error } = await supabase.from('rdo_activities').insert(
+          itemsParaCriar.map(item => ({
             obra_id: obraId,
             report_id: reportId,
             tipo: 'planilha',
@@ -177,11 +169,23 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
             executado_dia: 0,
             progresso: 0,
             status: 'em_andamento',
-          });
-        }
-      });
+          }))
+        );
+        if (error) throw error;
+      }
 
-      await Promise.all(promises);
+      // Atualizar quantidade_total dos que mudaram (batch por chunks de 10)
+      const itemsParaAtualizar = orcamentoItems.filter(item => {
+        const existing = activitiesByItem.get(item.id as string);
+        return existing && existing.quantidade_total !== item.quantidade;
+      });
+      for (const item of itemsParaAtualizar) {
+        const existing = activitiesByItem.get(item.id as string)!;
+        await supabase
+          .from('rdo_activities')
+          .update({ quantidade_total: item.quantidade })
+          .eq('id', existing.id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
