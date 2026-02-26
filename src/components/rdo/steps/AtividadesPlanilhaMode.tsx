@@ -335,13 +335,14 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   }, [savePending]);
 
   // Sincronizar automaticamente quando houver itens sem atividades
+  // Dependência em activitiesByItem.size garante re-disparo após cada sync parcial
   useEffect(() => {
-    if (!reportId || loadingActivities || orcamentoItems.length === 0 || syncMutation.isPending) return;
+    if (!reportId || loadingActivities || loadingOrcamento || orcamentoItems.length === 0 || syncMutation.isPending) return;
     const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
     if (itemsSemAtividade.length > 0) {
       syncMutation.mutate();
     }
-  }, [reportId, loadingActivities, orcamentoItems.length, activitiesByItem.size]);
+  }, [reportId, loadingActivities, loadingOrcamento, orcamentoItems.length, activitiesByItem.size]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities || loadingAditivos) {
     return (
