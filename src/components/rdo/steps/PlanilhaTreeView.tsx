@@ -275,7 +275,12 @@ export function PlanilhaTreeView({
 
           {/* Executado (RDO) - apenas para MICRO */}
           <div className="w-32 flex-shrink-0">
-            {!isMacro && node.activity && !isBlockedByAdministracao && !isFullySuppressed ? (
+            {!isMacro && !isBlockedByAdministracao && !isFullySuppressed && !node.activity ? (
+              // Atividade ainda não sincronizada — mostrar indicador de carregamento
+              <div className="h-8 flex items-center justify-center text-xs text-muted-foreground animate-pulse">
+                Sincronizando...
+              </div>
+            ) : !isMacro && node.activity && !isBlockedByAdministracao && !isFullySuppressed ? (
               (() => {
                 const saldoZero = node.disponivel <= 0 && node.executadoDia === 0;
                 const bloqueado = isRdoApproved || saldoZero;
