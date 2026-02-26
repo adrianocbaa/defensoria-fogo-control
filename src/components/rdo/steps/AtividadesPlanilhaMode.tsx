@@ -374,7 +374,8 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     const totalExecutado = executadoAcumulado + executadoDia;
     const percentualExecutado = quantidadeAjustada > 0 ? (totalExecutado / quantidadeAjustada * 100) : 0;
     const disponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
-    const excedeuLimite = totalExecutado > quantidadeAjustada;
+    // Usar tolerância para evitar falso positivo por imprecisão de ponto flutuante
+    const excedeuLimite = totalExecutado > quantidadeAjustada + 0.0001;
 
     return {
       ...item,
