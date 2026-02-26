@@ -220,6 +220,11 @@ export function AssinaturasStep({
 
     setIsSaving(true);
     try {
+      // Garantir que todos os quantitativos pendentes sejam salvos ANTES de assinar
+      if ((window as any).rdoSavePending) {
+        await (window as any).rdoSavePending();
+      }
+
       const validatedAt = new Date().toISOString();
       
       // Buscar estado atual do banco para verificar se contratada já validou
@@ -346,6 +351,11 @@ export function AssinaturasStep({
 
     setIsSaving(true);
     try {
+      // Garantir que todos os quantitativos pendentes sejam salvos ANTES de assinar
+      if ((window as any).rdoSavePending) {
+        await (window as any).rdoSavePending();
+      }
+
       const validatedAt = new Date().toISOString();
       
       const fiscalJaValidou = reportData?.assinatura_fiscal_validado_em;
