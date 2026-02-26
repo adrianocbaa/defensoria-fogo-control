@@ -47,7 +47,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     return map;
   }, [orcamentoItems]);
 
-  const { data: rdoActivities = [], isLoading: loadingActivities } = useQuery({
+  const { data: rdoActivities = [], isLoading: loadingActivities, isFetching: fetchingActivities } = useQuery({
     queryKey: ['rdo-activities-planilha', reportId],
     queryFn: async () => {
       if (!reportId) return [];
@@ -337,12 +337,12 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   // Sincronizar automaticamente quando houver itens sem atividades
   // Dependência em activitiesByItem.size garante re-disparo após cada sync parcial
   useEffect(() => {
-    if (!reportId || loadingActivities || loadingOrcamento || orcamentoItems.length === 0 || syncMutation.isPending) return;
+    if (!reportId || loadingActivities || fetchingActivities || loadingOrcamento || orcamentoItems.length === 0 || syncMutation.isPending) return;
     const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
     if (itemsSemAtividade.length > 0) {
       syncMutation.mutate();
     }
-  }, [reportId, loadingActivities, loadingOrcamento, orcamentoItems.length, activitiesByItem.size]);
+  }, [reportId, loadingActivities, fetchingActivities, loadingOrcamento, orcamentoItems.length, activitiesByItem.size]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities || loadingAditivos) {
     return (
