@@ -337,21 +337,16 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   }, [savePending]);
 
   // Sincronizar automaticamente quando houver itens sem atividades
-  // Reexecuta se ainda há itens sem atividade (não bloqueia por hasSynced quando há pendências)
   useEffect(() => {
-    if (reportId && !loadingActivities && orcamentoItems.length > 0 && !syncMutation.isPending) {
-      const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
-      if (itemsSemAtividade.length > 0 && !hasSynced) {
-        setHasSynced(true);
-        syncMutation.mutate();
-      } else if (itemsSemAtividade.length > 0 && hasSynced) {
-        // Ainda há itens sem atividade após sync anterior — tentar novamente
-        setHasSynced(false);
-      } else {
-        setHasSynced(true);
-      }
+    if (!reportId || loadingActivities || orcamentoItems.length === 0 || syncMutation.isPending || hasSynced) return;
+    const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
+    if (itemsSemAtividade.length > 0) {
+      setHasSynced(true);
+      syncMutation.mutate();
+    } else {
+      setHasSynced(true);
     }
-  }, [reportId, loadingActivities, orcamentoItems.length, activitiesByItem, syncMutation.isPending]);
+  }, [reportId, loadingActivities, orcamentoItems.length, activitiesByItem.size, syncMutation.isPending, hasSynced]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities || loadingAditivos) {
     return (

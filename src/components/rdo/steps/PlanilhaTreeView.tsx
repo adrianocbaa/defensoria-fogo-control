@@ -276,43 +276,50 @@ export function PlanilhaTreeView({
           {/* Executado (RDO) - apenas para MICRO */}
           <div className="w-32 flex-shrink-0">
             {!isMacro && node.activity && !isBlockedByAdministracao && !isFullySuppressed ? (
-              isRdoApproved ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="h-8 flex items-center justify-center gap-1 px-2 border rounded-md bg-muted">
-                        <Lock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{node.executadoDia.toFixed(2)}</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>RDO aprovado - edição bloqueada</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  max={Math.max(0, (node.quantidadeAjustada ?? node.quantidade) - node.executadoAcumulado)}
-                  value={parseFloat(node.executadoDia.toFixed(2))}
-                  onChange={(e) => onExecutadoChange(
-                    node.id,
-                    node.activity.id,
-                    parseFloat(e.target.value) || 0
-                  )}
-                  onBlur={(e) => onExecutadoBlur(
-                    node.id,
-                    node.activity.id,
-                    parseFloat(e.target.value) || 0
-                  )}
-                  className={cn(
-                    "h-8 text-sm",
-                    node.excedeuLimite && 'border-destructive focus-visible:ring-destructive'
-                  )}
-                />
-              )
+              (() => {
+                const saldoZero = node.disponivel <= 0 && node.executadoDia === 0;
+                const bloqueado = isRdoApproved || saldoZero;
+                const tooltipMsg = isRdoApproved
+                  ? 'RDO aprovado - edição bloqueada'
+                  : 'Saldo esgotado — quantidade já foi 100% executada em outros RDOs';
+                return bloqueado ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="h-8 flex items-center justify-center gap-1 px-2 border rounded-md bg-muted">
+                          <Lock className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-sm">{node.executadoDia.toFixed(2)}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{tooltipMsg}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    max={Math.max(0, (node.quantidadeAjustada ?? node.quantidade) - node.executadoAcumulado)}
+                    value={parseFloat(node.executadoDia.toFixed(2))}
+                    onChange={(e) => onExecutadoChange(
+                      node.id,
+                      node.activity.id,
+                      parseFloat(e.target.value) || 0
+                    )}
+                    onBlur={(e) => onExecutadoBlur(
+                      node.id,
+                      node.activity.id,
+                      parseFloat(e.target.value) || 0
+                    )}
+                    className={cn(
+                      "h-8 text-sm",
+                      node.excedeuLimite && 'border-destructive focus-visible:ring-destructive'
+                    )}
+                  />
+                );
+              })()
             ) : isFullySuppressed ? (
               <TooltipProvider>
                 <Tooltip>
