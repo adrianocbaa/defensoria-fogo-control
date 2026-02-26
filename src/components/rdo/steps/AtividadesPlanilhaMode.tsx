@@ -336,20 +336,22 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     return () => { delete (window as any).rdoSavePending; };
   }, [savePending]);
 
-  // Sincronizar automaticamente quando houver itens sem atividades (apenas uma vez)
+  // Sincronizar automaticamente quando houver itens sem atividades
+  // Reexecuta se ainda há itens sem atividade (não bloqueia por hasSynced quando há pendências)
   useEffect(() => {
-    if (reportId && !loadingActivities && orcamentoItems.length > 0 && !hasSynced && !syncMutation.isPending) {
-      // Verificar se há itens sem atividade criada
-      const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id));
-      if (itemsSemAtividade.length > 0) {
+    if (reportId && !loadingActivities && orcamentoItems.length > 0 && !syncMutation.isPending) {
+      const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
+      if (itemsSemAtividade.length > 0 && !hasSynced) {
         setHasSynced(true);
         syncMutation.mutate();
+      } else if (itemsSemAtividade.length > 0 && hasSynced) {
+        // Ainda há itens sem atividade após sync anterior — tentar novamente
+        setHasSynced(false);
       } else {
-        // Se todos os itens já têm atividade, marcar como sincronizado
         setHasSynced(true);
       }
     }
-  }, [reportId, loadingActivities, orcamentoItems.length, hasSynced, syncMutation.isPending]);
+  }, [reportId, loadingActivities, orcamentoItems.length, activitiesByItem, syncMutation.isPending]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities || loadingAditivos) {
     return (
@@ -403,12 +405,24 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     <>
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Lista de Serviços (Planilha)</CardTitle>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Lista de Serviços (Planilha)</CardTitle>
+              </div>
+              <SaveIndicator isSaving={updateExecutadoMutation.isPending || syncMutation.isPending} />
             </div>
-            <SaveIndicator isSaving={updateExecutadoMutation.isPending || syncMutation.isPending} />
+            {/* Botão de sincronização manual — útil quando itens aparecem sem campo de input */}
+            {reportId && orcamentoItems.filter(i => !activitiesByItem.has(i.id as string)).length > 0 && (
+              <button
+                onClick={() => { setHasSynced(false); }}
+                className="text-xs text-primary underline"
+                disabled={syncMutation.isPending}
+              >
+                {syncMutation.isPending ? 'Sincronizando...' : `⟳ Carregar campos faltantes (${orcamentoItems.filter(i => !activitiesByItem.has(i.id as string)).length} itens)`}
+              </button>
+            )}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Visualização hierárquica da planilha orçamentária (MACRO/MICRO)
