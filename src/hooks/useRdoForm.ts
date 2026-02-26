@@ -68,15 +68,16 @@ export function useRdoForm(obraId: string, data: string) {
     },
   });
 
-  // Atualizar formData quando a data mudar OU quando carregar o RDO existente
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+
+  // Atualizar formData APENAS na carga inicial ou quando a data/obra mudar
+  // Nunca sobrescrever se o usuário já está editando (isFormInitialized = true)
   useEffect(() => {
-    if (isLoading) return; // Aguardar carregamento
+    if (isLoading) return;
     
     if (rdoReport) {
-      // RDO existente encontrado
       setFormData(rdoReport as RdoFormData);
     } else {
-      // Nenhum RDO para esta data - resetar para rascunho
       setFormData({
         obra_id: obraId,
         data,
@@ -84,7 +85,26 @@ export function useRdoForm(obraId: string, data: string) {
       });
     }
     setHasChanges(false);
-  }, [obraId, data, rdoReport, isLoading]);
+    setIsFormInitialized(true);
+  }, [obraId, data, isLoading]); // ← Removido rdoReport: não recarregar ao refetch
+
+  // Sincronizar apenas campos do banco que o usuário não pode ter alterado localmente
+  // (ex: assinaturas, status externo) sem sobrescrever campos editáveis
+  useEffect(() => {
+    if (!isFormInitialized || isLoading || !rdoReport) return;
+    setFormData(prev => ({
+      ...prev,
+      // Sincronizar apenas campos de controle/status do servidor
+      status: rdoReport.status,
+      assinatura_fiscal_validado_em: rdoReport.assinatura_fiscal_validado_em,
+      assinatura_contratada_validado_em: rdoReport.assinatura_contratada_validado_em,
+      fiscal_concluido_em: rdoReport.fiscal_concluido_em,
+      contratada_concluido_em: rdoReport.contratada_concluido_em,
+      aprovacao_observacao: rdoReport.aprovacao_observacao,
+      pdf_url: rdoReport.pdf_url,
+      hash_verificacao: rdoReport.hash_verificacao,
+    }));
+  }, [rdoReport?.status, rdoReport?.assinatura_fiscal_validado_em, rdoReport?.assinatura_contratada_validado_em]);
 
   // Mutation para salvar/atualizar
   const saveMutation = useMutation({
