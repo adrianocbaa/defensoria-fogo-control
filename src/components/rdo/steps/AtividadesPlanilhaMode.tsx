@@ -24,7 +24,6 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   const { isContratada } = useUserRole();
   const [localExecutado, setLocalExecutado] = useState<Record<string, number>>({});
   const [isInitialized, setIsInitialized] = useState(false);
-  const [hasSynced, setHasSynced] = useState(false);
   const [noteDialog, setNoteDialog] = useState<{
     open: boolean;
     activityId?: string;
@@ -130,7 +129,6 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   // Resetar estado quando reportId mudar
   useEffect(() => {
     setIsInitialized(false);
-    setHasSynced(false);
     setLocalExecutado({});
   }, [reportId]);
 
@@ -338,15 +336,12 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
 
   // Sincronizar automaticamente quando houver itens sem atividades
   useEffect(() => {
-    if (!reportId || loadingActivities || orcamentoItems.length === 0 || syncMutation.isPending || hasSynced) return;
+    if (!reportId || loadingActivities || orcamentoItems.length === 0 || syncMutation.isPending) return;
     const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
     if (itemsSemAtividade.length > 0) {
-      setHasSynced(true);
       syncMutation.mutate();
-    } else {
-      setHasSynced(true);
     }
-  }, [reportId, loadingActivities, orcamentoItems.length, activitiesByItem.size, syncMutation.isPending, hasSynced]);
+  }, [reportId, loadingActivities, orcamentoItems.length, activitiesByItem.size]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities || loadingAditivos) {
     return (
@@ -408,10 +403,10 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
               </div>
               <SaveIndicator isSaving={updateExecutadoMutation.isPending || syncMutation.isPending} />
             </div>
-            {/* Botão de sincronização manual — útil quando itens aparecem sem campo de input */}
+            {/* Botão de sincronização manual — fallback caso o automático falhe */}
             {reportId && orcamentoItems.filter(i => !activitiesByItem.has(i.id as string)).length > 0 && (
               <button
-                onClick={() => { setHasSynced(false); }}
+                onClick={() => syncMutation.mutate()}
                 className="text-xs text-primary underline"
                 disabled={syncMutation.isPending}
               >
