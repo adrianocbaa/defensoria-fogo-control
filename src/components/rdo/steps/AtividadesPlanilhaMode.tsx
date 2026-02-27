@@ -134,29 +134,34 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     syncDoneRef.current = false;
   }, [reportId]);
 
-  // Inicializar valores locais APENAS na primeira carga (quando ainda não foi inicializado)
-  // NUNCA reinicializar após sync para não sobrescrever valores que o usuário digitou
+  // Inicializar valores locais APENAS na primeira carga
   useEffect(() => {
-    if (!loadingActivities && !fetchingActivities && !isInitialized && rdoActivities.length >= 0) {
+    if (!loadingActivities && !fetchingActivities && !isInitialized) {
       const initialValues: Record<string, number> = {};
       activitiesByItem.forEach((act, key) => {
         initialValues[key] = Number(act.executado_dia || 0);
       });
       setLocalExecutado(initialValues);
       setIsInitialized(true);
-    } else if (isInitialized && !fetchingActivities) {
-      // Após sync: adicionar apenas itens novos sem sobrescrever os existentes
-      setLocalExecutado(prev => {
-        const updated = { ...prev };
-        activitiesByItem.forEach((act, key) => {
-          if (!(key in updated)) {
-            updated[key] = Number(act.executado_dia || 0);
-          }
-        });
-        return updated;
-      });
     }
-  }, [loadingActivities, fetchingActivities, isInitialized]); // ← sem rdoActivities para não re-rodar após refetch
+  }, [loadingActivities, fetchingActivities, isInitialized, activitiesByItem]);
+
+  // Após sync: adicionar apenas itens novos sem sobrescrever os existentes
+  const prevActivitiesSizeRef = useRef(0);
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (activitiesByItem.size <= prevActivitiesSizeRef.current) return;
+    prevActivitiesSizeRef.current = activitiesByItem.size;
+    setLocalExecutado(prev => {
+      const updated = { ...prev };
+      activitiesByItem.forEach((act, key) => {
+        if (!(key in updated)) {
+          updated[key] = Number(act.executado_dia || 0);
+        }
+      });
+      return updated;
+    });
+  }, [isInitialized, activitiesByItem]);
 
   const syncMutation = useMutation({
     mutationFn: async () => {
@@ -225,11 +230,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       
       return { orcamentoItemId, value };
     },
-    onSuccess: (data) => {
-      // Atualizar o estado local com o valor salvo
-      if (data) {
-        setLocalExecutado(prev => ({ ...prev, [data.orcamentoItemId]: data.value }));
-      }
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
     },
@@ -239,6 +240,9 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   const pendingUpdatesRef = useRef<Map<string, { activityId: string; value: number }>>(new Map());
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Contador para disparar auto-save sem depender de localExecutado no useEffect
+  const pendingCountRef = useRef(0);
+
   const handleExecutadoChange = (orcamentoItemId: string, activityId: string, value: number) => {
     // Calcular saldo disponível para impedir que ultrapasse o limite contratual
     const item = orcamentoItems.find(i => i.id === orcamentoItemId);
@@ -257,38 +261,23 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     }
 
     setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: clampedValue }));
-    // Agendar auto-save
+    // Agendar auto-save via debounce imperativo (sem useEffect dependente de estado)
     pendingUpdatesRef.current.set(orcamentoItemId, { activityId, value: clampedValue });
-  };
+    pendingCountRef.current += 1;
 
-  // Auto-save com debounce
-  useEffect(() => {
-    if (pendingUpdatesRef.current.size === 0) return;
-    
-    // Limpar timer anterior
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
-    // Agendar save após 500ms de inatividade
     debounceTimerRef.current = setTimeout(() => {
       const updates = Array.from(pendingUpdatesRef.current.entries());
       pendingUpdatesRef.current.clear();
-      
-      updates.forEach(([orcamentoItemId, { activityId, value }]) => {
-        updateExecutadoMutation.mutate({ activityId, value, orcamentoItemId });
+      updates.forEach(([oid, { activityId: aid, value: val }]) => {
+        updateExecutadoMutation.mutate({ activityId: aid, value: val, orcamentoItemId: oid });
       });
     }, 500);
-    
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [localExecutado]);
+  };
 
   const handleExecutadoBlur = (orcamentoItemId: string, activityId: string, value: number) => {
-    // Recalcular saldo no blur também para garantir consistência
     const item = orcamentoItems.find(i => i.id === orcamentoItemId);
     const acumulado = acumulados.find(a => a.orcamento_item_id === orcamentoItemId);
     const executadoAcumulado = acumulado?.executado_acumulado || 0;
@@ -301,9 +290,10 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: clampedValue }));
     }
 
-    // Salvar imediatamente no blur (caso o usuário saia do campo)
+    // Cancelar debounce pendente e salvar imediatamente no blur
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
     pendingUpdatesRef.current.delete(orcamentoItemId);
     updateExecutadoMutation.mutate({ activityId, value: clampedValue, orcamentoItemId });

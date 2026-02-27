@@ -145,12 +145,12 @@ export function useRdoForm(obraId: string, data: string) {
 
         const { data: newReport, error } = await supabase
           .from('rdo_reports')
-          .insert({
+          .upsert({
             ...data,
             numero_seq,
             modo_atividades: modoAtividades,
             created_by: user?.id,
-          })
+          }, { onConflict: 'obra_id,data' })
           .select()
           .single();
 
