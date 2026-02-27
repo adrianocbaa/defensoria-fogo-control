@@ -329,11 +329,13 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   }, [savePending]);
 
   // Sincronizar automaticamente APENAS UMA VEZ quando houver itens sem atividades
+  // Aguarda 1s após o reportId aparecer para garantir que o INSERT do RDO foi commitado no banco
   useEffect(() => {
     if (!reportId || loadingActivities || fetchingActivities || loadingOrcamento || orcamentoItems.length === 0 || syncMutation.isPending || syncDoneRef.current) return;
     const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
     if (itemsSemAtividade.length > 0) {
-      syncMutation.mutate();
+      const timer = setTimeout(() => syncMutation.mutate(), 1000);
+      return () => clearTimeout(timer);
     } else {
       syncDoneRef.current = true; // Todos os itens já existem, não precisa sync
     }

@@ -25,6 +25,22 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
+    // Verificar se o report_id realmente existe antes de inserir atividades
+    // (evita FK violation quando o RDO ainda não foi salvo)
+    const { data: reportExists, error: reportErr } = await supabase
+      .from('rdo_reports')
+      .select('id')
+      .eq('id', reportId)
+      .maybeSingle()
+
+    if (reportErr) throw new Error(`report check: ${reportErr.message}`)
+    if (!reportExists) {
+      return new Response(JSON.stringify({ created: 0, skipped: 'report_not_found' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Buscar itens folha da obra excluindo ADMINISTRAÇÃO (evita trigger vw_planilha_hierarquia)
     // Itens folha = têm ponto no número (ex: "1.1", "2.3") e eh_administracao_local = false
     const { data: orcamentoItems, error: orcErr } = await supabase
@@ -62,8 +78,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Inserir em batches de 20 para evitar timeout do trigger rdo_block_excesso_quantidade
-    // O trigger só dispara quando executado_dia > 0, mas inserimos com 0, então deve ser rápido
+    // Inserir em batches de 50 para evitar timeout
     const BATCH_SIZE = 50
     let totalCreated = 0
 
