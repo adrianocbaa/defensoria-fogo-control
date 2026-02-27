@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,19 +13,30 @@ Deno.serve(async (req) => {
   try {
     const { reportId, obraId } = await req.json()
 
+    if (!reportId || !obraId) {
+      return new Response(JSON.stringify({ error: 'reportId and obraId are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Buscar todos os itens da planilha da obra
+    // Buscar todos os itens não-macro da planilha da obra
     const { data: orcamentoItems, error: orcErr } = await supabase
-      .from('orcamento_items_hierarquia')
+      .from('orcamento_items')
       .select('id, item, descricao, unidade, quantidade')
       .eq('obra_id', obraId)
-      .eq('is_macro', false)
+      .neq('nivel', 1) // nivel 1 = grupos/macro
 
-    if (orcErr) throw orcErr
+    if (orcErr) throw new Error(`orcamento query: ${orcErr.message}`)
+
+    // Filtrar apenas itens folha (sem filhos) usando calculated_level da view seria ideal,
+    // mas para evitar timeout, filtramos itens que têm código não vazio (não são grupos)
+    const leafItems = (orcamentoItems || []).filter((item: any) => item.item && item.item.includes('.'))
 
     // Buscar atividades já existentes neste RDO
     const { data: existingActivities, error: actErr } = await supabase
@@ -34,12 +45,12 @@ Deno.serve(async (req) => {
       .eq('report_id', reportId)
       .eq('tipo', 'planilha')
 
-    if (actErr) throw actErr
+    if (actErr) throw new Error(`activities query: ${actErr.message}`)
 
     const existingIds = new Set((existingActivities || []).map((a: any) => a.orcamento_item_id))
 
     // Filtrar itens que ainda não têm atividade
-    const itemsToCreate = (orcamentoItems || []).filter((item: any) => !existingIds.has(item.id))
+    const itemsToCreate = leafItems.filter((item: any) => !existingIds.has(item.id))
 
     if (itemsToCreate.length === 0) {
       return new Response(JSON.stringify({ created: 0 }), {
@@ -64,13 +75,15 @@ Deno.serve(async (req) => {
       }))
     )
 
-    if (insertErr) throw insertErr
+    if (insertErr) throw new Error(`insert error: ${insertErr.message}`)
 
     return new Response(JSON.stringify({ created: itemsToCreate.length }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+    const msg = error instanceof Error ? error.message : JSON.stringify(error)
+    console.error('rdo-sync-activities error:', msg)
+    return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
