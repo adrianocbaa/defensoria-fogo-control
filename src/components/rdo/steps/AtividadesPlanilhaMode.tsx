@@ -24,6 +24,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   const { isContratada } = useUserRole();
   const [localExecutado, setLocalExecutado] = useState<Record<string, number>>({});
   const [isInitialized, setIsInitialized] = useState(false);
+  const syncDoneRef = useRef(false);
   const [noteDialog, setNoteDialog] = useState<{
     open: boolean;
     activityId?: string;
@@ -130,19 +131,32 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   useEffect(() => {
     setIsInitialized(false);
     setLocalExecutado({});
+    syncDoneRef.current = false;
   }, [reportId]);
 
   // Inicializar valores locais APENAS na primeira carga (quando ainda não foi inicializado)
+  // NUNCA reinicializar após sync para não sobrescrever valores que o usuário digitou
   useEffect(() => {
-    if (!loadingActivities && rdoActivities.length > 0 && !isInitialized) {
+    if (!loadingActivities && !fetchingActivities && !isInitialized && rdoActivities.length >= 0) {
       const initialValues: Record<string, number> = {};
       activitiesByItem.forEach((act, key) => {
         initialValues[key] = Number(act.executado_dia || 0);
       });
       setLocalExecutado(initialValues);
       setIsInitialized(true);
+    } else if (isInitialized && !fetchingActivities) {
+      // Após sync: adicionar apenas itens novos sem sobrescrever os existentes
+      setLocalExecutado(prev => {
+        const updated = { ...prev };
+        activitiesByItem.forEach((act, key) => {
+          if (!(key in updated)) {
+            updated[key] = Number(act.executado_dia || 0);
+          }
+        });
+        return updated;
+      });
     }
-  }, [rdoActivities, loadingActivities, isInitialized]);
+  }, [loadingActivities, fetchingActivities, isInitialized]); // ← sem rdoActivities para não re-rodar após refetch
 
   const syncMutation = useMutation({
     mutationFn: async () => {
@@ -167,10 +181,15 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
         const err = await res.json();
         throw new Error(err.error || 'Erro ao sincronizar');
       }
+      return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
-      toast.success('Planilha sincronizada com sucesso');
+    onSuccess: async (result: any) => {
+      syncDoneRef.current = true;
+      // Só invalidar se realmente criou novos itens
+      if (result?.created > 0) {
+        // Recarregar sem resetar isInitialized — só adicionar os novos itens ao localExecutado
+        await queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
+      }
     },
     onError: () => {
       toast.error('Erro ao sincronizar planilha');
@@ -319,15 +338,16 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     return () => { delete (window as any).rdoSavePending; };
   }, [savePending]);
 
-  // Sincronizar automaticamente quando houver itens sem atividades
-  // Dependência em activitiesByItem.size garante re-disparo após cada sync parcial
+  // Sincronizar automaticamente APENAS UMA VEZ quando houver itens sem atividades
   useEffect(() => {
-    if (!reportId || loadingActivities || fetchingActivities || loadingOrcamento || orcamentoItems.length === 0 || syncMutation.isPending) return;
+    if (!reportId || loadingActivities || fetchingActivities || loadingOrcamento || orcamentoItems.length === 0 || syncMutation.isPending || syncDoneRef.current) return;
     const itemsSemAtividade = orcamentoItems.filter(item => !activitiesByItem.has(item.id as string));
     if (itemsSemAtividade.length > 0) {
       syncMutation.mutate();
+    } else {
+      syncDoneRef.current = true; // Todos os itens já existem, não precisa sync
     }
-  }, [reportId, loadingActivities, fetchingActivities, loadingOrcamento, orcamentoItems.length, activitiesByItem.size]);
+  }, [reportId, loadingActivities, fetchingActivities, loadingOrcamento, orcamentoItems.length]);
 
   if (loadingOrcamento || loadingAcumulados || loadingActivities || loadingAditivos) {
     return (
