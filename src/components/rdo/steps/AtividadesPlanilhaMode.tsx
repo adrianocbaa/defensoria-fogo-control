@@ -234,6 +234,18 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
     },
+    onError: (err: any, variables) => {
+      // Extrair mensagem amigável do banco (trigger de validação)
+      const msg = err?.message || '';
+      const triggerMatch = msg.match(/Quantidade executada .+ excede o saldo disponível \(.+\)\. Item: (.+)/);
+      if (triggerMatch) {
+        toast.error(`Item ${triggerMatch[1]}: saldo insuficiente. O valor foi revertido.`);
+      } else {
+        toast.error('Erro ao salvar quantidade. Verifique o valor e tente novamente.');
+      }
+      // Reverter para o valor salvo no banco
+      queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
+    },
   });
 
   // Referência para atualizações pendentes (deve ser declarado antes do uso)
