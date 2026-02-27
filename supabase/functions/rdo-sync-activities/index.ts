@@ -25,18 +25,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Buscar todos os itens não-macro da planilha da obra
+    // Buscar itens folha da obra excluindo ADMINISTRAÇÃO (evita trigger vw_planilha_hierarquia)
+    // Itens folha = têm ponto no número (ex: "1.1", "2.3") e eh_administracao_local = false
     const { data: orcamentoItems, error: orcErr } = await supabase
       .from('orcamento_items')
       .select('id, item, descricao, unidade, quantidade')
       .eq('obra_id', obraId)
-      .neq('nivel', 1) // nivel 1 = grupos/macro
+      .eq('eh_administracao_local', false)
+      .limit(5000)
 
     if (orcErr) throw new Error(`orcamento query: ${orcErr.message}`)
 
-    // Filtrar apenas itens folha (sem filhos) usando calculated_level da view seria ideal,
-    // mas para evitar timeout, filtramos itens que têm código não vazio (não são grupos)
-    const leafItems = (orcamentoItems || []).filter((item: any) => item.item && item.item.includes('.'))
+    // Filtrar apenas itens folha (contêm ponto no número = não são grupos)
+    const leafItems = (orcamentoItems || []).filter((item: any) =>
+      item.item && item.item.includes('.')
+    )
 
     // Buscar atividades já existentes neste RDO
     const { data: existingActivities, error: actErr } = await supabase
@@ -44,6 +47,7 @@ Deno.serve(async (req) => {
       .select('orcamento_item_id')
       .eq('report_id', reportId)
       .eq('tipo', 'planilha')
+      .limit(5000)
 
     if (actErr) throw new Error(`activities query: ${actErr.message}`)
 
@@ -58,26 +62,33 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Inserir em batch
-    const { error: insertErr } = await supabase.from('rdo_activities').insert(
-      itemsToCreate.map((item: any) => ({
-        obra_id: obraId,
-        report_id: reportId,
-        tipo: 'planilha',
-        orcamento_item_id: item.id,
-        item_code: item.item,
-        descricao: item.descricao,
-        unidade: item.unidade,
-        quantidade_total: item.quantidade,
-        executado_dia: 0,
-        progresso: 0,
-        status: 'em_andamento',
-      }))
-    )
+    // Inserir em batches de 20 para evitar timeout do trigger rdo_block_excesso_quantidade
+    // O trigger só dispara quando executado_dia > 0, mas inserimos com 0, então deve ser rápido
+    const BATCH_SIZE = 50
+    let totalCreated = 0
 
-    if (insertErr) throw new Error(`insert error: ${insertErr.message}`)
+    for (let i = 0; i < itemsToCreate.length; i += BATCH_SIZE) {
+      const batch = itemsToCreate.slice(i, i + BATCH_SIZE)
+      const { error: insertErr } = await supabase.from('rdo_activities').insert(
+        batch.map((item: any) => ({
+          obra_id: obraId,
+          report_id: reportId,
+          tipo: 'planilha',
+          orcamento_item_id: item.id,
+          item_code: item.item,
+          descricao: item.descricao,
+          unidade: item.unidade,
+          quantidade_total: item.quantidade,
+          executado_dia: 0,
+          progresso: 0,
+          status: 'em_andamento',
+        }))
+      )
+      if (insertErr) throw new Error(`insert batch ${i}: ${insertErr.message}`)
+      totalCreated += batch.length
+    }
 
-    return new Response(JSON.stringify({ created: itemsToCreate.length }), {
+    return new Response(JSON.stringify({ created: totalCreated }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
