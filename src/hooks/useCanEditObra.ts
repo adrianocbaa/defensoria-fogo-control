@@ -125,8 +125,8 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
         .maybeSingle();
 
       if (substituto) {
-        // Substituto só pode editar obras "em_andamento"
-        const canEdit = obra.status === 'em_andamento';
+        // Substituto pode editar obras "em_andamento" ou "planejamento"
+        const canEdit = obra.status === 'em_andamento' || obra.status === 'planejamento';
         setCanEditObra(canEdit);
         setRole('substituto');
         setIsStatusRestricted(!canEdit);
@@ -144,8 +144,8 @@ export function useCanEditObra(obraId: string | undefined): UseCanEditObraReturn
         .maybeSingle();
 
       if (access) {
-        // Acesso explícito só permite editar obras "em_andamento"
-        const canEdit = obra.status === 'em_andamento';
+        // Acesso explícito permite editar obras "em_andamento" ou "planejamento"
+        const canEdit = obra.status === 'em_andamento' || obra.status === 'planejamento';
         setCanEditObra(canEdit);
         setRole('access');
         setIsStatusRestricted(!canEdit);

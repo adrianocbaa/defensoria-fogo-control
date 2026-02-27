@@ -170,9 +170,9 @@ export function useObraActionPermissions(obraIds: string[]): UseObraActionPermis
       return perm;
     }
 
-    // Substituto e access: só podem editar obras "em_andamento"
+    // Substituto e access: podem editar obras "em_andamento" ou "planejamento"
     if (perm.role === 'substituto' || perm.role === 'access') {
-      const canEditThisStatus = obraStatus === 'em_andamento';
+      const canEditThisStatus = obraStatus === 'em_andamento' || obraStatus === 'planejamento';
       return {
         canEdit: canEditThisStatus,
         canDelete: false,
