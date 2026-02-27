@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { Button } from '@/components/ui/button';
@@ -91,6 +91,14 @@ export default function RDODiario() {
     hasChanges,
   } = useRdoForm(obraId!, data);
 
+  // Flush pending activity saves before changing step — deve ficar antes do early return
+  const handleStepChange = useCallback(async (step: number) => {
+    if ((window as any).rdoSavePending) {
+      try { await (window as any).rdoSavePending(); } catch {}
+    }
+    setCurrentStep(step);
+  }, []);
+
   if (isLoading || permissionLoading || obraLoading) {
     return (
       <div className="container mx-auto p-4 space-y-4">
@@ -160,14 +168,6 @@ export default function RDODiario() {
     } finally {
       setIsGeneratingPdf(false);
     }
-  };
-
-  // Flush pending activity saves before changing step
-  const handleStepChange = async (step: number) => {
-    if ((window as any).rdoSavePending) {
-      try { await (window as any).rdoSavePending(); } catch {}
-    }
-    setCurrentStep(step);
   };
 
   const handleDeleteRdo = async () => {
