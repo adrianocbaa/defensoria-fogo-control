@@ -162,6 +162,14 @@ export default function RDODiario() {
     }
   };
 
+  // Flush pending activity saves before changing step
+  const handleStepChange = async (step: number) => {
+    if ((window as any).rdoSavePending) {
+      try { await (window as any).rdoSavePending(); } catch {}
+    }
+    setCurrentStep(step);
+  };
+
   const handleDeleteRdo = async () => {
     const success = await deleteRdo();
     if (success) {
@@ -379,7 +387,7 @@ export default function RDODiario() {
       </AlertDialog>
 
       {/* Stepper */}
-      <RdoStepper currentStep={currentStep} onStepChange={setCurrentStep} steps={STEPS} />
+      <RdoStepper currentStep={currentStep} onStepChange={handleStepChange} steps={STEPS} />
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
@@ -413,7 +421,7 @@ export default function RDODiario() {
             <>
               <Button
                 variant="outline"
-                onClick={() => currentStep > 0 && setCurrentStep(currentStep - 1)}
+                onClick={() => currentStep > 0 && handleStepChange(currentStep - 1)}
                 disabled={currentStep === 0}
               >
                 <ChevronLeft className="h-4 w-4 mr-2" />
@@ -445,7 +453,7 @@ export default function RDODiario() {
                 )}
 
                 {currentStep < STEPS.length - 1 && (
-                  <Button onClick={() => setCurrentStep(currentStep + 1)}>
+                  <Button onClick={() => handleStepChange(currentStep + 1)}>
                     Próximo
                   </Button>
                 )}
