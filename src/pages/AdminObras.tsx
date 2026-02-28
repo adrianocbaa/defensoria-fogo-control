@@ -458,7 +458,7 @@ export function AdminObras() {
                           </div>
                         )}
                         {/* Valor Pago (Medição) com marcadores */}
-                        {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (() => {
+                        {obraProgressos[obra.id] !== undefined && (() => {
                           const pctExibido = obraProgressos[obra.id] ?? 0;
                           return (
                             <div className="flex items-center gap-2">
@@ -475,23 +475,6 @@ export function AdminObras() {
                             </div>
                           );
                         })()}
-                        {/* Fallback: se não tiver nem RDO nem Medição, usar valor_executado */}
-                        {(obraRdoProgressos[obra.id] === null || obraRdoProgressos[obra.id] === undefined) && 
-                         (!obraMarcos[obra.id] || obraMarcos[obra.id].length === 0) && (
-                          obraProgressos[obra.id] !== undefined && obraProgressos[obra.id] > 0 ? (
-                            <div className="flex items-center gap-2">
-                              <Progress 
-                                value={obraProgressos[obra.id]} 
-                                className="w-[100px] h-2"
-                              />
-                              <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">
-                                {obraProgressos[obra.id].toFixed(1)}%
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">-</span>
-                          )
-                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
