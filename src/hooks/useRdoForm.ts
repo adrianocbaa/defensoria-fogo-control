@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,6 +49,7 @@ export function useRdoForm(obraId: string, data: string) {
     status: 'rascunho',
   });
   const [hasChanges, setHasChanges] = useState(false);
+  const saveMutationRef = useRef<any>(null);
 
   const debouncedFormData = useDebounce(formData, 2000);
 
@@ -189,10 +190,15 @@ export function useRdoForm(obraId: string, data: string) {
     },
   });
 
-  // Autosave
+  // Manter ref atualizada para usar no autosave sem causar loop
+  useEffect(() => {
+    saveMutationRef.current = saveMutation;
+  });
+
+  // Autosave — usa ref para evitar que saveMutation entre nas deps e cause loop
   useEffect(() => {
     if (hasChanges && debouncedFormData.id) {
-      saveMutation.mutate(debouncedFormData);
+      saveMutationRef.current?.mutate(debouncedFormData);
     }
   }, [debouncedFormData, hasChanges]);
 
