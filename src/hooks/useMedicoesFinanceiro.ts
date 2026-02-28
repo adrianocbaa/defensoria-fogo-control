@@ -72,10 +72,11 @@ export const useMedicoesFinanceiro = (obraId: string) => {
           // Calcular valor por sessão para os marcos
           const valorPorSessao: Record<string, number> = {};
           medicaoItems?.forEach(item => {
-            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + (item.total || 0);
+            const roundedTotal = Math.round((item.total || 0) * 100) / 100;
+            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + roundedTotal;
           });
           
-          valorAcumulado = medicaoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
+          valorAcumulado = medicaoItems?.reduce((sum, item) => sum + Math.round((item.total || 0) * 100) / 100, 0) || 0;
           
           // Calcular marcos acumulados por sequência
           let acumulado = 0;
