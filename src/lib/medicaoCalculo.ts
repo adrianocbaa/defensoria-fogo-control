@@ -142,34 +142,18 @@ export function calcularFinanceiroMedicao(
   const marcos: MarcoCalculado[] = sessionsSorted.map((session, idx) => {
     const sessionIdsAteAgora = new Set(sessionsSorted.slice(0, idx + 1).map(s => s.id));
 
-    // Acumulado até esta sessão: soma pct de todas as sessões anteriores + esta
-    const calcAcumulado = (ids: Set<string>) => {
-      const pctPorItem = new Map<string, number>();
-      const totalPorItem = new Map<string, number>();
-      medicaoItems.filter(i => ids.has(i.medicao_id)).forEach(item => {
-        pctPorItem.set(item.item_code, (pctPorItem.get(item.item_code) || 0) + Number(item.pct || 0));
-        totalPorItem.set(item.item_code, (totalPorItem.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100);
-      });
-      let acum = 0;
-      pctPorItem.forEach((pctAcum, itemCode) => {
-        const tc = totalContratoPorItem.get(itemCode);
-        if (tc !== undefined && tc > 0) {
-          const pctCapped = Math.min(pctAcum, 100);
-          acum += Math.round((pctCapped / 100) * tc * 100) / 100;
-        } else {
-          acum += Math.round((totalPorItem.get(itemCode) || 0) * 100) / 100;
-        }
-      });
-      return acum;
-    };
-
     // valorMedicao: soma direta do campo `total` dos itens desta sessão (igual a "Serviços Executados")
     const itemsDaSessao = medicaoItems.filter(i => i.medicao_id === session.id);
     const valorMedicao = Math.round(
       itemsDaSessao.reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
     ) / 100;
 
-    const acumuladoAteAgora = calcAcumulado(sessionIdsAteAgora);
+    // Acumulado até esta sessão: soma direta dos campos `total` (valor real pago), sem recalcular via pct
+    const acumuladoAteAgora = Math.round(
+      medicaoItems
+        .filter(i => sessionIdsAteAgora.has(i.medicao_id))
+        .reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
+    ) / 100;
 
     return {
       sequencia: session.sequencia,
