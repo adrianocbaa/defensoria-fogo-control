@@ -14,28 +14,28 @@ interface MedicaoProgressBarProps {
   totalContrato: number;
   className?: string;
   height?: number;
+  color?: 'green' | 'blue';
 }
 
-export function MedicaoProgressBar({ marcos, totalContrato, className = '', height = 12 }: MedicaoProgressBarProps) {
+export function MedicaoProgressBar({ marcos, totalContrato, className = '', height = 8, color = 'green' }: MedicaoProgressBarProps) {
   const percentualTotal = totalContrato > 0
     ? Math.min((marcos[marcos.length - 1]?.valorAcumulado || 0) / totalContrato * 100, 100)
     : 0;
+
+  const trackColor = color === 'blue' ? 'bg-blue-500' : 'bg-green-500';
+  const markerColor = color === 'blue' ? 'bg-blue-700' : 'bg-green-700';
 
   return (
     <TooltipProvider delayDuration={100}>
       <div className={`relative w-full ${className}`} style={{ height }}>
         {/* Trilho de fundo */}
-        <div
-          className="absolute inset-0 rounded-full bg-muted"
-          style={{ height }}
-        />
+        <div className="absolute inset-0 rounded-full bg-muted" style={{ height }} />
         {/* Barra preenchida */}
         <div
-          className="absolute left-0 top-0 rounded-full bg-green-500 transition-all duration-300"
+          className={`absolute left-0 top-0 rounded-full transition-all duration-300 ${trackColor}`}
           style={{ width: `${percentualTotal}%`, height }}
         />
-
-        {/* Marcos com tooltip */}
+        {/* Marcos — tracinho discreto */}
         {marcos.map((marco) => {
           const pos = totalContrato > 0
             ? Math.min((marco.valorAcumulado / totalContrato) * 100, 100)
@@ -45,14 +45,17 @@ export function MedicaoProgressBar({ marcos, totalContrato, className = '', heig
             <Tooltip key={marco.sequencia}>
               <TooltipTrigger asChild>
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 cursor-pointer"
-                  style={{ left: `${pos}%` }}
+                  className="absolute top-0 -translate-x-1/2 z-10 cursor-pointer"
+                  style={{ left: `${pos}%`, height }}
                 >
-                  <div className="w-3 h-3 rounded-full bg-green-700 border-2 border-white shadow-md hover:scale-125 transition-transform" />
+                  <div
+                    className={`w-[2px] opacity-70 hover:opacity-100 transition-opacity ${markerColor}`}
+                    style={{ height }}
+                  />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs max-w-[200px]">
-                <p className="font-semibold">Medição {marco.sequencia}ª</p>
+                <p className="font-semibold">{marco.sequencia}ª Medição</p>
                 <p>Valor pago: <span className="font-bold">{formatCurrency(marco.valorMedicao)}</span></p>
                 <p>Acumulado: <span className="font-bold">{formatCurrency(marco.valorAcumulado)}</span></p>
                 <p>Progresso: <span className="font-bold">{marco.percentualAcumulado.toFixed(1)}%</span></p>
