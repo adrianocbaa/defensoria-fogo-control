@@ -458,13 +458,15 @@ export function AdminObras() {
                           </div>
                         )}
                         {/* Valor Pago (Medição) com marcadores */}
-                        {obraProgressos[obra.id] !== undefined && (() => {
+                        {(() => {
                           const pctExibido = obraProgressos[obra.id] ?? 0;
+                          const temMarcos = obraMarcos[obra.id]?.length > 0;
+                          if (pctExibido <= 0 && !temMarcos) return null;
                           return (
                             <div className="flex items-center gap-2">
                               <ProgressBarWithMarkers
                                 value={pctExibido}
-                                marcos={obraMarcos[obra.id]}
+                                marcos={obraMarcos[obra.id] || []}
                                 className="w-[100px]"
                                 variant="subtle"
                                 color="green"
