@@ -57,39 +57,47 @@ function ObraProgressCell({ obraId, rdo_habilitado, rdoProgresso, fallbackProgre
 }) {
   const { dados } = useMedicoesFinanceiro(obraId);
 
-  if (dados.marcos.length > 0) {
-    return (
-      <div className="space-y-1 py-1 min-w-[160px]">
-        <MedicaoProgressBar
-          marcos={dados.marcos}
-          totalContrato={dados.totalContrato}
-          height={10}
-        />
-        <div className="text-xs text-muted-foreground text-right">
-          {dados.percentualExecutado.toFixed(1)}%
-        </div>
-      </div>
-    );
-  }
+  const hasRdo = rdo_habilitado && rdoProgresso != null;
+  const hasMarcoes = dados.marcos.length > 0;
+  const hasFallback = !hasMarcoes && fallbackProgresso && fallbackProgresso > 0;
 
-  // Fallback: barra simples
-  if (rdo_habilitado && rdoProgresso != null) {
-    return (
-      <div className="flex items-center gap-2 min-w-[160px]">
-        <Progress value={rdoProgresso} className="w-[100px] h-2" />
-        <span className="text-sm font-medium whitespace-nowrap">{rdoProgresso.toFixed(1)}%</span>
-      </div>
-    );
-  }
-  if (fallbackProgresso && fallbackProgresso > 0) {
-    return (
-      <div className="flex items-center gap-2 min-w-[160px]">
-        <Progress value={fallbackProgresso} className="w-[100px] h-2" />
-        <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">{fallbackProgresso.toFixed(1)}%</span>
-      </div>
-    );
-  }
-  return <span className="text-sm text-muted-foreground">-</span>;
+  return (
+    <div className="flex flex-col gap-1.5 min-w-[160px] py-1">
+      {/* Barra azul: progresso físico (RDO) */}
+      {hasRdo && (
+        <div className="flex items-center gap-2">
+          <Progress value={rdoProgresso} className="w-[100px] h-2" />
+          <span className="text-sm font-medium whitespace-nowrap">{rdoProgresso!.toFixed(1)}%</span>
+        </div>
+      )}
+
+      {/* Barra verde: progresso financeiro (medições) */}
+      {hasMarcoes && (
+        <div className="space-y-0.5">
+          <MedicaoProgressBar
+            marcos={dados.marcos}
+            totalContrato={dados.totalContrato}
+            height={8}
+          />
+          <div className="text-xs text-muted-foreground text-right">
+            {dados.percentualExecutado.toFixed(1)}%
+          </div>
+        </div>
+      )}
+
+      {/* Fallback se não tiver nenhuma das duas */}
+      {!hasRdo && hasFallback && (
+        <div className="flex items-center gap-2">
+          <Progress value={fallbackProgresso} className="w-[100px] h-2" />
+          <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">{fallbackProgresso!.toFixed(1)}%</span>
+        </div>
+      )}
+
+      {!hasRdo && !hasMarcoes && !hasFallback && (
+        <span className="text-sm text-muted-foreground">-</span>
+      )}
+    </div>
+  );
 }
 
 export function AdminObras() {
