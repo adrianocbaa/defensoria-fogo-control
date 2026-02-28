@@ -85,7 +85,6 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
       const inicioExistente = parseISO(periodo.data_inicio);
       const fimExistente = parseISO(periodo.data_fim);
 
-      // Verifica se há sobreposição
       const sobrepoe = (
         isWithinInterval(dateRange.from, { start: inicioExistente, end: fimExistente }) ||
         isWithinInterval(dateRange.to, { start: inicioExistente, end: fimExistente }) ||
@@ -107,7 +106,6 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
       return;
     }
 
-    // Verificar sobreposição
     const erroSobreposicao = verificarSobreposicao();
     if (erroSobreposicao) {
       setErro(erroSobreposicao);
@@ -121,23 +119,37 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
       const dataInicio = format(dateRange.from, 'yyyy-MM-dd');
       const dataFim = format(dateRange.to, 'yyyy-MM-dd');
 
-      // Buscar todos os RDOs aprovados no período selecionado
-      const { data: rdoReports, error: rdoError } = await supabase
-        .from('rdo_reports')
-        .select('id')
-        .eq('obra_id', obraId)
-        .eq('status', 'aprovado')
-        .gte('data', dataInicio)
-        .lte('data', dataFim);
+      // Buscar RDOs aprovados/concluídos OU com fiscal já validado no período
+      const [{ data: rdoAprovados, error: err1 }, { data: rdoFiscalValidados, error: err2 }] = await Promise.all([
+        supabase
+          .from('rdo_reports')
+          .select('id')
+          .eq('obra_id', obraId)
+          .in('status', ['aprovado', 'concluido'])
+          .gte('data', dataInicio)
+          .lte('data', dataFim),
+        supabase
+          .from('rdo_reports')
+          .select('id')
+          .eq('obra_id', obraId)
+          .not('assinatura_fiscal_validado_em', 'is', null)
+          .gte('data', dataInicio)
+          .lte('data', dataFim),
+      ]);
 
-      if (rdoError) throw rdoError;
+      if (err1) throw err1;
+      if (err2) throw err2;
 
-      if (!rdoReports || rdoReports.length === 0) {
-        setErro('Nenhum RDO aprovado encontrado no período selecionado');
+      // Unificar IDs sem duplicatas
+      const idsSet = new Set<string>();
+      (rdoAprovados || []).forEach(r => idsSet.add(r.id));
+      (rdoFiscalValidados || []).forEach(r => idsSet.add(r.id));
+      const reportIds = Array.from(idsSet);
+
+      if (reportIds.length === 0) {
+        setErro('Nenhum RDO aprovado ou com validação do fiscal encontrado no período selecionado');
         return;
       }
-
-      const reportIds = rdoReports.map(r => r.id);
 
       // Buscar todas as atividades do tipo 'planilha' desses RDOs
       const { data: activities, error: activitiesError } = await supabase
@@ -187,17 +199,15 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
 
       if (insertError) {
         console.error('Erro ao registrar período importado:', insertError);
-        // Não bloquear a importação se falhar o registro
       }
 
-      // Converter para objeto
       const dadosImportados: { [itemCode: string]: number } = {};
       agregado.forEach((valor, codigo) => {
         dadosImportados[codigo] = valor;
       });
 
       toast.success(
-        `${agregado.size} itens importados do RDO (${rdoReports.length} relatórios no período)`
+        `${agregado.size} itens importados do RDO (${reportIds.length} relatórios no período)`
       );
       
       onImportar(dadosImportados);
@@ -298,9 +308,7 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
                     }
                   }}
                   disabled={(date) => {
-                    // Desabilitar datas futuras
                     if (date > new Date()) return true;
-                    // Desabilitar datas já importadas
                     return isDataImportada(date);
                   }}
                 />
@@ -309,7 +317,7 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
           </div>
           
           <p className="text-xs text-muted-foreground">
-            O sistema irá somar os valores executados de todos os RDOs aprovados no período selecionado.
+            O sistema irá somar os valores executados de todos os RDOs aprovados ou com fiscal validado no período selecionado.
             <br />
             <span className="text-destructive font-medium">Datas já importadas estão destacadas e bloqueadas.</span>
           </p>
