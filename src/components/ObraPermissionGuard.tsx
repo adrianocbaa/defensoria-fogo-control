@@ -142,8 +142,9 @@ export function ObraPermissionGuard({
           .maybeSingle();
 
         if (substituto) {
-          // Substituto só pode editar obras "em_andamento"
-          const canEdit = obra.status === 'em_andamento';
+          // Substituto pode editar obras "em_andamento" ou "planejamento"
+          const canEdit = obra.status === 'em_andamento' || obra.status === 'planejamento';
+
           setPermissionInfo({
             canEdit,
             role: 'substituto',
@@ -163,8 +164,8 @@ export function ObraPermissionGuard({
           .maybeSingle();
 
         if (access) {
-          // Acesso explícito só permite editar obras "em_andamento"
-          const canEdit = obra.status === 'em_andamento';
+          // Acesso explícito pode editar obras "em_andamento" ou "planejamento"
+          const canEdit = obra.status === 'em_andamento' || obra.status === 'planejamento';
           setPermissionInfo({
             canEdit,
             role: 'access',
@@ -236,7 +237,7 @@ export function ObraPermissionGuard({
           <Lock className="h-4 w-4" />
           <AlertDescription>
             {isStatusRestriction 
-              ? `Você não pode editar esta obra porque ela está com status "${permissionInfo.obraStatus}". Fiscais substitutos só podem editar obras "Em Andamento".`
+              ? `Você não pode editar esta obra porque ela está com status "${permissionInfo.obraStatus}". Fiscais substitutos só podem editar obras "Em Andamento" ou "Planejamento".`
               : 'Você não tem permissão para editar esta obra. Apenas o fiscal responsável ou usuários com acesso atribuído podem editar.'
             }
           </AlertDescription>
