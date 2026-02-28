@@ -107,79 +107,49 @@ export function calcularFinanceiroMedicao(
   // Mapa para cálculo dos itens
   const totalContratoPorItem = buildTotalContratoPorItem(orcItems);
 
-  // Agrupa pct acumulado por item_code (soma dos pcts de todas as medições, limitado a 100%)
-  // e valor total para itens extracontratuais
-  const pctAcumuladoPorItem = new Map<string, number>();
-  const totalExtracontratualPorItem = new Map<string, number>();
+  // Valor acumulado global: soma direta do campo `total` de cada item de medição
+  // (igual à lógica da página de medição — usa o valor em R$ já gravado com desconto)
+  // Agrupa por item_code para evitar dupla contagem e aplica cap pelo total_contrato
+  const totalAcumuladoPorItem = new Map<string, number>();
   medicaoItems.forEach(item => {
-    const totalContrato = totalContratoPorItem.get(item.item_code);
-    if (totalContrato !== undefined && totalContrato > 0) {
-      // Item contratual: acumula pct
-      pctAcumuladoPorItem.set(item.item_code, (pctAcumuladoPorItem.get(item.item_code) || 0) + Number(item.pct));
-    } else {
-      // Item extracontratual: acumula total diretamente
-      totalExtracontratualPorItem.set(item.item_code, (totalExtracontratualPorItem.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100);
-    }
+    totalAcumuladoPorItem.set(
+      item.item_code,
+      (totalAcumuladoPorItem.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100
+    );
   });
 
-  // Valor acumulado global: soma de cada item com cap de 100% para contratuais
   let valorAcumulado = 0;
-  pctAcumuladoPorItem.forEach((pctTotal, itemCode) => {
-    const totalContrato = totalContratoPorItem.get(itemCode)!;
-    const pctCapped = Math.min(pctTotal, 100);
-    valorAcumulado += Math.round((pctCapped / 100) * totalContrato * 100) / 100;
-  });
-  totalExtracontratualPorItem.forEach(total => {
-    valorAcumulado += total;
+  totalAcumuladoPorItem.forEach((totalAcum, itemCode) => {
+    const totalContrato = totalContratoPorItem.get(itemCode);
+    // Cap pelo total_contrato para itens contratuais (evita ultrapassar 100%)
+    const valorFinal = totalContrato !== undefined && totalContrato > 0
+      ? Math.min(totalAcum, totalContrato)
+      : totalAcum;
+    valorAcumulado += Math.round(valorFinal * 100) / 100;
   });
 
-  // Marcos por sessão: para cada sessão, recalcula o acumulado com cap de 100% por item
+  // Marcos por sessão: usa total acumulado (igual à lógica da página de medição)
   const sessionsSorted = [...sessions].sort((a, b) => a.sequencia - b.sequencia);
 
   const marcos: MarcoCalculado[] = sessionsSorted.map((session, idx) => {
-    // Sessões até e incluindo esta
     const sessionIdsAteAgora = new Set(sessionsSorted.slice(0, idx + 1).map(s => s.id));
-    const itensDaSessaoAtual = medicaoItems.filter(i => i.medicao_id === session.id);
-    const itenAteAgora = medicaoItems.filter(i => sessionIdsAteAgora.has(i.medicao_id));
-
-    // Acumulado até esta sessão (com cap)
-    const pctAcum = new Map<string, number>();
-    const totalExtraAcum = new Map<string, number>();
-    itenAteAgora.forEach(item => {
-      const tc = totalContratoPorItem.get(item.item_code);
-      if (tc !== undefined && tc > 0) {
-        pctAcum.set(item.item_code, (pctAcum.get(item.item_code) || 0) + Number(item.pct));
-      } else {
-        totalExtraAcum.set(item.item_code, (totalExtraAcum.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100);
-      }
-    });
-    let acumuladoAteAgora = 0;
-    pctAcum.forEach((pctTotal, itemCode) => {
-      const tc = totalContratoPorItem.get(itemCode)!;
-      acumuladoAteAgora += Math.round((Math.min(pctTotal, 100) / 100) * tc * 100) / 100;
-    });
-    totalExtraAcum.forEach(total => { acumuladoAteAgora += total; });
-
-    // Acumulado até sessão anterior (com cap)
     const sessionIdsAntes = new Set(sessionsSorted.slice(0, idx).map(s => s.id));
-    const itensAntes = medicaoItems.filter(i => sessionIdsAntes.has(i.medicao_id));
-    const pctAntes = new Map<string, number>();
-    const totalExtraAntes = new Map<string, number>();
-    itensAntes.forEach(item => {
-      const tc = totalContratoPorItem.get(item.item_code);
-      if (tc !== undefined && tc > 0) {
-        pctAntes.set(item.item_code, (pctAntes.get(item.item_code) || 0) + Number(item.pct));
-      } else {
-        totalExtraAntes.set(item.item_code, (totalExtraAntes.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100);
-      }
-    });
-    let acumuladoAntes = 0;
-    pctAntes.forEach((pctTotal, itemCode) => {
-      const tc = totalContratoPorItem.get(itemCode)!;
-      acumuladoAntes += Math.round((Math.min(pctTotal, 100) / 100) * tc * 100) / 100;
-    });
-    totalExtraAntes.forEach(total => { acumuladoAntes += total; });
 
+    const calcAcumulado = (ids: Set<string>) => {
+      const totaisPorItem = new Map<string, number>();
+      medicaoItems.filter(i => ids.has(i.medicao_id)).forEach(item => {
+        totaisPorItem.set(item.item_code, (totaisPorItem.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100);
+      });
+      let acum = 0;
+      totaisPorItem.forEach((totalAcum, itemCode) => {
+        const tc = totalContratoPorItem.get(itemCode);
+        acum += Math.round((tc !== undefined && tc > 0 ? Math.min(totalAcum, tc) : totalAcum) * 100) / 100;
+      });
+      return acum;
+    };
+
+    const acumuladoAteAgora = calcAcumulado(sessionIdsAteAgora);
+    const acumuladoAntes = calcAcumulado(sessionIdsAntes);
     const valorMedicao = Math.round((acumuladoAteAgora - acumuladoAntes) * 100) / 100;
 
     return {

@@ -3798,6 +3798,11 @@ const criarNovaMedicao = async () => {
                 <CardContent className="p-4">
                   <div className="text-sm text-muted-foreground">Valor Acumulado</div>
                   <div className="text-2xl font-bold text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
+                  {resumoFinanceiro.valorContratoPosAditivo > 0 && (
+                    <div className="text-sm font-semibold text-cyan-700 mt-1">
+                      {Math.min((valorAcumuladoTotal / resumoFinanceiro.valorContratoPosAditivo) * 100, 100).toFixed(1)}%
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               {canEdit && (
