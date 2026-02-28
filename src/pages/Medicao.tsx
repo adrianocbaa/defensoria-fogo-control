@@ -3695,7 +3695,7 @@ const criarNovaMedicao = async () => {
           const itemId = parseInt(itemIdStr);
           const item = items.find(it => it.id === itemId);
           if (item && ehItemFolha(item.item)) {
-            valorAcumulado += dados.total || 0;
+            valorAcumulado += Math.round((dados.total || 0) * 100) / 100;
           }
         });
       }
