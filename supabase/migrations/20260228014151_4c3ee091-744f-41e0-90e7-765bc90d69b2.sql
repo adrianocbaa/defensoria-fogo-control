@@ -1,0 +1,1 @@
+DELETE FROM medicao_rdo_imports WHERE id = '194566fa-d27b-4f3b-9711-60c7ed517c6f';
