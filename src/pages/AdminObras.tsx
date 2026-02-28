@@ -59,42 +59,41 @@ function ObraProgressCell({ obraId, rdo_habilitado, rdoProgresso, fallbackProgre
 
   const hasRdo = rdo_habilitado && rdoProgresso != null;
   const hasMarcoes = dados.marcos.length > 0;
-  const hasFallback = !hasMarcoes && fallbackProgresso && fallbackProgresso > 0;
+
+  if (!hasRdo && !hasMarcoes) {
+    const p = fallbackProgresso && fallbackProgresso > 0 ? fallbackProgresso : null;
+    if (!p) return <span className="text-sm text-muted-foreground">-</span>;
+    return (
+      <div className="flex items-center gap-2 min-w-[180px]">
+        <Progress value={p} className="flex-1 h-2" />
+        <span className="text-xs text-muted-foreground w-10 text-right">{p.toFixed(1)}%</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-1.5 min-w-[160px] py-1">
-      {/* Barra azul: progresso físico (RDO) */}
+    <div className="flex flex-col gap-1.5 min-w-[180px] py-0.5">
       {hasRdo && (
         <div className="flex items-center gap-2">
-          <Progress value={rdoProgresso} className="w-[100px] h-2" />
-          <span className="text-sm font-medium whitespace-nowrap">{rdoProgresso!.toFixed(1)}%</span>
+          <span className="text-[10px] text-muted-foreground w-6">RDO</span>
+          <div className="relative flex-1 h-2 rounded-full bg-muted overflow-hidden">
+            <div className="absolute left-0 top-0 h-full rounded-full bg-blue-500 transition-all" style={{ width: `${Math.min(rdoProgresso!, 100)}%` }} />
+          </div>
+          <span className="text-xs font-medium w-10 text-right">{rdoProgresso!.toFixed(1)}%</span>
         </div>
       )}
-
-      {/* Barra verde: progresso financeiro (medições) */}
       {hasMarcoes && (
-        <div className="space-y-0.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground w-6">Med</span>
           <MedicaoProgressBar
             marcos={dados.marcos}
             totalContrato={dados.totalContrato}
             height={8}
+            color="green"
+            className="flex-1"
           />
-          <div className="text-xs text-muted-foreground text-right">
-            {dados.percentualExecutado.toFixed(1)}%
-          </div>
+          <span className="text-xs font-medium w-10 text-right">{dados.percentualExecutado.toFixed(1)}%</span>
         </div>
-      )}
-
-      {/* Fallback se não tiver nenhuma das duas */}
-      {!hasRdo && hasFallback && (
-        <div className="flex items-center gap-2">
-          <Progress value={fallbackProgresso} className="w-[100px] h-2" />
-          <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">{fallbackProgresso!.toFixed(1)}%</span>
-        </div>
-      )}
-
-      {!hasRdo && !hasMarcoes && !hasFallback && (
-        <span className="text-sm text-muted-foreground">-</span>
       )}
     </div>
   );
