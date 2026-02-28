@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ProgressBarWithMarkers } from '@/components/ProgressBarWithMarkers';
-import { MedicaoMarco } from '@/hooks/useMedicoesFinanceiro';
+import { calcularFinanceiroMedicao, MarcoCalculado } from '@/lib/medicaoCalculo';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, BarChart3, Map as MapIcon } from 'lucide-react';
@@ -57,7 +57,7 @@ export function AdminObras() {
   const [obraValores, setObraValores] = useState<Record<string, number>>({});
   const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
   const [obraRdoProgressos, setObraRdoProgressos] = useState<Record<string, number | null>>({});
-  const [obraMarcos, setObraMarcos] = useState<Record<string, MedicaoMarco[]>>({});
+  const [obraMarcos, setObraMarcos] = useState<Record<string, MarcoCalculado[]>>({});
   const userRole = useUserRole();
   const navigate = useNavigate();
 
@@ -185,94 +185,39 @@ export function AdminObras() {
       const valores: Record<string, number> = {};
       const progressos: Record<string, number> = {};
       const rdoProgressos: Record<string, number | null> = {};
-      const marcos: Record<string, MedicaoMarco[]> = {};
+      const marcos: Record<string, MarcoCalculado[]> = {};
       
       for (const obra of sortedObras) {
         // Andamento da Obra (RDO) - calculado pelo banco via RPC
         const rdoProgress = rdoProgressMap.get(obra.id);
         rdoProgressos[obra.id] = rdoProgress !== undefined ? rdoProgress : null;
         
-        // Calcular valor da obra e Valor Pago (medição) - usando mesma lógica de useMedicoesFinanceiro
+        // Calcular financeiro usando utilitário centralizado (mesma lógica de useMedicoesFinanceiro)
         const obraOrcamentoFinanceiro = orcamentoFinanceiroData.data?.filter((item: any) => item.obra_id === obra.id) || [];
-        
-        // Função para verificar se é item folha (não tem filhos)
-        const ehItemFolha = (itemCode: string): boolean => {
-          const prefix = itemCode + '.';
-          return !obraOrcamentoFinanceiro.some((other: any) => other.item.startsWith(prefix));
-        };
-        
-        // Filtrar apenas itens folha e somar total_contrato
-        const totalContratoOrcamento = obraOrcamentoFinanceiro.reduce((sum: number, item: any) => {
-          if (ehItemFolha(item.item)) {
-            return sum + Number(item.total_contrato || 0);
-          }
-          return sum;
-        }, 0);
-        
-        if (totalContratoOrcamento > 0) {
-          // Buscar aditivos da obra
-          const obraAditivoSessions = aditivoData.data?.filter(s => s.obra_id === obra.id) || [];
-          const aditivoSessionIds = obraAditivoSessions.map(s => s.id);
-          const obraAditivoItems = aditivoItemsData.data?.filter((item: any) => 
-            aditivoSessionIds.includes(item.aditivo_id)
-          ) || [];
-          const aditivos = obraAditivoItems.reduce((sum: number, item: any) => sum + Number(item.total || 0), 0);
-          
-          valores[obra.id] = totalContratoOrcamento + aditivos;
-          
-          // Mapa item_code -> total_contrato para itens folha (mesma lógica de useMedicoesFinanceiro)
-          const totalContratoPorItem = new Map<string, number>();
-          obraOrcamentoFinanceiro.forEach((oi: any) => {
-            if (ehItemFolha(oi.item) && Number(oi.total_contrato || 0) > 0) {
-              totalContratoPorItem.set(oi.item, Number(oi.total_contrato));
-            }
-          });
-          
-          const calcularValorItem = (item: any): number => {
-            const totalContrato = totalContratoPorItem.get(item.item_code);
-            if (totalContrato !== undefined && totalContrato > 0) {
-              return Math.round((Number(item.pct) / 100) * totalContrato * 100) / 100;
-            }
-            return Math.round(Number(item.total || 0) * 100) / 100;
-          };
+        const obraAditivoSessions = aditivoData.data?.filter((s: any) => s.obra_id === obra.id) || [];
+        const aditivoSessionIds = obraAditivoSessions.map((s: any) => s.id);
+        const obraAditivoItems = aditivoItemsData.data?.filter((item: any) =>
+          aditivoSessionIds.includes(item.aditivo_id)
+        ) || [];
+        const obraMedicaoSessions = (medicaoData.data?.filter((s: any) => s.obra_id === obra.id) || [])
+          .sort((a: any, b: any) => a.sequencia - b.sequencia);
+        const medicaoSessionIds = obraMedicaoSessions.map((s: any) => s.id);
+        const obraMedicaoItems = medicaoItemsData.data?.filter((item: any) =>
+          medicaoSessionIds.includes(item.medicao_id)
+        ) || [];
 
-          // Calcular progresso e marcos
-          const obraMedicaoSessions = (medicaoData.data?.filter(s => s.obra_id === obra.id) || [])
-            .sort((a: any, b: any) => a.sequencia - b.sequencia);
-          const medicaoSessionIds = obraMedicaoSessions.map((s: any) => s.id);
-          const obraMedicaoItems = medicaoItemsData.data?.filter((item: any) => 
-            medicaoSessionIds.includes(item.medicao_id)
-          ) || [];
-          const valorAcumulado = obraMedicaoItems.reduce((sum: number, item: any) => sum + calcularValorItem(item), 0);
-          
-          progressos[obra.id] = valores[obra.id] > 0 ? Math.min((valorAcumulado / valores[obra.id]) * 100, 100) : 0;
-          
-          // Calcular marcos para cada sessão de medição
-          const valorPorSessao: Record<string, number> = {};
-          obraMedicaoItems.forEach((item: any) => {
-            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + calcularValorItem(item);
-          });
-          
-          let acumuladoMarco = 0;
-          const obraMarcos: MedicaoMarco[] = [];
-          for (const session of obraMedicaoSessions) {
-            const valorMedicao = valorPorSessao[(session as any).id] || 0;
-            acumuladoMarco += valorMedicao;
-            obraMarcos.push({
-              sequencia: (session as any).sequencia,
-              valorAcumulado: acumuladoMarco,
-              valorMedicao: valorMedicao,
-              percentualAcumulado: valores[obra.id] > 0 ? Math.min((acumuladoMarco / valores[obra.id]) * 100, 100) : 0
-            });
-          }
-          marcos[obra.id] = obraMarcos;
-        } else {
-          // Não tem planilha: usar valores da obra
-          valores[obra.id] = Number(obra.valor_total || 0) + Number(obra.valor_aditivado || 0);
-          progressos[obra.id] = valores[obra.id] > 0 
-            ? (Number(obra.valor_executado || 0) / valores[obra.id]) * 100 
-            : 0;
-        }
+        const resultado = calcularFinanceiroMedicao(
+          obraOrcamentoFinanceiro,
+          obraAditivoItems,
+          obraMedicaoSessions,
+          obraMedicaoItems,
+          Number(obra.valor_total || 0),
+          Number(obra.valor_aditivado || 0),
+        );
+
+        valores[obra.id] = resultado.totalContrato;
+        progressos[obra.id] = resultado.percentualExecutado;
+        marcos[obra.id] = resultado.marcos;
       }
       
       setObraValores(valores);
