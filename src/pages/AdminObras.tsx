@@ -215,8 +215,11 @@ export function AdminObras() {
           Number(obra.valor_aditivado || 0),
         );
 
-        valores[obra.id] = resultado.totalContrato;
-        progressos[obra.id] = resultado.percentualExecutado;
+        // Campo 2 / Campo 1: valor_executado / (valor_total + valor_aditivado)
+        const valorExecutado = Number(obra.valor_executado || 0);
+        const totalContrato = Number(obra.valor_total || 0) + Number(obra.valor_aditivado || 0);
+        valores[obra.id] = totalContrato || resultado.totalContrato;
+        progressos[obra.id] = totalContrato > 0 ? Math.min((valorExecutado / totalContrato) * 100, 100) : 0;
         marcos[obra.id] = resultado.marcos;
       }
       
@@ -456,8 +459,7 @@ export function AdminObras() {
                         )}
                         {/* Valor Pago (Medição) com marcadores */}
                         {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (() => {
-                          const ultimoMarco = obraMarcos[obra.id][obraMarcos[obra.id].length - 1];
-                          const pctExibido = ultimoMarco.percentualAcumulado;
+                          const pctExibido = obraProgressos[obra.id] ?? 0;
                           return (
                             <div className="flex items-center gap-2">
                               <ProgressBarWithMarkers
