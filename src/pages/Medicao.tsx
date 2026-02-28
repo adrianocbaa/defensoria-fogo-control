@@ -3710,14 +3710,13 @@ const criarNovaMedicao = async () => {
   };
 
   // Calcular total de serviços executados na medição atual
-  // Usa dadosHierarquicosMemoizados (já inclui AL calculada em memória) para evitar flash
-  // Soma apenas itens folha para evitar dupla contagem com macros
+  // Usa medicao.dados (estado após useEffect de AL) para incluir administração local calculada
   const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
-  const totalServicosExecutados = medicaoAtual
+  const totalServicosExecutados = medicaoAtualData
     ? items
         .filter(item => ehItemFolha(item.item))
         .reduce((sum, item) => {
-          const dados = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id];
+          const dados = medicaoAtualData.dados[item.id];
           return sum + (dados?.total || 0);
         }, 0)
     : 0;
