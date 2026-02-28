@@ -108,8 +108,8 @@ export function calcularFinanceiroMedicao(
   const totalContratoPorItem = buildTotalContratoPorItem(orcItems);
 
   // Valor acumulado global: soma direta do campo `total` de cada item de medição
-  // (igual à lógica da página de medição — usa o valor em R$ já gravado com desconto)
-  // Agrupa por item_code para evitar dupla contagem e aplica cap pelo total_contrato
+  // O campo `total` já contém o valor correto com descontos aplicados — é a fonte da verdade.
+  // Agrupa por item_code para evitar dupla contagem entre sessões.
   const totalAcumuladoPorItem = new Map<string, number>();
   medicaoItems.forEach(item => {
     totalAcumuladoPorItem.set(
@@ -119,13 +119,8 @@ export function calcularFinanceiroMedicao(
   });
 
   let valorAcumulado = 0;
-  totalAcumuladoPorItem.forEach((totalAcum, itemCode) => {
-    const totalContrato = totalContratoPorItem.get(itemCode);
-    // Cap pelo total_contrato para itens contratuais (evita ultrapassar 100%)
-    const valorFinal = totalContrato !== undefined && totalContrato > 0
-      ? Math.min(totalAcum, totalContrato)
-      : totalAcum;
-    valorAcumulado += Math.round(valorFinal * 100) / 100;
+  totalAcumuladoPorItem.forEach((totalAcum) => {
+    valorAcumulado += Math.round(totalAcum * 100) / 100;
   });
 
   // Marcos por sessão: usa total acumulado (igual à lógica da página de medição)
@@ -141,9 +136,8 @@ export function calcularFinanceiroMedicao(
         totaisPorItem.set(item.item_code, (totaisPorItem.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100);
       });
       let acum = 0;
-      totaisPorItem.forEach((totalAcum, itemCode) => {
-        const tc = totalContratoPorItem.get(itemCode);
-        acum += Math.round((tc !== undefined && tc > 0 ? Math.min(totalAcum, tc) : totalAcum) * 100) / 100;
+      totaisPorItem.forEach((totalAcum) => {
+        acum += Math.round(totalAcum * 100) / 100;
       });
       return acum;
     };
