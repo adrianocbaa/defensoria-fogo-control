@@ -666,11 +666,22 @@ export function Medicao() {
       const medicaoSeqInline = medicao.id;
       const hasAdminLocal = items.some(item => item.ehAdministracaoLocal);
       if (hasAdminLocal) {
-        // Total dos itens folha NÃO-AL já lançados
-        let totalServicosExec = 0;
+        // Acumular serviços NÃO-AL de TODAS as medições até esta (inclusive)
+        // Isso é necessário para calcular a proporção correta da AL na última medição
+        const sessoesAnteriores = medicoes.filter(m => m.id < medicao.id);
+        let totalServicosExecAcumulado = 0;
+        // Serviços de medições anteriores bloqueadas
+        sessoesAnteriores.forEach(sesAnterior => {
+          items.forEach(item => {
+            if (!item.ehAdministracaoLocal && (childrenByCode.get(item.item.trim())?.length ?? 0) === 0) {
+              totalServicosExecAcumulado += sesAnterior.dados[item.id]?.total || 0;
+            }
+          });
+        });
+        // Serviços da medição atual
         items.forEach(item => {
           if (!item.ehAdministracaoLocal && (childrenByCode.get(item.item.trim())?.length ?? 0) === 0) {
-            totalServicosExec += dadosCalculados[item.id]?.total || 0;
+            totalServicosExecAcumulado += dadosCalculados[item.id]?.total || 0;
           }
         });
 
@@ -683,19 +694,36 @@ export function Medicao() {
           .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoSeqInline), 0);
 
         const divisor = totalContrato - totalAL;
-        if (totalServicosExec > 0 && divisor > 0) {
-          const pct = totalServicosExec / divisor;
+        if (totalServicosExecAcumulado > 0 && divisor > 0) {
+          // Percentual acumulado de AL que deve existir até esta medição
+          const pctAcumulado = Math.min(totalServicosExecAcumulado / divisor, 1);
+
           items.forEach(item => {
-            if (item.ehAdministracaoLocal) {
+            if (item.ehAdministracaoLocal && (childrenByCode.get(item.item.trim())?.length ?? 0) === 0) {
               const totalContratoAjustado = calcularTotalContratoComAditivos(item, medicaoSeqInline);
               const qntAditivoAcum = aditivos
                 .filter(a => a.bloqueada && (a.sequencia === undefined || a.sequencia <= medicaoSeqInline))
                 .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
               const quantidadeAjustada = item.quantidade + qntAditivoAcum;
+
+              // AL acumulada nas medições anteriores (usar cache já calculado para consistência)
+              const alAcumuladoAnteriorTotal = sessoesAnteriores.reduce((sum, sesAnterior) => {
+                return sum + ((cache[sesAnterior.id]?.[item.id]?.total) ?? (sesAnterior.dados[item.id]?.total) ?? 0);
+              }, 0);
+              const alAcumuladoAnteriorQnt = sessoesAnteriores.reduce((sum, sesAnterior) => {
+                return sum + ((cache[sesAnterior.id]?.[item.id]?.qnt) ?? (sesAnterior.dados[item.id]?.qnt) ?? 0);
+              }, 0);
+
+              // AL desta medição = AL acumulada até agora - AL já lançada anteriormente
+              const totalAcumuladoAL = pctAcumulado * totalContratoAjustado;
+              const totalEstaMedicao = totalAcumuladoAL - alAcumuladoAnteriorTotal;
+              const qntAcumulada = pctAcumulado * quantidadeAjustada;
+              const qntAnterior = alAcumuladoAnteriorQnt;
+
               dadosCalculados[item.id] = {
-                qnt: pct * quantidadeAjustada,
-                percentual: pct * 100,
-                total: pct * totalContratoAjustado,
+                qnt: qntAcumulada - qntAnterior,
+                percentual: pctAcumulado * 100,
+                total: totalEstaMedicao,
               };
             }
           });
@@ -830,8 +858,18 @@ export function Medicao() {
     // com sequência <= sequência da medição, evitando que aditivos futuros distorçam a base)
     const medicaoSeq = medicaoAtualData.id; // id == sequencia no sistema
 
-    // 1. Calcular Total de Serviços Executados (valor da medição dos itens que NÃO são administração local, apenas itens folha)
+    // 1. Calcular Total de Serviços Executados ACUMULADO (medições anteriores + atual, NÃO-AL, folha)
+    const sessoesAnteriores = medicoes.filter(m => m.bloqueada && m.id < medicaoSeq);
     let totalServicosExecutados = 0;
+    // Serviços das medições anteriores bloqueadas
+    sessoesAnteriores.forEach(sesAnterior => {
+      items.forEach(item => {
+        if (!item.ehAdministracaoLocal && ehItemFolha(item.item)) {
+          totalServicosExecutados += dadosHierarquicosMemoizados[sesAnterior.id]?.[item.id]?.total || 0;
+        }
+      });
+    });
+    // Serviços da medição atual
     items.forEach(item => {
       if (!item.ehAdministracaoLocal && ehItemFolha(item.item)) {
         const medicaoData = medicaoAtualData.dados[item.id];
@@ -860,8 +898,10 @@ export function Medicao() {
       return;
     }
 
-    // Aplicar a fórmula: Total de Serviços Executados / (Total do Contrato - Total Administração Local)
-    const porcentagemExecucao = totalServicosExecutados / (totalDoContrato - totalAdministracaoLocal);
+    // Percentual acumulado de execução (limitado a 100%)
+    const porcentagemExecucaoAcumulada = Math.min(totalServicosExecutados / (totalDoContrato - totalAdministracaoLocal), 1);
+    // O percentual da AL nesta medição é o acumulado menos o já lançado anteriormente
+    // (calculado por item abaixo)
 
     // Aplicar a porcentagem nos itens da Administração Local
     setMedicoes(prevMedicoes =>
@@ -870,29 +910,33 @@ export function Medicao() {
           const novosDados = { ...medicao.dados };
           
           items.forEach(item => {
-            if (item.ehAdministracaoLocal) {
-              // % (coluna 2): Inserir a porcentagem calculada
-              const percentualCalculado = porcentagemExecucao * 100;
-
-              // Calcular quantidade e total considerando apenas aditivos com seq <= medição atual
+            if (item.ehAdministracaoLocal && ehItemFolha(item.item)) {
               const totalContratoAjustado = calcularTotalContratoComAditivos(item, medicaoSeq);
-              
-              // Calcular quantidade ajustada com base nos aditivos bloqueados até a sequência da medição
               const qntAditivoAcum = aditivos
                 .filter(a => a.bloqueada && (a.sequencia === undefined || a.sequencia <= medicaoSeq))
                 .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
               const quantidadeAjustada = item.quantidade + qntAditivoAcum;
 
-              // QNT (coluna 1): % × Quantitativo ajustado (com aditivos/supressões)
-              const quantidadeCalculada = porcentagemExecucao * quantidadeAjustada;
+              // AL acumulada das medições anteriores (bloqueadas)
+              const alAcumuladoAnteriorTotal = sessoesAnteriores.reduce((sum, sesAnterior) => {
+                return sum + (dadosHierarquicosMemoizados[sesAnterior.id]?.[item.id]?.total || 0);
+              }, 0);
+              const alAcumuladoAnteriorQnt = sessoesAnteriores.reduce((sum, sesAnterior) => {
+                return sum + (dadosHierarquicosMemoizados[sesAnterior.id]?.[item.id]?.qnt || 0);
+              }, 0);
 
-              // TOTAL (coluna 3): % × Total Contrato ajustado (com aditivos/supressões)
-              const totalCalculado = porcentagemExecucao * totalContratoAjustado;
+              // Total acumulado de AL que deveria existir até esta medição
+              const totalAcumuladoAL = porcentagemExecucaoAcumulada * totalContratoAjustado;
+              const qntAcumuladaAL = porcentagemExecucaoAcumulada * quantidadeAjustada;
+
+              // Esta medição = acumulado até agora - o que já foi lançado antes
+              const totalEstaMedicao = totalAcumuladoAL - alAcumuladoAnteriorTotal;
+              const qntEstaMedicao = qntAcumuladaAL - alAcumuladoAnteriorQnt;
 
               novosDados[item.id] = {
-                qnt: quantidadeCalculada,
-                percentual: percentualCalculado,
-                total: totalCalculado
+                qnt: qntEstaMedicao,
+                percentual: porcentagemExecucaoAcumulada * 100,
+                total: totalEstaMedicao
               };
             }
           });
@@ -906,7 +950,7 @@ export function Medicao() {
       })
     );
 
-    if (!silent) toast.success(`Administração Local calculada! Porcentagem de execução: ${(porcentagemExecucao * 100).toFixed(2)}%`);
+    if (!silent) toast.success(`Administração Local calculada! Porcentagem de execução acumulada: ${(porcentagemExecucaoAcumulada * 100).toFixed(2)}%`);
   };
 
   // Debounce por célula (medição)
