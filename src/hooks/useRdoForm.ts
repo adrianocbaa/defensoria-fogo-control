@@ -92,19 +92,33 @@ export function useRdoForm(obraId: string, data: string) {
   // (ex: assinaturas, status externo) sem sobrescrever campos editáveis
   useEffect(() => {
     if (!isFormInitialized || isLoading || !rdoReport) return;
-    setFormData(prev => ({
-      ...prev,
-      // Sincronizar apenas campos de controle/status do servidor
-      status: rdoReport.status,
-      assinatura_fiscal_validado_em: rdoReport.assinatura_fiscal_validado_em,
-      assinatura_contratada_validado_em: rdoReport.assinatura_contratada_validado_em,
-      fiscal_concluido_em: rdoReport.fiscal_concluido_em,
-      contratada_concluido_em: rdoReport.contratada_concluido_em,
-      aprovacao_observacao: rdoReport.aprovacao_observacao,
-      pdf_url: rdoReport.pdf_url,
-      hash_verificacao: rdoReport.hash_verificacao,
-    }));
-  }, [rdoReport?.status, rdoReport?.assinatura_fiscal_validado_em, rdoReport?.assinatura_contratada_validado_em]);
+    setFormData(prev => {
+      // Evitar re-render se os valores não mudaram
+      if (
+        prev.status === rdoReport.status &&
+        prev.assinatura_fiscal_validado_em === rdoReport.assinatura_fiscal_validado_em &&
+        prev.assinatura_contratada_validado_em === rdoReport.assinatura_contratada_validado_em &&
+        prev.fiscal_concluido_em === rdoReport.fiscal_concluido_em &&
+        prev.contratada_concluido_em === rdoReport.contratada_concluido_em &&
+        prev.aprovacao_observacao === rdoReport.aprovacao_observacao &&
+        prev.pdf_url === rdoReport.pdf_url &&
+        prev.hash_verificacao === rdoReport.hash_verificacao
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        status: rdoReport.status,
+        assinatura_fiscal_validado_em: rdoReport.assinatura_fiscal_validado_em,
+        assinatura_contratada_validado_em: rdoReport.assinatura_contratada_validado_em,
+        fiscal_concluido_em: rdoReport.fiscal_concluido_em,
+        contratada_concluido_em: rdoReport.contratada_concluido_em,
+        aprovacao_observacao: rdoReport.aprovacao_observacao,
+        pdf_url: rdoReport.pdf_url,
+        hash_verificacao: rdoReport.hash_verificacao,
+      };
+    });
+  }, [rdoReport?.status, rdoReport?.assinatura_fiscal_validado_em, rdoReport?.assinatura_contratada_validado_em, rdoReport?.fiscal_concluido_em, rdoReport?.contratada_concluido_em, rdoReport?.pdf_url, rdoReport?.hash_verificacao]);
 
   // Mutation para salvar/atualizar
   const saveMutation = useMutation({
