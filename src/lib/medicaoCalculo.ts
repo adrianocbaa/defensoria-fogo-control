@@ -154,7 +154,7 @@ export function calcularFinanceiroMedicao(
       pctPorItem.forEach((pctAcum, itemCode) => {
         const tc = totalContratoPorItem.get(itemCode);
         if (tc !== undefined && tc > 0) {
-          acum += Math.round((Math.min(pctAcum, 100) / 100) * tc * 100) / 100;
+          acum += Math.round((pctAcum / 100) * tc * 100) / 100;
         } else {
           acum += Math.round((totalPorItem.get(itemCode) || 0) * 100) / 100;
         }
