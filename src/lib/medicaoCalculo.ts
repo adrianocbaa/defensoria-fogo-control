@@ -162,18 +162,11 @@ export function calcularFinanceiroMedicao(
       return acum;
     };
 
-    // valorMedicao: soma direta dos itens desta sessão (pct × total_contrato ou total direto)
+    // valorMedicao: soma direta do campo `total` dos itens desta sessão (igual a "Serviços Executados")
     const itemsDaSessao = medicaoItems.filter(i => i.medicao_id === session.id);
-    let valorMedicao = 0;
-    itemsDaSessao.forEach(item => {
-      const tc = totalContratoPorItem.get(item.item_code);
-      if (tc !== undefined && tc > 0) {
-        valorMedicao += Math.round((Number(item.pct || 0) / 100) * tc * 100) / 100;
-      } else {
-        valorMedicao += Math.round(Number(item.total || 0) * 100) / 100;
-      }
-    });
-    valorMedicao = Math.round(valorMedicao * 100) / 100;
+    const valorMedicao = Math.round(
+      itemsDaSessao.reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
+    ) / 100;
 
     const acumuladoAteAgora = calcAcumulado(sessionIdsAteAgora);
 
