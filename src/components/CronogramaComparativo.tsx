@@ -57,6 +57,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'macros' | 'acumulado'>('macros');
   const [medicaoSelecionada, setMedicaoSelecionada] = useState<number>(1);
+  // Total do contrato por macro (soma dos itens folha do orcamento_items) — mesma base da tabela
+  const [totalContratoPorMacroState, setTotalContratoPorMacroState] = useState<Map<number, number>>(new Map());
 
   useEffect(() => {
     carregarDadosExecutados();
@@ -88,10 +90,10 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         return;
       }
 
-      // Buscar itens do orçamento para mapear códigos para MACROs
+      // Buscar itens do orçamento para mapear códigos para MACROs e calcular total_contrato por macro
       const { data: orcamentoItems, error: orcError } = await supabase
         .from('orcamento_items')
-        .select('codigo, item, descricao')
+        .select('codigo, item, descricao, total_contrato')
         .eq('obra_id', obraId);
 
       if (orcError) throw orcError;
@@ -99,7 +101,19 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
       // Criar mapa de código para MACRO e mapa de código para item hierárquico canônico
       const codigoParaMacro = new Map<string, { macro: string; descricao: string }>();
       const codigoParaItemHierarquico = new Map<string, string>(); // Mapeia qualquer código para o item hierárquico canônico
+      // Mapa: macroNum -> total_contrato somado dos itens FOLHA daquele macro (= mesma base da tabela)
+      const totalContratoPorMacro = new Map<number, number>();
       
+      // Primeiro identificar quais itens são folha (não têm filhos)
+      const prefixosComFilhos = new Set<string>();
+      orcamentoItems?.forEach(item => {
+        const partes = item.item.split('.');
+        // Para cada nível acima do item atual, marcar como "tem filhos"
+        for (let i = 1; i < partes.length; i++) {
+          prefixosComFilhos.add(partes.slice(0, i).join('.'));
+        }
+      });
+
       orcamentoItems?.forEach(item => {
         // Extrair o primeiro dígito do código do item (MACRO)
         const macro = item.item.split('.')[0];
@@ -117,6 +131,15 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         // Mapear código hierárquico (ex: "2.1.1") para o macro e para si mesmo
         codigoParaMacro.set(item.item, { macro, descricao: item.descricao });
         codigoParaItemHierarquico.set(item.item, item.item);
+
+        // Acumular total_contrato apenas de itens FOLHA por macro
+        const ehFolha = !prefixosComFilhos.has(item.item);
+        if (ehFolha) {
+          const macroNum = parseInt(macro);
+          if (!isNaN(macroNum)) {
+            totalContratoPorMacro.set(macroNum, (totalContratoPorMacro.get(macroNum) || 0) + (item.total_contrato || 0));
+          }
+        }
       });
 
       // Processar cada medição individualmente e calcular acumulado progressivo
@@ -216,6 +239,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
       }
 
       setMedicoesComparativo(comparativos);
+      setTotalContratoPorMacroState(totalContratoPorMacro);
     } catch (error) {
       console.error('Erro ao carregar dados executados:', error);
     } finally {
@@ -297,13 +321,22 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
         const macrosExecutados = medicaoComp.macros;
 
         // Calcular o total da obra para cada MACRO
+        // Usar total_contrato do orçamento (itens folha) — mesma base da tabela de medição
+        // Fallback para total_etapa do cronograma caso não haja dados de orçamento
         const totaisPorMacro = new Map<number, number>();
         cronograma.items.forEach(item => {
-          totaisPorMacro.set(item.item_numero, item.total_etapa);
+          const totalOrcamento = totalContratoPorMacroState.get(item.item_numero);
+          totaisPorMacro.set(item.item_numero, totalOrcamento ?? item.total_etapa);
         });
 
         // Calcular o total geral da obra
-        const totalObra = cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
+        // Usar soma do orçamento (mesma base da tabela); fallback para cronograma
+        const totalObraOrcamento = totalContratoPorMacroState.size > 0
+          ? Array.from(totalContratoPorMacroState.values()).reduce((s, v) => s + v, 0)
+          : 0;
+        const totalObra = totalObraOrcamento > 0
+          ? totalObraOrcamento
+          : cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
 
         // Preparar dados para o gráfico baseado no modo de visualização
         const isAcumulado = viewMode === 'acumulado';
