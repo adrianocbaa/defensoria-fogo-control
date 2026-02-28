@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileDown, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
+import { MedicaoProgressBar, MedicaoMarcoBar } from '@/components/MedicaoProgressBar';
 
 interface Item {
   id: number;
@@ -29,6 +30,8 @@ interface ResumoContratoProps {
   ehItemPrimeiroNivel: (itemCode: string) => boolean;
   medicaoAtual?: number;
   canEdit?: boolean;
+  marcos?: MedicaoMarcoBar[];
+  totalContrato?: number;
 }
 
 interface ResumoAditivoData {
@@ -49,7 +52,9 @@ export function ResumoContrato({
   items, 
   ehItemPrimeiroNivel,
   medicaoAtual,
-  canEdit = true
+  canEdit = true,
+  marcos = [],
+  totalContrato,
 }: ResumoContratoProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -151,6 +156,30 @@ export function ResumoContrato({
             </div>
           </div>
         </CardHeader>
+
+        {/* Barra de progresso de medições */}
+        {marcos.length > 0 && (
+          <div className="px-6 pb-4 space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span className="font-medium">Progresso de Pagamentos</span>
+              <span className="font-semibold text-green-600">
+                {totalContrato && totalContrato > 0
+                  ? `${Math.min((marcos[marcos.length - 1]?.valorAcumulado / totalContrato) * 100, 100).toFixed(1)}%`
+                  : '0%'}
+              </span>
+            </div>
+            <MedicaoProgressBar
+              marcos={marcos}
+              totalContrato={totalContrato || valorTotalOriginal}
+              height={14}
+            />
+            <div className="text-xs text-muted-foreground mt-1">
+              Acumulado: <span className="font-semibold">{formatCurrency(marcos[marcos.length - 1]?.valorAcumulado || 0)}</span>
+              {' '}/ {formatCurrency(totalContrato || valorTotalOriginal)}
+            </div>
+          </div>
+        )}
+
         <CollapsibleContent>
           <CardContent className="p-0">
             <div className="overflow-x-auto">

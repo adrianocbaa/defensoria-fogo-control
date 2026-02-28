@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Map as MapIcon, List, Search } from 'lucide-react';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
+import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
+import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 
 const statusColors: Record<string, string> = {
   planejamento: 'bg-blue-100 text-blue-800',
@@ -27,12 +29,67 @@ const statusLabels: Record<string, string> = {
   paralisada: 'Paralisada',
 };
 
+// Sub-componente por obra para isolar o hook
+function ObraRow({ obra }: { obra: ReturnType<typeof useObras>['obras'][number] }) {
+  const { dados } = useMedicoesFinanceiro(obra.id);
+  const valorFinal = obra.valor + (obra.valor_aditivado || 0);
+  const porcentagemExecucao = valorFinal > 0 ? (obra.valorExecutado / valorFinal) * 100 : 0;
+
+  return (
+    <TableRow key={obra.id}>
+      <TableCell className="font-medium">
+        <div>
+          <div className="font-semibold">{obra.nome}</div>
+          <div className="text-sm text-muted-foreground">{obra.tipo}</div>
+        </div>
+      </TableCell>
+      <TableCell>{obra.municipio}</TableCell>
+      <TableCell>
+        <Badge className={statusColors[obra.status] || 'bg-gray-100 text-gray-800'}>
+          {statusLabels[obra.status] || obra.status}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right font-medium">
+        {formatCurrency(valorFinal)}
+      </TableCell>
+      <TableCell className="text-right">
+        {formatCurrency(obra.valorExecutado)}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end space-x-2">
+          <span className={`font-medium ${
+            porcentagemExecucao >= 100 ? 'text-green-600' : 
+            porcentagemExecucao >= 50 ? 'text-yellow-600' : 'text-red-600'
+          }`}>
+            {formatPercentageValue(Number(porcentagemExecucao.toFixed(2)))}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell className="min-w-[160px]">
+        {dados.marcos.length > 0 ? (
+          <div className="space-y-1 py-1">
+            <MedicaoProgressBar
+              marcos={dados.marcos}
+              totalContrato={dados.totalContrato}
+              height={10}
+            />
+            <div className="text-xs text-muted-foreground text-right">
+              {formatCurrency(dados.valorAcumulado)}
+            </div>
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">Sem medições</span>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export function ObrasLista() {
   const { obras, loading, error, refetch } = useObras();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredObras, setFilteredObras] = useState(obras);
 
-  // Filtrar obras quando mudar o termo de busca ou as obras
   useEffect(() => {
     if (!searchTerm) {
       setFilteredObras(obras);
@@ -46,17 +103,12 @@ export function ObrasLista() {
     }
   }, [searchTerm, obras]);
 
-  if (loading) {
-    return <LoadingStates.TableSkeleton />;
-  }
+  if (loading) return <LoadingStates.TableSkeleton />;
 
   if (error) {
     return (
       <div className="container mx-auto py-6">
-        <LoadingStates.ErrorState 
-          message={error} 
-          onRetry={refetch}
-        />
+        <LoadingStates.ErrorState message={error} onRetry={refetch} />
       </div>
     );
   }
@@ -65,101 +117,68 @@ export function ObrasLista() {
     <SimpleHeader>
       <PermissionGuard requiresEdit>
         <div className="container mx-auto py-6 space-y-6">
-        <PageHeader
-          title="Lista de Obras"
-          subtitle="Visualização em tabela de todas as obras públicas"
-          actions={
-            <Button asChild variant="outline">
-              <Link to="/obras">
-                <MapIcon className="h-4 w-4 mr-2" />
-                Ver como Mapa
-              </Link>
-            </Button>
-          }
-        />
+          <PageHeader
+            title="Lista de Obras"
+            subtitle="Visualização em tabela de todas as obras públicas"
+            actions={
+              <Button asChild variant="outline">
+                <Link to="/obras">
+                  <MapIcon className="h-4 w-4 mr-2" />
+                  Ver como Mapa
+                </Link>
+              </Button>
+            }
+          />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <List className="h-5 w-5" />
-              Obras Cadastradas ({filteredObras.length})
-            </CardTitle>
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4" />
-              <Input
-                placeholder="Buscar por nome, município ou tipo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredObras.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  {searchTerm ? 'Nenhuma obra encontrada com os critérios de busca.' : 'Nenhuma obra cadastrada ainda.'}
-                </p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <List className="h-5 w-5" />
+                Obras Cadastradas ({filteredObras.length})
+              </CardTitle>
+              <div className="flex items-center space-x-2">
+                <Search className="h-4 w-4" />
+                <Input
+                  placeholder="Buscar por nome, município ou tipo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                />
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[250px]">🏗️ Nome da Obra</TableHead>
-                      <TableHead>📍 Município</TableHead>
-                      <TableHead>📅 Status</TableHead>
-                      <TableHead className="text-right">💰 Valor Final</TableHead>
-                      <TableHead className="text-right">💸 Valor Pago</TableHead>
-                      <TableHead className="text-right">📈 Execução (%)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredObras.map((obra) => {
-                      const valorFinal = obra.valor + (obra.valor_aditivado || 0);
-                      const porcentagemExecucao = valorFinal > 0 ? (obra.valorExecutado / valorFinal) * 100 : 0;
-                      
-                      return (
-                        <TableRow key={obra.id}>
-                          <TableCell className="font-medium">
-                            <div>
-                              <div className="font-semibold">{obra.nome}</div>
-                              <div className="text-sm text-muted-foreground">{obra.tipo}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{obra.municipio}</TableCell>
-                          <TableCell>
-                            <Badge className={statusColors[obra.status] || 'bg-gray-100 text-gray-800'}>
-                              {statusLabels[obra.status] || obra.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(valorFinal)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(obra.valorExecutado)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <span className={`font-medium ${
-                                porcentagemExecucao >= 100 ? 'text-green-600' : 
-                                porcentagemExecucao >= 50 ? 'text-yellow-600' : 'text-red-600'
-                              }`}>
-                                {formatPercentageValue(Number(porcentagemExecucao.toFixed(2)))}
-                              </span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-          </div>
-        </PermissionGuard>
-      </SimpleHeader>
-    );
-  }
+            </CardHeader>
+            <CardContent>
+              {filteredObras.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">
+                    {searchTerm ? 'Nenhuma obra encontrada com os critérios de busca.' : 'Nenhuma obra cadastrada ainda.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[250px]">🏗️ Nome da Obra</TableHead>
+                        <TableHead>📍 Município</TableHead>
+                        <TableHead>📅 Status</TableHead>
+                        <TableHead className="text-right">💰 Valor Final</TableHead>
+                        <TableHead className="text-right">💸 Valor Pago</TableHead>
+                        <TableHead className="text-right">📈 Execução (%)</TableHead>
+                        <TableHead className="min-w-[160px]">📊 Progresso Medições</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredObras.map((obra) => (
+                        <ObraRow key={obra.id} obra={obra} />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </PermissionGuard>
+    </SimpleHeader>
+  );
+}
