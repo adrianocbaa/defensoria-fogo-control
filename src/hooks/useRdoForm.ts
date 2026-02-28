@@ -196,8 +196,13 @@ export function useRdoForm(obraId: string, data: string) {
   });
 
   // Autosave — usa ref para evitar que saveMutation entre nas deps e cause loop
+  // Se o RDO ainda não foi criado (sem id), cria agora antes de salvar as mudanças
   useEffect(() => {
-    if (hasChanges && debouncedFormData.id) {
+    if (!hasChanges) return;
+    if (debouncedFormData.id) {
+      saveMutationRef.current?.mutate(debouncedFormData);
+    } else {
+      // RDO não existe ainda: criar agora
       saveMutationRef.current?.mutate(debouncedFormData);
     }
   }, [debouncedFormData, hasChanges]);

@@ -62,7 +62,8 @@ export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExis
   useEffect(() => {
     let isMounted = true;
     
-    if (!reportId && !currentReportId && ensureRdoExists && config) {
+    // Criar RDO imediatamente ao entrar na aba de atividades, mesmo sem preencher outros passos
+    if (!currentReportId && ensureRdoExists) {
       ensureRdoExists()
         .then((newId) => {
           if (isMounted && newId) {
@@ -77,7 +78,7 @@ export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExis
     return () => {
       isMounted = false;
     };
-  }, [reportId, currentReportId, ensureRdoExists, config]);
+  }, [currentReportId, ensureRdoExists]);
 
   // Sincronizar reportId quando vier do parent
   useEffect(() => {
