@@ -231,7 +231,8 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       return { orcamentoItemId, value };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
+      // NÃO invalidar rdo-activities-planilha aqui — causaria re-inicialização dos valores locais
+      // Apenas atualizar o acumulado para refletir o novo progresso
       queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
     },
     onError: (err: any, variables) => {
