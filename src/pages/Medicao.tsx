@@ -2837,7 +2837,7 @@ const criarNovaMedicao = async () => {
               .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
         const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
         const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
-        if (dados.qnt > disponivel + 1e-9) {
+        if (dados.qnt > disponivel + 0.005) {
           itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
         }
       }
@@ -3042,7 +3042,7 @@ const criarNovaMedicao = async () => {
           .reduce((sum, a) => sum + (a.dados[itemId]?.qnt || 0), 0);
         const quantidadeProjetoAjustada = (item.quantidade || 0) + qntAditivoAcum;
         const disponivel = quantidadeProjetoAjustada - qntAcumAnterior;
-        if (dados.qnt > disponivel + 1e-9) {
+        if (dados.qnt > disponivel + 0.005) {
           itensInvalidos.push({ codigo: item.codigo, disponivel, digitado: dados.qnt });
         }
       }
