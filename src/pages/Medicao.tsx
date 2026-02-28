@@ -764,7 +764,7 @@ export function Medicao() {
       totalAditivo,
       totalContrato,
       servicosExecutados,
-      valorAcumulado,
+      valorAcumulado: Math.round(valorAcumulado * 100) / 100,
     };
 
     try {
@@ -3704,7 +3704,7 @@ const criarNovaMedicao = async () => {
     // Não somar aditivos automaticamente ao valor acumulado total
     // Os aditivos só devem ser considerados quando efetivamente medidos/executados
     
-    return valorAcumulado;
+    return Math.round(valorAcumulado * 100) / 100;
   };
 
   const valorAcumuladoTotal = calcularValorAcumuladoTotal();
