@@ -444,7 +444,13 @@ export default function RDODiario() {
                     </Button>
 
                     {currentStep === STEPS.length - 1 && (
-                      <Button onClick={conclude} disabled={isSaving}>
+                      <Button onClick={async () => {
+                        (document.activeElement as HTMLElement | null)?.blur();
+                        if ((window as any).rdoSavePending) {
+                          try { await (window as any).rdoSavePending(); } catch {}
+                        }
+                        await conclude();
+                      }} disabled={isSaving}>
                         <CheckCircle2 className="h-4 w-4 mr-2" />
                         Concluir
                       </Button>

@@ -134,17 +134,21 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     syncDoneRef.current = false;
   }, [reportId]);
 
-  // Inicializar valores locais APENAS na primeira carga
+  // Inicializar valores locais APENAS na primeira carga (sem activitiesByItem nas deps para evitar re-init em refetches)
+  const activitiesByItemRef = useRef(activitiesByItem);
+  activitiesByItemRef.current = activitiesByItem;
   useEffect(() => {
     if (!loadingActivities && !fetchingActivities && !isInitialized) {
       const initialValues: Record<string, number> = {};
-      activitiesByItem.forEach((act, key) => {
+      activitiesByItemRef.current.forEach((act, key) => {
         initialValues[key] = Number(act.executado_dia || 0);
       });
       setLocalExecutado(initialValues);
       setIsInitialized(true);
     }
-  }, [loadingActivities, fetchingActivities, isInitialized, activitiesByItem]);
+    // NÃO incluir activitiesByItem nas deps — evita re-inicialização após refetches do sync/save
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingActivities, fetchingActivities, isInitialized]);
 
   // Após sync: adicionar apenas itens novos sem sobrescrever os existentes
   const prevActivitiesSizeRef = useRef(0);
