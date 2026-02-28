@@ -749,7 +749,7 @@ export function Medicao() {
           const itemId = parseInt(itemIdStr);
           const item = items.find(it => it.id === itemId);
           if (item && ehItemFolha(item.item)) {
-            valorAcumulado += d.total || 0;
+            valorAcumulado += (d.qnt || 0) * (item.valorUnitario || 0);
           }
         });
       }
@@ -3695,7 +3695,7 @@ const criarNovaMedicao = async () => {
           const itemId = parseInt(itemIdStr);
           const item = items.find(it => it.id === itemId);
           if (item && ehItemFolha(item.item)) {
-            valorAcumulado += dados.total || 0;
+            valorAcumulado += (dados.qnt || 0) * (item.valorUnitario || 0);
           }
         });
       }
