@@ -44,40 +44,71 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         setLoading(true);
         setError(null);
 
-        // 1. Buscar dados da obra
-        const { data: obraData } = await supabase
-          .from('obras')
-          .select('valor_total, valor_aditivado, percentual_desconto')
-          .eq('id', obraId)
-          .single();
+        // 1. Buscar dados da obra e itens do orçamento em paralelo
+        const [obraResult, orcResult, sessionsResult] = await Promise.all([
+          supabase.from('obras').select('valor_total, valor_aditivado, percentual_desconto').eq('id', obraId).single(),
+          supabase.from('orcamento_items').select('item, total_contrato').eq('obra_id', obraId),
+          supabase.from('medicao_sessions').select('id, sequencia').eq('obra_id', obraId).order('sequencia', { ascending: true }),
+        ]);
 
-        // 2. Buscar todas as sessões de medição da obra ordenadas por sequência
-        const { data: sessions } = await supabase
-          .from('medicao_sessions')
-          .select('id, sequencia')
-          .eq('obra_id', obraId)
-          .order('sequencia', { ascending: true });
+        const obraData = obraResult.data;
+        const orcItems = orcResult.data || [];
+        const sessions = sessionsResult.data || [];
 
-        // 3. Buscar todos os itens de medição dessas sessões
+        // Identificar itens folha do orçamento (sem filhos)
+        const prefixosComFilhos = new Set<string>();
+        orcItems.forEach(oi => {
+          const partes = oi.item.split('.');
+          for (let i = 1; i < partes.length; i++) {
+            prefixosComFilhos.add(partes.slice(0, i).join('.'));
+          }
+        });
+
+        // Mapa item_code -> total_contrato (apenas itens folha com total_contrato > 0)
+        // Usado para calcular valor da medição via pct × total_contrato (mesma lógica da tabela)
+        const totalContratoPorItem = new Map<string, number>();
+        let totalContratoOrcamento = 0;
+        orcItems.forEach(oi => {
+          const ehFolha = !prefixosComFilhos.has(oi.item);
+          if (ehFolha) {
+            totalContratoOrcamento += oi.total_contrato || 0;
+            if ((oi.total_contrato || 0) > 0) {
+              totalContratoPorItem.set(oi.item, oi.total_contrato);
+            }
+          }
+        });
+
+        // Função para calcular valor de um item de medição — igual à lógica da tabela:
+        // itens com total_contrato → pct × total_contrato
+        // itens extracontratuais (total_contrato = 0) → total direto do banco
+        const calcularValorItem = (item: { item_code: string; pct: number; total: number }): number => {
+          const totalContrato = totalContratoPorItem.get(item.item_code);
+          if (totalContrato !== undefined && totalContrato > 0) {
+            return Math.round((item.pct / 100) * totalContrato * 100) / 100;
+          }
+          return Math.round((item.total || 0) * 100) / 100;
+        };
+
+        // 2. Buscar itens de medição e calcular acumulados
         let valorAcumulado = 0;
         const marcos: MedicaoMarco[] = [];
-        
-        if (sessions && sessions.length > 0) {
+
+        if (sessions.length > 0) {
           const sessionIds = sessions.map(s => s.id);
           const { data: medicaoItems } = await supabase
             .from('medicao_items')
-            .select('total, medicao_id')
+            .select('total, medicao_id, item_code, pct')
             .in('medicao_id', sessionIds);
-          
-          // Calcular valor por sessão para os marcos
+
+          // Calcular valor por sessão
           const valorPorSessao: Record<string, number> = {};
           medicaoItems?.forEach(item => {
-            const roundedTotal = Math.round((item.total || 0) * 100) / 100;
-            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + roundedTotal;
+            const valor = calcularValorItem(item);
+            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + valor;
           });
-          
-          valorAcumulado = medicaoItems?.reduce((sum, item) => sum + Math.round((item.total || 0) * 100) / 100, 0) || 0;
-          
+
+          valorAcumulado = medicaoItems?.reduce((sum, item) => sum + calcularValorItem(item), 0) || 0;
+
           // Calcular marcos acumulados por sequência
           let acumulado = 0;
           for (const session of sessions) {
@@ -92,28 +123,7 @@ export const useMedicoesFinanceiro = (obraId: string) => {
           }
         }
 
-        // 4. Buscar total do contrato dos itens do orçamento (apenas itens folha)
-        const { data: orcamentoItems } = await supabase
-          .from('orcamento_items')
-          .select('total_contrato, item')
-          .eq('obra_id', obraId);
-
-        // Função para verificar se é item folha (não tem filhos)
-        const ehItemFolha = (itemCode: string): boolean => {
-          if (!orcamentoItems) return true;
-          const prefix = itemCode + '.';
-          return !orcamentoItems.some(other => other.item.startsWith(prefix));
-        };
-
-        // Filtrar apenas itens folha para o cálculo do total do contrato
-        const totalContratoOrcamento = orcamentoItems?.reduce((sum, item) => {
-          if (ehItemFolha(item.item)) {
-            return sum + (item.total_contrato || 0);
-          }
-          return sum;
-        }, 0) || 0;
-
-        // 5. Buscar aditivos bloqueados
+        // 3. Buscar aditivos bloqueados
         const { data: aditivoSessions } = await supabase
           .from('aditivo_sessions')
           .select('id, status')
@@ -131,15 +141,15 @@ export const useMedicoesFinanceiro = (obraId: string) => {
           totalAditivo = aditivoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
         }
 
-        // Calcular valores
+        // Calcular valores finais
         const valorTotalOriginal = obraData?.valor_total || 0;
         const valorAditivadoObra = obraData?.valor_aditivado || 0;
-        
+
         // Se tem planilha importada, usar total do orçamento + aditivos bloqueados
         // Senão, usar valor da obra + valor aditivado
         const temPlanilha = totalContratoOrcamento > 0;
-        const totalContrato = temPlanilha 
-          ? totalContratoOrcamento + totalAditivo 
+        const totalContrato = temPlanilha
+          ? totalContratoOrcamento + totalAditivo
           : valorTotalOriginal + valorAditivadoObra;
 
         // Percentual executado
