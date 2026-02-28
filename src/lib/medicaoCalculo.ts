@@ -107,13 +107,33 @@ export function calcularFinanceiroMedicao(
   // Mapa para cálculo dos itens
   const totalContratoPorItem = buildTotalContratoPorItem(orcItems);
 
-  // Valor acumulado de todas as medições
-  const valorAcumulado = medicaoItems.reduce(
-    (sum, item) => sum + calcularValorItemMedicao(item, totalContratoPorItem),
-    0
-  );
+  // Agrupa pct acumulado por item_code (soma dos pcts de todas as medições, limitado a 100%)
+  // e valor total para itens extracontratuais
+  const pctAcumuladoPorItem = new Map<string, number>();
+  const totalExtracontratualPorItem = new Map<string, number>();
+  medicaoItems.forEach(item => {
+    const totalContrato = totalContratoPorItem.get(item.item_code);
+    if (totalContrato !== undefined && totalContrato > 0) {
+      // Item contratual: acumula pct
+      pctAcumuladoPorItem.set(item.item_code, (pctAcumuladoPorItem.get(item.item_code) || 0) + Number(item.pct));
+    } else {
+      // Item extracontratual: acumula total diretamente
+      totalExtracontratualPorItem.set(item.item_code, (totalExtracontratualPorItem.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100);
+    }
+  });
 
-  // Marcos por sessão
+  // Valor acumulado global: soma de cada item com cap de 100% para contratuais
+  let valorAcumulado = 0;
+  pctAcumuladoPorItem.forEach((pctTotal, itemCode) => {
+    const totalContrato = totalContratoPorItem.get(itemCode)!;
+    const pctCapped = Math.min(pctTotal, 100);
+    valorAcumulado += Math.round((pctCapped / 100) * totalContrato * 100) / 100;
+  });
+  totalExtracontratualPorItem.forEach(total => {
+    valorAcumulado += total;
+  });
+
+  // Marcos por sessão: incremento de cada medição individualmente (sem cap por item para mostrar o incremento real)
   const valorPorSessao: Record<string, number> = {};
   medicaoItems.forEach(item => {
     valorPorSessao[item.medicao_id] =
