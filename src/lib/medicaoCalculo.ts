@@ -107,34 +107,11 @@ export function calcularFinanceiroMedicao(
   // Mapa para cálculo dos itens
   const totalContratoPorItem = buildTotalContratoPorItem(orcItems);
 
-  // Valor acumulado global: mesma lógica da página de medição (coluna ACUMULADA).
-  // Para itens contratuais: sum(pct) cap 100% × total_contrato
-  // Para itens extracontratuais (sem total_contrato): sum(total) direto
-  const pctAcumuladoPorItem = new Map<string, number>();
-  const totalAcumuladoPorItem = new Map<string, number>();
-  medicaoItems.forEach(item => {
-    pctAcumuladoPorItem.set(
-      item.item_code,
-      (pctAcumuladoPorItem.get(item.item_code) || 0) + Number(item.pct || 0)
-    );
-    totalAcumuladoPorItem.set(
-      item.item_code,
-      (totalAcumuladoPorItem.get(item.item_code) || 0) + Math.round(Number(item.total || 0) * 100) / 100
-    );
-  });
-
-  let valorAcumulado = 0;
-  pctAcumuladoPorItem.forEach((pctAcum, itemCode) => {
-    const tc = totalContratoPorItem.get(itemCode);
-    if (tc !== undefined && tc > 0) {
-      // Item contratual: cap pct em 100% e multiplica pelo total_contrato
-      const pctCapped = Math.min(pctAcum, 100);
-      valorAcumulado += Math.round((pctCapped / 100) * tc * 100) / 100;
-    } else {
-      // Item extracontratual: soma direta dos totais
-      valorAcumulado += Math.round((totalAcumuladoPorItem.get(itemCode) || 0) * 100) / 100;
-    }
-  });
+  // Valor acumulado global: soma direta do campo `total` de todos os itens de medição.
+  // O campo `total` já representa o valor financeiro real pago (calculado na página de medição).
+  const valorAcumulado = Math.round(
+    medicaoItems.reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
+  ) / 100;
 
   // Marcos por sessão: usa total acumulado (igual à lógica da página de medição)
   const sessionsSorted = [...sessions].sort((a, b) => a.sequencia - b.sequencia);
