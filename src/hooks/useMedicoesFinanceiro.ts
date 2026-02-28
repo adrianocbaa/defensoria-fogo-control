@@ -43,7 +43,7 @@ export const useMedicoesFinanceiro = (obraId: string) => {
 
         // Buscar todos os dados em paralelo
         const [obraResult, orcResult, sessionsResult, aditivoSessionsResult] = await Promise.all([
-          supabase.from('obras').select('valor_total, valor_aditivado').eq('id', obraId).single(),
+          supabase.from('obras').select('valor_total, valor_aditivado, valor_executado').eq('id', obraId).single(),
           supabase.from('orcamento_items').select('item, total_contrato, origem').eq('obra_id', obraId),
           supabase.from('medicao_sessions').select('id, sequencia').eq('obra_id', obraId).order('sequencia', { ascending: true }),
           supabase.from('aditivo_sessions').select('id').eq('obra_id', obraId).eq('status', 'bloqueada'),
@@ -77,14 +77,22 @@ export const useMedicoesFinanceiro = (obraId: string) => {
           obraData?.valor_aditivado || 0,
         );
 
+        // Campo 2 / Campo 1: valor_executado / (valor_total + valor_aditivado)
+        // Ambos mantidos automaticamente pela automação do formulário de obra
+        const valorAcumulado = Number(obraData?.valor_executado || 0);
+        const totalContrato = Number(obraData?.valor_total || 0) + Number(obraData?.valor_aditivado || 0);
+        const percentualExecutado = totalContrato > 0
+          ? Math.min((valorAcumulado / totalContrato) * 100, 100)
+          : 0;
+
         setDados({
           valorTotalOriginal: resultado.totalContratoOrcamento,
           totalAditivo: resultado.totalAditivo,
-          totalContrato: resultado.totalContrato,
+          totalContrato: totalContrato || resultado.totalContrato,
           servicosExecutados: resultado.valorAcumulado,
-          valorAcumulado: resultado.valorAcumulado,
-          percentualExecutado: resultado.percentualExecutado,
-          valorPago: resultado.valorAcumulado,
+          valorAcumulado,
+          percentualExecutado,
+          valorPago: valorAcumulado,
           marcos: resultado.marcos,
         });
 
