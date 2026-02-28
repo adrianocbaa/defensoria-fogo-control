@@ -34,6 +34,7 @@ import { ResumoContrato } from '@/components/ResumoContrato';
 import { ObraAuditLogs } from '@/components/ObraAuditLogs';
 import { ExportMedicaoDialog } from '@/components/ExportMedicaoDialog';
 import { useObraActionLogs } from '@/hooks/useObraActionLogs';
+import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
 import { generatePdfFromElement } from '@/lib/pdfExport';
 
@@ -118,6 +119,7 @@ export function Medicao() {
   const { canEditObra, loading: permissionLoading } = useCanEditObra(id);
   // Permissão efetiva: admin sempre pode, outros usam canEditObra
   const canEdit = isAdmin ? roleCanEdit : canEditObra;
+  const { dados: dadosMedicaoFinanceiro } = useMedicoesFinanceiro(id || '');
   const { createSession, blockSession, reopenSession, deleteSession } = useMedicaoSessions();
   const { createSession: createAditivoSession, reopenSession: reopenAditivoSession, deleteSession: deleteAditivoSession, fetchSessionsWithItems: fetchAditivoSessions, blockSession: blockAditivoSession } = useAditivoSessions();
   const { upsertItems } = useMedicaoItems();
@@ -4393,6 +4395,8 @@ const criarNovaMedicao = async () => {
           ehItemPrimeiroNivel={ehItemPrimeiroNivel}
           medicaoAtual={medicaoAtual}
           canEdit={canEdit}
+          marcos={dadosMedicaoFinanceiro.marcos}
+          totalContrato={dadosMedicaoFinanceiro.totalContrato}
         />
 
         {/* Cronograma Financeiro */}
