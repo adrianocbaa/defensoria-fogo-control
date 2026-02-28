@@ -303,21 +303,22 @@ export function PlanilhaTreeView({
                   </TooltipProvider>
                 ) : (
                   <Input
+                    key={node.activity.id}
                     type="number"
                     min="0"
                     step="0.01"
                     max={Math.max(0, (node.quantidadeAjustada ?? node.quantidade) - node.executadoAcumulado)}
-                    value={parseFloat(node.executadoDia.toFixed(2))}
-                    onChange={(e) => onExecutadoChange(
-                      node.id,
-                      node.activity.id,
-                      parseFloat(e.target.value) || 0
-                    )}
-                    onBlur={(e) => onExecutadoBlur(
-                      node.id,
-                      node.activity.id,
-                      parseFloat(e.target.value) || 0
-                    )}
+                    defaultValue={parseFloat(node.executadoDia.toFixed(2))}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        onExecutadoChange(node.id, node.activity.id, val);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.target.value);
+                      onExecutadoBlur(node.id, node.activity.id, isNaN(val) ? 0 : val);
+                    }}
                     className={cn(
                       "h-8 text-sm",
                       node.excedeuLimite && 'border-destructive focus-visible:ring-destructive'

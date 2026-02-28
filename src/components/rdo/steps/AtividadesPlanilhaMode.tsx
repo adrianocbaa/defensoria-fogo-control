@@ -316,22 +316,44 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     updateExecutadoMutation.mutate({ activityId, value: clampedValue, orcamentoItemId });
   };
 
-  // Salvar pendências programaticamente (chamado pelo botão "Salvar")
+  // Salvar pendências programaticamente (chamado antes de Concluir/assinar)
+  // Força o save de TODOS os valores locais que diferem do banco, incluindo pendências no debounce
   const savePending = useCallback(async () => {
     if (!reportId) return;
+
+    // Cancelar qualquer debounce pendente
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
     const updates: { activityId: string; value: number; orcamentoItemId: string }[] = [];
 
+    // Primeiro: processar pendências do debounce
+    pendingUpdatesRef.current.forEach(({ activityId, value }, orcamentoItemId) => {
+      updates.push({ activityId, value, orcamentoItemId });
+    });
+    pendingUpdatesRef.current.clear();
+
+    // Segundo: garantir que todos os valores locais > 0 estejam salvos no banco
     orcamentoItems.forEach((item) => {
       const activity = activitiesByItem.get(item.id);
       if (!activity) return;
 
       const localValue = localExecutado[item.id];
-      const currentValue = activity.executado_dia || 0;
+      const currentValue = Number(activity.executado_dia || 0);
 
-      if (typeof localValue === 'number' && localValue !== currentValue) {
-        updates.push({ activityId: activity.id, value: localValue, orcamentoItemId: item.id });
+      // Salvar se há diferença OU se o valor local é > 0 mas o banco está zerado
+      if (typeof localValue === 'number' && (localValue !== currentValue || (localValue > 0 && currentValue === 0))) {
+        // Evitar duplicata com o que já está em updates
+        const alreadyQueued = updates.some(u => u.orcamentoItemId === item.id);
+        if (!alreadyQueued) {
+          updates.push({ activityId: activity.id, value: localValue, orcamentoItemId: item.id });
+        }
       }
     });
+
+    if (updates.length === 0) return;
 
     // Executa e aguarda todas as atualizações antes de retornar
     await Promise.all(
