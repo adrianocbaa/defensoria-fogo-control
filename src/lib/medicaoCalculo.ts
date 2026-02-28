@@ -170,12 +170,12 @@ export function calcularFinanceiroMedicao(
       sequencia: session.sequencia,
       valorMedicao,
       valorAcumulado: acumuladoAteAgora,
-      percentualAcumulado: totalContrato > 0 ? Math.min((acumuladoAteAgora / totalContrato) * 100, 100) : 0,
+      percentualAcumulado: totalContrato > 0 ? (acumuladoAteAgora / totalContrato) * 100 : 0,
     };
   });
 
   const percentualExecutado = totalContrato > 0
-    ? Math.min((valorAcumulado / totalContrato) * 100, 100)
+    ? (valorAcumulado / totalContrato) * 100
     : 0;
 
   return {
