@@ -215,11 +215,8 @@ export function AdminObras() {
           Number(obra.valor_aditivado || 0),
         );
 
-        // Campo 2 / Campo 1: valor_executado / (valor_total + valor_aditivado)
-        const valorExecutado = Number(obra.valor_executado || 0);
-        const totalContrato = Number(obra.valor_total || 0) + Number(obra.valor_aditivado || 0);
-        valores[obra.id] = totalContrato || resultado.totalContrato;
-        progressos[obra.id] = totalContrato > 0 ? Math.min((valorExecutado / totalContrato) * 100, 100) : 0;
+        valores[obra.id] = resultado.totalContrato;
+        progressos[obra.id] = resultado.percentualExecutado;
         marcos[obra.id] = resultado.marcos;
       }
       
@@ -458,15 +455,14 @@ export function AdminObras() {
                           </div>
                         )}
                         {/* Valor Pago (Medição) com marcadores */}
-                        {(() => {
-                          const pctExibido = obraProgressos[obra.id] ?? 0;
-                          const temMarcos = obraMarcos[obra.id]?.length > 0;
-                          if (pctExibido <= 0 && !temMarcos) return null;
+                        {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (() => {
+                          const ultimoMarco = obraMarcos[obra.id][obraMarcos[obra.id].length - 1];
+                          const pctExibido = ultimoMarco.percentualAcumulado;
                           return (
                             <div className="flex items-center gap-2">
                               <ProgressBarWithMarkers
                                 value={pctExibido}
-                                marcos={obraMarcos[obra.id] || []}
+                                marcos={obraMarcos[obra.id]}
                                 className="w-[100px]"
                                 variant="subtle"
                                 color="green"
@@ -477,6 +473,23 @@ export function AdminObras() {
                             </div>
                           );
                         })()}
+                        {/* Fallback: se não tiver nem RDO nem Medição, usar valor_executado */}
+                        {(obraRdoProgressos[obra.id] === null || obraRdoProgressos[obra.id] === undefined) && 
+                         (!obraMarcos[obra.id] || obraMarcos[obra.id].length === 0) && (
+                          obraProgressos[obra.id] !== undefined && obraProgressos[obra.id] > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <Progress 
+                                value={obraProgressos[obra.id]} 
+                                className="w-[100px] h-2"
+                              />
+                              <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">
+                                {obraProgressos[obra.id].toFixed(1)}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
