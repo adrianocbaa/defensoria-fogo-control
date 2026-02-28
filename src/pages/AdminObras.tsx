@@ -169,7 +169,7 @@ export function AdminObras() {
         const medicaoSessionIds = medicaoData.data.map(s => s.id);
         medicaoItemsData = await supabase
           .from('medicao_items')
-          .select('medicao_id, total')
+          .select('medicao_id, total, item_code, pct')
           .in('medicao_id', medicaoSessionIds);
       }
 
@@ -220,6 +220,22 @@ export function AdminObras() {
           
           valores[obra.id] = totalContratoOrcamento + aditivos;
           
+          // Mapa item_code -> total_contrato para itens folha (mesma lógica de useMedicoesFinanceiro)
+          const totalContratoPorItem = new Map<string, number>();
+          obraOrcamentoFinanceiro.forEach((oi: any) => {
+            if (ehItemFolha(oi.item) && Number(oi.total_contrato || 0) > 0) {
+              totalContratoPorItem.set(oi.item, Number(oi.total_contrato));
+            }
+          });
+          
+          const calcularValorItem = (item: any): number => {
+            const totalContrato = totalContratoPorItem.get(item.item_code);
+            if (totalContrato !== undefined && totalContrato > 0) {
+              return Math.round((Number(item.pct) / 100) * totalContrato * 100) / 100;
+            }
+            return Math.round(Number(item.total || 0) * 100) / 100;
+          };
+
           // Calcular progresso e marcos
           const obraMedicaoSessions = (medicaoData.data?.filter(s => s.obra_id === obra.id) || [])
             .sort((a: any, b: any) => a.sequencia - b.sequencia);
@@ -227,14 +243,14 @@ export function AdminObras() {
           const obraMedicaoItems = medicaoItemsData.data?.filter((item: any) => 
             medicaoSessionIds.includes(item.medicao_id)
           ) || [];
-          const valorAcumulado = obraMedicaoItems.reduce((sum: number, item: any) => sum + Number(item.total || 0), 0);
+          const valorAcumulado = obraMedicaoItems.reduce((sum: number, item: any) => sum + calcularValorItem(item), 0);
           
           progressos[obra.id] = valores[obra.id] > 0 ? Math.min((valorAcumulado / valores[obra.id]) * 100, 100) : 0;
           
           // Calcular marcos para cada sessão de medição
           const valorPorSessao: Record<string, number> = {};
           obraMedicaoItems.forEach((item: any) => {
-            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + Number(item.total || 0);
+            valorPorSessao[item.medicao_id] = (valorPorSessao[item.medicao_id] || 0) + calcularValorItem(item);
           });
           
           let acumuladoMarco = 0;
