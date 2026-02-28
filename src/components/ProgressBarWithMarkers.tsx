@@ -1,11 +1,11 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MedicaoMarco } from '@/hooks/useMedicoesFinanceiro';
+import { MarcoCalculado } from '@/lib/medicaoCalculo';
 import { formatCurrency } from '@/lib/formatters';
 
 interface ProgressBarWithMarkersProps {
   value: number;
-  marcos: MedicaoMarco[];
+  marcos: MarcoCalculado[];
   className?: string;
   variant?: 'default' | 'subtle';
   color?: 'default' | 'green' | 'blue';
