@@ -15,6 +15,7 @@ import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/components/LoadingStates';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
+import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 
 interface ObraDetailsProps {
   obra: Obra | null;
@@ -321,7 +322,24 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                     <Progress value={Math.min(rdoProgress, 100)} className="h-2" color="blue" />
                   </div>
                 )}
-                
+
+                {/* Barra de progresso das medições */}
+                {dadosFinanceiros.marcos.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Medições:</span>
+                      <span className="text-sm font-semibold text-green-600">
+                        {dadosFinanceiros.percentualExecutado.toFixed(2)}%
+                      </span>
+                    </div>
+                    <MedicaoProgressBar
+                      marcos={dadosFinanceiros.marcos}
+                      totalContrato={dadosFinanceiros.totalContrato}
+                      height={8}
+                      color="green"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </AccordionContent>
