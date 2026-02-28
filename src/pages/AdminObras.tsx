@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
+import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
+import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, BarChart3, Map as MapIcon } from 'lucide-react';
@@ -46,6 +48,49 @@ const statusLabels: Record<string, string> = {
   concluida: 'Concluída',
   paralisada: 'Paralisada',
 };
+
+function ObraProgressCell({ obraId, rdo_habilitado, rdoProgresso, fallbackProgresso }: {
+  obraId: string;
+  rdo_habilitado?: boolean;
+  rdoProgresso?: number | null;
+  fallbackProgresso?: number;
+}) {
+  const { dados } = useMedicoesFinanceiro(obraId);
+
+  if (dados.marcos.length > 0) {
+    return (
+      <div className="space-y-1 py-1 min-w-[160px]">
+        <MedicaoProgressBar
+          marcos={dados.marcos}
+          totalContrato={dados.totalContrato}
+          height={10}
+        />
+        <div className="text-xs text-muted-foreground text-right">
+          {dados.percentualExecutado.toFixed(1)}%
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: barra simples
+  if (rdo_habilitado && rdoProgresso != null) {
+    return (
+      <div className="flex items-center gap-2 min-w-[160px]">
+        <Progress value={rdoProgresso} className="w-[100px] h-2" />
+        <span className="text-sm font-medium whitespace-nowrap">{rdoProgresso.toFixed(1)}%</span>
+      </div>
+    );
+  }
+  if (fallbackProgresso && fallbackProgresso > 0) {
+    return (
+      <div className="flex items-center gap-2 min-w-[160px]">
+        <Progress value={fallbackProgresso} className="w-[100px] h-2" />
+        <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">{fallbackProgresso.toFixed(1)}%</span>
+      </div>
+    );
+  }
+  return <span className="text-sm text-muted-foreground">-</span>;
+}
 
 export function AdminObras() {
   const [obras, setObras] = useState<Obra[]>([]);
@@ -435,37 +480,12 @@ export function AdminObras() {
                         : '-'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1.5 min-w-[160px]">
-                        {/* Andamento da Obra (RDO) - só mostra se RDO habilitado e tiver dados */}
-                        {obra.rdo_habilitado && obraRdoProgressos[obra.id] !== null && obraRdoProgressos[obra.id] !== undefined && (
-                          <div className="flex items-center gap-2">
-                            <Progress 
-                              value={obraRdoProgressos[obra.id] || 0} 
-                              className="w-[100px] h-2"
-                              color="blue"
-                            />
-                            <span className="text-sm font-medium whitespace-nowrap">
-                              {obraRdoProgressos[obra.id]?.toFixed(1)}%
-                            </span>
-                          </div>
-                        )}
-                        {/* Fallback: se não tiver RDO, usar valor_executado */}
-                        {(obraRdoProgressos[obra.id] === null || obraRdoProgressos[obra.id] === undefined) && (
-                           obraProgressos[obra.id] !== undefined && obraProgressos[obra.id] > 0 ? (
-                            <div className="flex items-center gap-2">
-                              <Progress 
-                                value={obraProgressos[obra.id]} 
-                                className="w-[100px] h-2"
-                              />
-                              <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">
-                                {obraProgressos[obra.id].toFixed(1)}%
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">-</span>
-                          )
-                        )}
-                      </div>
+                      <ObraProgressCell
+                        obraId={obra.id}
+                        rdo_habilitado={obra.rdo_habilitado}
+                        rdoProgresso={obraRdoProgressos[obra.id]}
+                        fallbackProgresso={obraProgressos[obra.id]}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
