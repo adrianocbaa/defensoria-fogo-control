@@ -294,9 +294,22 @@ export function Medicao() {
             if (!mappedId) {
               return;
             }
+            const qtd = Number(it.qtd) || 0;
+            let pct = Number(it.pct) || 0;
+            // Corrigir imprecisão de ponto flutuante: se pct >= 99.99 e qtd ≈ quantidade do item, forçar 100
+            const orcItem = orcamentoItems?.find((oi: any) => {
+              const c = String(oi.item || '').trim();
+              return codigoToIdMap.get(c) === mappedId;
+            });
+            if (orcItem && pct > 99.98 && pct < 100) {
+              const quantidadeTotal = Number(orcItem.quantidade) || 0;
+              if (quantidadeTotal > 0 && Math.abs(qtd - quantidadeTotal) / quantidadeTotal < 0.005) {
+                pct = 100;
+              }
+            }
             m.dados[mappedId] = {
-              qnt: Number(it.qtd) || 0,
-              percentual: Number(it.pct) || 0,
+              qnt: qtd,
+              percentual: pct,
               total: Number(it.total) || 0,
             };
           });
@@ -3403,6 +3416,18 @@ const criarNovaMedicao = async () => {
       const novoDados = { ...medicaoAtualObj.dados };
       let itensAtualizados = 0;
 
+      // Calcular quantidade acumulada anterior (de medições já bloqueadas) para cada item
+      const medicaoIndex = medicoes.findIndex(m => m.id === medicaoAtual);
+      const qntAcumAnteriorMap = new Map<number, number>();
+      for (let i = 0; i < medicaoIndex; i++) {
+        const dh = dadosHierarquicosMemoizados[medicoes[i].id];
+        if (!dh) continue;
+        Object.entries(dh).forEach(([idStr, val]: [string, any]) => {
+          const iid = parseInt(idStr);
+          qntAcumAnteriorMap.set(iid, (qntAcumAnteriorMap.get(iid) || 0) + (val.qnt || 0));
+        });
+      }
+
       Object.entries(dadosImportados).forEach(([itemCode, qtdExecutada]) => {
         // Encontrar item pelo código (tentando tanto codigo quanto item)
         const item = items.find(i => 
@@ -3411,14 +3436,36 @@ const criarNovaMedicao = async () => {
         );
 
         if (item && ehItemFolha(item.item)) {
+          const ehExtracontratual = item.origem === 'extracontratual';
+          const qntAditivoAcum = ehExtracontratual
+            ? 0
+            : aditivos
+                .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoAtual)
+                .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
+          const quantidadeTotal = (item.quantidade || 0) + qntAditivoAcum;
+
+          // Verificar se já atingiu 100% nas medições anteriores - pular se sim
+          const qntAcumAnterior = qntAcumAnteriorMap.get(item.id) || 0;
+          const disponivel = quantidadeTotal - qntAcumAnterior;
+
+          // Limitar qtd ao disponível (pode ser 0 se já 100% executado)
+          const qtdLimitada = Math.min(qtdExecutada, Math.max(0, disponivel));
+
           const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual);
-          const valorTotal = qtdExecutada * item.valorUnitario;
-          const percentual = totalContratoItem > 0 ? (valorTotal / totalContratoItem) * 100 : 0;
+          const valorTotal = qtdLimitada * item.valorUnitario;
+
+          // Se quantidade é igual ao total do contrato, forçar 100% para evitar imprecisão de float
+          const qtdTotalEfetiva = quantidadeTotal;
+          const isQntCompleta = Math.abs(qtdLimitada - qtdTotalEfetiva) < 1e-6 && qntAcumAnterior === 0;
+          const percentual = isQntCompleta
+            ? 100
+            : totalContratoItem > 0 ? Math.min(100, (valorTotal / totalContratoItem) * 100) : 0;
+          const totalFinal = isQntCompleta ? totalContratoItem : valorTotal;
 
           novoDados[item.id] = {
-            qnt: qtdExecutada,
-            percentual: Math.min(100, percentual),
-            total: valorTotal
+            qnt: qtdLimitada,
+            percentual,
+            total: totalFinal
           };
           itensAtualizados++;
         }
