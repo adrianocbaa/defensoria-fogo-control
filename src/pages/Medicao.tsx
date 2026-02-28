@@ -3454,13 +3454,10 @@ const criarNovaMedicao = async () => {
           const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual);
           const valorTotal = qtdLimitada * item.valorUnitario;
 
-          // Se quantidade é igual ao total do contrato, forçar 100% para evitar imprecisão de float
-          const qtdTotalEfetiva = quantidadeTotal;
-          const isQntCompleta = Math.abs(qtdLimitada - qtdTotalEfetiva) < 1e-6 && qntAcumAnterior === 0;
-          const percentual = isQntCompleta
-            ? 100
-            : totalContratoItem > 0 ? Math.min(100, (valorTotal / totalContratoItem) * 100) : 0;
-          const totalFinal = isQntCompleta ? totalContratoItem : valorTotal;
+          // Calcular percentual baseado em QUANTIDADE (não em valor monetário) para evitar imprecisão de float
+          // Ex: 5m executados / 5m contratados = exatamente 100%, independente do preço unitário
+          const percentual = quantidadeTotal > 0 ? Math.min(100, (qtdLimitada / quantidadeTotal) * 100) : 0;
+          const totalFinal = percentual >= 100 ? totalContratoItem : valorTotal;
 
           novoDados[item.id] = {
             qnt: qtdLimitada,
