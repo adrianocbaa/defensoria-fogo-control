@@ -661,6 +661,46 @@ export function Medicao() {
       // Estes valores NÃO devem ser sobrescritos para itens folha
       const dadosCalculados: { [itemId: number]: { qnt: number; percentual: number; total: number } } = { ...medicao.dados };
 
+      // --- Calcular Administração Local inline (mesmo sem o useEffect ter rodado) ---
+      const hasAdminLocal = items.some(item => item.ehAdministracaoLocal);
+      if (hasAdminLocal) {
+        // Total dos itens folha NÃO-AL já lançados
+        let totalServicosExec = 0;
+        items.forEach(item => {
+          if (!item.ehAdministracaoLocal && (childrenByCode.get(item.item.trim())?.length ?? 0) === 0) {
+            totalServicosExec += dadosCalculados[item.id]?.total || 0;
+          }
+        });
+
+        const totalContrato = items
+          .filter(item => (childrenByCode.get(item.item.trim())?.length ?? 0) === 0)
+          .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicao.id), 0);
+
+        const totalAL = items
+          .filter(item => item.ehAdministracaoLocal && (childrenByCode.get(item.item.trim())?.length ?? 0) === 0)
+          .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicao.id), 0);
+
+        const divisor = totalContrato - totalAL;
+        if (totalServicosExec > 0 && divisor > 0) {
+          const pct = totalServicosExec / divisor;
+          items.forEach(item => {
+            if (item.ehAdministracaoLocal) {
+              const totalContratoAjustado = calcularTotalContratoComAditivos(item, medicao.id);
+              const qntAditivoAcum = aditivos
+                .filter(a => a.bloqueada)
+                .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
+              const quantidadeAjustada = item.quantidade + qntAditivoAcum;
+              dadosCalculados[item.id] = {
+                qnt: pct * quantidadeAjustada,
+                percentual: pct * 100,
+                total: pct * totalContratoAjustado,
+              };
+            }
+          });
+        }
+      }
+      // --- Fim cálculo AL ---
+
       // Processar do nível mais profundo até o nível 1 para calcular agregações hierárquicas
       // ATENÇÃO: Apenas recalcular valores para itens MACRO (que possuem filhos)
       // Itens FOLHA devem manter os valores originais do banco
@@ -699,7 +739,8 @@ export function Medicao() {
     });
 
     return cache;
-  }, [medicoes, itemsByCode, childrenByCode, maxNivelHierarquia, codesByLevel]);
+  }, [medicoes, itemsByCode, childrenByCode, maxNivelHierarquia, codesByLevel, items, aditivos]);
+
 
   // Função para calcular percentual baseado na quantidade
   const calcularPercentual = (quantidade: number, quantidadeTotal: number) => {
@@ -3669,16 +3710,16 @@ const criarNovaMedicao = async () => {
   };
 
   // Calcular total de serviços executados na medição atual
-  // Soma o total dos itens folha (sem filhos) — cada item tem lançamento direto, sem dupla contagem
+  // Usa dadosHierarquicosMemoizados (já inclui AL calculada em memória) para evitar flash
+  // Soma apenas itens folha para evitar dupla contagem com macros
   const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
-  const totalServicosExecutados = medicaoAtualData
-    ? Object.entries(medicaoAtualData.dados).reduce((sum, [itemIdStr, dados]) => {
-        const item = items.find(it => it.id === parseInt(itemIdStr));
-        if (item && ehItemFolha(item.item)) {
-          return sum + (dados.total || 0);
-        }
-        return sum;
-      }, 0)
+  const totalServicosExecutados = medicaoAtual
+    ? items
+        .filter(item => ehItemFolha(item.item))
+        .reduce((sum, item) => {
+          const dados = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id];
+          return sum + (dados?.total || 0);
+        }, 0)
     : 0;
 
   // Calcular valor acumulado - soma de todos os TOTAL das medições anteriores até a medição atual
