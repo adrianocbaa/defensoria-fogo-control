@@ -381,8 +381,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
               return sum + acumulado;
             }, 0);
             
-            dadosExecutado.push(totalObra > 0 ? (execAcumulado / totalObra) * 100 : 0);
-            dadosPrevisto.push(totalObra > 0 ? (prevAcumulado / totalObra) * 100 : 0);
+            dadosExecutado.push(totalObra > 0 ? Math.min((execAcumulado / totalObra) * 100, 100) : 0);
+            dadosPrevisto.push(totalObra > 0 ? Math.min((prevAcumulado / totalObra) * 100, 100) : 0);
           });
           
           chartData = {
@@ -433,7 +433,7 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
                     }, 0);
                   
                   const totalMacro = totaisPorMacro.get(m.itemNumero) || 0;
-                  return totalMacro > 0 ? (acumuladoExecutado / totalMacro) * 100 : 0;
+                  return totalMacro > 0 ? Math.min((acumuladoExecutado / totalMacro) * 100, 100) : 0;
                 }),
                 backgroundColor: 'rgba(34, 197, 94, 0.7)',
                 borderColor: 'rgba(34, 197, 94, 1)',
