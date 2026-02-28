@@ -71,8 +71,10 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   const valorExecutado = dadosFinanceiros.valorAcumulado || (obra?.valorExecutado || 0); // Valor Executado = Valor Acumulado
   const valorPago = dadosFinanceiros.valorPago > 0 ? dadosFinanceiros.valorPago : (obra?.valorExecutado || 0);
   
-  // Valor Pago: Valor Acumulado / Valor Contrato Pós Aditivo * 100
-  const percentualValorPago = valorFinal > 0 ? (valorExecutado / valorFinal) * 100 : 0;
+  // Valor Pago: usa percentualExecutado centralizado (mesmo cálculo da lista de obras)
+  const percentualValorPago = dadosFinanceiros.percentualExecutado > 0
+    ? dadosFinanceiros.percentualExecutado
+    : (valorFinal > 0 ? (valorExecutado / valorFinal) * 100 : 0);
   
   // Simulate photo loading delay
   React.useEffect(() => {
