@@ -455,22 +455,24 @@ export function AdminObras() {
                           </div>
                         )}
                         {/* Valor Pago (Medição) com marcadores */}
-                        {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (
-                          <div className="flex items-center gap-2">
-                            <ProgressBarWithMarkers
-                              value={obraProgressos[obra.id] !== undefined ? obraProgressos[obra.id] : 0}
-                              marcos={obraMarcos[obra.id]}
-                              className="w-[100px]"
-                              variant="subtle"
-                              color="green"
-                            />
-                            <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">
-                              {obraProgressos[obra.id] !== undefined 
-                                ? `${obraProgressos[obra.id].toFixed(1)}%` 
-                                : '-'}
-                            </span>
-                          </div>
-                        )}
+                        {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (() => {
+                          const ultimoMarco = obraMarcos[obra.id][obraMarcos[obra.id].length - 1];
+                          const pctExibido = ultimoMarco.percentualAcumulado;
+                          return (
+                            <div className="flex items-center gap-2">
+                              <ProgressBarWithMarkers
+                                value={pctExibido}
+                                marcos={obraMarcos[obra.id]}
+                                className="w-[100px]"
+                                variant="subtle"
+                                color="green"
+                              />
+                              <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">
+                                {`${pctExibido.toFixed(1)}%`}
+                              </span>
+                            </div>
+                          );
+                        })()}
                         {/* Fallback: se não tiver nem RDO nem Medição, usar valor_executado */}
                         {(obraRdoProgressos[obra.id] === null || obraRdoProgressos[obra.id] === undefined) && 
                          (!obraMarcos[obra.id] || obraMarcos[obra.id].length === 0) && (
