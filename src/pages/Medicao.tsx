@@ -662,6 +662,8 @@ export function Medicao() {
       const dadosCalculados: { [itemId: number]: { qnt: number; percentual: number; total: number } } = { ...medicao.dados };
 
       // --- Calcular Administração Local inline (mesmo sem o useEffect ter rodado) ---
+      // medicao.id == sequência da medição; usar como seqLimit para não incluir aditivos futuros
+      const medicaoSeqInline = medicao.id;
       const hasAdminLocal = items.some(item => item.ehAdministracaoLocal);
       if (hasAdminLocal) {
         // Total dos itens folha NÃO-AL já lançados
@@ -674,20 +676,20 @@ export function Medicao() {
 
         const totalContrato = items
           .filter(item => (childrenByCode.get(item.item.trim())?.length ?? 0) === 0)
-          .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicao.id), 0);
+          .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoSeqInline), 0);
 
         const totalAL = items
           .filter(item => item.ehAdministracaoLocal && (childrenByCode.get(item.item.trim())?.length ?? 0) === 0)
-          .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicao.id), 0);
+          .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoSeqInline), 0);
 
         const divisor = totalContrato - totalAL;
         if (totalServicosExec > 0 && divisor > 0) {
           const pct = totalServicosExec / divisor;
           items.forEach(item => {
             if (item.ehAdministracaoLocal) {
-              const totalContratoAjustado = calcularTotalContratoComAditivos(item, medicao.id);
+              const totalContratoAjustado = calcularTotalContratoComAditivos(item, medicaoSeqInline);
               const qntAditivoAcum = aditivos
-                .filter(a => a.bloqueada)
+                .filter(a => a.bloqueada && (a.sequencia === undefined || a.sequencia <= medicaoSeqInline))
                 .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
               const quantidadeAjustada = item.quantidade + qntAditivoAcum;
               dadosCalculados[item.id] = {
@@ -824,6 +826,10 @@ export function Medicao() {
     const medicaoAtualData = medicoes.find(m => m.id === medicaoAtual);
     if (!medicaoAtualData) return;
 
+    // Sequência da medição atual — usada como limite para aditivos (só considerar aditivos
+    // com sequência <= sequência da medição, evitando que aditivos futuros distorçam a base)
+    const medicaoSeq = medicaoAtualData.id; // id == sequencia no sistema
+
     // 1. Calcular Total de Serviços Executados (valor da medição dos itens que NÃO são administração local, apenas itens folha)
     let totalServicosExecutados = 0;
     items.forEach(item => {
@@ -835,16 +841,15 @@ export function Medicao() {
       }
     });
 
-    // 2. Calcular Total do Contrato considerando aditivos/supressões bloqueados (apenas itens folha)
-    // IMPORTANTE: Usar calcularTotalContratoComAditivos para considerar supressões
+    // 2. Calcular Total do Contrato considerando apenas aditivos com sequência <= medição atual
     const totalDoContrato = items
       .filter(item => ehItemFolha(item.item))
-      .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0);
+      .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoSeq), 0);
 
-    // 3. Calcular Total da Administração Local considerando aditivos/supressões (apenas itens folha selecionados como AL)
+    // 3. Calcular Total da Administração Local com o mesmo limite de sequência
     const totalAdministracaoLocal = items
       .filter(item => item.ehAdministracaoLocal && ehItemFolha(item.item))
-      .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0);
+      .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoSeq), 0);
     if (totalServicosExecutados === 0) {
       if (!silent) toast.error('Nenhum serviço foi medido ainda. Insira valores de medição antes de calcular a administração local.');
       return;
@@ -869,12 +874,12 @@ export function Medicao() {
               // % (coluna 2): Inserir a porcentagem calculada
               const percentualCalculado = porcentagemExecucao * 100;
 
-              // Calcular quantidade e total considerando aditivos/supressões
-              const totalContratoAjustado = calcularTotalContratoComAditivos(item);
+              // Calcular quantidade e total considerando apenas aditivos com seq <= medição atual
+              const totalContratoAjustado = calcularTotalContratoComAditivos(item, medicaoSeq);
               
-              // Calcular quantidade ajustada com base nos aditivos bloqueados
+              // Calcular quantidade ajustada com base nos aditivos bloqueados até a sequência da medição
               const qntAditivoAcum = aditivos
-                .filter(a => a.bloqueada)
+                .filter(a => a.bloqueada && (a.sequencia === undefined || a.sequencia <= medicaoSeq))
                 .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
               const quantidadeAjustada = item.quantidade + qntAditivoAcum;
 
