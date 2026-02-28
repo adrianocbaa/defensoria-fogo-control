@@ -15,7 +15,6 @@ import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/components/LoadingStates';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
-import { ProgressBarWithMarkers } from '@/components/ProgressBarWithMarkers';
 
 interface ObraDetailsProps {
   obra: Obra | null;
@@ -69,12 +68,6 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   const valorAditivado = dadosFinanceiros.totalAditivo || ((obra as any)?.valor_aditivado || 0);
   const valorFinal = dadosFinanceiros.totalContrato || (valorInicial + valorAditivado); // Valor Final = Total do Contrato
   const valorExecutado = dadosFinanceiros.valorAcumulado || (obra?.valorExecutado || 0); // Valor Executado = Valor Acumulado
-  const valorPago = dadosFinanceiros.valorPago > 0 ? dadosFinanceiros.valorPago : (obra?.valorExecutado || 0);
-  
-  // Valor Pago: usa percentualExecutado centralizado (mesmo cálculo da lista de obras)
-  const percentualValorPago = dadosFinanceiros.percentualExecutado > 0
-    ? dadosFinanceiros.percentualExecutado
-    : (valorFinal > 0 ? (valorExecutado / valorFinal) * 100 : 0);
   
   // Simulate photo loading delay
   React.useEffect(() => {
@@ -329,28 +322,6 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                   </div>
                 )}
                 
-                {/* Valor Pago (Medições) */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Valor Pago:</span>
-                    <span className="text-lg font-semibold text-green-600">{percentualValorPago.toFixed(2)}%</span>
-                  </div>
-                  <ProgressBarWithMarkers 
-                    value={Math.min(percentualValorPago, 100)} 
-                    marcos={dadosFinanceiros.marcos}
-                    color="green"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                    <div>
-                      <span className="font-medium">Valor Executado: </span>
-                      <span>{formatCurrency(valorExecutado)}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Valor Final: </span>
-                      <span>{formatCurrency(valorFinal)}</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </AccordionContent>

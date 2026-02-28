@@ -11,8 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ProgressBarWithMarkers } from '@/components/ProgressBarWithMarkers';
-import { calcularFinanceiroMedicao, MarcoCalculado } from '@/lib/medicaoCalculo';
+import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, BarChart3, Map as MapIcon } from 'lucide-react';
@@ -57,7 +56,6 @@ export function AdminObras() {
   const [obraValores, setObraValores] = useState<Record<string, number>>({});
   const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
   const [obraRdoProgressos, setObraRdoProgressos] = useState<Record<string, number | null>>({});
-  const [obraMarcos, setObraMarcos] = useState<Record<string, MarcoCalculado[]>>({});
   const userRole = useUserRole();
   const navigate = useNavigate();
 
@@ -185,7 +183,6 @@ export function AdminObras() {
       const valores: Record<string, number> = {};
       const progressos: Record<string, number> = {};
       const rdoProgressos: Record<string, number | null> = {};
-      const marcos: Record<string, MarcoCalculado[]> = {};
       
       for (const obra of sortedObras) {
         // Andamento da Obra (RDO) - calculado pelo banco via RPC
@@ -217,13 +214,11 @@ export function AdminObras() {
 
         valores[obra.id] = resultado.totalContrato;
         progressos[obra.id] = resultado.percentualExecutado;
-        marcos[obra.id] = resultado.marcos;
       }
       
       setObraValores(valores);
       setObraProgressos(progressos);
       setObraRdoProgressos(rdoProgressos);
-      setObraMarcos(marcos);
     } catch (error) {
       console.error('Erro ao carregar obras:', error);
       toast.error('Erro ao carregar obras');
@@ -454,29 +449,9 @@ export function AdminObras() {
                             </span>
                           </div>
                         )}
-                        {/* Valor Pago (Medição) com marcadores */}
-                        {obraMarcos[obra.id] && obraMarcos[obra.id].length > 0 && (() => {
-                          const ultimoMarco = obraMarcos[obra.id][obraMarcos[obra.id].length - 1];
-                          const pctExibido = ultimoMarco.percentualAcumulado;
-                          return (
-                            <div className="flex items-center gap-2">
-                              <ProgressBarWithMarkers
-                                value={pctExibido}
-                                marcos={obraMarcos[obra.id]}
-                                className="w-[100px]"
-                                variant="subtle"
-                                color="green"
-                              />
-                              <span className="text-sm font-medium whitespace-nowrap text-muted-foreground">
-                                {`${pctExibido.toFixed(1)}%`}
-                              </span>
-                            </div>
-                          );
-                        })()}
-                        {/* Fallback: se não tiver nem RDO nem Medição, usar valor_executado */}
-                        {(obraRdoProgressos[obra.id] === null || obraRdoProgressos[obra.id] === undefined) && 
-                         (!obraMarcos[obra.id] || obraMarcos[obra.id].length === 0) && (
-                          obraProgressos[obra.id] !== undefined && obraProgressos[obra.id] > 0 ? (
+                        {/* Fallback: se não tiver RDO, usar valor_executado */}
+                        {(obraRdoProgressos[obra.id] === null || obraRdoProgressos[obra.id] === undefined) && (
+                           obraProgressos[obra.id] !== undefined && obraProgressos[obra.id] > 0 ? (
                             <div className="flex items-center gap-2">
                               <Progress 
                                 value={obraProgressos[obra.id]} 
