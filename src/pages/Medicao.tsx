@@ -3668,16 +3668,16 @@ const criarNovaMedicao = async () => {
       .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0)
   };
 
-  // Calcular total de serviços executados na medição atual (apenas itens folha para evitar dupla contagem)
-  const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
-  const totalServicosExecutados = medicaoAtualData ? 
-    Object.entries(medicaoAtualData.dados).reduce((sum, [itemIdStr, dados]) => {
-      const item = items.find(it => it.id === parseInt(itemIdStr));
-      if (item && ehItemFolha(item.item)) {
-        return sum + (dados.total || 0);
-      }
-      return sum;
-    }, 0) : 0;
+  // Calcular total de serviços executados na medição atual
+  // Soma o total dos itens MACRO de nível 1 (já agregam todos os filhos recursivamente)
+  const totalServicosExecutados = medicaoAtual
+    ? items
+        .filter(item => item.nivel === 1)
+        .reduce((sum, item) => {
+          const dados = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id];
+          return sum + (dados?.total || 0);
+        }, 0)
+    : 0;
 
   // Calcular valor acumulado - soma de todos os TOTAL das medições anteriores até a medição atual
   const calcularValorAcumuladoTotal = () => {
