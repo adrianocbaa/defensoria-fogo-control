@@ -244,12 +244,14 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       const msg = err?.message || '';
       const triggerMatch = msg.match(/Quantidade executada .+ excede o saldo disponível \(.+\)\. Item: (.+)/);
       if (triggerMatch) {
-        toast.error(`Item ${triggerMatch[1]}: saldo insuficiente. O valor foi revertido.`);
+        toast.error(`Item ${triggerMatch[1]}: saldo esgotado (100% já executado em outros RDOs). Valor descartado.`, { duration: 8000 });
       } else {
-        toast.error('Erro ao salvar quantidade. Verifique o valor e tente novamente.');
+        toast.error(`Erro ao salvar quantidade: ${msg || 'Verifique o valor e tente novamente.'}`, { duration: 6000 });
       }
-      // Reverter para o valor salvo no banco
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities-planilha', reportId] });
+      // Reverter APENAS o item que falhou no estado local — não resetar todos os outros
+      if (variables?.orcamentoItemId) {
+        setLocalExecutado(prev => ({ ...prev, [variables.orcamentoItemId]: 0 }));
+      }
     },
   });
 
@@ -269,10 +271,18 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
     // Manter precisão total internamente para cálculos financeiros
     const saldoDisponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
+
+    // Bloquear imediatamente se saldo for zero
+    if (saldoDisponivel <= 0) {
+      toast.error(`Item já 100% executado em RDOs anteriores. Saldo = 0.`, { duration: 5000 });
+      setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: 0 }));
+      return;
+    }
+
     // Clamp sem arredondar — preserva precisão para a medição
     const clampedValue = Math.min(value, saldoDisponivel);
     // Apenas para exibição no toast, mostrar 2 casas decimais
-    if (value > saldoDisponivel && saldoDisponivel >= 0) {
+    if (value > saldoDisponivel) {
       const saldoDisplay = saldoDisponivel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       toast.warning(`Quantidade máxima permitida: ${saldoDisplay}. O valor foi ajustado automaticamente.`);
     }
@@ -317,7 +327,7 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
   };
 
   // Salvar pendências programaticamente (chamado antes de Concluir/assinar)
-  // Força o save de TODOS os valores locais que diferem do banco, incluindo pendências no debounce
+  // Usa allSettled para não abortar demais saves se um item falhar (ex: saldo zero)
   const savePending = useCallback(async () => {
     if (!reportId) return;
 
@@ -340,11 +350,18 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       const activity = activitiesByItem.get(item.id);
       if (!activity) return;
 
+      // Calcular saldo para não tentar salvar itens com saldo zero (evitar erro de trigger)
+      const acumulado = acumulados.find((a: any) => a.orcamento_item_id === item.id);
+      const executadoAcumulado = acumulado?.executado_acumulado || 0;
+      const ajusteAditivo = item.origem !== 'extracontratual' ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+      const quantidadeAjustada = Math.max(0, item.quantidade + ajusteAditivo);
+      const saldoDisponivel = Math.max(0, quantidadeAjustada - executadoAcumulado);
+
       const localValue = localExecutado[item.id];
       const currentValue = Number(activity.executado_dia || 0);
 
-      // Salvar se há diferença OU se o valor local é > 0 mas o banco está zerado
-      if (typeof localValue === 'number' && (localValue !== currentValue || (localValue > 0 && currentValue === 0))) {
+      // Salvar se há diferença E o saldo permite (não tentar salvar em item com saldo zero)
+      if (typeof localValue === 'number' && localValue > 0 && saldoDisponivel > 0 && localValue !== currentValue) {
         // Evitar duplicata com o que já está em updates
         const alreadyQueued = updates.some(u => u.orcamentoItemId === item.id);
         if (!alreadyQueued) {
@@ -355,11 +372,22 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
 
     if (updates.length === 0) return;
 
-    // Executa e aguarda todas as atualizações antes de retornar
-    await Promise.all(
+    // Usar allSettled para não abortar os demais saves se um item falhar
+    const results = await Promise.allSettled(
       updates.map((u) => updateExecutadoMutation.mutateAsync(u))
     );
-  }, [reportId, orcamentoItems, activitiesByItem, localExecutado, updateExecutadoMutation]);
+
+    // Reportar itens que falharam (ex: saldo esgotado)
+    const failures = results.filter(r => r.status === 'rejected');
+    if (failures.length > 0) {
+      const successCount = results.length - failures.length;
+      if (successCount > 0) {
+        toast.warning(`${successCount} item(s) salvo(s). ${failures.length} item(s) com saldo insuficiente foram ignorados.`);
+      } else {
+        toast.error(`Não foi possível salvar: ${failures.length} item(s) com saldo insuficiente.`);
+      }
+    }
+  }, [reportId, orcamentoItems, activitiesByItem, localExecutado, acumulados, aditivos, codigoToItemCode, updateExecutadoMutation]);
 
   // Expor função global para o botão Salvar aguardar
   useEffect(() => {
