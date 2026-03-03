@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type UserRole = 'admin' | 'editor' | 'viewer' | 'gm' | 'manutencao' | 'contratada' | 'prestadora'; // prestadora mantido para compatibilidade
+export type UserRole = 'admin' | 'editor' | 'viewer' | 'gm' | 'manutencao' | 'contratada' | 'prestadora' | 'demo'; // prestadora mantido para compatibilidade
 
 export function useUserRole() {
   const { user } = useAuth();
@@ -44,12 +44,13 @@ export function useUserRole() {
   }, [user?.id]);
 
   const isAdmin = role === 'admin';
+  const isDemo = role === 'demo';
   const canEdit = role === 'admin' || role === 'editor' || role === 'gm';
   const isGM = role === 'gm';
   const isContratada = role === 'contratada' || role === 'prestadora'; // Aceita ambos para compatibilidade
-  const canEditRDO = role === 'admin' || role === 'editor' || role === 'gm' || role === 'contratada' || role === 'prestadora';
-  const canViewMedicoes = role === 'admin' || role === 'editor' || role === 'gm' || role === 'contratada';
-  const canViewObras = role === 'admin' || role === 'editor' || role === 'gm' || role === 'contratada';
+  const canEditRDO = role === 'admin' || role === 'editor' || role === 'gm' || role === 'contratada' || role === 'prestadora' || role === 'demo';
+  const canViewMedicoes = role === 'admin' || role === 'editor' || role === 'gm' || role === 'contratada' || role === 'demo';
+  const canViewObras = role === 'admin' || role === 'editor' || role === 'gm' || role === 'contratada' || role === 'demo';
 
   const refreshRole = () => {
     fetchUserRole();
@@ -58,6 +59,7 @@ export function useUserRole() {
   return {
     role,
     isAdmin,
+    isDemo,
     canEdit,
     isGM,
     isContratada,
