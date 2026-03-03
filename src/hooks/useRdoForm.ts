@@ -119,7 +119,7 @@ export function useRdoForm(obraId: string, data: string) {
         hash_verificacao: rdoReport.hash_verificacao,
       };
     });
-  }, [rdoReport?.status, rdoReport?.assinatura_fiscal_validado_em, rdoReport?.assinatura_contratada_validado_em, rdoReport?.fiscal_concluido_em, rdoReport?.contratada_concluido_em, rdoReport?.pdf_url, rdoReport?.hash_verificacao]);
+  }, [isFormInitialized, isLoading, rdoReport?.status, rdoReport?.assinatura_fiscal_validado_em, rdoReport?.assinatura_contratada_validado_em, rdoReport?.fiscal_concluido_em, rdoReport?.contratada_concluido_em, rdoReport?.aprovacao_observacao, rdoReport?.pdf_url, rdoReport?.hash_verificacao]);
 
   // Mutation para salvar/atualizar
   const saveMutation = useMutation({
