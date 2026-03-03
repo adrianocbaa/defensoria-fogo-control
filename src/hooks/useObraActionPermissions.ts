@@ -30,7 +30,7 @@ interface UseObraActionPermissionsReturn {
  */
 export function useObraActionPermissions(obraIds: string[]): UseObraActionPermissionsReturn {
   const { user } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  const { isAdmin, isDemo, loading: roleLoading } = useUserRole();
   const [permissions, setPermissions] = useState<Record<string, ObraPermission>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +48,18 @@ export function useObraActionPermissions(obraIds: string[]): UseObraActionPermis
     try {
       setLoading(true);
       setError(null);
+
+      // Usuário demo: acesso somente às obras is_demo=true
+      if (isDemo) {
+        const demoPerms: Record<string, ObraPermission> = {};
+        obraIds.forEach(id => {
+          demoPerms[id] = { canEdit: true, canDelete: false, role: 'access' };
+        });
+        setPermissions(demoPerms);
+        setIsSetorDif(true);
+        setLoading(false);
+        return;
+      }
 
       // Se for admin, todas as obras têm permissão total
       if (isAdmin) {
@@ -143,7 +155,7 @@ export function useObraActionPermissions(obraIds: string[]): UseObraActionPermis
     } finally {
       setLoading(false);
     }
-  }, [user?.id, obraIds.join(','), isAdmin, roleLoading]);
+  }, [user?.id, obraIds.join(','), isAdmin, isDemo, roleLoading]);
 
   useEffect(() => {
     fetchPermissions();
