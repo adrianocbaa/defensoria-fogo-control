@@ -3232,6 +3232,7 @@ export type Database = {
       }
       is_admin: { Args: { user_uuid?: string }; Returns: boolean }
       is_contratada: { Args: { user_uuid?: string }; Returns: boolean }
+      is_demo_user: { Args: { user_uuid?: string }; Returns: boolean }
       is_fiscal_of_obra: {
         Args: { obra_uuid: string; user_uuid?: string }
         Returns: boolean
@@ -3245,6 +3246,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      obra_is_demo: { Args: { obra_uuid: string }; Returns: boolean }
       unaccent: { Args: { "": string }; Returns: string }
       user_has_obra_access: {
         Args: { obra_uuid: string; user_uuid: string }
