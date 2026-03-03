@@ -1458,6 +1458,7 @@ export type Database = {
           fiscal_id: string | null
           fotos: Json | null
           id: string
+          is_demo: boolean
           is_public: boolean
           municipio: string
           n_contrato: string | null
@@ -1496,6 +1497,7 @@ export type Database = {
           fiscal_id?: string | null
           fotos?: Json | null
           id?: string
+          is_demo?: boolean
           is_public?: boolean
           municipio: string
           n_contrato?: string | null
@@ -1534,6 +1536,7 @@ export type Database = {
           fiscal_id?: string | null
           fotos?: Json | null
           id?: string
+          is_demo?: boolean
           is_public?: boolean
           municipio?: string
           n_contrato?: string | null
@@ -3282,6 +3285,7 @@ export type Database = {
         | "gm"
         | "prestadora"
         | "contratada"
+        | "demo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3444,6 +3448,7 @@ export const Constants = {
         "gm",
         "prestadora",
         "contratada",
+        "demo",
       ],
     },
   },
