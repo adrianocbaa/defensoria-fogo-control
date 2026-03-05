@@ -1064,13 +1064,15 @@ export function Medicao() {
     );
   };
 
-  // Efeito para calcular automaticamente Administração Local quando houver mudanças
+  // Efeito para calcular automaticamente Administração Local quando a medição ativa ou os itens mudam.
+  // IMPORTANTE: não incluir `medicoes` nas dependências pois calcularEDistribuirAdministracaoLocal
+  // chama setMedicoes, o que causaria um loop infinito ao reabrir uma medição.
   useEffect(() => {
     // Verificar se há itens marcados como Administração Local
     const hasAdminLocal = items.some(item => item.ehAdministracaoLocal);
     
     // Só calcular se houver itens de Admin Local e houver uma medição ativa
-    if (hasAdminLocal && medicaoAtual && medicoes.length > 0) {
+    if (hasAdminLocal && medicaoAtual) {
       // Usar timeout para evitar cálculos excessivos durante edição
       const timeoutId = setTimeout(() => {
         calcularEDistribuirAdministracaoLocal(true); // silent=true para não mostrar toast
@@ -1078,7 +1080,8 @@ export function Medicao() {
       
       return () => clearTimeout(timeoutId);
     }
-  }, [medicoes, items, medicaoAtual]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, medicaoAtual]);
 
   // Função para atualizar dados de aditivo
   const atualizarAditivo = (itemId: number, aditivoId: number, campo: string, valor: string) => {
