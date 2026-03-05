@@ -2043,7 +2043,7 @@ const criarNovaMedicao = async () => {
             <td class="text-center">${item.codigo}</td>
             <td class="descricao-col">${indent}${item.descricao}</td>
             <td class="text-center">${item.und}</td>
-            <td class="text-right">${item.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${Number(item.quantidade || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="text-right">${formatMoney(item.valorUnitario)}</td>
             <td class="text-right">${formatMoney(item.valorTotal)}</td>
         `;
@@ -2051,8 +2051,8 @@ const criarNovaMedicao = async () => {
         aditivosBloqueados.forEach(aditivo => {
           const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
           htmlContent += `
-            <td class="text-right">${aditivoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="text-right">${aditivoData.percentual.toFixed(2)}%</td>
+            <td class="text-right">${Number(aditivoData.qnt || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${Number(aditivoData.percentual || 0).toFixed(2)}%</td>
             <td class="text-right">${formatMoney(aditivoData.total)}</td>
           `;
         });
@@ -2065,8 +2065,8 @@ const criarNovaMedicao = async () => {
         const pctMedicao = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
         
         htmlContent += `
-            <td class="text-right">${ehMacro ? '' : medicaoData.qnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="text-right">${pctMedicao.toFixed(2)}%</td>
+            <td class="text-right">${ehMacro ? '' : Number(medicaoData.qnt || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${Number(pctMedicao || 0).toFixed(2)}%</td>
             <td class="text-right">${formatMoney(medicaoData.total)}</td>
         `;
 
@@ -2074,8 +2074,8 @@ const criarNovaMedicao = async () => {
         const acumPct = calcularPercentualAcumulado(item.id);
         const acumTotal = calcularValorAcumuladoItem(item.id);
         htmlContent += `
-            <td class="text-right">${ehMacro ? '' : acumQnt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="text-right">${acumPct.toFixed(2)}%</td>
+            <td class="text-right">${ehMacro ? '' : Number(acumQnt || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="text-right">${Number(acumPct || 0).toFixed(2)}%</td>
             <td class="text-right">${formatMoney(acumTotal)}</td>
           </tr>
         `;
