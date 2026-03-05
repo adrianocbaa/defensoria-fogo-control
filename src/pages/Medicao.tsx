@@ -1955,14 +1955,152 @@ const criarNovaMedicao = async () => {
           <body>
       `;
 
+      // ---- Conteúdo do body: cabeçalho + resumo + tabela ----
+      const nomeObra = obra.nome;
+      const nomeContrato = obra.n_contrato || '—';
+      const nomeEmpresa = obra.empresa_responsavel || '—';
+      const nomeMedicao = medicaoAtualObj.nome;
+
+      // Cabeçalho
       htmlContent += `
-              </tbody>
-            </table>
-            <div class="footer">
-              <p>Documento gerado em ${dataAtual}</p>
+          <div style="padding: 10px 14px;">
+            <div class="header">
+              <h1>${nomeObra}</h1>
+              <h2>${nomeMedicao}</h2>
             </div>
-          </body>
-        </html>
+            <div class="info-section">
+              <div class="info-row">
+                <span><span class="info-label">Contrato: </span><span class="info-value">${nomeContrato}</span></span>
+                <span><span class="info-label">Empresa: </span><span class="info-value">${nomeEmpresa}</span></span>
+                <span><span class="info-label">Data: </span><span class="info-value">${dataAtual}</span></span>
+              </div>
+            </div>
+            <div class="summary-section">
+              <div class="summary-card">
+                <div class="summary-label">Total Contrato</div>
+                <div class="summary-value">${formatMoney(totalTotalContratoPDF)}</div>
+              </div>
+              <div class="summary-card blue">
+                <div class="summary-label">Esta Medição</div>
+                <div class="summary-value">${formatMoney(totalMedicaoAtualPDF)}</div>
+              </div>
+              <div class="summary-card green">
+                <div class="summary-label">Acumulado</div>
+                <div class="summary-value">${formatMoney(totalAcumuladoPDF)}</div>
+              </div>
+              <div class="summary-card orange">
+                <div class="summary-label">% Execução</div>
+                <div class="summary-value">${percentualExecucao.toFixed(2).replace('.', ',')}%</div>
+              </div>
+            </div>
+      `;
+
+      // ---- Cabeçalho da tabela ----
+      let tableHeaderRow1 = `<th rowspan="2">Item</th><th rowspan="2">Cód.</th><th rowspan="2" class="descricao-col">Descrição</th><th rowspan="2">Un.</th><th colspan="3">Contrato</th>`;
+      aditivosBloqueados.forEach(a => {
+        tableHeaderRow1 += `<th colspan="3">Aditivo ${a.id}</th>`;
+      });
+      tableHeaderRow1 += `<th colspan="3">Total Contrato c/ Aditivos</th>`;
+      tableHeaderRow1 += `<th colspan="3">${nomeMedicao}</th>`;
+      tableHeaderRow1 += `<th colspan="3">Acumulado</th>`;
+
+      const subHeaders = `<th class="sub-header">QNT</th><th class="sub-header">%</th><th class="sub-header">TOTAL</th>`;
+      let tableHeaderRow2 = subHeaders; // Contrato
+      aditivosBloqueados.forEach(() => { tableHeaderRow2 += subHeaders; });
+      tableHeaderRow2 += subHeaders; // Total c/ Aditivos
+      tableHeaderRow2 += subHeaders; // Medição atual
+      tableHeaderRow2 += subHeaders; // Acumulado
+
+      htmlContent += `
+            <table>
+              <thead>
+                <tr>${tableHeaderRow1}</tr>
+                <tr>${tableHeaderRow2}</tr>
+              </thead>
+              <tbody>
+      `;
+
+      // ---- Linhas de dados ----
+      const formatQnt = (v: number) =>
+        Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const formatPct = (v: number) =>
+        Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+
+      items.forEach(item => {
+        const isMacro = !ehItemFolha(item.item);
+        const rowClass = isMacro ? 'macro-item' : (item.nivel === 1 ? 'nivel-1' : 'nivel-2');
+        const indent = item.nivel > 1 ? `padding-left:${(item.nivel - 1) * 8}px;` : '';
+
+        // Contrato
+        const qntContrato = item.quantidade || 0;
+        const pctContrato = '';
+        const totalContrato = item.valorTotal || 0;
+
+        // Aditivos
+        let aditivoCols = '';
+        aditivosBloqueados.forEach(a => {
+          const ad = a.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+          aditivoCols += `<td class="text-right">${isMacro ? '' : formatQnt(ad.qnt)}</td>
+            <td class="text-right">${isMacro ? '' : formatPct(ad.percentual)}</td>
+            <td class="text-right">${isMacro ? '' : formatMoney(ad.total)}</td>`;
+        });
+
+        // Total c/ aditivos
+        const totalComAditivos = calcularTotalContratoComAditivos(item, medicaoAtual);
+
+        // Medição atual
+        const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
+
+        // Acumulado
+        const acumTotal = calcularValorAcumuladoItem(item.id);
+        const acumPct = totalComAditivos > 0 ? (acumTotal / totalComAditivos) * 100 : 0;
+
+        htmlContent += `
+          <tr class="${rowClass}">
+            <td class="text-center">${item.item}</td>
+            <td class="text-center">${item.codigo}</td>
+            <td class="descricao-col" style="${indent}">${item.descricao}</td>
+            <td class="text-center">${item.und}</td>
+            <td class="text-right">${isMacro ? '' : formatQnt(qntContrato)}</td>
+            <td class="text-right">${isMacro ? '' : pctContrato}</td>
+            <td class="text-right">${formatMoney(totalContrato)}</td>
+            ${aditivoCols}
+            <td class="text-right">${isMacro ? '' : formatQnt(qntContrato)}</td>
+            <td class="text-right"></td>
+            <td class="text-right">${formatMoney(totalComAditivos)}</td>
+            <td class="text-right">${isMacro ? '' : formatQnt(medicaoData.qnt)}</td>
+            <td class="text-right">${isMacro ? '' : formatPct(medicaoData.percentual)}</td>
+            <td class="text-right">${isMacro ? '' : formatMoney(medicaoData.total)}</td>
+            <td class="text-right">${isMacro ? '' : formatQnt(acumPct)}</td>
+            <td class="text-right">${isMacro ? '' : formatPct(acumPct)}</td>
+            <td class="text-right">${isMacro ? '' : formatMoney(acumTotal)}</td>
+          </tr>
+        `;
+      });
+
+      // Linha de totais
+      htmlContent += `
+          <tr class="totals-row">
+            <td colspan="4" class="text-right">TOTAL</td>
+            <td></td><td></td><td class="text-right">${formatMoney(totalTotalContratoPDF)}</td>
+      `;
+      aditivosBloqueados.forEach(() => {
+        htmlContent += `<td></td><td></td><td></td>`;
+      });
+      htmlContent += `
+            <td></td><td></td><td class="text-right">${formatMoney(totalTotalContratoPDF)}</td>
+            <td></td><td></td><td class="text-right">${formatMoney(totalMedicaoAtualPDF)}</td>
+            <td></td><td class="text-right">${percentualExecucao.toFixed(2).replace('.', ',')}%</td><td class="text-right">${formatMoney(totalAcumuladoPDF)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <p>Documento gerado em ${dataAtual}</p>
+      </div>
+    </div>
+  </body>
+</html>
       `;
 
       // Largura A4 paisagem em pixels a 150dpi ≈ 1587px — garante que todo o conteúdo caiba
