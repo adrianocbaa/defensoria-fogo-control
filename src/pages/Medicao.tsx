@@ -36,7 +36,7 @@ import { ExportMedicaoDialog } from '@/components/ExportMedicaoDialog';
 import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
-import { generatePdfFromElement } from '@/lib/pdfExport';
+import { generatePdfFromElementAutoPage } from '@/lib/pdfExport';
 
 interface Obra {
   id: string;
@@ -1902,6 +1902,13 @@ const criarNovaMedicao = async () => {
                 text-align: left;
                 vertical-align: middle;
               }
+              tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+              }
+              thead {
+                display: table-header-group;
+              }
               th { 
                 background: #d4d9fc;
                 color: #000; 
@@ -2135,7 +2142,7 @@ const criarNovaMedicao = async () => {
         },
       };
 
-      generatePdfFromElement(tempDiv, opt).then(() => {
+      generatePdfFromElementAutoPage(tempDiv, opt).then(() => {
         document.body.removeChild(tempDiv);
         toast.success('PDF exportado com sucesso!');
       }).catch((error: any) => {
