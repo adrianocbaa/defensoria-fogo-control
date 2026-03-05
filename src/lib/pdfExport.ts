@@ -131,15 +131,19 @@ export async function generatePdfFromElementAutoPage(
   const orientation = pdfOptions.orientation || 'portrait';
   const format = pdfOptions.format || 'a4';
 
-  // Collect row top/bottom positions (relative to element) BEFORE rendering
+  // Collect row top/bottom positions relative to element using offsetTop
+  // getBoundingClientRect is unreliable when element is off-screen (e.g. top: -99999px)
   const rows = Array.from(element.querySelectorAll('tr')) as HTMLTableRowElement[];
-  const elementTop = element.getBoundingClientRect().top;
   const rowBounds = rows.map(tr => {
-    const rect = tr.getBoundingClientRect();
-    return {
-      top: rect.top - elementTop,
-      bottom: rect.bottom - elementTop,
-    };
+    // Walk up to find cumulative offsetTop relative to our root element
+    let top = 0;
+    let el: HTMLElement | null = tr;
+    while (el && el !== element) {
+      top += el.offsetTop;
+      el = el.offsetParent as HTMLElement | null;
+    }
+    const bottom = top + tr.offsetHeight;
+    return { top, bottom };
   });
 
   // Render full content as one canvas

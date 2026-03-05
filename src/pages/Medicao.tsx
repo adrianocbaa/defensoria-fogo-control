@@ -2123,7 +2123,7 @@ const criarNovaMedicao = async () => {
       document.body.appendChild(tempDiv);
 
       const opt = {
-        margin: [5, 5, 5, 5],
+        margin: [10, 10, 10, 10],
         filename: `Medicao_${medicaoAtual}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.pdf`,
         image: { type: 'jpeg', quality: 0.97 },
         html2canvas: {
