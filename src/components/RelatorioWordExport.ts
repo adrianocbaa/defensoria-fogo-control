@@ -952,7 +952,7 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
     const dataExecutado = [0];
     
     dadosHistoricoPorMedicao.forEach(h => {
-      labelsLine.push(`${h.sequencia * 30} dias`);
+      labelsLine.push(`${(h as any).diasReais ?? h.sequencia * 30} dias`);
       dataPrevisto.push(h.pctPrevisto);
       dataExecutado.push(h.pctExecutado);
     });

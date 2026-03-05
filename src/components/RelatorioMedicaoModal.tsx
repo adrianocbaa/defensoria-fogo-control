@@ -145,6 +145,7 @@ export function RelatorioMedicaoModal({
   // Dados históricos por medição para gráfico de linha
   const [dadosHistoricoPorMedicao, setDadosHistoricoPorMedicao] = useState<{
     sequencia: number;
+    diasReais: number;
     previstoAcum: number;
     executadoAcum: number;
     pctPrevisto: number;
@@ -234,26 +235,53 @@ export function RelatorioMedicaoModal({
           return;
         }
 
-        // Buscar itens do orçamento para mapear códigos
+        // Buscar itens do orçamento para mapear códigos e calcular total_contrato por macro (igual ao CronogramaComparativo)
         const { data: orcamentoItems, error: orcError } = await supabase
           .from('orcamento_items')
-          .select('codigo, item, descricao')
+          .select('codigo, item, descricao, total_contrato')
           .eq('obra_id', obra.id);
 
         if (orcError) throw orcError;
 
+        // Identificar itens folha (sem filhos) — mesma lógica do CronogramaComparativo
+        const prefixosComFilhos = new Set<string>();
+        orcamentoItems?.forEach(item => {
+          const partes = item.item.split('.');
+          for (let i = 1; i < partes.length; i++) {
+            prefixosComFilhos.add(partes.slice(0, i).join('.'));
+          }
+        });
+
         const codigoParaMacro = new Map<string, { macro: string; descricao: string }>();
+        const codigoParaItemHierarquico = new Map<string, string>();
+        const totalContratoPorMacro = new Map<number, number>();
+
         orcamentoItems?.forEach(item => {
           const macro = item.item.split('.')[0];
           if (!codigoParaMacro.has(macro)) {
             const isMacro = item.item.split('.').length === 1;
-            if (isMacro) {
-              codigoParaMacro.set(macro, { macro, descricao: item.descricao });
-            }
+            if (isMacro) codigoParaMacro.set(macro, { macro, descricao: item.descricao });
           }
           codigoParaMacro.set(item.codigo, { macro, descricao: item.descricao });
           codigoParaMacro.set(item.item, { macro, descricao: item.descricao });
+          codigoParaItemHierarquico.set(item.codigo, item.item);
+          codigoParaItemHierarquico.set(item.item, item.item);
+
+          // Acumular total_contrato apenas de itens FOLHA — mesma base da tabela de medição
+          const ehFolha = !prefixosComFilhos.has(item.item);
+          if (ehFolha) {
+            const macroNum = parseInt(macro);
+            if (!isNaN(macroNum)) {
+              totalContratoPorMacro.set(macroNum, (totalContratoPorMacro.get(macroNum) || 0) + (item.total_contrato || 0));
+            }
+          }
         });
+
+        // Base total do contrato: soma dos folha do orçamento; fallback para cronograma
+        const totalOrcamento = Array.from(totalContratoPorMacro.values()).reduce((s, v) => s + v, 0);
+        const valorTotalContrato = totalOrcamento > 0
+          ? totalOrcamento
+          : cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
 
         // Calcular dados acumulados até a medição atual
         const medicaoAtualSession = medicaoSessions.find(s => s.sequencia === medicaoAtual);
@@ -264,7 +292,7 @@ export function RelatorioMedicaoModal({
 
         const sessionsAteMedicaoAtual = medicaoSessions.filter(s => s.sequencia <= medicaoAtual);
         
-        // Calcular executado por medição
+        // Calcular executado por medição (com deduplicação igual ao CronogramaComparativo)
         const executadoPorMacroPorMedicao = new Map<number, Map<number, number>>();
         
         for (const session of sessionsAteMedicaoAtual) {
@@ -274,7 +302,12 @@ export function RelatorioMedicaoModal({
             .eq('medicao_id', session.id);
 
           const executadoMacro = new Map<number, number>();
+          const itensJaProcessados = new Set<string>();
           medicaoItems?.forEach(item => {
+            const itemHierarquico = codigoParaItemHierarquico.get(item.item_code) || item.item_code;
+            if (itensJaProcessados.has(itemHierarquico)) return;
+            itensJaProcessados.add(itemHierarquico);
+
             const macroInfo = codigoParaMacro.get(item.item_code);
             if (macroInfo) {
               const macroNum = parseInt(macroInfo.macro);
@@ -287,18 +320,24 @@ export function RelatorioMedicaoModal({
           executadoPorMacroPorMedicao.set(session.sequencia, executadoMacro);
         }
 
-        // Calcular valor total do contrato (soma de todos os previstos do cronograma)
-        const valorTotalContrato = cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
+        // Descobrir todos os períodos únicos do cronograma ordenados — igual ao CronogramaComparativo
+        const periodosUnicos = new Set<number>();
+        cronograma.items.forEach(item => {
+          item.periodos.forEach(p => periodosUnicos.add(p.periodo));
+        });
+        const todosPeriodosOrdenados = Array.from(periodosUnicos).sort((a, b) => a - b);
 
-        // Gerar dados de comparativo para a medição atual
+        // Gerar dados de comparativo para a medição atual usando mapeamento ordinal
         const comparativos = cronograma.items.map(itemCronograma => {
-          const periodoAtual = medicaoAtual * 30;
-          const periodoAtualData = itemCronograma.periodos.find(p => p.periodo === periodoAtual);
+          // Mapeamento ordinal: medição N → N-ésimo período (igual ao CronogramaComparativo)
+          const periodosOrdenados = [...itemCronograma.periodos].sort((a, b) => a.periodo - b.periodo);
+          const periodoIndex = medicaoAtual - 1;
+          const periodoAtualData = periodoIndex < periodosOrdenados.length ? periodosOrdenados[periodoIndex] : null;
           const previsto = periodoAtualData?.valor || 0;
           
-          // Calcular previsto acumulado (soma de todos os períodos até o atual)
-          const previstoAcum = itemCronograma.periodos
-            .filter(p => p.periodo <= periodoAtual)
+          // Previsto acumulado: soma dos N primeiros períodos
+          const previstoAcum = periodosOrdenados
+            .slice(0, medicaoAtual)
             .reduce((sum, p) => sum + p.valor, 0);
 
           // Executado desta medição
@@ -328,16 +367,19 @@ export function RelatorioMedicaoModal({
         setDadosComparativo(comparativos);
 
         // Calcular histórico acumulado por medição para o gráfico de linha
-        const historico: { sequencia: number; previstoAcum: number; executadoAcum: number; pctPrevisto: number; pctExecutado: number }[] = [];
+        // Usar os dias reais dos períodos do cronograma (igual ao CronogramaComparativo)
+        const historico: { sequencia: number; diasReais: number; previstoAcum: number; executadoAcum: number; pctPrevisto: number; pctExecutado: number }[] = [];
         
         for (let seq = 1; seq <= medicaoAtual; seq++) {
-          const periodo = seq * 30;
-          
-          // Previsto acumulado até esta medição
+          // Dias reais do N-ésimo período (mapeamento ordinal)
+          const diasReais = todosPeriodosOrdenados[seq - 1] ?? seq * 30;
+
+          // Previsto acumulado: soma dos N primeiros períodos de cada macro
           let previstoAcumMed = 0;
           cronograma.items.forEach(item => {
-            previstoAcumMed += item.periodos
-              .filter(p => p.periodo <= periodo)
+            const periodosOrdenados = [...item.periodos].sort((a, b) => a.periodo - b.periodo);
+            previstoAcumMed += periodosOrdenados
+              .slice(0, seq)
               .reduce((sum, p) => sum + p.valor, 0);
           });
           
@@ -345,18 +387,15 @@ export function RelatorioMedicaoModal({
           let executadoAcumMed = 0;
           for (let s = 1; s <= seq; s++) {
             const execMap = executadoPorMacroPorMedicao.get(s);
-            if (execMap) {
-              execMap.forEach((val) => {
-                executadoAcumMed += val;
-              });
-            }
+            if (execMap) execMap.forEach((val) => { executadoAcumMed += val; });
           }
           
           historico.push({
             sequencia: seq,
+            diasReais,
             previstoAcum: previstoAcumMed,
             executadoAcum: executadoAcumMed,
-            pctPrevisto: valorTotalContrato > 0 ? (previstoAcumMed / valorTotalContrato) * 100 : 0,
+            pctPrevisto: valorTotalContrato > 0 ? Math.min((previstoAcumMed / valorTotalContrato) * 100, 100) : 0,
             pctExecutado: valorTotalContrato > 0 ? (executadoAcumMed / valorTotalContrato) * 100 : 0
           });
         }
@@ -936,7 +975,7 @@ export function RelatorioMedicaoModal({
           const dataExecutado = [0];
           
           dadosHistoricoPorMedicao.forEach(h => {
-            labelsLine.push(`${h.sequencia * 30} dias`);
+            labelsLine.push(`${h.diasReais} dias`);
             dataPrevisto.push(h.pctPrevisto);
             dataExecutado.push(h.pctExecutado);
           });
