@@ -240,7 +240,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">📊 Execução:</span>
+                    <span className="text-gray-600">💰 Valor Pago:</span>
                     <span className="font-medium text-gray-900">{getFormattedExec(obra)}</span>
                   </div>
                 </div>
