@@ -1835,17 +1835,25 @@ const criarNovaMedicao = async () => {
                 margin-bottom: 3px;
               }
               .info-section {
-                margin: 15px 0;
+                margin: 12px 0;
                 background: #f1f5f9;
-                padding: 10px;
-                border-radius: 4px;
+                padding: 8px 14px;
                 border-left: 4px solid #3b82f6;
-              }
-              .info-row {
                 display: flex;
                 justify-content: space-between;
-                margin: 4px 0;
+                align-items: center;
+              }
+              .info-col {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+              }
+              .info-col.right {
+                text-align: right;
+              }
+              .info-row {
                 font-size: 9px;
+                line-height: 1.4;
               }
               .info-label {
                 font-weight: bold;
@@ -1976,10 +1984,13 @@ const criarNovaMedicao = async () => {
               <h2>${nomeMedicao}</h2>
             </div>
             <div class="info-section">
-              <div class="info-row">
-                <span><span class="info-label">Contrato: </span><span class="info-value">${nomeContrato}</span></span>
-                <span><span class="info-label">Empresa: </span><span class="info-value">${nomeEmpresa}</span></span>
-                <span><span class="info-label">Data: </span><span class="info-value">${dataAtual}</span></span>
+              <div class="info-col">
+                <div class="info-row"><span class="info-label">Município: </span><span class="info-value">${obra.municipio || '—'}</span></div>
+                <div class="info-row"><span class="info-label">Nº do Contrato: </span><span class="info-value">${nomeContrato}</span></div>
+              </div>
+              <div class="info-col right">
+                <div class="info-row"><span class="info-label">Data da Medição: </span><span class="info-value">${dataAtual}</span></div>
+                <div class="info-row"><span class="info-label">Empresa: </span><span class="info-value">${nomeEmpresa}</span></div>
               </div>
             </div>
             <div class="summary-section">
