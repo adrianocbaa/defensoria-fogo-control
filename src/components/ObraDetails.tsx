@@ -329,7 +329,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-muted-foreground">Medições:</span>
                       <span className="text-sm font-semibold text-green-600">
-                        {dadosFinanceiros.percentualExecutado.toFixed(2)}%
+                        {Math.min(dadosFinanceiros.percentualExecutado, 100).toFixed(2)}%
                       </span>
                     </div>
                     <MedicaoProgressBar
