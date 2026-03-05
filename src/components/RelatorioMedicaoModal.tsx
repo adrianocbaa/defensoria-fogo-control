@@ -279,11 +279,13 @@ export function RelatorioMedicaoModal({
           }
         });
 
-        // Base total do contrato: soma dos folha do orçamento; fallback para cronograma
+        // Base para Curva S: usa total_etapa do cronograma pois é a base do próprio previsto.
+        // Isso garante que Previsto alcance exatamente 100% no último período,
+        // evitando que macros extracontratuais (total_contrato=0 no orçamento) inflem o numerador.
+        const totalCronograma = cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
         const totalOrcamento = Array.from(totalContratoPorMacro.values()).reduce((s, v) => s + v, 0);
-        const valorTotalContrato = totalOrcamento > 0
-          ? totalOrcamento
-          : cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
+        // Para o gráfico de Curva S usamos o cronograma como base; para % por macro usamos o orçamento
+        const valorTotalContrato = totalCronograma > 0 ? totalCronograma : (totalOrcamento > 0 ? totalOrcamento : 1);
 
         // Calcular dados acumulados até a medição atual
         const medicaoAtualSession = medicaoSessions.find(s => s.sequencia === medicaoAtual);
