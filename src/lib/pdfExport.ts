@@ -202,15 +202,23 @@ export async function generatePdfFromElementAutoPage(
     const pageEnd = pageStart + contentHeight;
     if (pageEnd >= totalImgHeightMm) break; // last page, no break needed
 
-    // Find the last row that fits entirely within this page
+    // Find the FIRST row that starts within this page but whose bottom exceeds the page end
+    // Iterate FORWARD so we catch the first cut row, not the last
     let breakAt = pageEnd;
-    for (let i = rowBottomsMm.length - 1; i >= 0; i--) {
-      if (rowTopsMm[i] >= pageStart && rowBottomsMm[i] > pageEnd) {
-        // This row is cut — move break to before this row
+    for (let i = 0; i < rowBottomsMm.length; i++) {
+      if (
+        rowTopsMm[i] >= pageStart &&   // row starts within this page
+        rowTopsMm[i] < pageEnd &&      // row hasn't already passed the page boundary
+        rowBottomsMm[i] > pageEnd      // row bottom exceeds page — would be cut
+      ) {
+        // Break just before this row
         breakAt = rowTopsMm[i];
-        break;
+        break; // found the first cut row — stop searching
       }
     }
+
+    // Safety guard: if breakAt didn't advance (e.g. single row taller than page), force advance
+    if (breakAt <= pageStart) breakAt = pageEnd;
 
     pageBreaks.push(breakAt);
     pageStart = breakAt;
