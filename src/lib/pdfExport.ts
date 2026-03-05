@@ -114,6 +114,69 @@ export async function generatePdfFromElement(
 }
 
 /**
+ * Generate a PDF from an HTML element using jsPDF.html() with autoPaging
+ * This respects CSS break-inside: avoid on rows, preventing content cuts
+ */
+export async function generatePdfFromElementAutoPage(
+  element: HTMLElement,
+  options: Html2PdfOptions = {}
+): Promise<void> {
+  const {
+    filename = 'document.pdf',
+    html2canvas: canvasOptions = {},
+    jsPDF: pdfOptions = {},
+  } = options;
+
+  const orientation = pdfOptions.orientation || 'portrait';
+  const format = pdfOptions.format || 'a4';
+
+  const pdf = new jsPDF({
+    orientation,
+    unit: (pdfOptions.unit as any) || 'mm',
+    format,
+    compress: pdfOptions.compress !== false,
+  });
+
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+
+  let marginTop = 0, marginRight = 0, marginBottom = 0, marginLeft = 0;
+  if (options.margin !== undefined) {
+    if (Array.isArray(options.margin)) {
+      [marginTop, marginRight, marginBottom, marginLeft] = options.margin.length === 4
+        ? options.margin
+        : [options.margin[0], options.margin[0], options.margin[0], options.margin[0]];
+    } else {
+      marginTop = marginRight = marginBottom = marginLeft = options.margin;
+    }
+  }
+
+  const contentWidth = pdfWidth - marginLeft - marginRight;
+
+  return new Promise<void>((resolve, reject) => {
+    (pdf as any).html(element, {
+      callback: (doc: any) => {
+        doc.save(filename);
+        resolve();
+      },
+      x: marginLeft,
+      y: marginTop,
+      width: contentWidth,
+      windowWidth: canvasOptions.windowWidth || 1587,
+      html2canvas: {
+        scale: canvasOptions.scale || 1.5,
+        useCORS: canvasOptions.useCORS !== false,
+        logging: false,
+        allowTaint: canvasOptions.allowTaint || false,
+        width: canvasOptions.width,
+        windowWidth: canvasOptions.windowWidth,
+      },
+      autoPaging: 'slice',
+      margin: [marginTop, marginRight, marginBottom, marginLeft],
+    });
+  });
+}
+
+/**
  * Generate a PDF from an HTML element and return as Blob
  */
 export async function generatePdfBlobFromElement(
