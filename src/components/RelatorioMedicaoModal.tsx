@@ -139,6 +139,8 @@ export function RelatorioMedicaoModal({
     previstoAcum: number;
     executado: number;
     executadoAcum: number;
+    executadoAcumPct: number;
+    previstoAcumPct: number;
     desvioPct: number;
     desvioAcumPct: number;
   }[]>([]);
@@ -352,6 +354,10 @@ export function RelatorioMedicaoModal({
           const desvioPct = previsto > 0 ? ((executadoMedicaoAtual - previsto) / previsto) * 100 : 0;
           const desvioAcumPct = previstoAcum > 0 ? ((executadoAcum - previstoAcum) / previstoAcum) * 100 : 0;
 
+          const totalMacro = totalContratoPorMacro.get(itemCronograma.item_numero) ?? itemCronograma.total_etapa ?? 0;
+          const executadoAcumPct = totalMacro > 0 ? Math.min((executadoAcum / totalMacro) * 100, 200) : 0;
+          const previstoAcumPct = totalMacro > 0 ? Math.min((previstoAcum / totalMacro) * 100, 100) : 0;
+
           return {
             itemNumero: itemCronograma.item_numero,
             descricao: itemCronograma.descricao,
@@ -359,6 +365,8 @@ export function RelatorioMedicaoModal({
             previstoAcum,
             executado: executadoMedicaoAtual,
             executadoAcum,
+            executadoAcumPct,
+            previstoAcumPct,
             desvioPct,
             desvioAcumPct
           };
@@ -879,6 +887,7 @@ export function RelatorioMedicaoModal({
             y: {
               stacked: options.stacked,
               beginAtZero: true,
+              max: options.yAxisSuffix === '%' ? 100 : undefined,
               title: options.yAxisLabel ? {
                 display: true,
                 text: options.yAxisLabel,
@@ -953,19 +962,19 @@ export function RelatorioMedicaoModal({
             labelsBar,
             [
               {
-                label: 'Previsto',
-                data: dadosComparativo.map(d => d.previsto),
+                label: 'Previsto Acumulado (%)',
+                data: dadosComparativo.map(d => d.previstoAcumPct),
                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                 borderColor: 'rgb(59, 130, 246)',
               },
               {
-                label: 'Executado',
-                data: dadosComparativo.map(d => d.executado),
+                label: 'Executado Acumulado (%)',
+                data: dadosComparativo.map(d => d.executadoAcumPct),
                 backgroundColor: 'rgba(34, 197, 94, 0.7)',
                 borderColor: 'rgb(34, 197, 94)',
               },
             ],
-            { title: `Previsto x Executado - ${medicaoAtual}ª Medição` }
+            { title: `Previsto x Executado - ${medicaoAtual}ª Medição`, yAxisSuffix: '%' }
           );
 
           // Gráfico de linha: Acumulado (Previsto x Executado por período)
