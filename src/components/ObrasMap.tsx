@@ -103,7 +103,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
   const getFormattedExec = (o: Obra): string => {
     const item = valorPagoMap?.[o.id];
     if (item) {
-      return item.percentual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+      return Math.min(item.percentual, 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
     }
     return formatExecutionPercentage(o);
   };
