@@ -898,19 +898,19 @@ export async function exportarWord(params: ExportWordParams): Promise<void> {
       labelsBar,
       [
         {
-          label: 'Previsto',
-          data: dadosComparativo.map(d => d.previsto),
+          label: 'Previsto Acumulado (%)',
+          data: dadosComparativo.map(d => (d as any).previstoAcumPct ?? 0),
           backgroundColor: 'rgba(59, 130, 246, 0.7)',
           borderColor: 'rgb(59, 130, 246)',
         },
         {
-          label: 'Executado',
-          data: dadosComparativo.map(d => d.executado),
+          label: 'Executado Acumulado (%)',
+          data: dadosComparativo.map(d => (d as any).executadoAcumPct ?? 0),
           backgroundColor: 'rgba(34, 197, 94, 0.7)',
           borderColor: 'rgb(34, 197, 94)',
         },
       ],
-      { title: 'Previsto x Executado por Etapa', yAxisLabel: 'Valor (R$)' }
+      { title: 'Previsto x Executado por Etapa', yAxisLabel: 'Percentual (%)', yAxisSuffix: '%' }
     );
 
     if (chartBarImage) {
