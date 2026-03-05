@@ -1950,15 +1950,6 @@ const criarNovaMedicao = async () => {
                 color: #7f8c8d;
                 text-align: center;
               }
-              @page {
-                size: A4 landscape;
-                margin: 8mm;
-              }
-              @media print {
-                body { padding: 0; }
-                tr { page-break-inside: avoid; }
-                thead { display: table-header-group; }
-              }
             </style>
           </head>
           <body>
@@ -1974,21 +1965,48 @@ const criarNovaMedicao = async () => {
         </html>
       `;
 
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        toast.error('Bloqueio de popup detectado. Permita popups para este site e tente novamente.');
-        return;
-      }
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
-      // Aguarda renderização completa antes de imprimir
-      printWindow.onload = () => {
-        setTimeout(() => {
-          printWindow.print();
-        }, 500);
+      // Largura A4 paisagem em pixels a 150dpi ≈ 1587px — garante que todo o conteúdo caiba
+      const A4_LANDSCAPE_PX = 1587;
+
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'fixed';
+      tempDiv.style.top = '-99999px';
+      tempDiv.style.left = '-99999px';
+      tempDiv.style.width = `${A4_LANDSCAPE_PX}px`;
+      tempDiv.style.background = 'white';
+      tempDiv.innerHTML = htmlContent;
+      document.body.appendChild(tempDiv);
+
+      const opt = {
+        margin: [5, 5, 5, 5],
+        filename: `Medicao_${medicaoAtual}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.97 },
+        html2canvas: {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          allowTaint: true,
+          width: A4_LANDSCAPE_PX,
+          windowWidth: A4_LANDSCAPE_PX,
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'landscape' as const,
+          compress: true,
+        },
       };
-      toast.success('Janela de impressão aberta! Use "Salvar como PDF" no diálogo de impressão.');
+
+      generatePdfFromElement(tempDiv, opt).then(() => {
+        document.body.removeChild(tempDiv);
+        toast.success('PDF exportado com sucesso!');
+      }).catch((error: any) => {
+        console.error('Erro ao exportar PDF:', error);
+        if (tempDiv && tempDiv.parentNode) {
+          document.body.removeChild(tempDiv);
+        }
+        toast.error('Erro ao exportar PDF');
+      });
 
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
