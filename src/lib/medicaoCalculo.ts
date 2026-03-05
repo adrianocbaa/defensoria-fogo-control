@@ -108,10 +108,12 @@ export function calcularFinanceiroMedicao(
   const totalContratoPorItem = buildTotalContratoPorItem(orcItems);
 
   // Valor acumulado global: soma direta do campo `total` de todos os itens de medição.
-  // O campo `total` já representa o valor financeiro real pago (calculado na página de medição).
-  const valorAcumulado = Math.round(
-    medicaoItems.reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
-  ) / 100;
+  // Cada item é arredondado individualmente antes de somar, para evitar acúmulo de erro de ponto flutuante.
+  const valorAcumuladoRaw = medicaoItems.reduce(
+    (sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100,
+    0
+  );
+  const valorAcumulado = Math.round(valorAcumuladoRaw * 100) / 100;
 
   // Marcos por sessão: usa total acumulado (igual à lógica da página de medição)
   const sessionsSorted = [...sessions].sort((a, b) => a.sequencia - b.sequencia);
