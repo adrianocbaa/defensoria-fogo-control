@@ -1813,7 +1813,6 @@ const criarNovaMedicao = async () => {
               body { 
                 font-family: 'Arial', sans-serif; 
                 font-size: 8px; 
-                padding: 15mm;
                 background: white;
                 color: #000;
               }
@@ -1953,154 +1952,16 @@ const criarNovaMedicao = async () => {
               }
               @page {
                 size: A4 landscape;
-                margin: 10mm;
+                margin: 8mm;
+              }
+              @media print {
+                body { padding: 0; }
+                tr { page-break-inside: avoid; }
+                thead { display: table-header-group; }
               }
             </style>
           </head>
           <body>
-            <div class="header">
-              <h1>${medicaoAtual}ª Planilha de Medição</h1>
-              <h2>${obra.nome}</h2>
-            </div>
-            
-            <div class="info-section">
-              <div class="info-row">
-                <span><span class="info-label">Município:</span> <span class="info-value">${obra.municipio}</span></span>
-                <span><span class="info-label">Data da Medição:</span> <span class="info-value">${dataAtual}</span></span>
-              </div>
-              ${obra.n_contrato ? `
-              <div class="info-row">
-                <span><span class="info-label">Nº do Contrato:</span> <span class="info-value">${obra.n_contrato}</span></span>
-                <span><span class="info-label">Empresa:</span> <span class="info-value">${obra.empresa_responsavel || '-'}</span></span>
-              </div>
-              ` : ''}
-            </div>
-
-            <div class="summary-section">
-              <div class="summary-card green">
-                <div class="summary-label">Valor do Contrato</div>
-                <div class="summary-value">${formatMoney(totalTotalContratoPDF)}</div>
-              </div>
-              <div class="summary-card blue">
-                <div class="summary-label">Medição Atual</div>
-                <div class="summary-value">${formatMoney(totalMedicaoAtualPDF)}</div>
-              </div>
-              <div class="summary-card orange">
-                <div class="summary-label">Valor Acumulado</div>
-                <div class="summary-value">${formatMoney(totalAcumuladoPDF)}</div>
-              </div>
-              <div class="summary-card">
-                <div class="summary-label">% Executado</div>
-                <div class="summary-value">${percentualExecucao.toFixed(2)}%</div>
-              </div>
-            </div>
-            
-            <table>
-              <thead>
-                <tr>
-                  <th colspan="7" style="background: #d4d9fc; text-align: center; color: #000;">Planilha Orçamentária</th>
-      `;
-
-      aditivosBloqueados.forEach(aditivo => {
-        htmlContent += `<th colspan="3" style="background: #b3e5fc; color: #000;">${aditivo.nome}</th>`;
-      });
-
-      htmlContent += `
-                  <th rowspan="3" style="width: 80px; background: #c8e6c9; color: #000;">TOTAL CONTRATO</th>
-                  <th colspan="3" style="background: #fff9c4; color: #000;">${medicaoAtual}ª MEDIÇÃO</th>
-                  <th colspan="3" style="background: #e8ebfe; color: #000;">ACUMULADO</th>
-                </tr>
-                <tr>
-                  <th style="width: 40px;">Item</th>
-                  <th style="width: 60px;">Código Banco</th>
-                  <th style="width: 200px;">Descrição</th>
-                  <th style="width: 30px;">Und</th>
-                  <th style="width: 50px;">Quant.</th>
-                  <th style="width: 60px;">Valor unit com BDI e Desc.</th>
-                  <th style="width: 70px;">Valor total com BDI e Desconto</th>
-      `;
-
-      aditivosBloqueados.forEach(() => {
-        htmlContent += `<th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>`;
-      });
-
-      htmlContent += `
-                  <th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>
-                  <th style="width: 50px;">QTD</th><th style="width: 35px;">%</th><th style="width: 60px;">TOTAL</th>
-                </tr>
-              </thead>
-              <tbody>
-      `;
-
-      items.forEach(item => {
-        const ehMacro = !ehItemFolha(item.item);
-        const nivelClass = ehMacro ? 'macro-item' : (item.nivel === 1 ? 'nivel-1' : item.nivel === 2 ? 'nivel-2' : '');
-        const indent = '&nbsp;'.repeat((item.nivel - 1) * 3);
-        
-        htmlContent += `
-          <tr class="${nivelClass}">
-            <td class="text-center">${item.item}</td>
-            <td class="text-center">${item.codigo}</td>
-            <td class="descricao-col">${indent}${item.descricao}</td>
-            <td class="text-center">${item.und}</td>
-            <td class="text-right">${Number(item.quantidade || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="text-right">${formatMoney(item.valorUnitario)}</td>
-            <td class="text-right">${formatMoney(item.valorTotal)}</td>
-        `;
-
-        aditivosBloqueados.forEach(aditivo => {
-          const aditivoData = aditivo.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-          htmlContent += `
-            <td class="text-right">${Number(aditivoData.qnt || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="text-right">${Number(aditivoData.percentual || 0).toFixed(2)}%</td>
-            <td class="text-right">${formatMoney(aditivoData.total)}</td>
-          `;
-        });
-
-        const totalContrato = calcularTotalContratoComAditivos(item, medicaoAtual);
-        htmlContent += `<td class="text-right" style="background: #e8f5e9;">${formatMoney(totalContrato)}</td>`;
-
-        // Usar dados hierárquicos que já calculam valores para MACROs e MICROs
-        const medicaoData = dadosHierarquicosMemoizados[medicaoAtual]?.[item.id] || { qnt: 0, percentual: 0, total: 0 };
-        const pctMedicao = totalContrato > 0 ? (medicaoData.total / totalContrato) * 100 : 0;
-        
-        htmlContent += `
-            <td class="text-right">${ehMacro ? '' : Number(medicaoData.qnt || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="text-right">${Number(pctMedicao || 0).toFixed(2)}%</td>
-            <td class="text-right">${formatMoney(medicaoData.total)}</td>
-        `;
-
-        const acumQnt = calcularQuantidadeAcumulada(item.id);
-        const acumPct = calcularPercentualAcumulado(item.id);
-        const acumTotal = calcularValorAcumuladoItem(item.id);
-        htmlContent += `
-            <td class="text-right">${ehMacro ? '' : Number(acumQnt || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="text-right">${Number(acumPct || 0).toFixed(2)}%</td>
-            <td class="text-right">${formatMoney(acumTotal)}</td>
-          </tr>
-        `;
-      });
-
-      // Adicionar linha de totais
-      htmlContent += `
-          <tr class="totals-row">
-            <td colspan="7" style="text-align: right; padding-right: 10px;">TOTAL GERAL:</td>
-      `;
-      
-      // Colunas vazias para aditivos
-      aditivosBloqueados.forEach(() => {
-        htmlContent += `<td></td><td></td><td></td>`;
-      });
-      
-      htmlContent += `
-            <td class="text-right" style="font-weight: bold;">${formatMoney(totalTotalContratoPDF)}</td>
-            <td></td>
-            <td></td>
-            <td class="text-right" style="font-weight: bold;">${formatMoney(totalMedicaoAtualPDF)}</td>
-            <td></td>
-            <td></td>
-            <td class="text-right" style="font-weight: bold;">${formatMoney(totalAcumuladoPDF)}</td>
-          </tr>
       `;
 
       htmlContent += `
@@ -2113,43 +1974,21 @@ const criarNovaMedicao = async () => {
         </html>
       `;
 
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = htmlContent;
-      tempDiv.style.width = '297mm';
-      tempDiv.style.padding = '10mm';
-      tempDiv.style.background = 'white';
-      document.body.appendChild(tempDiv);
-
-      const opt = {
-        margin: [5, 5, 5, 5],
-        filename: `Medicao_${medicaoAtual}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { 
-          scale: 1.5,
-          useCORS: true,
-          logging: true,
-          letterRendering: true,
-          allowTaint: true
-        },
-        jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: 'landscape' as const,
-          compress: true
-        },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        toast.error('Bloqueio de popup detectado. Permita popups para este site e tente novamente.');
+        return;
+      }
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      // Aguarda renderização completa antes de imprimir
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
       };
-
-      generatePdfFromElement(tempDiv, opt).then(() => {
-        document.body.removeChild(tempDiv);
-        toast.success('PDF exportado com sucesso!');
-      }).catch((error: any) => {
-        console.error('Erro ao exportar PDF:', error);
-        if (tempDiv && tempDiv.parentNode) {
-          document.body.removeChild(tempDiv);
-        }
-        toast.error('Erro ao exportar PDF');
-      });
+      toast.success('Janela de impressão aberta! Use "Salvar como PDF" no diálogo de impressão.');
 
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
