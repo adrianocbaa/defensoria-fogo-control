@@ -114,8 +114,8 @@ export async function generatePdfFromElement(
 }
 
 /**
- * Generate a PDF from an HTML element using jsPDF.html() with autoPaging
- * This respects CSS break-inside: avoid on rows, preventing content cuts
+ * Generate a PDF from an HTML element using html2canvas (image-based, same quality as before)
+ * with smart page breaks that detect actual <tr> row positions so no row is ever cut.
  */
 export async function generatePdfFromElementAutoPage(
   element: HTMLElement,
@@ -123,12 +123,39 @@ export async function generatePdfFromElementAutoPage(
 ): Promise<void> {
   const {
     filename = 'document.pdf',
+    image = { type: 'jpeg', quality: 0.97 },
     html2canvas: canvasOptions = {},
     jsPDF: pdfOptions = {},
   } = options;
 
   const orientation = pdfOptions.orientation || 'portrait';
   const format = pdfOptions.format || 'a4';
+
+  // Collect row top/bottom positions (relative to element) BEFORE rendering
+  const rows = Array.from(element.querySelectorAll('tr')) as HTMLTableRowElement[];
+  const elementTop = element.getBoundingClientRect().top;
+  const rowBounds = rows.map(tr => {
+    const rect = tr.getBoundingClientRect();
+    return {
+      top: rect.top - elementTop,
+      bottom: rect.bottom - elementTop,
+    };
+  });
+
+  // Render full content as one canvas
+  const canvas = await html2canvas(element, {
+    scale: canvasOptions.scale || 2,
+    useCORS: canvasOptions.useCORS !== false,
+    logging: false,
+    allowTaint: canvasOptions.allowTaint || false,
+    width: canvasOptions.width,
+    windowWidth: canvasOptions.windowWidth,
+  });
+
+  const imgData = canvas.toDataURL(
+    `image/${image.type || 'jpeg'}`,
+    image.quality || 0.97
+  );
 
   const pdf = new jsPDF({
     orientation,
@@ -138,6 +165,7 @@ export async function generatePdfFromElementAutoPage(
   });
 
   const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = pdf.internal.pageSize.getHeight();
 
   let marginTop = 0, marginRight = 0, marginBottom = 0, marginLeft = 0;
   if (options.margin !== undefined) {
@@ -151,29 +179,67 @@ export async function generatePdfFromElementAutoPage(
   }
 
   const contentWidth = pdfWidth - marginLeft - marginRight;
+  const contentHeight = pdfHeight - marginTop - marginBottom;
 
-  return new Promise<void>((resolve, reject) => {
-    (pdf as any).html(element, {
-      callback: (doc: any) => {
-        doc.save(filename);
-        resolve();
-      },
-      x: marginLeft,
-      y: marginTop,
-      width: contentWidth,
-      windowWidth: canvasOptions.windowWidth || 1587,
-      html2canvas: {
-        scale: canvasOptions.scale || 1.5,
-        useCORS: canvasOptions.useCORS !== false,
-        logging: false,
-        allowTaint: canvasOptions.allowTaint || false,
-        width: canvasOptions.width,
-        windowWidth: canvasOptions.windowWidth,
-      },
-      autoPaging: 'slice',
-      margin: [marginTop, marginRight, marginBottom, marginLeft],
-    });
-  });
+  // Scale factor: canvas pixels → PDF mm
+  const scale = contentWidth / canvas.width;
+  const totalImgHeightMm = canvas.height * scale;
+
+  // Build smart page-break points using row positions
+  // Convert pixel row positions to mm using same scale
+  const rowBottomsMm = rowBounds.map(r => r.bottom * scale);
+  const rowTopsMm    = rowBounds.map(r => r.top * scale);
+
+  // Find break points: when a row would be cut by a page boundary, break before that row
+  const pageBreaks: number[] = [0]; // start of first page in mm
+  let pageStart = 0;
+
+  while (true) {
+    const pageEnd = pageStart + contentHeight;
+    if (pageEnd >= totalImgHeightMm) break; // last page, no break needed
+
+    // Find the last row that fits entirely within this page
+    let breakAt = pageEnd;
+    for (let i = rowBottomsMm.length - 1; i >= 0; i--) {
+      if (rowTopsMm[i] >= pageStart && rowBottomsMm[i] > pageEnd) {
+        // This row is cut — move break to before this row
+        breakAt = rowTopsMm[i];
+        break;
+      }
+    }
+
+    pageBreaks.push(breakAt);
+    pageStart = breakAt;
+  }
+
+  // Render each page slice
+  for (let p = 0; p < pageBreaks.length; p++) {
+    if (p > 0) pdf.addPage();
+
+    const sliceStartMm = pageBreaks[p];
+    const sliceEndMm = p + 1 < pageBreaks.length ? pageBreaks[p + 1] : totalImgHeightMm;
+    const sliceHeightMm = sliceEndMm - sliceStartMm;
+
+    // Convert slice to canvas pixels
+    const srcY = Math.round(sliceStartMm / scale);
+    const srcH = Math.round(sliceHeightMm / scale);
+
+    // Crop canvas to this slice
+    const sliceCanvas = document.createElement('canvas');
+    sliceCanvas.width = canvas.width;
+    sliceCanvas.height = srcH;
+    const ctx = sliceCanvas.getContext('2d')!;
+    ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+    const sliceData = sliceCanvas.toDataURL(
+      `image/${image.type || 'jpeg'}`,
+      image.quality || 0.97
+    );
+
+    pdf.addImage(sliceData, (image.type || 'jpeg').toUpperCase(), marginLeft, marginTop, contentWidth, sliceHeightMm);
+  }
+
+  pdf.save(filename);
 }
 
 /**
