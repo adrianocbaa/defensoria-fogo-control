@@ -354,7 +354,9 @@ export function RelatorioMedicaoModal({
           const desvioPct = previsto > 0 ? ((executadoMedicaoAtual - previsto) / previsto) * 100 : 0;
           const desvioAcumPct = previstoAcum > 0 ? ((executadoAcum - previstoAcum) / previstoAcum) * 100 : 0;
 
-          const totalMacro = totalContratoPorMacro.get(itemCronograma.item_numero) ?? itemCronograma.total_etapa ?? 0;
+          const totalOrcMacro = totalContratoPorMacro.get(itemCronograma.item_numero) || 0;
+          // Se orçamento for zero (itens extracontratuais), usa total_etapa do cronograma como base
+          const totalMacro = totalOrcMacro > 0 ? totalOrcMacro : (itemCronograma.total_etapa ?? 0);
           const executadoAcumPct = totalMacro > 0 ? Math.min((executadoAcum / totalMacro) * 100, 200) : 0;
           const previstoAcumPct = totalMacro > 0 ? Math.min((previstoAcum / totalMacro) * 100, 100) : 0;
 

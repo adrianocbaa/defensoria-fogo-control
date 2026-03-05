@@ -322,11 +322,12 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
         // Calcular o total da obra para cada MACRO
         // Usar total_contrato do orçamento (itens folha) — mesma base da tabela de medição
-        // Fallback para total_etapa do cronograma caso não haja dados de orçamento
+        // Fallback para total_etapa do cronograma caso o orçamento seja zero (ex: macros extracontratuais)
         const totaisPorMacro = new Map<number, number>();
         cronograma.items.forEach(item => {
-          const totalOrcamento = totalContratoPorMacroState.get(item.item_numero);
-          totaisPorMacro.set(item.item_numero, totalOrcamento ?? item.total_etapa);
+          const totalOrcamento = totalContratoPorMacroState.get(item.item_numero) || 0;
+          // Se o total do orçamento for zero (itens extracontratuais), usar total_etapa do cronograma
+          totaisPorMacro.set(item.item_numero, totalOrcamento > 0 ? totalOrcamento : item.total_etapa);
         });
 
         // Calcular o total geral da obra
