@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { type ObraStatus, type Obra } from '@/data/mockObras';
 import { MapLoadingSkeleton } from '@/components/LoadingStates';
 import { createCustomIcon } from '@/components/MapPinOptions';
+import { useObrasValorPagoMap } from '@/hooks/useObrasValorPagoMap';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -80,60 +81,29 @@ interface ObrasMapProps {
 export function ObrasMap({ className, obras = [], onObraClick, loading = false }: ObrasMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const [execPercents, setExecPercents] = useState<Record<string, number>>({});
+
+  // Busca o valor pago acumulado diretamente do banco para todas as obras
+  const obraIds = obras.map(o => o.id);
+  const { data: valorPagoMap } = useObrasValorPagoMap(obraIds);
 
   // Coordenadas do centro de Mato Grosso
   const matogrossoCenter: [number, number] = [-12.64, -55.42];
   const initialZoom = 7;
 
   useEffect(() => {
-    // Simulate map initialization time
     const timer = setTimeout(() => {
       setMapReady(true);
       if (mapRef.current) {
         mapRef.current.invalidateSize();
       }
     }, 300);
-
     return () => clearTimeout(timer);
   }, []);
 
-  // Sincroniza "Execução" com "Andamento da obra" (Sistema de Medição)
-  useEffect(() => {
-    const map: Record<string, number> = {};
-    try {
-      obras.forEach((o) => {
-        const raw = localStorage.getItem(`resumo_financeiro_${o.id}`);
-        if (raw) {
-          const data = JSON.parse(raw);
-          const total = Number(data?.totalContrato) || 0;
-          const acumulado = Number(data?.valorAcumulado) || 0;
-          const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
-          map[o.id] = pct;
-        }
-      });
-    } catch {}
-    setExecPercents(map);
-  }, [obras]);
-
-  // Ouvinte: atualizações em tempo real vindas da tela de Medição
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<any>).detail;
-      if (!detail?.obraId) return;
-      const total = Number(detail?.totalContrato) || 0;
-      const acumulado = Number(detail?.valorAcumulado) || 0;
-      const pct = total > 0 ? Math.min((acumulado / total) * 100, 100) : 0;
-      setExecPercents((prev) => ({ ...prev, [detail.obraId]: pct }));
-    };
-    window.addEventListener('medicaoAtualizada', handler as EventListener);
-    return () => window.removeEventListener('medicaoAtualizada', handler as EventListener);
-  }, []);
-
   const getFormattedExec = (o: Obra): string => {
-    const p = execPercents[o.id];
-    if (typeof p === 'number') {
-      return p.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+    const item = valorPagoMap?.[o.id];
+    if (item) {
+      return item.percentual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
     }
     return formatExecutionPercentage(o);
   };
