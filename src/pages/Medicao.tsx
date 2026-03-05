@@ -2125,11 +2125,14 @@ const criarNovaMedicao = async () => {
       const A4_LANDSCAPE_PX = 1587;
 
       const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'fixed';
-      tempDiv.style.top = '-99999px';
+      // Use position:absolute (not fixed) so getBoundingClientRect() gives
+      // correct row positions relative to the element — essential for page-break detection
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.top = '0px';
       tempDiv.style.left = '-99999px';
       tempDiv.style.width = `${A4_LANDSCAPE_PX}px`;
       tempDiv.style.background = 'white';
+      tempDiv.style.visibility = 'hidden';
       tempDiv.innerHTML = htmlContent;
       document.body.appendChild(tempDiv);
 
