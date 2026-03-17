@@ -234,6 +234,19 @@ export function ChecklistDinamico() {
                 <Upload className="h-3.5 w-3.5 mr-1" />
                 Substituir PDF
               </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="text-xs"
+                onClick={handleExportPdf}
+                disabled={exportingPdf || ambientes.length === 0}
+                title={ambientes.length === 0 ? 'Crie ambientes antes de exportar' : 'Gerar relatório técnico PDF'}
+              >
+                {exportingPdf
+                  ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />Gerando...</>
+                  : <><Download className="h-3.5 w-3.5 mr-1" />Exportar Relatório</>
+                }
+              </Button>
             )}
           </div>
         </div>
