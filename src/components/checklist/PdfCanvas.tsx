@@ -54,6 +54,7 @@ export function PdfCanvas({
   onPageCount,
   onDrawComplete,
   onAmbienteClick,
+  onDeselect,
   onPinPlaced,
 }: PdfCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
