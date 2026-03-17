@@ -302,6 +302,7 @@ export function ChecklistDinamico() {
                   onPageCount={handlePageCount}
                   onDrawComplete={handleDrawComplete}
                   onAmbienteClick={handleAmbienteClick}
+                  onDeselect={() => setSelectedAmbienteId(null)}
                   onPinPlaced={handlePinPlaced}
                 />
               </div>

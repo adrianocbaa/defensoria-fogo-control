@@ -34,6 +34,7 @@ interface PdfCanvasProps {
     shapeData?: ShapeData;
   }) => void;
   onAmbienteClick: (id: string) => void;
+  onDeselect: () => void;
   onPinPlaced: (servicoId: string, pin: { x: number; y: number }) => void;
 }
 
@@ -53,6 +54,7 @@ export function PdfCanvas({
   onPageCount,
   onDrawComplete,
   onAmbienteClick,
+  onDeselect,
   onPinPlaced,
 }: PdfCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -187,7 +189,6 @@ export function PdfCanvas({
 
     // Polyline: add point
     if (isDrawingMode && drawMode === 'polyline') {
-      // Snap to close
       if (isSnapping) {
         onDrawComplete({ type: 'polyline', shapeData: { points: polyPoints } });
         setPolyPoints([]);
@@ -195,6 +196,12 @@ export function PdfCanvas({
         return;
       }
       setPolyPoints(prev => [...prev, pos]);
+      return;
+    }
+
+    // Click on empty space (not drawing, not pin) → deselect
+    if (!isDrawingMode && !isPinMode) {
+      onDeselect();
     }
   };
 
@@ -292,7 +299,11 @@ export function PdfCanvas({
           const shapeData = (amb as any).shape_data as ShapeData | null;
           const clickProps = {
             style: { cursor: isDrawingMode ? undefined : 'pointer', pointerEvents: isDrawingMode ? ('none' as const) : ('all' as const) },
-            onClick: () => !isDrawingMode && onAmbienteClick(amb.id),
+            onClick: (e: React.MouseEvent) => {
+              if (isDrawingMode) return;
+              e.stopPropagation(); // prevent container handleClick from firing onDeselect
+              onAmbienteClick(amb.id);
+            },
           };
 
           if (shapeType === 'circle' && shapeData?.cx !== undefined) {
