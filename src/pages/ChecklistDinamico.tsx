@@ -64,6 +64,7 @@ export function ChecklistDinamico() {
   const [selectedAmbienteId, setSelectedAmbienteId] = useState<string | null>(null);
   const [pendingShape, setPendingShape] = useState<PendingShape | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   // Pin mode: when user clicks "marcar no PDF" from a service
   const [isPinMode, setIsPinMode] = useState(false);
@@ -73,6 +74,55 @@ export function ChecklistDinamico() {
 
   const selectedAmbiente = ambientes.find(a => a.id === selectedAmbienteId) ?? null;
   const totalPages = pdf?.total_paginas ?? 1;
+
+  const handleExportPdf = async () => {
+    if (!obraId || !pdf) return;
+    setExportingPdf(true);
+    try {
+      // Buscar dados da obra
+      const { data: obra } = await supabase
+        .from('obras')
+        .select('nome, municipio, empresa_responsavel, n_contrato, fiscal_id, empresas(razao_social)')
+        .eq('id', obraId)
+        .maybeSingle();
+
+      let fiscalName = '';
+      if (obra?.fiscal_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('user_id', obra.fiscal_id)
+          .maybeSingle();
+        fiscalName = profile?.display_name ?? '';
+      }
+
+      const empresa =
+        (obra?.empresas as any)?.razao_social || obra?.empresa_responsavel || '';
+
+      await exportChecklistPdf(
+        {
+          obraId: obraId!,
+          nomeObra: obra?.nome ?? 'Obra',
+          municipio: obra?.municipio ?? '',
+          empresa,
+          nContrato: obra?.n_contrato,
+          fiscal: fiscalName,
+          dataRelatorio: new Date().toLocaleDateString('pt-BR', {
+            day: '2-digit', month: 'long', year: 'numeric',
+          }),
+          pdfNomeArquivo: pdf.nome_arquivo,
+        },
+        ambientes,
+      );
+      toast.success('Relatório PDF gerado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao gerar relatório PDF.');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
