@@ -189,7 +189,6 @@ export function PdfCanvas({
 
     // Polyline: add point
     if (isDrawingMode && drawMode === 'polyline') {
-      // Snap to close
       if (isSnapping) {
         onDrawComplete({ type: 'polyline', shapeData: { points: polyPoints } });
         setPolyPoints([]);
@@ -197,6 +196,12 @@ export function PdfCanvas({
         return;
       }
       setPolyPoints(prev => [...prev, pos]);
+      return;
+    }
+
+    // Click on empty space (not drawing, not pin) → deselect
+    if (!isDrawingMode && !isPinMode) {
+      onDeselect();
     }
   };
 
