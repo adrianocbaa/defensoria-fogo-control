@@ -32,7 +32,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ViewObraChecklistModal } from './ViewObraChecklistModal';
+
 
 interface ObraChecklist {
   id: string;
@@ -448,12 +448,6 @@ export function ObrasKanbanBoard({ obras, onObrasUpdate }: ObrasKanbanBoardProps
         ) : null}
       </DragOverlay>
 
-      <ViewObraChecklistModal
-        obra={selectedObra}
-        open={viewModalOpen}
-        onOpenChange={setViewModalOpen}
-        onUpdate={onObrasUpdate}
-      />
     </DndContext>
   );
 }
