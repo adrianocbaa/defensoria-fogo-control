@@ -109,14 +109,6 @@ export default function Obras() {
                 </Button>
               </Link>
               
-              <PermissionGuard requiresEdit showMessage={false}>
-                <Link to="/admin/obras/checklist">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Obras em Check-List</span>
-                  </Button>
-                </Link>
-              </PermissionGuard>
               
               <Link to="/admin/obras">
                 <Button variant="outline" size="sm" className="gap-2">
