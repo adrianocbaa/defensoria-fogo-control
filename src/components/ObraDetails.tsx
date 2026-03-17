@@ -58,6 +58,7 @@ const formatDate = (dateString: string) => {
 
 function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: () => void; loading?: boolean }) {
   const [photosLoading, setPhotosLoading] = useState(true);
+  const navigate = useNavigate();
   
   // Buscar dados financeiros das medições
   const { dados: dadosFinanceiros, loading: loadingFinanceiro } = useMedicoesFinanceiro(obra.id);
