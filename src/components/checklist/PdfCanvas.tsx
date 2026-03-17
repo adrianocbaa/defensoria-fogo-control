@@ -34,6 +34,7 @@ interface PdfCanvasProps {
     shapeData?: ShapeData;
   }) => void;
   onAmbienteClick: (id: string) => void;
+  onDeselect: () => void;
   onPinPlaced: (servicoId: string, pin: { x: number; y: number }) => void;
 }
 
