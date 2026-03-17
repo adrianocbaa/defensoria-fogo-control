@@ -19,7 +19,12 @@ import {
   Square,
   Circle,
   Spline,
+  Download,
+  Loader2,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { exportChecklistPdf } from '@/components/checklist/ChecklistPdfExport';
+import { toast } from 'sonner';
 import { PdfCanvas, type DrawMode } from '@/components/checklist/PdfCanvas';
 import type { ShapeData } from '@/components/checklist/PdfCanvas';
 import { AmbienteDialog } from '@/components/checklist/AmbienteDialog';
@@ -59,6 +64,7 @@ export function ChecklistDinamico() {
   const [selectedAmbienteId, setSelectedAmbienteId] = useState<string | null>(null);
   const [pendingShape, setPendingShape] = useState<PendingShape | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   // Pin mode: when user clicks "marcar no PDF" from a service
   const [isPinMode, setIsPinMode] = useState(false);
@@ -68,6 +74,55 @@ export function ChecklistDinamico() {
 
   const selectedAmbiente = ambientes.find(a => a.id === selectedAmbienteId) ?? null;
   const totalPages = pdf?.total_paginas ?? 1;
+
+  const handleExportPdf = async () => {
+    if (!obraId || !pdf) return;
+    setExportingPdf(true);
+    try {
+      // Buscar dados da obra
+      const { data: obra } = await supabase
+        .from('obras')
+        .select('nome, municipio, empresa_responsavel, n_contrato, fiscal_id, empresas(razao_social)')
+        .eq('id', obraId)
+        .maybeSingle();
+
+      let fiscalName = '';
+      if (obra?.fiscal_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('user_id', obra.fiscal_id)
+          .maybeSingle();
+        fiscalName = profile?.display_name ?? '';
+      }
+
+      const empresa =
+        (obra?.empresas as any)?.razao_social || obra?.empresa_responsavel || '';
+
+      await exportChecklistPdf(
+        {
+          obraId: obraId!,
+          nomeObra: obra?.nome ?? 'Obra',
+          municipio: obra?.municipio ?? '',
+          empresa,
+          nContrato: obra?.n_contrato,
+          fiscal: fiscalName,
+          dataRelatorio: new Date().toLocaleDateString('pt-BR', {
+            day: '2-digit', month: 'long', year: 'numeric',
+          }),
+          pdfNomeArquivo: pdf.nome_arquivo,
+        },
+        ambientes,
+      );
+      toast.success('Relatório PDF gerado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao gerar relatório PDF.');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -169,16 +224,31 @@ export function ChecklistDinamico() {
 
           <div className="ml-auto flex items-center gap-2">
             {pdf && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                <Upload className="h-3.5 w-3.5 mr-1" />
-                Substituir PDF
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Upload className="h-3.5 w-3.5 mr-1" />
+                  Substituir PDF
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="text-xs"
+                  onClick={handleExportPdf}
+                  disabled={exportingPdf || ambientes.length === 0}
+                  title={ambientes.length === 0 ? 'Crie ambientes antes de exportar' : 'Gerar relatório técnico PDF'}
+                >
+                  {exportingPdf
+                    ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />Gerando...</>
+                    : <><Download className="h-3.5 w-3.5 mr-1" />Exportar Relatório</>
+                  }
+                </Button>
+              </>
             )}
           </div>
         </div>
