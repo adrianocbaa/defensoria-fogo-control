@@ -14,6 +14,8 @@ import {
   Plus,
   ChevronDown,
   ChevronUp,
+  MapPin,
+  X,
 } from 'lucide-react';
 import type { ChecklistServico } from '@/hooks/useChecklistDinamico';
 
@@ -22,9 +24,10 @@ interface ServicoItemProps {
   onUpdate: (id: string, updates: Partial<ChecklistServico>) => void;
   onDelete: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
+  onPinRequest: (servicoId: string, descricao: string) => void;
 }
 
-export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto }: ServicoItemProps) {
+export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRequest }: ServicoItemProps) {
   const [expanded, setExpanded] = useState(servico.status === 'reprovado');
   const [observacao, setObservacao] = useState(servico.observacao ?? '');
   const [uploadingRepro, setUploadingRepro] = useState(false);
@@ -38,17 +41,8 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto }: Servi
     reprovado: 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800',
   }[servico.status] ?? 'border-border bg-muted/20';
 
-  const StatusIcon = servico.status === 'aprovado'
-    ? CheckCircle2
-    : servico.status === 'reprovado'
-    ? XCircle
-    : Clock;
-
-  const iconClass = servico.status === 'aprovado'
-    ? 'text-green-600'
-    : servico.status === 'reprovado'
-    ? 'text-destructive'
-    : 'text-yellow-600';
+  const StatusIcon = servico.status === 'aprovado' ? CheckCircle2 : servico.status === 'reprovado' ? XCircle : Clock;
+  const iconClass = servico.status === 'aprovado' ? 'text-green-600' : servico.status === 'reprovado' ? 'text-destructive' : 'text-yellow-600';
 
   const handleStatus = (status: 'aprovado' | 'reprovado' | 'pendente') => {
     onUpdate(servico.id, { status });
@@ -81,41 +75,40 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto }: Servi
     e.target.value = '';
   };
 
+  const hasPin = !!servico.location_pin;
+
   return (
     <div className={`border rounded-lg transition-all ${statusClass}`}>
-      {/* Header do item */}
+      {/* Header */}
       <div className="flex items-start gap-2 p-3">
         <StatusIcon className={`h-4 w-4 mt-0.5 shrink-0 ${iconClass}`} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium leading-snug">{servico.descricao}</p>
-          {servico.is_padrao && (
-            <Badge variant="outline" className="text-[10px] mt-0.5 h-4">Padrão</Badge>
-          )}
-          {servico.foto_correcao_url && (
-            <Badge className="text-[10px] mt-0.5 h-4 ml-1 bg-green-600">Corrigido</Badge>
-          )}
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {servico.is_padrao && (
+              <Badge variant="outline" className="text-[10px] h-4">Padrão</Badge>
+            )}
+            {servico.foto_correcao_url && (
+              <Badge className="text-[10px] h-4 bg-green-600">Corrigido</Badge>
+            )}
+            {hasPin && (
+              <Badge variant="outline" className="text-[10px] h-4 border-destructive text-destructive gap-0.5">
+                <MapPin className="h-2.5 w-2.5" /> Localizado
+              </Badge>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6"
-            onClick={() => setExpanded(!expanded)}
-          >
+        <div className="flex items-center gap-0.5 shrink-0">
+          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setExpanded(!expanded)}>
             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6 hover:text-destructive"
-            onClick={() => onDelete(servico.id)}
-          >
+          <Button size="icon" variant="ghost" className="h-6 w-6 hover:text-destructive" onClick={() => onDelete(servico.id)}>
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
 
-      {/* Botões de aprovação */}
+      {/* Status buttons */}
       <div className="flex gap-2 px-3 pb-3">
         <Button
           size="sm"
@@ -137,9 +130,54 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto }: Servi
         </Button>
       </div>
 
-      {/* Área expandida */}
+      {/* Expanded area */}
       {expanded && (
         <div className="px-3 pb-3 space-y-3 border-t pt-3">
+          {/* Localizar no PDF */}
+          <div>
+            <Label className="text-xs font-medium flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 text-destructive" />
+              Localização no Projeto
+            </Label>
+            {hasPin ? (
+              <div className="mt-1 flex items-center justify-between bg-destructive/10 border border-destructive/30 rounded px-2 py-1.5">
+                <span className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                  <MapPin className="h-3 w-3" /> Pin marcado no PDF
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5 text-destructive hover:bg-destructive/10"
+                    title="Reposicionar pin"
+                    onClick={() => onPinRequest(servico.id, servico.descricao)}
+                  >
+                    <MapPin className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5 hover:text-destructive"
+                    title="Remover pin"
+                    onClick={() => onUpdate(servico.id, { location_pin: null })}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-1 h-7 text-xs w-full border-dashed border-destructive/50 text-destructive hover:bg-destructive/5"
+                onClick={() => onPinRequest(servico.id, servico.descricao)}
+              >
+                <MapPin className="h-3.5 w-3.5 mr-1" />
+                Marcar localização no PDF
+              </Button>
+            )}
+          </div>
+
           <div>
             <Label className="text-xs font-medium">Observação</Label>
             <Textarea
@@ -160,35 +198,22 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto }: Servi
             </Label>
             {servico.foto_reprovacao_url ? (
               <div className="mt-1 relative">
-                <img
-                  src={servico.foto_reprovacao_url}
-                  alt="Foto do problema"
-                  className="w-full h-32 object-cover rounded-md border"
-                />
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  className="absolute top-1 right-1 h-6 w-6"
-                  onClick={() => onUpdate(servico.id, { foto_reprovacao_url: null })}
-                >
+                <img src={servico.foto_reprovacao_url} alt="Foto do problema" className="w-full h-32 object-cover rounded-md border" />
+                <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6"
+                  onClick={() => onUpdate(servico.id, { foto_reprovacao_url: null })}>
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                className="mt-1 h-8 text-xs w-full border-dashed"
-                disabled={uploadingRepro}
-                onClick={() => reproInputRef.current?.click()}
-              >
+              <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed"
+                disabled={uploadingRepro} onClick={() => reproInputRef.current?.click()}>
                 {uploadingRepro ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Adicionar foto do problema</>}
               </Button>
             )}
             <input ref={reproInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoReprovacao} />
           </div>
 
-          {/* Foto da correção - apenas se reprovado */}
+          {/* Foto da correção */}
           {servico.status === 'reprovado' && (
             <>
               <Separator className="opacity-40" />
@@ -202,28 +227,16 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto }: Servi
                 </p>
                 {servico.foto_correcao_url ? (
                   <div className="mt-1 relative">
-                    <img
-                      src={servico.foto_correcao_url}
-                      alt="Foto da correção"
-                      className="w-full h-32 object-cover rounded-md border-2 border-green-400"
-                    />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-1 right-1 h-6 w-6"
-                      onClick={() => onUpdate(servico.id, { foto_correcao_url: null })}
-                    >
+                    <img src={servico.foto_correcao_url} alt="Foto da correção" className="w-full h-32 object-cover rounded-md border-2 border-green-400" />
+                    <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6"
+                      onClick={() => onUpdate(servico.id, { foto_correcao_url: null })}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <Button size="sm" variant="outline"
                     className="mt-1 h-8 text-xs w-full border-dashed border-green-500 text-green-700 hover:bg-green-50"
-                    disabled={uploadingCorrecao}
-                    onClick={() => correcaoInputRef.current?.click()}
-                  >
+                    disabled={uploadingCorrecao} onClick={() => correcaoInputRef.current?.click()}>
                     {uploadingCorrecao ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Registrar foto da correção</>}
                   </Button>
                 )}

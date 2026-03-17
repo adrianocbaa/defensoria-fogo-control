@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import type { DrawMode, ShapeData } from '@/components/checklist/PdfCanvas';
 
 export interface ChecklistPdf {
   id: string;
@@ -25,6 +26,7 @@ export interface ChecklistServico {
   foto_correcao_url?: string | null;
   data_avaliacao?: string | null;
   avaliado_por?: string | null;
+  location_pin?: { x: number; y: number } | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +41,8 @@ export interface ChecklistAmbiente {
   pos_y: number;
   pos_w: number;
   pos_h: number;
+  shape_type: DrawMode;
+  shape_data: ShapeData | null;
   created_at: string;
   servicos: ChecklistServico[];
 }
@@ -61,6 +65,8 @@ export function useChecklistDinamico(obraId: string) {
 
     const mapped: ChecklistAmbiente[] = (data || []).map((a: any) => ({
       ...a,
+      shape_type: a.shape_type || 'rect',
+      shape_data: a.shape_data || null,
       servicos: ((a.checklist_servicos || []) as ChecklistServico[])
         .sort((x, y) => x.ordem - y.ordem),
     }));
@@ -81,7 +87,6 @@ export function useChecklistDinamico(obraId: string) {
     if (error) console.error(error);
     setPdf(data ?? null);
     setLoading(false);
-
     if (data?.id) await fetchAmbientes(data.id);
   }, [obraId, fetchAmbientes]);
 
@@ -132,7 +137,9 @@ export function useChecklistDinamico(obraId: string) {
     nome: string,
     pagina: number,
     pos: { x: number; y: number; w: number; h: number },
-    servicosDescricoes: { descricao: string; is_padrao: boolean }[]
+    servicosDescricoes: { descricao: string; is_padrao: boolean }[],
+    shapeType: DrawMode = 'rect',
+    shapeData?: ShapeData
   ) => {
     if (!pdf || !user) return null;
 
@@ -147,8 +154,10 @@ export function useChecklistDinamico(obraId: string) {
         pos_y: pos.y,
         pos_w: pos.w,
         pos_h: pos.h,
+        shape_type: shapeType,
+        shape_data: shapeData ?? null,
         user_id: user.id,
-      })
+      } as any)
       .select()
       .single();
 
@@ -179,6 +188,7 @@ export function useChecklistDinamico(obraId: string) {
       observacao?: string;
       foto_reprovacao_url?: string | null;
       foto_correcao_url?: string | null;
+      location_pin?: { x: number; y: number } | null;
     }
   ) => {
     const { error } = await supabase
@@ -187,7 +197,7 @@ export function useChecklistDinamico(obraId: string) {
         ...updates,
         data_avaliacao: new Date().toISOString(),
         avaliado_por: user?.id,
-      })
+      } as any)
       .eq('id', servicoId);
 
     if (error) { toast.error('Erro ao atualizar serviço'); return; }
@@ -236,7 +246,6 @@ export function useChecklistDinamico(obraId: string) {
     return publicUrl;
   };
 
-  // Stats por obra
   const stats = {
     total: ambientes.reduce((acc, a) => acc + a.servicos.length, 0),
     aprovados: ambientes.reduce((acc, a) => acc + a.servicos.filter(s => s.status === 'aprovado').length, 0),

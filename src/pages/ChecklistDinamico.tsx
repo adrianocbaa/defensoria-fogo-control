@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
   ArrowLeft,
@@ -17,12 +16,22 @@ import {
   XCircle,
   Clock,
   Layers,
+  Square,
+  Circle,
+  Spline,
 } from 'lucide-react';
-import { PdfCanvas } from '@/components/checklist/PdfCanvas';
+import { PdfCanvas, type DrawMode } from '@/components/checklist/PdfCanvas';
+import type { ShapeData } from '@/components/checklist/PdfCanvas';
 import { AmbienteDialog } from '@/components/checklist/AmbienteDialog';
 import { ServicosPanel } from '@/components/checklist/ServicosPanel';
 import { useChecklistDinamico, type ChecklistServico } from '@/hooks/useChecklistDinamico';
 import { cn } from '@/lib/utils';
+
+type PendingShape = {
+  type: DrawMode;
+  rect?: { x: number; y: number; w: number; h: number };
+  shapeData?: ShapeData;
+};
 
 export function ChecklistDinamico() {
   const { obraId } = useParams<{ obraId: string }>();
@@ -46,9 +55,15 @@ export function ChecklistDinamico() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [drawMode, setDrawMode] = useState<DrawMode>('rect');
   const [selectedAmbienteId, setSelectedAmbienteId] = useState<string | null>(null);
-  const [pendingRect, setPendingRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [pendingShape, setPendingShape] = useState<PendingShape | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Pin mode: when user clicks "marcar no PDF" from a service
+  const [isPinMode, setIsPinMode] = useState(false);
+  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedAmbiente = ambientes.find(a => a.id === selectedAmbienteId) ?? null;
@@ -67,8 +82,8 @@ export function ChecklistDinamico() {
     }
   };
 
-  const handleDrawComplete = (rect: { x: number; y: number; w: number; h: number }) => {
-    setPendingRect(rect);
+  const handleDrawComplete = (shape: { type: DrawMode; rect?: { x: number; y: number; w: number; h: number }; shapeData?: ShapeData }) => {
+    setPendingShape(shape);
     setDialogOpen(true);
     setIsDrawingMode(false);
   };
@@ -77,10 +92,12 @@ export function ChecklistDinamico() {
     nome: string,
     servicos: { descricao: string; is_padrao: boolean }[]
   ) => {
-    if (!pendingRect) return;
-    const ambiente = await createAmbiente(nome, currentPage, pendingRect, servicos);
+    if (!pendingShape) return;
+
+    const pos = pendingShape.rect ?? { x: 0, y: 0, w: 0, h: 0 };
+    const ambiente = await createAmbiente(nome, currentPage, pos, servicos, pendingShape.type, pendingShape.shapeData);
     if (ambiente) setSelectedAmbienteId(ambiente.id);
-    setPendingRect(null);
+    setPendingShape(null);
     setDialogOpen(false);
   };
 
@@ -88,7 +105,22 @@ export function ChecklistDinamico() {
     setSelectedAmbienteId(id);
   };
 
-  const pageAmbientes = ambientes.filter(a => a.pagina === currentPage);
+  const handlePinRequest = (servicoId: string, descricao: string) => {
+    setIsPinMode(true);
+    setPendingPinServico({ id: servicoId, descricao });
+    setIsDrawingMode(false);
+  };
+
+  const handlePinPlaced = (servicoId: string, pin: { x: number; y: number }) => {
+    updateServico(servicoId, { location_pin: pin });
+    setIsPinMode(false);
+    setPendingPinServico(null);
+  };
+
+  const handleCancelPin = () => {
+    setIsPinMode(false);
+    setPendingPinServico(null);
+  };
 
   if (loading) {
     return (
@@ -99,6 +131,12 @@ export function ChecklistDinamico() {
       </SimpleHeader>
     );
   }
+
+  const drawModeOptions: { mode: DrawMode; label: string; icon: React.ElementType }[] = [
+    { mode: 'rect', label: 'Retângulo', icon: Square },
+    { mode: 'circle', label: 'Círculo', icon: Circle },
+    { mode: 'polyline', label: 'Polilinha', icon: Spline },
+  ];
 
   return (
     <SimpleHeader>
@@ -115,7 +153,6 @@ export function ChecklistDinamico() {
           {pdf && (
             <>
               <Separator orientation="vertical" className="h-5" />
-              {/* Stats resumidas */}
               <div className="flex items-center gap-3 text-xs">
                 <span className="flex items-center gap-1 text-green-600">
                   <CheckCircle2 className="h-3.5 w-3.5" /> {stats.aprovados}
@@ -146,9 +183,7 @@ export function ChecklistDinamico() {
           </div>
         </div>
 
-        {/* Main content */}
         {!pdf ? (
-          /* Upload area */
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-sm">
               <div className="mx-auto w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -170,19 +205,18 @@ export function ChecklistDinamico() {
             </div>
           </div>
         ) : (
-          /* Split layout: PDF viewer | Services panel */
           <div className="flex-1 flex overflow-hidden">
             {/* LEFT: PDF Viewer */}
             <div className="flex-1 flex flex-col overflow-hidden border-r min-w-0">
               {/* PDF toolbar */}
-              <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30 shrink-0">
-                {/* Mode toggle */}
+              <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30 shrink-0 flex-wrap">
+                {/* Mode: select / draw */}
                 <div className="flex items-center gap-1 p-0.5 bg-muted rounded-md">
                   <Button
                     size="sm"
-                    variant={!isDrawingMode ? 'default' : 'ghost'}
+                    variant={!isDrawingMode && !isPinMode ? 'default' : 'ghost'}
                     className="h-7 text-xs px-2"
-                    onClick={() => setIsDrawingMode(false)}
+                    onClick={() => { setIsDrawingMode(false); handleCancelPin(); }}
                   >
                     <MousePointer className="h-3.5 w-3.5 mr-1" />
                     Selecionar
@@ -191,40 +225,64 @@ export function ChecklistDinamico() {
                     size="sm"
                     variant={isDrawingMode ? 'default' : 'ghost'}
                     className="h-7 text-xs px-2"
-                    onClick={() => setIsDrawingMode(!isDrawingMode)}
+                    onClick={() => { setIsDrawingMode(v => !v); handleCancelPin(); }}
                   >
                     <Pencil className="h-3.5 w-3.5 mr-1" />
                     Novo Ambiente
                   </Button>
                 </div>
 
+                {/* Shape type selector - only visible in drawing mode */}
                 {isDrawingMode && (
+                  <div className="flex items-center gap-1 p-0.5 bg-muted rounded-md">
+                    {drawModeOptions.map(opt => (
+                      <Button
+                        key={opt.mode}
+                        size="sm"
+                        variant={drawMode === opt.mode ? 'default' : 'ghost'}
+                        className="h-7 text-xs px-2"
+                        onClick={() => setDrawMode(opt.mode)}
+                        title={opt.label}
+                      >
+                        <opt.icon className="h-3.5 w-3.5 mr-1" />
+                        {opt.label}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
+                {isPinMode && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-destructive font-medium animate-pulse">
+                      📍 Clique no PDF para marcar a localização
+                    </span>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={handleCancelPin}>
+                      Cancelar
+                    </Button>
+                  </div>
+                )}
+
+                {isDrawingMode && !isPinMode && (
                   <span className="text-xs text-primary animate-pulse font-medium">
-                    Arraste para marcar um ambiente no PDF
+                    {drawMode === 'polyline'
+                      ? 'Clique para pontos · Duplo-clique para finalizar'
+                      : drawMode === 'circle'
+                      ? 'Clique e arraste para desenhar o círculo'
+                      : 'Arraste para marcar o ambiente'}
                   </span>
                 )}
 
                 {/* Page navigation */}
                 <div className="ml-auto flex items-center gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  >
+                  <Button size="icon" variant="ghost" className="h-7 w-7"
+                    disabled={currentPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <span className="text-xs font-medium min-w-[60px] text-center">
                     {currentPage} / {totalPages}
                   </span>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    disabled={currentPage >= totalPages}
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  >
+                  <Button size="icon" variant="ghost" className="h-7 w-7"
+                    disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -237,17 +295,20 @@ export function ChecklistDinamico() {
                   currentPage={currentPage}
                   ambientes={ambientes}
                   isDrawingMode={isDrawingMode}
+                  drawMode={drawMode}
                   selectedAmbienteId={selectedAmbienteId}
+                  isPinMode={isPinMode}
+                  pendingPinServico={pendingPinServico}
                   onPageCount={handlePageCount}
                   onDrawComplete={handleDrawComplete}
                   onAmbienteClick={handleAmbienteClick}
+                  onPinPlaced={handlePinPlaced}
                 />
               </div>
             </div>
 
             {/* RIGHT: Environments list + services */}
             <div className="w-80 xl:w-96 flex flex-col overflow-hidden shrink-0">
-              {/* Environments list */}
               <div className="border-b">
                 <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
                   <div className="flex items-center gap-1.5">
@@ -255,7 +316,6 @@ export function ChecklistDinamico() {
                     <span className="text-xs font-medium">Ambientes</span>
                     <Badge variant="secondary" className="h-4 text-[10px]">{ambientes.length}</Badge>
                   </div>
-                  {/* Page filter */}
                   <span className="text-[10px] text-muted-foreground">Página {currentPage}</span>
                 </div>
                 <div className="max-h-48 overflow-y-auto">
@@ -270,6 +330,7 @@ export function ChecklistDinamico() {
                       const reprovados = amb.servicos.filter(s => s.status === 'reprovado').length;
                       const isSelected = selectedAmbienteId === amb.id;
                       const isCurrentPage = amb.pagina === currentPage;
+                      const shapeIcon = amb.shape_type === 'circle' ? '⬤' : amb.shape_type === 'polyline' ? '⬡' : '▭';
 
                       return (
                         <button
@@ -284,17 +345,14 @@ export function ChecklistDinamico() {
                             setSelectedAmbienteId(amb.id);
                           }}
                         >
+                          <span className="text-base opacity-60 shrink-0">{shapeIcon}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium truncate">{amb.nome}</p>
                             <p className="text-[10px] text-muted-foreground">Pág. {amb.pagina} · {total} serviços</p>
                           </div>
                           <div className="flex gap-1 shrink-0">
-                            {aprovados > 0 && (
-                              <span className="text-[10px] text-green-600 font-medium">{aprovados}✓</span>
-                            )}
-                            {reprovados > 0 && (
-                              <span className="text-[10px] text-destructive font-medium">{reprovados}✗</span>
-                            )}
+                            {aprovados > 0 && <span className="text-[10px] text-green-600 font-medium">{aprovados}✓</span>}
+                            {reprovados > 0 && <span className="text-[10px] text-destructive font-medium">{reprovados}✗</span>}
                           </div>
                         </button>
                       );
@@ -303,7 +361,6 @@ export function ChecklistDinamico() {
                 </div>
               </div>
 
-              {/* Services for selected ambiente */}
               <div className="flex-1 overflow-hidden">
                 <ServicosPanel
                   ambiente={selectedAmbiente}
@@ -312,6 +369,7 @@ export function ChecklistDinamico() {
                   onAddServico={addServico}
                   onDeleteAmbiente={deleteAmbiente}
                   onUploadFoto={uploadFoto}
+                  onPinRequest={handlePinRequest}
                 />
               </div>
             </div>
@@ -319,7 +377,6 @@ export function ChecklistDinamico() {
         )}
       </div>
 
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -328,10 +385,9 @@ export function ChecklistDinamico() {
         onChange={handleFileChange}
       />
 
-      {/* Ambiente creation dialog */}
       <AmbienteDialog
         open={dialogOpen}
-        onClose={() => { setDialogOpen(false); setPendingRect(null); }}
+        onClose={() => { setDialogOpen(false); setPendingShape(null); }}
         onConfirm={handleAmbienteCreate}
       />
     </SimpleHeader>
