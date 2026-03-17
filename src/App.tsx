@@ -65,6 +65,7 @@ import OrcamentoCurvaABC from "./pages/OrcamentoCurvaABC";
 import GerenciarObras from "./pages/GerenciarObras";
 import Apresentacao from "./pages/Apresentacao";
 import FluxogramaObras from "./pages/FluxogramaObras";
+import { ChecklistDinamico } from "./pages/ChecklistDinamico";
 
 const queryClient = new QueryClient();
 
@@ -431,6 +432,14 @@ const AppRoutes = () => {
         } 
       />
       
+      <Route
+        path="/obras/:obraId/checklist"
+        element={
+          <ProtectedRoute>
+            <ChecklistDinamico />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/obras/:obraId/rdo/diario" 
         element={
