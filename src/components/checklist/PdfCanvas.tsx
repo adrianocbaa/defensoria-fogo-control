@@ -299,7 +299,11 @@ export function PdfCanvas({
           const shapeData = (amb as any).shape_data as ShapeData | null;
           const clickProps = {
             style: { cursor: isDrawingMode ? undefined : 'pointer', pointerEvents: isDrawingMode ? ('none' as const) : ('all' as const) },
-            onClick: () => !isDrawingMode && onAmbienteClick(amb.id),
+            onClick: (e: React.MouseEvent) => {
+              if (isDrawingMode) return;
+              e.stopPropagation(); // prevent container handleClick from firing onDeselect
+              onAmbienteClick(amb.id);
+            },
           };
 
           if (shapeType === 'circle' && shapeData?.cx !== undefined) {
