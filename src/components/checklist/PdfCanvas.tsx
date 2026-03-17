@@ -133,15 +133,18 @@ export function PdfCanvas({
     renderPage();
   }, [renderKey, currentPage]);
 
-  // ── Coordinate helper (returns 0-100 space) ────────────────────────────────
-  const getPos = (e: React.MouseEvent<HTMLDivElement>) => {
+  // ── Coordinate helpers ─────────────────────────────────────────────────────
+  const getPosFromClient = (clientX: number, clientY: number) => {
     if (!containerRef.current) return { x: 0, y: 0 };
     const r = containerRef.current.getBoundingClientRect();
     return {
-      x: Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)),
-      y: Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100)),
+      x: Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100)),
+      y: Math.max(0, Math.min(100, ((clientY - r.top) / r.height) * 100)),
     };
   };
+
+  const getPos = (e: React.MouseEvent<HTMLDivElement>) =>
+    getPosFromClient(e.clientX, e.clientY);
 
   // ── Mouse handlers ─────────────────────────────────────────────────────────
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -175,6 +178,73 @@ export function PdfCanvas({
       const r = dist({ x: pos.x, y: pos.y }, { x: circleState.startX, y: circleState.startY });
       setCircleState(null);
       if (r > 1.5) onDrawComplete({ type: 'circle', shapeData: { cx: circleState.startX, cy: circleState.startY, r } });
+    }
+  };
+
+  // ── Touch handlers (tablet / mobile) ───────────────────────────────────────
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDrawingMode) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const pos = getPosFromClient(t.clientX, t.clientY);
+    if (drawMode === 'rect') setRectState({ startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y });
+    if (drawMode === 'circle') setCircleState({ startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDrawingMode) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const pos = getPosFromClient(t.clientX, t.clientY);
+    if (drawMode === 'rect' && rectState) setRectState(p => p ? { ...p, currentX: pos.x, currentY: pos.y } : null);
+    if (drawMode === 'circle' && circleState) setCircleState(p => p ? { ...p, currentX: pos.x, currentY: pos.y } : null);
+    if (drawMode === 'polyline') setPolyMouse(pos);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDrawingMode && !isPinMode) return;
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    const pos = getPosFromClient(t.clientX, t.clientY);
+
+    // Pin mode
+    if (isPinMode && pendingPinServico) {
+      onPinPlaced(pendingPinServico.id, pos);
+      return;
+    }
+
+    // Polyline: add point or close
+    if (drawMode === 'polyline') {
+      const snapping =
+        polyPoints.length >= 2 &&
+        dist(pos, polyPoints[0]) < SNAP_THRESHOLD;
+      if (snapping) {
+        onDrawComplete({ type: 'polyline', shapeData: { points: polyPoints } });
+        setPolyPoints([]);
+        setPolyMouse(null);
+      } else {
+        setPolyPoints(prev => [...prev, pos]);
+      }
+      return;
+    }
+
+    // Rect
+    if (drawMode === 'rect' && rectState) {
+      const x = Math.min(rectState.startX, pos.x);
+      const y = Math.min(rectState.startY, pos.y);
+      const w = Math.abs(pos.x - rectState.startX);
+      const h = Math.abs(pos.y - rectState.startY);
+      setRectState(null);
+      if (w > 1.5 && h > 1.5) onDrawComplete({ type: 'rect', rect: { x, y, w, h } });
+      return;
+    }
+
+    // Circle
+    if (drawMode === 'circle' && circleState) {
+      const r = dist(pos, { x: circleState.startX, y: circleState.startY });
+      setCircleState(null);
+      if (r > 1.5) onDrawComplete({ type: 'circle', shapeData: { cx: circleState.startX, cy: circleState.startY, r } });
+      return;
     }
   };
 
@@ -268,7 +338,7 @@ export function PdfCanvas({
     <div
       ref={containerRef}
       className="relative w-full select-none rounded-lg overflow-hidden"
-      style={{ cursor }}
+      style={{ cursor, touchAction: isDrawingMode || isPinMode ? 'none' : 'auto' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -279,6 +349,9 @@ export function PdfCanvas({
         setCircleState(null);
         setPolyMouse(null);
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* PDF canvas */}
       <canvas ref={canvasRef} className="w-full block shadow-sm" />
