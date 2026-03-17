@@ -240,7 +240,7 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
                     {uploadingCorrecao ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Registrar foto da correção</>}
                   </Button>
                 )}
-                <input ref={correcaoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoCorrecao} />
+                <input ref={correcaoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoCorrecao} />
               </div>
             </>
           )}

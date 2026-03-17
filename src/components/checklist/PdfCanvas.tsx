@@ -338,7 +338,7 @@ export function PdfCanvas({
     <div
       ref={containerRef}
       className="relative w-full select-none rounded-lg overflow-hidden"
-      style={{ cursor }}
+      style={{ cursor, touchAction: isDrawingMode || isPinMode ? 'none' : 'auto' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -349,6 +349,9 @@ export function PdfCanvas({
         setCircleState(null);
         setPolyMouse(null);
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* PDF canvas */}
       <canvas ref={canvasRef} className="w-full block shadow-sm" />
