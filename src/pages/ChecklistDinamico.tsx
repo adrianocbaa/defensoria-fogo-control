@@ -19,7 +19,12 @@ import {
   Square,
   Circle,
   Spline,
+  Download,
+  Loader2,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { exportChecklistPdf } from '@/components/checklist/ChecklistPdfExport';
+import { toast } from 'sonner';
 import { PdfCanvas, type DrawMode } from '@/components/checklist/PdfCanvas';
 import type { ShapeData } from '@/components/checklist/PdfCanvas';
 import { AmbienteDialog } from '@/components/checklist/AmbienteDialog';
