@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   CheckCircle2,
   XCircle,
@@ -10,8 +9,6 @@ import {
   MapPin,
   Trash2,
   Plus,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import type { ChecklistAmbiente, ChecklistServico } from '@/hooks/useChecklistDinamico';
 import { ServicoItem } from './ServicoItem';
@@ -23,6 +20,7 @@ interface ServicosProps {
   onAddServico: (ambienteId: string, descricao: string) => void;
   onDeleteAmbiente: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
+  onPinRequest: (servicoId: string, descricao: string) => void;
 }
 
 export function ServicosPanel({
@@ -32,6 +30,7 @@ export function ServicosPanel({
   onAddServico,
   onDeleteAmbiente,
   onUploadFoto,
+  onPinRequest,
 }: ServicosProps) {
   const [newServico, setNewServico] = useState('');
   const [showAdd, setShowAdd] = useState(false);
@@ -61,7 +60,6 @@ export function ServicosPanel({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header do ambiente */}
       <div className="p-4 border-b bg-muted/30">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -78,7 +76,6 @@ export function ServicosPanel({
           </Button>
         </div>
 
-        {/* Status summary */}
         {total > 0 && (
           <div className="flex gap-3 mt-3">
             <div className="flex items-center gap-1 text-xs">
@@ -100,7 +97,6 @@ export function ServicosPanel({
         )}
       </div>
 
-      {/* Lista de serviços */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {ambiente.servicos.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
@@ -115,12 +111,12 @@ export function ServicosPanel({
               onUpdate={onUpdateServico}
               onDelete={onDeleteServico}
               onUploadFoto={onUploadFoto}
+              onPinRequest={onPinRequest}
             />
           ))
         )}
       </div>
 
-      {/* Adicionar serviço */}
       <div className="p-3 border-t bg-background">
         {showAdd ? (
           <div className="flex gap-2">
