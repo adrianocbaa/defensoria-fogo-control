@@ -448,12 +448,6 @@ export function ObrasKanbanBoard({ obras, onObrasUpdate }: ObrasKanbanBoardProps
         ) : null}
       </DragOverlay>
 
-      <ViewObraChecklistModal
-        obra={selectedObra}
-        open={viewModalOpen}
-        onOpenChange={setViewModalOpen}
-        onUpdate={onObrasUpdate}
-      />
     </DndContext>
   );
 }
