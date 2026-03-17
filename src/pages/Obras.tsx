@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Menu, X, RotateCcw, Plus, List, BarChart3, Settings, CheckCircle2 } from 'lucide-react';
+import { Menu, X, RotateCcw, Plus, List, BarChart3, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleHeader } from '@/components/SimpleHeader';
