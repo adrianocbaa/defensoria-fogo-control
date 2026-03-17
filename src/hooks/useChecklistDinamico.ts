@@ -91,7 +91,8 @@ export function useChecklistDinamico(obraId: string) {
     if (!user) return;
     setUploading(true);
     try {
-      const filePath = `${obraId}/${Date.now()}_${file.name}`;
+      const safeName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._\-]/g, '_');
+      const filePath = `${obraId}/${Date.now()}_${safeName}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('checklist-pdfs')
         .upload(filePath, file, { cacheControl: '3600', upsert: false });
