@@ -339,6 +339,8 @@ export type Database = {
           pos_w: number
           pos_x: number
           pos_y: number
+          shape_data: Json | null
+          shape_type: string
           user_id: string | null
         }
         Insert: {
@@ -352,6 +354,8 @@ export type Database = {
           pos_w?: number
           pos_x?: number
           pos_y?: number
+          shape_data?: Json | null
+          shape_type?: string
           user_id?: string | null
         }
         Update: {
@@ -365,6 +369,8 @@ export type Database = {
           pos_w?: number
           pos_x?: number
           pos_y?: number
+          shape_data?: Json | null
+          shape_type?: string
           user_id?: string | null
         }
         Relationships: [
@@ -426,6 +432,7 @@ export type Database = {
           foto_reprovacao_url: string | null
           id: string
           is_padrao: boolean
+          location_pin: Json | null
           obra_id: string
           observacao: string | null
           ordem: number
@@ -443,6 +450,7 @@ export type Database = {
           foto_reprovacao_url?: string | null
           id?: string
           is_padrao?: boolean
+          location_pin?: Json | null
           obra_id: string
           observacao?: string | null
           ordem?: number
@@ -460,6 +468,7 @@ export type Database = {
           foto_reprovacao_url?: string | null
           id?: string
           is_padrao?: boolean
+          location_pin?: Json | null
           obra_id?: string
           observacao?: string | null
           ordem?: number
