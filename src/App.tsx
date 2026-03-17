@@ -433,6 +433,14 @@ const AppRoutes = () => {
       />
       
       <Route
+        path="/obras/:obraId/checklist"
+        element={
+          <ProtectedRoute>
+            <ChecklistDinamico />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/obras/:obraId/rdo/diario" 
         element={
           <ProtectedRoute>
