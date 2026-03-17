@@ -388,22 +388,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      <Route 
-        path="/admin/obras/checklist" 
-        element={
-          <ProtectedRoute>
-            <ObrasChecklist />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/admin/obras/checklist/:id" 
-        element={
-          <ProtectedRoute>
-            <ObraChecklistDetails />
-          </ProtectedRoute>
-        } 
-      />
       
       {/* Prototype Routes */}
       <Route 
