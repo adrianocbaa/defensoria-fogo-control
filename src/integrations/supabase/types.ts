@@ -327,6 +327,156 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_ambientes: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          obra_id: string
+          pagina: number
+          pdf_id: string
+          pos_h: number
+          pos_w: number
+          pos_x: number
+          pos_y: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          obra_id: string
+          pagina?: number
+          pdf_id: string
+          pos_h?: number
+          pos_w?: number
+          pos_x?: number
+          pos_y?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          obra_id?: string
+          pagina?: number
+          pdf_id?: string
+          pos_h?: number
+          pos_w?: number
+          pos_x?: number
+          pos_y?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_ambientes_pdf_id_fkey"
+            columns: ["pdf_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_pdfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_pdfs: {
+        Row: {
+          created_at: string
+          id: string
+          nome_arquivo: string
+          obra_id: string
+          pdf_url: string
+          total_paginas: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_arquivo: string
+          obra_id: string
+          pdf_url: string
+          total_paginas?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_arquivo?: string
+          obra_id?: string
+          pdf_url?: string
+          total_paginas?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_pdfs_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_servicos: {
+        Row: {
+          ambiente_id: string
+          avaliado_por: string | null
+          created_at: string
+          data_avaliacao: string | null
+          descricao: string
+          foto_correcao_url: string | null
+          foto_reprovacao_url: string | null
+          id: string
+          is_padrao: boolean
+          obra_id: string
+          observacao: string | null
+          ordem: number
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          ambiente_id: string
+          avaliado_por?: string | null
+          created_at?: string
+          data_avaliacao?: string | null
+          descricao: string
+          foto_correcao_url?: string | null
+          foto_reprovacao_url?: string | null
+          id?: string
+          is_padrao?: boolean
+          obra_id: string
+          observacao?: string | null
+          ordem?: number
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          ambiente_id?: string
+          avaliado_por?: string | null
+          created_at?: string
+          data_avaliacao?: string | null
+          descricao?: string
+          foto_correcao_url?: string | null
+          foto_reprovacao_url?: string | null
+          id?: string
+          is_padrao?: boolean
+          obra_id?: string
+          observacao?: string | null
+          ordem?: number
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_servicos_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_ambientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contratos_licitacao: {
         Row: {
           created_at: string
