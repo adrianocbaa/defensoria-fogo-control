@@ -32,7 +32,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ViewObraChecklistModal } from './ViewObraChecklistModal';
+
 
 interface ObraChecklist {
   id: string;
