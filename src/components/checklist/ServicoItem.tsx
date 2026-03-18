@@ -47,8 +47,9 @@ const GRAVIDADE_CONFIG: Record<Gravidade, { label: string; color: string; bg: st
   estetico: { label: 'Estético', color: 'text-blue-700',   bg: 'bg-blue-100',   border: 'border-blue-400',   Icon: Paintbrush },
 };
 
-export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRequest }: ServicoItemProps) {
+export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto, onPinRequest }: ServicoItemProps) {
   const [expanded, setExpanded] = useState(servico.status === 'reprovado');
+  const [ocorrenciasExpanded, setOcorrenciasExpanded] = useState(false);
   const [observacao, setObservacao] = useState(servico.observacao ?? '');
   const [uploadingRepro, setUploadingRepro] = useState(false);
   const [uploadingCorrecao, setUploadingCorrecao] = useState(false);
@@ -58,6 +59,13 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
   const correcaoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  const { ocorrenciasPorServico, fetchOcorrencias, addOcorrencia, updateOcorrencia, deleteOcorrencia, uploadFotoOcorrencia } = useChecklistOcorrencias(obraId);
+  const ocorrencias = ocorrenciasPorServico[servico.id] ?? [];
+
+  useEffect(() => {
+    fetchOcorrencias(servico.id);
+  }, [servico.id, fetchOcorrencias]);
 
   const gravidade: Gravidade = (servico.gravidade as Gravidade) ?? 'medio';
 
