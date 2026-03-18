@@ -63,7 +63,7 @@ export function useChecklistOcorrencias(obraId: string) {
 
     if (error) { toast.error('Erro ao adicionar ocorrência'); return null; }
     await fetchOcorrencias(servicoId);
-    return data as ChecklistOcorrencia;
+    return data as unknown as ChecklistOcorrencia;
   };
 
   const updateOcorrencia = async (
