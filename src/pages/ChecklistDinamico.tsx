@@ -72,6 +72,7 @@ export function ChecklistDinamico() {
     uploadPdf,
     deletePdf,
     updateTotalPages,
+    updatePrazoCorrecao,
     createAmbiente,
     updateServico,
     addServico,
