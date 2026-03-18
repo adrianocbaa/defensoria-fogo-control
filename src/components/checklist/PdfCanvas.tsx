@@ -63,6 +63,7 @@ export function PdfCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<any>(null);
+  const renderTaskRef = useRef<any>(null);
   const [renderKey, setRenderKey] = useState(0);
 
   // Rect
