@@ -121,16 +121,6 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
     if (observacao !== (servico.observacao ?? '')) onUpdate(servico.id, { observacao });
   };
 
-  const handlePrazoBlur = () => {
-    const val = prazoCorrecao.trim() === '' ? null : parseInt(prazoCorrecao, 10);
-    onUpdate(servico.id, { prazo_correcao: val } as any);
-  };
-
-  const handleResponsavelBlur = () => {
-    const val = responsavelCorrecao.trim() || null;
-    onUpdate(servico.id, { responsavel_correcao: val } as any);
-  };
-
   const handleFotoReprovacao = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
