@@ -430,12 +430,15 @@ export type Database = {
           descricao: string
           foto_correcao_url: string | null
           foto_reprovacao_url: string | null
+          gravidade: string | null
           id: string
           is_padrao: boolean
           location_pin: Json | null
           obra_id: string
           observacao: string | null
           ordem: number
+          prazo_correcao: number | null
+          responsavel_correcao: string | null
           status: string
           updated_at: string
           user_id: string | null
@@ -448,12 +451,15 @@ export type Database = {
           descricao: string
           foto_correcao_url?: string | null
           foto_reprovacao_url?: string | null
+          gravidade?: string | null
           id?: string
           is_padrao?: boolean
           location_pin?: Json | null
           obra_id: string
           observacao?: string | null
           ordem?: number
+          prazo_correcao?: number | null
+          responsavel_correcao?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -466,12 +472,15 @@ export type Database = {
           descricao?: string
           foto_correcao_url?: string | null
           foto_reprovacao_url?: string | null
+          gravidade?: string | null
           id?: string
           is_padrao?: boolean
           location_pin?: Json | null
           obra_id?: string
           observacao?: string | null
           ordem?: number
+          prazo_correcao?: number | null
+          responsavel_correcao?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
