@@ -49,10 +49,13 @@ export interface ChecklistAmbiente {
 
 export function useChecklistDinamico(obraId: string) {
   const { user } = useAuth();
-  const [pdf, setPdf] = useState<ChecklistPdf | null>(null);
+  const [pdfs, setPdfs] = useState<ChecklistPdf[]>([]);
+  const [selectedPdfId, setSelectedPdfId] = useState<string | null>(null);
   const [ambientes, setAmbientes] = useState<ChecklistAmbiente[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+
+  const pdf = pdfs.find(p => p.id === selectedPdfId) ?? null;
 
   const fetchAmbientes = useCallback(async (pdfId: string) => {
     const { data, error } = await supabase
@@ -73,24 +76,37 @@ export function useChecklistDinamico(obraId: string) {
     setAmbientes(mapped);
   }, []);
 
-  const fetchPdf = useCallback(async () => {
+  const fetchPdfs = useCallback(async () => {
     if (!obraId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('checklist_pdfs')
       .select('*')
       .eq('obra_id', obraId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order('created_at', { ascending: true });
 
     if (error) console.error(error);
-    setPdf(data ?? null);
+    const list = (data ?? []) as ChecklistPdf[];
+    setPdfs(list);
     setLoading(false);
-    if (data?.id) await fetchAmbientes(data.id);
-  }, [obraId, fetchAmbientes]);
 
-  useEffect(() => { fetchPdf(); }, [fetchPdf]);
+    // Auto-select first PDF
+    if (list.length > 0) {
+      const firstId = list[0].id;
+      setSelectedPdfId(prev => prev && list.find(p => p.id === prev) ? prev : firstId);
+    } else {
+      setSelectedPdfId(null);
+      setAmbientes([]);
+    }
+  }, [obraId]);
+
+  useEffect(() => { fetchPdfs(); }, [fetchPdfs]);
+
+  // When selected PDF changes, fetch its ambientes
+  useEffect(() => {
+    if (selectedPdfId) fetchAmbientes(selectedPdfId);
+    else setAmbientes([]);
+  }, [selectedPdfId, fetchAmbientes]);
 
   const uploadPdf = async (file: File) => {
     if (!user) return;
@@ -121,16 +137,34 @@ export function useChecklistDinamico(obraId: string) {
         .single();
 
       if (error) { toast.error('Erro ao salvar PDF'); return; }
-      setPdf(data as ChecklistPdf);
-      toast.success('PDF enviado com sucesso!');
+      const newPdf = data as ChecklistPdf;
+      setPdfs(prev => [...prev, newPdf]);
+      setSelectedPdfId(newPdf.id);
+      toast.success(`PDF "${file.name}" enviado com sucesso!`);
     } finally {
       setUploading(false);
     }
   };
 
+  const deletePdf = async (pdfId: string) => {
+    // Delete ambientes/servicos via cascade (handled by DB FK), then delete PDF record
+    const { error } = await supabase.from('checklist_pdfs').delete().eq('id', pdfId);
+    if (error) { toast.error('Erro ao excluir projeto'); return; }
+
+    const remaining = pdfs.filter(p => p.id !== pdfId);
+    setPdfs(remaining);
+
+    if (selectedPdfId === pdfId) {
+      const next = remaining[0] ?? null;
+      setSelectedPdfId(next?.id ?? null);
+      if (!next) setAmbientes([]);
+    }
+    toast.success('Projeto excluído');
+  };
+
   const updateTotalPages = async (pdfId: string, totalPaginas: number) => {
     await supabase.from('checklist_pdfs').update({ total_paginas: totalPaginas }).eq('id', pdfId);
-    setPdf(prev => prev ? { ...prev, total_paginas: totalPaginas } : null);
+    setPdfs(prev => prev.map(p => p.id === pdfId ? { ...p, total_paginas: totalPaginas } : p));
   };
 
   const createAmbiente = async (
@@ -255,11 +289,15 @@ export function useChecklistDinamico(obraId: string) {
 
   return {
     pdf,
+    pdfs,
+    selectedPdfId,
+    setSelectedPdfId,
     ambientes,
     loading,
     uploading,
     stats,
     uploadPdf,
+    deletePdf,
     updateTotalPages,
     createAmbiente,
     updateServico,
@@ -267,6 +305,6 @@ export function useChecklistDinamico(obraId: string) {
     deleteAmbiente,
     deleteServico,
     uploadFoto,
-    refetch: fetchPdf,
+    refetch: fetchPdfs,
   };
 }
