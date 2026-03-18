@@ -593,16 +593,16 @@ export async function exportChecklistPdf(
         doc.text(obsLines[0], COL.margin + 12, y + 9);
       }
 
-      // Gravidade pill
+      // Gravidade pill — posicionada antes do Status
       const [gr, gg, gb] = gravidadeColor(serv.gravidade);
       const gLabel = gravidadeLabel(serv.gravidade).replace(/🔴 |🟡 |🟢 /, '');
       doc.setFillColor(gr, gg, gb);
       const gw = doc.getTextWidth(gLabel) + 4;
-      doc.roundedRect(COL.pageW - COL.margin - 90, y + 1.5, gw, 4.5, 1, 1, 'F');
+      doc.roundedRect(COL.pageW - COL.margin - 57, y + 1.5, gw, 4.5, 1, 1, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(5.5);
-      doc.text(gLabel, COL.pageW - COL.margin - 90 + gw / 2, y + 4.3, { align: 'center' });
+      doc.text(gLabel, COL.pageW - COL.margin - 57 + gw / 2, y + 4.3, { align: 'center' });
 
       // Status pill
       const { r: sr, g: sg, b: sb } = statusColor(serv.status);
