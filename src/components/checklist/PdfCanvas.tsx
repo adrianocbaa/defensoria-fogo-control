@@ -118,23 +118,41 @@ export function PdfCanvas({
   }, [pdfUrl, onPageCount]);
 
   useEffect(() => {
+    let cancelled = false;
     const renderPage = async () => {
       const doc = pdfDocRef.current;
       if (!doc || !canvasRef.current || !containerRef.current) return;
+
+      // Cancel any ongoing render task before starting a new one
+      if (renderTaskRef.current) {
+        try { renderTaskRef.current.cancel(); } catch (_) {}
+        renderTaskRef.current = null;
+      }
+
       try {
         const page = await doc.getPage(currentPage);
+        if (cancelled) return;
         const containerWidth = containerRef.current.clientWidth || 600;
         const vp0 = page.getViewport({ scale: 1 });
         const vp = page.getViewport({ scale: containerWidth / vp0.width });
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx || cancelled) return;
         canvas.width = vp.width;
         canvas.height = vp.height;
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-      } catch (err) { console.error('Page render error:', err); }
+        const task = page.render({ canvasContext: ctx, viewport: vp });
+        renderTaskRef.current = task;
+        await task.promise;
+        renderTaskRef.current = null;
+      } catch (err: any) {
+        // Ignore cancellation errors
+        if (err?.name !== 'RenderingCancelledException') {
+          console.error('Page render error:', err);
+        }
+      }
     };
     renderPage();
+    return () => { cancelled = true; };
   }, [renderKey, currentPage]);
 
   // ── Coordinate helpers ─────────────────────────────────────────────────────
