@@ -302,11 +302,13 @@ export function PdfCanvas({
 
   const pageAmbientes = ambientes.filter(a => a.pagina === currentPage);
 
+  const [activePinId, setActivePinId] = useState<string | null>(null);
+
   const locationPins: LocationPin[] = [];
   pageAmbientes.forEach(amb => {
     amb.servicos.forEach(s => {
       const pin = s.location_pin as { x: number; y: number } | null;
-      if (pin) locationPins.push({ x: pin.x, y: pin.y, servicoId: s.id, label: s.descricao });
+      if (pin) locationPins.push({ x: pin.x, y: pin.y, servicoId: s.id, label: s.descricao, fotoUrl: s.foto_reprovacao_url });
     });
   });
 
