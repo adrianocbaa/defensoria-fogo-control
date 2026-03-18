@@ -143,6 +143,8 @@ export function ChecklistDinamico() {
             day: '2-digit', month: 'long', year: 'numeric',
           }),
           pdfNomeArquivo: pdf.nome_arquivo,
+          pdfUrl: pdf.pdf_url,
+          totalPaginasPdf: pdf.total_paginas ?? 1,
         },
         ambientes,
       );
