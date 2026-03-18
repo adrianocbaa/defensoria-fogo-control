@@ -16,6 +16,7 @@ interface LocationPin {
   y: number;
   servicoId: string;
   label: string;
+  fotoUrl?: string | null;
 }
 
 interface PdfCanvasProps {
