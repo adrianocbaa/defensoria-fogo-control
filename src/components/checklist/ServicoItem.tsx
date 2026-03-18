@@ -159,12 +159,6 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
               <GravidadeIcon className="h-2.5 w-2.5" />
               {gConfig.label}
             </span>
-            {(servico as any).prazo_correcao != null && (
-              <span className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 rounded-full bg-muted text-muted-foreground border">
-                <CalendarClock className="h-2.5 w-2.5" />
-                {(servico as any).prazo_correcao}d
-              </span>
-            )}
             {servico.foto_correcao_url && <Badge className="text-[10px] h-4 bg-green-600">Corrigido</Badge>}
             {hasPin && (
               <Badge variant="outline" className="text-[10px] h-4 border-destructive text-destructive gap-0.5">
@@ -235,42 +229,6 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
               })}
             </div>
           </div>
-
-          {/* Prazo e Responsável — mostrar somente quando reprovado */}
-          {servico.status === 'reprovado' && (
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-xs font-medium flex items-center gap-1">
-                  <CalendarClock className="h-3.5 w-3.5 text-orange-500" />
-                  Prazo (dias)
-                </Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={365}
-                  value={prazoCorrecao}
-                  onChange={e => setPrazoCorrecao(e.target.value)}
-                  onBlur={handlePrazoBlur}
-                  placeholder="Ex: 5"
-                  className="mt-1 h-8 text-xs"
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-medium flex items-center gap-1">
-                  <User className="h-3.5 w-3.5 text-blue-500" />
-                  Responsável
-                </Label>
-                <Input
-                  type="text"
-                  value={responsavelCorrecao}
-                  onChange={e => setResponsavelCorrecao(e.target.value)}
-                  onBlur={handleResponsavelBlur}
-                  placeholder="Ex: Contratada"
-                  className="mt-1 h-8 text-xs"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Localizar no PDF */}
           <div>
