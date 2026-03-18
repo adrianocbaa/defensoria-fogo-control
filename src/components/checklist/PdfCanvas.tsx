@@ -311,7 +311,12 @@ export function PdfCanvas({
   pageAmbientes.forEach(amb => {
     amb.servicos.forEach(s => {
       const pin = s.location_pin as { x: number; y: number } | null;
-      if (pin) locationPins.push({ x: pin.x, y: pin.y, servicoId: s.id, label: s.descricao, fotoUrl: s.foto_reprovacao_url });
+      if (pin) locationPins.push({
+        x: pin.x, y: pin.y, servicoId: s.id, label: s.descricao,
+        status: s.status,
+        fotoUrl: s.foto_reprovacao_url,
+        fotoCorrecaoUrl: s.foto_correcao_url,
+      });
     });
   });
 
