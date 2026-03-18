@@ -148,6 +148,7 @@ export function ChecklistDinamico() {
           pdfNomeArquivo: pdf.nome_arquivo,
           pdfUrl: pdf.pdf_url,
           totalPaginasPdf: pdf.total_paginas ?? 1,
+          prazoCorrecao: pdf.prazo_correcao ?? null,
         },
         ambientes,
       );
