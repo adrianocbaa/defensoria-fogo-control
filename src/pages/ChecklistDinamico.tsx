@@ -138,6 +138,23 @@ export function ChecklistDinamico() {
 
       const empresa = (obra?.empresas as any)?.razao_social || obra?.empresa_responsavel || '';
 
+      // Buscar todas as ocorrências dos serviços desta obra
+      const servicoIds = ambientes.flatMap(a => a.servicos.map(s => s.id));
+      let ocorrenciasPorServico: Record<string, import('@/hooks/useChecklistOcorrencias').ChecklistOcorrencia[]> = {};
+      if (servicoIds.length > 0) {
+        const { data: ocData } = await supabase
+          .from('checklist_ocorrencias' as any)
+          .select('*')
+          .in('servico_id', servicoIds)
+          .order('ordem', { ascending: true });
+        if (ocData) {
+          for (const oc of ocData as any[]) {
+            if (!ocorrenciasPorServico[oc.servico_id]) ocorrenciasPorServico[oc.servico_id] = [];
+            ocorrenciasPorServico[oc.servico_id].push(oc);
+          }
+        }
+      }
+
       await exportChecklistPdf(
         {
           obraId: obraId!,
@@ -155,6 +172,7 @@ export function ChecklistDinamico() {
           prazoCorrecao: pdf.prazo_correcao ?? null,
         },
         ambientes,
+        ocorrenciasPorServico,
       );
       toast.success('Relatório PDF gerado com sucesso!');
     } catch (err) {
