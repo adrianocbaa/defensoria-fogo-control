@@ -383,6 +383,71 @@ export type Database = {
           },
         ]
       }
+      checklist_ocorrencias: {
+        Row: {
+          avaliado_por: string | null
+          created_at: string
+          data_avaliacao: string | null
+          descricao: string | null
+          foto_correcao_url: string | null
+          foto_reprovacao_url: string | null
+          gravidade: string | null
+          id: string
+          location_pin: Json | null
+          obra_id: string
+          observacao: string | null
+          ordem: number
+          servico_id: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avaliado_por?: string | null
+          created_at?: string
+          data_avaliacao?: string | null
+          descricao?: string | null
+          foto_correcao_url?: string | null
+          foto_reprovacao_url?: string | null
+          gravidade?: string | null
+          id?: string
+          location_pin?: Json | null
+          obra_id: string
+          observacao?: string | null
+          ordem?: number
+          servico_id: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avaliado_por?: string | null
+          created_at?: string
+          data_avaliacao?: string | null
+          descricao?: string | null
+          foto_correcao_url?: string | null
+          foto_reprovacao_url?: string | null
+          gravidade?: string | null
+          id?: string
+          location_pin?: Json | null
+          obra_id?: string
+          observacao?: string | null
+          ordem?: number
+          servico_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_ocorrencias_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_servicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_pdfs: {
         Row: {
           created_at: string
