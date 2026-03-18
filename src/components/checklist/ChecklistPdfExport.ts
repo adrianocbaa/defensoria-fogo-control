@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import type { ChecklistAmbiente } from '@/hooks/useChecklistDinamico';
+import type { ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
 import type { ShapeData } from '@/components/checklist/PdfCanvas';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
