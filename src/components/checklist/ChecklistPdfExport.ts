@@ -349,7 +349,7 @@ export async function exportChecklistPdf(
           const pinX = COL.margin + (pin.x / 100) * mapW;
           const pinY = y + (pin.y / 100) * mapH;
 
-          const circleR = 3.5;
+          const circleR = 2.0;
 
           // Drop shadow
           doc.setFillColor(0, 0, 0);
