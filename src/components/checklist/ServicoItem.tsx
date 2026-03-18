@@ -46,12 +46,6 @@ const GRAVIDADE_CONFIG: Record<Gravidade, { label: string; color: string; bg: st
 export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRequest }: ServicoItemProps) {
   const [expanded, setExpanded] = useState(servico.status === 'reprovado');
   const [observacao, setObservacao] = useState(servico.observacao ?? '');
-  const [prazoCorrecao, setPrazoCorrecao] = useState<string>(
-    (servico as any).prazo_correcao != null ? String((servico as any).prazo_correcao) : ''
-  );
-  const [responsavelCorrecao, setResponsavelCorrecao] = useState<string>(
-    (servico as any).responsavel_correcao ?? ''
-  );
   const [uploadingRepro, setUploadingRepro] = useState(false);
   const [uploadingCorrecao, setUploadingCorrecao] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -61,7 +55,7 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  const gravidade: Gravidade = ((servico as any).gravidade as Gravidade) ?? 'medio';
+  const gravidade: Gravidade = (servico.gravidade as Gravidade) ?? 'medio';
 
   const startRecording = async () => {
     try {
