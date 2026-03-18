@@ -6,6 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   ArrowLeft,
   Upload,
   FileText,
@@ -24,6 +34,9 @@ import {
   Loader2,
   Map,
   ListChecks,
+  Trash2,
+  Plus,
+  FilePlus,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { exportChecklistPdf } from '@/components/checklist/ChecklistPdfExport';
@@ -32,7 +45,7 @@ import { PdfCanvas, type DrawMode } from '@/components/checklist/PdfCanvas';
 import type { ShapeData } from '@/components/checklist/PdfCanvas';
 import { AmbienteDialog } from '@/components/checklist/AmbienteDialog';
 import { ServicosPanel } from '@/components/checklist/ServicosPanel';
-import { useChecklistDinamico, type ChecklistServico } from '@/hooks/useChecklistDinamico';
+import { useChecklistDinamico, type ChecklistServico, type ChecklistPdf } from '@/hooks/useChecklistDinamico';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -49,11 +62,15 @@ export function ChecklistDinamico() {
 
   const {
     pdf,
+    pdfs,
+    selectedPdfId,
+    setSelectedPdfId,
     ambientes,
     loading,
     uploading,
     stats,
     uploadPdf,
+    deletePdf,
     updateTotalPages,
     createAmbiente,
     updateServico,
@@ -72,6 +89,7 @@ export function ChecklistDinamico() {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [mobileTab, setMobileTab] = useState<'pdf' | 'ambientes'>('pdf');
   const [servicosSheetOpen, setServicosSheetOpen] = useState(false);
+  const [deletePdfId, setDeletePdfId] = useState<string | null>(null);
 
   // Pin mode
   const [isPinMode, setIsPinMode] = useState(false);
@@ -81,6 +99,15 @@ export function ChecklistDinamico() {
 
   const selectedAmbiente = ambientes.find(a => a.id === selectedAmbienteId) ?? null;
   const totalPages = pdf?.total_paginas ?? 1;
+
+  // Reset page when changing PDF
+  const handleSelectPdf = (pdfId: string) => {
+    setSelectedPdfId(pdfId);
+    setCurrentPage(1);
+    setSelectedAmbienteId(null);
+    setIsDrawingMode(false);
+    setIsPinMode(false);
+  };
 
   const handleExportPdf = async () => {
     if (!obraId || !pdf) return;
@@ -133,6 +160,7 @@ export function ChecklistDinamico() {
     if (!file || file.type !== 'application/pdf') return;
     await uploadPdf(file);
     e.target.value = '';
+    setCurrentPage(1);
   };
 
   const handlePageCount = (count: number) => {
@@ -156,7 +184,6 @@ export function ChecklistDinamico() {
     const ambiente = await createAmbiente(nome, currentPage, pos, servicos, pendingShape.type, pendingShape.shapeData);
     if (ambiente) {
       setSelectedAmbienteId(ambiente.id);
-      // On mobile, open services sheet automatically
       if (isMobile) setServicosSheetOpen(true);
     }
     setPendingShape(null);
@@ -172,7 +199,6 @@ export function ChecklistDinamico() {
     setIsPinMode(true);
     setPendingPinServico({ id: servicoId, descricao });
     setIsDrawingMode(false);
-    // On mobile, close sheet so user can see PDF
     if (isMobile) setServicosSheetOpen(false);
   };
 
@@ -180,7 +206,6 @@ export function ChecklistDinamico() {
     updateServico(servicoId, { location_pin: pin });
     setIsPinMode(false);
     setPendingPinServico(null);
-    // On mobile, reopen sheet after pin placed
     if (isMobile && selectedAmbienteId) setServicosSheetOpen(true);
   };
 
@@ -204,6 +229,49 @@ export function ChecklistDinamico() {
     { mode: 'circle', label: 'Círculo', icon: Circle },
     { mode: 'polyline', label: 'Polilinha', icon: Spline },
   ];
+
+  // ── PDF Selector bar ─────────────────────────────────────────────────────
+  const PdfSelectorBar = () => (
+    <div className="flex items-center gap-1 px-2 py-1.5 border-b bg-muted/20 shrink-0 overflow-x-auto">
+      {pdfs.map((p) => (
+        <div key={p.id} className="flex items-center shrink-0">
+          <button
+            onClick={() => handleSelectPdf(p.id)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors max-w-[180px]',
+              selectedPdfId === p.id
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-background border hover:bg-muted text-foreground'
+            )}
+          >
+            <FileText className="h-3 w-3 shrink-0" />
+            <span className="truncate">{p.nome_arquivo.replace(/\.pdf$/i, '')}</span>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setDeletePdfId(p.id); }}
+            className={cn(
+              'ml-0.5 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors',
+              selectedPdfId === p.id ? 'text-primary-foreground/60 hover:text-primary-foreground' : 'text-muted-foreground'
+            )}
+            title="Excluir projeto"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-7 px-2 text-xs shrink-0 gap-1 text-muted-foreground hover:text-foreground"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+        title="Adicionar novo projeto PDF"
+      >
+        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FilePlus className="h-3.5 w-3.5" />}
+        <span className="hidden sm:inline">{uploading ? 'Enviando...' : 'Adicionar Projeto'}</span>
+      </Button>
+    </div>
+  );
 
   // ── Shared PDF toolbar ───────────────────────────────────────────────────
   const PdfToolbar = () => (
@@ -333,6 +401,8 @@ export function ChecklistDinamico() {
     </div>
   );
 
+  const pdfToDelete = pdfs.find(p => p.id === deletePdfId);
+
   return (
     <SimpleHeader>
       <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden">
@@ -362,27 +432,20 @@ export function ChecklistDinamico() {
 
           <div className="ml-auto flex items-center gap-1.5">
             {pdf && (
-              <>
-                <Button variant="outline" size="sm" className="h-8 px-2 text-xs"
-                  onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                  <Upload className="h-3.5 w-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">{uploading ? 'Enviando...' : 'Substituir PDF'}</span>
-                </Button>
-                <Button variant="default" size="sm" className="h-8 px-2 text-xs"
-                  onClick={handleExportPdf}
-                  disabled={exportingPdf || ambientes.length === 0}
-                  title={ambientes.length === 0 ? 'Crie ambientes antes de exportar' : 'Gerar relatório técnico PDF'}>
-                  {exportingPdf
-                    ? <><Loader2 className="h-3.5 w-3.5 sm:mr-1 animate-spin" /><span className="hidden sm:inline">Gerando...</span></>
-                    : <><Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Exportar Relatório</span></>}
-                </Button>
-              </>
+              <Button variant="default" size="sm" className="h-8 px-2 text-xs"
+                onClick={handleExportPdf}
+                disabled={exportingPdf || ambientes.length === 0}
+                title={ambientes.length === 0 ? 'Crie ambientes antes de exportar' : 'Gerar relatório técnico PDF'}>
+                {exportingPdf
+                  ? <><Loader2 className="h-3.5 w-3.5 sm:mr-1 animate-spin" /><span className="hidden sm:inline">Gerando...</span></>
+                  : <><Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Exportar Relatório</span></>}
+              </Button>
             )}
           </div>
         </div>
 
         {/* ── No PDF state ────────────────────────────────────────────────── */}
-        {!pdf ? (
+        {pdfs.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-sm">
               <div className="mx-auto w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -390,7 +453,7 @@ export function ChecklistDinamico() {
               </div>
               <h2 className="text-lg font-semibold mb-2">Nenhum projeto carregado</h2>
               <p className="text-sm text-muted-foreground mb-6">
-                Faça o upload do projeto em PDF para começar a demarcar os ambientes e registrar os serviços a verificar.
+                Faça o upload de um ou mais projetos em PDF (ex: Pavimento Térreo, Pavimento 01...) para começar a demarcar os ambientes.
               </p>
               <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} size="lg" className="gap-2">
                 <Upload className="h-4 w-4" />
@@ -399,153 +462,164 @@ export function ChecklistDinamico() {
             </div>
           </div>
 
-        ) : isMobile ? (
-          /* ── MOBILE LAYOUT: tab switcher ─────────────────────────────── */
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Tab bar */}
-            <div className="flex border-b shrink-0 bg-background">
-              <button
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium border-b-2 transition-colors',
-                  mobileTab === 'pdf'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground'
-                )}
-                onClick={() => setMobileTab('pdf')}
-              >
-                <Map className="h-4 w-4" />
-                Projeto PDF
-              </button>
-              <button
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium border-b-2 transition-colors',
-                  mobileTab === 'ambientes'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground'
-                )}
-                onClick={() => setMobileTab('ambientes')}
-              >
-                <ListChecks className="h-4 w-4" />
-                Ambientes
-                {ambientes.length > 0 && (
-                  <Badge variant="secondary" className="h-4 text-[10px] px-1">{ambientes.length}</Badge>
-                )}
-              </button>
-            </div>
-
-            {/* PDF tab */}
-            {mobileTab === 'pdf' && (
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <PdfToolbar />
-                <div className="flex-1 overflow-auto p-2">
-                  <PdfCanvas
-                    pdfUrl={pdf.pdf_url}
-                    currentPage={currentPage}
-                    ambientes={ambientes}
-                    isDrawingMode={isDrawingMode}
-                    drawMode={drawMode}
-                    selectedAmbienteId={selectedAmbienteId}
-                    isPinMode={isPinMode}
-                    pendingPinServico={pendingPinServico}
-                    onPageCount={handlePageCount}
-                    onDrawComplete={handleDrawComplete}
-                    onAmbienteClick={handleAmbienteClick}
-                    onDeselect={() => setSelectedAmbienteId(null)}
-                    onPinPlaced={handlePinPlaced}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Ambientes tab */}
-            {mobileTab === 'ambientes' && (
-              <div className="flex-1 overflow-y-auto">
-                <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b sticky top-0 z-10">
-                  <div className="flex items-center gap-1.5">
-                    <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-sm font-medium">Ambientes</span>
-                    <Badge variant="secondary" className="h-5 text-[10px]">{ambientes.length}</Badge>
-                  </div>
-                </div>
-                <AmbientesList compact />
-              </div>
-            )}
-
-            {/* Services bottom sheet (mobile) */}
-            <Sheet open={servicosSheetOpen} onOpenChange={setServicosSheetOpen}>
-              <SheetContent side="bottom" className="h-[75vh] p-0 flex flex-col rounded-t-xl">
-                <SheetHeader className="px-4 pt-4 pb-2 border-b shrink-0">
-                  <SheetTitle className="text-base">
-                    {selectedAmbiente?.nome ?? 'Serviços'}
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="flex-1 overflow-hidden">
-                  <ServicosPanel
-                    ambiente={selectedAmbiente}
-                    onUpdateServico={(id, updates) => updateServico(id, updates as Parameters<typeof updateServico>[1])}
-                    onDeleteServico={deleteServico}
-                    onAddServico={addServico}
-                    onDeleteAmbiente={(id) => { deleteAmbiente(id); setServicosSheetOpen(false); setSelectedAmbienteId(null); }}
-                    onUploadFoto={uploadFoto}
-                    onPinRequest={handlePinRequest}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-
         ) : (
-          /* ── DESKTOP LAYOUT: side by side ────────────────────────────── */
-          <div className="flex-1 flex overflow-hidden">
-            {/* LEFT: PDF Viewer */}
-            <div className="flex-1 flex flex-col overflow-hidden border-r min-w-0">
-              <PdfToolbar />
-              <div className="flex-1 overflow-auto p-3">
-                <PdfCanvas
-                  pdfUrl={pdf.pdf_url}
-                  currentPage={currentPage}
-                  ambientes={ambientes}
-                  isDrawingMode={isDrawingMode}
-                  drawMode={drawMode}
-                  selectedAmbienteId={selectedAmbienteId}
-                  isPinMode={isPinMode}
-                  pendingPinServico={pendingPinServico}
-                  onPageCount={handlePageCount}
-                  onDrawComplete={handleDrawComplete}
-                  onAmbienteClick={handleAmbienteClick}
-                  onDeselect={() => setSelectedAmbienteId(null)}
-                  onPinPlaced={handlePinPlaced}
-                />
-              </div>
-            </div>
+          <>
+            {/* ── PDF selector (tabs by project) ─────────────────────────── */}
+            <PdfSelectorBar />
 
-            {/* RIGHT: Environments list + services */}
-            <div className="w-80 xl:w-96 flex flex-col overflow-hidden shrink-0">
-              <div className="border-b">
-                <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
-                  <div className="flex items-center gap-1.5">
-                    <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-medium">Ambientes</span>
-                    <Badge variant="secondary" className="h-4 text-[10px]">{ambientes.length}</Badge>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">Página {currentPage}</span>
+            {isMobile ? (
+              /* ── MOBILE LAYOUT ──────────────────────────────────────────── */
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Tab bar */}
+                <div className="flex border-b shrink-0 bg-background">
+                  <button
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                      mobileTab === 'pdf'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground'
+                    )}
+                    onClick={() => setMobileTab('pdf')}
+                  >
+                    <Map className="h-4 w-4" />
+                    Projeto PDF
+                  </button>
+                  <button
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                      mobileTab === 'ambientes'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground'
+                    )}
+                    onClick={() => setMobileTab('ambientes')}
+                  >
+                    <ListChecks className="h-4 w-4" />
+                    Ambientes
+                    {ambientes.length > 0 && (
+                      <Badge variant="secondary" className="h-4 text-[10px] px-1">{ambientes.length}</Badge>
+                    )}
+                  </button>
                 </div>
-                <AmbientesList />
+
+                {/* PDF tab */}
+                {mobileTab === 'pdf' && pdf && (
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <PdfToolbar />
+                    <div className="flex-1 overflow-auto p-2">
+                      <PdfCanvas
+                        pdfUrl={pdf.pdf_url}
+                        currentPage={currentPage}
+                        ambientes={ambientes}
+                        isDrawingMode={isDrawingMode}
+                        drawMode={drawMode}
+                        selectedAmbienteId={selectedAmbienteId}
+                        isPinMode={isPinMode}
+                        pendingPinServico={pendingPinServico}
+                        onPageCount={handlePageCount}
+                        onDrawComplete={handleDrawComplete}
+                        onAmbienteClick={handleAmbienteClick}
+                        onDeselect={() => setSelectedAmbienteId(null)}
+                        onPinPlaced={handlePinPlaced}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Ambientes tab */}
+                {mobileTab === 'ambientes' && (
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b sticky top-0 z-10">
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-sm font-medium">Ambientes</span>
+                        <Badge variant="secondary" className="h-5 text-[10px]">{ambientes.length}</Badge>
+                      </div>
+                    </div>
+                    <AmbientesList compact />
+                  </div>
+                )}
+
+                {/* Services bottom sheet (mobile) */}
+                <Sheet open={servicosSheetOpen} onOpenChange={setServicosSheetOpen}>
+                  <SheetContent side="bottom" className="h-[75vh] p-0 flex flex-col rounded-t-xl">
+                    <SheetHeader className="px-4 pt-4 pb-2 border-b shrink-0">
+                      <SheetTitle className="text-base">
+                        {selectedAmbiente?.nome ?? 'Serviços'}
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="flex-1 overflow-hidden">
+                      <ServicosPanel
+                        ambiente={selectedAmbiente}
+                        onUpdateServico={(id, updates) => updateServico(id, updates as Parameters<typeof updateServico>[1])}
+                        onDeleteServico={deleteServico}
+                        onAddServico={addServico}
+                        onDeleteAmbiente={(id) => { deleteAmbiente(id); setServicosSheetOpen(false); setSelectedAmbienteId(null); }}
+                        onUploadFoto={uploadFoto}
+                        onPinRequest={handlePinRequest}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
 
-              <div className="flex-1 overflow-hidden">
-                <ServicosPanel
-                  ambiente={selectedAmbiente}
-                  onUpdateServico={(id, updates) => updateServico(id, updates as Parameters<typeof updateServico>[1])}
-                  onDeleteServico={deleteServico}
-                  onAddServico={addServico}
-                  onDeleteAmbiente={deleteAmbiente}
-                  onUploadFoto={uploadFoto}
-                  onPinRequest={handlePinRequest}
-                />
+            ) : (
+              /* ── DESKTOP LAYOUT ─────────────────────────────────────────── */
+              <div className="flex-1 flex overflow-hidden">
+                {/* LEFT: PDF Viewer */}
+                <div className="flex-1 flex flex-col overflow-hidden border-r min-w-0">
+                  {pdf && (
+                    <>
+                      <PdfToolbar />
+                      <div className="flex-1 overflow-auto p-3">
+                        <PdfCanvas
+                          pdfUrl={pdf.pdf_url}
+                          currentPage={currentPage}
+                          ambientes={ambientes}
+                          isDrawingMode={isDrawingMode}
+                          drawMode={drawMode}
+                          selectedAmbienteId={selectedAmbienteId}
+                          isPinMode={isPinMode}
+                          pendingPinServico={pendingPinServico}
+                          onPageCount={handlePageCount}
+                          onDrawComplete={handleDrawComplete}
+                          onAmbienteClick={handleAmbienteClick}
+                          onDeselect={() => setSelectedAmbienteId(null)}
+                          onPinPlaced={handlePinPlaced}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* RIGHT: Environments list + services */}
+                <div className="w-80 xl:w-96 flex flex-col overflow-hidden shrink-0">
+                  <div className="border-b">
+                    <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs font-medium">Ambientes</span>
+                        <Badge variant="secondary" className="h-4 text-[10px]">{ambientes.length}</Badge>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">Página {currentPage}</span>
+                    </div>
+                    <AmbientesList />
+                  </div>
+
+                  <div className="flex-1 overflow-hidden">
+                    <ServicosPanel
+                      ambiente={selectedAmbiente}
+                      onUpdateServico={(id, updates) => updateServico(id, updates as Parameters<typeof updateServico>[1])}
+                      onDeleteServico={deleteServico}
+                      onAddServico={addServico}
+                      onDeleteAmbiente={deleteAmbiente}
+                      onUploadFoto={uploadFoto}
+                      onPinRequest={handlePinRequest}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
 
@@ -562,6 +636,27 @@ export function ChecklistDinamico() {
         onClose={() => { setDialogOpen(false); setPendingShape(null); }}
         onConfirm={handleAmbienteCreate}
       />
+
+      {/* Delete PDF confirmation */}
+      <AlertDialog open={!!deletePdfId} onOpenChange={(o) => { if (!o) setDeletePdfId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir projeto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O projeto <strong>"{pdfToDelete?.nome_arquivo.replace(/\.pdf$/i, '')}"</strong> e todos os seus ambientes e serviços serão excluídos permanentemente. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              onClick={() => { if (deletePdfId) { deletePdf(deletePdfId); setDeletePdfId(null); } }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SimpleHeader>
   );
 }
