@@ -525,11 +525,13 @@ export async function exportChecklistPdf(
     doc.rect(COL.margin, y, COL.contentW, 7, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.text('Nº', COL.margin + 3, y + 4.8);
     doc.text('DESCRIÇÃO DO SERVIÇO', COL.margin + 12, y + 4.8);
-    doc.text('STATUS', COL.pageW - COL.margin - 32, y + 4.8);
-    doc.text('TIPO', COL.pageW - COL.margin - 10, y + 4.8, { align: 'right' });
+    doc.text('GRAVIDADE', COL.pageW - COL.margin - 86, y + 4.8);
+    doc.text('PRAZO', COL.pageW - COL.margin - 56, y + 4.8);
+    doc.text('RESPONSÁVEL', COL.pageW - COL.margin - 38, y + 4.8);
+    doc.text('STATUS', COL.pageW - COL.margin - 12, y + 4.8, { align: 'right' });
     y += 7;
 
     // Table rows
