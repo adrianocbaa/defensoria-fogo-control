@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,16 +23,20 @@ import {
   AlertTriangle,
   Minus,
   Paintbrush,
+  ListChecks,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ChecklistServico } from '@/hooks/useChecklistDinamico';
+import { useChecklistOcorrencias, type ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
+import { OcorrenciaItem } from './OcorrenciaItem';
 
 interface ServicoItemProps {
   servico: ChecklistServico;
+  obraId: string;
   onUpdate: (id: string, updates: Partial<ChecklistServico>) => void;
   onDelete: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
-  onPinRequest: (servicoId: string, descricao: string) => void;
+  onPinRequest: (servicoId: string, descricao: string, isOcorrencia?: boolean) => void;
 }
 
 type Gravidade = 'critico' | 'medio' | 'estetico';
