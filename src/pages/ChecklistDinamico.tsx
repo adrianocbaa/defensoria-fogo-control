@@ -205,15 +205,22 @@ export function ChecklistDinamico() {
     if (isMobile) setServicosSheetOpen(true);
   };
 
-  const handlePinRequest = (servicoId: string, descricao: string) => {
+  const handlePinRequest = (servicoId: string, descricao: string, isOcorrencia?: boolean) => {
     setIsPinMode(true);
-    setPendingPinServico({ id: servicoId, descricao });
+    setPendingPinServico({ id: servicoId, descricao, isOcorrencia });
     setIsDrawingMode(false);
     if (isMobile) setServicosSheetOpen(false);
   };
 
-  const handlePinPlaced = (servicoId: string, pin: { x: number; y: number }) => {
-    updateServico(servicoId, { location_pin: pin });
+  const handlePinPlaced = (id: string, pin: { x: number; y: number }) => {
+    if (pendingPinServico?.isOcorrencia) {
+      // Buscar o servicoId da ocorrência — usamos o id da ocorrência diretamente
+      // O updateOcorrenciaPin não precisa do servicoId para o update, pois usa o id da ocorrência
+      // Mas o hook exige servicoId para re-fetch; passamos string vazia e fazemos refresh via fetchOcorrencias
+      updateOcorrenciaPin(id, '', { location_pin: pin });
+    } else {
+      updateServico(id, { location_pin: pin });
+    }
     setIsPinMode(false);
     setPendingPinServico(null);
     if (isMobile && selectedAmbienteId) setServicosSheetOpen(true);
