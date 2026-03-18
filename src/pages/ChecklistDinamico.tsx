@@ -46,6 +46,7 @@ import type { ShapeData } from '@/components/checklist/PdfCanvas';
 import { AmbienteDialog } from '@/components/checklist/AmbienteDialog';
 import { ServicosPanel } from '@/components/checklist/ServicosPanel';
 import { useChecklistDinamico, type ChecklistServico, type ChecklistPdf } from '@/hooks/useChecklistDinamico';
+import { useChecklistOcorrencias } from '@/hooks/useChecklistOcorrencias';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
