@@ -575,6 +575,7 @@ export function ChecklistDinamico() {
                     <div className="flex-1 overflow-hidden">
                       <ServicosPanel
                         ambiente={selectedAmbiente}
+                        obraId={obraId!}
                         onUpdateServico={(id, updates) => updateServico(id, updates as Parameters<typeof updateServico>[1])}
                         onDeleteServico={deleteServico}
                         onAddServico={addServico}
