@@ -29,8 +29,6 @@ export interface ChecklistServico {
   avaliado_por?: string | null;
   location_pin?: { x: number; y: number } | null;
   gravidade?: 'critico' | 'medio' | 'estetico' | null;
-  prazo_correcao?: number | null;
-  responsavel_correcao?: string | null;
   created_at: string;
   updated_at: string;
 }

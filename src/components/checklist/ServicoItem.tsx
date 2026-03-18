@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
@@ -24,8 +23,6 @@ import {
   AlertTriangle,
   Minus,
   Paintbrush,
-  CalendarClock,
-  User,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ChecklistServico } from '@/hooks/useChecklistDinamico';
