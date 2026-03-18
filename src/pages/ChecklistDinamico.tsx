@@ -82,6 +82,8 @@ export function ChecklistDinamico() {
     uploadFoto,
   } = useChecklistDinamico(obraId!);
 
+  const { updateOcorrencia: updateOcorrenciaPin } = useChecklistOcorrencias(obraId!);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [drawMode, setDrawMode] = useState<DrawMode>('rect');
