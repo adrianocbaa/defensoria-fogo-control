@@ -87,6 +87,9 @@ export function ChecklistDinamico() {
   const [pendingShape, setPendingShape] = useState<PendingShape | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [prazoRelatorio, setPrazoRelatorio] = useState<string>(
+    pdf?.prazo_correcao != null ? String(pdf.prazo_correcao) : ''
+  );
   const [mobileTab, setMobileTab] = useState<'pdf' | 'ambientes'>('pdf');
   const [servicosSheetOpen, setServicosSheetOpen] = useState(false);
   const [deletePdfId, setDeletePdfId] = useState<string | null>(null);

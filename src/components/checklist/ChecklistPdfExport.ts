@@ -167,6 +167,7 @@ export async function exportChecklistPdf(
     ...(meta.nContrato ? [['Nº do Contrato', meta.nContrato] as [string, string]] : []),
     ...(meta.fiscal ? [['Fiscal Responsável', meta.fiscal] as [string, string]] : []),
     ['Arquivo de Projeto', meta.pdfNomeArquivo],
+    ...(meta.prazoCorrecao ? [['Prazo para Correção', `${meta.prazoCorrecao} dia${meta.prazoCorrecao !== 1 ? 's' : ''} (Responsável: Contratada)`] as [string, string]] : []),
   ];
 
   const fieldRowH = 11;
