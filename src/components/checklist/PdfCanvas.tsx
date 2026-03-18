@@ -270,8 +270,9 @@ export function PdfCanvas({
       return;
     }
 
-    // Click on empty space (not drawing, not pin) → deselect
+    // Click on empty space (not drawing, not pin) → deselect + close pin popover
     if (!isDrawingMode && !isPinMode) {
+      setActivePinId(null);
       onDeselect();
     }
   };
