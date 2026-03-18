@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 import {
   CheckCircle2,
   XCircle,
@@ -16,7 +17,11 @@ import {
   ChevronUp,
   MapPin,
   X,
+  Mic,
+  MicOff,
+  Loader2,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import type { ChecklistServico } from '@/hooks/useChecklistDinamico';
 
 interface ServicoItemProps {
