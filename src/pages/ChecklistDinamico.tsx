@@ -98,9 +98,9 @@ export function ChecklistDinamico() {
   const [servicosSheetOpen, setServicosSheetOpen] = useState(false);
   const [deletePdfId, setDeletePdfId] = useState<string | null>(null);
 
-  // Pin mode
+  // Pin mode — pode ser para um serviço ou para uma ocorrência
   const [isPinMode, setIsPinMode] = useState(false);
-  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string } | null>(null);
+  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string; isOcorrencia?: boolean } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
