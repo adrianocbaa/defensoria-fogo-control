@@ -110,6 +110,7 @@ export function ServicosPanel({
             <ServicoItem
               key={servico.id}
               servico={servico}
+              obraId={obraId}
               onUpdate={onUpdateServico}
               onDelete={onDeleteServico}
               onUploadFoto={onUploadFoto}
