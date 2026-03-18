@@ -10,6 +10,7 @@ export interface ChecklistPdf {
   nome_arquivo: string;
   pdf_url: string;
   total_paginas: number;
+  prazo_correcao?: number | null;
   created_at: string;
 }
 
@@ -28,8 +29,6 @@ export interface ChecklistServico {
   avaliado_por?: string | null;
   location_pin?: { x: number; y: number } | null;
   gravidade?: 'critico' | 'medio' | 'estetico' | null;
-  prazo_correcao?: number | null;
-  responsavel_correcao?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -170,6 +169,11 @@ export function useChecklistDinamico(obraId: string) {
     setPdfs(prev => prev.map(p => p.id === pdfId ? { ...p, total_paginas: totalPaginas } : p));
   };
 
+  const updatePrazoCorrecao = async (pdfId: string, prazo: number | null) => {
+    await supabase.from('checklist_pdfs').update({ prazo_correcao: prazo } as any).eq('id', pdfId);
+    setPdfs(prev => prev.map(p => p.id === pdfId ? { ...p, prazo_correcao: prazo } : p));
+  };
+
   const createAmbiente = async (
     nome: string,
     pagina: number,
@@ -308,6 +312,7 @@ export function useChecklistDinamico(obraId: string) {
     deleteAmbiente,
     deleteServico,
     uploadFoto,
+    updatePrazoCorrecao,
     refetch: fetchPdfs,
   };
 }

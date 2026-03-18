@@ -390,6 +390,7 @@ export type Database = {
           nome_arquivo: string
           obra_id: string
           pdf_url: string
+          prazo_correcao: number | null
           total_paginas: number | null
           user_id: string | null
         }
@@ -399,6 +400,7 @@ export type Database = {
           nome_arquivo: string
           obra_id: string
           pdf_url: string
+          prazo_correcao?: number | null
           total_paginas?: number | null
           user_id?: string | null
         }
@@ -408,6 +410,7 @@ export type Database = {
           nome_arquivo?: string
           obra_id?: string
           pdf_url?: string
+          prazo_correcao?: number | null
           total_paginas?: number | null
           user_id?: string | null
         }
@@ -437,8 +440,6 @@ export type Database = {
           obra_id: string
           observacao: string | null
           ordem: number
-          prazo_correcao: number | null
-          responsavel_correcao: string | null
           status: string
           updated_at: string
           user_id: string | null
@@ -458,8 +459,6 @@ export type Database = {
           obra_id: string
           observacao?: string | null
           ordem?: number
-          prazo_correcao?: number | null
-          responsavel_correcao?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -479,8 +478,6 @@ export type Database = {
           obra_id?: string
           observacao?: string | null
           ordem?: number
-          prazo_correcao?: number | null
-          responsavel_correcao?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null

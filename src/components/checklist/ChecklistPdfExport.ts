@@ -89,6 +89,7 @@ export interface ChecklistReportMeta {
   pdfNomeArquivo: string;
   pdfUrl?: string; // URL of the PDF to render as map
   totalPaginasPdf?: number;
+  prazoCorrecao?: number | null; // Prazo geral para correção do relatório
 }
 
 export async function exportChecklistPdf(
@@ -166,6 +167,7 @@ export async function exportChecklistPdf(
     ...(meta.nContrato ? [['Nº do Contrato', meta.nContrato] as [string, string]] : []),
     ...(meta.fiscal ? [['Fiscal Responsável', meta.fiscal] as [string, string]] : []),
     ['Arquivo de Projeto', meta.pdfNomeArquivo],
+    ...(meta.prazoCorrecao ? [['Prazo para Correção', `${meta.prazoCorrecao} dia${meta.prazoCorrecao !== 1 ? 's' : ''} (Responsável: Contratada)`] as [string, string]] : []),
   ];
 
   const fieldRowH = 11;
@@ -528,9 +530,7 @@ export async function exportChecklistPdf(
     doc.setFontSize(6.5);
     doc.text('Nº', COL.margin + 3, y + 4.8);
     doc.text('DESCRIÇÃO DO SERVIÇO', COL.margin + 12, y + 4.8);
-    doc.text('GRAVIDADE', COL.pageW - COL.margin - 86, y + 4.8);
-    doc.text('PRAZO', COL.pageW - COL.margin - 56, y + 4.8);
-    doc.text('RESPONSÁVEL', COL.pageW - COL.margin - 38, y + 4.8);
+    doc.text('GRAVIDADE', COL.pageW - COL.margin - 55, y + 4.8);
     doc.text('STATUS', COL.pageW - COL.margin - 12, y + 4.8, { align: 'right' });
     y += 7;
 
@@ -538,9 +538,7 @@ export async function exportChecklistPdf(
     for (let idx = 0; idx < amb.servicos.length; idx++) {
       const serv = amb.servicos[idx];
       const extraRowH = serv.observacao ? 4 : 0;
-      // Extra row height if reprovado with prazo/responsavel
-      const hasExtra = serv.status === 'reprovado' && (serv.prazo_correcao != null || serv.responsavel_correcao);
-      const rowH = 8 + extraRowH + (hasExtra ? 5 : 0);
+      const rowH = 8 + extraRowH;
 
       // Pre-calculate photos height so we can do a single checkY for the whole block
       const photoPairs: { url: string; label: string }[] = [];
@@ -581,7 +579,7 @@ export async function exportChecklistPdf(
       }
 
       // Descrição
-      const descLines = doc.splitTextToSize(serv.descricao, 80);
+      const descLines = doc.splitTextToSize(serv.descricao, 95);
       doc.setTextColor(20, 20, 20);
       doc.setFont('helvetica', serv.status === 'reprovado' ? 'bold' : 'normal');
       doc.setFontSize(7);
@@ -592,37 +590,20 @@ export async function exportChecklistPdf(
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(6);
         doc.setTextColor(120, 120, 120);
-        const obsLines = doc.splitTextToSize(`Obs: ${serv.observacao}`, 80);
+        const obsLines = doc.splitTextToSize(`Obs: ${serv.observacao}`, 95);
         doc.text(obsLines[0], COL.margin + 12, y + 9);
       }
 
-      // Prazo + Responsável (linha extra para itens reprovados)
-      if (hasExtra) {
-        const extraY = y + 8 + extraRowH;
-        if (serv.prazo_correcao != null) {
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(6);
-          doc.setTextColor(180, 80, 0);
-          doc.text(`⏱ ${serv.prazo_correcao} dia${serv.prazo_correcao !== 1 ? 's' : ''}`, COL.margin + 12, extraY + 3.5);
-        }
-        if (serv.responsavel_correcao) {
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6);
-          doc.setTextColor(60, 80, 160);
-          doc.text(`👤 ${serv.responsavel_correcao}`, COL.margin + 38, extraY + 3.5);
-        }
-      }
-
-      // Gravidade pill
+      // Gravidade pill — posicionada antes do Status
       const [gr, gg, gb] = gravidadeColor(serv.gravidade);
       const gLabel = gravidadeLabel(serv.gravidade).replace(/🔴 |🟡 |🟢 /, '');
       doc.setFillColor(gr, gg, gb);
       const gw = doc.getTextWidth(gLabel) + 4;
-      doc.roundedRect(COL.pageW - COL.margin - 90, y + 1.5, gw, 4.5, 1, 1, 'F');
+      doc.roundedRect(COL.pageW - COL.margin - 57, y + 1.5, gw, 4.5, 1, 1, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(5.5);
-      doc.text(gLabel, COL.pageW - COL.margin - 90 + gw / 2, y + 4.3, { align: 'center' });
+      doc.text(gLabel, COL.pageW - COL.margin - 57 + gw / 2, y + 4.3, { align: 'center' });
 
       // Status pill
       const { r: sr, g: sg, b: sb } = statusColor(serv.status);
