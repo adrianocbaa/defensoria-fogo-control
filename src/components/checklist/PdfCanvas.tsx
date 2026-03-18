@@ -401,9 +401,9 @@ export function PdfCanvas({
           const shapeType = (amb as any).shape_type || 'rect';
           const shapeData = (amb as any).shape_data as ShapeData | null;
           const clickProps = {
-            style: { cursor: isDrawingMode ? undefined : 'pointer', pointerEvents: isDrawingMode ? ('none' as const) : ('all' as const) },
+            style: { cursor: (isDrawingMode || isPinMode) ? undefined : 'pointer', pointerEvents: (isDrawingMode || isPinMode) ? ('none' as const) : ('all' as const) },
             onClick: (e: React.MouseEvent) => {
-              if (isDrawingMode) return;
+              if (isDrawingMode || isPinMode) return;
               e.stopPropagation(); // prevent container handleClick from firing onDeselect
               onAmbienteClick(amb.id);
             },
