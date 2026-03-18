@@ -10,6 +10,7 @@ export interface ChecklistPdf {
   nome_arquivo: string;
   pdf_url: string;
   total_paginas: number;
+  prazo_correcao?: number | null;
   created_at: string;
 }
 
