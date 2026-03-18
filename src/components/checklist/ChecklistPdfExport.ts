@@ -10,12 +10,9 @@ const COL = {
   contentW: 182, // 210 - 2×14
 };
 
-function hexToRgb(hex: string) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return { r, g, b };
-}
+// Cor primária da Defensoria (verde)
+const PRIMARY: [number, number, number] = [21, 128, 61];   // green-700
+const PRIMARY_LIGHT: [number, number, number] = [240, 253, 244]; // green-50
 
 function statusLabel(s: string) {
   if (s === 'aprovado') return 'APROVADO';
