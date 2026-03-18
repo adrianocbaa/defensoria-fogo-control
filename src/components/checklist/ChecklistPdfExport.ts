@@ -96,6 +96,7 @@ export interface ChecklistReportMeta {
 export async function exportChecklistPdf(
   meta: ChecklistReportMeta,
   ambientes: ChecklistAmbiente[],
+  ocorrenciasPorServico?: Record<string, ChecklistOcorrencia[]>,
 ) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   let y = COL.margin;
