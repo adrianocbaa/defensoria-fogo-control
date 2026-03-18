@@ -82,8 +82,8 @@ export function ChecklistDinamico() {
     uploadFoto,
   } = useChecklistDinamico(obraId!);
 
-  const { updateOcorrencia: updateOcorrenciaPin, ..._ } = useChecklistOcorrencias(obraId!);
-  void updateOcorrenciaPin; void _; // não usados diretamente aqui
+  // Hook de ocorrências não é usado diretamente nesta página (cada ServicoItem gerencia o seu)
+  // mas precisamos do supabase para salvar pins de ocorrências
 
   const [currentPage, setCurrentPage] = useState(1);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
