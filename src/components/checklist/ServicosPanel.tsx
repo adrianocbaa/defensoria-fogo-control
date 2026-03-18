@@ -15,6 +15,7 @@ import { ServicoItem } from './ServicoItem';
 
 interface ServicosProps {
   ambiente: ChecklistAmbiente | null;
+  obraId: string;
   onUpdateServico: (id: string, updates: Partial<ChecklistServico>) => void;
   onDeleteServico: (id: string) => void;
   onAddServico: (ambienteId: string, descricao: string) => void;
@@ -25,6 +26,7 @@ interface ServicosProps {
 
 export function ServicosPanel({
   ambiente,
+  obraId,
   onUpdateServico,
   onDeleteServico,
   onAddServico,
