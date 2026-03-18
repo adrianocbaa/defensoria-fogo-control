@@ -27,6 +27,18 @@ function statusColor(s: string): { r: number; g: number; b: number } {
   return { r: 202, g: 138, b: 4 };
 }
 
+function gravidadeLabel(g: string | null | undefined): string {
+  if (g === 'critico') return '🔴 Crítico';
+  if (g === 'estetico') return '🟢 Estético';
+  return '🟡 Médio';
+}
+
+function gravidadeColor(g: string | null | undefined): [number, number, number] {
+  if (g === 'critico') return [220, 38, 38];
+  if (g === 'estetico') return [59, 130, 246];
+  return [202, 138, 4];
+}
+
 async function loadImageAsBase64(url: string): Promise<string | null> {
   try {
     const resp = await fetch(url, { mode: 'cors' });
