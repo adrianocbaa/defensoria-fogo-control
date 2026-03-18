@@ -519,25 +519,37 @@ export function PdfCanvas({
           );
         })}
 
-        {/* Location pins for rejected services */}
+        {/* Location pins */}
         {locationPins.map(pin => {
           const isActive = activePinId === pin.servicoId;
+          const isAprovado = pin.status === 'aprovado';
+          const photoUrl = isAprovado ? pin.fotoCorrecaoUrl : pin.fotoUrl;
+          const pinBg = isAprovado ? 'bg-green-600' : 'bg-destructive';
+          const pinTriangle = isAprovado
+            ? 'border-t-green-600'
+            : 'border-t-destructive';
+          const popoverBorder = isAprovado ? 'border-green-500/40' : 'border-destructive/40';
+          const popoverFooterBg = isAprovado ? 'bg-green-500/10 border-t border-green-500/20' : 'bg-destructive/10 border-t border-destructive/20';
+          const popoverLabel = isAprovado ? 'text-green-700' : 'text-destructive';
+          const photoAlt = isAprovado ? 'Foto da correção' : 'Foto do problema';
+          const icon = isAprovado ? '✓' : '⚠';
+
           return (
             <div key={pin.servicoId} className="absolute"
               style={{ left: `${pin.x}%`, top: `${pin.y}%`, transform: 'translate(-50%, -100%)', pointerEvents: 'all', zIndex: isActive ? 50 : 10 }}>
               {/* Photo popover */}
               {isActive && (
-                <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-50 w-48 rounded-lg overflow-hidden shadow-2xl border border-destructive/40 bg-popover"
+                <div className={`absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-50 w-48 rounded-lg overflow-hidden shadow-2xl border ${popoverBorder} bg-popover`}
                   onClick={e => e.stopPropagation()}>
-                  {pin.fotoUrl ? (
-                    <img src={pin.fotoUrl} alt="Foto do problema" className="w-full h-32 object-cover" />
+                  {photoUrl ? (
+                    <img src={photoUrl} alt={photoAlt} className="w-full h-32 object-cover" />
                   ) : (
                     <div className="w-full h-20 flex items-center justify-center bg-muted text-muted-foreground text-[10px]">
                       Sem foto registrada
                     </div>
                   )}
-                  <div className="px-2 py-1.5 bg-destructive/10 border-t border-destructive/20">
-                    <p className="text-[10px] font-semibold text-destructive leading-tight truncate">{pin.label}</p>
+                  <div className={`px-2 py-1.5 ${popoverFooterBg}`}>
+                    <p className={`text-[10px] font-semibold ${popoverLabel} leading-tight truncate`}>{pin.label}</p>
                   </div>
                 </div>
               )}
@@ -546,10 +558,10 @@ export function PdfCanvas({
                 className="flex flex-col items-center cursor-pointer"
                 onClick={e => { e.stopPropagation(); setActivePinId(isActive ? null : pin.servicoId); }}
               >
-                <div className="bg-destructive text-destructive-foreground text-[8px] font-bold px-1 py-0.5 rounded shadow-md whitespace-nowrap max-w-[80px] truncate text-center hover:scale-110 transition-transform">
-                  ⚠ {pin.label}
+                <div className={`${pinBg} text-white text-[8px] font-bold px-1 py-0.5 rounded shadow-md whitespace-nowrap max-w-[80px] truncate text-center hover:scale-110 transition-transform`}>
+                  {icon} {pin.label}
                 </div>
-                <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-destructive" />
+                <div className={`w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent ${pinTriangle}`} />
               </div>
             </div>
           );
