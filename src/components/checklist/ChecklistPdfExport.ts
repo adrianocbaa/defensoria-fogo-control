@@ -529,9 +529,7 @@ export async function exportChecklistPdf(
     doc.setFontSize(6.5);
     doc.text('Nº', COL.margin + 3, y + 4.8);
     doc.text('DESCRIÇÃO DO SERVIÇO', COL.margin + 12, y + 4.8);
-    doc.text('GRAVIDADE', COL.pageW - COL.margin - 86, y + 4.8);
-    doc.text('PRAZO', COL.pageW - COL.margin - 56, y + 4.8);
-    doc.text('RESPONSÁVEL', COL.pageW - COL.margin - 38, y + 4.8);
+    doc.text('GRAVIDADE', COL.pageW - COL.margin - 55, y + 4.8);
     doc.text('STATUS', COL.pageW - COL.margin - 12, y + 4.8, { align: 'right' });
     y += 7;
 
