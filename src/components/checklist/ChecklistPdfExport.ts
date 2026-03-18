@@ -349,7 +349,7 @@ export async function exportChecklistPdf(
           const pinX = COL.margin + (pin.x / 100) * mapW;
           const pinY = y + (pin.y / 100) * mapH;
 
-          const circleR = 3.5;
+          const circleR = 2.0;
 
           // Drop shadow
           doc.setFillColor(0, 0, 0);
@@ -365,9 +365,9 @@ export async function exportChecklistPdf(
 
           // Number
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(pinNum > 9 ? 5 : 6);
+          doc.setFontSize(pinNum > 9 ? 3.5 : 4.5);
           doc.setTextColor(255, 255, 255);
-          doc.text(String(pinNum), pinX, pinY + (pinNum > 9 ? 1.8 : 2), { align: 'center' });
+          doc.text(String(pinNum), pinX, pinY + (pinNum > 9 ? 1.0 : 1.2), { align: 'center' });
         });
       });
 
