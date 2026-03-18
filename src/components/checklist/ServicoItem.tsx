@@ -78,8 +78,15 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
 
   const transcribeAudio = async (audioBlob: Blob) => {
     try {
+      // Detect best supported format and send with correct extension
+      const mimeType = audioBlob.type || 'audio/webm';
+      const ext = mimeType.includes('ogg') ? 'ogg'
+        : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'mp4'
+        : mimeType.includes('wav') ? 'wav'
+        : 'webm';
+
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'audio.webm');
+      formData.append('audio', audioBlob, `audio.${ext}`);
 
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
@@ -99,11 +106,14 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
         const newText = observacao ? `${observacao} ${result.text}` : result.text;
         setObservacao(newText);
         onUpdate(servico.id, { observacao: newText });
+        toast.success('Áudio transcrito com sucesso!');
       } else {
-        toast.error('Não foi possível transcrever o áudio');
+        console.error('Transcription error response:', result);
+        toast.error(result.error ?? 'Não foi possível transcrever o áudio');
       }
-    } catch {
-      toast.error('Erro ao transcrever o áudio');
+    } catch (err) {
+      console.error('Transcription fetch error:', err);
+      toast.error('Erro ao enviar áudio para transcrição');
     } finally {
       setIsTranscribing(false);
     }
