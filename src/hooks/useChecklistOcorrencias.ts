@@ -46,7 +46,12 @@ export function useChecklistOcorrencias(obraId: string) {
 
   const addOcorrencia = async (servicoId: string, descricao?: string) => {
     if (!user) return;
-    const existingCount = ocorrenciasPorServico[servicoId]?.length ?? 0;
+    // Busca a contagem atual do banco para evitar conflito de ordem
+    const { count } = await supabase
+      .from('checklist_ocorrencias' as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('servico_id', servicoId);
+    const ordem = count ?? (ocorrenciasPorServico[servicoId]?.length ?? 0);
     const { data, error } = await supabase
       .from('checklist_ocorrencias' as any)
       .insert({
@@ -55,7 +60,7 @@ export function useChecklistOcorrencias(obraId: string) {
         descricao: descricao ?? null,
         status: 'reprovado',
         gravidade: 'medio',
-        ordem: existingCount,
+        ordem,
         user_id: user.id,
       })
       .select()
