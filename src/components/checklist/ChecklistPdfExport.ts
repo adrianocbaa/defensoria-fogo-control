@@ -325,7 +325,7 @@ export async function exportChecklistPdf(
 
     // Table header
     checkY(8);
-    doc.setFillColor(30, 64, 175);
+    doc.setFillColor(...PRIMARY);
     doc.rect(COL.margin, y, COL.contentW, 7, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
