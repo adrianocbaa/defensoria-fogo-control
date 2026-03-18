@@ -40,7 +40,7 @@ export function useChecklistOcorrencias(obraId: string) {
     if (error) { console.error(error); return; }
     setOcorrenciasPorServico(prev => ({
       ...prev,
-      [servicoId]: (data ?? []) as ChecklistOcorrencia[],
+      [servicoId]: (data ?? []) as unknown as ChecklistOcorrencia[],
     }));
   }, []);
 
