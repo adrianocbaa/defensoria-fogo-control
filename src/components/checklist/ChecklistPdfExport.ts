@@ -537,9 +537,7 @@ export async function exportChecklistPdf(
     for (let idx = 0; idx < amb.servicos.length; idx++) {
       const serv = amb.servicos[idx];
       const extraRowH = serv.observacao ? 4 : 0;
-      // Extra row height if reprovado with prazo/responsavel
-      const hasExtra = serv.status === 'reprovado' && (serv.prazo_correcao != null || serv.responsavel_correcao);
-      const rowH = 8 + extraRowH + (hasExtra ? 5 : 0);
+      const rowH = 8 + extraRowH;
 
       // Pre-calculate photos height so we can do a single checkY for the whole block
       const photoPairs: { url: string; label: string }[] = [];
@@ -580,7 +578,7 @@ export async function exportChecklistPdf(
       }
 
       // Descrição
-      const descLines = doc.splitTextToSize(serv.descricao, 80);
+      const descLines = doc.splitTextToSize(serv.descricao, 95);
       doc.setTextColor(20, 20, 20);
       doc.setFont('helvetica', serv.status === 'reprovado' ? 'bold' : 'normal');
       doc.setFontSize(7);
@@ -591,25 +589,8 @@ export async function exportChecklistPdf(
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(6);
         doc.setTextColor(120, 120, 120);
-        const obsLines = doc.splitTextToSize(`Obs: ${serv.observacao}`, 80);
+        const obsLines = doc.splitTextToSize(`Obs: ${serv.observacao}`, 95);
         doc.text(obsLines[0], COL.margin + 12, y + 9);
-      }
-
-      // Prazo + Responsável (linha extra para itens reprovados)
-      if (hasExtra) {
-        const extraY = y + 8 + extraRowH;
-        if (serv.prazo_correcao != null) {
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(6);
-          doc.setTextColor(180, 80, 0);
-          doc.text(`⏱ ${serv.prazo_correcao} dia${serv.prazo_correcao !== 1 ? 's' : ''}`, COL.margin + 12, extraY + 3.5);
-        }
-        if (serv.responsavel_correcao) {
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6);
-          doc.setTextColor(60, 80, 160);
-          doc.text(`👤 ${serv.responsavel_correcao}`, COL.margin + 38, extraY + 3.5);
-        }
       }
 
       // Gravidade pill
