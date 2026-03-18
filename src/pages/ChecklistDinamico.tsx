@@ -214,10 +214,12 @@ export function ChecklistDinamico() {
 
   const handlePinPlaced = (id: string, pin: { x: number; y: number }) => {
     if (pendingPinServico?.isOcorrencia) {
-      // Buscar o servicoId da ocorrência — usamos o id da ocorrência diretamente
-      // O updateOcorrenciaPin não precisa do servicoId para o update, pois usa o id da ocorrência
-      // Mas o hook exige servicoId para re-fetch; passamos string vazia e fazemos refresh via fetchOcorrencias
-      updateOcorrenciaPin(id, '', { location_pin: pin });
+      // Atualiza pin da ocorrência diretamente via supabase
+      supabase
+        .from('checklist_ocorrencias' as any)
+        .update({ location_pin: pin, data_avaliacao: new Date().toISOString() })
+        .eq('id', id)
+        .then(({ error }) => { if (error) console.error('Erro ao salvar pin da ocorrência', error); });
     } else {
       updateServico(id, { location_pin: pin });
     }
