@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import type { ChecklistAmbiente } from '@/hooks/useChecklistDinamico';
+import type { ShapeData } from '@/components/checklist/PdfCanvas';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,27 @@ async function loadImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
+/** Render the PDF page as a base64 image via pdf.js */
+async function renderPdfPageToBase64(pdfUrl: string, pageNum: number, targetWidthPx = 1200): Promise<string | null> {
+  try {
+    const lib = (window as any).pdfjsLib;
+    if (!lib) return null;
+    const pdfDoc = await lib.getDocument({ url: pdfUrl, withCredentials: false }).promise;
+    const page = await pdfDoc.getPage(pageNum);
+    const vp0 = page.getViewport({ scale: 1 });
+    const scale = targetWidthPx / vp0.width;
+    const vp = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = vp.width;
+    canvas.height = vp.height;
+    const ctx = canvas.getContext('2d')!;
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    return canvas.toDataURL('image/jpeg', 0.92);
+  } catch {
+    return null;
+  }
+}
+
 // ─── main export ────────────────────────────────────────────────────────────
 
 export interface ChecklistReportMeta {
@@ -53,6 +75,8 @@ export interface ChecklistReportMeta {
   fiscal?: string;
   dataRelatorio: string; // ISO or formatted string
   pdfNomeArquivo: string;
+  pdfUrl?: string; // URL of the PDF to render as map
+  totalPaginasPdf?: number;
 }
 
 export async function exportChecklistPdf(
@@ -72,9 +96,7 @@ export async function exportChecklistPdf(
     if (y + needed > COL.pageH - 16) addPage();
   };
 
-  // ── Cabeçalho de página (rodapé) ────────────────────────────────────────
-  const totalPagesPlaceholder = '{totalPages}';
-
+  // ── Rodapé de página ────────────────────────────────────────────────────
   function drawPageFooter() {
     const pageNum = doc.getNumberOfPages();
     doc.setFont('helvetica', 'normal');
@@ -91,21 +113,18 @@ export async function exportChecklistPdf(
       COL.pageH - 8,
       { align: 'right' },
     );
-    // separator line
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
     doc.line(COL.margin, COL.pageH - 12, COL.pageW - COL.margin, COL.pageH - 12);
   }
 
   function drawPageHeader() {
-    // thin top accent verde
     doc.setFillColor(...PRIMARY);
     doc.rect(COL.margin, y, COL.contentW, 1, 'F');
     y += 3;
   }
 
-  // ── Capa / cabeçalho principal ───────────────────────────────────────────
-  // Banner verde
+  // ── Banner principal ─────────────────────────────────────────────────────
   doc.setFillColor(...PRIMARY);
   doc.rect(0, 0, COL.pageW, 38, 'F');
 
@@ -118,19 +137,16 @@ export async function exportChecklistPdf(
   doc.setFontSize(9);
   doc.text('Fiscalização de Obras · Inspeção de Serviços', COL.margin, 21);
 
-  // Linha divisória branca
   doc.setDrawColor(255, 255, 255);
   doc.setLineWidth(0.4);
   doc.line(COL.margin, 26, COL.pageW - COL.margin, 26);
 
-  // Data
   doc.setFontSize(8);
   doc.text(`Emitido em: ${meta.dataRelatorio}`, COL.pageW - COL.margin, 33, { align: 'right' });
 
   y = 46;
 
   // ── Bloco de identificação ──────────────────────────────────────────────
-  // Layout: 2 colunas, cada campo ocupa labelH(3.5) + valueH(4.5) + gap(3) = 11mm por linha
   const fields: [string, string][] = [
     ['Obra', meta.nomeObra],
     ['Município', meta.municipio],
@@ -140,10 +156,9 @@ export async function exportChecklistPdf(
     ['Arquivo de Projeto', meta.pdfNomeArquivo],
   ];
 
-  // Distribuir em 2 colunas: índices pares → col1, ímpares → col2
-  const fieldRowH = 11; // altura por campo (label + valor + espaço)
+  const fieldRowH = 11;
   const numRows = Math.ceil(fields.length / 2);
-  const blockH = 14 + numRows * fieldRowH; // 14 = título + linha
+  const blockH = 14 + numRows * fieldRowH;
 
   doc.setFillColor(245, 248, 245);
   doc.setDrawColor(180, 220, 190);
@@ -164,18 +179,16 @@ export async function exportChecklistPdf(
   const colW = COL.contentW / 2 - 8;
 
   fields.forEach(([label, value], idx) => {
-    const col = idx % 2; // 0 = esquerda, 1 = direita
+    const col = idx % 2;
     const row = Math.floor(idx / 2);
     const fx = col === 0 ? col1x : col2x;
     const baseY = y + 14 + row * fieldRowH;
 
-    // Label (pequeno, cinza)
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
     doc.setTextColor(120, 130, 120);
     doc.text(label.toUpperCase(), fx, baseY);
 
-    // Valor (maior, preto, com wrap)
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(20, 20, 20);
@@ -208,17 +221,16 @@ export async function exportChecklistPdf(
   doc.setLineWidth(0.5);
   doc.line(COL.margin + 4, y + 9, COL.margin + 45, y + 9);
 
-  // 5 boxes distribuídos uniformemente dentro do contentW
-  const totalBoxW = COL.contentW - 8; // área disponível (margem de 4 em cada lado)
+  const totalBoxW = COL.contentW - 8;
   const boxGap = 3;
-  const boxW = (totalBoxW - boxGap * 4) / 5; // 5 caixas, 4 gaps
+  const boxW = (totalBoxW - boxGap * 4) / 5;
 
   const boxes = [
     { label: 'Ambientes',      val: ambientes.length, color: PRIMARY as [number,number,number] },
     { label: 'Total Serviços', val: totalServ,         color: [80, 80, 80]    as [number,number,number] },
     { label: 'Aprovados',      val: totalAprov,        color: [22, 163, 74]   as [number,number,number] },
-    { label: 'Reprovados',     val: totalReprov,        color: [220, 38, 38]   as [number,number,number] },
-    { label: 'Pendentes',      val: totalPend,          color: [202, 138, 4]   as [number,number,number] },
+    { label: 'Reprovados',     val: totalReprov,       color: [220, 38, 38]   as [number,number,number] },
+    { label: 'Pendentes',      val: totalPend,         color: [202, 138, 4]   as [number,number,number] },
   ];
 
   boxes.forEach((b, i) => {
@@ -258,12 +270,184 @@ export async function exportChecklistPdf(
 
   y += 14;
 
+  // ── MAPA DO PROJETO (uma página por PDF page com pins numerados) ──────────
+  if (meta.pdfUrl) {
+    const totalPages = meta.totalPaginasPdf || 1;
+
+    // Agrupar ambientes por página
+    const ambsByPage: Map<number, ChecklistAmbiente[]> = new Map();
+    ambientes.forEach(amb => {
+      const pg = amb.pagina;
+      if (!ambsByPage.has(pg)) ambsByPage.set(pg, []);
+      ambsByPage.get(pg)!.push(amb);
+    });
+
+    // Render only pages that have ambientes with pins
+    const pagesWithPins = Array.from(ambsByPage.keys()).filter(pg => {
+      const ambs = ambsByPage.get(pg) || [];
+      return ambs.some(a => a.servicos.some(s => s.location_pin));
+    });
+
+    for (const pageNum of pagesWithPins.sort((a, b) => a - b)) {
+      // Render PDF page
+      const pageImgData = await renderPdfPageToBase64(meta.pdfUrl, pageNum, 1600);
+
+      addPage(); // always start map on a new page
+
+      // Title
+      doc.setFillColor(...PRIMARY);
+      doc.rect(COL.margin, y, COL.contentW, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text(`MAPA DE MARCAÇÕES — PÁGINA ${pageNum}`, COL.margin + 4, y + 5.5);
+      y += 10;
+
+      // Map area: draw PDF page image
+      const mapH = 140; // mm height for map
+      const mapW = COL.contentW;
+
+      if (pageImgData) {
+        // Draw a light border
+        doc.setDrawColor(180, 220, 190);
+        doc.setLineWidth(0.4);
+        doc.rect(COL.margin, y, mapW, mapH, 'D');
+        doc.addImage(pageImgData, 'JPEG', COL.margin, y, mapW, mapH);
+      } else {
+        doc.setFillColor(245, 248, 245);
+        doc.setDrawColor(180, 220, 190);
+        doc.setLineWidth(0.3);
+        doc.rect(COL.margin, y, mapW, mapH, 'FD');
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8);
+        doc.setTextColor(140, 140, 140);
+        doc.text('Projeto não disponível', COL.margin + mapW / 2, y + mapH / 2, { align: 'center' });
+      }
+
+      // Build a global index map: servicoId → sequential number across all environments
+      const globalPinIndex: Map<string, number> = new Map();
+      let pinCounter = 1;
+      ambientes.forEach(amb => {
+        amb.servicos.forEach(s => {
+          if (s.location_pin) {
+            globalPinIndex.set(s.id, pinCounter++);
+          }
+        });
+      });
+
+      // Overlay pins as numbered circles on the map image
+      const pageAmbs = ambsByPage.get(pageNum) || [];
+      pageAmbs.forEach(amb => {
+        amb.servicos.forEach(s => {
+          const pin = s.location_pin as { x: number; y: number } | null;
+          if (!pin) return;
+
+          const pinNum = globalPinIndex.get(s.id) ?? 0;
+          const { r, g, b } = statusColor(s.status);
+
+          // Convert 0-100 coordinates to PDF mm within the map rect
+          const pinX = COL.margin + (pin.x / 100) * mapW;
+          const pinY = y + (pin.y / 100) * mapH;
+
+          const circleR = 3.5;
+
+          // Drop shadow
+          doc.setFillColor(0, 0, 0);
+          doc.setGState(doc.GState({ opacity: 0.2 }));
+          doc.circle(pinX + 0.4, pinY + 0.4, circleR, 'F');
+          doc.setGState(doc.GState({ opacity: 1 }));
+
+          // Colored circle
+          doc.setFillColor(r, g, b);
+          doc.setDrawColor(255, 255, 255);
+          doc.setLineWidth(0.5);
+          doc.circle(pinX, pinY, circleR, 'FD');
+
+          // Number
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(pinNum > 9 ? 5 : 6);
+          doc.setTextColor(255, 255, 255);
+          doc.text(String(pinNum), pinX, pinY + (pinNum > 9 ? 1.8 : 2), { align: 'center' });
+        });
+      });
+
+      y += mapH + 6;
+
+      // Legend below the map
+      checkY(20);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...PRIMARY);
+      doc.text('LEGENDA DOS PINS:', COL.margin, y + 4);
+      y += 7;
+
+      // List pins for this page in 2 columns
+      const pageServicos: { num: number; descricao: string; status: string; ambNome: string }[] = [];
+      pageAmbs.forEach(amb => {
+        amb.servicos.forEach(s => {
+          const pin = s.location_pin as { x: number; y: number } | null;
+          if (!pin) return;
+          pageServicos.push({
+            num: globalPinIndex.get(s.id) ?? 0,
+            descricao: s.descricao,
+            status: s.status,
+            ambNome: amb.nome,
+          });
+        });
+      });
+
+      const legendColW = (COL.contentW - 6) / 2;
+      pageServicos.forEach((item, idx) => {
+        const col = idx % 2;
+        const lx = col === 0 ? COL.margin : COL.margin + legendColW + 6;
+        if (col === 0 && idx > 0) checkY(7);
+
+        const { r, g, b } = statusColor(item.status);
+        const rowY = y;
+
+        doc.setFillColor(r, g, b);
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.3);
+        doc.circle(lx + 3, rowY + 2.5, 2.8, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5.5);
+        doc.setTextColor(255, 255, 255);
+        doc.text(String(item.num), lx + 3, rowY + 3.8, { align: 'center' });
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(20, 20, 20);
+        const descWrapped = doc.splitTextToSize(`${item.ambNome} · ${item.descricao}`, legendColW - 10);
+        doc.text(descWrapped[0], lx + 7.5, rowY + 2.5);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(r, g, b);
+        doc.text(statusLabel(item.status), lx + 7.5, rowY + 5.5);
+
+        if (col === 1 || idx === pageServicos.length - 1) y += 8;
+      });
+
+      y += 4;
+    }
+  }
+
   // ── Por ambiente ─────────────────────────────────────────────────────────
+  // Build a global sequential index for pins
+  const globalPinIndexFinal: Map<string, number> = new Map();
+  let pinCounterFinal = 1;
+  ambientes.forEach(amb => {
+    amb.servicos.forEach(s => {
+      if (s.location_pin) {
+        globalPinIndexFinal.set(s.id, pinCounterFinal++);
+      }
+    });
+  });
+
   for (const amb of ambientes) {
     const reprovados = amb.servicos.filter(s => s.status === 'reprovado');
     const aprovados = amb.servicos.filter(s => s.status === 'aprovado');
     const pendentes = amb.servicos.filter(s => s.status === 'pendente');
-    const hasPhotos = amb.servicos.some(s => s.foto_reprovacao_url || s.foto_correcao_url);
 
     checkY(24);
 
@@ -340,7 +524,18 @@ export async function exportChecklistPdf(
     for (let idx = 0; idx < amb.servicos.length; idx++) {
       const serv = amb.servicos[idx];
       const rowH = serv.observacao ? 10 : 7;
-      checkY(rowH);
+
+      // Pre-calculate photos height so we can do a single checkY for the whole block
+      const photoPairs: { url: string; label: string }[] = [];
+      if (serv.foto_reprovacao_url) photoPairs.push({ url: serv.foto_reprovacao_url, label: 'Foto do Problema' });
+      if (serv.foto_correcao_url) photoPairs.push({ url: serv.foto_correcao_url, label: 'Foto da Correção' });
+
+      const photoW = 85;
+      const photoH = 52;
+      const photoBlockH = photoPairs.length > 0 ? photoH + 10 : 0;
+
+      // checkY for the full block (row + photos) so they always stay together
+      checkY(rowH + photoBlockH + 2);
 
       const rowBg = idx % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
       doc.setFillColor(...(rowBg as [number, number, number]));
@@ -348,16 +543,31 @@ export async function exportChecklistPdf(
       doc.setLineWidth(0.1);
       doc.rect(COL.margin, y, COL.contentW, rowH, 'FD');
 
-      // Nº
+      // Nº (show pin number if has pin, else sequential index)
+      const pinNum = globalPinIndexFinal.get(serv.id);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(100, 100, 100);
       doc.text(String(idx + 1).padStart(2, '0'), COL.margin + 3, y + 4.5);
 
+      // If has pin, draw a small colored circle with the global number
+      if (pinNum !== undefined) {
+        const { r: pr, g: pg, b: pb } = statusColor(serv.status);
+        doc.setFillColor(pr, pg, pb);
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.3);
+        doc.circle(COL.margin + 7.5, y + rowH / 2, 2.2, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(pinNum > 9 ? 4.5 : 5.5);
+        doc.setTextColor(255, 255, 255);
+        doc.text(String(pinNum), COL.margin + 7.5, y + rowH / 2 + 1.8, { align: 'center' });
+      }
+
       // Descrição
       const descLines = doc.splitTextToSize(serv.descricao, 100);
       doc.setTextColor(20, 20, 20);
       doc.setFont('helvetica', serv.status === 'reprovado' ? 'bold' : 'normal');
+      doc.setFontSize(7);
       doc.text(descLines[0], COL.margin + 12, y + 4.5);
 
       // Observação (se houver)
@@ -386,25 +596,10 @@ export async function exportChecklistPdf(
       doc.setTextColor(140, 140, 140);
       doc.text(serv.is_padrao ? 'Padrão' : 'Avulso', COL.pageW - COL.margin - 1, y + 4.5, { align: 'right' });
 
-      // Pin indicator
-      if (serv.location_pin) {
-        doc.setFillColor(220, 38, 38);
-        doc.circle(COL.margin + 7.5, y + rowH / 2, 1, 'F');
-      }
-
       y += rowH;
 
-      // ── Fotos inline (logo abaixo da linha do serviço) ──────────────────
-      const photoPairs: { url: string; label: string }[] = [];
-      if (serv.foto_reprovacao_url) photoPairs.push({ url: serv.foto_reprovacao_url, label: 'Foto do Problema' });
-      if (serv.foto_correcao_url) photoPairs.push({ url: serv.foto_correcao_url, label: 'Foto da Correção' });
-
+      // ── Fotos inline (logo abaixo da linha do serviço, na mesma página) ────
       if (photoPairs.length > 0) {
-        const photoW = 85;
-        const photoH = 52;
-        const photoBlockH = photoH + 10; // foto + legenda + margem
-        checkY(photoBlockH);
-
         let px = COL.margin;
         for (const { url, label } of photoPairs) {
           const imgData = await loadImageAsBase64(url);
@@ -439,17 +634,17 @@ export async function exportChecklistPdf(
   }
 
   // ── Rodapé em todas as páginas ───────────────────────────────────────────
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
+  const totalPagesAll = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPagesAll; i++) {
     doc.setPage(i);
     drawPageFooter();
   }
 
   // ── Assinatura / observação final ────────────────────────────────────────
-  doc.setPage(totalPages);
+  doc.setPage(totalPagesAll);
   checkY(40);
 
-  doc.setDrawColor(30, 64, 175);
+  doc.setDrawColor(...PRIMARY);
   doc.setLineWidth(0.4);
   doc.line(COL.margin, y, COL.pageW - COL.margin, y);
   y += 6;
@@ -485,8 +680,5 @@ export async function exportChecklistPdf(
     doc.text(meta.fiscal, COL.pageW / 2, y + 8, { align: 'center' });
   }
 
-  // ── Salvar ───────────────────────────────────────────────────────────────
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const safeName = meta.nomeObra.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 30);
-  doc.save(`Checklist_${safeName}_${date}.pdf`);
+  doc.save(`checklist_${meta.obraId}_${Date.now()}.pdf`);
 }
