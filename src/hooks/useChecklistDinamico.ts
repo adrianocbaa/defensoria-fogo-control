@@ -169,6 +169,11 @@ export function useChecklistDinamico(obraId: string) {
     setPdfs(prev => prev.map(p => p.id === pdfId ? { ...p, total_paginas: totalPaginas } : p));
   };
 
+  const updatePrazoCorrecao = async (pdfId: string, prazo: number | null) => {
+    await supabase.from('checklist_pdfs').update({ prazo_correcao: prazo } as any).eq('id', pdfId);
+    setPdfs(prev => prev.map(p => p.id === pdfId ? { ...p, prazo_correcao: prazo } : p));
+  };
+
   const createAmbiente = async (
     nome: string,
     pagina: number,
