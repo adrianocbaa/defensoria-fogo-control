@@ -537,7 +537,10 @@ export async function exportChecklistPdf(
     // Table rows
     for (let idx = 0; idx < amb.servicos.length; idx++) {
       const serv = amb.servicos[idx];
-      const rowH = serv.observacao ? 10 : 7;
+      const extraRowH = serv.observacao ? 4 : 0;
+      // Extra row height if reprovado with prazo/responsavel
+      const hasExtra = serv.status === 'reprovado' && (serv.prazo_correcao != null || serv.responsavel_correcao);
+      const rowH = 8 + extraRowH + (hasExtra ? 5 : 0);
 
       // Pre-calculate photos height so we can do a single checkY for the whole block
       const photoPairs: { url: string; label: string }[] = [];
@@ -557,12 +560,12 @@ export async function exportChecklistPdf(
       doc.setLineWidth(0.1);
       doc.rect(COL.margin, y, COL.contentW, rowH, 'FD');
 
-      // Nº (show pin number if has pin, else sequential index)
+      // Nº
       const pinNum = globalPinIndexFinal.get(serv.id);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(100, 100, 100);
-      doc.text(String(idx + 1).padStart(2, '0'), COL.margin + 3, y + 4.5);
+      doc.text(String(idx + 1).padStart(2, '0'), COL.margin + 3, y + 5);
 
       // If has pin, draw a small colored circle with the global number
       if (pinNum !== undefined) {
@@ -570,45 +573,67 @@ export async function exportChecklistPdf(
         doc.setFillColor(pr, pg, pb);
         doc.setDrawColor(255, 255, 255);
         doc.setLineWidth(0.3);
-        doc.circle(COL.margin + 7.5, y + rowH / 2, 2.2, 'FD');
+        doc.circle(COL.margin + 7.5, y + 4, 2.2, 'FD');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(pinNum > 9 ? 4.5 : 5.5);
         doc.setTextColor(255, 255, 255);
-        doc.text(String(pinNum), COL.margin + 7.5, y + rowH / 2 + 1.8, { align: 'center' });
+        doc.text(String(pinNum), COL.margin + 7.5, y + 5.8, { align: 'center' });
       }
 
       // Descrição
-      const descLines = doc.splitTextToSize(serv.descricao, 100);
+      const descLines = doc.splitTextToSize(serv.descricao, 80);
       doc.setTextColor(20, 20, 20);
       doc.setFont('helvetica', serv.status === 'reprovado' ? 'bold' : 'normal');
       doc.setFontSize(7);
-      doc.text(descLines[0], COL.margin + 12, y + 4.5);
+      doc.text(descLines[0], COL.margin + 12, y + 5);
 
-      // Observação (se houver)
+      // Observação
       if (serv.observacao) {
         doc.setFont('helvetica', 'italic');
-        doc.setFontSize(6.5);
+        doc.setFontSize(6);
         doc.setTextColor(120, 120, 120);
-        const obsLines = doc.splitTextToSize(`Obs: ${serv.observacao}`, 110);
-        doc.text(obsLines[0], COL.margin + 12, y + 8.5);
+        const obsLines = doc.splitTextToSize(`Obs: ${serv.observacao}`, 80);
+        doc.text(obsLines[0], COL.margin + 12, y + 9);
       }
+
+      // Prazo + Responsável (linha extra para itens reprovados)
+      if (hasExtra) {
+        const extraY = y + 8 + extraRowH;
+        if (serv.prazo_correcao != null) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6);
+          doc.setTextColor(180, 80, 0);
+          doc.text(`⏱ ${serv.prazo_correcao} dia${serv.prazo_correcao !== 1 ? 's' : ''}`, COL.margin + 12, extraY + 3.5);
+        }
+        if (serv.responsavel_correcao) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6);
+          doc.setTextColor(60, 80, 160);
+          doc.text(`👤 ${serv.responsavel_correcao}`, COL.margin + 38, extraY + 3.5);
+        }
+      }
+
+      // Gravidade pill
+      const [gr, gg, gb] = gravidadeColor(serv.gravidade);
+      const gLabel = gravidadeLabel(serv.gravidade).replace(/🔴 |🟡 |🟢 /, '');
+      doc.setFillColor(gr, gg, gb);
+      const gw = doc.getTextWidth(gLabel) + 4;
+      doc.roundedRect(COL.pageW - COL.margin - 90, y + 1.5, gw, 4.5, 1, 1, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      doc.text(gLabel, COL.pageW - COL.margin - 90 + gw / 2, y + 4.3, { align: 'center' });
 
       // Status pill
       const { r: sr, g: sg, b: sb } = statusColor(serv.status);
       doc.setFillColor(sr, sg, sb);
       const sLabel = statusLabel(serv.status);
       const sw2 = doc.getTextWidth(sLabel) + 4;
-      doc.roundedRect(COL.pageW - COL.margin - sw2 - 14, y + 1.5, sw2, 4.5, 1, 1, 'F');
+      doc.roundedRect(COL.pageW - COL.margin - sw2 - 1, y + 1.5, sw2, 4.5, 1, 1, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6);
-      doc.text(sLabel, COL.pageW - COL.margin - 14 - sw2 / 2, y + 4.3, { align: 'center' });
-
-      // Tipo (padrão/avulso)
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
-      doc.setTextColor(140, 140, 140);
-      doc.text(serv.is_padrao ? 'Padrão' : 'Avulso', COL.pageW - COL.margin - 1, y + 4.5, { align: 'right' });
+      doc.text(sLabel, COL.pageW - COL.margin - 1 - sw2 / 2, y + 4.3, { align: 'center' });
 
       y += rowH;
 
@@ -654,45 +679,70 @@ export async function exportChecklistPdf(
     drawPageFooter();
   }
 
-  // ── Assinatura / observação final ────────────────────────────────────────
+  // ── Bloco de assinatura formal ───────────────────────────────────────────
   doc.setPage(totalPagesAll);
-  checkY(40);
+  checkY(70);
 
+  // Separador
   doc.setDrawColor(...PRIMARY);
-  doc.setLineWidth(0.4);
+  doc.setLineWidth(0.5);
   doc.line(COL.margin, y, COL.pageW - COL.margin, y);
   y += 6;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(60, 60, 60);
-  doc.text(
-    'Este relatório foi gerado automaticamente pelo Sistema de Fiscalização de Obras (SIDIF).',
-    COL.margin,
-    y,
-  );
-  doc.text(
-    'Para informações ou contestações, entre em contato com o fiscal responsável pela obra.',
-    COL.margin,
-    y + 5,
-  );
-
-  y += 16;
-
-  // Linha de assinatura
-  doc.setDrawColor(80, 80, 80);
+  // Texto institucional
+  doc.setFillColor(...PRIMARY_LIGHT);
+  doc.setDrawColor(180, 220, 190);
   doc.setLineWidth(0.3);
-  const sigW = 70;
-  const sigX = COL.pageW / 2 - sigW / 2;
-  doc.line(sigX, y, sigX + sigW, y);
+  doc.roundedRect(COL.margin, y, COL.contentW, 14, 2, 2, 'FD');
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.setTextColor(80, 80, 80);
-  doc.text('Fiscal Responsável', COL.pageW / 2, y + 4, { align: 'center' });
-  if (meta.fiscal) {
+  doc.setTextColor(50, 80, 60);
+  doc.text('Este relatório foi gerado pelo Sistema Integrado de Fiscalização (SIDIF) · Defensoria Pública do Estado de Mato Grosso.', COL.margin + 4, y + 5.5);
+  doc.text('Documento de uso interno. Para esclarecimentos, contate o fiscal responsável pela obra.', COL.margin + 4, y + 10);
+  y += 20;
+
+  // Três campos de assinatura lado a lado
+  const sigW = 52;
+  const sigGap = (COL.contentW - sigW * 3) / 2;
+  const sigs: { line: string; label: string; name?: string }[] = [
+    { line: '_'.repeat(30), label: 'Fiscal Responsável', name: meta.fiscal },
+    { line: '_'.repeat(30), label: 'Responsável pela Empresa', name: undefined },
+    { line: '_'.repeat(30), label: 'Coordenador / Gestor', name: undefined },
+  ];
+
+  sigs.forEach((sig, i) => {
+    const sx = COL.margin + i * (sigW + sigGap);
+    // Box
+    doc.setFillColor(250, 252, 250);
+    doc.setDrawColor(180, 220, 190);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(sx, y, sigW, 28, 2, 2, 'FD');
+    // Linha de assinatura
+    doc.setDrawColor(100, 100, 100);
+    doc.setLineWidth(0.3);
+    doc.line(sx + 4, y + 16, sx + sigW - 4, y + 16);
+    // Label
     doc.setFont('helvetica', 'bold');
-    doc.text(meta.fiscal, COL.pageW / 2, y + 8, { align: 'center' });
-  }
+    doc.setFontSize(6.5);
+    doc.setTextColor(...PRIMARY);
+    doc.text(sig.label, sx + sigW / 2, y + 20, { align: 'center' });
+    // Nome
+    if (sig.name) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6);
+      doc.setTextColor(40, 40, 40);
+      const nameWrapped = doc.splitTextToSize(sig.name, sigW - 6);
+      doc.text(nameWrapped[0], sx + sigW / 2, y + 24.5, { align: 'center' });
+    }
+    // Data
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(140, 140, 140);
+    doc.text(`Data: ____/____/________`, sx + sigW / 2, y + 25.5 + (sig.name ? 2 : 0), { align: 'center' });
+  });
+
+  y += 32;
 
   doc.save(`checklist_${meta.obraId}_${Date.now()}.pdf`);
 }
+
