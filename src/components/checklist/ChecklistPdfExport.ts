@@ -10,12 +10,9 @@ const COL = {
   contentW: 182, // 210 - 2×14
 };
 
-function hexToRgb(hex: string) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return { r, g, b };
-}
+// Cor primária da Defensoria (verde)
+const PRIMARY: [number, number, number] = [21, 128, 61];   // green-700
+const PRIMARY_LIGHT: [number, number, number] = [240, 253, 244]; // green-50
 
 function statusLabel(s: string) {
   if (s === 'aprovado') return 'APROVADO';
@@ -101,15 +98,15 @@ export async function exportChecklistPdf(
   }
 
   function drawPageHeader() {
-    // thin top accent
-    doc.setFillColor(30, 64, 175); // blue-800
+    // thin top accent verde
+    doc.setFillColor(...PRIMARY);
     doc.rect(COL.margin, y, COL.contentW, 1, 'F');
     y += 3;
   }
 
   // ── Capa / cabeçalho principal ───────────────────────────────────────────
-  // Banner
-  doc.setFillColor(30, 64, 175);
+  // Banner verde
+  doc.setFillColor(...PRIMARY);
   doc.rect(0, 0, COL.pageW, 38, 'F');
 
   doc.setTextColor(255, 255, 255);
@@ -133,54 +130,60 @@ export async function exportChecklistPdf(
   y = 46;
 
   // ── Bloco de identificação ──────────────────────────────────────────────
-  doc.setFillColor(245, 247, 250);
-  doc.setDrawColor(200, 210, 230);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(COL.margin, y, COL.contentW, 40, 2, 2, 'FD');
+  // Layout: 2 colunas, cada campo ocupa labelH(3.5) + valueH(4.5) + gap(3) = 11mm por linha
+  const fields: [string, string][] = [
+    ['Obra', meta.nomeObra],
+    ['Município', meta.municipio],
+    ['Empresa Contratada', meta.empresa],
+    ...(meta.nContrato ? [['Nº do Contrato', meta.nContrato] as [string, string]] : []),
+    ...(meta.fiscal ? [['Fiscal Responsável', meta.fiscal] as [string, string]] : []),
+    ['Arquivo de Projeto', meta.pdfNomeArquivo],
+  ];
 
-  doc.setTextColor(30, 64, 175);
+  // Distribuir em 2 colunas: índices pares → col1, ímpares → col2
+  const fieldRowH = 11; // altura por campo (label + valor + espaço)
+  const numRows = Math.ceil(fields.length / 2);
+  const blockH = 14 + numRows * fieldRowH; // 14 = título + linha
+
+  doc.setFillColor(245, 248, 245);
+  doc.setDrawColor(180, 220, 190);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(COL.margin, y, COL.contentW, blockH, 2, 2, 'FD');
+
+  doc.setTextColor(...PRIMARY);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text('IDENTIFICAÇÃO DA OBRA', COL.margin + 4, y + 7);
 
-  doc.setDrawColor(30, 64, 175);
+  doc.setDrawColor(...PRIMARY);
   doc.setLineWidth(0.5);
-  doc.line(COL.margin + 4, y + 9, COL.margin + 60, y + 9);
-
-  const fields = [
-    ['Obra', meta.nomeObra],
-    ['Município', meta.municipio],
-    ['Empresa Contratada', meta.empresa],
-    ...(meta.nContrato ? [['Nº do Contrato', meta.nContrato]] : []),
-    ...(meta.fiscal ? [['Fiscal Responsável', meta.fiscal]] : []),
-    ['Arquivo de Projeto', meta.pdfNomeArquivo],
-  ] as [string, string][];
+  doc.line(COL.margin + 4, y + 9, COL.margin + 65, y + 9);
 
   const col1x = COL.margin + 4;
-  const col2x = COL.margin + 50;
-  let fy = y + 14;
-  const rowH = 5.5;
+  const col2x = COL.margin + 4 + COL.contentW / 2;
+  const colW = COL.contentW / 2 - 8;
 
   fields.forEach(([label, value], idx) => {
+    const col = idx % 2; // 0 = esquerda, 1 = direita
     const row = Math.floor(idx / 2);
-    const isLeft = idx % 2 === 0;
-    const fx = isLeft ? col1x : col2x + 46;
-    const lineY = y + 14 + row * rowH;
+    const fx = col === 0 ? col1x : col2x;
+    const baseY = y + 14 + row * fieldRowH;
 
+    // Label (pequeno, cinza)
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(100, 110, 130);
-    doc.text(label.toUpperCase(), fx, lineY);
+    doc.setFontSize(6.5);
+    doc.setTextColor(120, 130, 120);
+    doc.text(label.toUpperCase(), fx, baseY);
 
+    // Valor (maior, preto, com wrap)
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(30, 30, 30);
-    const maxW = isLeft ? 44 : 50;
-    const lines = doc.splitTextToSize(value, maxW);
-    doc.text(lines[0], fx, lineY + 3.5);
+    doc.setTextColor(20, 20, 20);
+    const wrapped = doc.splitTextToSize(value, colW);
+    doc.text(wrapped[0], fx, baseY + 4.5);
   });
 
-  y += 46;
+  y += blockH + 6;
 
   // ── Resumo geral ─────────────────────────────────────────────────────────
   const allServicos = ambientes.flatMap(a => a.servicos);
@@ -190,48 +193,51 @@ export async function exportChecklistPdf(
   const totalPend = allServicos.filter(s => s.status === 'pendente').length;
   const pctAprov = totalServ ? Math.round((totalAprov / totalServ) * 100) : 0;
 
-  checkY(34);
+  checkY(38);
 
-  doc.setFillColor(240, 244, 255);
-  doc.setDrawColor(200, 210, 230);
+  doc.setFillColor(...PRIMARY_LIGHT);
+  doc.setDrawColor(180, 220, 190);
   doc.setLineWidth(0.3);
-  doc.roundedRect(COL.margin, y, COL.contentW, 28, 2, 2, 'FD');
+  doc.roundedRect(COL.margin, y, COL.contentW, 30, 2, 2, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.setTextColor(30, 64, 175);
+  doc.setTextColor(...PRIMARY);
   doc.text('RESUMO GERAL', COL.margin + 4, y + 7);
-  doc.setDrawColor(30, 64, 175);
+  doc.setDrawColor(...PRIMARY);
   doc.setLineWidth(0.5);
   doc.line(COL.margin + 4, y + 9, COL.margin + 45, y + 9);
 
-  const boxW = 34;
-  const boxGap = 6;
+  // 5 boxes distribuídos uniformemente dentro do contentW
+  const totalBoxW = COL.contentW - 8; // área disponível (margem de 4 em cada lado)
+  const boxGap = 3;
+  const boxW = (totalBoxW - boxGap * 4) / 5; // 5 caixas, 4 gaps
+
   const boxes = [
-    { label: 'Ambientes', val: ambientes.length, color: [30, 64, 175] },
-    { label: 'Total Serviços', val: totalServ, color: [80, 80, 80] },
-    { label: 'Aprovados', val: totalAprov, color: [22, 163, 74] },
-    { label: 'Reprovados', val: totalReprov, color: [220, 38, 38] },
-    { label: 'Pendentes', val: totalPend, color: [202, 138, 4] },
-  ] as const;
+    { label: 'Ambientes',      val: ambientes.length, color: PRIMARY as [number,number,number] },
+    { label: 'Total Serviços', val: totalServ,         color: [80, 80, 80]    as [number,number,number] },
+    { label: 'Aprovados',      val: totalAprov,        color: [22, 163, 74]   as [number,number,number] },
+    { label: 'Reprovados',     val: totalReprov,        color: [220, 38, 38]   as [number,number,number] },
+    { label: 'Pendentes',      val: totalPend,          color: [202, 138, 4]   as [number,number,number] },
+  ];
 
   boxes.forEach((b, i) => {
     const bx = COL.margin + 4 + i * (boxW + boxGap);
     doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(...(b.color as [number, number, number]));
+    doc.setDrawColor(...b.color);
     doc.setLineWidth(0.5);
-    doc.roundedRect(bx, y + 12, boxW, 12, 1.5, 1.5, 'FD');
+    doc.roundedRect(bx, y + 12, boxW, 14, 1.5, 1.5, 'FD');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(...(b.color as [number, number, number]));
-    doc.text(String(b.val), bx + boxW / 2, y + 20, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setTextColor(...b.color);
+    doc.text(String(b.val), bx + boxW / 2, y + 21, { align: 'center' });
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
+    doc.setFontSize(6);
     doc.setTextColor(100, 100, 100);
-    doc.text(b.label, bx + boxW / 2, y + 23.5, { align: 'center' });
+    doc.text(b.label, bx + boxW / 2, y + 25, { align: 'center' });
   });
 
-  y += 34;
+  y += 36;
 
   // ── Barra de progresso ───────────────────────────────────────────────────
   checkY(12);
@@ -240,12 +246,14 @@ export async function exportChecklistPdf(
   doc.setTextColor(30, 30, 30);
   doc.text(`Conformidade: ${pctAprov}%`, COL.margin, y + 5);
 
-  doc.setFillColor(230, 234, 240);
-  doc.roundedRect(COL.margin + 38, y + 1.5, 130, 5, 2, 2, 'F');
+  const barX = COL.margin + 42;
+  const barW = COL.contentW - 44;
+  doc.setFillColor(220, 240, 225);
+  doc.roundedRect(barX, y + 1.5, barW, 5, 2, 2, 'F');
 
   if (pctAprov > 0) {
     doc.setFillColor(22, 163, 74);
-    doc.roundedRect(COL.margin + 38, y + 1.5, 130 * (pctAprov / 100), 5, 2, 2, 'F');
+    doc.roundedRect(barX, y + 1.5, barW * (pctAprov / 100), 5, 2, 2, 'F');
   }
 
   y += 14;
@@ -317,7 +325,7 @@ export async function exportChecklistPdf(
 
     // Table header
     checkY(8);
-    doc.setFillColor(30, 64, 175);
+    doc.setFillColor(...PRIMARY);
     doc.rect(COL.margin, y, COL.contentW, 7, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
