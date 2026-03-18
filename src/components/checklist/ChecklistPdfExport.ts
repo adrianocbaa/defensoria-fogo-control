@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import type { ChecklistAmbiente } from '@/hooks/useChecklistDinamico';
+import type { ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
 import type { ShapeData } from '@/components/checklist/PdfCanvas';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -95,6 +96,7 @@ export interface ChecklistReportMeta {
 export async function exportChecklistPdf(
   meta: ChecklistReportMeta,
   ambientes: ChecklistAmbiente[],
+  ocorrenciasPorServico?: Record<string, ChecklistOcorrencia[]>,
 ) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   let y = COL.margin;
@@ -537,6 +539,7 @@ export async function exportChecklistPdf(
     // Table rows
     for (let idx = 0; idx < amb.servicos.length; idx++) {
       const serv = amb.servicos[idx];
+      const ocorrencias = ocorrenciasPorServico?.[serv.id] ?? [];
       const extraRowH = serv.observacao ? 4 : 0;
       const rowH = 8 + extraRowH;
 
@@ -618,7 +621,7 @@ export async function exportChecklistPdf(
 
       y += rowH;
 
-      // ── Fotos inline (logo abaixo da linha do serviço, na mesma página) ────
+      // ── Fotos inline do serviço ────
       if (photoPairs.length > 0) {
         let px = COL.margin;
         for (const { url, label } of photoPairs) {
@@ -647,6 +650,121 @@ export async function exportChecklistPdf(
         }
 
         y += photoBlockH;
+      }
+
+      // ── Ocorrências internas ────────────────────────────────────────────
+      if (ocorrencias.length > 0) {
+        checkY(10);
+        // Cabeçalho da seção de ocorrências
+        doc.setFillColor(250, 240, 240);
+        doc.setDrawColor(220, 180, 180);
+        doc.setLineWidth(0.2);
+        doc.rect(COL.margin + 6, y, COL.contentW - 6, 6, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6);
+        doc.setTextColor(180, 60, 60);
+        doc.text(`OCORRÊNCIAS ESPECÍFICAS (${ocorrencias.length})`, COL.margin + 10, y + 4);
+        y += 6;
+
+        for (let oi = 0; oi < ocorrencias.length; oi++) {
+          const oc = ocorrencias[oi];
+          const ocPhotos: { url: string; label: string }[] = [];
+          if (oc.foto_reprovacao_url) ocPhotos.push({ url: oc.foto_reprovacao_url, label: 'Foto do Problema' });
+          if (oc.foto_correcao_url) ocPhotos.push({ url: oc.foto_correcao_url, label: 'Foto Após Correção' });
+
+          const ocPhotoBlockH = ocPhotos.length > 0 ? photoH + 10 : 0;
+          const ocRowH = oc.observacao ? 11 : 8;
+          checkY(ocRowH + ocPhotoBlockH + 2);
+
+          // Sub-row
+          doc.setFillColor(255, 248, 248);
+          doc.setDrawColor(220, 200, 200);
+          doc.setLineWidth(0.1);
+          doc.rect(COL.margin + 6, y, COL.contentW - 6, ocRowH, 'FD');
+
+          // Número da ocorrência
+          doc.setFillColor(220, 38, 38);
+          doc.setDrawColor(255, 255, 255);
+          doc.setLineWidth(0.2);
+          doc.circle(COL.margin + 10, y + ocRowH / 2, 2, 'FD');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5);
+          doc.setTextColor(255, 255, 255);
+          doc.text(String(oi + 1), COL.margin + 10, y + ocRowH / 2 + 1.5, { align: 'center' });
+
+          // Descrição da ocorrência
+          const ocDesc = oc.descricao || `Ocorrência ${oi + 1}`;
+          const ocDescLines = doc.splitTextToSize(ocDesc, 95);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.5);
+          doc.setTextColor(60, 20, 20);
+          doc.text(ocDescLines[0], COL.margin + 15, y + 4.5);
+
+          // Observação
+          if (oc.observacao) {
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(5.5);
+            doc.setTextColor(120, 80, 80);
+            const ocObsLines = doc.splitTextToSize(`Obs: ${oc.observacao}`, 90);
+            doc.text(ocObsLines[0], COL.margin + 15, y + 8.5);
+          }
+
+          // Gravidade pill
+          const [ogr, ogg, ogb] = gravidadeColor(oc.gravidade);
+          const ogLabel = gravidadeLabel(oc.gravidade).replace(/🔴 |🟡 |🟢 /, '');
+          doc.setFillColor(ogr, ogg, ogb);
+          const ogw = doc.getTextWidth(ogLabel) + 4;
+          doc.roundedRect(COL.pageW - COL.margin - 57, y + 1.5, ogw, 4, 0.8, 0.8, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5);
+          doc.text(ogLabel, COL.pageW - COL.margin - 57 + ogw / 2, y + 4, { align: 'center' });
+
+          // Status pill
+          const { r: osr, g: osg, b: osb } = statusColor(oc.status);
+          doc.setFillColor(osr, osg, osb);
+          const osLabel = statusLabel(oc.status);
+          const osw = doc.getTextWidth(osLabel) + 4;
+          doc.roundedRect(COL.pageW - COL.margin - osw - 1, y + 1.5, osw, 4, 0.8, 0.8, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5.5);
+          doc.text(osLabel, COL.pageW - COL.margin - 1 - osw / 2, y + 4, { align: 'center' });
+
+          y += ocRowH;
+
+          // Fotos da ocorrência
+          if (ocPhotos.length > 0) {
+            let opx = COL.margin + 6;
+            const ocPhotoW = 82;
+            const ocPhotoH = 50;
+            for (const { url, label } of ocPhotos) {
+              const imgData = await loadImageAsBase64(url);
+              doc.setFillColor(250, 245, 245);
+              doc.setDrawColor(200, 180, 180);
+              doc.setLineWidth(0.2);
+              doc.rect(opx, y, ocPhotoW, ocPhotoH + 6, 'FD');
+
+              if (imgData) {
+                try {
+                  doc.addImage(imgData, 'JPEG', opx + 1, y + 1, ocPhotoW - 2, ocPhotoH - 2);
+                } catch {
+                  doc.setFont('helvetica', 'italic');
+                  doc.setFontSize(6.5);
+                  doc.setTextColor(160, 140, 140);
+                  doc.text('[Imagem não disponível]', opx + ocPhotoW / 2, y + ocPhotoH / 2, { align: 'center' });
+                }
+              }
+
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(6);
+              doc.setTextColor(100, 70, 70);
+              doc.text(label, opx + ocPhotoW / 2, y + ocPhotoH + 4, { align: 'center' });
+              opx += ocPhotoW + 12;
+            }
+            y += ocPhotoBlockH;
+          }
+        }
       }
     }
 

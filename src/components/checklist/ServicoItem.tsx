@@ -219,7 +219,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
           <div>
             <Label className="text-xs font-medium flex items-center gap-1">
               <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" />
-              Gravidade
+              Gravidade do Serviço
             </Label>
             <div className="flex gap-1.5 mt-1">
               {(Object.entries(GRAVIDADE_CONFIG) as [Gravidade, typeof GRAVIDADE_CONFIG[Gravidade]][]).map(([key, cfg]) => {
@@ -272,21 +272,21 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
 
           <div>
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium">Observação</Label>
+              <Label className="text-xs font-medium">Observação Geral</Label>
               <Button size="icon" variant={isRecording ? 'destructive' : 'outline'} className="h-6 w-6" title={isRecording ? 'Parar gravação' : 'Gravar observação por voz'} onClick={isRecording ? stopRecording : startRecording} disabled={isTranscribing}>
                 {isTranscribing ? <Loader2 className="h-3 w-3 animate-spin" /> : isRecording ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
               </Button>
             </div>
             {isRecording && <p className="text-[10px] text-destructive mt-0.5 flex items-center gap-1"><span className="inline-block h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />Gravando... toque no botão para parar</p>}
             {isTranscribing && <p className="text-[10px] text-muted-foreground mt-0.5">Transcrevendo áudio...</p>}
-            <Textarea value={observacao} onChange={e => setObservacao(e.target.value)} onBlur={handleObservacaoBlur} placeholder="Descreva o problema encontrado..." rows={2} className="mt-1 text-xs resize-none" />
+            <Textarea value={observacao} onChange={e => setObservacao(e.target.value)} onBlur={handleObservacaoBlur} placeholder="Observação geral sobre o serviço..." rows={2} className="mt-1 text-xs resize-none" />
           </div>
 
           {/* Foto do problema */}
           <div>
             <Label className="text-xs font-medium flex items-center gap-1">
               <Camera className="h-3.5 w-3.5 text-destructive" />
-              Foto do Problema
+              Foto Geral do Problema
             </Label>
             {servico.foto_reprovacao_url ? (
               <div className="mt-1 relative">
@@ -308,7 +308,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
               <div>
                 <Label className="text-xs font-medium flex items-center gap-1">
                   <ImageIcon className="h-3.5 w-3.5 text-green-600" />
-                  Foto da Correção
+                  Foto Geral da Correção
                 </Label>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Registre após o serviço ser corrigido pela empresa.</p>
                 {servico.foto_correcao_url ? (
@@ -325,6 +325,78 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
               </div>
             </>
           )}
+
+          {/* ── Ocorrências internas ── */}
+          <Separator className="opacity-40" />
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-xs font-medium flex items-center gap-1">
+                <ListChecks className="h-3.5 w-3.5 text-primary" />
+                Ocorrências Específicas
+                {ocorrencias.length > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full text-[9px] font-bold bg-primary text-primary-foreground">
+                    {ocorrencias.length}
+                  </span>
+                )}
+              </Label>
+              <div className="flex items-center gap-1">
+                {ocorrencias.length > 0 && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-muted-foreground"
+                    onClick={() => setOcorrenciasExpanded(!ocorrenciasExpanded)}
+                    title={ocorrenciasExpanded ? 'Recolher ocorrências' : 'Expandir ocorrências'}
+                  >
+                    {ocorrenciasExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-[10px] border-dashed border-primary/50 text-primary hover:bg-primary/5"
+                  onClick={async () => {
+                    await addOcorrencia(servico.id);
+                    setOcorrenciasExpanded(true);
+                  }}
+                >
+                  <Plus className="h-3 w-3 mr-0.5" />
+                  Ocorrência
+                </Button>
+              </div>
+            </div>
+
+            {ocorrencias.length === 0 && (
+              <p className="text-[10px] text-muted-foreground italic py-1">
+                Nenhuma ocorrência registrada. Use para detalhar problemas específicos (ex: parede 1, parede 2...).
+              </p>
+            )}
+
+            {ocorrencias.length > 0 && (ocorrenciasExpanded || ocorrencias.length <= 2) && (
+              <div className="space-y-2 mt-1">
+                {ocorrencias.map((oc, idx) => (
+                  <OcorrenciaItem
+                    key={oc.id}
+                    ocorrencia={oc}
+                    index={idx}
+                    onUpdate={(id, updates) => updateOcorrencia(id, servico.id, updates)}
+                    onDelete={(id) => deleteOcorrencia(id, servico.id)}
+                    onUploadFoto={uploadFotoOcorrencia}
+                    onPinRequest={(ocId, desc) => onPinRequest(ocId, desc, true)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {ocorrencias.length > 2 && !ocorrenciasExpanded && (
+              <button
+                className="text-[10px] text-primary underline mt-1"
+                onClick={() => setOcorrenciasExpanded(true)}
+              >
+                Ver todas as {ocorrencias.length} ocorrências
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

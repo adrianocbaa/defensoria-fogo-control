@@ -81,6 +81,9 @@ export function ChecklistDinamico() {
     uploadFoto,
   } = useChecklistDinamico(obraId!);
 
+  // Hook de ocorrências não é usado diretamente nesta página (cada ServicoItem gerencia o seu)
+  // mas precisamos do supabase para salvar pins de ocorrências
+
   const [currentPage, setCurrentPage] = useState(1);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [drawMode, setDrawMode] = useState<DrawMode>('rect');
@@ -95,9 +98,9 @@ export function ChecklistDinamico() {
   const [servicosSheetOpen, setServicosSheetOpen] = useState(false);
   const [deletePdfId, setDeletePdfId] = useState<string | null>(null);
 
-  // Pin mode
+  // Pin mode — pode ser para um serviço ou para uma ocorrência
   const [isPinMode, setIsPinMode] = useState(false);
-  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string } | null>(null);
+  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string; isOcorrencia?: boolean } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -135,6 +138,23 @@ export function ChecklistDinamico() {
 
       const empresa = (obra?.empresas as any)?.razao_social || obra?.empresa_responsavel || '';
 
+      // Buscar todas as ocorrências dos serviços desta obra
+      const servicoIds = ambientes.flatMap(a => a.servicos.map(s => s.id));
+      let ocorrenciasPorServico: Record<string, import('@/hooks/useChecklistOcorrencias').ChecklistOcorrencia[]> = {};
+      if (servicoIds.length > 0) {
+        const { data: ocData } = await supabase
+          .from('checklist_ocorrencias' as any)
+          .select('*')
+          .in('servico_id', servicoIds)
+          .order('ordem', { ascending: true });
+        if (ocData) {
+          for (const oc of ocData as any[]) {
+            if (!ocorrenciasPorServico[oc.servico_id]) ocorrenciasPorServico[oc.servico_id] = [];
+            ocorrenciasPorServico[oc.servico_id].push(oc);
+          }
+        }
+      }
+
       await exportChecklistPdf(
         {
           obraId: obraId!,
@@ -152,6 +172,7 @@ export function ChecklistDinamico() {
           prazoCorrecao: pdf.prazo_correcao ?? null,
         },
         ambientes,
+        ocorrenciasPorServico,
       );
       toast.success('Relatório PDF gerado com sucesso!');
     } catch (err) {
@@ -202,15 +223,24 @@ export function ChecklistDinamico() {
     if (isMobile) setServicosSheetOpen(true);
   };
 
-  const handlePinRequest = (servicoId: string, descricao: string) => {
+  const handlePinRequest = (servicoId: string, descricao: string, isOcorrencia?: boolean) => {
     setIsPinMode(true);
-    setPendingPinServico({ id: servicoId, descricao });
+    setPendingPinServico({ id: servicoId, descricao, isOcorrencia });
     setIsDrawingMode(false);
     if (isMobile) setServicosSheetOpen(false);
   };
 
-  const handlePinPlaced = (servicoId: string, pin: { x: number; y: number }) => {
-    updateServico(servicoId, { location_pin: pin });
+  const handlePinPlaced = (id: string, pin: { x: number; y: number }) => {
+    if (pendingPinServico?.isOcorrencia) {
+      // Atualiza pin da ocorrência diretamente via supabase
+      supabase
+        .from('checklist_ocorrencias' as any)
+        .update({ location_pin: pin, data_avaliacao: new Date().toISOString() })
+        .eq('id', id)
+        .then(({ error }) => { if (error) console.error('Erro ao salvar pin da ocorrência', error); });
+    } else {
+      updateServico(id, { location_pin: pin });
+    }
     setIsPinMode(false);
     setPendingPinServico(null);
     if (isMobile && selectedAmbienteId) setServicosSheetOpen(true);
