@@ -438,14 +438,32 @@ export function ChecklistDinamico() {
 
           <div className="ml-auto flex items-center gap-1.5">
             {pdf && (
-              <Button variant="default" size="sm" className="h-8 px-2 text-xs"
-                onClick={handleExportPdf}
-                disabled={exportingPdf || ambientes.length === 0}
-                title={ambientes.length === 0 ? 'Crie ambientes antes de exportar' : 'Gerar relatório técnico PDF'}>
-                {exportingPdf
-                  ? <><Loader2 className="h-3.5 w-3.5 sm:mr-1 animate-spin" /><span className="hidden sm:inline">Gerando...</span></>
-                  : <><Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Exportar Relatório</span></>}
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 border rounded px-2 h-8 bg-background">
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">Prazo geral (dias):</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={prazoRelatorio}
+                    onChange={e => setPrazoRelatorio(e.target.value)}
+                    onBlur={async () => {
+                      const val = prazoRelatorio.trim() === '' ? null : parseInt(prazoRelatorio, 10);
+                      await updatePrazoCorrecao(pdf.id, val);
+                    }}
+                    placeholder="—"
+                    className="w-12 text-xs text-center bg-transparent outline-none"
+                  />
+                </div>
+                <Button variant="default" size="sm" className="h-8 px-2 text-xs"
+                  onClick={handleExportPdf}
+                  disabled={exportingPdf || ambientes.length === 0}
+                  title={ambientes.length === 0 ? 'Crie ambientes antes de exportar' : 'Gerar relatório técnico PDF'}>
+                  {exportingPdf
+                    ? <><Loader2 className="h-3.5 w-3.5 sm:mr-1 animate-spin" /><span className="hidden sm:inline">Gerando...</span></>
+                    : <><Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Exportar Relatório</span></>}
+                </Button>
+              </div>
             )}
           </div>
         </div>

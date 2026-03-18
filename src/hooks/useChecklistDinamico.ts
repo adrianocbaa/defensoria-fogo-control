@@ -312,6 +312,7 @@ export function useChecklistDinamico(obraId: string) {
     deleteAmbiente,
     deleteServico,
     uploadFoto,
+    updatePrazoCorrecao,
     refetch: fetchPdfs,
   };
 }
