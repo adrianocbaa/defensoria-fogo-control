@@ -329,7 +329,8 @@ export async function exportChecklistPdf(
     y += 7;
 
     // Table rows
-    amb.servicos.forEach((serv, idx) => {
+    for (let idx = 0; idx < amb.servicos.length; idx++) {
+      const serv = amb.servicos[idx];
       const rowH = serv.observacao ? 10 : 7;
       checkY(rowH);
 
@@ -384,67 +385,45 @@ export async function exportChecklistPdf(
       }
 
       y += rowH;
-    });
 
-    y += 4;
+      // ── Fotos inline (logo abaixo da linha do serviço) ──────────────────
+      const photoPairs: { url: string; label: string }[] = [];
+      if (serv.foto_reprovacao_url) photoPairs.push({ url: serv.foto_reprovacao_url, label: 'Foto do Problema' });
+      if (serv.foto_correcao_url) photoPairs.push({ url: serv.foto_correcao_url, label: 'Foto da Correção' });
 
-    // ── Fotos do ambiente ──────────────────────────────────────────────────
-    const servicosComFoto = amb.servicos.filter(s => s.foto_reprovacao_url || s.foto_correcao_url);
-    if (servicosComFoto.length > 0) {
-      for (const serv of servicosComFoto) {
-        const photoPairs: { url: string; label: string }[] = [];
-        if (serv.foto_reprovacao_url) photoPairs.push({ url: serv.foto_reprovacao_url, label: 'Foto do Problema' });
-        if (serv.foto_correcao_url) photoPairs.push({ url: serv.foto_correcao_url, label: 'Foto da Correção' });
-
-        if (photoPairs.length === 0) continue;
-
-        const photoBlockH = 58;
-        checkY(photoBlockH + 6);
-
-        // sub-header serviço
-        doc.setFillColor(254, 242, 242);
-        doc.setDrawColor(254, 202, 202);
-        doc.setLineWidth(0.2);
-        doc.rect(COL.margin, y, COL.contentW, 7, 'FD');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(185, 28, 28);
-        const descTrunc = doc.splitTextToSize(serv.descricao, COL.contentW - 8)[0];
-        doc.text(`📷  ${descTrunc}`, COL.margin + 3, y + 4.8);
-        y += 9;
-
-        // fotos lado a lado
+      if (photoPairs.length > 0) {
         const photoW = 85;
         const photoH = 52;
-        let px = COL.margin;
+        const photoBlockH = photoH + 10; // foto + legenda + margem
+        checkY(photoBlockH);
 
+        let px = COL.margin;
         for (const { url, label } of photoPairs) {
           const imgData = await loadImageAsBase64(url);
-          if (imgData) {
-            doc.setFillColor(245, 245, 245);
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.2);
-            doc.rect(px, y, photoW, photoH + 6, 'FD');
+          doc.setFillColor(245, 245, 245);
+          doc.setDrawColor(200, 200, 200);
+          doc.setLineWidth(0.2);
+          doc.rect(px, y, photoW, photoH + 6, 'FD');
 
+          if (imgData) {
             try {
               doc.addImage(imgData, 'JPEG', px + 1, y + 1, photoW - 2, photoH - 2);
             } catch {
-              // fallback se imagem falhar
               doc.setFont('helvetica', 'italic');
               doc.setFontSize(7);
               doc.setTextColor(160, 160, 160);
               doc.text('[Imagem não disponível]', px + photoW / 2, y + photoH / 2, { align: 'center' });
             }
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(6.5);
-            doc.setTextColor(80, 80, 80);
-            doc.text(label, px + photoW / 2, y + photoH + 4, { align: 'center' });
           }
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.5);
+          doc.setTextColor(80, 80, 80);
+          doc.text(label, px + photoW / 2, y + photoH + 4, { align: 'center' });
           px += photoW + 12;
         }
 
-        y += photoH + 12;
+        y += photoBlockH;
       }
     }
 
