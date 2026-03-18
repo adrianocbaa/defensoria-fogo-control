@@ -89,6 +89,7 @@ export interface ChecklistReportMeta {
   pdfNomeArquivo: string;
   pdfUrl?: string; // URL of the PDF to render as map
   totalPaginasPdf?: number;
+  prazoCorrecao?: number | null; // Prazo geral para correção do relatório
 }
 
 export async function exportChecklistPdf(
