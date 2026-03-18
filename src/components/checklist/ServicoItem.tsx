@@ -253,7 +253,34 @@ export function ServicoItem({ servico, onUpdate, onDelete, onUploadFoto, onPinRe
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Observação</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-medium">Observação</Label>
+              <Button
+                size="icon"
+                variant={isRecording ? 'destructive' : 'outline'}
+                className="h-6 w-6"
+                title={isRecording ? 'Parar gravação' : 'Gravar observação por voz'}
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={isTranscribing}
+              >
+                {isTranscribing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : isRecording ? (
+                  <MicOff className="h-3 w-3" />
+                ) : (
+                  <Mic className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+            {isRecording && (
+              <p className="text-[10px] text-destructive mt-0.5 flex items-center gap-1">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
+                Gravando... toque no botão para parar
+              </p>
+            )}
+            {isTranscribing && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">Transcrevendo áudio...</p>
+            )}
             <Textarea
               value={observacao}
               onChange={e => setObservacao(e.target.value)}
