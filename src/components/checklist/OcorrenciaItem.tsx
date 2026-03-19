@@ -86,7 +86,7 @@ export function OcorrenciaItem({
               onChange={e => setDescricao(e.target.value)}
               onBlur={() => onUpdate(ocorrencia.id, { descricao: descricao || null })}
               placeholder="Descreva esta ocorrência..."
-              className="h-6 text-xs border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="h-8 text-xs"
             />
           ) : (
             <p className="text-xs font-medium truncate">{descricao || `Ocorrência ${index + 1}`}</p>
@@ -193,8 +193,8 @@ export function OcorrenciaItem({
               onChange={e => setObservacao(e.target.value)}
               onBlur={() => { if (observacao !== (ocorrencia.observacao ?? '')) onUpdate(ocorrencia.id, { observacao }); }}
               placeholder="Descreva o problema..."
-              rows={2}
-              className="mt-1 text-xs resize-none"
+              rows={3}
+              className="mt-1 text-sm resize-none min-h-[72px]"
             />
           </div>
 

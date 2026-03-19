@@ -127,7 +127,7 @@ export function ServicosPanel({
               value={newServico}
               onChange={e => setNewServico(e.target.value)}
               placeholder="Descreva o serviço..."
-              className="text-sm h-8"
+              className="text-sm h-10"
               autoFocus
               onKeyDown={e => {
                 if (e.key === 'Enter') handleAddServico();
