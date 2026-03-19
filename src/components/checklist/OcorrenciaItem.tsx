@@ -193,8 +193,8 @@ export function OcorrenciaItem({
               onChange={e => setObservacao(e.target.value)}
               onBlur={() => { if (observacao !== (ocorrencia.observacao ?? '')) onUpdate(ocorrencia.id, { observacao }); }}
               placeholder="Descreva o problema..."
-              rows={2}
-              className="mt-1 text-xs resize-none"
+              rows={3}
+              className="mt-1 text-sm resize-none min-h-[72px]"
             />
           </div>
 
