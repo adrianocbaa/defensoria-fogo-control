@@ -279,7 +279,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
             </div>
             {isRecording && <p className="text-[10px] text-destructive mt-0.5 flex items-center gap-1"><span className="inline-block h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />Gravando... toque no botão para parar</p>}
             {isTranscribing && <p className="text-[10px] text-muted-foreground mt-0.5">Transcrevendo áudio...</p>}
-            <Textarea value={observacao} onChange={e => setObservacao(e.target.value)} onBlur={handleObservacaoBlur} placeholder="Observação geral sobre o serviço..." rows={2} className="mt-1 text-xs resize-none" />
+            <Textarea value={observacao} onChange={e => setObservacao(e.target.value)} onBlur={handleObservacaoBlur} placeholder="Observação geral sobre o serviço..." rows={3} className="mt-1 text-sm resize-none min-h-[80px]" />
           </div>
 
           {/* Foto do problema */}
