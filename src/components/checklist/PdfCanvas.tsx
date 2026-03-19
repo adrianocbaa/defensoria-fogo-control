@@ -261,7 +261,17 @@ export function PdfCanvas({
   // ── Mouse pan (middle-click drag OR space+drag) ────────────────────────────
   const isSpaceRef = useRef(false);
   useEffect(() => {
-    const down = (e: KeyboardEvent) => { if (e.code === 'Space') { e.preventDefault(); isSpaceRef.current = true; } };
+    const isTypingTarget = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable;
+    };
+    const down = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        if (isTypingTarget(e)) return; // never block typing in inputs
+        e.preventDefault();
+        isSpaceRef.current = true;
+      }
+    };
     const up = (e: KeyboardEvent) => { if (e.code === 'Space') isSpaceRef.current = false; };
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
