@@ -52,9 +52,12 @@ export function OcorrenciaItem({
   const [zoomPoint, setZoomPoint] = useState<Point | null>(null);
   const [zoomTitle, setZoomTitle] = useState('');
 
-  // annotation point — read from DB field and kept in sync
+  // annotation points — read from DB and kept in sync
   const [reproPoint, setReproPoint] = useState<Point | null>(
     ocorrencia.foto_reprovacao_pin ?? null
+  );
+  const [correcaoPoint, setCorrecaoPoint] = useState<Point | null>(
+    (ocorrencia as any).foto_correcao_pin ?? null
   );
 
   const reproRef = useRef<HTMLInputElement>(null);
@@ -107,7 +110,11 @@ export function OcorrenciaItem({
           foto_reprovacao_pin: point,
         });
       } else {
-        onUpdate(ocorrencia.id, { foto_correcao_url: url });
+        setCorrecaoPoint(point);
+        onUpdate(ocorrencia.id, {
+          foto_correcao_url: url,
+          foto_correcao_pin: point,
+        } as any);
       }
     }
 
@@ -314,13 +321,20 @@ export function OcorrenciaItem({
                     <div className="mt-1 relative group">
                       <div
                         className="relative cursor-pointer"
-                        onClick={() => openZoom(ocorrencia.foto_correcao_url!, null, 'Foto da Correção')}
+                        onClick={() => openZoom(ocorrencia.foto_correcao_url!, correcaoPoint, 'Foto da Correção')}
                       >
                         <img
                           src={ocorrencia.foto_correcao_url}
                           alt="Foto correção"
                           className="w-full h-28 object-cover rounded border-2 border-green-400"
                         />
+                        {correcaoPoint && (
+                          <div className="absolute pointer-events-none" style={{ left: `${correcaoPoint.x}%`, top: `${correcaoPoint.y}%`, transform: 'translate(-50%,-50%)' }}>
+                            <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-md flex items-center justify-center">
+                              <div className="w-1 h-1 rounded-full bg-white" />
+                            </div>
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded flex items-center justify-center">
                           <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
@@ -329,7 +343,7 @@ export function OcorrenciaItem({
                         <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFile('correcao')}>
                           <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
                         </Button>
-                        <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => onUpdate(ocorrencia.id, { foto_correcao_url: null })}>
+                        <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(ocorrencia.id, { foto_correcao_url: null }); setCorrecaoPoint(null); }}>
                           <Trash2 className="h-2.5 w-2.5" />
                         </Button>
                       </div>
@@ -359,7 +373,7 @@ export function OcorrenciaItem({
           }}
           imageSrc={pendingFileSrc}
           onConfirm={handleAnnotationConfirm}
-          initialPoint={pendingTipo === 'reprovacao' ? reproPoint : null}
+          initialPoint={pendingTipo === 'reprovacao' ? reproPoint : correcaoPoint}
         />
       )}
 
@@ -369,6 +383,7 @@ export function OcorrenciaItem({
           onClose={() => setZoomSrc(null)}
           src={zoomSrc}
           annotationPoint={zoomPoint}
+          annotationColor={zoomTitle.includes('Correção') ? 'green' : 'red'}
           title={zoomTitle}
         />
       )}

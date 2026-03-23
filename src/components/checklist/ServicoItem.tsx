@@ -71,11 +71,13 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
   const [pendingTipo, setPendingTipo] = useState<'reprovacao' | 'correcao'>('reprovacao');
   const [annotationOpen, setAnnotationOpen] = useState(false);
   const [reproPoint, setReproPoint] = useState<Point | null>(servico.foto_reprovacao_pin ?? null);
+  const [correcaoPoint, setCorrecaoPoint] = useState<Point | null>((servico as any).foto_correcao_pin ?? null);
 
-  // Sync annotation point when servico data is refreshed from DB
+  // Sync annotation points when servico data is refreshed from DB
   useEffect(() => {
     setReproPoint(servico.foto_reprovacao_pin ?? null);
-  }, [servico.foto_reprovacao_pin]);
+    setCorrecaoPoint((servico as any).foto_correcao_pin ?? null);
+  }, [servico.foto_reprovacao_pin, (servico as any).foto_correcao_pin]);
 
   // zoom dialog state
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
@@ -186,7 +188,8 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
         setReproPoint(point);
         onUpdate(servico.id, { foto_reprovacao_url: url, foto_reprovacao_pin: point } as any);
       } else {
-        onUpdate(servico.id, { foto_correcao_url: url });
+        setCorrecaoPoint(point);
+        onUpdate(servico.id, { foto_correcao_url: url, foto_correcao_pin: point } as any);
       }
     }
 
@@ -388,9 +391,16 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                   <div className="mt-1 relative group">
                     <div
                       className="relative cursor-pointer"
-                      onClick={() => openZoom(servico.foto_correcao_url!, null, 'Foto da Correção')}
+                      onClick={() => openZoom(servico.foto_correcao_url!, correcaoPoint, 'Foto da Correção')}
                     >
                       <img src={servico.foto_correcao_url} alt="Foto da correção" className="w-full h-32 object-cover rounded-md border-2 border-green-400" />
+                      {correcaoPoint && (
+                        <div className="absolute pointer-events-none" style={{ left: `${correcaoPoint.x}%`, top: `${correcaoPoint.y}%`, transform: 'translate(-50%,-50%)' }}>
+                          <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-md flex items-center justify-center">
+                            <div className="w-1 h-1 rounded-full bg-white" />
+                          </div>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-md flex items-center justify-center">
                         <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
@@ -399,7 +409,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                       <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('correcao')}>
                         <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
                       </Button>
-                      <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => onUpdate(servico.id, { foto_correcao_url: null })}>
+                      <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_correcao_url: null } as any); setCorrecaoPoint(null); }}>
                         <Trash2 className="h-2.5 w-2.5" />
                       </Button>
                     </div>
@@ -511,6 +521,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
           onClose={() => setZoomSrc(null)}
           src={zoomSrc}
           annotationPoint={zoomPoint}
+          annotationColor={zoomTitle.includes('Correção') ? 'green' : 'red'}
           title={zoomTitle}
         />
       )}
