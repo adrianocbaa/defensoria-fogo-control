@@ -230,7 +230,9 @@ export function useChecklistDinamico(obraId: string) {
       observacao?: string;
       foto_reprovacao_url?: string | null;
       foto_correcao_url?: string | null;
+      foto_reprovacao_pin?: { x: number; y: number } | null;
       location_pin?: { x: number; y: number } | null;
+      gravidade?: string | null;
     }
   ) => {
     const { error } = await supabase
