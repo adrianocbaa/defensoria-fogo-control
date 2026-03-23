@@ -125,9 +125,11 @@ export function PhotoAnnotationDialog({
     try {
       let finalBlob = croppedBlob;
       if (!finalBlob) {
-        // no crop → fetch original as blob
-        const resp = await fetch(imageSrc);
+        // no crop → fetch original as blob (handles CORS)
+        const localUrl = await fetchAsBlobUrl(imageSrc);
+        const resp = await fetch(localUrl);
         finalBlob = await resp.blob();
+        if (!imageSrc.startsWith('blob:')) URL.revokeObjectURL(localUrl);
       }
       onConfirm(finalBlob, annotationPoint);
       onClose();
