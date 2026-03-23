@@ -19,36 +19,45 @@ interface PhotoAnnotationDialogProps {
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────────
-async function createImageFromBlob(blobUrl: string): Promise<HTMLImageElement> {
+/** Load an image element from any src, waiting until fully decoded */
+async function loadImageElement(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.addEventListener('load', () => resolve(img));
-    img.addEventListener('error', reject);
-    img.src = blobUrl;
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
   });
 }
 
-async function fetchAsBlobUrl(src: string): Promise<string> {
-  // If already a blob URL, return as-is
-  if (src.startsWith('blob:')) return src;
-  const resp = await fetch(src);
-  const blob = await resp.blob();
-  return URL.createObjectURL(blob);
+/** Convert any image src to a local blob URL to avoid CORS taint on canvas */
+async function toLocalBlobUrl(src: string): Promise<{ url: string; owned: boolean }> {
+  if (src.startsWith('blob:') || src.startsWith('data:')) return { url: src, owned: false };
+  try {
+    const resp = await fetch(src);
+    const blob = await resp.blob();
+    return { url: URL.createObjectURL(blob), owned: true };
+  } catch {
+    return { url: src, owned: false };
+  }
 }
 
 async function getCroppedBlob(src: string, crop: Area): Promise<Blob> {
-  // Fetch image as local blob to avoid canvas CORS taint
-  const localUrl = await fetchAsBlobUrl(src);
-  const image = await createImageFromBlob(localUrl);
+  const { url: localUrl, owned } = await toLocalBlobUrl(src);
+  const image = await loadImageElement(localUrl);
   const canvas = document.createElement('canvas');
-  canvas.width = crop.width;
-  canvas.height = crop.height;
+  canvas.width = Math.round(crop.width);
+  canvas.height = Math.round(crop.height);
   const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-  // Revoke temp URL if we created it
-  if (!src.startsWith('blob:')) URL.revokeObjectURL(localUrl);
+  ctx.drawImage(
+    image,
+    Math.round(crop.x), Math.round(crop.y),
+    Math.round(crop.width), Math.round(crop.height),
+    0, 0,
+    Math.round(crop.width), Math.round(crop.height)
+  );
+  if (owned) URL.revokeObjectURL(localUrl);
   return new Promise((resolve, reject) =>
-    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('canvas empty'))), 'image/jpeg', 0.92)
+    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('canvas vazio'))), 'image/jpeg', 0.92)
   );
 }
 
@@ -65,6 +74,7 @@ export function PhotoAnnotationDialog({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
   const [croppedPreviewUrl, setCroppedPreviewUrl] = useState<string | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   // ── annotate state ──
   const [annotationPoint, setAnnotationPoint] = useState<Point | null>(initialPoint ?? null);
