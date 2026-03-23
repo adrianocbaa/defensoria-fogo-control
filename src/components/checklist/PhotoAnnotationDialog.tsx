@@ -19,23 +19,34 @@ interface PhotoAnnotationDialogProps {
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────────
-async function createImage(url: string): Promise<HTMLImageElement> {
+async function createImageFromBlob(blobUrl: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.addEventListener('load', () => resolve(img));
     img.addEventListener('error', reject);
-    img.src = url;
+    img.src = blobUrl;
   });
 }
 
+async function fetchAsBlobUrl(src: string): Promise<string> {
+  // If already a blob URL, return as-is
+  if (src.startsWith('blob:')) return src;
+  const resp = await fetch(src);
+  const blob = await resp.blob();
+  return URL.createObjectURL(blob);
+}
+
 async function getCroppedBlob(src: string, crop: Area): Promise<Blob> {
-  const image = await createImage(src);
+  // Fetch image as local blob to avoid canvas CORS taint
+  const localUrl = await fetchAsBlobUrl(src);
+  const image = await createImageFromBlob(localUrl);
   const canvas = document.createElement('canvas');
   canvas.width = crop.width;
   canvas.height = crop.height;
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+  // Revoke temp URL if we created it
+  if (!src.startsWith('blob:')) URL.revokeObjectURL(localUrl);
   return new Promise((resolve, reject) =>
     canvas.toBlob(b => (b ? resolve(b) : reject(new Error('canvas empty'))), 'image/jpeg', 0.92)
   );
@@ -114,9 +125,11 @@ export function PhotoAnnotationDialog({
     try {
       let finalBlob = croppedBlob;
       if (!finalBlob) {
-        // no crop → fetch original as blob
-        const resp = await fetch(imageSrc);
+        // no crop → fetch original as blob (handles CORS)
+        const localUrl = await fetchAsBlobUrl(imageSrc);
+        const resp = await fetch(localUrl);
         finalBlob = await resp.blob();
+        if (!imageSrc.startsWith('blob:')) URL.revokeObjectURL(localUrl);
       }
       onConfirm(finalBlob, annotationPoint);
       onClose();
