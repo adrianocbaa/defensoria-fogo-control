@@ -188,7 +188,8 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
         setReproPoint(point);
         onUpdate(servico.id, { foto_reprovacao_url: url, foto_reprovacao_pin: point } as any);
       } else {
-        onUpdate(servico.id, { foto_correcao_url: url });
+        setCorrecaoPoint(point);
+        onUpdate(servico.id, { foto_correcao_url: url, foto_correcao_pin: point } as any);
       }
     }
 
