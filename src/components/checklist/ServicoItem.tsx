@@ -179,7 +179,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
     if (url) {
       if (tipo === 'reprovacao') {
         setReproPoint(point);
-        onUpdate(servico.id, { foto_reprovacao_url: url });
+        onUpdate(servico.id, { foto_reprovacao_url: url, foto_reprovacao_pin: point } as any);
       } else {
         onUpdate(servico.id, { foto_correcao_url: url });
       }
