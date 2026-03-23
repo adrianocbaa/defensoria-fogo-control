@@ -72,6 +72,11 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
   const [annotationOpen, setAnnotationOpen] = useState(false);
   const [reproPoint, setReproPoint] = useState<Point | null>(servico.foto_reprovacao_pin ?? null);
 
+  // Sync annotation point when servico data is refreshed from DB
+  useEffect(() => {
+    setReproPoint(servico.foto_reprovacao_pin ?? null);
+  }, [servico.foto_reprovacao_pin]);
+
   // zoom dialog state
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
   const [zoomPoint, setZoomPoint] = useState<Point | null>(null);
