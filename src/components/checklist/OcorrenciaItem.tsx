@@ -110,7 +110,11 @@ export function OcorrenciaItem({
           foto_reprovacao_pin: point,
         });
       } else {
-        onUpdate(ocorrencia.id, { foto_correcao_url: url });
+        setCorrecaoPoint(point);
+        onUpdate(ocorrencia.id, {
+          foto_correcao_url: url,
+          foto_correcao_pin: point,
+        } as any);
       }
     }
 
