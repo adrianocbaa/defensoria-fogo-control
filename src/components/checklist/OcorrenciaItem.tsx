@@ -52,9 +52,9 @@ export function OcorrenciaItem({
   const [zoomPoint, setZoomPoint] = useState<Point | null>(null);
   const [zoomTitle, setZoomTitle] = useState('');
 
-  // stored annotation points (saved in-memory; for persistence we embed in metadata)
+  // annotation point — read from DB field and kept in sync
   const [reproPoint, setReproPoint] = useState<Point | null>(
-    (ocorrencia as any).foto_reprovacao_point ?? null
+    ocorrencia.foto_reprovacao_pin ?? null
   );
 
   const reproRef = useRef<HTMLInputElement>(null);
@@ -104,8 +104,7 @@ export function OcorrenciaItem({
         setReproPoint(point);
         onUpdate(ocorrencia.id, {
           foto_reprovacao_url: url,
-          // store point in observacao metadata via a special field if needed
-          // For now we store in component state; it persists as long as panel is open
+          foto_reprovacao_pin: point,
         });
       } else {
         onUpdate(ocorrencia.id, { foto_correcao_url: url });

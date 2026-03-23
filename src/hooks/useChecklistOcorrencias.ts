@@ -12,6 +12,7 @@ export interface ChecklistOcorrencia {
   gravidade?: 'critico' | 'medio' | 'estetico' | null;
   observacao?: string | null;
   foto_reprovacao_url?: string | null;
+  foto_reprovacao_pin?: { x: number; y: number } | null;
   foto_correcao_url?: string | null;
   location_pin?: { x: number; y: number } | null;
   ordem: number;
@@ -28,6 +29,11 @@ export function useChecklistOcorrencias(obraId: string) {
   >({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
 
+  const toPoint = (v: any): { x: number; y: number } | null => {
+    if (v && typeof v === 'object' && typeof v.x === 'number' && typeof v.y === 'number') return { x: v.x, y: v.y };
+    return null;
+  };
+
   const fetchOcorrencias = useCallback(async (servicoId: string) => {
     setLoadingIds(prev => new Set(prev).add(servicoId));
     const { data, error } = await supabase
@@ -38,9 +44,16 @@ export function useChecklistOcorrencias(obraId: string) {
 
     setLoadingIds(prev => { const s = new Set(prev); s.delete(servicoId); return s; });
     if (error) { console.error(error); return; }
+
+    const mapped: ChecklistOcorrencia[] = ((data ?? []) as any[]).map((o: any) => ({
+      ...o,
+      foto_reprovacao_pin: toPoint(o.foto_reprovacao_pin),
+      location_pin: toPoint(o.location_pin),
+    }));
+
     setOcorrenciasPorServico(prev => ({
       ...prev,
-      [servicoId]: (data ?? []) as unknown as ChecklistOcorrencia[],
+      [servicoId]: mapped,
     }));
   }, []);
 
