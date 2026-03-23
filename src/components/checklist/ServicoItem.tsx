@@ -335,16 +335,38 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
               Foto Geral do Problema
             </Label>
             {servico.foto_reprovacao_url ? (
-              <div className="mt-1 relative">
-                <img src={servico.foto_reprovacao_url} alt="Foto do problema" className="w-full h-32 object-cover rounded-md border" />
-                <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6" onClick={() => onUpdate(servico.id, { foto_reprovacao_url: null })}><Trash2 className="h-3 w-3" /></Button>
+              <div className="mt-1 relative group">
+                <div
+                  className="relative cursor-pointer"
+                  onClick={() => openZoom(servico.foto_reprovacao_url!, reproPoint, 'Foto do Problema')}
+                >
+                  <img src={servico.foto_reprovacao_url} alt="Foto do problema" className="w-full h-32 object-cover rounded-md border" />
+                  {reproPoint && (
+                    <div className="absolute pointer-events-none" style={{ left: `${reproPoint.x}%`, top: `${reproPoint.y}%`, transform: 'translate(-50%,-50%)' }}>
+                      <div className="w-4 h-4 rounded-full bg-destructive border-2 border-white shadow-md flex items-center justify-center">
+                        <div className="w-1 h-1 rounded-full bg-white" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-md flex items-center justify-center">
+                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+                <div className="flex gap-1 mt-1">
+                  <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('reprovacao')}>
+                    <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
+                  </Button>
+                  <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_reprovacao_url: null }); setReproPoint(null); }}>
+                    <Trash2 className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
               </div>
             ) : (
-              <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed" disabled={uploadingRepro} onClick={() => reproInputRef.current?.click()}>
+              <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed" disabled={uploadingRepro} onClick={() => pickFoto('reprovacao')}>
                 {uploadingRepro ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Adicionar foto do problema</>}
               </Button>
             )}
-            <input ref={reproInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoReprovacao} />
+            <input ref={reproInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChosen(e, 'reprovacao')} />
           </div>
 
           {/* Foto da correção */}
@@ -358,16 +380,31 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                 </Label>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Registre após o serviço ser corrigido pela empresa.</p>
                 {servico.foto_correcao_url ? (
-                  <div className="mt-1 relative">
-                    <img src={servico.foto_correcao_url} alt="Foto da correção" className="w-full h-32 object-cover rounded-md border-2 border-green-400" />
-                    <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6" onClick={() => onUpdate(servico.id, { foto_correcao_url: null })}><Trash2 className="h-3 w-3" /></Button>
+                  <div className="mt-1 relative group">
+                    <div
+                      className="relative cursor-pointer"
+                      onClick={() => openZoom(servico.foto_correcao_url!, null, 'Foto da Correção')}
+                    >
+                      <img src={servico.foto_correcao_url} alt="Foto da correção" className="w-full h-32 object-cover rounded-md border-2 border-green-400" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-md flex items-center justify-center">
+                        <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('correcao')}>
+                        <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
+                      </Button>
+                      <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => onUpdate(servico.id, { foto_correcao_url: null })}>
+                        <Trash2 className="h-2.5 w-2.5" />
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed border-green-500 text-green-700 hover:bg-green-50" disabled={uploadingCorrecao} onClick={() => correcaoInputRef.current?.click()}>
+                  <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed border-green-500 text-green-700 hover:bg-green-50" disabled={uploadingCorrecao} onClick={() => pickFoto('correcao')}>
                     {uploadingCorrecao ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Registrar foto da correção</>}
                   </Button>
                 )}
-                <input ref={correcaoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoCorrecao} />
+                <input ref={correcaoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChosen(e, 'correcao')} />
               </div>
             </>
           )}
@@ -444,6 +481,33 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
             )}
           </div>
         </div>
+      )}
+
+      {/* Annotation dialog */}
+      {pendingFileSrc && (
+        <PhotoAnnotationDialog
+          open={annotationOpen}
+          onClose={() => {
+            setAnnotationOpen(false);
+            if (pendingFileSrc) URL.revokeObjectURL(pendingFileSrc);
+            setPendingFile(null);
+            setPendingFileSrc(null);
+          }}
+          imageSrc={pendingFileSrc}
+          onConfirm={handleAnnotationConfirm}
+          initialPoint={pendingTipo === 'reprovacao' ? reproPoint : null}
+        />
+      )}
+
+      {/* Zoom dialog */}
+      {zoomSrc && (
+        <PhotoZoomDialog
+          open={!!zoomSrc}
+          onClose={() => setZoomSrc(null)}
+          src={zoomSrc}
+          annotationPoint={zoomPoint}
+          title={zoomTitle}
+        />
       )}
     </div>
   );
