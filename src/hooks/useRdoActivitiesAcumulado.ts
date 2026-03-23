@@ -11,26 +11,22 @@ export function useRdoActivitiesAcumulado(obraId: string, dataAtual: string, cur
   return useQuery({
     queryKey: ['rdo-activities-acumulado', obraId, dataAtual, currentReportId],
     queryFn: async () => {
-      // Buscar todos os RDOs de TODOS os dias, exceto o RDO atual
-      // Isso garante que o saldo disponível considere execuções passadas E futuras
-      let query = supabase
+      // Buscar apenas RDOs de dias ANTERIORES ao dia atual (lógica progressiva/sequencial).
+      // Isso garante que o acumulado exibido no RDO do dia X reflita somente
+      // o que foi executado até o dia X-1, sem contaminar com execuções futuras.
+      const { data, error } = await supabase
         .from('rdo_activities')
         .select(`
           orcamento_item_id,
           executado_dia,
           quantidade_total,
-          report_id
+          report_id,
+          rdo_reports!inner(data)
         `)
         .eq('obra_id', obraId)
         .eq('tipo', 'planilha')
-        .not('orcamento_item_id', 'is', null);
-
-      // Excluir o RDO atual do acumulado (para não contar com ele mesmo)
-      if (currentReportId) {
-        query = query.neq('report_id', currentReportId);
-      }
-
-      const { data, error } = await query;
+        .not('orcamento_item_id', 'is', null)
+        .lt('rdo_reports.data', dataAtual);
       
       if (error) throw error;
 
