@@ -24,11 +24,14 @@ import {
   Minus,
   Paintbrush,
   ListChecks,
+  ZoomIn,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ChecklistServico } from '@/hooks/useChecklistDinamico';
 import { useChecklistOcorrencias, type ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
 import { OcorrenciaItem } from './OcorrenciaItem';
+import { PhotoAnnotationDialog } from './PhotoAnnotationDialog';
+import { PhotoZoomDialog } from './PhotoZoomDialog';
 
 interface ServicoItemProps {
   servico: ChecklistServico;
