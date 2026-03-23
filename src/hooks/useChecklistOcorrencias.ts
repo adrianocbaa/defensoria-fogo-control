@@ -12,6 +12,7 @@ export interface ChecklistOcorrencia {
   gravidade?: 'critico' | 'medio' | 'estetico' | null;
   observacao?: string | null;
   foto_reprovacao_url?: string | null;
+  foto_reprovacao_pin?: { x: number; y: number } | null;
   foto_correcao_url?: string | null;
   location_pin?: { x: number; y: number } | null;
   ordem: number;

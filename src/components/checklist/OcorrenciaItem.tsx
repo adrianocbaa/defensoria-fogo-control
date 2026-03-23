@@ -52,9 +52,9 @@ export function OcorrenciaItem({
   const [zoomPoint, setZoomPoint] = useState<Point | null>(null);
   const [zoomTitle, setZoomTitle] = useState('');
 
-  // stored annotation points (saved in-memory; for persistence we embed in metadata)
+  // annotation point — read from DB field and kept in sync
   const [reproPoint, setReproPoint] = useState<Point | null>(
-    (ocorrencia as any).foto_reprovacao_point ?? null
+    ocorrencia.foto_reprovacao_pin ?? null
   );
 
   const reproRef = useRef<HTMLInputElement>(null);
