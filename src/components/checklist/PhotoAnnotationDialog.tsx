@@ -5,7 +5,6 @@ import { Slider } from '@/components/ui/slider';
 import Cropper from 'react-easy-crop';
 import { ZoomIn, ZoomOut, Crosshair, Crop, Check, X, RotateCcw } from 'lucide-react';
 
-
 interface Area { x: number; y: number; width: number; height: number; }
 interface Point { x: number; y: number; } // 0-100 % relative to image
 
@@ -20,8 +19,9 @@ interface PhotoAnnotationDialogProps {
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────────
-/** Load an image element from any src, waiting until fully decoded */
-async function loadImageElement(src: string): Promise<HTMLImageElement> {
+
+/** Load an image element, waiting until fully decoded */
+async function loadImg(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
@@ -30,33 +30,36 @@ async function loadImageElement(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Convert any image src to a local blob URL to avoid CORS taint on canvas */
-async function toLocalBlobUrl(src: string): Promise<{ url: string; owned: boolean }> {
-  if (src.startsWith('blob:') || src.startsWith('data:')) return { url: src, owned: false };
-  try {
+/**
+ * Crop the original image using canvas.
+ * Uses fetch to get a local blob URL so the canvas is never CORS-tainted.
+ */
+async function getCroppedBlob(src: string, cropPx: Area): Promise<Blob> {
+  // Ensure we have a local blob URL to avoid canvas CORS taint
+  let localUrl = src;
+  let shouldRevoke = false;
+  if (!src.startsWith('blob:') && !src.startsWith('data:')) {
     const resp = await fetch(src);
     const blob = await resp.blob();
-    return { url: URL.createObjectURL(blob), owned: true };
-  } catch {
-    return { url: src, owned: false };
+    localUrl = URL.createObjectURL(blob);
+    shouldRevoke = true;
   }
-}
 
-async function getCroppedBlob(src: string, crop: Area): Promise<Blob> {
-  const { url: localUrl, owned } = await toLocalBlobUrl(src);
-  const image = await loadImageElement(localUrl);
+  const image = await loadImg(localUrl);
+  if (shouldRevoke) URL.revokeObjectURL(localUrl);
+
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(crop.width);
-  canvas.height = Math.round(crop.height);
+  canvas.width = Math.round(cropPx.width);
+  canvas.height = Math.round(cropPx.height);
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(
     image,
-    Math.round(crop.x), Math.round(crop.y),
-    Math.round(crop.width), Math.round(crop.height),
+    Math.round(cropPx.x), Math.round(cropPx.y),
+    Math.round(cropPx.width), Math.round(cropPx.height),
     0, 0,
-    Math.round(crop.width), Math.round(crop.height)
+    Math.round(cropPx.width), Math.round(cropPx.height),
   );
-  if (owned) URL.revokeObjectURL(localUrl);
+
   return new Promise((resolve, reject) =>
     canvas.toBlob(b => (b ? resolve(b) : reject(new Error('canvas vazio'))), 'image/jpeg', 0.92)
   );
@@ -73,11 +76,12 @@ export function PhotoAnnotationDialog({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
-  const [croppedPreviewUrl, setCroppedPreviewUrl] = useState<string | null>(null);
-  const [imgLoaded, setImgLoaded] = useState(false);
+  // Store crop pixels to use when building the final blob — but preview uses CSS, not canvas
+  const [savedCropPx, setSavedCropPx] = useState<Area | null>(null);
 
   // ── annotate state ──
+  // In annotate mode we always show imageSrc directly (no canvas conversion)
+  // and store the crop area to apply at confirm time
   const [annotationPoint, setAnnotationPoint] = useState<Point | null>(initialPoint ?? null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [processing, setProcessing] = useState(false);
@@ -89,9 +93,7 @@ export function PhotoAnnotationDialog({
       setCrop({ x: 0, y: 0 });
       setZoom(1);
       setCroppedAreaPixels(null);
-      setCroppedBlob(null);
-      if (croppedPreviewUrl) { URL.revokeObjectURL(croppedPreviewUrl); }
-      setCroppedPreviewUrl(null);
+      setSavedCropPx(null);
       setAnnotationPoint(initialPoint ?? null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,25 +103,15 @@ export function PhotoAnnotationDialog({
     setCroppedAreaPixels(pixelCrop);
   }, []);
 
-  const handleApplyCrop = async () => {
+  const handleApplyCrop = () => {
     if (!croppedAreaPixels) return;
-    setProcessing(true);
-    try {
-      const blob = await getCroppedBlob(imageSrc, croppedAreaPixels);
-      setCroppedBlob(blob);
-      const url = URL.createObjectURL(blob);
-      if (croppedPreviewUrl) URL.revokeObjectURL(croppedPreviewUrl);
-      setCroppedPreviewUrl(url);
-      setMode('annotate');
-    } finally {
-      setProcessing(false);
-    }
+    // Save the crop coordinates — we'll use them at confirm time via canvas
+    setSavedCropPx(croppedAreaPixels);
+    setMode('annotate');
   };
 
   const handleSkipCrop = () => {
-    // go straight to annotate without cropping
-    setCroppedBlob(null);
-    setCroppedPreviewUrl(null);
+    setSavedCropPx(null);
     setMode('annotate');
   };
 
@@ -134,22 +126,23 @@ export function PhotoAnnotationDialog({
   const handleConfirm = async () => {
     setProcessing(true);
     try {
-      let finalBlob = croppedBlob;
-      if (!finalBlob) {
-        // no crop → fetch original as blob via toLocalBlobUrl helper
-        const { url: localUrl, owned } = await toLocalBlobUrl(imageSrc);
-        const resp = await fetch(localUrl);
+      let finalBlob: Blob;
+      if (savedCropPx) {
+        // Apply the stored crop via canvas (safe because imageSrc is a local blob URL)
+        finalBlob = await getCroppedBlob(imageSrc, savedCropPx);
+      } else {
+        // No crop — just fetch the original as blob
+        const resp = await fetch(imageSrc);
         finalBlob = await resp.blob();
-        if (owned) URL.revokeObjectURL(localUrl);
       }
       onConfirm(finalBlob, annotationPoint);
       onClose();
+    } catch (err) {
+      console.error('PhotoAnnotationDialog confirm error:', err);
     } finally {
       setProcessing(false);
     }
   };
-
-  const displaySrc = croppedPreviewUrl ?? imageSrc;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -180,20 +173,26 @@ export function PhotoAnnotationDialog({
               crop={crop}
               zoom={zoom}
               aspect={undefined}
+              minZoom={0.5}
+              maxZoom={5}
+              zoomSpeed={0.2}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
+              style={{ containerStyle: { background: '#000' } }}
             />
           ) : (
-            <div className="relative w-full h-full flex items-center justify-center">
-              <div className="relative inline-block max-w-full max-h-full">
+            /* ── Annotate mode: show original imageSrc directly (no canvas) ── */
+            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+              <div className="relative">
                 <img
                   ref={imgRef}
-                  src={displaySrc}
+                  src={imageSrc}
                   alt="Foto para anotação"
-                  className="max-w-full max-h-[360px] object-contain cursor-crosshair select-none"
+                  className="max-w-full max-h-[380px] object-contain cursor-crosshair select-none block"
                   onClick={handleAnnotationClick}
                   draggable={false}
+                  style={savedCropPx ? undefined : undefined}
                 />
                 {annotationPoint && (
                   <div
@@ -205,12 +204,20 @@ export function PhotoAnnotationDialog({
                     }}
                   >
                     {/* outer pulsing ring */}
-                    <span className="absolute inset-0 rounded-full bg-destructive opacity-30 animate-ping" style={{ width: 28, height: 28, marginLeft: -4, marginTop: -4 }} />
+                    <span className="absolute rounded-full bg-destructive opacity-30 animate-ping" style={{ width: 28, height: 28, top: -4, left: -4 }} />
                     {/* inner dot */}
                     <div className="w-5 h-5 rounded-full bg-destructive border-2 border-white shadow-lg flex items-center justify-center">
                       <div className="w-1.5 h-1.5 rounded-full bg-white" />
                     </div>
                   </div>
+                )}
+                {annotationPoint && (
+                  <button
+                    className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1 hover:bg-black/80"
+                    onClick={() => setAnnotationPoint(null)}
+                  >
+                    <RotateCcw className="h-2.5 w-2.5" /> Remover marcação
+                  </button>
                 )}
               </div>
               {!annotationPoint && (
@@ -218,13 +225,10 @@ export function PhotoAnnotationDialog({
                   Clique na foto para marcar onde está o problema
                 </div>
               )}
-              {annotationPoint && (
-                <button
-                  className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1 hover:bg-black/80"
-                  onClick={() => setAnnotationPoint(null)}
-                >
-                  <RotateCcw className="h-2.5 w-2.5" /> Remover marcação
-                </button>
+              {savedCropPx && (
+                <div className="absolute top-2 left-2 bg-primary/80 text-primary-foreground text-[10px] px-2 py-1 rounded flex items-center gap-1 pointer-events-none">
+                  <Crop className="h-2.5 w-2.5" /> Recorte aplicado
+                </div>
               )}
             </div>
           )}
@@ -234,7 +238,7 @@ export function PhotoAnnotationDialog({
         {mode === 'crop' && (
           <div className="px-4 py-2 border-t flex items-center gap-3 bg-background">
             <ZoomOut className="h-4 w-4 text-muted-foreground shrink-0" />
-            <Slider value={[zoom]} onValueChange={v => setZoom(v[0])} min={1} max={3} step={0.05} className="flex-1" />
+            <Slider value={[zoom]} onValueChange={v => setZoom(v[0])} min={0.5} max={5} step={0.05} className="flex-1" />
             <ZoomIn className="h-4 w-4 text-muted-foreground shrink-0" />
             <span className="text-xs text-muted-foreground w-10 text-right">{Math.round(zoom * 100)}%</span>
           </div>
@@ -251,7 +255,7 @@ export function PhotoAnnotationDialog({
                 Pular recorte →
               </Button>
               <Button size="sm" onClick={handleApplyCrop} disabled={processing || !croppedAreaPixels} className="h-8 text-xs">
-                {processing ? 'Processando...' : <><Crop className="h-3 w-3 mr-1" />Aplicar recorte</>}
+                <Crop className="h-3 w-3 mr-1" />Aplicar recorte
               </Button>
             </>
           ) : (
