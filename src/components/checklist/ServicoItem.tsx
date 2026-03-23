@@ -50,6 +50,8 @@ const GRAVIDADE_CONFIG: Record<Gravidade, { label: string; color: string; bg: st
   estetico: { label: 'Estético', color: 'text-blue-700',   bg: 'bg-blue-100',   border: 'border-blue-400',   Icon: Paintbrush },
 };
 
+interface Point { x: number; y: number; }
+
 export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto, onPinRequest }: ServicoItemProps) {
   const [expanded, setExpanded] = useState(servico.status === 'reprovado');
   const [ocorrenciasExpanded, setOcorrenciasExpanded] = useState(false);
@@ -62,6 +64,18 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
   const correcaoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  // annotation dialog state
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFileSrc, setPendingFileSrc] = useState<string | null>(null);
+  const [pendingTipo, setPendingTipo] = useState<'reprovacao' | 'correcao'>('reprovacao');
+  const [annotationOpen, setAnnotationOpen] = useState(false);
+  const [reproPoint, setReproPoint] = useState<Point | null>(null);
+
+  // zoom dialog state
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
+  const [zoomPoint, setZoomPoint] = useState<Point | null>(null);
+  const [zoomTitle, setZoomTitle] = useState('');
 
   const { ocorrenciasPorServico, fetchOcorrencias, addOcorrencia, updateOcorrencia, deleteOcorrencia, uploadFotoOcorrencia } = useChecklistOcorrencias(obraId);
   const ocorrencias = ocorrenciasPorServico[servico.id] ?? [];
