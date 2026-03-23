@@ -3780,12 +3780,16 @@ const criarNovaMedicao = async () => {
   // Usa medicao.dados (estado após useEffect de AL) para incluir administração local calculada
   const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
   const totalServicosExecutados = medicaoAtualData
-    ? items
-        .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => {
-          const dados = medicaoAtualData.dados[item.id];
-          return sum + (dados?.total || 0);
-        }, 0)
+    ? Math.round(
+        items
+          .filter(item => ehItemFolha(item.item))
+          .reduce((sum, item) => {
+            const dados = medicaoAtualData.dados[item.id];
+            // Arredonda cada item individualmente para 2 casas decimais
+            // ocultando a terceira casa e evitando divergências de R$0,01
+            return sum + Math.round((dados?.total || 0) * 100) / 100;
+          }, 0)
+        * 100) / 100
     : 0;
 
   // Calcular valor acumulado - soma de todos os TOTAL das medições anteriores até a medição atual
