@@ -803,17 +803,10 @@ export function Medicao() {
       .filter(item => ehItemFolha(item.item))
       .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item), 0);
 
-    // 4) Serviços Executados (medição atual) — apenas itens FOLHA para evitar dupla contagem com MACROs
+    // 4) Serviços Executados (medição atual)
     const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
     const servicosExecutados = medicaoAtualData
-      ? Object.entries(medicaoAtualData.dados).reduce((sum, [itemIdStr, d]: [string, any]) => {
-          const itemId = parseInt(itemIdStr);
-          const item = items.find(it => it.id === itemId);
-          if (item && ehItemFolha(item.item)) {
-            return sum + (d.total || 0);
-          }
-          return sum;
-        }, 0)
+      ? Object.values(medicaoAtualData.dados).reduce((sum, d: any) => sum + (d.total || 0), 0)
       : 0;
 
     // 5) Valor Acumulado (SEMPRE até a ÚLTIMA medição, não a atual visualizada)
