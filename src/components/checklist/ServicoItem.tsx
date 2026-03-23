@@ -150,24 +150,53 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
     if (observacao !== (servico.observacao ?? '')) onUpdate(servico.id, { observacao });
   };
 
-  const handleFotoReprovacao = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const pickFoto = (tipo: 'reprovacao' | 'correcao') => {
+    setPendingTipo(tipo);
+    if (tipo === 'reprovacao') reproInputRef.current?.click();
+    else correcaoInputRef.current?.click();
+  };
+
+  const handleFileChosen = (e: React.ChangeEvent<HTMLInputElement>, tipo: 'reprovacao' | 'correcao') => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingRepro(true);
-    const url = await onUploadFoto(file, servico.id, 'reprovacao');
-    if (url) onUpdate(servico.id, { foto_reprovacao_url: url });
-    setUploadingRepro(false);
+    const src = URL.createObjectURL(file);
+    setPendingFile(file);
+    setPendingFileSrc(src);
+    setPendingTipo(tipo);
+    setAnnotationOpen(true);
     e.target.value = '';
   };
 
-  const handleFotoCorrecao = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingCorrecao(true);
-    const url = await onUploadFoto(file, servico.id, 'correcao');
-    if (url) onUpdate(servico.id, { foto_correcao_url: url });
-    setUploadingCorrecao(false);
-    e.target.value = '';
+  const handleAnnotationConfirm = async (blob: Blob, point: Point | null) => {
+    if (!pendingFile) return;
+    const tipo = pendingTipo;
+    const processedFile = new File([blob], pendingFile.name, { type: 'image/jpeg' });
+
+    if (tipo === 'reprovacao') setUploadingRepro(true);
+    else setUploadingCorrecao(true);
+
+    const url = await onUploadFoto(processedFile, servico.id, tipo);
+    if (url) {
+      if (tipo === 'reprovacao') {
+        setReproPoint(point);
+        onUpdate(servico.id, { foto_reprovacao_url: url });
+      } else {
+        onUpdate(servico.id, { foto_correcao_url: url });
+      }
+    }
+
+    if (tipo === 'reprovacao') setUploadingRepro(false);
+    else setUploadingCorrecao(false);
+
+    if (pendingFileSrc) URL.revokeObjectURL(pendingFileSrc);
+    setPendingFile(null);
+    setPendingFileSrc(null);
+  };
+
+  const openZoom = (src: string, point: Point | null, title: string) => {
+    setZoomSrc(src);
+    setZoomPoint(point);
+    setZoomTitle(title);
   };
 
   const hasPin = !!servico.location_pin;
