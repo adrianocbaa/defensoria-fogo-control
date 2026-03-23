@@ -24,11 +24,14 @@ import {
   Minus,
   Paintbrush,
   ListChecks,
+  ZoomIn,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ChecklistServico } from '@/hooks/useChecklistDinamico';
 import { useChecklistOcorrencias, type ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
 import { OcorrenciaItem } from './OcorrenciaItem';
+import { PhotoAnnotationDialog } from './PhotoAnnotationDialog';
+import { PhotoZoomDialog } from './PhotoZoomDialog';
 
 interface ServicoItemProps {
   servico: ChecklistServico;
@@ -47,6 +50,8 @@ const GRAVIDADE_CONFIG: Record<Gravidade, { label: string; color: string; bg: st
   estetico: { label: 'Estético', color: 'text-blue-700',   bg: 'bg-blue-100',   border: 'border-blue-400',   Icon: Paintbrush },
 };
 
+interface Point { x: number; y: number; }
+
 export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto, onPinRequest }: ServicoItemProps) {
   const [expanded, setExpanded] = useState(servico.status === 'reprovado');
   const [ocorrenciasExpanded, setOcorrenciasExpanded] = useState(false);
@@ -59,6 +64,18 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
   const correcaoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  // annotation dialog state
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFileSrc, setPendingFileSrc] = useState<string | null>(null);
+  const [pendingTipo, setPendingTipo] = useState<'reprovacao' | 'correcao'>('reprovacao');
+  const [annotationOpen, setAnnotationOpen] = useState(false);
+  const [reproPoint, setReproPoint] = useState<Point | null>(null);
+
+  // zoom dialog state
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
+  const [zoomPoint, setZoomPoint] = useState<Point | null>(null);
+  const [zoomTitle, setZoomTitle] = useState('');
 
   const { ocorrenciasPorServico, fetchOcorrencias, addOcorrencia, updateOcorrencia, deleteOcorrencia, uploadFotoOcorrencia } = useChecklistOcorrencias(obraId);
   const ocorrencias = ocorrenciasPorServico[servico.id] ?? [];
@@ -133,24 +150,53 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
     if (observacao !== (servico.observacao ?? '')) onUpdate(servico.id, { observacao });
   };
 
-  const handleFotoReprovacao = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const pickFoto = (tipo: 'reprovacao' | 'correcao') => {
+    setPendingTipo(tipo);
+    if (tipo === 'reprovacao') reproInputRef.current?.click();
+    else correcaoInputRef.current?.click();
+  };
+
+  const handleFileChosen = (e: React.ChangeEvent<HTMLInputElement>, tipo: 'reprovacao' | 'correcao') => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingRepro(true);
-    const url = await onUploadFoto(file, servico.id, 'reprovacao');
-    if (url) onUpdate(servico.id, { foto_reprovacao_url: url });
-    setUploadingRepro(false);
+    const src = URL.createObjectURL(file);
+    setPendingFile(file);
+    setPendingFileSrc(src);
+    setPendingTipo(tipo);
+    setAnnotationOpen(true);
     e.target.value = '';
   };
 
-  const handleFotoCorrecao = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingCorrecao(true);
-    const url = await onUploadFoto(file, servico.id, 'correcao');
-    if (url) onUpdate(servico.id, { foto_correcao_url: url });
-    setUploadingCorrecao(false);
-    e.target.value = '';
+  const handleAnnotationConfirm = async (blob: Blob, point: Point | null) => {
+    if (!pendingFile) return;
+    const tipo = pendingTipo;
+    const processedFile = new File([blob], pendingFile.name, { type: 'image/jpeg' });
+
+    if (tipo === 'reprovacao') setUploadingRepro(true);
+    else setUploadingCorrecao(true);
+
+    const url = await onUploadFoto(processedFile, servico.id, tipo);
+    if (url) {
+      if (tipo === 'reprovacao') {
+        setReproPoint(point);
+        onUpdate(servico.id, { foto_reprovacao_url: url });
+      } else {
+        onUpdate(servico.id, { foto_correcao_url: url });
+      }
+    }
+
+    if (tipo === 'reprovacao') setUploadingRepro(false);
+    else setUploadingCorrecao(false);
+
+    if (pendingFileSrc) URL.revokeObjectURL(pendingFileSrc);
+    setPendingFile(null);
+    setPendingFileSrc(null);
+  };
+
+  const openZoom = (src: string, point: Point | null, title: string) => {
+    setZoomSrc(src);
+    setZoomPoint(point);
+    setZoomTitle(title);
   };
 
   const hasPin = !!servico.location_pin;
@@ -289,16 +335,38 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
               Foto Geral do Problema
             </Label>
             {servico.foto_reprovacao_url ? (
-              <div className="mt-1 relative">
-                <img src={servico.foto_reprovacao_url} alt="Foto do problema" className="w-full h-32 object-cover rounded-md border" />
-                <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6" onClick={() => onUpdate(servico.id, { foto_reprovacao_url: null })}><Trash2 className="h-3 w-3" /></Button>
+              <div className="mt-1 relative group">
+                <div
+                  className="relative cursor-pointer"
+                  onClick={() => openZoom(servico.foto_reprovacao_url!, reproPoint, 'Foto do Problema')}
+                >
+                  <img src={servico.foto_reprovacao_url} alt="Foto do problema" className="w-full h-32 object-cover rounded-md border" />
+                  {reproPoint && (
+                    <div className="absolute pointer-events-none" style={{ left: `${reproPoint.x}%`, top: `${reproPoint.y}%`, transform: 'translate(-50%,-50%)' }}>
+                      <div className="w-4 h-4 rounded-full bg-destructive border-2 border-white shadow-md flex items-center justify-center">
+                        <div className="w-1 h-1 rounded-full bg-white" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-md flex items-center justify-center">
+                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+                <div className="flex gap-1 mt-1">
+                  <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('reprovacao')}>
+                    <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
+                  </Button>
+                  <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_reprovacao_url: null }); setReproPoint(null); }}>
+                    <Trash2 className="h-2.5 w-2.5" />
+                  </Button>
+                </div>
               </div>
             ) : (
-              <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed" disabled={uploadingRepro} onClick={() => reproInputRef.current?.click()}>
+              <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed" disabled={uploadingRepro} onClick={() => pickFoto('reprovacao')}>
                 {uploadingRepro ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Adicionar foto do problema</>}
               </Button>
             )}
-            <input ref={reproInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoReprovacao} />
+            <input ref={reproInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChosen(e, 'reprovacao')} />
           </div>
 
           {/* Foto da correção */}
@@ -312,16 +380,31 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                 </Label>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Registre após o serviço ser corrigido pela empresa.</p>
                 {servico.foto_correcao_url ? (
-                  <div className="mt-1 relative">
-                    <img src={servico.foto_correcao_url} alt="Foto da correção" className="w-full h-32 object-cover rounded-md border-2 border-green-400" />
-                    <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6" onClick={() => onUpdate(servico.id, { foto_correcao_url: null })}><Trash2 className="h-3 w-3" /></Button>
+                  <div className="mt-1 relative group">
+                    <div
+                      className="relative cursor-pointer"
+                      onClick={() => openZoom(servico.foto_correcao_url!, null, 'Foto da Correção')}
+                    >
+                      <img src={servico.foto_correcao_url} alt="Foto da correção" className="w-full h-32 object-cover rounded-md border-2 border-green-400" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-md flex items-center justify-center">
+                        <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('correcao')}>
+                        <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
+                      </Button>
+                      <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => onUpdate(servico.id, { foto_correcao_url: null })}>
+                        <Trash2 className="h-2.5 w-2.5" />
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed border-green-500 text-green-700 hover:bg-green-50" disabled={uploadingCorrecao} onClick={() => correcaoInputRef.current?.click()}>
+                  <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed border-green-500 text-green-700 hover:bg-green-50" disabled={uploadingCorrecao} onClick={() => pickFoto('correcao')}>
                     {uploadingCorrecao ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Registrar foto da correção</>}
                   </Button>
                 )}
-                <input ref={correcaoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoCorrecao} />
+                <input ref={correcaoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChosen(e, 'correcao')} />
               </div>
             </>
           )}
@@ -398,6 +481,33 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
             )}
           </div>
         </div>
+      )}
+
+      {/* Annotation dialog */}
+      {pendingFileSrc && (
+        <PhotoAnnotationDialog
+          open={annotationOpen}
+          onClose={() => {
+            setAnnotationOpen(false);
+            if (pendingFileSrc) URL.revokeObjectURL(pendingFileSrc);
+            setPendingFile(null);
+            setPendingFileSrc(null);
+          }}
+          imageSrc={pendingFileSrc}
+          onConfirm={handleAnnotationConfirm}
+          initialPoint={pendingTipo === 'reprovacao' ? reproPoint : null}
+        />
+      )}
+
+      {/* Zoom dialog */}
+      {zoomSrc && (
+        <PhotoZoomDialog
+          open={!!zoomSrc}
+          onClose={() => setZoomSrc(null)}
+          src={zoomSrc}
+          annotationPoint={zoomPoint}
+          title={zoomTitle}
+        />
       )}
     </div>
   );
