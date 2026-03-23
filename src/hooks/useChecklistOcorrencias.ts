@@ -48,6 +48,7 @@ export function useChecklistOcorrencias(obraId: string) {
     const mapped: ChecklistOcorrencia[] = ((data ?? []) as any[]).map((o: any) => ({
       ...o,
       foto_reprovacao_pin: toPoint(o.foto_reprovacao_pin),
+      foto_correcao_pin: toPoint(o.foto_correcao_pin),
       location_pin: toPoint(o.location_pin),
     }));
 

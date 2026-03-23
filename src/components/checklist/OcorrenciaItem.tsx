@@ -383,6 +383,7 @@ export function OcorrenciaItem({
           onClose={() => setZoomSrc(null)}
           src={zoomSrc}
           annotationPoint={zoomPoint}
+          annotationColor={zoomTitle.includes('Correção') ? 'green' : 'red'}
           title={zoomTitle}
         />
       )}
