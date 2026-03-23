@@ -9,10 +9,15 @@ interface PhotoZoomDialogProps {
   onClose: () => void;
   src: string;
   annotationPoint?: Point | null;
+  annotationColor?: 'red' | 'green';
   title?: string;
 }
 
-export function PhotoZoomDialog({ open, onClose, src, annotationPoint, title }: PhotoZoomDialogProps) {
+export function PhotoZoomDialog({ open, onClose, src, annotationPoint, annotationColor = 'red', title }: PhotoZoomDialogProps) {
+  const isGreen = annotationColor === 'green';
+  const pingColor = isGreen ? 'bg-green-500' : 'bg-destructive';
+  const dotColor  = isGreen ? 'bg-green-500' : 'bg-destructive';
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 gap-0 bg-black border-none overflow-hidden">
@@ -32,8 +37,8 @@ export function PhotoZoomDialog({ open, onClose, src, annotationPoint, title }: 
                   transform: 'translate(-50%, -50%)',
                 }}
               >
-                <span className="absolute rounded-full bg-destructive opacity-30 animate-ping" style={{ width: 36, height: 36, top: -8, left: -8 }} />
-                <div className="w-6 h-6 rounded-full bg-destructive border-2 border-white shadow-xl flex items-center justify-center">
+                <span className={`absolute rounded-full ${pingColor} opacity-30 animate-ping`} style={{ width: 36, height: 36, top: -8, left: -8 }} />
+                <div className={`w-6 h-6 rounded-full ${dotColor} border-2 border-white shadow-xl flex items-center justify-center`}>
                   <div className="w-2 h-2 rounded-full bg-white" />
                 </div>
               </div>
