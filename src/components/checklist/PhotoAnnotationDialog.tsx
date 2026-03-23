@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import Cropper from 'react-easy-crop';
 import { ZoomIn, ZoomOut, Crosshair, Crop, Check, X, RotateCcw } from 'lucide-react';
 
+
 interface Area { x: number; y: number; width: number; height: number; }
 interface Point { x: number; y: number; } // 0-100 % relative to image
 
