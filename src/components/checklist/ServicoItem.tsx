@@ -71,11 +71,13 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
   const [pendingTipo, setPendingTipo] = useState<'reprovacao' | 'correcao'>('reprovacao');
   const [annotationOpen, setAnnotationOpen] = useState(false);
   const [reproPoint, setReproPoint] = useState<Point | null>(servico.foto_reprovacao_pin ?? null);
+  const [correcaoPoint, setCorrecaoPoint] = useState<Point | null>((servico as any).foto_correcao_pin ?? null);
 
-  // Sync annotation point when servico data is refreshed from DB
+  // Sync annotation points when servico data is refreshed from DB
   useEffect(() => {
     setReproPoint(servico.foto_reprovacao_pin ?? null);
-  }, [servico.foto_reprovacao_pin]);
+    setCorrecaoPoint((servico as any).foto_correcao_pin ?? null);
+  }, [servico.foto_reprovacao_pin, (servico as any).foto_correcao_pin]);
 
   // zoom dialog state
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
