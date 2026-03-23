@@ -373,7 +373,7 @@ export function OcorrenciaItem({
           }}
           imageSrc={pendingFileSrc}
           onConfirm={handleAnnotationConfirm}
-          initialPoint={pendingTipo === 'reprovacao' ? reproPoint : null}
+          initialPoint={pendingTipo === 'reprovacao' ? reproPoint : correcaoPoint}
         />
       )}
 
