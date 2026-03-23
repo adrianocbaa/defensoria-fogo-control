@@ -69,11 +69,23 @@ export function useChecklistDinamico(obraId: string) {
 
     if (error) { console.error(error); return; }
 
+    const toPoint = (v: any): { x: number; y: number } | null => {
+      if (v && typeof v === 'object' && typeof v.x === 'number' && typeof v.y === 'number') {
+        return { x: v.x, y: v.y };
+      }
+      return null;
+    };
+
     const mapped: ChecklistAmbiente[] = (data || []).map((a: any) => ({
       ...a,
       shape_type: a.shape_type || 'rect',
       shape_data: a.shape_data || null,
-      servicos: ((a.checklist_servicos || []) as ChecklistServico[])
+      servicos: ((a.checklist_servicos || []) as any[])
+        .map((s: any): ChecklistServico => ({
+          ...s,
+          foto_reprovacao_pin: toPoint(s.foto_reprovacao_pin),
+          location_pin: toPoint(s.location_pin),
+        }))
         .sort((x, y) => x.ordem - y.ordem),
     }));
     setAmbientes(mapped);
