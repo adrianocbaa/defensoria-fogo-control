@@ -70,7 +70,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
   const [pendingFileSrc, setPendingFileSrc] = useState<string | null>(null);
   const [pendingTipo, setPendingTipo] = useState<'reprovacao' | 'correcao'>('reprovacao');
   const [annotationOpen, setAnnotationOpen] = useState(false);
-  const [reproPoint, setReproPoint] = useState<Point | null>(null);
+  const [reproPoint, setReproPoint] = useState<Point | null>(servico.foto_reprovacao_pin ?? null);
 
   // zoom dialog state
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
