@@ -521,6 +521,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
           onClose={() => setZoomSrc(null)}
           src={zoomSrc}
           annotationPoint={zoomPoint}
+          annotationColor={zoomTitle.includes('Correção') ? 'green' : 'red'}
           title={zoomTitle}
         />
       )}
