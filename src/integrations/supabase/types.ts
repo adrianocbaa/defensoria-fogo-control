@@ -390,6 +390,7 @@ export type Database = {
           data_avaliacao: string | null
           descricao: string | null
           foto_correcao_url: string | null
+          foto_reprovacao_pin: Json | null
           foto_reprovacao_url: string | null
           gravidade: string | null
           id: string
@@ -408,6 +409,7 @@ export type Database = {
           data_avaliacao?: string | null
           descricao?: string | null
           foto_correcao_url?: string | null
+          foto_reprovacao_pin?: Json | null
           foto_reprovacao_url?: string | null
           gravidade?: string | null
           id?: string
@@ -426,6 +428,7 @@ export type Database = {
           data_avaliacao?: string | null
           descricao?: string | null
           foto_correcao_url?: string | null
+          foto_reprovacao_pin?: Json | null
           foto_reprovacao_url?: string | null
           gravidade?: string | null
           id?: string
@@ -497,6 +500,7 @@ export type Database = {
           data_avaliacao: string | null
           descricao: string
           foto_correcao_url: string | null
+          foto_reprovacao_pin: Json | null
           foto_reprovacao_url: string | null
           gravidade: string | null
           id: string
@@ -516,6 +520,7 @@ export type Database = {
           data_avaliacao?: string | null
           descricao: string
           foto_correcao_url?: string | null
+          foto_reprovacao_pin?: Json | null
           foto_reprovacao_url?: string | null
           gravidade?: string | null
           id?: string
@@ -535,6 +540,7 @@ export type Database = {
           data_avaliacao?: string | null
           descricao?: string
           foto_correcao_url?: string | null
+          foto_reprovacao_pin?: Json | null
           foto_reprovacao_url?: string | null
           gravidade?: string | null
           id?: string

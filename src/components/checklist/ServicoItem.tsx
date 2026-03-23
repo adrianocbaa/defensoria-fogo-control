@@ -70,7 +70,12 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
   const [pendingFileSrc, setPendingFileSrc] = useState<string | null>(null);
   const [pendingTipo, setPendingTipo] = useState<'reprovacao' | 'correcao'>('reprovacao');
   const [annotationOpen, setAnnotationOpen] = useState(false);
-  const [reproPoint, setReproPoint] = useState<Point | null>(null);
+  const [reproPoint, setReproPoint] = useState<Point | null>(servico.foto_reprovacao_pin ?? null);
+
+  // Sync annotation point when servico data is refreshed from DB
+  useEffect(() => {
+    setReproPoint(servico.foto_reprovacao_pin ?? null);
+  }, [servico.foto_reprovacao_pin]);
 
   // zoom dialog state
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
@@ -179,7 +184,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
     if (url) {
       if (tipo === 'reprovacao') {
         setReproPoint(point);
-        onUpdate(servico.id, { foto_reprovacao_url: url });
+        onUpdate(servico.id, { foto_reprovacao_url: url, foto_reprovacao_pin: point } as any);
       } else {
         onUpdate(servico.id, { foto_correcao_url: url });
       }
