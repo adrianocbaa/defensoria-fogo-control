@@ -339,6 +339,13 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           ? totalObraOrcamento
           : cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
 
+        // Para o gráfico acumulado: usar apenas os macros presentes no cronograma como base
+        // Isso garante consistência entre numerador (executado por macro do cronograma) e denominador
+        const totalObraCronograma = cronograma.items.reduce((sum, item) => {
+          const totalOrc = totalContratoPorMacroState.get(item.item_numero) || 0;
+          return sum + (totalOrc > 0 ? totalOrc : item.total_etapa);
+        }, 0);
+
         // Preparar dados para o gráfico baseado no modo de visualização
         const isAcumulado = viewMode === 'acumulado';
         const chartType = isAcumulado ? 'line' : 'bar'; // Acumulado = Linhas, Macros = Colunas
