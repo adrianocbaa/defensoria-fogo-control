@@ -339,6 +339,13 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
           ? totalObraOrcamento
           : cronograma.items.reduce((sum, item) => sum + item.total_etapa, 0);
 
+        // Para o gráfico acumulado: usar apenas os macros presentes no cronograma como base
+        // Isso garante consistência entre numerador (executado por macro do cronograma) e denominador
+        const totalObraCronograma = cronograma.items.reduce((sum, item) => {
+          const totalOrc = totalContratoPorMacroState.get(item.item_numero) || 0;
+          return sum + (totalOrc > 0 ? totalOrc : item.total_etapa);
+        }, 0);
+
         // Preparar dados para o gráfico baseado no modo de visualização
         const isAcumulado = viewMode === 'acumulado';
         const chartType = isAcumulado ? 'line' : 'bar'; // Acumulado = Linhas, Macros = Colunas
@@ -373,7 +380,10 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
             
             // Buscar a medição correspondente a esta posição
             const medicaoAtePeriodo = medicoesComparativo.find(m => m.sequencia === sequenciaPeriodo);
-            const execAcumulado = medicaoAtePeriodo?.valorTotalAcumulado || 0;
+            // Usar apenas soma dos macros do cronograma para evitar duplicações e inconsistências
+            const execAcumulado = medicaoAtePeriodo
+              ? medicaoAtePeriodo.macros.reduce((sum, m) => sum + m.executadoAcumulado, 0)
+              : 0;
             
             const prevAcumulado = cronograma.items.reduce((sum, item) => {
               const acumulado = item.periodos
@@ -382,8 +392,8 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
               return sum + acumulado;
             }, 0);
             
-            dadosExecutado.push(totalObra > 0 ? Math.min((execAcumulado / totalObra) * 100, 100) : 0);
-            dadosPrevisto.push(totalObra > 0 ? Math.min((prevAcumulado / totalObra) * 100, 100) : 0);
+            dadosExecutado.push(totalObraCronograma > 0 ? Math.min((execAcumulado / totalObraCronograma) * 100, 100) : 0);
+            dadosPrevisto.push(totalObraCronograma > 0 ? Math.min((prevAcumulado / totalObraCronograma) * 100, 100) : 0);
           });
           
           chartData = {
