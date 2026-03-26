@@ -91,6 +91,18 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
     fetchOcorrencias(servico.id);
   }, [servico.id, fetchOcorrencias]);
 
+  // Escuta evento de re-fetch disparado após pin de ocorrência ser salvo
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.servicoId === servico.id) {
+        fetchOcorrencias(servico.id);
+      }
+    };
+    window.addEventListener('checklist:refresh-ocorrencias', handler);
+    return () => window.removeEventListener('checklist:refresh-ocorrencias', handler);
+  }, [servico.id, fetchOcorrencias]);
+
   const gravidade: Gravidade = (servico.gravidade as Gravidade) ?? 'medio';
 
   const startRecording = async () => {
