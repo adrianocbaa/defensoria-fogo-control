@@ -39,7 +39,7 @@ interface ServicoItemProps {
   onUpdate: (id: string, updates: Partial<ChecklistServico>) => void;
   onDelete: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
-  onPinRequest: (servicoId: string, descricao: string, isOcorrencia?: boolean) => void;
+  onPinRequest: (id: string, descricao: string, isOcorrencia?: boolean, servicoId?: string) => void;
 }
 
 type Gravidade = 'critico' | 'medio' | 'estetico';
@@ -89,6 +89,18 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
 
   useEffect(() => {
     fetchOcorrencias(servico.id);
+  }, [servico.id, fetchOcorrencias]);
+
+  // Escuta evento de re-fetch disparado após pin de ocorrência ser salvo
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.servicoId === servico.id) {
+        fetchOcorrencias(servico.id);
+      }
+    };
+    window.addEventListener('checklist:refresh-ocorrencias', handler);
+    return () => window.removeEventListener('checklist:refresh-ocorrencias', handler);
   }, [servico.id, fetchOcorrencias]);
 
   const gravidade: Gravidade = (servico.gravidade as Gravidade) ?? 'medio';
@@ -480,7 +492,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                     onUpdate={(id, updates) => updateOcorrencia(id, servico.id, updates)}
                     onDelete={(id) => deleteOcorrencia(id, servico.id)}
                     onUploadFoto={uploadFotoOcorrencia}
-                    onPinRequest={(ocId, desc) => onPinRequest(ocId, desc, true)}
+                    onPinRequest={(ocId, desc) => onPinRequest(ocId, desc, true, servico.id)}
                   />
                 ))}
               </div>

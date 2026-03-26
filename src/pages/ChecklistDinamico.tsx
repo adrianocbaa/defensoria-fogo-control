@@ -100,7 +100,7 @@ export function ChecklistDinamico() {
 
   // Pin mode — pode ser para um serviço ou para uma ocorrência
   const [isPinMode, setIsPinMode] = useState(false);
-  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string; isOcorrencia?: boolean } | null>(null);
+  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string; isOcorrencia?: boolean; servicoId?: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -223,9 +223,9 @@ export function ChecklistDinamico() {
     if (isMobile) setServicosSheetOpen(true);
   };
 
-  const handlePinRequest = (servicoId: string, descricao: string, isOcorrencia?: boolean) => {
+  const handlePinRequest = (idOrOcorrenciaId: string, descricao: string, isOcorrencia?: boolean, servicoId?: string) => {
     setIsPinMode(true);
-    setPendingPinServico({ id: servicoId, descricao, isOcorrencia });
+    setPendingPinServico({ id: idOrOcorrenciaId, descricao, isOcorrencia, servicoId });
     setIsDrawingMode(false);
     if (isMobile) setServicosSheetOpen(false);
   };
@@ -237,7 +237,17 @@ export function ChecklistDinamico() {
         .from('checklist_ocorrencias' as any)
         .update({ location_pin: pin, data_avaliacao: new Date().toISOString() })
         .eq('id', id)
-        .then(({ error }) => { if (error) console.error('Erro ao salvar pin da ocorrência', error); });
+        .then(({ error }) => {
+          if (error) {
+            console.error('Erro ao salvar pin da ocorrência', error);
+          } else {
+            // Dispara evento para o ServicoItem re-buscar as ocorrências
+            const svcId = pendingPinServico?.servicoId;
+            if (svcId) {
+              window.dispatchEvent(new CustomEvent('checklist:refresh-ocorrencias', { detail: { servicoId: svcId } }));
+            }
+          }
+        });
     } else {
       updateServico(id, { location_pin: pin });
     }
