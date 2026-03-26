@@ -492,7 +492,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                     onUpdate={(id, updates) => updateOcorrencia(id, servico.id, updates)}
                     onDelete={(id) => deleteOcorrencia(id, servico.id)}
                     onUploadFoto={uploadFotoOcorrencia}
-                    onPinRequest={(ocId, desc) => onPinRequest(ocId, desc, true)}
+                    onPinRequest={(ocId, desc) => onPinRequest(ocId, desc, true, servico.id)}
                   />
                 ))}
               </div>
