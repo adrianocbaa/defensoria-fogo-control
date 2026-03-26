@@ -100,7 +100,7 @@ export function ChecklistDinamico() {
 
   // Pin mode — pode ser para um serviço ou para uma ocorrência
   const [isPinMode, setIsPinMode] = useState(false);
-  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string; isOcorrencia?: boolean } | null>(null);
+  const [pendingPinServico, setPendingPinServico] = useState<{ id: string; descricao: string; isOcorrencia?: boolean; servicoId?: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
