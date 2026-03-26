@@ -39,7 +39,7 @@ interface ServicoItemProps {
   onUpdate: (id: string, updates: Partial<ChecklistServico>) => void;
   onDelete: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
-  onPinRequest: (servicoId: string, descricao: string, isOcorrencia?: boolean) => void;
+  onPinRequest: (id: string, descricao: string, isOcorrencia?: boolean, servicoId?: string) => void;
 }
 
 type Gravidade = 'critico' | 'medio' | 'estetico';
