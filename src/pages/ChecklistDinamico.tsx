@@ -624,6 +624,7 @@ export function ChecklistDinamico() {
                         onDeleteAmbiente={(id) => { deleteAmbiente(id); setServicosSheetOpen(false); setSelectedAmbienteId(null); }}
                         onUploadFoto={uploadFoto}
                         onPinRequest={handlePinRequest}
+                        isContratada={isContratada}
                       />
                     </div>
                   </SheetContent>
