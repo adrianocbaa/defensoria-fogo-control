@@ -40,6 +40,7 @@ interface ServicoItemProps {
   onDelete: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
   onPinRequest: (id: string, descricao: string, isOcorrencia?: boolean, servicoId?: string) => void;
+  isContratada?: boolean;
 }
 
 type Gravidade = 'critico' | 'medio' | 'estetico';
@@ -52,7 +53,7 @@ const GRAVIDADE_CONFIG: Record<Gravidade, { label: string; color: string; bg: st
 
 interface Point { x: number; y: number; }
 
-export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto, onPinRequest }: ServicoItemProps) {
+export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto, onPinRequest, isContratada = false }: ServicoItemProps) {
   const [expanded, setExpanded] = useState(servico.status === 'reprovado');
   const [ocorrenciasExpanded, setOcorrenciasExpanded] = useState(false);
   const [observacao, setObservacao] = useState(servico.observacao ?? '');
@@ -249,147 +250,181 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
           <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setExpanded(!expanded)}>
             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </Button>
-          <Button size="icon" variant="ghost" className="h-6 w-6 hover:text-destructive" onClick={() => onDelete(servico.id)}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {!isContratada && (
+            <Button size="icon" variant="ghost" className="h-6 w-6 hover:text-destructive" onClick={() => onDelete(servico.id)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Status buttons */}
-      <div className="flex gap-2 px-3 pb-3">
-        <Button
-          size="sm"
-          variant={servico.status === 'aprovado' ? 'default' : 'outline'}
-          className={`flex-1 h-7 text-xs ${servico.status === 'aprovado' ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}`}
-          onClick={() => handleStatus(servico.status === 'aprovado' ? 'pendente' : 'aprovado')}
-        >
-          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-          Aprovar
-        </Button>
-        <Button
-          size="sm"
-          variant={servico.status === 'reprovado' ? 'destructive' : 'outline'}
-          className="flex-1 h-7 text-xs"
-          onClick={() => handleStatus(servico.status === 'reprovado' ? 'pendente' : 'reprovado')}
-        >
-          <XCircle className="h-3.5 w-3.5 mr-1" />
-          Reprovar
-        </Button>
-      </div>
+      {/* Status buttons — hidden for contratada */}
+      {!isContratada && (
+        <div className="flex gap-2 px-3 pb-3">
+          <Button
+            size="sm"
+            variant={servico.status === 'aprovado' ? 'default' : 'outline'}
+            className={`flex-1 h-7 text-xs ${servico.status === 'aprovado' ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}`}
+            onClick={() => handleStatus(servico.status === 'aprovado' ? 'pendente' : 'aprovado')}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+            Aprovar
+          </Button>
+          <Button
+            size="sm"
+            variant={servico.status === 'reprovado' ? 'destructive' : 'outline'}
+            className="flex-1 h-7 text-xs"
+            onClick={() => handleStatus(servico.status === 'reprovado' ? 'pendente' : 'reprovado')}
+          >
+            <XCircle className="h-3.5 w-3.5 mr-1" />
+            Reprovar
+          </Button>
+        </div>
+      )}
 
       {/* Expanded area */}
       {expanded && (
         <div className="px-3 pb-3 space-y-3 border-t pt-3">
 
-          {/* Gravidade */}
-          <div>
-            <Label className="text-xs font-medium flex items-center gap-1">
-              <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" />
-              Gravidade do Serviço
-            </Label>
-            <div className="flex gap-1.5 mt-1">
-              {(Object.entries(GRAVIDADE_CONFIG) as [Gravidade, typeof GRAVIDADE_CONFIG[Gravidade]][]).map(([key, cfg]) => {
-                const Icon = cfg.Icon;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleGravidade(key)}
-                    className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-medium py-1.5 rounded-md border transition-all ${
-                      gravidade === key
-                        ? `${cfg.bg} ${cfg.color} ${cfg.border} shadow-sm`
-                        : 'bg-background text-muted-foreground border-border hover:bg-muted/50'
-                    }`}
-                  >
-                    <Icon className="h-3 w-3" />
-                    {cfg.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Localizar no PDF */}
-          <div>
-            <Label className="text-xs font-medium flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5 text-destructive" />
-              Localização no Projeto
-            </Label>
-            {hasPin ? (
-              <div className="mt-1 flex items-center justify-between bg-destructive/10 border border-destructive/30 rounded px-2 py-1.5">
-                <span className="text-[11px] text-destructive font-medium flex items-center gap-1">
-                  <MapPin className="h-3 w-3" /> Pin marcado no PDF
-                </span>
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:bg-destructive/10" title="Reposicionar pin" onClick={() => onPinRequest(servico.id, servico.descricao)}>
-                    <MapPin className="h-3 w-3" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-5 w-5 hover:text-destructive" title="Remover pin" onClick={() => onUpdate(servico.id, { location_pin: null })}>
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
+          {/* Gravidade — hidden for contratada */}
+          {!isContratada && (
+            <div>
+              <Label className="text-xs font-medium flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" />
+                Gravidade do Serviço
+              </Label>
+              <div className="flex gap-1.5 mt-1">
+                {(Object.entries(GRAVIDADE_CONFIG) as [Gravidade, typeof GRAVIDADE_CONFIG[Gravidade]][]).map(([key, cfg]) => {
+                  const Icon = cfg.Icon;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => handleGravidade(key)}
+                      className={`flex-1 flex items-center justify-center gap-1 text-[11px] font-medium py-1.5 rounded-md border transition-all ${
+                        gravidade === key
+                          ? `${cfg.bg} ${cfg.color} ${cfg.border} shadow-sm`
+                          : 'bg-background text-muted-foreground border-border hover:bg-muted/50'
+                      }`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {cfg.label}
+                    </button>
+                  );
+                })}
               </div>
-            ) : (
-              <Button size="sm" variant="outline" className="mt-1 h-7 text-xs w-full border-dashed border-destructive/50 text-destructive hover:bg-destructive/5" onClick={() => onPinRequest(servico.id, servico.descricao)}>
-                <MapPin className="h-3.5 w-3.5 mr-1" />
-                Marcar localização no PDF
-              </Button>
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium">Observação Geral</Label>
-              <Button size="icon" variant={isRecording ? 'destructive' : 'outline'} className="h-6 w-6" title={isRecording ? 'Parar gravação' : 'Gravar observação por voz'} onClick={isRecording ? stopRecording : startRecording} disabled={isTranscribing}>
-                {isTranscribing ? <Loader2 className="h-3 w-3 animate-spin" /> : isRecording ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
-              </Button>
             </div>
-            {isRecording && <p className="text-[10px] text-destructive mt-0.5 flex items-center gap-1"><span className="inline-block h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />Gravando... toque no botão para parar</p>}
-            {isTranscribing && <p className="text-[10px] text-muted-foreground mt-0.5">Transcrevendo áudio...</p>}
-            <Textarea value={observacao} onChange={e => setObservacao(e.target.value)} onBlur={handleObservacaoBlur} placeholder="Observação geral sobre o serviço..." rows={3} className="mt-1 text-sm resize-none min-h-[80px]" />
-          </div>
+          )}
 
-          {/* Foto do problema */}
-          <div>
-            <Label className="text-xs font-medium flex items-center gap-1">
-              <Camera className="h-3.5 w-3.5 text-destructive" />
-              Foto Geral do Problema
-            </Label>
-            {servico.foto_reprovacao_url ? (
-              <div className="mt-1 relative group">
-                <div
-                  className="relative cursor-pointer"
-                  onClick={() => openZoom(servico.foto_reprovacao_url!, reproPoint, 'Foto do Problema')}
-                >
-                  <img src={servico.foto_reprovacao_url} alt="Foto do problema" className="w-full h-32 object-cover rounded-md border" />
-                  {reproPoint && (
-                    <div className="absolute pointer-events-none" style={{ left: `${reproPoint.x}%`, top: `${reproPoint.y}%`, transform: 'translate(-50%,-50%)' }}>
-                      <div className="w-4 h-4 rounded-full bg-destructive border-2 border-white shadow-md flex items-center justify-center">
-                        <div className="w-1 h-1 rounded-full bg-white" />
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-md flex items-center justify-center">
-                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          {/* Localizar no PDF — hidden for contratada */}
+          {!isContratada && (
+            <div>
+              <Label className="text-xs font-medium flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5 text-destructive" />
+                Localização no Projeto
+              </Label>
+              {hasPin ? (
+                <div className="mt-1 flex items-center justify-between bg-destructive/10 border border-destructive/30 rounded px-2 py-1.5">
+                  <span className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> Pin marcado no PDF
+                  </span>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:bg-destructive/10" title="Reposicionar pin" onClick={() => onPinRequest(servico.id, servico.descricao)}>
+                      <MapPin className="h-3 w-3" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-5 w-5 hover:text-destructive" title="Remover pin" onClick={() => onUpdate(servico.id, { location_pin: null })}>
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-1 mt-1">
-                  <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('reprovacao')}>
-                    <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
-                  </Button>
-                  <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_reprovacao_url: null }); setReproPoint(null); }}>
-                    <Trash2 className="h-2.5 w-2.5" />
-                  </Button>
+              ) : (
+                <Button size="sm" variant="outline" className="mt-1 h-7 text-xs w-full border-dashed border-destructive/50 text-destructive hover:bg-destructive/5" onClick={() => onPinRequest(servico.id, servico.descricao)}>
+                  <MapPin className="h-3.5 w-3.5 mr-1" />
+                  Marcar localização no PDF
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Observação — hidden for contratada */}
+          {!isContratada && (
+            <div>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium">Observação Geral</Label>
+                <Button size="icon" variant={isRecording ? 'destructive' : 'outline'} className="h-6 w-6" title={isRecording ? 'Parar gravação' : 'Gravar observação por voz'} onClick={isRecording ? stopRecording : startRecording} disabled={isTranscribing}>
+                  {isTranscribing ? <Loader2 className="h-3 w-3 animate-spin" /> : isRecording ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+                </Button>
+              </div>
+              {isRecording && <p className="text-[10px] text-destructive mt-0.5 flex items-center gap-1"><span className="inline-block h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />Gravando... toque no botão para parar</p>}
+              {isTranscribing && <p className="text-[10px] text-muted-foreground mt-0.5">Transcrevendo áudio...</p>}
+              <Textarea value={observacao} onChange={e => setObservacao(e.target.value)} onBlur={handleObservacaoBlur} placeholder="Observação geral sobre o serviço..." rows={3} className="mt-1 text-sm resize-none min-h-[80px]" />
+            </div>
+          )}
+
+          {/* Foto do problema — read-only for contratada (view only, no upload/delete) */}
+          {!isContratada ? (
+            <div>
+              <Label className="text-xs font-medium flex items-center gap-1">
+                <Camera className="h-3.5 w-3.5 text-destructive" />
+                Foto Geral do Problema
+              </Label>
+              {servico.foto_reprovacao_url ? (
+                <div className="mt-1 relative group">
+                  <div
+                    className="relative cursor-pointer"
+                    onClick={() => openZoom(servico.foto_reprovacao_url!, reproPoint, 'Foto do Problema')}
+                  >
+                    <img src={servico.foto_reprovacao_url} alt="Foto do problema" className="w-full h-32 object-cover rounded-md border" />
+                    {reproPoint && (
+                      <div className="absolute pointer-events-none" style={{ left: `${reproPoint.x}%`, top: `${reproPoint.y}%`, transform: 'translate(-50%,-50%)' }}>
+                        <div className="w-4 h-4 rounded-full bg-destructive border-2 border-white shadow-md flex items-center justify-center">
+                          <div className="w-1 h-1 rounded-full bg-white" />
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-md flex items-center justify-center">
+                      <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                  <div className="flex gap-1 mt-1">
+                    <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('reprovacao')}>
+                      <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
+                    </Button>
+                    <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_reprovacao_url: null }); setReproPoint(null); }}>
+                      <Trash2 className="h-2.5 w-2.5" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed" disabled={uploadingRepro} onClick={() => pickFoto('reprovacao')}>
+                  {uploadingRepro ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Adicionar foto do problema</>}
+                </Button>
+              )}
+              <input ref={reproInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChosen(e, 'reprovacao')} />
+            </div>
+          ) : servico.foto_reprovacao_url ? (
+            /* Contratada: view-only foto do problema */
+            <div>
+              <Label className="text-xs font-medium flex items-center gap-1">
+                <Camera className="h-3.5 w-3.5 text-destructive" />
+                Foto do Problema
+              </Label>
+              <div className="mt-1 relative group cursor-pointer" onClick={() => openZoom(servico.foto_reprovacao_url!, reproPoint, 'Foto do Problema')}>
+                <img src={servico.foto_reprovacao_url} alt="Foto do problema" className="w-full h-32 object-cover rounded-md border" />
+                {reproPoint && (
+                  <div className="absolute pointer-events-none" style={{ left: `${reproPoint.x}%`, top: `${reproPoint.y}%`, transform: 'translate(-50%,-50%)' }}>
+                    <div className="w-4 h-4 rounded-full bg-destructive border-2 border-white shadow-md flex items-center justify-center">
+                      <div className="w-1 h-1 rounded-full bg-white" />
+                    </div>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-md flex items-center justify-center">
+                  <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
-            ) : (
-              <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed" disabled={uploadingRepro} onClick={() => pickFoto('reprovacao')}>
-                {uploadingRepro ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Adicionar foto do problema</>}
-              </Button>
-            )}
-            <input ref={reproInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChosen(e, 'reprovacao')} />
-          </div>
+            </div>
+          ) : null}
 
-          {/* Foto da correção */}
+          {/* Foto da correção — THIS is what contratada CAN edit */}
           {servico.status === 'reprovado' && (
             <>
               <Separator className="opacity-40" />
@@ -421,9 +456,11 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                       <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('correcao')}>
                         <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
                       </Button>
-                      <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_correcao_url: null } as any); setCorrecaoPoint(null); }}>
-                        <Trash2 className="h-2.5 w-2.5" />
-                      </Button>
+                      {!isContratada && (
+                        <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_correcao_url: null } as any); setCorrecaoPoint(null); }}>
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -461,24 +498,32 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                     {ocorrenciasExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-6 text-[10px] border-dashed border-primary/50 text-primary hover:bg-primary/5"
-                  onClick={async () => {
-                    await addOcorrencia(servico.id);
-                    setOcorrenciasExpanded(true);
-                  }}
-                >
-                  <Plus className="h-3 w-3 mr-0.5" />
-                  Ocorrência
-                </Button>
+                {!isContratada && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 text-[10px] border-dashed border-primary/50 text-primary hover:bg-primary/5"
+                    onClick={async () => {
+                      await addOcorrencia(servico.id);
+                      setOcorrenciasExpanded(true);
+                    }}
+                  >
+                    <Plus className="h-3 w-3 mr-0.5" />
+                    Ocorrência
+                  </Button>
+                )}
               </div>
             </div>
 
-            {ocorrencias.length === 0 && (
+            {ocorrencias.length === 0 && !isContratada && (
               <p className="text-[10px] text-muted-foreground italic py-1">
                 Nenhuma ocorrência registrada. Use para detalhar problemas específicos (ex: parede 1, parede 2...).
+              </p>
+            )}
+
+            {ocorrencias.length === 0 && isContratada && (
+              <p className="text-[10px] text-muted-foreground italic py-1">
+                Nenhuma ocorrência registrada.
               </p>
             )}
 
@@ -493,6 +538,7 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                     onDelete={(id) => deleteOcorrencia(id, servico.id)}
                     onUploadFoto={uploadFotoOcorrencia}
                     onPinRequest={(ocId, desc) => onPinRequest(ocId, desc, true, servico.id)}
+                    isContratada={isContratada}
                   />
                 ))}
               </div>

@@ -22,6 +22,7 @@ interface ServicosProps {
   onDeleteAmbiente: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
   onPinRequest: (servicoId: string, descricao: string) => void;
+  isContratada?: boolean;
 }
 
 export function ServicosPanel({
@@ -33,6 +34,7 @@ export function ServicosPanel({
   onDeleteAmbiente,
   onUploadFoto,
   onPinRequest,
+  isContratada = false,
 }: ServicosProps) {
   const [newServico, setNewServico] = useState('');
   const [showAdd, setShowAdd] = useState(false);
@@ -68,14 +70,16 @@ export function ServicosPanel({
             <h3 className="font-semibold text-base">{ambiente.nome}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Página {ambiente.pagina}</p>
           </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-            onClick={() => onDeleteAmbiente(ambiente.id)}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {!isContratada && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+              onClick={() => onDeleteAmbiente(ambiente.id)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
 
         {total > 0 && (
@@ -103,7 +107,7 @@ export function ServicosPanel({
         {ambiente.servicos.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p className="text-sm">Nenhum serviço cadastrado.</p>
-            <p className="text-xs mt-1">Adicione serviços para verificar neste ambiente.</p>
+            {!isContratada && <p className="text-xs mt-1">Adicione serviços para verificar neste ambiente.</p>}
           </div>
         ) : (
           ambiente.servicos.map(servico => (
@@ -115,44 +119,48 @@ export function ServicosPanel({
               onDelete={onDeleteServico}
               onUploadFoto={onUploadFoto}
               onPinRequest={onPinRequest}
+              isContratada={isContratada}
             />
           ))
         )}
       </div>
 
-      <div className="p-3 border-t bg-background">
-        {showAdd ? (
-          <div className="flex gap-2">
-            <Input
-              value={newServico}
-              onChange={e => setNewServico(e.target.value)}
-              placeholder="Descreva o serviço..."
-              className="text-sm h-10"
-              autoFocus
-              onKeyDown={e => {
-                if (e.key === 'Enter') handleAddServico();
-                if (e.key === 'Escape') { setShowAdd(false); setNewServico(''); }
-              }}
-            />
-            <Button size="sm" className="h-8" onClick={handleAddServico}>
-              <Plus className="h-3.5 w-3.5" />
+      {/* Add service — hidden for contratada */}
+      {!isContratada && (
+        <div className="p-3 border-t bg-background">
+          {showAdd ? (
+            <div className="flex gap-2">
+              <Input
+                value={newServico}
+                onChange={e => setNewServico(e.target.value)}
+                placeholder="Descreva o serviço..."
+                className="text-sm h-10"
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleAddServico();
+                  if (e.key === 'Escape') { setShowAdd(false); setNewServico(''); }
+                }}
+              />
+              <Button size="sm" className="h-8" onClick={handleAddServico}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="sm" variant="ghost" className="h-8" onClick={() => { setShowAdd(false); setNewServico(''); }}>
+                ✕
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs border-dashed"
+              onClick={() => setShowAdd(true)}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Adicionar serviço
             </Button>
-            <Button size="sm" variant="ghost" className="h-8" onClick={() => { setShowAdd(false); setNewServico(''); }}>
-              ✕
-            </Button>
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full text-xs border-dashed"
-            onClick={() => setShowAdd(true)}
-          >
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Adicionar serviço
-          </Button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

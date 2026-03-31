@@ -48,6 +48,7 @@ import { ServicosPanel } from '@/components/checklist/ServicosPanel';
 import { useChecklistDinamico, type ChecklistServico, type ChecklistPdf } from '@/hooks/useChecklistDinamico';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUserRole } from '@/hooks/useUserRole';
 
 type PendingShape = {
   type: DrawMode;
@@ -59,6 +60,7 @@ export function ChecklistDinamico() {
   const { obraId } = useParams<{ obraId: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { isContratada } = useUserRole();
 
   const {
     pdf,
@@ -294,7 +296,7 @@ export function ChecklistDinamico() {
             <FileText className="h-3 w-3 shrink-0" />
             <span className="truncate">{p.nome_arquivo.replace(/\.pdf$/i, '')}</span>
           </button>
-          <button
+          {!isContratada && <button
             onClick={(e) => { e.stopPropagation(); setDeletePdfId(p.id); }}
             className={cn(
               'ml-0.5 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors',
@@ -303,10 +305,10 @@ export function ChecklistDinamico() {
             title="Excluir projeto"
           >
             <Trash2 className="h-3 w-3" />
-          </button>
+          </button>}
         </div>
       ))}
-      <Button
+      {!isContratada && <Button
         size="sm"
         variant="ghost"
         className="h-7 px-2 text-xs shrink-0 gap-1 text-muted-foreground hover:text-foreground"
@@ -316,7 +318,7 @@ export function ChecklistDinamico() {
       >
         {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FilePlus className="h-3.5 w-3.5" />}
         <span className="hidden sm:inline">{uploading ? 'Enviando...' : 'Adicionar Projeto'}</span>
-      </Button>
+      </Button>}
     </div>
   );
 
@@ -334,7 +336,7 @@ export function ChecklistDinamico() {
           <MousePointer className="h-3.5 w-3.5 sm:mr-1" />
           <span className="hidden sm:inline">Selecionar</span>
         </Button>
-        <Button
+        {!isContratada && <Button
           size="sm"
           variant={isDrawingMode ? 'default' : 'ghost'}
           className="h-8 text-xs px-2"
@@ -342,7 +344,7 @@ export function ChecklistDinamico() {
         >
           <Pencil className="h-3.5 w-3.5 sm:mr-1" />
           <span className="hidden sm:inline">Novo Ambiente</span>
-        </Button>
+        </Button>}
       </div>
 
       {/* Shape selectors */}
@@ -480,7 +482,7 @@ export function ChecklistDinamico() {
           <div className="ml-auto flex items-center gap-1.5">
             {pdf && (
               <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1 border rounded px-2 h-8 bg-background">
+                {!isContratada && <div className="flex items-center gap-1 border rounded px-2 h-8 bg-background">
                   <span className="text-[10px] text-muted-foreground whitespace-nowrap">Prazo geral (dias):</span>
                   <input
                     type="number"
@@ -495,7 +497,7 @@ export function ChecklistDinamico() {
                     placeholder="—"
                     className="w-12 text-xs text-center bg-transparent outline-none"
                   />
-                </div>
+                </div>}
                 <Button variant="default" size="sm" className="h-8 px-2 text-xs"
                   onClick={handleExportPdf}
                   disabled={exportingPdf || ambientes.length === 0}
@@ -518,12 +520,16 @@ export function ChecklistDinamico() {
               </div>
               <h2 className="text-lg font-semibold mb-2">Nenhum projeto carregado</h2>
               <p className="text-sm text-muted-foreground mb-6">
-                Faça o upload de um ou mais projetos em PDF (ex: Pavimento Térreo, Pavimento 01...) para começar a demarcar os ambientes.
+                {isContratada
+                  ? 'Nenhum projeto PDF foi carregado pelo fiscal para esta obra.'
+                  : 'Faça o upload de um ou mais projetos em PDF (ex: Pavimento Térreo, Pavimento 01...) para começar a demarcar os ambientes.'}
               </p>
-              <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} size="lg" className="gap-2">
-                <Upload className="h-4 w-4" />
-                {uploading ? 'Enviando...' : 'Carregar Projeto PDF'}
-              </Button>
+              {!isContratada && (
+                <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} size="lg" className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  {uploading ? 'Enviando...' : 'Carregar Projeto PDF'}
+                </Button>
+              )}
             </div>
           </div>
 
@@ -622,6 +628,7 @@ export function ChecklistDinamico() {
                         onDeleteAmbiente={(id) => { deleteAmbiente(id); setServicosSheetOpen(false); setSelectedAmbienteId(null); }}
                         onUploadFoto={uploadFoto}
                         onPinRequest={handlePinRequest}
+                        isContratada={isContratada}
                       />
                     </div>
                   </SheetContent>
@@ -681,6 +688,7 @@ export function ChecklistDinamico() {
                       onDeleteAmbiente={deleteAmbiente}
                       onUploadFoto={uploadFoto}
                       onPinRequest={handlePinRequest}
+                      isContratada={isContratada}
                     />
                   </div>
                 </div>
