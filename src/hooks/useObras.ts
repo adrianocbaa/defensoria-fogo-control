@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface UseObrasReturn {
   obras: Obra[];
@@ -21,20 +23,46 @@ const normalizeStatus = (s: string): ObraStatus => {
 };
 
 export function useObras(): UseObrasReturn {
+  const { user } = useAuth();
+  const { isContratada, loading: roleLoading } = useUserRole();
   const [obras, setObras] = useState<Obra[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchObras = async () => {
+    if (roleLoading) return;
+    
     try {
       setLoading(true);
       setError(null);
+
+      // For contratada users, first get their allowed obra IDs
+      let allowedObraIds: string[] | null = null;
+      if (isContratada && user) {
+        const { data: accessData } = await supabase
+          .from('user_obra_access')
+          .select('obra_id')
+          .eq('user_id', user.id);
+        allowedObraIds = (accessData || []).map(a => a.obra_id);
+        if (allowedObraIds.length === 0) {
+          setObras([]);
+          setLoading(false);
+          return;
+        }
+      }
       
-      const { data, error: supabaseError } = await supabase
+      let query = supabase
         .from('obras')
         .select('*, empresas(razao_social)')
         .order('created_at', { ascending: false });
-      
+
+      // Client-side filter for contratada (RLS also enforces this)
+      if (allowedObraIds) {
+        query = query.in('id', allowedObraIds);
+      }
+
+      const { data, error: supabaseError } = await query;
+
       if (supabaseError) {
         throw new Error('Erro ao carregar obras: ' + supabaseError.message);
       }
@@ -99,8 +127,10 @@ export function useObras(): UseObrasReturn {
   };
 
   useEffect(() => {
-    fetchObras();
-  }, []);
+    if (!roleLoading) {
+      fetchObras();
+    }
+  }, [roleLoading, isContratada, user?.id]);
 
   const refetch = () => {
     fetchObras();
