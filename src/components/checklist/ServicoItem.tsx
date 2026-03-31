@@ -53,7 +53,7 @@ const GRAVIDADE_CONFIG: Record<Gravidade, { label: string; color: string; bg: st
 
 interface Point { x: number; y: number; }
 
-export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto, onPinRequest }: ServicoItemProps) {
+export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto, onPinRequest, isContratada = false }: ServicoItemProps) {
   const [expanded, setExpanded] = useState(servico.status === 'reprovado');
   const [ocorrenciasExpanded, setOcorrenciasExpanded] = useState(false);
   const [observacao, setObservacao] = useState(servico.observacao ?? '');
