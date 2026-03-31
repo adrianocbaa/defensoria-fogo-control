@@ -48,6 +48,7 @@ import { ServicosPanel } from '@/components/checklist/ServicosPanel';
 import { useChecklistDinamico, type ChecklistServico, type ChecklistPdf } from '@/hooks/useChecklistDinamico';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUserRole } from '@/hooks/useUserRole';
 
 type PendingShape = {
   type: DrawMode;

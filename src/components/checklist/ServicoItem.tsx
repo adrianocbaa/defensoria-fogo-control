@@ -40,6 +40,7 @@ interface ServicoItemProps {
   onDelete: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
   onPinRequest: (id: string, descricao: string, isOcorrencia?: boolean, servicoId?: string) => void;
+  isContratada?: boolean;
 }
 
 type Gravidade = 'critico' | 'medio' | 'estetico';

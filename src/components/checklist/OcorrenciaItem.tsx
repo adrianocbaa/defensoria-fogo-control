@@ -30,6 +30,7 @@ interface OcorrenciaItemProps {
   onDelete: (id: string) => void;
   onUploadFoto: (file: File, id: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
   onPinRequest: (ocorrenciaId: string, descricao: string) => void;
+  isContratada?: boolean;
 }
 
 export function OcorrenciaItem({

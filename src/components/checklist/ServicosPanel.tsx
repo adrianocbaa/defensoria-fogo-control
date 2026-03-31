@@ -22,6 +22,7 @@ interface ServicosProps {
   onDeleteAmbiente: (id: string) => void;
   onUploadFoto: (file: File, servicoId: string, tipo: 'reprovacao' | 'correcao') => Promise<string | null>;
   onPinRequest: (servicoId: string, descricao: string) => void;
+  isContratada?: boolean;
 }
 
 export function ServicosPanel({
