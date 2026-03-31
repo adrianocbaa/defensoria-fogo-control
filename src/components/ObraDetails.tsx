@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, MapPin, Calendar, Building2, Users, FileText, Image, Download, Loader2, DollarSign, TrendingUp, ClipboardCheck } from 'lucide-react';
+import { X, MapPin, Calendar, Building2, Users, FileText, Image, Download, Loader2, DollarSign, TrendingUp } from 'lucide-react';
 import { PhotoGalleryCollapsible } from '@/components/PhotoGalleryCollapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
