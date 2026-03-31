@@ -60,6 +60,7 @@ export function ChecklistDinamico() {
   const { obraId } = useParams<{ obraId: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { isContratada } = useUserRole();
 
   const {
     pdf,
