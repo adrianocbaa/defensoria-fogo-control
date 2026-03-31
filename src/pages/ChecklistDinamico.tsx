@@ -296,7 +296,7 @@ export function ChecklistDinamico() {
             <FileText className="h-3 w-3 shrink-0" />
             <span className="truncate">{p.nome_arquivo.replace(/\.pdf$/i, '')}</span>
           </button>
-          <button
+          {!isContratada && <button
             onClick={(e) => { e.stopPropagation(); setDeletePdfId(p.id); }}
             className={cn(
               'ml-0.5 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors',
@@ -305,10 +305,10 @@ export function ChecklistDinamico() {
             title="Excluir projeto"
           >
             <Trash2 className="h-3 w-3" />
-          </button>
+          </button>}
         </div>
       ))}
-      <Button
+      {!isContratada && <Button
         size="sm"
         variant="ghost"
         className="h-7 px-2 text-xs shrink-0 gap-1 text-muted-foreground hover:text-foreground"
@@ -318,7 +318,7 @@ export function ChecklistDinamico() {
       >
         {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FilePlus className="h-3.5 w-3.5" />}
         <span className="hidden sm:inline">{uploading ? 'Enviando...' : 'Adicionar Projeto'}</span>
-      </Button>
+      </Button>}
     </div>
   );
 
