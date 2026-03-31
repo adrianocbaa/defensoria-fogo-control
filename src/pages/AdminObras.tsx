@@ -523,6 +523,14 @@ export function AdminObras() {
                             <ClipboardList className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/obras/${obra.id}/checklist`)}
+                          title="Checklist"
+                        >
+                          <ClipboardCheck className="h-4 w-4" />
+                        </Button>
                         
                         {/* Botão Editar - verifica permissão granular */}
                         {(() => {
