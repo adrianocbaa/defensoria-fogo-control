@@ -16,7 +16,7 @@ import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, BarChart3, Map as MapIcon } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, ClipboardCheck, BarChart3, Map as MapIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Obra {
@@ -523,6 +523,14 @@ export function AdminObras() {
                             <ClipboardList className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/obras/${obra.id}/checklist`)}
+                          title="Checklist"
+                        >
+                          <ClipboardCheck className="h-4 w-4" />
+                        </Button>
                         
                         {/* Botão Editar - verifica permissão granular */}
                         {(() => {
