@@ -336,7 +336,7 @@ export function ChecklistDinamico() {
           <MousePointer className="h-3.5 w-3.5 sm:mr-1" />
           <span className="hidden sm:inline">Selecionar</span>
         </Button>
-        <Button
+        {!isContratada && <Button
           size="sm"
           variant={isDrawingMode ? 'default' : 'ghost'}
           className="h-8 text-xs px-2"
@@ -344,7 +344,7 @@ export function ChecklistDinamico() {
         >
           <Pencil className="h-3.5 w-3.5 sm:mr-1" />
           <span className="hidden sm:inline">Novo Ambiente</span>
-        </Button>
+        </Button>}
       </div>
 
       {/* Shape selectors */}
