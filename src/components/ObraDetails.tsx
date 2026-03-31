@@ -170,15 +170,6 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1"
-              onClick={() => { onClose(); navigate(`/obras/${obra.id}/checklist`); }}
-            >
-              <ClipboardCheck className="h-3.5 w-3.5" />
-              Checklist
-            </Button>
             <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-destructive/10 hover:text-destructive transition-colors">
               <X className="h-4 w-4" />
             </Button>
