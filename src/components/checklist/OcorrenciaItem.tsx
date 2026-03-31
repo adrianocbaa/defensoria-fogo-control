@@ -34,7 +34,7 @@ interface OcorrenciaItemProps {
 }
 
 export function OcorrenciaItem({
-  ocorrencia, index, onUpdate, onDelete, onUploadFoto, onPinRequest,
+  ocorrencia, index, onUpdate, onDelete, onUploadFoto, onPinRequest, isContratada = false,
 }: OcorrenciaItemProps) {
   const [expanded, setExpanded] = useState(true);
   const [observacao, setObservacao] = useState(ocorrencia.observacao ?? '');
