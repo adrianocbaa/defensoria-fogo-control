@@ -482,7 +482,7 @@ export function ChecklistDinamico() {
           <div className="ml-auto flex items-center gap-1.5">
             {pdf && (
               <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1 border rounded px-2 h-8 bg-background">
+                {!isContratada && <div className="flex items-center gap-1 border rounded px-2 h-8 bg-background">
                   <span className="text-[10px] text-muted-foreground whitespace-nowrap">Prazo geral (dias):</span>
                   <input
                     type="number"
@@ -497,7 +497,7 @@ export function ChecklistDinamico() {
                     placeholder="—"
                     className="w-12 text-xs text-center bg-transparent outline-none"
                   />
-                </div>
+                </div>}
                 <Button variant="default" size="sm" className="h-8 px-2 text-xs"
                   onClick={handleExportPdf}
                   disabled={exportingPdf || ambientes.length === 0}
