@@ -684,6 +684,7 @@ export function ChecklistDinamico() {
                       onDeleteAmbiente={deleteAmbiente}
                       onUploadFoto={uploadFoto}
                       onPinRequest={handlePinRequest}
+                      isContratada={isContratada}
                     />
                   </div>
                 </div>
