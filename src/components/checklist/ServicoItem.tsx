@@ -250,33 +250,37 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
           <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setExpanded(!expanded)}>
             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </Button>
-          <Button size="icon" variant="ghost" className="h-6 w-6 hover:text-destructive" onClick={() => onDelete(servico.id)}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {!isContratada && (
+            <Button size="icon" variant="ghost" className="h-6 w-6 hover:text-destructive" onClick={() => onDelete(servico.id)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Status buttons */}
-      <div className="flex gap-2 px-3 pb-3">
-        <Button
-          size="sm"
-          variant={servico.status === 'aprovado' ? 'default' : 'outline'}
-          className={`flex-1 h-7 text-xs ${servico.status === 'aprovado' ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}`}
-          onClick={() => handleStatus(servico.status === 'aprovado' ? 'pendente' : 'aprovado')}
-        >
-          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-          Aprovar
-        </Button>
-        <Button
-          size="sm"
-          variant={servico.status === 'reprovado' ? 'destructive' : 'outline'}
-          className="flex-1 h-7 text-xs"
-          onClick={() => handleStatus(servico.status === 'reprovado' ? 'pendente' : 'reprovado')}
-        >
-          <XCircle className="h-3.5 w-3.5 mr-1" />
-          Reprovar
-        </Button>
-      </div>
+      {/* Status buttons — hidden for contratada */}
+      {!isContratada && (
+        <div className="flex gap-2 px-3 pb-3">
+          <Button
+            size="sm"
+            variant={servico.status === 'aprovado' ? 'default' : 'outline'}
+            className={`flex-1 h-7 text-xs ${servico.status === 'aprovado' ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}`}
+            onClick={() => handleStatus(servico.status === 'aprovado' ? 'pendente' : 'aprovado')}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+            Aprovar
+          </Button>
+          <Button
+            size="sm"
+            variant={servico.status === 'reprovado' ? 'destructive' : 'outline'}
+            className="flex-1 h-7 text-xs"
+            onClick={() => handleStatus(servico.status === 'reprovado' ? 'pendente' : 'reprovado')}
+          >
+            <XCircle className="h-3.5 w-3.5 mr-1" />
+            Reprovar
+          </Button>
+        </div>
+      )}
 
       {/* Expanded area */}
       {expanded && (
