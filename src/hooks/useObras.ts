@@ -127,8 +127,10 @@ export function useObras(): UseObrasReturn {
   };
 
   useEffect(() => {
-    fetchObras();
-  }, []);
+    if (!roleLoading) {
+      fetchObras();
+    }
+  }, [roleLoading, isContratada, user?.id]);
 
   const refetch = () => {
     fetchObras();
