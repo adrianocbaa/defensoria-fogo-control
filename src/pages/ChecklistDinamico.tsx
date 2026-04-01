@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { Button } from '@/components/ui/button';
