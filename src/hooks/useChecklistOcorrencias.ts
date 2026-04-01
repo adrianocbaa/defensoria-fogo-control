@@ -101,6 +101,7 @@ export function useChecklistOcorrencias(obraId: string) {
 
     if (error) { toast.error('Erro ao atualizar ocorrência'); return; }
     await fetchOcorrencias(servicoId);
+    window.dispatchEvent(new CustomEvent('checklist:refresh-ocorrencias'));
   };
 
   const deleteOcorrencia = async (ocorrenciaId: string, servicoId: string) => {
@@ -110,6 +111,7 @@ export function useChecklistOcorrencias(obraId: string) {
       .eq('id', ocorrenciaId);
     if (error) { toast.error('Erro ao excluir ocorrência'); return; }
     await fetchOcorrencias(servicoId);
+    window.dispatchEvent(new CustomEvent('checklist:refresh-ocorrencias'));
     toast.success('Ocorrência excluída');
   };
 
