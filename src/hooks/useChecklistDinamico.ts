@@ -281,12 +281,14 @@ export function useChecklistDinamico(obraId: string) {
     const { error } = await supabase.from('checklist_ambientes').delete().eq('id', ambienteId);
     if (error) { toast.error('Erro ao excluir ambiente'); return; }
     setAmbientes(prev => prev.filter(a => a.id !== ambienteId));
+    window.dispatchEvent(new CustomEvent('checklist:refresh-ocorrencias'));
     toast.success('Ambiente excluído');
   };
 
   const deleteServico = async (servicoId: string) => {
     await supabase.from('checklist_servicos').delete().eq('id', servicoId);
     if (pdf?.id) await fetchAmbientes(pdf.id);
+    window.dispatchEvent(new CustomEvent('checklist:refresh-ocorrencias'));
   };
 
   const uploadFoto = async (
