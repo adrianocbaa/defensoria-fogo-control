@@ -36,6 +36,7 @@ interface PdfCanvasProps {
   selectedAmbienteId: string | null;
   isPinMode: boolean;
   pendingPinServico: { id: string; descricao: string } | null;
+  ocorrenciasPorServico?: Record<string, ChecklistOcorrencia[]>;
   onPageCount: (count: number) => void;
   onDrawComplete: (shape: {
     type: DrawMode;
