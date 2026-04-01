@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { ChecklistAmbiente } from '@/hooks/useChecklistDinamico';
+import type { ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -35,6 +36,7 @@ interface PdfCanvasProps {
   selectedAmbienteId: string | null;
   isPinMode: boolean;
   pendingPinServico: { id: string; descricao: string } | null;
+  ocorrenciasPorServico?: Record<string, ChecklistOcorrencia[]>;
   onPageCount: (count: number) => void;
   onDrawComplete: (shape: {
     type: DrawMode;
@@ -63,6 +65,7 @@ export function PdfCanvas({
   selectedAmbienteId,
   isPinMode,
   pendingPinServico,
+  ocorrenciasPorServico = {},
   onPageCount,
   onDrawComplete,
   onAmbienteClick,
@@ -486,6 +489,17 @@ export function PdfCanvas({
         status: s.status,
         fotoUrl: s.foto_reprovacao_url,
         fotoCorrecaoUrl: s.foto_correcao_url,
+      });
+      // Also collect pins from ocorrências of this service
+      const ocorrencias = ocorrenciasPorServico[s.id] ?? [];
+      ocorrencias.forEach(oc => {
+        const ocPin = oc.location_pin as { x: number; y: number } | null;
+        if (ocPin) locationPins.push({
+          x: ocPin.x, y: ocPin.y, servicoId: oc.id, label: oc.descricao ?? `Ocorrência - ${s.descricao}`,
+          status: oc.status,
+          fotoUrl: oc.foto_reprovacao_url,
+          fotoCorrecaoUrl: oc.foto_correcao_url,
+        });
       });
     });
   });

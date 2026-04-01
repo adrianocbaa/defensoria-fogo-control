@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ import type { ShapeData } from '@/components/checklist/PdfCanvas';
 import { AmbienteDialog } from '@/components/checklist/AmbienteDialog';
 import { ServicosPanel } from '@/components/checklist/ServicosPanel';
 import { useChecklistDinamico, type ChecklistServico, type ChecklistPdf } from '@/hooks/useChecklistDinamico';
+import type { ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -83,8 +84,34 @@ export function ChecklistDinamico() {
     uploadFoto,
   } = useChecklistDinamico(obraId!);
 
-  // Hook de ocorrências não é usado diretamente nesta página (cada ServicoItem gerencia o seu)
-  // mas precisamos do supabase para salvar pins de ocorrências
+  // Centralized ocorrências state for PdfCanvas pins
+  const [ocorrenciasPorServico, setOcorrenciasPorServico] = useState<Record<string, ChecklistOcorrencia[]>>({});
+
+  const fetchAllOcorrencias = useCallback(async () => {
+    const servicoIds = ambientes.flatMap(a => a.servicos.map(s => s.id));
+    if (servicoIds.length === 0) { setOcorrenciasPorServico({}); return; }
+    const { data } = await supabase
+      .from('checklist_ocorrencias' as any)
+      .select('*')
+      .in('servico_id', servicoIds)
+      .order('ordem', { ascending: true });
+    if (!data) return;
+    const map: Record<string, ChecklistOcorrencia[]> = {};
+    for (const oc of data as any[]) {
+      if (!map[oc.servico_id]) map[oc.servico_id] = [];
+      map[oc.servico_id].push(oc);
+    }
+    setOcorrenciasPorServico(map);
+  }, [ambientes]);
+
+  useEffect(() => { fetchAllOcorrencias(); }, [fetchAllOcorrencias]);
+
+  // Re-fetch when ocorrência pins change
+  useEffect(() => {
+    const handler = () => { fetchAllOcorrencias(); };
+    window.addEventListener('checklist:refresh-ocorrencias', handler);
+    return () => window.removeEventListener('checklist:refresh-ocorrencias', handler);
+  }, [fetchAllOcorrencias]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
@@ -586,6 +613,7 @@ export function ChecklistDinamico() {
                         selectedAmbienteId={selectedAmbienteId}
                         isPinMode={isPinMode}
                         pendingPinServico={pendingPinServico}
+                        ocorrenciasPorServico={ocorrenciasPorServico}
                         onPageCount={handlePageCount}
                         onDrawComplete={handleDrawComplete}
                         onAmbienteClick={handleAmbienteClick}
@@ -653,6 +681,7 @@ export function ChecklistDinamico() {
                           selectedAmbienteId={selectedAmbienteId}
                           isPinMode={isPinMode}
                           pendingPinServico={pendingPinServico}
+                          ocorrenciasPorServico={ocorrenciasPorServico}
                           onPageCount={handlePageCount}
                           onDrawComplete={handleDrawComplete}
                           onAmbienteClick={handleAmbienteClick}
