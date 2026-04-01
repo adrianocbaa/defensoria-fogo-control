@@ -258,6 +258,7 @@ export function useChecklistDinamico(obraId: string) {
 
     if (error) { toast.error('Erro ao atualizar serviço'); return; }
     if (pdf?.id) await fetchAmbientes(pdf.id);
+    window.dispatchEvent(new CustomEvent('checklist:refresh-ocorrencias'));
   };
 
   const addServico = async (ambienteId: string, descricao: string) => {
