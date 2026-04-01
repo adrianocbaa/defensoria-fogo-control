@@ -613,6 +613,7 @@ export function ChecklistDinamico() {
                         selectedAmbienteId={selectedAmbienteId}
                         isPinMode={isPinMode}
                         pendingPinServico={pendingPinServico}
+                        ocorrenciasPorServico={ocorrenciasPorServico}
                         onPageCount={handlePageCount}
                         onDrawComplete={handleDrawComplete}
                         onAmbienteClick={handleAmbienteClick}
