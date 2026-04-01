@@ -65,6 +65,7 @@ export function PdfCanvas({
   selectedAmbienteId,
   isPinMode,
   pendingPinServico,
+  ocorrenciasPorServico = {},
   onPageCount,
   onDrawComplete,
   onAmbienteClick,
