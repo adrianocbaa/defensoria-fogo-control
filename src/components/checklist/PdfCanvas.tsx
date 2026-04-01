@@ -490,6 +490,17 @@ export function PdfCanvas({
         fotoUrl: s.foto_reprovacao_url,
         fotoCorrecaoUrl: s.foto_correcao_url,
       });
+      // Also collect pins from ocorrências of this service
+      const ocorrencias = ocorrenciasPorServico[s.id] ?? [];
+      ocorrencias.forEach(oc => {
+        const ocPin = oc.location_pin as { x: number; y: number } | null;
+        if (ocPin) locationPins.push({
+          x: ocPin.x, y: ocPin.y, servicoId: oc.id, label: oc.descricao ?? `Ocorrência - ${s.descricao}`,
+          status: oc.status,
+          fotoUrl: oc.foto_reprovacao_url,
+          fotoCorrecaoUrl: oc.foto_correcao_url,
+        });
+      });
     });
   });
 
