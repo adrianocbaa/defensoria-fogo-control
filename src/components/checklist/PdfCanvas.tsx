@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { ChecklistAmbiente } from '@/hooks/useChecklistDinamico';
+import type { ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
