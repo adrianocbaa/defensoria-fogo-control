@@ -1,0 +1,2 @@
+UPDATE public.rdo_activities SET executado_dia = 1, status = 'concluida' WHERE id = 'f43ea6c3-3ac6-4915-899c-b42b90986541';
+UPDATE public.rdo_reports SET status = 'concluido' WHERE id = '6206d037-9b6f-45e5-b63d-28f2a567ec07';
