@@ -107,10 +107,23 @@ export function calcularFinanceiroMedicao(
   // Mapa para cálculo dos itens
   const totalContratoPorItem = buildTotalContratoPorItem(orcItems);
 
-  // Valor acumulado global: soma direta do campo `total` de todos os itens de medição.
+  // Conjunto de itens FOLHA do orçamento (MICROs).
+  // IMPORTANTE: somar apenas itens folha evita dupla contagem com itens MACRO (pais),
+  // espelhando exatamente a lógica usada na tela de Medicao.tsx.
+  // Itens extracontratuais (não presentes no orçamento) também são considerados folhas.
+  const folhasSet = new Set<string>();
+  orcItems.forEach(oi => {
+    if (ehItemFolha(oi.item, orcItems)) folhasSet.add(oi.item);
+  });
+  const ehFolhaOuExtracontratual = (itemCode: string) =>
+    folhasSet.has(itemCode) || !orcItems.some(oi => oi.item === itemCode);
+
+  // Valor acumulado global: soma apenas dos itens folha/extracontratuais.
   // Cada item é arredondado individualmente antes de somar, para evitar acúmulo de erro de ponto flutuante.
   const valorAcumuladoRaw = medicaoItems.reduce(
-    (sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100,
+    (sum, item) => ehFolhaOuExtracontratual(item.item_code)
+      ? sum + Math.round(Number(item.total || 0) * 100) / 100
+      : sum,
     0
   );
   const valorAcumulado = Math.round(valorAcumuladoRaw * 100) / 100;
@@ -121,16 +134,16 @@ export function calcularFinanceiroMedicao(
   const marcos: MarcoCalculado[] = sessionsSorted.map((session, idx) => {
     const sessionIdsAteAgora = new Set(sessionsSorted.slice(0, idx + 1).map(s => s.id));
 
-    // valorMedicao: soma direta do campo `total` dos itens desta sessão (igual a "Serviços Executados")
-    const itemsDaSessao = medicaoItems.filter(i => i.medicao_id === session.id);
+    // valorMedicao: soma apenas folhas/extracontratuais desta sessão (igual a "Serviços Executados")
+    const itemsDaSessao = medicaoItems.filter(i => i.medicao_id === session.id && ehFolhaOuExtracontratual(i.item_code));
     const valorMedicao = Math.round(
       itemsDaSessao.reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
     ) / 100;
 
-    // Acumulado até esta sessão: soma direta dos campos `total` (valor real pago), sem recalcular via pct
+    // Acumulado até esta sessão: soma apenas folhas/extracontratuais
     const acumuladoAteAgora = Math.round(
       medicaoItems
-        .filter(i => sessionIdsAteAgora.has(i.medicao_id))
+        .filter(i => sessionIdsAteAgora.has(i.medicao_id) && ehFolhaOuExtracontratual(i.item_code))
         .reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
     ) / 100;
 
