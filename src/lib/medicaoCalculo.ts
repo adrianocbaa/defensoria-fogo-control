@@ -108,20 +108,20 @@ export function calcularFinanceiroMedicao(
   const totalContratoPorItem = buildTotalContratoPorItem(orcItems);
 
   // Conjunto de itens FOLHA do orçamento (MICROs).
-  // IMPORTANTE: somar apenas itens folha evita dupla contagem com itens MACRO (pais),
-  // espelhando exatamente a lógica usada na tela de Medicao.tsx.
-  // Itens extracontratuais (não presentes no orçamento) também são considerados folhas.
+  // IMPORTANTE: a tela de Medição considera apenas itens folha que existem
+  // na planilha da obra. Códigos avulsos gravados em `medicao_items` que não
+  // existem em `orcamento_items` devem ser ignorados aqui também, para manter
+  // paridade com a tela e evitar percentuais acima do real.
   const folhasSet = new Set<string>();
   orcItems.forEach(oi => {
     if (ehItemFolha(oi.item, orcItems)) folhasSet.add(oi.item);
   });
-  const ehFolhaOuExtracontratual = (itemCode: string) =>
-    folhasSet.has(itemCode) || !orcItems.some(oi => oi.item === itemCode);
+  const ehItemFolhaDaObra = (itemCode: string) => folhasSet.has(itemCode);
 
-  // Valor acumulado global: soma apenas dos itens folha/extracontratuais.
+  // Valor acumulado global: soma apenas dos itens folha existentes na obra.
   // Cada item é arredondado individualmente antes de somar, para evitar acúmulo de erro de ponto flutuante.
   const valorAcumuladoRaw = medicaoItems.reduce(
-    (sum, item) => ehFolhaOuExtracontratual(item.item_code)
+    (sum, item) => ehItemFolhaDaObra(item.item_code)
       ? sum + Math.round(Number(item.total || 0) * 100) / 100
       : sum,
     0
@@ -134,16 +134,16 @@ export function calcularFinanceiroMedicao(
   const marcos: MarcoCalculado[] = sessionsSorted.map((session, idx) => {
     const sessionIdsAteAgora = new Set(sessionsSorted.slice(0, idx + 1).map(s => s.id));
 
-    // valorMedicao: soma apenas folhas/extracontratuais desta sessão (igual a "Serviços Executados")
-    const itemsDaSessao = medicaoItems.filter(i => i.medicao_id === session.id && ehFolhaOuExtracontratual(i.item_code));
+    // valorMedicao: soma apenas itens folha existentes na obra (igual a "Serviços Executados")
+    const itemsDaSessao = medicaoItems.filter(i => i.medicao_id === session.id && ehItemFolhaDaObra(i.item_code));
     const valorMedicao = Math.round(
       itemsDaSessao.reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
     ) / 100;
 
-    // Acumulado até esta sessão: soma apenas folhas/extracontratuais
+    // Acumulado até esta sessão: soma apenas itens folha existentes na obra
     const acumuladoAteAgora = Math.round(
       medicaoItems
-        .filter(i => sessionIdsAteAgora.has(i.medicao_id) && ehFolhaOuExtracontratual(i.item_code))
+        .filter(i => sessionIdsAteAgora.has(i.medicao_id) && ehItemFolhaDaObra(i.item_code))
         .reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
     ) / 100;
 
