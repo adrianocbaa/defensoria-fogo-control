@@ -33,6 +33,24 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     orcamentoItemId?: string;
     itemDescricao?: string;
   }>({ open: false });
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    orcamentoItemId?: string;
+    itemDescricao?: string;
+    itemCode?: string;
+    quantidadeContratada?: number;
+    unidade?: string;
+  }>({ open: false });
+
+  const openDetails = useCallback((args: {
+    orcamentoItemId: string;
+    itemDescricao: string;
+    itemCode?: string;
+    quantidadeContratada: number;
+    unidade?: string;
+  }) => {
+    setDetailsDialog({ open: true, ...args });
+  }, []);
 
   const { data: orcamentoItems = [], isLoading: loadingOrcamento } = useOrcamentoItems(obraId);
   const { data: acumulados = [], isLoading: loadingAcumulados } = useRdoActivitiesAcumulado(obraId, dataRdo, reportId);
