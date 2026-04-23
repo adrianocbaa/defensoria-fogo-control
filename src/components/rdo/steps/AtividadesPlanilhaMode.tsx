@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SaveIndicator } from "@/components/ui/save-indicator";
 import { PlanilhaTreeView } from "./PlanilhaTreeView";
 import { useUserRole } from "@/hooks/useUserRole";
+import { ItemExecutionDetailsDialog } from "@/components/rdo/ItemExecutionDetailsDialog";
+
 interface AtividadesPlanilhaModeProps {
   reportId?: string;
   obraId: string;
@@ -31,6 +33,24 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
     orcamentoItemId?: string;
     itemDescricao?: string;
   }>({ open: false });
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    orcamentoItemId?: string;
+    itemDescricao?: string;
+    itemCode?: string;
+    quantidadeContratada?: number;
+    unidade?: string;
+  }>({ open: false });
+
+  const openDetails = useCallback((args: {
+    orcamentoItemId: string;
+    itemDescricao: string;
+    itemCode?: string;
+    quantidadeContratada: number;
+    unidade?: string;
+  }) => {
+    setDetailsDialog({ open: true, ...args });
+  }, []);
 
   const { data: orcamentoItems = [], isLoading: loadingOrcamento } = useOrcamentoItems(obraId);
   const { data: acumulados = [], isLoading: loadingAcumulados } = useRdoActivitiesAcumulado(obraId, dataRdo, reportId);
@@ -243,10 +263,23 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       // Extrair mensagem amigável do banco (trigger de validação)
       const msg = err?.message || '';
       const triggerMatch = msg.match(/Quantidade executada .+ excede o saldo disponível \(.+\)\. Item: (.+)/);
+      const item = orcamentoItems.find(i => i.id === variables?.orcamentoItemId);
+      const ajusteAditivo = (item && item.origem !== 'extracontratual') ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+      const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
+      const detailsAction = item && variables?.orcamentoItemId ? {
+        label: 'Ver detalhes',
+        onClick: () => openDetails({
+          orcamentoItemId: variables.orcamentoItemId,
+          itemDescricao: item.descricao || '',
+          itemCode: item.item,
+          quantidadeContratada: quantidadeAjustada,
+          unidade: item.unidade,
+        }),
+      } : undefined;
       if (triggerMatch) {
-        toast.error(`Item ${triggerMatch[1]}: saldo esgotado (100% já executado em outros RDOs). Valor descartado.`, { duration: 8000 });
+        toast.error(`Item ${triggerMatch[1]}: saldo esgotado (100% já executado em outros RDOs). Valor descartado.`, { duration: 8000, action: detailsAction });
       } else {
-        toast.error(`Erro ao salvar quantidade: ${msg || 'Verifique o valor e tente novamente.'}`, { duration: 6000 });
+        toast.error(`Erro ao salvar quantidade: ${msg || 'Verifique o valor e tente novamente.'}`, { duration: 6000, action: detailsAction });
       }
       // Reverter APENAS o item que falhou no estado local — não resetar todos os outros
       if (variables?.orcamentoItemId) {
@@ -274,7 +307,19 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
 
     // Bloquear imediatamente se saldo for zero
     if (saldoDisponivel <= 0) {
-      toast.error(`Item já 100% executado em RDOs anteriores. Saldo = 0.`, { duration: 5000 });
+      toast.error(`Item já 100% executado em RDOs anteriores. Saldo = 0.`, {
+        duration: 8000,
+        action: {
+          label: 'Ver detalhes',
+          onClick: () => openDetails({
+            orcamentoItemId,
+            itemDescricao: item?.descricao || '',
+            itemCode: item?.item,
+            quantidadeContratada: quantidadeAjustada,
+            unidade: item?.unidade,
+          }),
+        },
+      });
       setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: 0 }));
       return;
     }
@@ -523,6 +568,19 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
           itemDescricao={noteDialog.itemDescricao || ''}
           source="planilha"
           itemRef={noteDialog.orcamentoItemId}
+        />
+      )}
+
+      {detailsDialog.open && detailsDialog.orcamentoItemId && (
+        <ItemExecutionDetailsDialog
+          open={detailsDialog.open}
+          onOpenChange={(open) => setDetailsDialog((prev) => ({ ...prev, open }))}
+          obraId={obraId}
+          orcamentoItemId={detailsDialog.orcamentoItemId}
+          itemDescricao={detailsDialog.itemDescricao || ''}
+          itemCode={detailsDialog.itemCode}
+          quantidadeContratada={detailsDialog.quantidadeContratada || 0}
+          unidade={detailsDialog.unidade}
         />
       )}
     </>
