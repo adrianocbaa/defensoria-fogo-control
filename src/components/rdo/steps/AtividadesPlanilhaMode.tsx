@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SaveIndicator } from "@/components/ui/save-indicator";
 import { PlanilhaTreeView } from "./PlanilhaTreeView";
 import { useUserRole } from "@/hooks/useUserRole";
+import { ItemExecutionDetailsDialog } from "@/components/rdo/ItemExecutionDetailsDialog";
+
 interface AtividadesPlanilhaModeProps {
   reportId?: string;
   obraId: string;
