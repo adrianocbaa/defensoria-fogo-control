@@ -16,6 +16,7 @@ import { Download, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { writeExcelFromArrays } from '@/lib/excelUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface RdoAtividadesReportDialogProps {
   obraId: string;
@@ -33,6 +34,7 @@ interface AtividadeReport {
 export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesReportDialogProps) {
   const [open, setOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [includeInProgress, setIncludeInProgress] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -64,7 +66,7 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
         .eq('obra_id', obraId)
         .gte('rdo_reports.data', format(date.from, 'yyyy-MM-dd'))
         .lte('rdo_reports.data', format(date.to, 'yyyy-MM-dd'))
-        .in('rdo_reports.status', ['concluido', 'aprovado'])
+        .in('rdo_reports.status', includeInProgress ? ['concluido', 'aprovado', 'preenchendo', 'rascunho'] : ['concluido', 'aprovado'])
         .order('rdo_reports(data)', { ascending: true });
 
       if (error) throw error;
@@ -161,6 +163,22 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
           <div className="space-y-2">
             <label className="text-sm font-medium">Período</label>
             <DatePickerWithRange date={date} setDate={setDate} />
+          </div>
+
+          <div className="flex items-start gap-2 rounded-md border p-3">
+            <Checkbox
+              id="include-in-progress"
+              checked={includeInProgress}
+              onCheckedChange={(v) => setIncludeInProgress(v === true)}
+            />
+            <div className="space-y-1">
+              <label htmlFor="include-in-progress" className="text-sm font-medium cursor-pointer">
+                Incluir RDOs em preenchimento e rascunho
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Por padrão, apenas RDOs concluídos ou aprovados são incluídos.
+              </p>
+            </div>
           </div>
 
           <div className="text-sm text-muted-foreground">
