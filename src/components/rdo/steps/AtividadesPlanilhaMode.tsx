@@ -570,6 +570,19 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
           itemRef={noteDialog.orcamentoItemId}
         />
       )}
+
+      {detailsDialog.open && detailsDialog.orcamentoItemId && (
+        <ItemExecutionDetailsDialog
+          open={detailsDialog.open}
+          onOpenChange={(open) => setDetailsDialog((prev) => ({ ...prev, open }))}
+          obraId={obraId}
+          orcamentoItemId={detailsDialog.orcamentoItemId}
+          itemDescricao={detailsDialog.itemDescricao || ''}
+          itemCode={detailsDialog.itemCode}
+          quantidadeContratada={detailsDialog.quantidadeContratada || 0}
+          unidade={detailsDialog.unidade}
+        />
+      )}
     </>
   );
 }
