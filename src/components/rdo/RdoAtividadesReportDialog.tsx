@@ -66,7 +66,7 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
         .eq('obra_id', obraId)
         .gte('rdo_reports.data', format(date.from, 'yyyy-MM-dd'))
         .lte('rdo_reports.data', format(date.to, 'yyyy-MM-dd'))
-        .in('rdo_reports.status', ['concluido', 'aprovado'])
+        .in('rdo_reports.status', includeInProgress ? ['concluido', 'aprovado', 'preenchendo', 'rascunho'] : ['concluido', 'aprovado'])
         .order('rdo_reports(data)', { ascending: true });
 
       if (error) throw error;
