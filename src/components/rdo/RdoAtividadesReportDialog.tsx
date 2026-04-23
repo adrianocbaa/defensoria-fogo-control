@@ -165,6 +165,22 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
             <DatePickerWithRange date={date} setDate={setDate} />
           </div>
 
+          <div className="flex items-start gap-2 rounded-md border p-3">
+            <Checkbox
+              id="include-in-progress"
+              checked={includeInProgress}
+              onCheckedChange={(v) => setIncludeInProgress(v === true)}
+            />
+            <div className="space-y-1">
+              <label htmlFor="include-in-progress" className="text-sm font-medium cursor-pointer">
+                Incluir RDOs em preenchimento e rascunho
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Por padrão, apenas RDOs concluídos ou aprovados são incluídos.
+              </p>
+            </div>
+          </div>
+
           <div className="text-sm text-muted-foreground">
             <p className="font-medium mb-1">O relatório incluirá:</p>
             <ul className="list-disc list-inside space-y-1 text-xs">
