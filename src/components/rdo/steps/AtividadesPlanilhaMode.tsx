@@ -294,7 +294,19 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
 
     // Bloquear imediatamente se saldo for zero
     if (saldoDisponivel <= 0) {
-      toast.error(`Item já 100% executado em RDOs anteriores. Saldo = 0.`, { duration: 5000 });
+      toast.error(`Item já 100% executado em RDOs anteriores. Saldo = 0.`, {
+        duration: 8000,
+        action: {
+          label: 'Ver detalhes',
+          onClick: () => openDetails({
+            orcamentoItemId,
+            itemDescricao: item?.descricao || '',
+            itemCode: item?.item,
+            quantidadeContratada: quantidadeAjustada,
+            unidade: item?.unidade,
+          }),
+        },
+      });
       setLocalExecutado(prev => ({ ...prev, [orcamentoItemId]: 0 }));
       return;
     }
