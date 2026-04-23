@@ -34,6 +34,7 @@ interface AtividadeReport {
 export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesReportDialogProps) {
   const [open, setOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [includeInProgress, setIncludeInProgress] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
