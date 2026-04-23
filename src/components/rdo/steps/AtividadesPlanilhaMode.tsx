@@ -263,10 +263,23 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       // Extrair mensagem amigável do banco (trigger de validação)
       const msg = err?.message || '';
       const triggerMatch = msg.match(/Quantidade executada .+ excede o saldo disponível \(.+\)\. Item: (.+)/);
+      const item = orcamentoItems.find(i => i.id === variables?.orcamentoItemId);
+      const ajusteAditivo = (item && item.origem !== 'extracontratual') ? calcularAjusteAditivos(item.item, aditivos, codigoToItemCode) : 0;
+      const quantidadeAjustada = Math.max(0, (item?.quantidade || 0) + ajusteAditivo);
+      const detailsAction = item && variables?.orcamentoItemId ? {
+        label: 'Ver detalhes',
+        onClick: () => openDetails({
+          orcamentoItemId: variables.orcamentoItemId,
+          itemDescricao: item.descricao || '',
+          itemCode: item.item,
+          quantidadeContratada: quantidadeAjustada,
+          unidade: item.unidade,
+        }),
+      } : undefined;
       if (triggerMatch) {
-        toast.error(`Item ${triggerMatch[1]}: saldo esgotado (100% já executado em outros RDOs). Valor descartado.`, { duration: 8000 });
+        toast.error(`Item ${triggerMatch[1]}: saldo esgotado (100% já executado em outros RDOs). Valor descartado.`, { duration: 8000, action: detailsAction });
       } else {
-        toast.error(`Erro ao salvar quantidade: ${msg || 'Verifique o valor e tente novamente.'}`, { duration: 6000 });
+        toast.error(`Erro ao salvar quantidade: ${msg || 'Verifique o valor e tente novamente.'}`, { duration: 6000, action: detailsAction });
       }
       // Reverter APENAS o item que falhou no estado local — não resetar todos os outros
       if (variables?.orcamentoItemId) {
