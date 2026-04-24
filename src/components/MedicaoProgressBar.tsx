@@ -7,6 +7,19 @@ export interface MedicaoMarcoBar {
   valorAcumulado: number;
   valorMedicao: number;
   percentualAcumulado: number;
+  periodo_inicio?: string | null;
+  periodo_fim?: string | null;
+  data_vistoria?: string | null;
+  data_relatorio?: string | null;
+}
+
+function formatDateBR(value?: string | null): string | null {
+  if (!value) return null;
+  // Expected YYYY-MM-DD; build local date to avoid TZ shift
+  const [y, m, d] = value.split('T')[0].split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString('pt-BR');
 }
 
 interface MedicaoProgressBarProps {
@@ -54,11 +67,24 @@ export function MedicaoProgressBar({ marcos, totalContrato, className = '', heig
                   />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs max-w-[200px]">
+              <TooltipContent side="top" className="text-xs max-w-[240px] space-y-0.5">
                 <p className="font-semibold">{marco.sequencia}ª Medição</p>
                 <p>Valor pago: <span className="font-bold">{formatCurrency(marco.valorMedicao)}</span></p>
                 <p>Acumulado: <span className="font-bold">{formatCurrency(marco.valorAcumulado)}</span></p>
                 <p>Progresso: <span className="font-bold">{marco.percentualAcumulado.toFixed(1)}%</span></p>
+                {(marco.periodo_inicio || marco.periodo_fim) && (
+                  <p className="pt-1 border-t border-border/40">
+                    Período: <span className="font-medium">
+                      {formatDateBR(marco.periodo_inicio) || '—'} a {formatDateBR(marco.periodo_fim) || '—'}
+                    </span>
+                  </p>
+                )}
+                {marco.data_vistoria && (
+                  <p>Vistoria: <span className="font-medium">{formatDateBR(marco.data_vistoria)}</span></p>
+                )}
+                {marco.data_relatorio && (
+                  <p>Relatório: <span className="font-medium">{formatDateBR(marco.data_relatorio)}</span></p>
+                )}
               </TooltipContent>
             </Tooltip>
           );

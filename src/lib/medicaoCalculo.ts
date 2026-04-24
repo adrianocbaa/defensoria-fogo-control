@@ -24,6 +24,10 @@ export interface AditivoItemCalculo {
 export interface MedicaoSessionCalculo {
   id: string;
   sequencia: number;
+  periodo_inicio?: string | null;
+  periodo_fim?: string | null;
+  data_vistoria?: string | null;
+  data_relatorio?: string | null;
 }
 
 export interface MarcoCalculado {
@@ -31,6 +35,10 @@ export interface MarcoCalculado {
   valorAcumulado: number;
   valorMedicao: number;
   percentualAcumulado: number;
+  periodo_inicio?: string | null;
+  periodo_fim?: string | null;
+  data_vistoria?: string | null;
+  data_relatorio?: string | null;
 }
 
 export interface ResultadoCalculoFinanceiro {
@@ -152,6 +160,10 @@ export function calcularFinanceiroMedicao(
       valorMedicao,
       valorAcumulado: acumuladoAteAgora,
       percentualAcumulado: totalContrato > 0 ? (acumuladoAteAgora / totalContrato) * 100 : 0,
+      periodo_inicio: session.periodo_inicio ?? null,
+      periodo_fim: session.periodo_fim ?? null,
+      data_vistoria: session.data_vistoria ?? null,
+      data_relatorio: session.data_relatorio ?? null,
     };
   });
 
