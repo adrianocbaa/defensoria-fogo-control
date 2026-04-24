@@ -21,6 +21,7 @@ import ImportarPlanilha from '@/components/ImportarPlanilha';
 import { ImportarDoRDO } from '@/components/ImportarDoRDO';
 import NovoAditivoModal from '@/components/NovoAditivoModal';
 import { RelatorioMedicaoModal } from '@/components/RelatorioMedicaoModal';
+import { NovaMedicaoDialog, type NovaMedicaoData } from '@/components/NovaMedicaoDialog';
 import { ImportarCronograma } from '@/components/ImportarCronograma';
 import { CronogramaView } from '@/components/CronogramaView';
 import * as LoadingStates from '@/components/LoadingStates';
