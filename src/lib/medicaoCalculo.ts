@@ -160,6 +160,10 @@ export function calcularFinanceiroMedicao(
       valorMedicao,
       valorAcumulado: acumuladoAteAgora,
       percentualAcumulado: totalContrato > 0 ? (acumuladoAteAgora / totalContrato) * 100 : 0,
+      periodo_inicio: session.periodo_inicio ?? null,
+      periodo_fim: session.periodo_fim ?? null,
+      data_vistoria: session.data_vistoria ?? null,
+      data_relatorio: session.data_relatorio ?? null,
     };
   });
 
