@@ -45,7 +45,7 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         const [obraResult, orcResult, sessionsResult, aditivoSessionsResult] = await Promise.all([
           supabase.from('obras').select('valor_total, valor_aditivado').eq('id', obraId).single(),
           supabase.from('orcamento_items').select('item, total_contrato, origem').eq('obra_id', obraId),
-          supabase.from('medicao_sessions').select('id, sequencia').eq('obra_id', obraId).order('sequencia', { ascending: true }),
+          supabase.from('medicao_sessions').select('id, sequencia, periodo_inicio, periodo_fim, data_vistoria, data_relatorio').eq('obra_id', obraId).order('sequencia', { ascending: true }),
           supabase.from('aditivo_sessions').select('id').eq('obra_id', obraId).eq('status', 'bloqueada'),
         ]);
 
