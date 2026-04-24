@@ -4744,6 +4744,13 @@ export function Medicao() {
       />
     )}
 
+    <NovaMedicaoDialog
+      open={novaMedicaoOpen}
+      onOpenChange={setNovaMedicaoOpen}
+      proximaSequencia={proximaSequenciaPrevista}
+      onConfirm={confirmarCriarNovaMedicao}
+    />
+
     {/* Modal Exportar XLS com seleção de medições */}
     <ExportMedicaoDialog
       open={exportDialogAberto}
