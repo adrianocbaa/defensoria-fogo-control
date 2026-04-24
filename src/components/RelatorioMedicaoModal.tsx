@@ -133,6 +133,38 @@ export function RelatorioMedicaoModal({
   
   // Dados do cronograma financeiro para comparativo
   const { fetchCronograma } = useCronogramaFinanceiro();
+  const { profile } = useProfile();
+
+  // Pré-preenche datas (a partir da medicao_session) e dados do fiscal (a partir do perfil) quando o modal abre
+  useEffect(() => {
+    if (!open || !obra?.id || !medicaoAtual) return;
+
+    (async () => {
+      try {
+        const { data: session } = await supabase
+          .from('medicao_sessions')
+          .select('periodo_inicio, periodo_fim, data_vistoria, data_relatorio')
+          .eq('obra_id', obra.id)
+          .eq('sequencia', medicaoAtual)
+          .maybeSingle();
+
+        const s = session as any;
+        if (s?.periodo_inicio) setPeriodoInicio(s.periodo_inicio);
+        if (s?.periodo_fim) setPeriodoFim(s.periodo_fim);
+        if (s?.data_vistoria) setDataVistoria(s.data_vistoria);
+        if (s?.data_relatorio) setDataRelatorio(s.data_relatorio);
+      } catch (err) {
+        console.error('Erro ao carregar datas da medição:', err);
+      }
+    })();
+  }, [open, obra?.id, medicaoAtual]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (profile?.display_name) setFiscalNome((prev) => prev || profile.display_name || '');
+    if (profile?.position) setFiscalCargo((prev) => prev || profile.position || '');
+  }, [open, profile?.display_name, profile?.position]);
+
   const [dadosComparativo, setDadosComparativo] = useState<{
     itemNumero: number;
     descricao: string;
