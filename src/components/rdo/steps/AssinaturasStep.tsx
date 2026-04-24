@@ -18,6 +18,18 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useObraActionLogs } from "@/hooks/useObraActionLogs";
+import { useProfile } from "@/hooks/useProfile";
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Comment {
   id: string;
