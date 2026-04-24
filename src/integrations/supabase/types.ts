@@ -1183,8 +1183,12 @@ export type Database = {
       medicao_sessions: {
         Row: {
           created_at: string
+          data_relatorio: string | null
+          data_vistoria: string | null
           id: string
           obra_id: string
+          periodo_fim: string | null
+          periodo_inicio: string | null
           sequencia: number
           status: string
           updated_at: string
@@ -1192,8 +1196,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          data_relatorio?: string | null
+          data_vistoria?: string | null
           id?: string
           obra_id: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
           sequencia: number
           status?: string
           updated_at?: string
@@ -1201,8 +1209,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          data_relatorio?: string | null
+          data_vistoria?: string | null
           id?: string
           obra_id?: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
           sequencia?: number
           status?: string
           updated_at?: string
@@ -2079,6 +2091,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          crea_cau: string | null
           created_at: string
           department: string | null
           display_name: string | null
@@ -2099,6 +2112,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          crea_cau?: string | null
           created_at?: string
           department?: string | null
           display_name?: string | null
@@ -2119,6 +2133,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          crea_cau?: string | null
           created_at?: string
           department?: string | null
           display_name?: string | null

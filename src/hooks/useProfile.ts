@@ -13,6 +13,7 @@ export interface Profile {
   department: string | null;
   language: string;
   theme: string;
+  crea_cau: string | null;
   role: 'admin' | 'editor' | 'gm' | 'manutencao' | 'viewer';
 }
 
