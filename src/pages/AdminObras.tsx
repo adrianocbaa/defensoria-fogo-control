@@ -192,7 +192,7 @@ export function AdminObras() {
         // Buscar medicao_sessions de todas as obras
         supabase
           .from('medicao_sessions')
-          .select('id, obra_id, sequencia')
+          .select('id, obra_id, sequencia, periodo_inicio, periodo_fim, data_vistoria, data_relatorio')
           .in('obra_id', obraIds),
         
         // Buscar orcamento_items para cálculo financeiro (com total_contrato e item para filtro de folha)
