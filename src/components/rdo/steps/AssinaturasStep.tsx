@@ -862,6 +862,28 @@ export function AssinaturasStep({
           </Card>
         </div>
       </div>
+
+      <AlertDialog open={profileIncompleteOpen} onOpenChange={setProfileIncompleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete seu perfil para assinar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Antes de assinar o RDO, atualize as seguintes informações no seu perfil:
+              <ul className="list-disc list-inside mt-2 text-foreground">
+                {missingFields.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate('/profile')}>
+              Ir para Perfil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
