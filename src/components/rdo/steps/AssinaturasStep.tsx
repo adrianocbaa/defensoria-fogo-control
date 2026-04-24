@@ -18,6 +18,18 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useObraActionLogs } from "@/hooks/useObraActionLogs";
+import { useProfile } from "@/hooks/useProfile";
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Comment {
   id: string;
@@ -81,7 +93,41 @@ export function AssinaturasStep({
     setContratadaDocumento(reportData?.assinatura_contratada_documento || "");
     setContratadaValidadoLocal(reportData?.assinatura_contratada_validado_em || null);
   }, [reportData?.id, reportData?.assinatura_fiscal_validado_em, reportData?.assinatura_contratada_validado_em]);
-  
+
+  // Pré-preencher dados do perfil quando o RDO ainda não tiver os campos preenchidos
+  const { profile } = useProfile();
+  const navigate = useNavigate();
+  const [profileIncompleteOpen, setProfileIncompleteOpen] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!profile) return;
+    if (canValidateFiscal && !fiscalValidadoLocal) {
+      if (!reportData?.assinatura_fiscal_nome && profile.display_name) setFiscalNome((p) => p || profile.display_name || "");
+      if (!reportData?.assinatura_fiscal_cargo && profile.position) setFiscalCargo((p) => p || profile.position || "");
+      if (!reportData?.assinatura_fiscal_documento && profile.crea_cau) setFiscalDocumento((p) => p || profile.crea_cau || "");
+    }
+    if (canValidateContratada && !contratadaValidadoLocal) {
+      if (!reportData?.assinatura_contratada_nome && profile.display_name) setContratadaNome((p) => p || profile.display_name || "");
+      if (!reportData?.assinatura_contratada_cargo && profile.position) setContratadaCargo((p) => p || profile.position || "");
+      if (!reportData?.assinatura_contratada_documento && profile.crea_cau) setContratadaDocumento((p) => p || profile.crea_cau || "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.user_id, canValidateFiscal, canValidateContratada, fiscalValidadoLocal, contratadaValidadoLocal]);
+
+  const checkProfileComplete = (): boolean => {
+    const missing: string[] = [];
+    if (!profile?.display_name?.trim()) missing.push("Nome Completo");
+    if (!profile?.position?.trim()) missing.push("Cargo/Função");
+    if (!profile?.crea_cau?.trim()) missing.push("CREA/CAU");
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      setProfileIncompleteOpen(true);
+      return false;
+    }
+    return true;
+  };
+
   const fiscalValidado = fiscalValidadoLocal;
   const contratadaValidado = contratadaValidadoLocal;
 
@@ -213,6 +259,8 @@ export function AssinaturasStep({
       return;
     }
     
+    if (!checkProfileComplete()) return;
+
     if (!fiscalNome || !fiscalCargo || !fiscalDocumento) {
       toast.error("Preencha todos os campos do Fiscal/Gestor");
       return;
@@ -344,6 +392,8 @@ export function AssinaturasStep({
       return;
     }
     
+    if (!checkProfileComplete()) return;
+
     if (!contratadaNome || !contratadaCargo || !contratadaDocumento) {
       toast.error("Preencha todos os campos do Responsável Técnico");
       return;
@@ -812,6 +862,28 @@ export function AssinaturasStep({
           </Card>
         </div>
       </div>
+
+      <AlertDialog open={profileIncompleteOpen} onOpenChange={setProfileIncompleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete seu perfil para assinar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Antes de assinar o RDO, atualize as seguintes informações no seu perfil:
+              <ul className="list-disc list-inside mt-2 text-foreground">
+                {missingFields.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate('/profile')}>
+              Ir para Perfil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

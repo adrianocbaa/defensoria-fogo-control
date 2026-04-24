@@ -3319,6 +3319,7 @@ export type Database = {
       profiles_secure: {
         Row: {
           avatar_url: string | null
+          crea_cau: string | null
           created_at: string | null
           department: string | null
           display_name: string | null
@@ -3333,6 +3334,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          crea_cau?: string | null
           created_at?: string | null
           department?: string | null
           display_name?: string | null
@@ -3347,6 +3349,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          crea_cau?: string | null
           created_at?: string | null
           department?: string | null
           display_name?: string | null

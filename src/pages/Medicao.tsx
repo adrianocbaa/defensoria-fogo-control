@@ -21,6 +21,7 @@ import ImportarPlanilha from '@/components/ImportarPlanilha';
 import { ImportarDoRDO } from '@/components/ImportarDoRDO';
 import NovoAditivoModal from '@/components/NovoAditivoModal';
 import { RelatorioMedicaoModal } from '@/components/RelatorioMedicaoModal';
+import { NovaMedicaoDialog, type NovaMedicaoData } from '@/components/NovaMedicaoDialog';
 import { ImportarCronograma } from '@/components/ImportarCronograma';
 import { CronogramaView } from '@/components/CronogramaView';
 import * as LoadingStates from '@/components/LoadingStates';
@@ -1394,69 +1395,88 @@ export function Medicao() {
     }
   };
 
-  // Função para criar nova medição
-const criarNovaMedicao = async () => {
-  if (!id) return;
-  try {
-    // Buscar a última sequência diretamente no banco para evitar conflitos
-    const { data: last, error: lastErr } = await supabase
-      .from('medicao_sessions')
-      .select('sequencia')
-      .eq('obra_id', id)
-      .order('sequencia', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (lastErr) throw lastErr;
+  // Estado do dialog "Nova Medição"
+  const [novaMedicaoOpen, setNovaMedicaoOpen] = useState(false);
+  const [proximaSequenciaPrevista, setProximaSequenciaPrevista] = useState(1);
 
-    let nextSeq = (last?.sequencia ?? 0) + 1;
+  // Abre o dialog para coletar datas antes de criar a medição
+  const criarNovaMedicao = () => {
+    const maxSeq = medicoes.reduce((max, m) => (m.id > max ? m.id : max), 0);
+    setProximaSequenciaPrevista(maxSeq + 1);
+    setNovaMedicaoOpen(true);
+  };
 
-    // Tentar criar a sessão
-    let { data: inserted, error: insertErr } = await supabase
-      .from('medicao_sessions')
-      .insert({ obra_id: id, sequencia: nextSeq, status: 'aberta' })
-      .select('id, sequencia, status, created_at')
-      .single();
-
-    // Se houve conflito (23505), recalcular e tentar de novo uma vez
-    if (insertErr && (insertErr as any).code === '23505') {
-      const { data: last2 } = await supabase
+  // Cria a medição efetivamente após confirmar as datas no dialog
+  const confirmarCriarNovaMedicao = async (datas: NovaMedicaoData) => {
+    if (!id) return;
+    try {
+      const { data: last, error: lastErr } = await supabase
         .from('medicao_sessions')
         .select('sequencia')
         .eq('obra_id', id)
         .order('sequencia', { ascending: false })
         .limit(1)
         .maybeSingle();
-      nextSeq = (last2?.sequencia ?? nextSeq) + 1;
+      if (lastErr) throw lastErr;
 
-      const retry = await supabase
+      let nextSeq = (last?.sequencia ?? 0) + 1;
+
+      let { data: inserted, error: insertErr } = await supabase
         .from('medicao_sessions')
-        .insert({ obra_id: id, sequencia: nextSeq, status: 'aberta' })
+        .insert({
+          obra_id: id,
+          sequencia: nextSeq,
+          status: 'aberta',
+          ...(datas as any),
+        } as any)
         .select('id, sequencia, status, created_at')
         .single();
-      inserted = retry.data as any;
-      insertErr = retry.error as any;
+
+      if (insertErr && (insertErr as any).code === '23505') {
+        const { data: last2 } = await supabase
+          .from('medicao_sessions')
+          .select('sequencia')
+          .eq('obra_id', id)
+          .order('sequencia', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        nextSeq = (last2?.sequencia ?? nextSeq) + 1;
+
+        const retry = await supabase
+          .from('medicao_sessions')
+          .insert({
+            obra_id: id,
+            sequencia: nextSeq,
+            status: 'aberta',
+            ...(datas as any),
+          } as any)
+          .select('id, sequencia, status, created_at')
+          .single();
+        inserted = retry.data as any;
+        insertErr = retry.error as any;
+      }
+
+      if (insertErr) throw insertErr;
+      const newSession = inserted as any;
+
+      const novaMedicao: Medicao = {
+        id: newSession.sequencia,
+        sessionId: newSession.id,
+        nome: `${newSession.sequencia}ª MEDIÇÃO`,
+        dados: {},
+        bloqueada: newSession.status === 'bloqueada',
+      };
+
+      setMedicoes(prev => [...prev, novaMedicao].sort((a, b) => a.id - b.id));
+      setMedicaoAtual(novaMedicao.id);
+      setNovaMedicaoOpen(false);
+      toast.success(`${nextSeq}ª Medição criada com sucesso!`);
+    } catch (error: any) {
+      console.error('Erro ao criar medição:', error);
+      const msg = error?.code === '42501' ? 'Sem permissão para criar medição.' : 'Erro ao criar medição';
+      toast.error(msg);
     }
-
-    if (insertErr) throw insertErr;
-    const newSession = inserted as any;
-
-    const novaMedicao: Medicao = {
-      id: newSession.sequencia,
-      sessionId: newSession.id,
-      nome: `${newSession.sequencia}ª MEDIÇÃO`,
-      dados: {},
-      bloqueada: newSession.status === 'bloqueada',
-    };
-
-    setMedicoes(prev => [...prev, novaMedicao].sort((a, b) => a.id - b.id));
-    setMedicaoAtual(novaMedicao.id);
-    toast.success(`${nextSeq}ª Medição criada com sucesso!`);
-  } catch (error: any) {
-    console.error('Erro ao criar medição:', error);
-    const msg = error?.code === '42501' ? 'Sem permissão para criar medição.' : 'Erro ao criar medição';
-    toast.error(msg);
-  }
-};
+  };
 
   // Função para encontrar próximo número de aditivo disponível (sequencial com reaproveitamento de lacunas)
   const getProximoNumeroAditivo = () => {
@@ -4723,6 +4743,13 @@ const criarNovaMedicao = async () => {
         dadosHierarquicos={dadosHierarquicosMemoizados}
       />
     )}
+
+    <NovaMedicaoDialog
+      open={novaMedicaoOpen}
+      onOpenChange={setNovaMedicaoOpen}
+      proximaSequencia={proximaSequenciaPrevista}
+      onConfirm={confirmarCriarNovaMedicao}
+    />
 
     {/* Modal Exportar XLS com seleção de medições */}
     <ExportMedicaoDialog

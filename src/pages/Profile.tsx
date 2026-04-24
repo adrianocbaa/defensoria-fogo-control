@@ -35,6 +35,7 @@ export default function Profile() {
   const [phone, setPhone] = useState('');
   const [position, setPosition] = useState('');
   const [department, setDepartment] = useState('');
+  const [creaCau, setCreaCau] = useState('');
 
   // Password form state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -56,6 +57,7 @@ export default function Profile() {
       setPhone(profile.phone || '');
       setPosition(profile.position || '');
       setDepartment(profile.department || '');
+      setCreaCau(profile.crea_cau || '');
       setLanguage(profile.language || 'pt-BR');
       setTheme(profile.theme || 'system');
     }
@@ -138,7 +140,8 @@ export default function Profile() {
       phone,
       position,
       department,
-    });
+      crea_cau: creaCau,
+    } as any);
   };
 
   const handlePasswordChange = () => {
@@ -317,7 +320,7 @@ export default function Profile() {
                     />
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <Label htmlFor="department">Departamento/Setor</Label>
                     <Input
                       id="department"
@@ -325,6 +328,19 @@ export default function Profile() {
                       onChange={(e) => setDepartment(e.target.value)}
                       placeholder="Ex: DIF, Núcleo de Sorriso"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="crea-cau">CREA/CAU</Label>
+                    <Input
+                      id="crea-cau"
+                      value={creaCau}
+                      onChange={(e) => setCreaCau(e.target.value)}
+                      placeholder="Ex: CREA-MT 123456"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Necessário para assinar RDOs como Fiscal/Responsável Técnico
+                    </p>
                   </div>
 
                   <div className="space-y-2">
