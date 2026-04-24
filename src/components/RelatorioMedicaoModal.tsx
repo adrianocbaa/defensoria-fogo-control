@@ -15,6 +15,7 @@ import { generatePdfFromElement } from '@/lib/pdfExport';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
+import { useProfile } from '@/hooks/useProfile';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
