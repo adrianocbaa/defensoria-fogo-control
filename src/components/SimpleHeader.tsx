@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { User, LogOut, Settings, ArrowLeft, BarChart3, Shield, Building2, Bell } from 'lucide-react';
+import { User, LogOut, ArrowLeft, Shield, Building2, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
 import logoSidif from '@/assets/sidif-logo-oficial.png';
 import logoDif from '@/assets/logo-dif-transparente.png';
 
@@ -75,21 +77,24 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
                 </Button>
               )}
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={profile?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {profile?.display_name?.charAt(0).toUpperCase() || 
-                         user?.email?.charAt(0).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden sm:inline">
-                      {profile?.display_name || user?.email?.split('@')[0] || 'Usuário'}
-                    </span>
-                  </Button>
+                <DropdownMenuTrigger
+                  className={cn(
+                    buttonVariants({ variant: 'ghost', size: 'sm' }),
+                    'gap-2 text-primary-foreground hover:bg-primary-foreground/10'
+                  )}
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs">
+                      {profile?.display_name?.charAt(0).toUpperCase() || 
+                       user?.email?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden sm:inline">
+                    {profile?.display_name || user?.email?.split('@')[0] || 'Usuário'}
+                  </span>
                 </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end">
                 <DropdownMenuItem disabled>
                   <User className="mr-2 h-4 w-4" />
                   {user?.email}
