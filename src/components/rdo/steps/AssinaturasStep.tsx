@@ -259,6 +259,8 @@ export function AssinaturasStep({
       return;
     }
     
+    if (!checkProfileComplete()) return;
+
     if (!fiscalNome || !fiscalCargo || !fiscalDocumento) {
       toast.error("Preencha todos os campos do Fiscal/Gestor");
       return;
@@ -390,6 +392,8 @@ export function AssinaturasStep({
       return;
     }
     
+    if (!checkProfileComplete()) return;
+
     if (!contratadaNome || !contratadaCargo || !contratadaDocumento) {
       toast.error("Preencha todos os campos do Responsável Técnico");
       return;
