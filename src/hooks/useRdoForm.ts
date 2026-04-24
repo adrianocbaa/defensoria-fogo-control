@@ -99,6 +99,12 @@ export function useRdoForm(obraId: string, data: string) {
         prev.status === rdoReport.status &&
         prev.assinatura_fiscal_validado_em === rdoReport.assinatura_fiscal_validado_em &&
         prev.assinatura_contratada_validado_em === rdoReport.assinatura_contratada_validado_em &&
+        prev.assinatura_fiscal_nome === rdoReport.assinatura_fiscal_nome &&
+        prev.assinatura_fiscal_cargo === rdoReport.assinatura_fiscal_cargo &&
+        prev.assinatura_fiscal_documento === rdoReport.assinatura_fiscal_documento &&
+        prev.assinatura_contratada_nome === rdoReport.assinatura_contratada_nome &&
+        prev.assinatura_contratada_cargo === rdoReport.assinatura_contratada_cargo &&
+        prev.assinatura_contratada_documento === rdoReport.assinatura_contratada_documento &&
         prev.fiscal_concluido_em === rdoReport.fiscal_concluido_em &&
         prev.contratada_concluido_em === rdoReport.contratada_concluido_em &&
         prev.aprovacao_observacao === rdoReport.aprovacao_observacao &&
@@ -112,6 +118,12 @@ export function useRdoForm(obraId: string, data: string) {
         status: rdoReport.status,
         assinatura_fiscal_validado_em: rdoReport.assinatura_fiscal_validado_em,
         assinatura_contratada_validado_em: rdoReport.assinatura_contratada_validado_em,
+        assinatura_fiscal_nome: rdoReport.assinatura_fiscal_nome,
+        assinatura_fiscal_cargo: rdoReport.assinatura_fiscal_cargo,
+        assinatura_fiscal_documento: rdoReport.assinatura_fiscal_documento,
+        assinatura_contratada_nome: rdoReport.assinatura_contratada_nome,
+        assinatura_contratada_cargo: rdoReport.assinatura_contratada_cargo,
+        assinatura_contratada_documento: rdoReport.assinatura_contratada_documento,
         fiscal_concluido_em: rdoReport.fiscal_concluido_em,
         contratada_concluido_em: rdoReport.contratada_concluido_em,
         aprovacao_observacao: rdoReport.aprovacao_observacao,
@@ -119,7 +131,7 @@ export function useRdoForm(obraId: string, data: string) {
         hash_verificacao: rdoReport.hash_verificacao,
       };
     });
-  }, [isFormInitialized, isLoading, rdoReport?.status, rdoReport?.assinatura_fiscal_validado_em, rdoReport?.assinatura_contratada_validado_em, rdoReport?.fiscal_concluido_em, rdoReport?.contratada_concluido_em, rdoReport?.aprovacao_observacao, rdoReport?.pdf_url, rdoReport?.hash_verificacao]);
+  }, [isFormInitialized, isLoading, rdoReport?.status, rdoReport?.assinatura_fiscal_validado_em, rdoReport?.assinatura_contratada_validado_em, rdoReport?.assinatura_fiscal_nome, rdoReport?.assinatura_fiscal_cargo, rdoReport?.assinatura_fiscal_documento, rdoReport?.assinatura_contratada_nome, rdoReport?.assinatura_contratada_cargo, rdoReport?.assinatura_contratada_documento, rdoReport?.fiscal_concluido_em, rdoReport?.contratada_concluido_em, rdoReport?.aprovacao_observacao, rdoReport?.pdf_url, rdoReport?.hash_verificacao]);
 
   // Mutation para salvar/atualizar
   const saveMutation = useMutation({
