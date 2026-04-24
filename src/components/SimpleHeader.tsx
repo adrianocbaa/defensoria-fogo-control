@@ -77,22 +77,23 @@ export function SimpleHeader({ children }: SimpleHeaderProps) {
                 </Button>
               )}
               <DropdownMenu>
-                <DropdownMenuTrigger
-                  className={cn(
-                    buttonVariants({ variant: 'ghost', size: 'sm' }),
-                    'gap-2 text-primary-foreground hover:bg-primary-foreground/10'
-                  )}
-                >
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs">
-                      {profile?.display_name?.charAt(0).toUpperCase() || 
-                       user?.email?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden sm:inline">
-                    {profile?.display_name || user?.email?.split('@')[0] || 'Usuário'}
-                  </span>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2 text-primary-foreground hover:bg-primary-foreground/10"
+                  >
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={profile?.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {profile?.display_name?.charAt(0).toUpperCase() ||
+                         user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:inline">
+                      {profile?.display_name || user?.email?.split('@')[0] || 'Usuário'}
+                    </span>
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                 <DropdownMenuItem disabled>
