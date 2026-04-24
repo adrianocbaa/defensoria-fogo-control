@@ -40,7 +40,8 @@ export function useProfile() {
         .rpc('get_user_role', { user_uuid: user.id });
       
       return {
-        ...data,
+        ...(data as any),
+        crea_cau: (data as any).crea_cau ?? null,
         role: (roleData as string || 'viewer') as Profile['role']
       } as Profile;
     },
