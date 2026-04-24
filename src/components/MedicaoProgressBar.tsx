@@ -7,6 +7,19 @@ export interface MedicaoMarcoBar {
   valorAcumulado: number;
   valorMedicao: number;
   percentualAcumulado: number;
+  periodo_inicio?: string | null;
+  periodo_fim?: string | null;
+  data_vistoria?: string | null;
+  data_relatorio?: string | null;
+}
+
+function formatDateBR(value?: string | null): string | null {
+  if (!value) return null;
+  // Expected YYYY-MM-DD; build local date to avoid TZ shift
+  const [y, m, d] = value.split('T')[0].split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString('pt-BR');
 }
 
 interface MedicaoProgressBarProps {
