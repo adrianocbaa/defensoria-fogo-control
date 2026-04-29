@@ -1808,18 +1808,21 @@ export function Medicao() {
       };
 
       // Calcular totais (apenas itens folha/MICRO, excluindo MACROS)
-      const totalTotalContratoPDF = items
+      // IMPORTANTE: arredondar cada item para 2 casas ANTES de somar, mantendo
+      // paridade com "Serviços Executados" exibido na tela (medicaoCalculo.ts).
+      const round2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
+      const totalTotalContratoPDF = round2(items
         .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0);
-      const totalMedicaoAtualPDF = items
+        .reduce((sum, item) => sum + round2(calcularTotalContratoComAditivos(item, medicaoAtual)), 0));
+      const totalMedicaoAtualPDF = round2(items
         .filter(item => ehItemFolha(item.item))
         .reduce((sum, item) => {
           const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-          return sum + medicaoData.total;
-        }, 0);
-      const totalAcumuladoPDF = items
+          return sum + round2(medicaoData.total);
+        }, 0));
+      const totalAcumuladoPDF = round2(items
         .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => sum + calcularValorAcumuladoItem(item.id), 0);
+        .reduce((sum, item) => sum + round2(calcularValorAcumuladoItem(item.id)), 0));
       const percentualExecucao = totalTotalContratoPDF > 0 ? (totalAcumuladoPDF / totalTotalContratoPDF) * 100 : 0;
       
       // Criar conteúdo HTML profissional
