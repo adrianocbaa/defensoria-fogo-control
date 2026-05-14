@@ -54,8 +54,8 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
     setIsGenerating(true);
     try {
       const includedStatuses = includeInProgress
-        ? ['concluido', 'aprovado', 'preenchendo', 'rascunho']
-        : ['concluido', 'aprovado'];
+        ? (['concluido', 'aprovado', 'preenchendo', 'rascunho'] as const)
+        : (['concluido', 'aprovado'] as const);
 
       const { data: reports, error: reportsError } = await supabase
         .from('rdo_reports')
