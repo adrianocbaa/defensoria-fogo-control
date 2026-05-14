@@ -14,26 +14,41 @@ export function useRdoActivitiesAcumulado(obraId: string, dataAtual: string, cur
       // Buscar apenas RDOs de dias ANTERIORES ao dia atual (lógica progressiva/sequencial).
       // Isso garante que o acumulado exibido no RDO do dia X reflita somente
       // o que foi executado até o dia X-1, sem contaminar com execuções futuras.
+      //
+      // IMPORTANTE: fazer em 2 passos. O filtro em campo de tabela embarcada
+      // (`rdo_reports.data` via `!inner`) nem sempre é aplicado corretamente
+      // pelo PostgREST e estava deixando passar tudo OU truncando — provocando
+      // acumulado zerado em itens cujas atividades estavam mais ao final do
+      // resultado (caso real: itens 2.13 e 2.14 da obra de Paranatinga).
+
+      // Passo 1: IDs de RDOs anteriores ao dia atual
+      const { data: reports, error: reportsError } = await supabase
+        .from('rdo_reports')
+        .select('id')
+        .eq('obra_id', obraId)
+        .lt('data', dataAtual)
+        .limit(10000);
+
+      if (reportsError) throw reportsError;
+
+      const reportIds = (reports || []).map((r) => r.id);
+      if (reportIds.length === 0) return [];
+
+      // Passo 2: atividades de planilha desses RDOs
       const { data, error } = await supabase
         .from('rdo_activities')
-        .select(`
-          orcamento_item_id,
-          executado_dia,
-          quantidade_total,
-          report_id,
-          rdo_reports!inner(data)
-        `)
+        .select('orcamento_item_id, executado_dia, quantidade_total, report_id')
         .eq('obra_id', obraId)
         .eq('tipo', 'planilha')
         .not('orcamento_item_id', 'is', null)
-        .lt('rdo_reports.data', dataAtual)
-        .limit(50000);
-      
+        .in('report_id', reportIds)
+        .limit(100000);
+
       if (error) throw error;
 
       // Agrupar e somar por item
       const acumuladoMap = new Map<string, { total: number; quantidade: number }>();
-      
+
       (data || []).forEach((item: any) => {
         const itemId = item.orcamento_item_id;
         const current = acumuladoMap.get(itemId) || { total: 0, quantidade: item.quantidade_total };
