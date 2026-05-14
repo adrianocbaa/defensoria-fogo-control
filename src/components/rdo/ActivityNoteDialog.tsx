@@ -66,6 +66,7 @@ export function ActivityNoteDialog({
         texto: texto.trim(),
         source,
         item_ref: itemRef,
+        created_by: user?.id ?? null,
       });
       if (error) throw error;
     },
