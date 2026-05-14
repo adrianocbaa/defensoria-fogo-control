@@ -31,9 +31,45 @@ interface AtividadeReport {
   unidade: string;
 }
 
+interface RdoReportRow {
+  id: string;
+  data: string;
+}
+
+interface RdoActivityRow {
+  id: string;
+  descricao: string;
+  item_code: string | null;
+  executado_dia: number | null;
+  unidade: string | null;
+  report_id: string;
+}
+
 const parseYmdToDate = (value: string) => {
   const [year, month, day] = value.split('-').map(Number);
   return new Date(year, month - 1, day, 12, 0, 0);
+};
+
+const PAGE_SIZE = 1000;
+
+const fetchAllPages = async <T,>(
+  loadPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>
+) => {
+  const allRows: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await loadPage(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+
+    const page = data || [];
+    allRows.push(...page);
+
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return allRows;
 };
 
 export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesReportDialogProps) {
@@ -57,35 +93,38 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
         ? (['concluido', 'aprovado', 'preenchendo', 'rascunho'] as const)
         : (['concluido', 'aprovado'] as const);
 
-      const { data: reports, error: reportsError } = await supabase
-        .from('rdo_reports')
-        .select('id, data')
-        .eq('obra_id', obraId)
-        .gte('data', format(date.from, 'yyyy-MM-dd'))
-        .lte('data', format(date.to, 'yyyy-MM-dd'))
-        .in('status', includedStatuses)
-        .order('data', { ascending: true })
-        .limit(10000);
+      const reports = await fetchAllPages<RdoReportRow>((from, to) =>
+        supabase
+          .from('rdo_reports')
+          .select('id, data')
+          .eq('obra_id', obraId)
+          .gte('data', format(date.from, 'yyyy-MM-dd'))
+          .lte('data', format(date.to, 'yyyy-MM-dd'))
+          .in('status', includedStatuses)
+          .order('data', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, to)
+      );
 
-      if (reportsError) throw reportsError;
-
-      if (!reports || reports.length === 0) {
+      if (reports.length === 0) {
         toast.warning('Nenhum RDO encontrado no período selecionado');
         return;
       }
 
       const reportDateById = new Map(reports.map((report) => [report.id, report.data]));
 
-      const { data: activities, error } = await supabase
-        .from('rdo_activities')
-        .select('id, descricao, item_code, executado_dia, unidade, report_id')
-        .eq('obra_id', obraId)
-        .in('report_id', reports.map((report) => report.id))
-        .limit(50000);
+      const activities = await fetchAllPages<RdoActivityRow>((from, to) =>
+        supabase
+          .from('rdo_activities')
+          .select('id, descricao, item_code, executado_dia, unidade, report_id')
+          .eq('obra_id', obraId)
+          .in('report_id', reports.map((report) => report.id))
+          .order('report_id', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, to)
+      );
 
-      if (error) throw error;
-
-      if (!activities || activities.length === 0) {
+      if (activities.length === 0) {
         toast.warning('Nenhuma atividade encontrada no período selecionado');
         return;
       }
