@@ -53,7 +53,7 @@ const parseYmdToDate = (value: string) => {
 const PAGE_SIZE = 1000;
 
 const fetchAllPages = async <T,>(
-  loadPage: (from: number, to: number) => Promise<{ data: T[] | null; error: { message?: string } | null }>
+  loadPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>
 ) => {
   const allRows: T[] = [];
   let from = 0;
