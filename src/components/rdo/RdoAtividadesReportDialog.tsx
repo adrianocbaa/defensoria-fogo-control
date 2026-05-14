@@ -31,6 +31,11 @@ interface AtividadeReport {
   unidade: string;
 }
 
+const parseYmdToDate = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0);
+};
+
 export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesReportDialogProps) {
   const [open, setOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,26 +53,34 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
 
     setIsGenerating(true);
     try {
-      // Buscar atividades no período selecionado
+      const includedStatuses = includeInProgress
+        ? (['concluido', 'aprovado', 'preenchendo', 'rascunho'] as const)
+        : (['concluido', 'aprovado'] as const);
+
+      const { data: reports, error: reportsError } = await supabase
+        .from('rdo_reports')
+        .select('id, data')
+        .eq('obra_id', obraId)
+        .gte('data', format(date.from, 'yyyy-MM-dd'))
+        .lte('data', format(date.to, 'yyyy-MM-dd'))
+        .in('status', includedStatuses)
+        .order('data', { ascending: true })
+        .limit(10000);
+
+      if (reportsError) throw reportsError;
+
+      if (!reports || reports.length === 0) {
+        toast.warning('Nenhum RDO encontrado no período selecionado');
+        return;
+      }
+
+      const reportDateById = new Map(reports.map((report) => [report.id, report.data]));
+
       const { data: activities, error } = await supabase
         .from('rdo_activities')
-        .select(`
-          id,
-          descricao,
-          item_code,
-          executado_dia,
-          unidade,
-          report_id,
-          rdo_reports!inner (
-            data,
-            status
-          )
-        `)
+        .select('id, descricao, item_code, executado_dia, unidade, report_id')
         .eq('obra_id', obraId)
-        .gte('rdo_reports.data', format(date.from, 'yyyy-MM-dd'))
-        .lte('rdo_reports.data', format(date.to, 'yyyy-MM-dd'))
-        .in('rdo_reports.status', includeInProgress ? ['concluido', 'aprovado', 'preenchendo', 'rascunho'] : ['concluido', 'aprovado'])
-        .order('rdo_reports(data)', { ascending: true })
+        .in('report_id', reports.map((report) => report.id))
         .limit(50000);
 
       if (error) throw error;
@@ -80,13 +93,22 @@ export function RdoAtividadesReportDialog({ obraId, obraNome }: RdoAtividadesRep
       // Formatar dados para o relatório
       const reportData: AtividadeReport[] = activities
         .filter(a => a.executado_dia && a.executado_dia > 0)
-        .map(activity => ({
-          data: format(new Date((activity.rdo_reports as any).data + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR }),
-          codigo: activity.item_code || '-',
-          descricao: activity.descricao,
-          executado: activity.executado_dia || 0,
-          unidade: activity.unidade || '-',
-        }));
+        .map(activity => {
+          const reportDate = reportDateById.get(activity.report_id);
+          if (!reportDate) return null;
+
+          return {
+            rawDate: reportDate,
+            data: format(parseYmdToDate(reportDate), 'dd/MM/yyyy', { locale: ptBR }),
+            codigo: activity.item_code || '-',
+            descricao: activity.descricao,
+            executado: activity.executado_dia || 0,
+            unidade: activity.unidade || '-',
+          };
+        })
+        .filter((item): item is AtividadeReport & { rawDate: string } => item !== null)
+        .sort((a, b) => a.rawDate.localeCompare(b.rawDate))
+        .map(({ rawDate, ...item }) => item);
 
       if (reportData.length === 0) {
         toast.warning('Nenhuma atividade com execução encontrada no período');
