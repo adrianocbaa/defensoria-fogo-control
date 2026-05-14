@@ -304,8 +304,8 @@ export default function RDODiario() {
                     {isGeneratingPdf ? 'Gerando...' : 'Baixar PDF'}
                   </Button>
                 )}
-                {/* Botão Reabrir - apenas para admin quando RDO aprovado ou concluído */}
-                {isAdmin && (isApproved || isConcluded) && formData.id && (
+                {/* Botão Reabrir - admin sempre; fiscal da obra quando obra não está concluída */}
+                {(isAdmin || (canEditObra && !obraConcluida)) && (isApproved || isConcluded) && formData.id && (
                   <Button variant="outline" size="sm" onClick={() => setReopenDialog(true)}>
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reabrir RDO
