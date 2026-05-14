@@ -11,6 +11,26 @@ export function useRdoActivitiesAcumulado(obraId: string, dataAtual: string, cur
   return useQuery({
     queryKey: ['rdo-activities-acumulado', obraId, dataAtual, currentReportId],
     queryFn: async () => {
+      const PAGE_SIZE = 1000;
+
+      const fetchAllPages = async <T,>(loadPage: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>) => {
+        const allRows: T[] = [];
+        let from = 0;
+
+        while (true) {
+          const { data, error } = await loadPage(from, from + PAGE_SIZE - 1);
+          if (error) throw error;
+
+          const page = (data || []) as T[];
+          allRows.push(...page);
+
+          if (page.length < PAGE_SIZE) break;
+          from += PAGE_SIZE;
+        }
+
+        return allRows;
+      };
+
       // Buscar apenas RDOs de dias ANTERIORES ao dia atual (lógica progressiva/sequencial).
       // Isso garante que o acumulado exibido no RDO do dia X reflita somente
       // o que foi executado até o dia X-1, sem contaminar com execuções futuras.
@@ -22,37 +42,48 @@ export function useRdoActivitiesAcumulado(obraId: string, dataAtual: string, cur
       // resultado (caso real: itens 2.13 e 2.14 da obra de Paranatinga).
 
       // Passo 1: IDs de RDOs anteriores ao dia atual
-      const { data: reports, error: reportsError } = await supabase
-        .from('rdo_reports')
-        .select('id')
-        .eq('obra_id', obraId)
-        .lt('data', dataAtual)
-        .limit(10000);
-
-      if (reportsError) throw reportsError;
+      // IMPORTANTE: o projeto tem limite efetivo de 1000 linhas por request no Supabase.
+      // Sem paginação, os itens do fim da listagem podem sumir do acumulado.
+      const reports = await fetchAllPages<{ id: string }>((from, to) =>
+        supabase
+          .from('rdo_reports')
+          .select('id')
+          .eq('obra_id', obraId)
+          .lt('data', dataAtual)
+          .order('data', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, to)
+      );
 
       const reportIds = (reports || []).map((r) => r.id);
       if (reportIds.length === 0) return [];
 
       // Passo 2: atividades de planilha desses RDOs
-      const { data, error } = await supabase
-        .from('rdo_activities')
-        .select('orcamento_item_id, executado_dia, quantidade_total, report_id')
-        .eq('obra_id', obraId)
-        .eq('tipo', 'planilha')
-        .not('orcamento_item_id', 'is', null)
-        .in('report_id', reportIds)
-        .limit(100000);
-
-      if (error) throw error;
+      const data = await fetchAllPages<{
+        orcamento_item_id: string;
+        executado_dia: number;
+        quantidade_total: number;
+        report_id: string;
+      }>((from, to) =>
+        supabase
+          .from('rdo_activities')
+          .select('orcamento_item_id, executado_dia, quantidade_total, report_id')
+          .eq('obra_id', obraId)
+          .eq('tipo', 'planilha')
+          .not('orcamento_item_id', 'is', null)
+          .in('report_id', reportIds)
+          .order('report_id', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, to)
+      );
 
       // Agrupar e somar por item
       const acumuladoMap = new Map<string, { total: number; quantidade: number }>();
 
-      (data || []).forEach((item: any) => {
+      (data || []).forEach((item) => {
         const itemId = item.orcamento_item_id;
-        const current = acumuladoMap.get(itemId) || { total: 0, quantidade: item.quantidade_total };
-        current.total += item.executado_dia || 0;
+        const current = acumuladoMap.get(itemId) || { total: 0, quantidade: Number(item.quantidade_total || 0) };
+        current.total += Number(item.executado_dia || 0);
         acumuladoMap.set(itemId, current);
       });
 
