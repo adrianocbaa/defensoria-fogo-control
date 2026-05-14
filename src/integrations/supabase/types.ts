@@ -2250,9 +2250,14 @@ export type Database = {
           activity_id: string
           created_at: string
           created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          edited_at: string | null
+          edited_by: string | null
           id: string
           item_ref: string | null
           orcamento_item_id: string | null
+          original_texto: string | null
           report_id: string
           source: string | null
           texto: string
@@ -2261,9 +2266,14 @@ export type Database = {
           activity_id: string
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
           id?: string
           item_ref?: string | null
           orcamento_item_id?: string | null
+          original_texto?: string | null
           report_id: string
           source?: string | null
           texto: string
@@ -2272,9 +2282,14 @@ export type Database = {
           activity_id?: string
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
           id?: string
           item_ref?: string | null
           orcamento_item_id?: string | null
+          original_texto?: string | null
           report_id?: string
           source?: string | null
           texto?: string
