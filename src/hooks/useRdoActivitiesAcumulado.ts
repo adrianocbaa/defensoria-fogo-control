@@ -26,7 +26,8 @@ export function useRdoActivitiesAcumulado(obraId: string, dataAtual: string, cur
         .eq('obra_id', obraId)
         .eq('tipo', 'planilha')
         .not('orcamento_item_id', 'is', null)
-        .lt('rdo_reports.data', dataAtual);
+        .lt('rdo_reports.data', dataAtual)
+        .limit(50000);
       
       if (error) throw error;
 
