@@ -13,7 +13,7 @@ export function useRdoActivitiesAcumulado(obraId: string, dataAtual: string, cur
     queryFn: async () => {
       const PAGE_SIZE = 1000;
 
-      const fetchAllPages = async <T,>(loadPage: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>) => {
+      const fetchAllPages = async <T,>(loadPage: (from: number, to: number) => any) => {
         const allRows: T[] = [];
         let from = 0;
 
