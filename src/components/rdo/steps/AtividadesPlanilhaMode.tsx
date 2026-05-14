@@ -255,9 +255,10 @@ export function AtividadesPlanilhaMode({ reportId, obraId, dataRdo, disabled }: 
       return { orcamentoItemId, value };
     },
     onSuccess: () => {
-      // NÃO invalidar rdo-activities-planilha aqui — causaria re-inicialização dos valores locais
-      // Apenas atualizar o acumulado para refletir o novo progresso
-      queryClient.invalidateQueries({ queryKey: ['rdo-activities-acumulado', obraId] });
+      // NÃO invalidar rdo-activities-planilha aqui — causaria re-inicialização dos valores locais.
+      // NÃO invalidar rdo-activities-acumulado: o acumulado só considera RDOs de dias ANTERIORES
+      // ao atual (lt('rdo_reports.data', dataAtual)), portanto salvar o RDO de hoje não muda nada.
+      // Invalidar a cada save (até 169 itens em paralelo) causava "Maximum update depth exceeded".
     },
     onError: (err: any, variables) => {
       // Extrair mensagem amigável do banco (trigger de validação)
