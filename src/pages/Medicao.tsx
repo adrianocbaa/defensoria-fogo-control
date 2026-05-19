@@ -3559,45 +3559,56 @@ export function Medicao() {
         });
       }
 
+      const naoEncontrados: string[] = [];
+      const naoFolhas: string[] = [];
       Object.entries(dadosImportados).forEach(([itemCode, qtdExecutada]) => {
-        // Encontrar item pelo código (tentando tanto codigo quanto item)
-        const item = items.find(i => 
-          i.codigo.trim() === itemCode.trim() || 
-          i.item.trim() === itemCode.trim()
-        );
+        // Priorizar match pelo código hierárquico (item) antes do código de banco,
+        // para evitar que um item "banco" coincida com um código hierárquico de outro.
+        const item = items.find(i => i.item.trim() === itemCode.trim())
+          || items.find(i => i.codigo.trim() === itemCode.trim());
 
-        if (item && ehItemFolha(item.item)) {
-          const ehExtracontratual = item.origem === 'extracontratual';
-          const qntAditivoAcum = ehExtracontratual
-            ? 0
-            : aditivos
-                .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoAtual)
-                .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
-          const quantidadeTotal = (item.quantidade || 0) + qntAditivoAcum;
-
-          // Verificar se já atingiu 100% nas medições anteriores - pular se sim
-          const qntAcumAnterior = qntAcumAnteriorMap.get(item.id) || 0;
-          const disponivel = quantidadeTotal - qntAcumAnterior;
-
-          // Limitar qtd ao disponível (pode ser 0 se já 100% executado)
-          const qtdLimitada = Math.min(qtdExecutada, Math.max(0, disponivel));
-
-          const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual);
-          const valorTotal = qtdLimitada * item.valorUnitario;
-
-          // Calcular percentual baseado em QUANTIDADE (não em valor monetário) para evitar imprecisão de float
-          // Ex: 5m executados / 5m contratados = exatamente 100%, independente do preço unitário
-          const percentual = quantidadeTotal > 0 ? Math.min(100, (qtdLimitada / quantidadeTotal) * 100) : 0;
-          const totalFinal = percentual >= 100 ? totalContratoItem : valorTotal;
-
-          novoDados[item.id] = {
-            qnt: qtdLimitada,
-            percentual,
-            total: totalFinal
-          };
-          itensAtualizados++;
+        if (!item) {
+          naoEncontrados.push(itemCode);
+          console.warn('[ImportRDO] Item não encontrado:', itemCode, 'qtd:', qtdExecutada);
+          return;
         }
+        if (!ehItemFolha(item.item)) {
+          naoFolhas.push(itemCode);
+          console.warn('[ImportRDO] Ignorado (não é folha):', itemCode, '→ item:', item.item);
+          return;
+        }
+
+        const ehExtracontratual = item.origem === 'extracontratual';
+        const qntAditivoAcum = ehExtracontratual
+          ? 0
+          : aditivos
+              .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoAtual)
+              .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
+        const quantidadeTotal = (item.quantidade || 0) + qntAditivoAcum;
+
+        const qntAcumAnterior = qntAcumAnteriorMap.get(item.id) || 0;
+        const disponivel = quantidadeTotal - qntAcumAnterior;
+
+        const qtdLimitada = Math.min(qtdExecutada, Math.max(0, disponivel));
+
+        const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual);
+        const valorTotal = qtdLimitada * item.valorUnitario;
+
+        const percentual = quantidadeTotal > 0 ? Math.min(100, (qtdLimitada / quantidadeTotal) * 100) : 0;
+        const totalFinal = percentual >= 100 ? totalContratoItem : valorTotal;
+
+        console.log('[ImportRDO] OK', itemCode, '→ id:', item.id, 'qtd:', qtdLimitada, 'disp:', disponivel);
+
+        novoDados[item.id] = {
+          qnt: qtdLimitada,
+          percentual,
+          total: totalFinal
+        };
+        itensAtualizados++;
       });
+      console.log('[ImportRDO] Resumo - atualizados:', itensAtualizados,
+        'não encontrados:', naoEncontrados, 'não folha:', naoFolhas,
+        'total no payload:', Object.keys(dadosImportados).length);
 
       // Atualizar estado local
       const medicoesAtualizadas = medicoes.map(m => 
