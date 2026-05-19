@@ -3596,9 +3596,12 @@ export function Medicao() {
         const qtdLimitada = Math.min(qtdExecutada, Math.max(0, disponivel));
 
         const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual);
-        const valorTotal = qtdLimitada * item.valorUnitario;
 
         const percentual = quantidadeTotal > 0 ? Math.min(100, (qtdLimitada / quantidadeTotal) * 100) : 0;
+        // IMPORTANTE: calcular o total a partir do percentual × totalContrato (e não qtd × valorUnitario),
+        // pois em alguns itens o valor_unitario armazenado pode não refletir BDI/desconto corretamente,
+        // enquanto total_contrato é sempre a fonte de verdade. Igual à lógica de atualizarMedicao().
+        const valorTotal = (percentual / 100) * totalContratoItem;
         const totalFinal = percentual >= 100 ? totalContratoItem : valorTotal;
 
         console.log('[ImportRDO] OK', itemCode, '→ id:', item.id, 'qtd:', qtdLimitada, 'disp:', disponivel);
