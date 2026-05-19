@@ -853,8 +853,9 @@ export function Medicao() {
   };
 
   // Função para calcular e distribuir Administração Local
-  const calcularEDistribuirAdministracaoLocal = (silent = false) => {
-    const medicaoAtualData = medicoes.find(m => m.id === medicaoAtual);
+  const calcularEDistribuirAdministracaoLocal = (silent = false, medicoesOverride?: typeof medicoes) => {
+    const medicoesFonte = medicoesOverride ?? medicoes;
+    const medicaoAtualData = medicoesFonte.find(m => m.id === medicaoAtual);
     if (!medicaoAtualData) return;
 
     // Sequência da medição atual — usada como limite para aditivos (só considerar aditivos
@@ -862,7 +863,7 @@ export function Medicao() {
     const medicaoSeq = medicaoAtualData.id; // id == sequencia no sistema
 
     // 1. Calcular Total de Serviços Executados ACUMULADO (medições anteriores + atual, NÃO-AL, folha)
-    const sessoesAnteriores = medicoes.filter(m => m.bloqueada && m.id < medicaoSeq);
+    const sessoesAnteriores = medicoesFonte.filter(m => m.bloqueada && m.id < medicaoSeq);
     let totalServicosExecutados = 0;
     // Serviços das medições anteriores bloqueadas
     sessoesAnteriores.forEach(sesAnterior => {
@@ -3680,7 +3681,7 @@ export function Medicao() {
       // para que o valor de "Serviços Executados" já inclua a parcela proporcional
       // da Admin. Local sem precisar desmarcar/remarcar manualmente.
       if (items.some(i => i.ehAdministracaoLocal)) {
-        setTimeout(() => calcularEDistribuirAdministracaoLocal(true), 50);
+        calcularEDistribuirAdministracaoLocal(true, medicoesAtualizadas);
       }
     } catch (error) {
       console.error('Erro ao importar dados do RDO:', error);
