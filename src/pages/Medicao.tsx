@@ -863,7 +863,7 @@ export function Medicao() {
     const medicaoSeq = medicaoAtualData.id; // id == sequencia no sistema
 
     // 1. Calcular Total de Serviços Executados ACUMULADO (medições anteriores + atual, NÃO-AL, folha)
-    const sessoesAnteriores = medicoes.filter(m => m.bloqueada && m.id < medicaoSeq);
+    const sessoesAnteriores = medicoesFonte.filter(m => m.bloqueada && m.id < medicaoSeq);
     let totalServicosExecutados = 0;
     // Serviços das medições anteriores bloqueadas
     sessoesAnteriores.forEach(sesAnterior => {
