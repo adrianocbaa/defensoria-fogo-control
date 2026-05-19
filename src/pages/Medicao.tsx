@@ -3675,6 +3675,13 @@ export function Medicao() {
       }
 
       toast.success(`${itensAtualizados} itens importados do RDO com sucesso!`);
+
+      // Recalcular automaticamente a Administração Local após a importação,
+      // para que o valor de "Serviços Executados" já inclua a parcela proporcional
+      // da Admin. Local sem precisar desmarcar/remarcar manualmente.
+      if (items.some(i => i.ehAdministracaoLocal)) {
+        setTimeout(() => calcularEDistribuirAdministracaoLocal(true), 50);
+      }
     } catch (error) {
       console.error('Erro ao importar dados do RDO:', error);
       toast.error('Erro ao importar dados do RDO');
