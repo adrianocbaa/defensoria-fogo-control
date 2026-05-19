@@ -4276,7 +4276,7 @@ export function Medicao() {
                           <TableCell className="border border-gray-300 p-1">
                             <div className="text-right font-mono text-xs px-1">
                               {ehItemFolha(item.item)
-                                ? `R$ ${item.valorUnitario.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                ? `R$ ${(item.quantidade > 0 ? item.valorTotal / item.quantidade : 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 : ''}
                             </div>
                           </TableCell>
