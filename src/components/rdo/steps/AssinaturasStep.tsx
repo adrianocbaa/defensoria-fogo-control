@@ -283,7 +283,8 @@ export function AssinaturasStep({
         .single();
       
       const contratadaJaValidou = currentReport?.assinatura_contratada_validado_em;
-      const novoStatus = contratadaJaValidou ? 'aprovado' : (currentReport?.status || reportData?.status);
+      // A assinatura do Fiscal já aprova o RDO, mesmo sem a assinatura da Contratada
+      const novoStatus = 'aprovado';
       
       const { error: updateError } = await supabase
         .from("rdo_reports")
@@ -303,8 +304,8 @@ export function AssinaturasStep({
       await createAuditLog({
         obraId,
         reportId,
-        acao: contratadaJaValidou ? "APROVAR" : "ASSINAR_FISCAL",
-        detalhes: { nome: fiscalNome, cargo: fiscalCargo, documento: fiscalDocumento },
+        acao: "APROVAR",
+        detalhes: { nome: fiscalNome, cargo: fiscalCargo, documento: fiscalDocumento, contratada_assinou: !!contratadaJaValidou },
         actorId: user?.id,
         actorNome: fiscalNome,
       });
@@ -317,12 +318,9 @@ export function AssinaturasStep({
 
       setFiscalValidadoLocal(validatedAt);
       
-      if (contratadaJaValidou) {
-        toast.success("RDO aprovado com sucesso!");
-      } else {
-        toast.success("Validação do Fiscal/Gestor registrada. Aguardando Contratada.");
-      }
+      toast.success("RDO aprovado com sucesso!");
       onUpdate();
+
     } catch (error: any) {
       console.error("Error validating fiscal signature:", error);
       toast.error("Erro ao validar assinatura");
