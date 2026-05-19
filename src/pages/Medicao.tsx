@@ -3543,6 +3543,9 @@ export function Medicao() {
     }
 
     try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id ?? null;
+
       // Para cada código importado, encontrar o item correspondente e preencher a qtd
       const novoDados = { ...medicaoAtualObj.dados };
       let itensAtualizados = 0;
@@ -3564,8 +3567,9 @@ export function Medicao() {
       Object.entries(dadosImportados).forEach(([itemCode, qtdExecutada]) => {
         // Priorizar match pelo código hierárquico (item) antes do código de banco,
         // para evitar que um item "banco" coincida com um código hierárquico de outro.
-        const item = items.find(i => i.item.trim() === itemCode.trim())
-          || items.find(i => i.codigo.trim() === itemCode.trim());
+        const codigoNormalizado = itemCode.trim();
+        const item = items.find(i => (i.item || '').trim() === codigoNormalizado)
+          || items.find(i => (i.codigo || '').trim() === codigoNormalizado);
 
         if (!item) {
           naoEncontrados.push(itemCode);
@@ -3620,21 +3624,51 @@ export function Medicao() {
 
       // Salvar no banco de dados
       if (medicaoAtualObj.sessionId) {
-        const itemsParaSalvar = Object.entries(novoDados).map(([itemIdStr, valores]) => {
-          const itemId = parseInt(itemIdStr);
-          const item = items.find(i => i.id === itemId);
-          if (!item) return null;
+        const payload = Object.entries(novoDados)
+          .map(([itemIdStr, valores]) => {
+            const itemId = parseInt(itemIdStr);
+            const item = items.find(i => i.id === itemId);
+            if (!item || !item.item || !item.item.trim()) return null;
 
-          return {
-            medicao_id: medicaoAtualObj.sessionId,
-            item_code: item.item.trim(),
-            qtd: valores.qnt,
-            pct: valores.percentual,
-            total: valores.total
-          };
-        }).filter(Boolean);
+            return {
+              item_code: item.item.trim(),
+              qtd: Number(valores.qnt) || 0,
+              pct: Number(valores.percentual) || 0,
+              total: Number(valores.total) || 0
+            };
+          })
+          .filter((item): item is { item_code: string; qtd: number; pct: number; total: number } => {
+            if (!item) return false;
+            return item.qtd !== 0 || item.pct !== 0 || item.total !== 0;
+          });
 
-        await upsertItems(medicaoAtualObj.sessionId, itemsParaSalvar as any[]);
+        const { data: existingItems, error: existingError } = await supabase
+          .from('medicao_items')
+          .select('item_code')
+          .eq('medicao_id', medicaoAtualObj.sessionId);
+
+        if (existingError) throw existingError;
+
+        const payloadCodes = new Set(payload.map(p => p.item_code.trim()));
+        const existingCodes = new Set(
+          (existingItems || [])
+            .map((it: any) => (it.item_code || '').trim())
+            .filter((code: string) => !!code)
+        );
+
+        const codesToDelete = Array.from(existingCodes).filter(code => !payloadCodes.has(code));
+
+        if (codesToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('medicao_items')
+            .delete()
+            .eq('medicao_id', medicaoAtualObj.sessionId)
+            .in('item_code', codesToDelete);
+
+          if (deleteError) throw deleteError;
+        }
+
+        await upsertItems(medicaoAtualObj.sessionId, payload, userId);
       }
 
       toast.success(`${itensAtualizados} itens importados do RDO com sucesso!`);

@@ -19,7 +19,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 interface ImportarDoRDOProps {
   obraId: string;
   medicaoId: string;
-  onImportar: (dados: { [itemCode: string]: number }) => void;
+  onImportar: (dados: { [itemCode: string]: number }) => Promise<void>;
   onFechar: () => void;
 }
 
@@ -185,7 +185,14 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
         return;
       }
 
-      // Registrar o período importado
+      const dadosImportados: { [itemCode: string]: number } = {};
+      agregado.forEach((valor, codigo) => {
+        dadosImportados[codigo] = valor;
+      });
+
+      await onImportar(dadosImportados);
+
+      // Registrar o período importado apenas após a importação concluir com sucesso
       const { data: { user } } = await supabase.auth.getUser();
       const { error: insertError } = await supabase
         .from('medicao_rdo_imports')
@@ -201,16 +208,10 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
         console.error('Erro ao registrar período importado:', insertError);
       }
 
-      const dadosImportados: { [itemCode: string]: number } = {};
-      agregado.forEach((valor, codigo) => {
-        dadosImportados[codigo] = valor;
-      });
-
       toast.success(
         `${agregado.size} itens importados do RDO (${reportIds.length} relatórios no período)`
       );
-      
-      onImportar(dadosImportados);
+
       onFechar();
     } catch (error) {
       console.error('Erro ao importar do RDO:', error);
