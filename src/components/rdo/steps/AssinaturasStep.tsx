@@ -407,7 +407,9 @@ export function AssinaturasStep({
       const validatedAt = new Date().toISOString();
       
       const fiscalJaValidou = reportData?.assinatura_fiscal_validado_em;
-      const novoStatus = fiscalJaValidou ? 'concluido' : reportData?.status;
+      // Se fiscal já assinou, RDO já está aprovado — manter status aprovado
+      const novoStatus = fiscalJaValidou ? 'aprovado' : reportData?.status;
+
       
       const { error: updateError } = await supabase
         .from("rdo_reports")
