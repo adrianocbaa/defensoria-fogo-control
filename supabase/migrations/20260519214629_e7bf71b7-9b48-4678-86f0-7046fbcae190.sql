@@ -1,0 +1,1 @@
+DELETE FROM public.medicao_rdo_imports WHERE id = '5215a806-0dee-41ca-a88a-4dc6d61ccd93';
