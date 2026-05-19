@@ -853,8 +853,9 @@ export function Medicao() {
   };
 
   // Função para calcular e distribuir Administração Local
-  const calcularEDistribuirAdministracaoLocal = (silent = false) => {
-    const medicaoAtualData = medicoes.find(m => m.id === medicaoAtual);
+  const calcularEDistribuirAdministracaoLocal = (silent = false, medicoesOverride?: typeof medicoes) => {
+    const medicoesFonte = medicoesOverride ?? medicoes;
+    const medicaoAtualData = medicoesFonte.find(m => m.id === medicaoAtual);
     if (!medicaoAtualData) return;
 
     // Sequência da medição atual — usada como limite para aditivos (só considerar aditivos
