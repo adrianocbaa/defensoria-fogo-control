@@ -151,14 +151,18 @@ export function ImportarDoRDO({ obraId, medicaoId, onImportar, onFechar }: Impor
         return;
       }
 
-      // Buscar todas as atividades do tipo 'planilha' desses RDOs
+      // Buscar todas as atividades do tipo 'planilha' desses RDOs.
+      // IMPORTANTE: limite explícito alto para evitar truncamento silencioso
+      // do default de 1000 linhas do Supabase (ex.: 33 RDOs x 200 itens = 6600).
       const { data: activities, error: activitiesError } = await supabase
         .from('rdo_activities')
         .select('item_code, executado_dia, orcamento_item_id')
         .eq('obra_id', obraId)
         .eq('tipo', 'planilha')
         .in('report_id', reportIds)
-        .not('orcamento_item_id', 'is', null);
+        .not('orcamento_item_id', 'is', null)
+        .gt('executado_dia', 0)
+        .limit(100000);
 
       if (activitiesError) throw activitiesError;
 
