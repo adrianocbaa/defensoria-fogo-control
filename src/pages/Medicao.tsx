@@ -3681,7 +3681,7 @@ export function Medicao() {
       // para que o valor de "Serviços Executados" já inclua a parcela proporcional
       // da Admin. Local sem precisar desmarcar/remarcar manualmente.
       if (items.some(i => i.ehAdministracaoLocal)) {
-        setTimeout(() => calcularEDistribuirAdministracaoLocal(true), 50);
+        calcularEDistribuirAdministracaoLocal(true, medicoesAtualizadas);
       }
     } catch (error) {
       console.error('Erro ao importar dados do RDO:', error);
