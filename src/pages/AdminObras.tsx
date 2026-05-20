@@ -198,7 +198,7 @@ export function AdminObras() {
         // Buscar orcamento_items para cálculo financeiro (com total_contrato e item para filtro de folha)
         supabase
           .from('orcamento_items')
-          .select('obra_id, total_contrato, item')
+          .select('obra_id, total_contrato, item, eh_administracao_local')
           .in('obra_id', obraIds)
           .limit(10000)
       ]);
