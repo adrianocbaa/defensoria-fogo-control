@@ -28,8 +28,9 @@ export function useObrasValorPagoMap(obraIds: string[]) {
           .in('obra_id', obraIds),
         supabase
           .from('orcamento_items')
-          .select('obra_id, item, total_contrato, origem')
-          .in('obra_id', obraIds),
+          .select('obra_id, item, total_contrato, origem, eh_administracao_local')
+          .in('obra_id', obraIds)
+          .limit(10000),
         supabase
           .from('obras')
           .select('id, valor_total, valor_aditivado')
