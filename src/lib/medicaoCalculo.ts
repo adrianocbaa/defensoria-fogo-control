@@ -8,6 +8,7 @@ export interface OrcamentoItemFinanceiro {
   item: string;
   total_contrato: number;
   origem?: string;
+  eh_administracao_local?: boolean | null;
 }
 
 export interface MedicaoItemCalculo {
@@ -121,39 +122,47 @@ export function calcularFinanceiroMedicao(
   // existem em `orcamento_items` devem ser ignorados aqui também, para manter
   // paridade com a tela e evitar percentuais acima do real.
   const folhasSet = new Set<string>();
+  const folhasAdminLocalSet = new Set<string>();
   orcItems.forEach(oi => {
-    if (ehItemFolha(oi.item, orcItems)) folhasSet.add(oi.item);
+    if (ehItemFolha(oi.item, orcItems)) {
+      folhasSet.add(oi.item);
+      if (oi.eh_administracao_local) folhasAdminLocalSet.add(oi.item);
+    }
   });
   const ehItemFolhaDaObra = (itemCode: string) => folhasSet.has(itemCode);
+  const ehFolhaAL = (itemCode: string) => folhasAdminLocalSet.has(itemCode);
+  const ehFolhaNonAL = (itemCode: string) => folhasSet.has(itemCode) && !folhasAdminLocalSet.has(itemCode);
 
-  // Valor acumulado global: soma apenas dos itens folha existentes na obra.
-  // Cada item é arredondado individualmente antes de somar, para evitar acúmulo de erro de ponto flutuante.
-  const valorAcumuladoRaw = medicaoItems.reduce(
-    (sum, item) => ehItemFolhaDaObra(item.item_code)
-      ? sum + Math.round(Number(item.total || 0) * 100) / 100
-      : sum,
-    0
-  );
-  const valorAcumulado = Math.round(valorAcumuladoRaw * 100) / 100;
+  // Total contratado de Administração Local (folhas marcadas como AL)
+  const totalContratoAL = orcItems.reduce((sum, oi) => {
+    return ehFolhaAL(oi.item) ? sum + Number(oi.total_contrato || 0) : sum;
+  }, 0);
+  // Base não-AL do contrato para distribuir a AL proporcionalmente
+  const totalContratoNonAL = Math.max(0, totalContratoOrcamento - totalContratoAL);
 
-  // Marcos por sessão: usa total acumulado (igual à lógica da página de medição)
+  // Soma serviços executados (não-AL) por sessão — usados como base do %
   const sessionsSorted = [...sessions].sort((a, b) => a.sequencia - b.sequencia);
 
+  const round2 = (v: number) => Math.round(v * 100) / 100;
+  const sumNonALAteSessions = (sessionIds: Set<string>) => round2(
+    medicaoItems
+      .filter(i => sessionIds.has(i.medicao_id) && ehFolhaNonAL(i.item_code))
+      .reduce((s, i) => s + round2(Number(i.total || 0)), 0)
+  );
+
+  // Acumulado total (não-AL + AL distribuída dinamicamente)
+  let acumuladoAnterior = 0;
   const marcos: MarcoCalculado[] = sessionsSorted.map((session, idx) => {
     const sessionIdsAteAgora = new Set(sessionsSorted.slice(0, idx + 1).map(s => s.id));
 
-    // valorMedicao: soma apenas itens folha existentes na obra (igual a "Serviços Executados")
-    const itemsDaSessao = medicaoItems.filter(i => i.medicao_id === session.id && ehItemFolhaDaObra(i.item_code));
-    const valorMedicao = Math.round(
-      itemsDaSessao.reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
-    ) / 100;
-
-    // Acumulado até esta sessão: soma apenas itens folha existentes na obra
-    const acumuladoAteAgora = Math.round(
-      medicaoItems
-        .filter(i => sessionIdsAteAgora.has(i.medicao_id) && ehItemFolhaDaObra(i.item_code))
-        .reduce((sum, item) => sum + Math.round(Number(item.total || 0) * 100) / 100, 0) * 100
-    ) / 100;
+    const nonALAcum = sumNonALAteSessions(sessionIdsAteAgora);
+    const pctExecAcum = totalContratoNonAL > 0
+      ? Math.min(nonALAcum / totalContratoNonAL, 1)
+      : 0;
+    const alAcum = round2(pctExecAcum * totalContratoAL);
+    const acumuladoAteAgora = round2(nonALAcum + alAcum);
+    const valorMedicao = round2(acumuladoAteAgora - acumuladoAnterior);
+    acumuladoAnterior = acumuladoAteAgora;
 
     return {
       sequencia: session.sequencia,
@@ -166,6 +175,11 @@ export function calcularFinanceiroMedicao(
       data_relatorio: session.data_relatorio ?? null,
     };
   });
+
+  // Valor acumulado global = último acumulado calculado
+  const valorAcumulado = marcos.length > 0
+    ? marcos[marcos.length - 1].valorAcumulado
+    : 0;
 
   const percentualExecutado = totalContrato > 0
     ? (valorAcumulado / totalContrato) * 100
