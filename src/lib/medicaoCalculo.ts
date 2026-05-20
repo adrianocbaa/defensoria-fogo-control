@@ -8,6 +8,7 @@ export interface OrcamentoItemFinanceiro {
   item: string;
   total_contrato: number;
   origem?: string;
+  eh_administracao_local?: boolean | null;
 }
 
 export interface MedicaoItemCalculo {
