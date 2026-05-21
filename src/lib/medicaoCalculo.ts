@@ -145,47 +145,31 @@ export function calcularFinanceiroMedicao(
 
   const round2 = (v: number) => Math.round(v * 100) / 100;
 
-  // Tolerância de fechamento: quando a soma de pct de um item folha já está
-  // praticamente em 100% (>= 99.9%), considera 100% para evitar sobra de
-  // centavos por arredondamento de quantidade/pct digitado pelo usuário.
-  // Isso elimina o drift cumulativo SEM precisar corrigir dados históricos
-  // e mantém o sistema correto para obras futuras.
-  const PCT_FECHAMENTO_TOLERANCIA = 99.9;
+  // Tolerância de fechamento GLOBAL: quando o valor executado total já está
+  // praticamente igual ao contrato pós-aditivo (>= 99.9%), encosta no
+  // contrato para eliminar sobras de centavos por arredondamento de
+  // quantidade/preço unitário lançados pelo usuário. Aplicada por sessão.
+  const PCT_FECHAMENTO_TOLERANCIA = 0.999;
 
-  // Soma não-AL acumulada por item folha:
-  //   valor_item_acum = min(soma_pct, 100) × total_contrato_item / 100
-  // Itens cuja soma de pct ultrapassa o limiar são fechados em 100%.
-  // Extracontratuais (sem total_contrato no orçamento) somam o total bruto.
+  // Soma não-AL acumulada usando o valor REAL registrado em medicao_items.total
+  // (fonte da verdade — calculado a partir de qtd × preço unitário vigente
+  // naquela medição). NÃO recalculamos a partir de pct, porque o pct é
+  // relativo à quantidade vigente na época da medição: quando um item
+  // recebe aditivo, o pct deixa de bater com o total_contrato atual.
+  // Para extracontratuais (sem item no orçamento), também usa mi.total.
   const sumNonALAteSessions = (sessionIds: Set<string>) => {
-    const pctPorItem = new Map<string, number>();
-    medicaoItems.forEach(i => {
-      if (!sessionIds.has(i.medicao_id)) return;
-      if (!ehFolhaNonAL(i.item_code)) return;
-      if (totalContratoPorItem.has(i.item_code)) {
-        pctPorItem.set(
-          i.item_code,
-          (pctPorItem.get(i.item_code) || 0) + Number(i.pct || 0)
-        );
-      }
-    });
-
     let soma = 0;
-    pctPorItem.forEach((pctAcum, itemCode) => {
-      const totalContratoItem = totalContratoPorItem.get(itemCode) || 0;
-      const pctEfetivo = pctAcum >= PCT_FECHAMENTO_TOLERANCIA
-        ? 100
-        : Math.min(pctAcum, 100);
-      soma += (pctEfetivo / 100) * totalContratoItem;
-    });
-
     medicaoItems.forEach(i => {
       if (!sessionIds.has(i.medicao_id)) return;
-      if (!ehFolhaNonAL(i.item_code)) return;
-      if (!totalContratoPorItem.has(i.item_code)) {
-        soma += Number(i.total || 0);
+      if (ehFolhaNonAL(i.item_code) || !totalContratoPorItem.has(i.item_code)) {
+        // ehFolhaNonAL cobre itens da planilha não-AL;
+        // a 2ª condição garante inclusão de extracontratuais (que não estão
+        // em folhasSet) — mas estes não devem ser AL nem ter contrato.
+        if (ehFolhaNonAL(i.item_code) || (!folhasSet.has(i.item_code))) {
+          soma += Number(i.total || 0);
+        }
       }
     });
-
     return soma;
   };
 
@@ -204,7 +188,14 @@ export function calcularFinanceiroMedicao(
       ? totalContratoAL
       : pctExecAcum * totalContratoAL;
     // Acumulado bruto; cap no total contratado para não passar do contrato
-    const acumuladoBruto = nonALAcumRaw + alAcum;
+    let acumuladoBruto = nonALAcumRaw + alAcum;
+    // Snap de fechamento GLOBAL: se já chegou em >= 99.9% do contrato, encosta
+    // no contrato (elimina centavos perdidos por arredondamento de qtd/preço
+    // unitário em itens individuais — comportamento esperado quando a obra
+    // está praticamente concluída).
+    if (totalContrato > 0 && acumuladoBruto >= totalContrato * PCT_FECHAMENTO_TOLERANCIA) {
+      acumuladoBruto = totalContrato;
+    }
     const acumuladoAteAgora = totalContrato > 0
       ? round2(Math.min(acumuladoBruto, totalContrato))
       : round2(acumuladoBruto);
