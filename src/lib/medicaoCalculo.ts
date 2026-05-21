@@ -188,7 +188,14 @@ export function calcularFinanceiroMedicao(
       ? totalContratoAL
       : pctExecAcum * totalContratoAL;
     // Acumulado bruto; cap no total contratado para não passar do contrato
-    const acumuladoBruto = nonALAcumRaw + alAcum;
+    let acumuladoBruto = nonALAcumRaw + alAcum;
+    // Snap de fechamento GLOBAL: se já chegou em >= 99.9% do contrato, encosta
+    // no contrato (elimina centavos perdidos por arredondamento de qtd/preço
+    // unitário em itens individuais — comportamento esperado quando a obra
+    // está praticamente concluída).
+    if (totalContrato > 0 && acumuladoBruto >= totalContrato * PCT_FECHAMENTO_TOLERANCIA) {
+      acumuladoBruto = totalContrato;
+    }
     const acumuladoAteAgora = totalContrato > 0
       ? round2(Math.min(acumuladoBruto, totalContrato))
       : round2(acumuladoBruto);
