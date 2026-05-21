@@ -144,11 +144,12 @@ export function calcularFinanceiroMedicao(
   const sessionsSorted = [...sessions].sort((a, b) => a.sequencia - b.sequencia);
 
   const round2 = (v: number) => Math.round(v * 100) / 100;
-  const sumNonALAteSessions = (sessionIds: Set<string>) => round2(
+  // Soma SEM arredondar item-a-item para preservar precisão; o arredondamento
+  // ocorre apenas na exibição. Evita perda de centavos por rounding cumulativo.
+  const sumNonALAteSessions = (sessionIds: Set<string>) =>
     medicaoItems
       .filter(i => sessionIds.has(i.medicao_id) && ehFolhaNonAL(i.item_code))
-      .reduce((s, i) => s + round2(Number(i.total || 0)), 0)
-  );
+      .reduce((s, i) => s + Number(i.total || 0), 0);
 
   // Acumulado total (não-AL + AL distribuída dinamicamente)
   let acumuladoAnterior = 0;
@@ -156,17 +157,22 @@ export function calcularFinanceiroMedicao(
     const sessionIdsAteAgora = new Set(sessionsSorted.slice(0, idx + 1).map(s => s.id));
 
     const nonALAcumRaw = sumNonALAteSessions(sessionIdsAteAgora);
-    // Cap não-AL ao total contratado não-AL para evitar excesso por arredondamentos
-    const nonALAcum = totalContratoNonAL > 0
-      ? Math.min(nonALAcumRaw, totalContratoNonAL)
-      : nonALAcumRaw;
+    // Razão de execução não-AL (limitada a 1 para não estourar a AL distribuída)
     const pctExecAcum = totalContratoNonAL > 0
-      ? Math.min(nonALAcum / totalContratoNonAL, 1)
+      ? Math.min(nonALAcumRaw / totalContratoNonAL, 1)
       : 0;
-    const alAcum = round2(pctExecAcum * totalContratoAL);
-    const acumuladoAteAgora = round2(nonALAcum + alAcum);
+    // Quando 100% executado, força AL = total contratado de AL (evita drift por float)
+    const alAcum = pctExecAcum >= 1
+      ? totalContratoAL
+      : pctExecAcum * totalContratoAL;
+    // Acumulado bruto; cap no total contratado para não passar do contrato
+    const acumuladoBruto = nonALAcumRaw + alAcum;
+    const acumuladoAteAgora = totalContrato > 0
+      ? round2(Math.min(acumuladoBruto, totalContrato))
+      : round2(acumuladoBruto);
     const valorMedicao = round2(acumuladoAteAgora - acumuladoAnterior);
     acumuladoAnterior = acumuladoAteAgora;
+
 
     return {
       sequencia: session.sequencia,
