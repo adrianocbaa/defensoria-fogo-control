@@ -155,7 +155,11 @@ export function calcularFinanceiroMedicao(
   const marcos: MarcoCalculado[] = sessionsSorted.map((session, idx) => {
     const sessionIdsAteAgora = new Set(sessionsSorted.slice(0, idx + 1).map(s => s.id));
 
-    const nonALAcum = sumNonALAteSessions(sessionIdsAteAgora);
+    const nonALAcumRaw = sumNonALAteSessions(sessionIdsAteAgora);
+    // Cap não-AL ao total contratado não-AL para evitar excesso por arredondamentos
+    const nonALAcum = totalContratoNonAL > 0
+      ? Math.min(nonALAcumRaw, totalContratoNonAL)
+      : nonALAcumRaw;
     const pctExecAcum = totalContratoNonAL > 0
       ? Math.min(nonALAcum / totalContratoNonAL, 1)
       : 0;
