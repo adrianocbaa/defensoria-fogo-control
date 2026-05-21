@@ -144,12 +144,50 @@ export function calcularFinanceiroMedicao(
   const sessionsSorted = [...sessions].sort((a, b) => a.sequencia - b.sequencia);
 
   const round2 = (v: number) => Math.round(v * 100) / 100;
-  // Soma SEM arredondar item-a-item para preservar precisão; o arredondamento
-  // ocorre apenas na exibição. Evita perda de centavos por rounding cumulativo.
-  const sumNonALAteSessions = (sessionIds: Set<string>) =>
-    medicaoItems
-      .filter(i => sessionIds.has(i.medicao_id) && ehFolhaNonAL(i.item_code))
-      .reduce((s, i) => s + Number(i.total || 0), 0);
+
+  // Tolerância de fechamento: quando a soma de pct de um item folha já está
+  // praticamente em 100% (>= 99.9%), considera 100% para evitar sobra de
+  // centavos por arredondamento de quantidade/pct digitado pelo usuário.
+  // Isso elimina o drift cumulativo SEM precisar corrigir dados históricos
+  // e mantém o sistema correto para obras futuras.
+  const PCT_FECHAMENTO_TOLERANCIA = 99.9;
+
+  // Soma não-AL acumulada por item folha:
+  //   valor_item_acum = min(soma_pct, 100) × total_contrato_item / 100
+  // Itens cuja soma de pct ultrapassa o limiar são fechados em 100%.
+  // Extracontratuais (sem total_contrato no orçamento) somam o total bruto.
+  const sumNonALAteSessions = (sessionIds: Set<string>) => {
+    const pctPorItem = new Map<string, number>();
+    medicaoItems.forEach(i => {
+      if (!sessionIds.has(i.medicao_id)) return;
+      if (!ehFolhaNonAL(i.item_code)) return;
+      if (totalContratoPorItem.has(i.item_code)) {
+        pctPorItem.set(
+          i.item_code,
+          (pctPorItem.get(i.item_code) || 0) + Number(i.pct || 0)
+        );
+      }
+    });
+
+    let soma = 0;
+    pctPorItem.forEach((pctAcum, itemCode) => {
+      const totalContratoItem = totalContratoPorItem.get(itemCode) || 0;
+      const pctEfetivo = pctAcum >= PCT_FECHAMENTO_TOLERANCIA
+        ? 100
+        : Math.min(pctAcum, 100);
+      soma += (pctEfetivo / 100) * totalContratoItem;
+    });
+
+    medicaoItems.forEach(i => {
+      if (!sessionIds.has(i.medicao_id)) return;
+      if (!ehFolhaNonAL(i.item_code)) return;
+      if (!totalContratoPorItem.has(i.item_code)) {
+        soma += Number(i.total || 0);
+      }
+    });
+
+    return soma;
+  };
 
   // Acumulado total (não-AL + AL distribuída dinamicamente)
   let acumuladoAnterior = 0;
