@@ -220,8 +220,11 @@ export function AdminObras() {
         const medicaoSessionIds = medicaoData.data.map(s => s.id);
         medicaoItemsData = await supabase
           .from('medicao_items')
-          .select('medicao_id, total, item_code, pct')
+          .select(`medicao_id, total, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`)
           .in('medicao_id', medicaoSessionIds);
+        if (medicaoItemsData.data) {
+          medicaoItemsData.data = resolveItensEfetivos(medicaoItemsData.data);
+        }
       }
 
       // Mapear progresso RDO retornado pelo banco
