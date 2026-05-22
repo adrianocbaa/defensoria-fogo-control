@@ -4779,6 +4779,19 @@ export function Medicao() {
       />
     )}
 
+    {/* Modal Admin — Ajustar valores congelados */}
+    {isAdmin && id && (
+      <AjustarMedicaoCongeladaModal
+        open={modalAjustarCongeladaOpen}
+        onOpenChange={setModalAjustarCongeladaOpen}
+        medicaoSessionId={medicoes.find(m => m.id === medicaoAtual)?.sessionId || null}
+        obraId={id}
+        medicaoNome={medicoes.find(m => m.id === medicaoAtual)?.nome || ''}
+        onSaved={() => fetchMedicoesSalvas()}
+      />
+    )}
+
+
     <NovaMedicaoDialog
       open={novaMedicaoOpen}
       onOpenChange={setNovaMedicaoOpen}
