@@ -177,13 +177,33 @@ export function AjustarMedicaoCongeladaModal({
 
   const rowsFiltrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
+    let base = rows;
+    if (!mostrarTodos) {
+      base = base.filter(
+        (r) =>
+          Math.abs(r.qtd_atual) > 1e-6 ||
+          Math.abs(r.pct_atual) > 1e-6 ||
+          Math.abs(r.total_atual) > 0.005,
+      );
+    }
+    if (!q) return base;
+    return base.filter(
       (r) =>
         r.item_code.toLowerCase().includes(q) ||
         r.descricao.toLowerCase().includes(q)
     );
-  }, [rows, busca]);
+  }, [rows, busca, mostrarTodos]);
+
+  const itensComValor = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          Math.abs(r.qtd_atual) > 1e-6 ||
+          Math.abs(r.pct_atual) > 1e-6 ||
+          Math.abs(r.total_atual) > 0.005,
+      ).length,
+    [rows],
+  );
 
   const handleSalvar = async () => {
     if (alterados.length === 0) {
