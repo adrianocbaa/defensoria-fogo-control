@@ -222,17 +222,24 @@ export function AjustarMedicaoCongeladaModal({
         pct: parseNum(r.pct_novo),
         total: parseNum(r.total_novo),
       }));
-      const { data, error } = await supabase.rpc('ajustar_medicao_congelada_lote', {
-        p_ajustes: ajustes as any,
-        p_motivo: motivo.trim(),
-      });
-      console.log('[ajustar_medicao_congelada_lote] resultado:', { data, error });
-      if (error) throw error;
-      // Fecha imediatamente para a UI não parecer travada durante o refresh
+
+      // Chunk para evitar timeout da conexão em lotes grandes
+      const CHUNK = 25;
+      let totalAjustados = 0;
+      for (let i = 0; i < ajustes.length; i += CHUNK) {
+        const lote = ajustes.slice(i, i + CHUNK);
+        const { data, error } = await supabase.rpc('ajustar_medicao_congelada_lote', {
+          p_ajustes: lote as any,
+          p_motivo: motivo.trim(),
+        });
+        console.log(`[ajustar_medicao] lote ${Math.floor(i / CHUNK) + 1}:`, { count: lote.length, data, error });
+        if (error) throw error;
+        totalAjustados += Number(data ?? lote.length);
+      }
+
       setConfirmOpen(false);
       onOpenChange(false);
-      toast.success(`${data ?? alterados.length} itens ajustados com sucesso.`);
-      // Refresh em background — não bloqueia o fechamento
+      toast.success(`${totalAjustados} itens ajustados com sucesso.`);
       try {
         onSaved?.();
       } catch (e) {
