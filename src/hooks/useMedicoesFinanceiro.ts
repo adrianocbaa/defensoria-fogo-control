@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { calcularFinanceiroMedicao, MarcoCalculado } from '@/lib/medicaoCalculo';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 
 // Re-exporta como MedicaoMarco para retrocompatibilidade
 export type MedicaoMarco = MarcoCalculado;
