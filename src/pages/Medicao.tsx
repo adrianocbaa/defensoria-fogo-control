@@ -160,6 +160,7 @@ export function Medicao() {
   const [editandoDesconto, setEditandoDesconto] = useState(false);
   const [novoDesconto, setNovoDesconto] = useState('');
   const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
+  const [modalAjustarCongeladaOpen, setModalAjustarCongeladaOpen] = useState(false);
   const [exportDialogAberto, setExportDialogAberto] = useState(false);
   const [reimportarAditivoId, setReimportarAditivoId] = useState<number | null>(null);
   const fileInputReimportRef = React.useRef<HTMLInputElement>(null);
