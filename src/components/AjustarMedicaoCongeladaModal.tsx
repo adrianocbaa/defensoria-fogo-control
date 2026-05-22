@@ -261,7 +261,7 @@ export function AjustarMedicaoCongeladaModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex items-center gap-2 py-2">
+          <div className="flex items-center gap-3 py-2 flex-wrap">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -271,9 +271,24 @@ export function AjustarMedicaoCongeladaModal({
                 className="pl-8"
               />
             </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="mostrar-todos"
+                checked={mostrarTodos}
+                onCheckedChange={setMostrarTodos}
+              />
+              <Label htmlFor="mostrar-todos" className="text-xs cursor-pointer">
+                Mostrar todos os itens do contrato
+              </Label>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {mostrarTodos
+                ? `${rows.length} itens (todos)`
+                : `${itensComValor} itens nesta medição`}
+            </Badge>
             {alterados.length > 0 && (
               <Badge variant="secondary">
-                {alterados.length} item(ns) alterado(s)
+                {alterados.length} alterado(s)
               </Badge>
             )}
           </div>
