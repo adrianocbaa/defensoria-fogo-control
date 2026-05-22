@@ -334,10 +334,11 @@ export function RelatorioMedicaoModal({
         const executadoPorMacroPorMedicao = new Map<number, Map<number, number>>();
         
         for (const session of sessionsAteMedicaoAtual) {
-          const { data: medicaoItems } = await supabase
+          const { data: medicaoItemsRaw } = await supabase
             .from('medicao_items')
-            .select('item_code, total')
+            .select(`item_code, total, ${MEDICAO_SNAPSHOT_COLUMNS}`)
             .eq('medicao_id', session.id);
+          const medicaoItems = resolveItensEfetivos(medicaoItemsRaw || []);
 
           const executadoMacro = new Map<number, number>();
           const itensJaProcessados = new Set<string>();
