@@ -21,6 +21,7 @@ import ImportarPlanilha from '@/components/ImportarPlanilha';
 import { ImportarDoRDO } from '@/components/ImportarDoRDO';
 import NovoAditivoModal from '@/components/NovoAditivoModal';
 import { RelatorioMedicaoModal } from '@/components/RelatorioMedicaoModal';
+import { AjustarMedicaoCongeladaModal } from '@/components/AjustarMedicaoCongeladaModal';
 import { NovaMedicaoDialog, type NovaMedicaoData } from '@/components/NovaMedicaoDialog';
 import { ImportarCronograma } from '@/components/ImportarCronograma';
 import { CronogramaView } from '@/components/CronogramaView';
@@ -159,6 +160,7 @@ export function Medicao() {
   const [editandoDesconto, setEditandoDesconto] = useState(false);
   const [novoDesconto, setNovoDesconto] = useState('');
   const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
+  const [modalAjustarCongeladaOpen, setModalAjustarCongeladaOpen] = useState(false);
   const [exportDialogAberto, setExportDialogAberto] = useState(false);
   const [reimportarAditivoId, setReimportarAditivoId] = useState<number | null>(null);
   const fileInputReimportRef = React.useRef<HTMLInputElement>(null);
@@ -3924,6 +3926,17 @@ export function Medicao() {
                     Bloqueada
                   </Badge>
                 )}
+                {isAdmin && medicoes.find(m => m.id === medicaoAtual)?.bloqueada && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-auto h-7 text-xs"
+                    onClick={() => setModalAjustarCongeladaOpen(true)}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Ajustar valores congelados
+                  </Button>
+                )}
               </div>
             )}
             
@@ -4765,6 +4778,19 @@ export function Medicao() {
         dadosHierarquicos={dadosHierarquicosMemoizados}
       />
     )}
+
+    {/* Modal Admin — Ajustar valores congelados */}
+    {isAdmin && id && (
+      <AjustarMedicaoCongeladaModal
+        open={modalAjustarCongeladaOpen}
+        onOpenChange={setModalAjustarCongeladaOpen}
+        medicaoSessionId={medicoes.find(m => m.id === medicaoAtual)?.sessionId || null}
+        obraId={id}
+        medicaoNome={medicoes.find(m => m.id === medicaoAtual)?.nome || ''}
+        onSaved={() => fetchMedicoesSalvas()}
+      />
+    )}
+
 
     <NovaMedicaoDialog
       open={novaMedicaoOpen}
