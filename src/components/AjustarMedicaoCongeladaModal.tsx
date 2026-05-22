@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Loader2, Search, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -77,6 +78,7 @@ export function AjustarMedicaoCongeladaModal({
   const [rows, setRows] = useState<Row[]>([]);
   const [motivo, setMotivo] = useState('');
   const [busca, setBusca] = useState('');
+  const [mostrarTodos, setMostrarTodos] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
@@ -175,13 +177,33 @@ export function AjustarMedicaoCongeladaModal({
 
   const rowsFiltrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
+    let base = rows;
+    if (!mostrarTodos) {
+      base = base.filter(
+        (r) =>
+          Math.abs(r.qtd_atual) > 1e-6 ||
+          Math.abs(r.pct_atual) > 1e-6 ||
+          Math.abs(r.total_atual) > 0.005,
+      );
+    }
+    if (!q) return base;
+    return base.filter(
       (r) =>
         r.item_code.toLowerCase().includes(q) ||
         r.descricao.toLowerCase().includes(q)
     );
-  }, [rows, busca]);
+  }, [rows, busca, mostrarTodos]);
+
+  const itensComValor = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          Math.abs(r.qtd_atual) > 1e-6 ||
+          Math.abs(r.pct_atual) > 1e-6 ||
+          Math.abs(r.total_atual) > 0.005,
+      ).length,
+    [rows],
+  );
 
   const handleSalvar = async () => {
     if (alterados.length === 0) {
@@ -239,7 +261,7 @@ export function AjustarMedicaoCongeladaModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex items-center gap-2 py-2">
+          <div className="flex items-center gap-3 py-2 flex-wrap">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -249,9 +271,24 @@ export function AjustarMedicaoCongeladaModal({
                 className="pl-8"
               />
             </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="mostrar-todos"
+                checked={mostrarTodos}
+                onCheckedChange={setMostrarTodos}
+              />
+              <Label htmlFor="mostrar-todos" className="text-xs cursor-pointer">
+                Mostrar todos os itens do contrato
+              </Label>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {mostrarTodos
+                ? `${rows.length} itens (todos)`
+                : `${itensComValor} itens nesta medição`}
+            </Badge>
             {alterados.length > 0 && (
               <Badge variant="secondary">
-                {alterados.length} item(ns) alterado(s)
+                {alterados.length} alterado(s)
               </Badge>
             )}
           </div>
