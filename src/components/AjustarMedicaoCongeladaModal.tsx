@@ -204,12 +204,20 @@ export function AjustarMedicaoCongeladaModal({
         p_ajustes: ajustes as any,
         p_motivo: motivo.trim(),
       });
+      console.log('[ajustar_medicao_congelada_lote] resultado:', { data, error });
       if (error) throw error;
-      toast.success(`${data ?? alterados.length} itens ajustados com sucesso.`);
+      // Fecha imediatamente para a UI não parecer travada durante o refresh
       setConfirmOpen(false);
       onOpenChange(false);
-      onSaved?.();
+      toast.success(`${data ?? alterados.length} itens ajustados com sucesso.`);
+      // Refresh em background — não bloqueia o fechamento
+      try {
+        onSaved?.();
+      } catch (e) {
+        console.error('[ajustar_medicao] onSaved falhou:', e);
+      }
     } catch (err: any) {
+      console.error('[ajustar_medicao_congelada_lote] erro:', err);
       toast.error('Erro ao salvar ajustes: ' + (err.message || err));
     } finally {
       setSaving(false);
