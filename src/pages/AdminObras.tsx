@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import * as LoadingStates from '@/components/LoadingStates';
