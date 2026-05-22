@@ -3926,6 +3926,17 @@ export function Medicao() {
                     Bloqueada
                   </Badge>
                 )}
+                {isAdmin && medicoes.find(m => m.id === medicaoAtual)?.bloqueada && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-auto h-7 text-xs"
+                    onClick={() => setModalAjustarCongeladaOpen(true)}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Ajustar valores congelados
+                  </Button>
+                )}
               </div>
             )}
             
