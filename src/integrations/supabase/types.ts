@@ -3497,6 +3497,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      ajustar_medicao_congelada_lote: {
+        Args: { p_ajustes: Json; p_motivo: string }
+        Returns: number
+      }
       can_edit: { Args: { user_uuid?: string }; Returns: boolean }
       can_edit_obra: {
         Args: { obra_uuid: string; user_uuid?: string }
