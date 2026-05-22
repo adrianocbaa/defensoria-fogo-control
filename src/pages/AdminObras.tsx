@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import * as LoadingStates from '@/components/LoadingStates';
@@ -219,8 +220,11 @@ export function AdminObras() {
         const medicaoSessionIds = medicaoData.data.map(s => s.id);
         medicaoItemsData = await supabase
           .from('medicao_items')
-          .select('medicao_id, total, item_code, pct')
+          .select(`medicao_id, total, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`)
           .in('medicao_id', medicaoSessionIds);
+        if (medicaoItemsData.data) {
+          medicaoItemsData.data = resolveItensEfetivos(medicaoItemsData.data);
+        }
       }
 
       // Mapear progresso RDO retornado pelo banco

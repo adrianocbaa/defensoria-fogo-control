@@ -200,10 +200,10 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         const sessionIds = medicaoSessions.map(s => s.id);
         const { data: medicaoItems } = await supabase
           .from('medicao_items')
-          .select('total')
+          .select('total, total_congelado')
           .in('medicao_id', sessionIds);
-        
-        valorPago = medicaoItems?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
+
+        valorPago = medicaoItems?.reduce((sum, item: any) => sum + (Number(item.total_congelado ?? item.total) || 0), 0) || 0;
       }
       
       return { totalAditivo, valorPago };

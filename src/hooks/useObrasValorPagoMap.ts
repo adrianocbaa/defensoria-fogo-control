@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 
 interface ValorPagoItem {
   obraId: string;
@@ -55,9 +56,9 @@ export function useObrasValorPagoMap(obraIds: string[]) {
         sessionIds.length > 0
           ? supabase
               .from('medicao_items')
-              .select('medicao_id, item_code, pct, total')
+              .select(`medicao_id, item_code, pct, total, ${MEDICAO_SNAPSHOT_COLUMNS}`)
               .in('medicao_id', sessionIds)
-          : Promise.resolve({ data: [] as { medicao_id: string; item_code: string; pct: number; total: number }[] }),
+          : Promise.resolve({ data: [] as any[] }),
         aditivoSessionIds.length > 0
           ? supabase
               .from('aditivo_items')
@@ -66,7 +67,7 @@ export function useObrasValorPagoMap(obraIds: string[]) {
           : Promise.resolve({ data: [] as { aditivo_id: string; total: number }[] }),
       ]);
 
-      const allMedicaoItems = medicaoItemsResult.data || [];
+      const allMedicaoItems = resolveItensEfetivos(medicaoItemsResult.data || []);
       const allAditivoItems = aditivoItemsResult.data || [];
 
       // Calcular resultado por obra usando exatamente calcularFinanceiroMedicao

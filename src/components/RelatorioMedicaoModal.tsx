@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 import { generatePdfFromElement } from '@/lib/pdfExport';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 import { useCronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
 import { useProfile } from '@/hooks/useProfile';
 import { Chart, registerables } from 'chart.js';
@@ -333,10 +334,11 @@ export function RelatorioMedicaoModal({
         const executadoPorMacroPorMedicao = new Map<number, Map<number, number>>();
         
         for (const session of sessionsAteMedicaoAtual) {
-          const { data: medicaoItems } = await supabase
+          const { data: medicaoItemsRaw } = await supabase
             .from('medicao_items')
-            .select('item_code, total')
+            .select(`item_code, total, ${MEDICAO_SNAPSHOT_COLUMNS}`)
             .eq('medicao_id', session.id);
+          const medicaoItems = resolveItensEfetivos(medicaoItemsRaw || []);
 
           const executadoMacro = new Map<number, number>();
           const itensJaProcessados = new Set<string>();

@@ -41,8 +41,9 @@ export function PublicMedicao() {
     if (!medicoes.length) return map;
     medicoes.forEach((medicao: any) => {
       (medicao.medicao_items || []).forEach((item: any) => {
+        const total = item.total_congelado != null ? Number(item.total_congelado) : Number(item.total);
         const current = map.get(item.item_code) || 0;
-        map.set(item.item_code, current + (Number(item.total) || 0));
+        map.set(item.item_code, current + (total || 0));
       });
     });
     return map;
@@ -79,7 +80,7 @@ export function PublicMedicao() {
         // Buscar medições
         const { data: medicoesData, error: medicoesError } = await supabase
           .from('medicao_sessions')
-          .select('id, sequencia, status, created_at, medicao_items ( item_code, qtd, pct, total )')
+          .select('id, sequencia, status, created_at, medicao_items ( item_code, qtd, pct, total, qtd_congelado, pct_congelado, total_congelado )')
           .eq('obra_id', id)
           .order('sequencia', { ascending: true });
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 import { CronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
 import { Bar, Line } from 'react-chartjs-2';
 import {
@@ -153,12 +154,13 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
       for (const session of medicaoSessions) {
         // Buscar itens desta medição específica
-        const { data: medicaoItems, error: itemsError } = await supabase
+        const { data: medicaoItemsRaw, error: itemsError } = await supabase
           .from('medicao_items')
-          .select('item_code, total')
+          .select(`item_code, total, ${MEDICAO_SNAPSHOT_COLUMNS}`)
           .eq('medicao_id', session.id);
 
         if (itemsError) throw itemsError;
+        const medicaoItems = resolveItensEfetivos(medicaoItemsRaw || []);
 
         // Agregar valores executados por MACRO para esta medição
         // IMPORTANTE: Evitar duplicação quando o mesmo item aparece com código de banco e hierárquico
