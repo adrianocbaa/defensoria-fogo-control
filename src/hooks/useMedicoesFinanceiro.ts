@@ -58,14 +58,14 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         // Buscar itens de medição e aditivos em paralelo (se houver)
         const [medicaoItemsResult, aditivoItemsResult] = await Promise.all([
           sessions.length > 0
-            ? supabase.from('medicao_items').select('total, medicao_id, item_code, pct').in('medicao_id', sessions.map(s => s.id))
+            ? supabase.from('medicao_items').select(`total, medicao_id, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`).in('medicao_id', sessions.map(s => s.id))
             : Promise.resolve({ data: [] }),
           aditivoSessions.length > 0
             ? supabase.from('aditivo_items').select('total').in('aditivo_id', aditivoSessions.map(s => s.id))
             : Promise.resolve({ data: [] }),
         ]);
 
-        const medicaoItems = medicaoItemsResult.data || [];
+        const medicaoItems = resolveItensEfetivos(medicaoItemsResult.data || []);
         const aditivoItems = aditivoItemsResult.data || [];
 
         // Calcular usando o utilitário centralizado
