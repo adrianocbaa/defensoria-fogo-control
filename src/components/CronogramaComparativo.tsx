@@ -154,12 +154,13 @@ export function CronogramaComparativo({ obraId, cronograma }: CronogramaComparat
 
       for (const session of medicaoSessions) {
         // Buscar itens desta medição específica
-        const { data: medicaoItems, error: itemsError } = await supabase
+        const { data: medicaoItemsRaw, error: itemsError } = await supabase
           .from('medicao_items')
-          .select('item_code, total')
+          .select(`item_code, total, ${MEDICAO_SNAPSHOT_COLUMNS}`)
           .eq('medicao_id', session.id);
 
         if (itemsError) throw itemsError;
+        const medicaoItems = resolveItensEfetivos(medicaoItemsRaw || []);
 
         // Agregar valores executados por MACRO para esta medição
         // IMPORTANTE: Evitar duplicação quando o mesmo item aparece com código de banco e hierárquico
