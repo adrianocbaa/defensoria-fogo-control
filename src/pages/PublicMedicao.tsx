@@ -41,8 +41,9 @@ export function PublicMedicao() {
     if (!medicoes.length) return map;
     medicoes.forEach((medicao: any) => {
       (medicao.medicao_items || []).forEach((item: any) => {
+        const total = item.total_congelado != null ? Number(item.total_congelado) : Number(item.total);
         const current = map.get(item.item_code) || 0;
-        map.set(item.item_code, current + (Number(item.total) || 0));
+        map.set(item.item_code, current + (total || 0));
       });
     });
     return map;
