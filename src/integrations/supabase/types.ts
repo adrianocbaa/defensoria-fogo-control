@@ -1100,35 +1100,47 @@ export type Database = {
       }
       medicao_items: {
         Row: {
+          congelado_em: string | null
           created_at: string
           id: string
           item_code: string
           medicao_id: string
           pct: number
+          pct_congelado: number | null
           qtd: number
+          qtd_congelado: number | null
           total: number
+          total_congelado: number | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          congelado_em?: string | null
           created_at?: string
           id?: string
           item_code: string
           medicao_id: string
           pct?: number
+          pct_congelado?: number | null
           qtd?: number
+          qtd_congelado?: number | null
           total?: number
+          total_congelado?: number | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          congelado_em?: string | null
           created_at?: string
           id?: string
           item_code?: string
           medicao_id?: string
           pct?: number
+          pct_congelado?: number | null
           qtd?: number
+          qtd_congelado?: number | null
           total?: number
+          total_congelado?: number | null
           updated_at?: string
           user_id?: string | null
         }
@@ -3476,6 +3488,15 @@ export type Database = {
       }
     }
     Functions: {
+      ajustar_medicao_congelada: {
+        Args: {
+          p_medicao_item_id: string
+          p_pct: number
+          p_qtd: number
+          p_total: number
+        }
+        Returns: undefined
+      }
       can_edit: { Args: { user_uuid?: string }; Returns: boolean }
       can_edit_obra: {
         Args: { obra_uuid: string; user_uuid?: string }
@@ -3522,6 +3543,10 @@ export type Database = {
         Returns: undefined
       }
       obra_is_demo: { Args: { obra_uuid: string }; Returns: boolean }
+      snapshot_medicao_items: {
+        Args: { p_medicao_id: string }
+        Returns: undefined
+      }
       unaccent: { Args: { "": string }; Returns: string }
       user_has_obra_access: {
         Args: { obra_uuid: string; user_uuid: string }
