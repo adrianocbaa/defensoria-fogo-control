@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 import { CronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
 import { Bar, Line } from 'react-chartjs-2';
 import {
