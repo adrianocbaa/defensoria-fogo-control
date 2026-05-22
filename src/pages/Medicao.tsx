@@ -272,7 +272,7 @@ export function Medicao() {
       // Depois, buscar as sessões de medição normalizadas e seus itens
       const { data: sessions, error: sessionsError } = await supabase
         .from('medicao_sessions')
-        .select('id, sequencia, status, created_at, medicao_items ( item_code, qtd, pct, total )')
+        .select('id, sequencia, status, created_at, medicao_items ( item_code, qtd, pct, total, qtd_congelado, pct_congelado, total_congelado )')
         .eq('obra_id', id)
         .order('sequencia', { ascending: true });
 
@@ -290,7 +290,15 @@ export function Medicao() {
             usuarioBloqueio: s.status === 'bloqueada' ? 'Sistema' : undefined,
           };
           const itens = (s.medicao_items || []) as any[];
-          itens.forEach((it: any) => {
+          itens.forEach((itRaw: any) => {
+            // Aplicar snapshot: se a medição foi bloqueada e os valores foram
+            // congelados, usar os valores congelados como fonte da verdade.
+            const it = itRaw.total_congelado != null ? {
+              ...itRaw,
+              qtd: itRaw.qtd_congelado ?? itRaw.qtd,
+              pct: itRaw.pct_congelado ?? itRaw.pct,
+              total: itRaw.total_congelado,
+            } : itRaw;
             const code = (it.item_code || '').trim();
             // Tentar primeiro com código hierárquico, depois fallback para código de banco
             let mappedId = codigoToIdMap.get(code);
