@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 
 interface ValorPagoItem {
   obraId: string;
