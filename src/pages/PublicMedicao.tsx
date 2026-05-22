@@ -80,7 +80,7 @@ export function PublicMedicao() {
         // Buscar medições
         const { data: medicoesData, error: medicoesError } = await supabase
           .from('medicao_sessions')
-          .select('id, sequencia, status, created_at, medicao_items ( item_code, qtd, pct, total )')
+          .select('id, sequencia, status, created_at, medicao_items ( item_code, qtd, pct, total, qtd_congelado, pct_congelado, total_congelado )')
           .eq('obra_id', id)
           .order('sequencia', { ascending: true });
 
