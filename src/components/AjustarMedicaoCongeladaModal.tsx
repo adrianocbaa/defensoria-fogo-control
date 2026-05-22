@@ -78,6 +78,7 @@ export function AjustarMedicaoCongeladaModal({
   const [rows, setRows] = useState<Row[]>([]);
   const [motivo, setMotivo] = useState('');
   const [busca, setBusca] = useState('');
+  const [mostrarTodos, setMostrarTodos] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
