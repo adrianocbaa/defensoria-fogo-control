@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 import { generatePdfFromElement } from '@/lib/pdfExport';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
 import { useCronogramaFinanceiro } from '@/hooks/useCronogramaFinanceiro';
 import { useProfile } from '@/hooks/useProfile';
 import { Chart, registerables } from 'chart.js';
