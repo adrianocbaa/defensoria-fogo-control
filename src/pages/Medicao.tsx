@@ -121,6 +121,10 @@ export function Medicao() {
   // Permissão efetiva: admin sempre pode, outros usam canEditObra
   const canEdit = isAdmin ? roleCanEdit : canEditObra;
   const { dados: dadosMedicaoFinanceiro } = useMedicoesFinanceiro(id || '');
+  const valorAcumuladoCalculado = useMemo(
+    () => Math.round((dadosMedicaoFinanceiro.valorAcumulado || 0) * 100) / 100,
+    [dadosMedicaoFinanceiro.valorAcumulado]
+  );
   const { createSession, blockSession, reopenSession, deleteSession } = useMedicaoSessions();
   const { createSession: createAditivoSession, reopenSession: reopenAditivoSession, deleteSession: deleteAditivoSession, fetchSessionsWithItems: fetchAditivoSessions, blockSession: blockAditivoSession } = useAditivoSessions();
   const { upsertItems } = useMedicaoItems();
@@ -810,42 +814,20 @@ export function Medicao() {
       ? Object.values(medicaoAtualData.dados).reduce((sum, d: any) => sum + (d.total || 0), 0)
       : 0;
 
-    // 5) Valor Acumulado (SEMPRE até a ÚLTIMA medição, não a atual visualizada)
-    // Isso garante que o progresso mostrado em "Valor Pago" sempre reflita a última medição
-    // IMPORTANTE: Somar apenas itens FOLHA (MICROs) para evitar dupla contagem com MACROs
-    let valorAcumulado = 0;
-    if (medicoes.length > 0) {
-      // Somar TODAS as medições para obter o valor acumulado real (última medição)
-      for (let i = 0; i < medicoes.length; i++) {
-        const dados = medicoes[i].dados;
-        // Filtrar apenas itens folha para evitar dupla contagem
-        Object.entries(dados).forEach(([itemIdStr, d]: [string, any]) => {
-          const itemId = parseInt(itemIdStr);
-          const item = items.find(it => it.id === itemId);
-          if (item && ehItemFolha(item.item)) {
-            valorAcumulado += d.total || 0;
-          }
-        });
-      }
-    }
-    // Não somar aditivos automaticamente ao valor acumulado
-    // Os aditivos só devem ser considerados quando efetivamente medidos/executados
-    // O valor acumulado representa apenas os serviços já executados
-
     const resumoFinanceiro = {
       obraId: obra.id,
       valorTotalOriginal,
       totalAditivo,
       totalContrato,
       servicosExecutados,
-      valorAcumulado: Math.round(valorAcumulado * 100) / 100,
+      valorAcumulado: valorAcumuladoCalculado,
     };
 
     try {
       localStorage.setItem(`resumo_financeiro_${obra.id}`, JSON.stringify(resumoFinanceiro));
       window.dispatchEvent(new CustomEvent('medicaoAtualizada', { detail: resumoFinanceiro }));
     } catch {}
-  }, [obra?.id, items, aditivos, medicoes, medicaoAtual]);
+  }, [obra?.id, items, aditivos, medicoes, medicaoAtual, valorAcumuladoCalculado]);
 
   // Função para calcular total baseado na quantidade e valor unitário (sem truncamento para preservar precisão)
   const calcularTotal = (quantidade: number, valorUnitario: number) => {
@@ -3877,39 +3859,7 @@ export function Medicao() {
         * 100) / 100
     : 0;
 
-  // Calcular valor acumulado - soma de todos os TOTAL das medições anteriores até a medição atual
-  const calcularValorAcumuladoTotal = () => {
-    if (!medicaoAtual) return 0;
-    
-    // Encontrar o índice da medição atual
-    const medicaoAtualIndex = medicoes.findIndex(m => m.id === medicaoAtual);
-    if (medicaoAtualIndex === -1) return 0;
-
-    // Somar todas as medições até a atual (inclusive)
-    // IMPORTANTE: Somar apenas itens FOLHA (MICROs) para evitar dupla contagem com MACROs
-    let valorAcumulado = 0;
-    
-    for (let i = 0; i <= medicaoAtualIndex; i++) {
-      const medicao = medicoes[i];
-      if (medicao.dados) {
-        Object.entries(medicao.dados).forEach(([itemIdStr, dados]) => {
-          // Verificar se o item é folha (não tem filhos = é MICRO)
-          const itemId = parseInt(itemIdStr);
-          const item = items.find(it => it.id === itemId);
-          if (item && ehItemFolha(item.item)) {
-            valorAcumulado += Math.round((dados.total || 0) * 100) / 100;
-          }
-        });
-      }
-    }
-
-    // Não somar aditivos automaticamente ao valor acumulado total
-    // Os aditivos só devem ser considerados quando efetivamente medidos/executados
-    
-    return Math.round(valorAcumulado * 100) / 100;
-  };
-
-  const valorAcumuladoTotal = calcularValorAcumuladoTotal();
+  const valorAcumuladoTotal = valorAcumuladoCalculado;
 
   return (
     <SimpleHeader>
