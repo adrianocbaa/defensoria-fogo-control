@@ -903,7 +903,13 @@ export function Medicao() {
     }
 
     // Percentual acumulado de execução (limitado a 100%)
-    const porcentagemExecucaoAcumulada = Math.min(totalServicosExecutados / (totalDoContrato - totalAdministracaoLocal), 1);
+    let porcentagemExecucaoAcumulada = Math.min(totalServicosExecutados / (totalDoContrato - totalAdministracaoLocal), 1);
+    // Snap de fechamento: quando a execução está ≥ 99,9% do contrato (descontando AL),
+    // tratamos como 100% para evitar drift de centavos no acumulado da Administração Local.
+    // Isso garante que a soma dos itens de AL feche exatamente com o valor de contrato no encerramento.
+    if (porcentagemExecucaoAcumulada >= 0.999) {
+      porcentagemExecucaoAcumulada = 1;
+    }
     // O percentual da AL nesta medição é o acumulado menos o já lançado anteriormente
     // (calculado por item abaixo)
 
