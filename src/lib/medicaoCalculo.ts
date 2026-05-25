@@ -25,6 +25,7 @@ export interface AditivoItemCalculo {
 export interface MedicaoSessionCalculo {
   id: string;
   sequencia: number;
+  status?: string | null;
   periodo_inicio?: string | null;
   periodo_fim?: string | null;
   data_vistoria?: string | null;
