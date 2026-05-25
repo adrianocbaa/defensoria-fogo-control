@@ -917,6 +917,9 @@ export function Medicao() {
     const medicoesFonte = medicoesOverride ?? medicoes;
     const medicaoAtualData = medicoesFonte.find(m => m.id === medicaoAtual);
     if (!medicaoAtualData) return;
+    // Medições bloqueadas têm seus valores congelados em banco (qtd/pct/total_congelado).
+    // Não recalcular AL para elas — preserva os valores que foram pagos.
+    if (medicaoAtualData.bloqueada) return;
 
     const medicaoSeq = medicaoAtualData.id;
     const sessoesAnterioresBloqueadas = medicoesFonte.filter(m => m.bloqueada && m.id < medicaoSeq);
