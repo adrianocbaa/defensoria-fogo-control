@@ -60,10 +60,12 @@ export function ResumoContrato({
   
   // Calcular dados do resumo conforme especificação
   const calcularResumo = (): { linhas: ResumoAditivoData[]; valorFinalContrato: number } => {
-    // Filtrar apenas aditivos publicados/bloqueados e ordenar por sequência
+    // Filtrar apenas aditivos publicados/bloqueados e ordenar pelo número do aditivo
+    // (ADITIVO 1, ADITIVO 2, ADITIVO 3...) — que corresponde à ordem de criação,
+    // não pela "sequencia" (medição a partir da qual passa a valer).
     const aditivosPublicados = aditivos
       .filter(a => a.bloqueada)
-      .sort((a, b) => (a.sequencia || 0) - (b.sequencia || 0));
+      .sort((a, b) => (a.id || 0) - (b.id || 0));
 
     const linhas: ResumoAditivoData[] = [];
     let acumulado = 0;
