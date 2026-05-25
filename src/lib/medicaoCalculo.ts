@@ -174,35 +174,83 @@ export function calcularFinanceiroMedicao(
     return soma;
   };
 
-  // Acumulado total (não-AL + AL distribuída dinamicamente)
+  // Soma TOTAL (todos os itens, AL + não-AL + extracontratuais) de uma sessão.
+  // Usado para medições BLOQUEADAS: o valor já está congelado em medicao_items
+  // (qtd/pct/total_congelado) e representa exatamente o que foi pago — não pode
+  // ser recalculado quando aditivos futuros alteram a base do contrato.
+  const sumTotalSessao = (sessionId: string) => {
+    let soma = 0;
+    medicaoItems.forEach(i => {
+      if (i.medicao_id === sessionId) soma += Number(i.total || 0);
+    });
+    return soma;
+  };
+
+  // Soma acumulada congelada das sessões bloqueadas até (e incluindo) idx.
+  const sumCongeladoAteIdx = (idx: number) => {
+    let soma = 0;
+    for (let k = 0; k <= idx; k++) {
+      const s = sessionsSorted[k];
+      if (s.status === 'bloqueada') soma += sumTotalSessao(s.id);
+    }
+    return soma;
+  };
+
+  // Total não-AL já consumido por sessões bloqueadas (não entra na distribuição
+  // dinâmica de AL das sessões abertas — essas sessões trabalham apenas com o
+  // saldo remanescente do contrato).
+  const blockedSessionIds = new Set(sessionsSorted.filter(s => s.status === 'bloqueada').map(s => s.id));
+  const nonALBlockedConsumido = (() => {
+    let soma = 0;
+    medicaoItems.forEach(i => {
+      if (!blockedSessionIds.has(i.medicao_id)) return;
+      if (ehFolhaNonAL(i.item_code) || !folhasSet.has(i.item_code)) {
+        soma += Number(i.total || 0);
+      }
+    });
+    return soma;
+  })();
+  const totalContratoNonALRemanescente = Math.max(0, totalContratoNonAL - nonALBlockedConsumido);
+  const totalCongeladoBlocked = sessionsSorted
+    .filter(s => s.status === 'bloqueada')
+    .reduce((acc, s) => acc + sumTotalSessao(s.id), 0);
+  const totalContratoALRemanescente = Math.max(0, totalContratoAL - Math.max(0, totalCongeladoBlocked - nonALBlockedConsumido));
+
   let acumuladoAnterior = 0;
   const marcos: MarcoCalculado[] = sessionsSorted.map((session, idx) => {
-    const sessionIdsAteAgora = new Set(sessionsSorted.slice(0, idx + 1).map(s => s.id));
+    let acumuladoAteAgora: number;
 
-    const nonALAcumRaw = sumNonALAteSessions(sessionIdsAteAgora);
-    // Razão de execução não-AL (limitada a 1 para não estourar a AL distribuída)
-    const pctExecAcum = totalContratoNonAL > 0
-      ? Math.min(nonALAcumRaw / totalContratoNonAL, 1)
-      : 0;
-    // Quando 100% executado, força AL = total contratado de AL (evita drift por float)
-    const alAcum = pctExecAcum >= 1
-      ? totalContratoAL
-      : pctExecAcum * totalContratoAL;
-    // Acumulado bruto; cap no total contratado para não passar do contrato
-    let acumuladoBruto = nonALAcumRaw + alAcum;
-    // Snap de fechamento GLOBAL: se já chegou em >= 99.9% do contrato, encosta
-    // no contrato (elimina centavos perdidos por arredondamento de qtd/preço
-    // unitário em itens individuais — comportamento esperado quando a obra
-    // está praticamente concluída).
-    if (totalContrato > 0 && acumuladoBruto >= totalContrato * PCT_FECHAMENTO_TOLERANCIA) {
-      acumuladoBruto = totalContrato;
+    if (session.status === 'bloqueada') {
+      // Medição já fechada/paga: usa o congelado direto (imune a aditivos futuros).
+      acumuladoAteAgora = round2(sumCongeladoAteIdx(idx));
+    } else {
+      // Medição aberta: distribui AL proporcionalmente sobre o saldo remanescente
+      // do contrato (descontando o que já foi pago em medições bloqueadas).
+      const openSessionIdsAteAgora = new Set(
+        sessionsSorted.slice(0, idx + 1).filter(s => s.status !== 'bloqueada').map(s => s.id)
+      );
+      let nonALOpenAcum = 0;
+      medicaoItems.forEach(i => {
+        if (!openSessionIdsAteAgora.has(i.medicao_id)) return;
+        if (ehFolhaNonAL(i.item_code) || !folhasSet.has(i.item_code)) {
+          nonALOpenAcum += Number(i.total || 0);
+        }
+      });
+      const pctOpen = totalContratoNonALRemanescente > 0
+        ? Math.min(nonALOpenAcum / totalContratoNonALRemanescente, 1)
+        : 0;
+      const alOpenAcum = pctOpen >= 1 ? totalContratoALRemanescente : pctOpen * totalContratoALRemanescente;
+      let acumuladoBruto = totalCongeladoBlocked + nonALOpenAcum + alOpenAcum;
+      if (totalContrato > 0 && acumuladoBruto >= totalContrato * PCT_FECHAMENTO_TOLERANCIA) {
+        acumuladoBruto = totalContrato;
+      }
+      acumuladoAteAgora = totalContrato > 0
+        ? round2(Math.min(acumuladoBruto, totalContrato))
+        : round2(acumuladoBruto);
     }
-    const acumuladoAteAgora = totalContrato > 0
-      ? round2(Math.min(acumuladoBruto, totalContrato))
-      : round2(acumuladoBruto);
+
     const valorMedicao = round2(acumuladoAteAgora - acumuladoAnterior);
     acumuladoAnterior = acumuladoAteAgora;
-
 
     return {
       sequencia: session.sequencia,
