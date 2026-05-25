@@ -3689,6 +3689,148 @@ export function Medicao() {
     }
   };
 
+  // Preenche automaticamente o saldo restante de cada item folha (última medição).
+  // Usa o quantitativo total ajustado (original + aditivos publicados até esta medição)
+  // menos o acumulado das medições anteriores, preservando todas as casas decimais.
+  const preencherUltimaMedicao = async () => {
+    if (!id || !medicaoAtual) {
+      toast.error('Selecione uma medição antes de preencher como última medição');
+      return;
+    }
+    const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
+    if (!medicaoAtualObj) {
+      toast.error('Medição atual não encontrada');
+      return;
+    }
+    if (medicaoAtualObj.bloqueada) {
+      toast.error('Não é possível preencher uma medição bloqueada');
+      return;
+    }
+    const ok = window.confirm(
+      'Esta ação preencherá automaticamente TODOS os itens folha desta medição com o saldo restante (quantitativo total - quantitativo já pago em medições anteriores). Os valores atuais desta medição serão sobrescritos. Deseja continuar?'
+    );
+    if (!ok) return;
+
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id ?? null;
+
+      // Acumulado anterior por item (medições anteriores na sequência)
+      const medicaoIndex = medicoes.findIndex(m => m.id === medicaoAtual);
+      const qntAcumAnteriorMap = new Map<number, number>();
+      const totalAcumAnteriorMap = new Map<number, number>();
+      for (let i = 0; i < medicaoIndex; i++) {
+        const dh = dadosHierarquicosMemoizados[medicoes[i].id];
+        if (dh) {
+          Object.entries(dh).forEach(([idStr, val]: [string, any]) => {
+            const iid = parseInt(idStr);
+            qntAcumAnteriorMap.set(iid, (qntAcumAnteriorMap.get(iid) || 0) + (val.qnt || 0));
+          });
+        }
+        Object.entries(medicoes[i].dados).forEach(([idStr, val]: [string, any]) => {
+          const iid = parseInt(idStr);
+          totalAcumAnteriorMap.set(iid, (totalAcumAnteriorMap.get(iid) || 0) + (val.total || 0));
+        });
+      }
+
+      const novoDados: typeof medicaoAtualObj.dados = { ...medicaoAtualObj.dados };
+      let atualizados = 0;
+
+      items.forEach(item => {
+        if (!ehItemFolha(item.item)) return;
+        if (item.ehAdministracaoLocal) return; // AL é distribuída automaticamente
+
+        const ehExtracontratual = item.origem === 'extracontratual';
+        const qntAditivoAcum = ehExtracontratual
+          ? 0
+          : aditivos
+              .filter(a => a.bloqueada && (a.sequencia ?? 0) <= medicaoAtual)
+              .reduce((sum, a) => sum + (a.dados[item.id]?.qnt || 0), 0);
+
+        const quantidadeTotal = (item.quantidade || 0) + qntAditivoAcum;
+        const qntAcumAnterior = qntAcumAnteriorMap.get(item.id) || 0;
+        const disponivel = quantidadeTotal - qntAcumAnterior;
+
+        if (disponivel <= 1e-9) {
+          novoDados[item.id] = { qnt: 0, percentual: 0, total: 0 };
+          return;
+        }
+
+        const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual);
+        const percentual = quantidadeTotal > 0 ? (disponivel / quantidadeTotal) * 100 : 0;
+        // Se este período encerra o item (100%), usar o saldo de contrato remanescente
+        // para garantir que a soma das medições bata exatamente com o contrato.
+        const totalAcumAnteriorContrato = totalAcumAnteriorMap.get(item.id) || 0;
+        const saldoContrato = totalContratoItem - totalAcumAnteriorContrato;
+        const total = percentual >= 100 - 1e-9
+          ? saldoContrato
+          : (percentual / 100) * totalContratoItem;
+
+        novoDados[item.id] = { qnt: disponivel, percentual, total };
+        atualizados++;
+      });
+
+      const medicoesAtualizadas = medicoes.map(m =>
+        m.id === medicaoAtual ? { ...m, dados: novoDados } : m
+      );
+      setMedicoes(medicoesAtualizadas);
+
+      if (medicaoAtualObj.sessionId) {
+        const payload = Object.entries(novoDados)
+          .map(([itemIdStr, valores]) => {
+            const itemId = parseInt(itemIdStr);
+            const item = items.find(i => i.id === itemId);
+            if (!item || !item.item || !item.item.trim()) return null;
+            return {
+              item_code: item.item.trim(),
+              qtd: Number(valores.qnt) || 0,
+              pct: Number(valores.percentual) || 0,
+              total: Number(valores.total) || 0,
+            };
+          })
+          .filter((p): p is { item_code: string; qtd: number; pct: number; total: number } => {
+            if (!p) return false;
+            return p.qtd !== 0 || p.pct !== 0 || p.total !== 0;
+          });
+
+        const { data: existingItems, error: existingError } = await supabase
+          .from('medicao_items')
+          .select('item_code')
+          .eq('medicao_id', medicaoAtualObj.sessionId);
+        if (existingError) throw existingError;
+
+        const payloadCodes = new Set(payload.map(p => p.item_code.trim()));
+        const existingCodes = new Set(
+          (existingItems || [])
+            .map((it: any) => (it.item_code || '').trim())
+            .filter((c: string) => !!c)
+        );
+        const codesToDelete = Array.from(existingCodes).filter(c => !payloadCodes.has(c));
+        if (codesToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('medicao_items')
+            .delete()
+            .eq('medicao_id', medicaoAtualObj.sessionId)
+            .in('item_code', codesToDelete);
+          if (deleteError) throw deleteError;
+        }
+
+        await upsertItems(medicaoAtualObj.sessionId, payload, userId);
+      }
+
+      toast.success(`Última medição: ${atualizados} itens preenchidos com o saldo restante.`);
+
+      if (items.some(i => i.ehAdministracaoLocal)) {
+        calcularEDistribuirAdministracaoLocal(true, medicoesAtualizadas);
+      }
+    } catch (error) {
+      console.error('Erro ao preencher última medição:', error);
+      toast.error('Erro ao preencher última medição');
+    }
+  };
+
+
+
   // Função para obter estilo da linha baseado no nível
   const obterEstiloLinha = (item: Item) => {
     const n = determinarNivel(item.item);
