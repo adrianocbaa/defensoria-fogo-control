@@ -4228,6 +4228,15 @@ export function Medicao() {
                             />
                           </DialogContent>
                         </Dialog>
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          onClick={preencherUltimaMedicao}
+                          title="Preenche todos os itens folha desta medição com o saldo restante (quantitativo total - já pago)"
+                        >
+                          <Calculator className="h-4 w-4" />
+                          Última Medição
+                        </Button>
                         <Dialog open={modalImportarRDOAberto} onOpenChange={setModalImportarRDOAberto}>
                           <DialogTrigger asChild>
                             <Button variant="outline" className="flex items-center gap-2">
