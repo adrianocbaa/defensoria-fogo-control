@@ -538,7 +538,7 @@ export function PdfCanvas({
     <div
       ref={containerRef}
       className="relative w-full select-none rounded-lg overflow-hidden bg-muted/30"
-      style={{ cursor, touchAction: 'none' }}
+      style={{ cursor, touchAction: (isDrawingMode || isPinMode) ? 'none' : 'pan-y' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
