@@ -269,8 +269,12 @@ export function calcularFinanceiroMedicao(
     ? marcos[marcos.length - 1].valorAcumulado
     : 0;
 
+  // Percentual exibido sempre limitado a 100% — medições bloqueadas têm valores
+  // congelados imutáveis que podem, por arredondamento/aditivos retroativos,
+  // somar um pouco acima do contrato pós-aditivo. O valor real continua íntegro
+  // em `valorAcumulado`; apenas o indicador visual é clampado.
   const percentualExecutado = totalContrato > 0
-    ? (valorAcumulado / totalContrato) * 100
+    ? Math.min((valorAcumulado / totalContrato) * 100, 100)
     : 0;
 
   return {
