@@ -256,7 +256,7 @@ export function calcularFinanceiroMedicao(
       sequencia: session.sequencia,
       valorMedicao,
       valorAcumulado: acumuladoAteAgora,
-      percentualAcumulado: totalContrato > 0 ? (acumuladoAteAgora / totalContrato) * 100 : 0,
+      percentualAcumulado: totalContrato > 0 ? Math.min((acumuladoAteAgora / totalContrato) * 100, 100) : 0,
       periodo_inicio: session.periodo_inicio ?? null,
       periodo_fim: session.periodo_fim ?? null,
       data_vistoria: session.data_vistoria ?? null,
