@@ -2514,15 +2514,14 @@ export function Medicao() {
               // Salvar valores para processar depois no dadosAditivo
               // NÃO aplicar desconto - itens contratuais já tiveram desconto aplicado na planilha original
               // Itens extracontratuais de aditivos anteriores também já tiveram desconto aplicado
-              const valorUnitarioFinal = quant !== 0
-                ? valorTotalComDesconto / quant
-                : valorUnitBDI;
-              
-              // Usar o total financeiro da linha como fonte de verdade para evitar
-              // diferença de centavos entre valor unitário exibido e total da planilha.
-              const totalFinal = quant !== 0
-                ? valorTotalComDesconto
-                : valorUnitarioFinal * quant;
+              // Sempre usar o valor unitário PRECISO do item-base (totalContrato/quantidade)
+              // para o cálculo do aditivo, evitando diferenças de centavos causadas por
+              // VU truncado/arredondado na planilha do aditivo.
+              const vuPrecisoBase = obterValorUnitarioPrecisoItem(itemExistente);
+              const valorUnitarioFinal = Math.abs(vuPrecisoBase) > 1e-12
+                ? vuPrecisoBase
+                : (quant !== 0 ? valorTotalComDesconto / quant : valorUnitBDI);
+              const totalFinal = Math.round(quant * valorUnitarioFinal * 100) / 100;
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
@@ -2530,7 +2529,7 @@ export function Medicao() {
                 total: totalFinal,
                 valorUnitario: valorUnitarioFinal
               });
-              console.log(`Linha ${i + 1} - Item CONTRATUAL no aditivo (sem desconto): item=${code}, qnt=${quant}, VU_BDI=${valorUnitBDI}, VU_Final=${valorUnitarioFinal}, total=${totalFinal}`);
+              console.log(`Linha ${i + 1} - Item CONTRATUAL no aditivo: item=${code}, qnt=${quant}, VU_Preciso=${valorUnitarioFinal}, total=${totalFinal}`);
             }
           }
           return; // Não adicionar aos novos
