@@ -3998,12 +3998,17 @@ export function Medicao() {
     return qntAcumulada;
   };
 
-  // Função para formatar moeda
+  // Função para formatar moeda — TRUNCA em 2 casas (não arredonda) para preservar
+  // a precisão real. O cálculo interno continua usando todas as casas decimais.
   const formatCurrency = (value: number) => {
+    const v = Number(value) || 0;
+    const truncado = Math.trunc(v * 100) / 100;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(truncado);
   };
 
   if (loading) {
