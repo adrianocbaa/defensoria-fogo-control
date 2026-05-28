@@ -2793,13 +2793,13 @@ export function Medicao() {
             const itemExistente = items.find(it => it.item.trim() === code);
             if (itemExistente && quant !== 0 && nivel > 1) {
               // NÃO aplicar desconto - itens contratuais/extracontratuais anteriores já tiveram desconto
-              const valorUnitarioFinal = valorUnitBDI > 0 
-                ? valorUnitBDI
-                : (quant !== 0 ? valorTotalComDesconto / quant : 0);
+              const valorUnitarioFinal = quant !== 0
+                ? valorTotalComDesconto / quant
+                : valorUnitBDI;
               
-              const totalFinal = valorUnitarioFinal > 0 
-                ? valorUnitarioFinal * quant
-                : valorTotalComDesconto;
+              const totalFinal = quant !== 0
+                ? valorTotalComDesconto
+                : valorUnitarioFinal * quant;
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
@@ -2815,11 +2815,10 @@ export function Medicao() {
         if (vistosNoArquivo.has(code)) return;
         vistosNoArquivo.add(code);
 
-        const valorUnitComDescontoRaw = quant !== 0 ? valorTotalComDesconto / quant : 0;
-        const valorUnitComDesconto = Math.trunc(valorUnitComDescontoRaw * 100) / 100;
-        const valorUnitarioParaAditivo = valorUnitBDI > 0 
-          ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
-          : valorUnitComDesconto;
+        const valorUnitComDesconto = quant !== 0 ? valorTotalComDesconto / quant : 0;
+        const valorUnitarioParaAditivo = quant !== 0
+          ? valorTotalComDesconto / quant
+          : valorUnitBDI;
 
         const ordemVal = baseOrdem + i + 1;
         const novo: Item = {
