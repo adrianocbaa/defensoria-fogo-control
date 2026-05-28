@@ -2830,7 +2830,7 @@ export function Medicao() {
           descricao,
           und,
           quantidade: quant,
-          valorUnitario: valorUnitComDesconto,
+          valorUnitario: valorUnitarioParaAditivo,
           valorTotal: 0,
           valorTotalSemDesconto: totalSemDesconto,
           aditivo: { qnt: 0, percentual: 0, total: 0 },
