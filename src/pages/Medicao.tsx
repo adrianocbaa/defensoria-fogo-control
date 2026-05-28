@@ -912,6 +912,19 @@ export function Medicao() {
     return quantidade * valorUnitario;
   };
 
+  const obterValorUnitarioPrecisoItem = (item: Item) => {
+    const quantidade = Number(item.quantidade || 0);
+    const totalBase = Math.abs(Number(item.totalContrato || 0)) > 0
+      ? Number(item.totalContrato || 0)
+      : Number(item.valorTotal || 0);
+
+    if (Math.abs(quantidade) > 1e-12 && Math.abs(totalBase) > 0) {
+      return totalBase / quantidade;
+    }
+
+    return Number(item.valorUnitario || 0);
+  };
+
   // Função para calcular e distribuir Administração Local
   const calcularEDistribuirAdministracaoLocal = (silent = false, medicoesOverride?: typeof medicoes) => {
     const medicoesFonte = medicoesOverride ?? medicoes;
@@ -1135,22 +1148,29 @@ export function Medicao() {
               const ehSupressaoExata = qtdAcumAnterior > 0
                 && Math.abs(valorNumerico + qtdAcumAnterior) < 1e-6;
               
-              // PRIORIDADE 1: Se o aditivo tem valor unitário específico, usar ele
-              // Isso acontece quando a planilha do aditivo é importada com seus próprios valores
-              const valorUnitarioAditivo = dadosAtuais.valorUnitario || 0;
+              // Se já existe um total anterior salvo para o item no aditivo,
+              // usar total÷quantidade como fonte mais precisa do valor unitário.
+              const valorUnitarioAditivo = Math.abs(Number(dadosAtuais.qnt || 0)) > 1e-12
+                ? Number(dadosAtuais.total || 0) / Number(dadosAtuais.qnt || 0)
+                : Number(dadosAtuais.valorUnitario || 0);
               
               if (ehSupressaoExata) {
                 novosDados[itemId].total = -totalAcumAnterior;
                 if (valorUnitarioAditivo > 0) {
                   novosDados[itemId].valorUnitario = valorUnitarioAditivo;
+                } else {
+                  novosDados[itemId].valorUnitario = obterValorUnitarioPrecisoItem(item);
                 }
               } else if (valorUnitarioAditivo > 0) {
                 // Usar valor unitário específico do aditivo (sem truncamento)
                 novosDados[itemId].total = valorNumerico * valorUnitarioAditivo;
                 novosDados[itemId].valorUnitario = valorUnitarioAditivo; // Preservar
               } else {
-                // Para itens contratuais no aditivo: QNT × Valor Unit com BDI e Desc. (sem truncamento)
-                novosDados[itemId].total = valorNumerico * item.valorUnitario;
+                // Para itens sem valor unitário específico salvo no aditivo,
+                // derivar o valor unitário preciso do total/quantidade do item-base.
+                const valorUnitarioPreciso = obterValorUnitarioPrecisoItem(item);
+                novosDados[itemId].total = valorNumerico * valorUnitarioPreciso;
+                novosDados[itemId].valorUnitario = valorUnitarioPreciso;
               }
             }
           }
@@ -2444,10 +2464,6 @@ export function Medicao() {
         const totalSemDesconto = parseNumber(idx.totalSemDesconto >= 0 ? r[idx.totalSemDesconto] : 0);
         // Aplicar desconto: TRUNCAR(totalSemDesconto - (totalSemDesconto * desconto%), 2)
         const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
-        // Calcular valor unitário com desconto (também truncado para 2 casas decimais)
-        const valorUnitComDescontoRaw = quant !== 0 ? valorTotalComDesconto / quant : 0;
-        const valorUnitComDesconto = Math.trunc(valorUnitComDescontoRaw * 100) / 100;
-
         // Ignorar linhas completamente vazias (considerar valores negativos como conteúdo para supressões)
         const hasAnyContent = code || descricao || und || codigoBanco || quant !== 0 || totalSemDesconto !== 0;
         if (!hasAnyContent) {
@@ -2488,15 +2504,15 @@ export function Medicao() {
               // Salvar valores para processar depois no dadosAditivo
               // NÃO aplicar desconto - itens contratuais já tiveram desconto aplicado na planilha original
               // Itens extracontratuais de aditivos anteriores também já tiveram desconto aplicado
-              const valorUnitarioFinal = valorUnitBDI > 0 
-                ? valorUnitBDI
-                : (quant !== 0 ? valorTotalComDesconto / quant : 0);
+              const valorUnitarioFinal = quant !== 0
+                ? valorTotalComDesconto / quant
+                : valorUnitBDI;
               
-              // Para itens contratuais, o total também deve usar o valor SEM reaplicar desconto
-              // Sem truncamento para preservar precisão
-              const totalFinal = valorUnitarioFinal > 0 
-                ? valorUnitarioFinal * quant
-                : valorTotalComDesconto;
+              // Usar o total financeiro da linha como fonte de verdade para evitar
+              // diferença de centavos entre valor unitário exibido e total da planilha.
+              const totalFinal = quant !== 0
+                ? valorTotalComDesconto
+                : valorUnitarioFinal * quant;
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
@@ -2525,9 +2541,9 @@ export function Medicao() {
         const ordemVal = baseOrdem + i + 1;
         
         // Salvar valor unitário com BDI para usar no cálculo do aditivo
-        const valorUnitarioParaAditivo = valorUnitBDI > 0 
-          ? Math.trunc(valorUnitBDI * 100) / 100
-          : valorUnitComDesconto;
+        const valorUnitarioParaAditivo = quant !== 0
+          ? valorTotalComDesconto / quant
+          : valorUnitBDI;
         
         const novo: Item = {
           id: stableIdForRow(code, codigoBanco, ordemVal),
@@ -2537,7 +2553,7 @@ export function Medicao() {
           descricao,
           und,
           quantidade: (nivel === 1 ? 0 : quant),
-          valorUnitario: (nivel === 1 ? 0 : valorUnitComDesconto),
+          valorUnitario: (nivel === 1 ? 0 : valorUnitarioParaAditivo),
           valorTotal: valorTotalComDesconto,
           valorTotalSemDesconto: totalSemDesconto, // Valor original para cálculos de aditivo
           aditivo: { qnt: 0, percentual: 0, total: 0 },
@@ -2779,13 +2795,13 @@ export function Medicao() {
             const itemExistente = items.find(it => it.item.trim() === code);
             if (itemExistente && quant !== 0 && nivel > 1) {
               // NÃO aplicar desconto - itens contratuais/extracontratuais anteriores já tiveram desconto
-              const valorUnitarioFinal = valorUnitBDI > 0 
-                ? valorUnitBDI
-                : (quant !== 0 ? valorTotalComDesconto / quant : 0);
+              const valorUnitarioFinal = quant !== 0
+                ? valorTotalComDesconto / quant
+                : valorUnitBDI;
               
-              const totalFinal = valorUnitarioFinal > 0 
-                ? valorUnitarioFinal * quant
-                : valorTotalComDesconto;
+              const totalFinal = quant !== 0
+                ? valorTotalComDesconto
+                : valorUnitarioFinal * quant;
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
@@ -2801,11 +2817,9 @@ export function Medicao() {
         if (vistosNoArquivo.has(code)) return;
         vistosNoArquivo.add(code);
 
-        const valorUnitComDescontoRaw = quant !== 0 ? valorTotalComDesconto / quant : 0;
-        const valorUnitComDesconto = Math.trunc(valorUnitComDescontoRaw * 100) / 100;
-        const valorUnitarioParaAditivo = valorUnitBDI > 0 
-          ? Math.trunc(valorUnitBDI * (1 - descontoObra) * 100) / 100
-          : valorUnitComDesconto;
+        const valorUnitarioParaAditivo = quant !== 0
+          ? valorTotalComDesconto / quant
+          : valorUnitBDI;
 
         const ordemVal = baseOrdem + i + 1;
         const novo: Item = {
@@ -2816,7 +2830,7 @@ export function Medicao() {
           descricao,
           und,
           quantidade: quant,
-          valorUnitario: valorUnitComDesconto,
+          valorUnitario: valorUnitarioParaAditivo,
           valorTotal: 0,
           valorTotalSemDesconto: totalSemDesconto,
           aditivo: { qnt: 0, percentual: 0, total: 0 },

@@ -179,7 +179,6 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         }
         
         const quantidade = parseNumeric(row[quantidadeCol])
-        const valorUnitarioOriginal = parseNumeric(row[valorUnitCol])
         // Arredonda ao ler para alinhar com o valor exibido no Excel (evita erros de cache de fórmula)
         const totalOriginal = Math.round(parseNumeric(row[totalCol]) * 100) / 100
         
@@ -187,14 +186,15 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         // O desconto é aplicado sobre os valores originais da planilha (Total sem Desconto)
         const descontoFator = descontoValue > 0 ? (1 - descontoValue / 100) : 1
         
-        // Calcular valor unitário com desconto SEM truncamento para preservar precisão nos aditivos
-        const valorUnitarioComDesconto = descontoValue > 0 
-          ? valorUnitarioOriginal * descontoFator
-          : valorUnitarioOriginal
-        
         const valorTotalComDesconto = descontoValue > 0
           ? Math.round(totalOriginal * descontoFator * 100) / 100
           : totalOriginal
+
+        // Usar total÷quantidade como fonte do valor unitário para preservar
+        // todas as casas decimais implícitas na planilha importada.
+        const valorUnitarioComDesconto = quantidade !== 0
+          ? valorTotalComDesconto / quantidade
+          : 0
         
         const item: Item = {
           id: Date.now() + i, // ID único
