@@ -1158,6 +1158,8 @@ export function Medicao() {
                 novosDados[itemId].total = -totalAcumAnterior;
                 if (valorUnitarioAditivo > 0) {
                   novosDados[itemId].valorUnitario = valorUnitarioAditivo;
+                } else {
+                  novosDados[itemId].valorUnitario = obterValorUnitarioPrecisoItem(item);
                 }
               } else if (valorUnitarioAditivo > 0) {
                 // Usar valor unitário específico do aditivo (sem truncamento)
@@ -1166,7 +1168,9 @@ export function Medicao() {
               } else {
                 // Para itens sem valor unitário específico salvo no aditivo,
                 // derivar o valor unitário preciso do total/quantidade do item-base.
-                novosDados[itemId].total = valorNumerico * obterValorUnitarioPrecisoItem(item);
+                const valorUnitarioPreciso = obterValorUnitarioPrecisoItem(item);
+                novosDados[itemId].total = valorNumerico * valorUnitarioPreciso;
+                novosDados[itemId].valorUnitario = valorUnitarioPreciso;
               }
             }
           }
