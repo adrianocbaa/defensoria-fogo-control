@@ -925,6 +925,20 @@ export function Medicao() {
     return Number(item.valorUnitario || 0);
   };
 
+  const obterValorUnitarioCalculoAditivo = (
+    item: Item,
+    dadosAtuais: { qnt: number; percentual: number; total: number; valorUnitario?: number }
+  ) => {
+    const valorUnitarioItem = obterValorUnitarioPrecisoItem(item);
+    if (Math.abs(valorUnitarioItem) > 1e-12) return valorUnitarioItem;
+
+    if (Math.abs(Number(dadosAtuais.qnt || 0)) > 1e-12 && Math.abs(Number(dadosAtuais.total || 0)) > 0) {
+      return Number(dadosAtuais.total || 0) / Number(dadosAtuais.qnt || 0);
+    }
+
+    return Number(dadosAtuais.valorUnitario || 0);
+  };
+
   // Função para calcular e distribuir Administração Local
   const calcularEDistribuirAdministracaoLocal = (silent = false, medicoesOverride?: typeof medicoes) => {
     const medicoesFonte = medicoesOverride ?? medicoes;
@@ -1148,11 +1162,7 @@ export function Medicao() {
               const ehSupressaoExata = qtdAcumAnterior > 0
                 && Math.abs(valorNumerico + qtdAcumAnterior) < 1e-6;
               
-              // Se já existe um total anterior salvo para o item no aditivo,
-              // usar total÷quantidade como fonte mais precisa do valor unitário.
-              const valorUnitarioAditivo = Math.abs(Number(dadosAtuais.qnt || 0)) > 1e-12
-                ? Number(dadosAtuais.total || 0) / Number(dadosAtuais.qnt || 0)
-                : Number(dadosAtuais.valorUnitario || 0);
+              const valorUnitarioAditivo = obterValorUnitarioCalculoAditivo(item, dadosAtuais);
               
               if (ehSupressaoExata) {
                 novosDados[itemId].total = -totalAcumAnterior;
