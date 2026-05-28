@@ -1113,11 +1113,38 @@ export function Medicao() {
             if (item) {
               novosDados[itemId].percentual = calcularPercentual(valorNumerico, item.quantidade);
               
+              // Saldo acumulado (qtd e total) deste item considerando o orçamento
+              // original + todos os outros aditivos com sequência <= a do aditivo atual.
+              const seqAtual = aditivo.sequencia ?? 0;
+              const qtdAcumOutros = prevAditivos.reduce((sum, a) => {
+                if (a.id === aditivoId) return sum;
+                if ((a.sequencia ?? 0) > seqAtual) return sum;
+                return sum + Number(a.dados[itemId]?.qnt || 0);
+              }, 0);
+              const totalAcumOutros = prevAditivos.reduce((sum, a) => {
+                if (a.id === aditivoId) return sum;
+                if ((a.sequencia ?? 0) > seqAtual) return sum;
+                return sum + Number(a.dados[itemId]?.total || 0);
+              }, 0);
+              const qtdAcumAnterior = item.quantidade + qtdAcumOutros;
+              const totalAcumAnterior = item.valorTotal + totalAcumOutros;
+              
+              // SUPRESSÃO EXATA: quando o aditivo zera a quantidade acumulada do
+              // item, forçar o total = -totalAcumAnterior para garantir saldo
+              // exato (sem resíduo de centavos por arredondamento de preço unit.).
+              const ehSupressaoExata = qtdAcumAnterior > 0
+                && Math.abs(valorNumerico + qtdAcumAnterior) < 1e-6;
+              
               // PRIORIDADE 1: Se o aditivo tem valor unitário específico, usar ele
               // Isso acontece quando a planilha do aditivo é importada com seus próprios valores
               const valorUnitarioAditivo = dadosAtuais.valorUnitario || 0;
               
-              if (valorUnitarioAditivo > 0) {
+              if (ehSupressaoExata) {
+                novosDados[itemId].total = -totalAcumAnterior;
+                if (valorUnitarioAditivo > 0) {
+                  novosDados[itemId].valorUnitario = valorUnitarioAditivo;
+                }
+              } else if (valorUnitarioAditivo > 0) {
                 // Usar valor unitário específico do aditivo (sem truncamento)
                 novosDados[itemId].total = valorNumerico * valorUnitarioAditivo;
                 novosDados[itemId].valorUnitario = valorUnitarioAditivo; // Preservar
