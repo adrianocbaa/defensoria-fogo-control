@@ -1148,9 +1148,11 @@ export function Medicao() {
               const ehSupressaoExata = qtdAcumAnterior > 0
                 && Math.abs(valorNumerico + qtdAcumAnterior) < 1e-6;
               
-              // PRIORIDADE 1: Se o aditivo tem valor unitário específico, usar ele
-              // Isso acontece quando a planilha do aditivo é importada com seus próprios valores
-              const valorUnitarioAditivo = dadosAtuais.valorUnitario || 0;
+              // Se já existe um total anterior salvo para o item no aditivo,
+              // usar total÷quantidade como fonte mais precisa do valor unitário.
+              const valorUnitarioAditivo = Math.abs(Number(dadosAtuais.qnt || 0)) > 1e-12
+                ? Number(dadosAtuais.total || 0) / Number(dadosAtuais.qnt || 0)
+                : Number(dadosAtuais.valorUnitario || 0);
               
               if (ehSupressaoExata) {
                 novosDados[itemId].total = -totalAcumAnterior;
