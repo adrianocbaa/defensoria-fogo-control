@@ -2804,13 +2804,12 @@ export function Medicao() {
             const itemExistente = items.find(it => it.item.trim() === code);
             if (itemExistente && quant !== 0 && nivel > 1) {
               // NÃO aplicar desconto - itens contratuais/extracontratuais anteriores já tiveram desconto
-              const valorUnitarioFinal = quant !== 0
-                ? valorTotalComDesconto / quant
-                : valorUnitBDI;
-              
-              const totalFinal = quant !== 0
-                ? valorTotalComDesconto
-                : valorUnitarioFinal * quant;
+              // Sempre usar o VU PRECISO do item-base (totalContrato/quantidade)
+              const vuPrecisoBase = obterValorUnitarioPrecisoItem(itemExistente);
+              const valorUnitarioFinal = Math.abs(vuPrecisoBase) > 1e-12
+                ? vuPrecisoBase
+                : (quant !== 0 ? valorTotalComDesconto / quant : valorUnitBDI);
+              const totalFinal = Math.round(quant * valorUnitarioFinal * 100) / 100;
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
