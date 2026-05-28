@@ -2464,10 +2464,6 @@ export function Medicao() {
         const totalSemDesconto = parseNumber(idx.totalSemDesconto >= 0 ? r[idx.totalSemDesconto] : 0);
         // Aplicar desconto: TRUNCAR(totalSemDesconto - (totalSemDesconto * desconto%), 2)
         const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
-        // Preservar a precisão completa do valor unitário para que futuras
-        // supressões/acréscimos fechem exatamente com o total da planilha.
-        const valorUnitComDesconto = quant !== 0 ? valorTotalComDesconto / quant : 0;
-
         // Ignorar linhas completamente vazias (considerar valores negativos como conteúdo para supressões)
         const hasAnyContent = code || descricao || und || codigoBanco || quant !== 0 || totalSemDesconto !== 0;
         if (!hasAnyContent) {
@@ -2821,7 +2817,6 @@ export function Medicao() {
         if (vistosNoArquivo.has(code)) return;
         vistosNoArquivo.add(code);
 
-        const valorUnitComDesconto = quant !== 0 ? valorTotalComDesconto / quant : 0;
         const valorUnitarioParaAditivo = quant !== 0
           ? valorTotalComDesconto / quant
           : valorUnitBDI;
