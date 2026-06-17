@@ -17,6 +17,7 @@ import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, ClipboardCheck, BarChart3, Map as MapIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
