@@ -32,6 +32,7 @@ interface Obra {
   porcentagem_execucao: number;
   created_at: string;
   previsao_termino?: string;
+  data_inicio?: string;
   valor_calculado?: number;
   rdo_habilitado?: boolean;
 }
