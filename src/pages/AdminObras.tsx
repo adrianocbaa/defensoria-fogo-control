@@ -17,6 +17,7 @@ import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import * as LoadingStates from '@/components/LoadingStates';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, ClipboardCheck, BarChart3, Map as MapIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,6 +33,7 @@ interface Obra {
   porcentagem_execucao: number;
   created_at: string;
   previsao_termino?: string;
+  data_inicio?: string;
   valor_calculado?: number;
   rdo_habilitado?: boolean;
 }
@@ -106,6 +108,7 @@ export function AdminObras() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
+  const [yearFilter, setYearFilter] = useState<string>('todos');
   const [obraValores, setObraValores] = useState<Record<string, number>>({});
   const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
   const [obraRdoProgressos, setObraRdoProgressos] = useState<Record<string, number | null>>({});
@@ -311,6 +314,17 @@ export function AdminObras() {
     fetchObras();
   }, []);
 
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    obras.forEach(o => {
+      if (o.data_inicio) {
+        const y = parseInt(o.data_inicio.split('-')[0], 10);
+        if (!isNaN(y)) years.add(y);
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [obras]);
+
   useEffect(() => {
     let filtered = obras;
     
@@ -327,9 +341,17 @@ export function AdminObras() {
     if (statusFilter !== 'todos') {
       filtered = filtered.filter(obra => obra.status === statusFilter);
     }
+
+    // Filtro por ano (data de início)
+    if (yearFilter !== 'todos') {
+      filtered = filtered.filter(obra => {
+        if (!obra.data_inicio) return false;
+        return obra.data_inicio.split('-')[0] === yearFilter;
+      });
+    }
     
     setFilteredObras(filtered);
-  }, [searchTerm, statusFilter, obras]);
+  }, [searchTerm, statusFilter, yearFilter, obras]);
 
   const handleDelete = async (id: string, nome: string) => {
     if (!window.confirm(`Tem certeza que deseja excluir a obra "${nome}"?`)) {
@@ -410,6 +432,20 @@ export function AdminObras() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="max-w-sm"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">Ano início:</span>
+              <Select value={yearFilter} onValueChange={setYearFilter}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {availableYears.map(y => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground whitespace-nowrap">Filtrar por:</span>
