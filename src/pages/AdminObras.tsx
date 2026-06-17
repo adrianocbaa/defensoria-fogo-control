@@ -313,6 +313,17 @@ export function AdminObras() {
     fetchObras();
   }, []);
 
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    obras.forEach(o => {
+      if (o.data_inicio) {
+        const y = parseInt(o.data_inicio.split('-')[0], 10);
+        if (!isNaN(y)) years.add(y);
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [obras]);
+
   useEffect(() => {
     let filtered = obras;
     
@@ -329,9 +340,17 @@ export function AdminObras() {
     if (statusFilter !== 'todos') {
       filtered = filtered.filter(obra => obra.status === statusFilter);
     }
+
+    // Filtro por ano (data de início)
+    if (yearFilter !== 'todos') {
+      filtered = filtered.filter(obra => {
+        if (!obra.data_inicio) return false;
+        return obra.data_inicio.split('-')[0] === yearFilter;
+      });
+    }
     
     setFilteredObras(filtered);
-  }, [searchTerm, statusFilter, obras]);
+  }, [searchTerm, statusFilter, yearFilter, obras]);
 
   const handleDelete = async (id: string, nome: string) => {
     if (!window.confirm(`Tem certeza que deseja excluir a obra "${nome}"?`)) {
