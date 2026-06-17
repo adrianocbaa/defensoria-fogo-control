@@ -107,6 +107,7 @@ export function AdminObras() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
+  const [yearFilter, setYearFilter] = useState<string>('todos');
   const [obraValores, setObraValores] = useState<Record<string, number>>({});
   const [obraProgressos, setObraProgressos] = useState<Record<string, number>>({});
   const [obraRdoProgressos, setObraRdoProgressos] = useState<Record<string, number | null>>({});
