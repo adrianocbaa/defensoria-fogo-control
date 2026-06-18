@@ -190,6 +190,15 @@ export default function DimensionamentoCalhas() {
                 onBack={() => goTo('condutores')}
               />
             )}
+            {currentStep === 'relatorio' && cadastro && chuva && panos && calhas && (
+              <RelatorioStep
+                cadastro={cadastro}
+                chuva={chuva}
+                panos={panos.panos}
+                calhas={calhas.calhas}
+                onBack={() => goTo('resultados')}
+              />
+            )}
           </CardContent>
 
         </Card>
