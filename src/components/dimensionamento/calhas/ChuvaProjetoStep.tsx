@@ -59,8 +59,9 @@ export function ChuvaProjetoStep({
     },
   });
 
-  const { rows, salvar } = useIntensidadesPluviometricas(cidade, uf);
+  const { rows, salvar, refetch } = useIntensidadesPluviometricas(cidade, uf);
   const [salvando, setSalvando] = useState(false);
+  const [buscandoInmet, setBuscandoInmet] = useState(false);
   const [sugeriu, setSugeriu] = useState(false);
 
   // Sugestão automática: pega o primeiro registro (maior TR) ao chegar com cidade/UF
