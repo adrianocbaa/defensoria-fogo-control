@@ -3364,10 +3364,10 @@ export function Medicao() {
     }
   };
 
-  // Função para excluir medição (apenas admins)
+  // Função para excluir medição (admins e fiscais da obra)
   const excluirMedicao = async (medicaoId: number) => {
-    if (!isAdmin) {
-      toast.error('Apenas administradores podem excluir medições.');
+    if (!canEdit) {
+      toast.error('Você não tem permissão para excluir medições desta obra.');
       return;
     }
 
