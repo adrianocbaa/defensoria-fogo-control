@@ -193,10 +193,11 @@ export function ChuvaProjetoStep({
           <div className="flex items-start gap-2 text-sm">
             <Radio className="h-4 w-4 text-sky-600 mt-0.5" />
             <div>
-              <div className="font-medium">Buscar estação INMET mais próxima</div>
+              <div className="font-medium">Estimar i₅ por reanálise climática (ERA5)</div>
               <div className="text-xs text-muted-foreground">
-                Estima i₅ a partir das máximas diárias dos últimos 10 anos
-                (desagregação CETESB 24h→5min). Resultado é referência auxiliar — confirme com IDF local.
+                Usa a série histórica de precipitação diária da reanálise ERA5
+                (Open-Meteo) e aplica desagregação CETESB 24h→5min. Resultado é
+                referência auxiliar — confirme com IDF local antes de finalizar.
               </div>
             </div>
           </div>
@@ -212,7 +213,7 @@ export function ChuvaProjetoStep({
             ) : (
               <Radio className="h-4 w-4 mr-2" />
             )}
-            {buscandoInmet ? 'Consultando INMET...' : 'Buscar no INMET'}
+            {buscandoInmet ? 'Consultando ERA5...' : 'Estimar pela ERA5'}
           </Button>
         </div>
 
