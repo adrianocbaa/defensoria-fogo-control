@@ -138,7 +138,7 @@ export function ChuvaProjetoStep({
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error ?? 'Não foi possível obter dados do INMET');
 
-      const obs = `INMET • Estação ${data.estacao.nome} (${data.estacao.codigo}) • ${data.serie.anos_analisados} anos • ${data.metodo}`;
+      const obs = `${data.fonte_dados ?? 'Open-Meteo ERA5'} • ${data.estacao.nome} • ${data.serie.anos_analisados} anos • ${data.metodo}`;
       form.reset({
         intensidade_mm_h: data.intensidade_mm_h,
         tempo_retorno_anos: data.tempo_retorno_anos,
@@ -148,12 +148,12 @@ export function ChuvaProjetoStep({
       });
 
       toast({
-        title: 'Estimativa do INMET aplicada',
+        title: 'Estimativa ERA5 aplicada',
         description: `${data.intensidade_mm_h} mm/h • ${data.estacao.nome}. Confirme com IDF local antes de finalizar.`,
       });
     } catch (e: any) {
       toast({
-        title: 'Erro ao consultar INMET',
+        title: 'Erro ao consultar ERA5',
         description: e?.message ?? 'Tente novamente',
         variant: 'destructive',
       });
