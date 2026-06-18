@@ -35,7 +35,13 @@ const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   municipio: z.string().min(1, 'Município é obrigatório'),
   n_contrato: z.string().optional(),
-  sei_numero: z.string().optional(),
+  sei_numero: z
+    .string()
+    .optional()
+    .refine(
+      (v) => !v || /^\d{4}\.\d{1}\.\d{9}-\d{1}$/.test(v),
+      'Formato inválido. Use AAAA.D.DDDDDDDDD-D (ex.: 2025.0.000024717-0)'
+    ),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
   tipo: z.enum(['Reforma', 'Construção', 'Adequações']),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
@@ -512,15 +518,31 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
             <FormField
               control={form.control}
               name="sei_numero"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número do Procedimento SEI</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex.: 0001.000123/2026-00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const formatSei = (raw: string) => {
+                  const d = raw.replace(/\D/g, '').slice(0, 15);
+                  let out = d.slice(0, 4);
+                  if (d.length > 4) out += '.' + d.slice(4, 5);
+                  if (d.length > 5) out += '.' + d.slice(5, 14);
+                  if (d.length > 14) out += '-' + d.slice(14, 15);
+                  return out;
+                };
+                return (
+                  <FormItem>
+                    <FormLabel>Número do Procedimento SEI</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex.: 2025.0.000024717-0"
+                        inputMode="numeric"
+                        maxLength={17}
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(formatSei(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
 
