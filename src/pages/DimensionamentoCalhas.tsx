@@ -111,6 +111,22 @@ export default function DimensionamentoCalhas() {
           subtitle="Cálculo conforme ABNT NBR 10844:1989"
         />
 
+        <div className="mt-4 rounded-lg border bg-card p-3">
+          <ProjetosManager
+            projetoAtual={{
+              id: projetoId,
+              nome: projetoNome,
+              cadastro,
+              chuva,
+              panos,
+              calhas,
+            }}
+            onAbrir={handleAbrir}
+            onNovo={handleNovo}
+          />
+        </div>
+
+
         {/* Stepper */}
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
           {STEPS.map((step, idx) => {
