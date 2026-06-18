@@ -50,6 +50,7 @@ const obraSchema = z.object({
   regiao: z.string().optional(),
   secretaria_responsavel: z.string().optional(),
   fiscal_id: z.string().optional(),
+  fiscal_substituto_id: z.string().optional(),
   responsavel_projeto_id: z.string().optional(),
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
@@ -155,6 +156,23 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       return data || [];
     }
   });
+
+  // Buscar fiscal substituto atual da obra (apenas o primeiro)
+  const { data: substitutoAtualId } = useQuery({
+    queryKey: ['obra-fiscal-substituto', obraId],
+    queryFn: async () => {
+      if (!obraId || obraId === 'nova') return '';
+      const { data } = await supabase
+        .from('obra_fiscal_substitutos')
+        .select('substitute_user_id')
+        .eq('obra_id', obraId)
+        .limit(1)
+        .maybeSingle();
+      return data?.substitute_user_id || '';
+    },
+    enabled: !!obraId && obraId !== 'nova',
+  });
+
 
   // Verificar se existe planilha orçamentária importada (bloqueia campo valor_total)
   const { data: hasPlanilhaImportada = false } = useQuery({
@@ -267,6 +285,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       regiao: (initialData as any)?.regiao || '',
       secretaria_responsavel: initialData?.secretaria_responsavel || '',
       fiscal_id: (initialData as any)?.fiscal_id || '',
+      fiscal_substituto_id: '',
       responsavel_projeto_id: (initialData as any)?.responsavel_projeto_id || '',
       coordinates_lat: initialData?.coordinates_lat,
       coordinates_lng: initialData?.coordinates_lng,
@@ -302,6 +321,14 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
     });
     setPhotos(updatedPhotos);
   };
+
+  // Quando o fiscal substituto atual for carregado do banco, atualiza o form
+  useEffect(() => {
+    if (substitutoAtualId !== undefined) {
+      form.setValue('fiscal_substituto_id', substitutoAtualId || '');
+    }
+  }, [substitutoAtualId, form]);
+
 
   // Calcular automaticamente a previsão de término quando data_inicio, tempo_obra ou aditivo_prazo mudarem
   useEffect(() => {
@@ -364,6 +391,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         rdo_habilitado: data.rdo_habilitado,
       };
 
+      let savedObraId = obraId;
       if (obraId && obraId !== 'nova') {
         // Atualizar obra existente
         const { error } = await supabase
@@ -375,12 +403,35 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         toast.success('Obra atualizada com sucesso!');
       } else {
         // Criar nova obra
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('obras')
-          .insert([obraData]);
+          .insert([obraData])
+          .select('id')
+          .single();
 
         if (error) throw error;
+        savedObraId = inserted?.id;
         toast.success('Obra criada com sucesso!');
+      }
+
+      // Sincronizar fiscal substituto (único): remove todos os existentes e insere o selecionado
+      if (savedObraId) {
+        const { error: delErr } = await supabase
+          .from('obra_fiscal_substitutos')
+          .delete()
+          .eq('obra_id', savedObraId);
+        if (delErr) console.error('Erro ao limpar substitutos:', delErr);
+
+        if (data.fiscal_substituto_id) {
+          const { error: insErr } = await supabase
+            .from('obra_fiscal_substitutos')
+            .insert([{
+              obra_id: savedObraId,
+              substitute_user_id: data.fiscal_substituto_id,
+              created_by: user.id,
+            }]);
+          if (insErr) console.error('Erro ao salvar fiscal substituto:', insErr);
+        }
       }
 
       onSuccess();
@@ -782,7 +833,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
               name="fiscal_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fiscal do Contrato</FormLabel>
+                  <FormLabel>Fiscal Titular</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value || ''}
@@ -813,17 +864,49 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
 
             <FormField
               control={form.control}
+              name="fiscal_substituto_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fiscal Substituto</FormLabel>
+                  <Select
+                    onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
+                    value={field.value || '__none__'}
+                    disabled={!canChangeFiscal}
+                  >
+                    <FormControl>
+                      <SelectTrigger className={!canChangeFiscal ? 'bg-muted cursor-not-allowed' : ''}>
+                        <SelectValue placeholder="Selecione o fiscal substituto" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
+                      {fiscais
+                        .filter((f) => f.user_id !== form.watch('fiscal_id'))
+                        .map((fiscal) => (
+                          <SelectItem key={fiscal.user_id} value={fiscal.user_id}>
+                            {fiscal.display_name || fiscal.email}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="responsavel_projeto_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Responsável pelo Projeto</FormLabel>
+                  <FormLabel>Gestor(a) do Contrato</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value || ''}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o(a) arquiteto(a)" />
+                        <SelectValue placeholder="Selecione o(a) gestor(a) do contrato" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
