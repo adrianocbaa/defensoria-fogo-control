@@ -35,6 +35,7 @@ const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   municipio: z.string().min(1, 'Município é obrigatório'),
   n_contrato: z.string().optional(),
+  sei_numero: z.string().optional(),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
   tipo: z.enum(['Reforma', 'Construção', 'Adequações']),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
@@ -270,6 +271,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       nome: initialData?.nome || '',
       municipio: initialData?.municipio || '',
       n_contrato: initialData?.n_contrato || '',
+      sei_numero: (initialData as any)?.sei_numero || '',
       status: initialData?.status || 'planejamento',
       tipo: (initialData?.tipo as "Reforma" | "Construção" | "Adequações") || 'Reforma',
       valor_total: initialData?.valor_total || 0,
@@ -367,6 +369,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         nome: data.nome,
         municipio: data.municipio,
         n_contrato: data.status === 'planejamento' ? (data.n_contrato?.trim() || null) : data.n_contrato,
+        sei_numero: data.sei_numero?.trim() || null,
         status: data.status,
         tipo: data.tipo,
         valor_total: data.valor_total,
@@ -505,6 +508,21 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                 );
               }}
             />
+
+            <FormField
+              control={form.control}
+              name="sei_numero"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número do Procedimento SEI</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex.: 0001.000123/2026-00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
 
             <FormField
               control={form.control}
