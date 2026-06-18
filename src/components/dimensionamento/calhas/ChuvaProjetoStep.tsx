@@ -135,9 +135,9 @@ export function ChuvaProjetoStep({
     }
   };
 
-
-
+  const handleAplicarNBR = () => {
     const c = NBR10844_TABELA5.find(
+
       (x) => x.uf === nbrUf && x.cidade === nbrCidade,
     );
     if (!c) {
