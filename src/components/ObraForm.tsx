@@ -606,15 +606,25 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
             <FormField
               control={form.control}
               name="data_inicio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data de Início</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const isPlanejamento = form.watch('status') === 'planejamento';
+                return (
+                  <FormItem>
+                    <FormLabel>Data de Início</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        disabled={isPlanejamento}
+                        {...field}
+                      />
+                    </FormControl>
+                    {isPlanejamento && (
+                      <FormDescription>Disponível após mudar o status para "Em Andamento"</FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
