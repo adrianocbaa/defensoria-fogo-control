@@ -23,7 +23,8 @@ import {
   Package, 
   Laptop,
   Building2,
-  Calculator
+  Calculator,
+  Ruler
 } from 'lucide-react';
 
 export interface SectorInfo {
@@ -43,6 +44,7 @@ const sectorLabels: Record<string, string> = {
   'nucleos': 'Teletrabalho',
   'nucleos_central': 'Núcleos - Cadastro',
   'orcamento': 'Orçamento',
+  'dimensionamento': 'Dimensionamento',
 };
 
 // Adicione os ícones dos novos módulos aqui
@@ -56,7 +58,9 @@ const sectorIcons: Record<string, React.ComponentType<{ className?: string }>> =
   'nucleos': Laptop,
   'nucleos_central': Building2,
   'orcamento': Calculator,
+  'dimensionamento': Ruler,
 };
+
 
 export function useAvailableSectors() {
   const [sectors, setSectors] = useState<SectorInfo[]>([]);

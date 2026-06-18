@@ -721,6 +721,50 @@ export type Database = {
           },
         ]
       }
+      dimensionamento_calhas: {
+        Row: {
+          created_at: string
+          id: string
+          inputs: Json
+          nome: string
+          obra_id: string | null
+          observacoes: string | null
+          resultados: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inputs?: Json
+          nome: string
+          obra_id?: string | null
+          observacoes?: string | null
+          resultados?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inputs?: Json
+          nome?: string
+          obra_id?: string | null
+          observacoes?: string | null
+          resultados?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dimensionamento_calhas_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           id: string

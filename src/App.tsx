@@ -66,6 +66,8 @@ import GerenciarObras from "./pages/GerenciarObras";
 import Apresentacao from "./pages/Apresentacao";
 import FluxogramaObras from "./pages/FluxogramaObras";
 import { ChecklistDinamico } from "./pages/ChecklistDinamico";
+import Dimensionamento from "./pages/Dimensionamento";
+import DimensionamentoCalhas from "./pages/DimensionamentoCalhas";
 
 const queryClient = new QueryClient();
 
@@ -183,7 +185,24 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
+
+      <Route
+        path="/dimensionamento"
+        element={
+          <ProtectedRoute>
+            <Dimensionamento />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dimensionamento/calhas"
+        element={
+          <ProtectedRoute>
+            <DimensionamentoCalhas />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Legacy Routes */}
       <Route 
         path="/nucleus/:id" 
