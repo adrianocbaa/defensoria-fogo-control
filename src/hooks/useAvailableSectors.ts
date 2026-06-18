@@ -23,7 +23,8 @@ import {
   Package, 
   Laptop,
   Building2,
-  Calculator
+  Calculator,
+  Ruler
 } from 'lucide-react';
 
 export interface SectorInfo {
