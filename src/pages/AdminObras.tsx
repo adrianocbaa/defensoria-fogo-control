@@ -20,6 +20,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, ClipboardCheck, BarChart3, Map as MapIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { ObraDetails } from '@/components/ObraDetails';
+import { useObras as useObrasFull } from '@/hooks/useObras';
+import type { Obra as ObraFull } from '@/data/mockObras';
 
 interface Obra {
   id: string;
