@@ -38,7 +38,7 @@ interface LinhaCondutor {
   diametroAdotado_mm: number | null;
 }
 
-export function CondutoresVerticaisStep({ calhas, panos, intensidade_mm_h, onBack }: Props) {
+export function CondutoresVerticaisStep({ calhas, panos, intensidade_mm_h, onBack, onConfirm }: Props) {
   const [faixas, setFaixas] = useState<FaixaCondutor[]>(FAIXAS_CONDUTOR_PADRAO);
 
   // vazão por ponto de descida = Q da calha / nº de pontos
