@@ -31,6 +31,7 @@ export default function DimensionamentoCalhas() {
   const [cadastro, setCadastro] = useState<CadastroObra | null>(null);
   const [chuva, setChuva] = useState<ChuvaProjeto | null>(null);
   const [panos, setPanos] = useState<PanosForm | null>(null);
+  const [calhas, setCalhas] = useState<CalhasForm | null>(null);
 
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
