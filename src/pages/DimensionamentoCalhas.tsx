@@ -20,6 +20,7 @@ const STEPS: { id: StepId; label: string; description: string }[] = [
   { id: 'cadastro', label: 'Cadastro da obra', description: 'Identificação do projeto' },
   { id: 'chuva', label: 'Chuva de projeto', description: 'Intensidade pluviométrica' },
   { id: 'panos', label: 'Panos de telhado', description: 'Áreas de contribuição' },
+  { id: 'calhas', label: 'Calhas', description: 'Geometria e descidas' },
   { id: 'calculo', label: 'Cálculo', description: 'Em breve' },
   { id: 'relatorio', label: 'Relatório', description: 'Em breve' },
 ];
