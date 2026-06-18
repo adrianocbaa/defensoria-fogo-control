@@ -391,6 +391,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         rdo_habilitado: data.rdo_habilitado,
       };
 
+      let savedObraId = obraId;
       if (obraId && obraId !== 'nova') {
         // Atualizar obra existente
         const { error } = await supabase
@@ -402,12 +403,35 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         toast.success('Obra atualizada com sucesso!');
       } else {
         // Criar nova obra
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('obras')
-          .insert([obraData]);
+          .insert([obraData])
+          .select('id')
+          .single();
 
         if (error) throw error;
+        savedObraId = inserted?.id;
         toast.success('Obra criada com sucesso!');
+      }
+
+      // Sincronizar fiscal substituto (único): remove todos os existentes e insere o selecionado
+      if (savedObraId) {
+        const { error: delErr } = await supabase
+          .from('obra_fiscal_substitutos')
+          .delete()
+          .eq('obra_id', savedObraId);
+        if (delErr) console.error('Erro ao limpar substitutos:', delErr);
+
+        if (data.fiscal_substituto_id) {
+          const { error: insErr } = await supabase
+            .from('obra_fiscal_substitutos')
+            .insert([{
+              obra_id: savedObraId,
+              substitute_user_id: data.fiscal_substituto_id,
+              created_by: user.id,
+            }]);
+          if (insErr) console.error('Erro ao salvar fiscal substituto:', insErr);
+        }
       }
 
       onSuccess();
