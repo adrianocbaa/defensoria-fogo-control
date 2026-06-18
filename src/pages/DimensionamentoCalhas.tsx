@@ -6,23 +6,28 @@ import { Waves, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CadastroObraStep } from '@/components/dimensionamento/calhas/CadastroObraStep';
 import { ChuvaProjetoStep } from '@/components/dimensionamento/calhas/ChuvaProjetoStep';
+import { PanosTelhadoStep } from '@/components/dimensionamento/calhas/PanosTelhadoStep';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
 import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
+import { PanosForm } from '@/components/dimensionamento/calhas/panoSchema';
 import { toast } from '@/hooks/use-toast';
 
-type StepId = 'cadastro' | 'chuva' | 'calculo' | 'relatorio';
+type StepId = 'cadastro' | 'chuva' | 'panos' | 'calculo' | 'relatorio';
 
 const STEPS: { id: StepId; label: string; description: string }[] = [
   { id: 'cadastro', label: 'Cadastro da obra', description: 'Identificação do projeto' },
   { id: 'chuva', label: 'Chuva de projeto', description: 'Intensidade pluviométrica' },
+  { id: 'panos', label: 'Panos de telhado', description: 'Áreas de contribuição' },
   { id: 'calculo', label: 'Cálculo', description: 'Em breve' },
   { id: 'relatorio', label: 'Relatório', description: 'Em breve' },
 ];
+
 
 export default function DimensionamentoCalhas() {
   const [currentStep, setCurrentStep] = useState<StepId>('cadastro');
   const [cadastro, setCadastro] = useState<CadastroObra | null>(null);
   const [chuva, setChuva] = useState<ChuvaProjeto | null>(null);
+  const [panos, setPanos] = useState<PanosForm | null>(null);
 
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
@@ -40,8 +45,18 @@ export default function DimensionamentoCalhas() {
       title: 'Chuva de projeto definida',
       description: `${values.intensidade_mm_h} mm/h • TR ${values.tempo_retorno_anos} anos`,
     });
+    goTo('panos');
+  };
+
+  const handlePanosSubmit = (values: PanosForm) => {
+    setPanos(values);
+    toast({
+      title: 'Panos de telhado cadastrados',
+      description: `${values.panos.length} pano(s)`,
+    });
     // próxima etapa virá depois
   };
+
 
   return (
     <SimpleHeader>
@@ -115,7 +130,15 @@ export default function DimensionamentoCalhas() {
                 onBack={() => goTo('cadastro')}
               />
             )}
+            {currentStep === 'panos' && (
+              <PanosTelhadoStep
+                defaultValues={panos ?? undefined}
+                onSubmit={handlePanosSubmit}
+                onBack={() => goTo('chuva')}
+              />
+            )}
           </CardContent>
+
         </Card>
       </div>
     </SimpleHeader>
