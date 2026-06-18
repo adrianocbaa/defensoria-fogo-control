@@ -7,17 +7,20 @@ import { cn } from '@/lib/utils';
 import { CadastroObraStep } from '@/components/dimensionamento/calhas/CadastroObraStep';
 import { ChuvaProjetoStep } from '@/components/dimensionamento/calhas/ChuvaProjetoStep';
 import { PanosTelhadoStep } from '@/components/dimensionamento/calhas/PanosTelhadoStep';
+import { CalhasStep } from '@/components/dimensionamento/calhas/CalhasStep';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
 import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
 import { PanosForm } from '@/components/dimensionamento/calhas/panoSchema';
+import { CalhasForm } from '@/components/dimensionamento/calhas/calhaSchema';
 import { toast } from '@/hooks/use-toast';
 
-type StepId = 'cadastro' | 'chuva' | 'panos' | 'calculo' | 'relatorio';
+type StepId = 'cadastro' | 'chuva' | 'panos' | 'calhas' | 'calculo' | 'relatorio';
 
 const STEPS: { id: StepId; label: string; description: string }[] = [
   { id: 'cadastro', label: 'Cadastro da obra', description: 'Identificação do projeto' },
   { id: 'chuva', label: 'Chuva de projeto', description: 'Intensidade pluviométrica' },
   { id: 'panos', label: 'Panos de telhado', description: 'Áreas de contribuição' },
+  { id: 'calhas', label: 'Calhas', description: 'Geometria e descidas' },
   { id: 'calculo', label: 'Cálculo', description: 'Em breve' },
   { id: 'relatorio', label: 'Relatório', description: 'Em breve' },
 ];
@@ -28,6 +31,7 @@ export default function DimensionamentoCalhas() {
   const [cadastro, setCadastro] = useState<CadastroObra | null>(null);
   const [chuva, setChuva] = useState<ChuvaProjeto | null>(null);
   const [panos, setPanos] = useState<PanosForm | null>(null);
+  const [calhas, setCalhas] = useState<CalhasForm | null>(null);
 
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
@@ -53,6 +57,16 @@ export default function DimensionamentoCalhas() {
     toast({
       title: 'Panos de telhado cadastrados',
       description: `${values.panos.length} pano(s)`,
+    });
+    goTo('calhas');
+  };
+
+  const handleCalhasSubmit = (values: CalhasForm) => {
+    setCalhas(values);
+    const totalDescidas = values.calhas.reduce((s, c) => s + c.pontos_descida.length, 0);
+    toast({
+      title: 'Calhas cadastradas',
+      description: `${values.calhas.length} calha(s) • ${totalDescidas} descida(s)`,
     });
     // próxima etapa virá depois
   };
@@ -135,6 +149,13 @@ export default function DimensionamentoCalhas() {
                 defaultValues={panos ?? undefined}
                 onSubmit={handlePanosSubmit}
                 onBack={() => goTo('chuva')}
+              />
+            )}
+            {currentStep === 'calhas' && (
+              <CalhasStep
+                defaultValues={calhas ?? undefined}
+                onSubmit={handleCalhasSubmit}
+                onBack={() => goTo('panos')}
               />
             )}
           </CardContent>
