@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CloudRain, Database, Save, Sparkles, Calculator } from 'lucide-react';
+import { CloudRain, Database, Save, Sparkles, Calculator, BookOpen } from 'lucide-react';
 
 import { calcularIntensidadeIDF } from '@/lib/idfPfafstetter';
+import {
+  UFS_NBR,
+  cidadesPorUF,
+  intensidadePorTR,
+  NBR10844_TABELA5,
+} from '@/lib/nbr10844Tabela5';
 import { Button } from '@/components/ui/button';
+
 
 
 import { Input } from '@/components/ui/input';
@@ -64,6 +71,11 @@ export function ChuvaProjetoStep({
   const { rows, salvar, refetch } = useIntensidadesPluviometricas(cidade, uf);
   const [salvando, setSalvando] = useState(false);
   const [sugeriu, setSugeriu] = useState(false);
+  const [nbrUf, setNbrUf] = useState<string>(uf || '');
+  const [nbrCidade, setNbrCidade] = useState<string>('');
+
+  const nbrCidades = nbrUf ? cidadesPorUF(nbrUf) : [];
+
 
 
   // Sugestão automática: pega o primeiro registro (maior TR) ao chegar com cidade/UF
