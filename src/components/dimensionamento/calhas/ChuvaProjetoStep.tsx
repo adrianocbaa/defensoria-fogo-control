@@ -227,6 +227,65 @@ export function ChuvaProjetoStep({
           </div>
         </div>
 
+        <div className="rounded-md border border-amber-500/30 bg-amber-50/60 dark:bg-amber-950/20 px-4 py-3 space-y-3">
+          <div className="flex items-start gap-2 text-sm">
+            <BookOpen className="h-4 w-4 text-amber-600 mt-0.5" />
+            <div>
+              <div className="font-medium">Tabela 5 — NBR 10844:1989</div>
+              <div className="text-xs text-muted-foreground">
+                Selecione UF e cidade tabelada na norma. A intensidade é aplicada
+                conforme o TR escolhido abaixo (1, 5 ou 25 anos), duração 5 min.
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr_auto] gap-2">
+            <Select
+              value={nbrUf}
+              onValueChange={(v) => {
+                setNbrUf(v);
+                setNbrCidade('');
+              }}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="UF" />
+              </SelectTrigger>
+              <SelectContent>
+                {UFS_NBR.map((u) => (
+                  <SelectItem key={u} value={u}>{u}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={nbrCidade}
+              onValueChange={setNbrCidade}
+              disabled={!nbrUf}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder={nbrUf ? 'Selecione a cidade' : 'Selecione a UF primeiro'} />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {nbrCidades.map((c) => (
+                  <SelectItem key={c.cidade} value={c.cidade}>
+                    {c.cidade} — i₅ {c.i5} mm/h
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAplicarNBR}
+              disabled={!nbrUf || !nbrCidade}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              Aplicar NBR
+            </Button>
+          </div>
+        </div>
+
+
+
         <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-950/20 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-start gap-2 text-sm">
             <Calculator className="h-4 w-4 text-sky-600 mt-0.5" />
