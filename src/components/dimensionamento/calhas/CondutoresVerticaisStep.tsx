@@ -241,6 +241,7 @@ export function CondutoresVerticaisStep({ calhas, panos, intensidade_mm_h, onBac
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Voltar</Button>
+        {onConfirm && <Button onClick={onConfirm}>Avançar para resultados</Button>}
       </div>
     </div>
   );
