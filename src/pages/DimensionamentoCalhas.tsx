@@ -151,6 +151,13 @@ export default function DimensionamentoCalhas() {
                 onBack={() => goTo('chuva')}
               />
             )}
+            {currentStep === 'calhas' && (
+              <CalhasStep
+                defaultValues={calhas ?? undefined}
+                onSubmit={handleCalhasSubmit}
+                onBack={() => goTo('panos')}
+              />
+            )}
           </CardContent>
 
         </Card>
