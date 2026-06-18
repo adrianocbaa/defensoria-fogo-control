@@ -1,0 +1,1 @@
+ALTER TYPE sector_type ADD VALUE IF NOT EXISTS 'dimensionamento';
