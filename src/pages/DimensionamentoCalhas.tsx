@@ -28,7 +28,7 @@ const STEPS: { id: StepId; label: string; description: string }[] = [
   { id: 'calculo', label: 'Cálculo hidráulico', description: 'Manning e capacidade' },
   { id: 'condutores', label: 'Condutores verticais', description: 'Diâmetros por ábaco' },
   { id: 'resultados', label: 'Resultados', description: 'Dashboard e status' },
-  { id: 'relatorio', label: 'Relatório', description: 'Em breve' },
+  { id: 'relatorio', label: 'Memorial de cálculo', description: 'PDF para assinatura' },
 ];
 
 
