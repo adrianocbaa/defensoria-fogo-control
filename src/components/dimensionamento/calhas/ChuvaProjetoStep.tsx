@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CloudRain, Database, Save, Sparkles, Calculator, BookOpen } from 'lucide-react';
+import { CloudRain, Database, Save, Sparkles, BookOpen } from 'lucide-react';
 
-import { calcularIntensidadeIDF } from '@/lib/idfPfafstetter';
 import {
   UFS_NBR,
   cidadesPorUF,
@@ -11,6 +10,7 @@ import {
   NBR10844_TABELA5,
 } from '@/lib/nbr10844Tabela5';
 import { Button } from '@/components/ui/button';
+
 
 
 
