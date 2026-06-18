@@ -285,6 +285,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       regiao: (initialData as any)?.regiao || '',
       secretaria_responsavel: initialData?.secretaria_responsavel || '',
       fiscal_id: (initialData as any)?.fiscal_id || '',
+      fiscal_substituto_id: '',
       responsavel_projeto_id: (initialData as any)?.responsavel_projeto_id || '',
       coordinates_lat: initialData?.coordinates_lat,
       coordinates_lng: initialData?.coordinates_lng,
