@@ -25,6 +25,7 @@ const sectorPaths: Record<string, string> = {
   'nucleos': '/nucleos',
   'nucleos_central': '/nucleos-central',
   'orcamento': '/orcamento',
+  'dimensionamento': '/dimensionamento',
 };
 
 // Mapeamento de cores para cada módulo
@@ -38,6 +39,7 @@ const sectorColors: Record<string, { text: string; bg: string }> = {
   'nucleos': { text: 'text-amber-600', bg: 'bg-amber-50 hover:bg-amber-100 border-amber-200' },
   'nucleos_central': { text: 'text-indigo-600', bg: 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200' },
   'orcamento': { text: 'text-emerald-600', bg: 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200' },
+  'dimensionamento': { text: 'text-rose-600', bg: 'bg-rose-50 hover:bg-rose-100 border-rose-200' },
 };
 
 export default function Dashboard() {
