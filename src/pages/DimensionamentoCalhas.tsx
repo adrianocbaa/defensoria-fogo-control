@@ -11,6 +11,7 @@ import { CalhasStep } from '@/components/dimensionamento/calhas/CalhasStep';
 import { CalculoStep } from '@/components/dimensionamento/calhas/CalculoStep';
 import { CondutoresVerticaisStep } from '@/components/dimensionamento/calhas/CondutoresVerticaisStep';
 import { ResultadosStep } from '@/components/dimensionamento/calhas/ResultadosStep';
+import { RelatorioStep } from '@/components/dimensionamento/calhas/RelatorioStep';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
 import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
 import { PanosForm } from '@/components/dimensionamento/calhas/panoSchema';
