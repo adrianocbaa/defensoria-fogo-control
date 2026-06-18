@@ -61,18 +61,6 @@ const sectorIcons: Record<string, React.ComponentType<{ className?: string }>> =
   'dimensionamento': Ruler,
 };
 
-// Adicione os ícones dos novos módulos aqui
-const sectorIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  'preventivos': Shield,
-  'manutencao': Wrench,
-  'ar_condicionado': Wind,
-  'obra': HardHat,
-  'projetos': FolderKanban,
-  'almoxarifado': Package,
-  'nucleos': Laptop,
-  'nucleos_central': Building2,
-  'orcamento': Calculator,
-};
 
 export function useAvailableSectors() {
   const [sectors, setSectors] = useState<SectorInfo[]>([]);
