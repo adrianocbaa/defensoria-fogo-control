@@ -11,6 +11,7 @@ import { CalhasStep } from '@/components/dimensionamento/calhas/CalhasStep';
 import { CalculoStep } from '@/components/dimensionamento/calhas/CalculoStep';
 import { CondutoresVerticaisStep } from '@/components/dimensionamento/calhas/CondutoresVerticaisStep';
 import { ResultadosStep } from '@/components/dimensionamento/calhas/ResultadosStep';
+import { RelatorioStep } from '@/components/dimensionamento/calhas/RelatorioStep';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
 import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
 import { PanosForm } from '@/components/dimensionamento/calhas/panoSchema';
@@ -27,7 +28,7 @@ const STEPS: { id: StepId; label: string; description: string }[] = [
   { id: 'calculo', label: 'Cálculo hidráulico', description: 'Manning e capacidade' },
   { id: 'condutores', label: 'Condutores verticais', description: 'Diâmetros por ábaco' },
   { id: 'resultados', label: 'Resultados', description: 'Dashboard e status' },
-  { id: 'relatorio', label: 'Relatório', description: 'Em breve' },
+  { id: 'relatorio', label: 'Memorial de cálculo', description: 'PDF para assinatura' },
 ];
 
 
@@ -187,6 +188,16 @@ export default function DimensionamentoCalhas() {
                 panos={panos.panos}
                 intensidade_mm_h={chuva.intensidade_mm_h}
                 onBack={() => goTo('condutores')}
+                onConfirm={() => goTo('relatorio')}
+              />
+            )}
+            {currentStep === 'relatorio' && cadastro && chuva && panos && calhas && (
+              <RelatorioStep
+                cadastro={cadastro}
+                chuva={chuva}
+                panos={panos.panos}
+                calhas={calhas.calhas}
+                onBack={() => goTo('resultados')}
               />
             )}
           </CardContent>

@@ -23,9 +23,10 @@ interface Props {
   panos: Pano[];
   intensidade_mm_h: number;
   onBack: () => void;
+  onConfirm?: () => void;
 }
 
-export function ResultadosStep({ calhas, panos, intensidade_mm_h, onBack }: Props) {
+export function ResultadosStep({ calhas, panos, intensidade_mm_h, onBack, onConfirm }: Props) {
   const faixas = FAIXAS_CONDUTOR_PADRAO;
 
   const { resultadosCalha, resultadosCondutor, totais } = useMemo(() => {
@@ -220,6 +221,7 @@ export function ResultadosStep({ calhas, panos, intensidade_mm_h, onBack }: Prop
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Voltar</Button>
+        {onConfirm && <Button onClick={onConfirm}>Gerar memorial</Button>}
       </div>
     </div>
   );
