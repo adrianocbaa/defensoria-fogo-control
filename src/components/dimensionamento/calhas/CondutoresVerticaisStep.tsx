@@ -27,6 +27,7 @@ interface Props {
   panos: Pano[];
   intensidade_mm_h: number;
   onBack: () => void;
+  onConfirm?: () => void;
 }
 
 interface LinhaCondutor {
@@ -37,7 +38,7 @@ interface LinhaCondutor {
   diametroAdotado_mm: number | null;
 }
 
-export function CondutoresVerticaisStep({ calhas, panos, intensidade_mm_h, onBack }: Props) {
+export function CondutoresVerticaisStep({ calhas, panos, intensidade_mm_h, onBack, onConfirm }: Props) {
   const [faixas, setFaixas] = useState<FaixaCondutor[]>(FAIXAS_CONDUTOR_PADRAO);
 
   // vazão por ponto de descida = Q da calha / nº de pontos
@@ -240,6 +241,7 @@ export function CondutoresVerticaisStep({ calhas, panos, intensidade_mm_h, onBac
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Voltar</Button>
+        {onConfirm && <Button onClick={onConfirm}>Avançar para resultados</Button>}
       </div>
     </div>
   );
