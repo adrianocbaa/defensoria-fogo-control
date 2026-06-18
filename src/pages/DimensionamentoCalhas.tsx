@@ -12,10 +12,12 @@ import { CalculoStep } from '@/components/dimensionamento/calhas/CalculoStep';
 import { CondutoresVerticaisStep } from '@/components/dimensionamento/calhas/CondutoresVerticaisStep';
 import { ResultadosStep } from '@/components/dimensionamento/calhas/ResultadosStep';
 import { RelatorioStep } from '@/components/dimensionamento/calhas/RelatorioStep';
+import { ProjetosManager } from '@/components/dimensionamento/calhas/ProjetosManager';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
 import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
 import { PanosForm } from '@/components/dimensionamento/calhas/panoSchema';
 import { CalhasForm } from '@/components/dimensionamento/calhas/calhaSchema';
+import type { ProjetoCalhas } from '@/lib/projetoCalhasStorage';
 import { toast } from '@/hooks/use-toast';
 
 type StepId = 'cadastro' | 'chuva' | 'panos' | 'calhas' | 'calculo' | 'condutores' | 'resultados' | 'relatorio';
@@ -33,6 +35,8 @@ const STEPS: { id: StepId; label: string; description: string }[] = [
 
 
 export default function DimensionamentoCalhas() {
+  const [projetoId, setProjetoId] = useState<string>(() => crypto.randomUUID());
+  const [projetoNome, setProjetoNome] = useState<string>('Novo projeto');
   const [currentStep, setCurrentStep] = useState<StepId>('cadastro');
   const [cadastro, setCadastro] = useState<CadastroObra | null>(null);
   const [chuva, setChuva] = useState<ChuvaProjeto | null>(null);
@@ -42,6 +46,27 @@ export default function DimensionamentoCalhas() {
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
   const goTo = (id: StepId) => setCurrentStep(id);
+
+  const handleAbrir = (p: ProjetoCalhas) => {
+    setProjetoId(p.id);
+    setProjetoNome(p.nome);
+    setCadastro(p.cadastro);
+    setChuva(p.chuva);
+    setPanos(p.panos);
+    setCalhas(p.calhas);
+    setCurrentStep('cadastro');
+  };
+
+  const handleNovo = () => {
+    setProjetoId(crypto.randomUUID());
+    setProjetoNome('Novo projeto');
+    setCadastro(null);
+    setChuva(null);
+    setPanos(null);
+    setCalhas(null);
+    setCurrentStep('cadastro');
+    toast({ title: 'Novo projeto iniciado' });
+  };
 
   const handleCadastroSubmit = (values: CadastroObra) => {
     setCadastro(values);
@@ -85,6 +110,22 @@ export default function DimensionamentoCalhas() {
           title="Dimensionamento de Calhas"
           subtitle="Cálculo conforme ABNT NBR 10844:1989"
         />
+
+        <div className="mt-4 rounded-lg border bg-card p-3">
+          <ProjetosManager
+            projetoAtual={{
+              id: projetoId,
+              nome: projetoNome,
+              cadastro,
+              chuva,
+              panos,
+              calhas,
+            }}
+            onAbrir={handleAbrir}
+            onNovo={handleNovo}
+          />
+        </div>
+
 
         {/* Stepper */}
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">

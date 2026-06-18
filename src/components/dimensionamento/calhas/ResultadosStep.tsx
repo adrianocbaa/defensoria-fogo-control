@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  LayoutDashboard, CheckCircle2, XCircle, Droplets, CloudRain, Gauge, Ruler, ArrowDownToLine,
+  LayoutDashboard, CheckCircle2, XCircle, Droplets, CloudRain, Gauge, Ruler, ArrowDownToLine, Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { toCSV, baixarCSV } from '@/lib/projetoCalhasStorage';
 import type { Calha } from './calhaSchema';
 import type { Pano } from './panoSchema';
 import { calcularCalhas } from '@/lib/calhaCalculo';
@@ -219,9 +220,39 @@ export function ResultadosStep({ calhas, panos, intensidade_mm_h, onBack, onConf
         </div>
       </section>
 
-      <div className="flex justify-between">
+      <div className="flex flex-wrap justify-between gap-2">
         <Button variant="outline" onClick={onBack}>Voltar</Button>
-        {onConfirm && <Button onClick={onConfirm}>Gerar memorial</Button>}
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => {
+            const csv = toCSV([
+              ['Calha', 'Tipo', 'Área (m²)', 'Q proj. (L/min)', 'Capacidade (L/min)', 'FS', 'Status'],
+              ...resultadosCalha.map((r) => [
+                r.calha.nome, r.calha.tipo,
+                r.areaContribuicao_m2, r.vazaoProjeto_Lmin,
+                r.capacidade_Lmin ?? '', r.fatorSeguranca ?? '',
+                r.atende == null ? '' : r.atende ? 'Atende' : 'Não atende',
+              ]),
+            ]);
+            baixarCSV('resultados-calhas', csv);
+          }}>
+            <Download className="h-4 w-4" /> CSV calhas
+          </Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => {
+            const csv = toCSV([
+              ['Calha', 'Ponto', 'Q (L/min)', 'D mín (mm)', 'D adotado (mm)', 'Capacidade (L/min)', 'FS', 'Status'],
+              ...resultadosCondutor.map((c) => [
+                c.calhaNome, c.pontoRotulo, c.Q_Lmin,
+                c.dMin_mm ?? '', c.dAdotado_mm ?? '',
+                c.capacidade_Lmin ?? '', c.fs ?? '',
+                c.atende ? 'Atende' : 'Não atende',
+              ]),
+            ]);
+            baixarCSV('resultados-condutores', csv);
+          }}>
+            <Download className="h-4 w-4" /> CSV condutores
+          </Button>
+          {onConfirm && <Button onClick={onConfirm}>Gerar memorial</Button>}
+        </div>
       </div>
     </div>
   );
