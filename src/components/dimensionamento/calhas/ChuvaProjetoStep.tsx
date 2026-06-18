@@ -121,6 +121,47 @@ export function ChuvaProjetoStep({
     }
   };
 
+  const handleBuscarInmet = async () => {
+    if (!cidade || !uf) {
+      toast({
+        title: 'Cidade/UF ausentes',
+        description: 'Volte à Etapa 1 e preencha cidade e UF.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      setBuscandoInmet(true);
+      const { data, error } = await supabase.functions.invoke('inmet-buscar-intensidade', {
+        body: { cidade: cidade.trim(), uf, anos: 10 },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Não foi possível obter dados do INMET');
+
+      const obs = `INMET • Estação ${data.estacao.nome} (${data.estacao.codigo}) • ${data.serie.anos_analisados} anos • ${data.metodo}`;
+      form.reset({
+        intensidade_mm_h: data.intensidade_mm_h,
+        tempo_retorno_anos: data.tempo_retorno_anos,
+        duracao_min: data.duracao_min,
+        fonte: 'Estação pluviométrica',
+        observacoes_chuva: obs,
+      });
+
+      toast({
+        title: 'Estimativa do INMET aplicada',
+        description: `${data.intensidade_mm_h} mm/h • ${data.estacao.nome}. Confirme com IDF local antes de finalizar.`,
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Erro ao consultar INMET',
+        description: e?.message ?? 'Tente novamente',
+        variant: 'destructive',
+      });
+    } finally {
+      setBuscandoInmet(false);
+    }
+  };
+
   const aplicarRegistro = (id: string) => {
     const r = rows.find((x) => x.id === id);
     if (!r) return;
