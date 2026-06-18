@@ -117,6 +117,15 @@ export function AdminObras() {
   const [obraRdoProgressos, setObraRdoProgressos] = useState<Record<string, number | null>>({});
   const userRole = useUserRole();
   const navigate = useNavigate();
+  const { obras: obrasFull } = useObrasFull();
+  const [selectedObra, setSelectedObra] = useState<ObraFull | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const handleViewDetails = (obraId: string) => {
+    const found = obrasFull.find(o => o.id === obraId) || null;
+    setSelectedObra(found);
+    setDetailsOpen(true);
+  };
 
   // Pegar IDs das obras para verificar permissões
   const obraIds = useMemo(() => obras.map(o => o.id), [obras]);
