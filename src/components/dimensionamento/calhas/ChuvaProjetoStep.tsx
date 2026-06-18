@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CloudRain, Database, Loader2, Save, Sparkles, Calculator } from 'lucide-react';
+import { CloudRain, Database, Save, Sparkles, Calculator } from 'lucide-react';
 
 import { calcularIntensidadeIDF } from '@/lib/idfPfafstetter';
+import { Button } from '@/components/ui/button';
+
 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,8 +63,8 @@ export function ChuvaProjetoStep({
 
   const { rows, salvar, refetch } = useIntensidadesPluviometricas(cidade, uf);
   const [salvando, setSalvando] = useState(false);
-  const [buscandoInmet, setBuscandoInmet] = useState(false);
   const [sugeriu, setSugeriu] = useState(false);
+
 
   // Sugestão automática: pega o primeiro registro (maior TR) ao chegar com cidade/UF
   useEffect(() => {
@@ -121,7 +123,7 @@ export function ChuvaProjetoStep({
     }
   };
 
-  const handleBuscarInmet = async () => {
+  const handleCalcularIDF = () => {
     if (!cidade || !uf) {
       toast({
         title: 'Cidade/UF ausentes',
@@ -130,37 +132,31 @@ export function ChuvaProjetoStep({
       });
       return;
     }
-    try {
-      setBuscandoInmet(true);
-      const { data, error } = await supabase.functions.invoke('inmet-buscar-intensidade', {
-        body: { cidade: cidade.trim(), uf, anos: 10 },
-      });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error ?? 'Não foi possível obter dados do INMET');
-
-      const obs = `${data.fonte_dados ?? 'Open-Meteo ERA5'} • ${data.estacao.nome} • ${data.serie.anos_analisados} anos • ${data.metodo}`;
-      form.reset({
-        intensidade_mm_h: data.intensidade_mm_h,
-        tempo_retorno_anos: data.tempo_retorno_anos,
-        duracao_min: data.duracao_min,
-        fonte: 'Estação pluviométrica',
-        observacoes_chuva: obs,
-      });
-
+    const v = form.getValues();
+    const TR = Number(v.tempo_retorno_anos) || 5;
+    const t = Number(v.duracao_min) || 5;
+    const res = calcularIntensidadeIDF(cidade, uf, TR, t);
+    if (!res) {
       toast({
-        title: 'Estimativa ERA5 aplicada',
-        description: `${data.intensidade_mm_h} mm/h • ${data.estacao.nome}. Confirme com IDF local antes de finalizar.`,
-      });
-    } catch (e: any) {
-      toast({
-        title: 'Erro ao consultar ERA5',
-        description: e?.message ?? 'Tente novamente',
+        title: 'Cidade sem curva IDF cadastrada',
+        description: `Não há coeficientes Pfafstetter para ${cidade}/${uf}. Use a Tabela NBR 10844 ou entre o valor manualmente.`,
         variant: 'destructive',
       });
-    } finally {
-      setBuscandoInmet(false);
+      return;
     }
+    form.reset({
+      intensidade_mm_h: res.intensidade_mm_h,
+      tempo_retorno_anos: TR,
+      duracao_min: t,
+      fonte: 'Curva IDF local',
+      observacoes_chuva: `Pfafstetter (${res.fonte}) • ${res.cidade_base}/${res.uf} • ${res.equacao} • TR=${TR}a • t=${t}min`,
+    });
+    toast({
+      title: 'Intensidade calculada pela IDF',
+      description: `${res.intensidade_mm_h} mm/h • ${res.cidade_base}/${res.uf} • ${res.fonte}`,
+    });
   };
+
 
   const aplicarRegistro = (id: string) => {
     const r = rows.find((x) => x.id === id);
@@ -191,13 +187,13 @@ export function ChuvaProjetoStep({
 
         <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-950/20 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-start gap-2 text-sm">
-            <Radio className="h-4 w-4 text-sky-600 mt-0.5" />
+            <Calculator className="h-4 w-4 text-sky-600 mt-0.5" />
             <div>
-              <div className="font-medium">Estimar i₅ por reanálise climática (ERA5)</div>
+              <div className="font-medium">Calcular pela curva IDF (Pfafstetter)</div>
               <div className="text-xs text-muted-foreground">
-                Usa a série histórica de precipitação diária da reanálise ERA5
-                (Open-Meteo) e aplica desagregação CETESB 24h→5min. Resultado é
-                referência auxiliar — confirme com IDF local antes de finalizar.
+                Aplica i = K·TR^a / (t+b)^c com coeficientes locais publicados
+                (Pfafstetter 1957, DAEE, Plúvio/UFV). Use TR e duração do
+                formulário abaixo. Cidades sem curva: utilize a Tabela NBR 10844.
               </div>
             </div>
           </div>
@@ -205,17 +201,14 @@ export function ChuvaProjetoStep({
             type="button"
             variant="outline"
             size="sm"
-            onClick={handleBuscarInmet}
-            disabled={buscandoInmet || !cidade || !uf}
+            onClick={handleCalcularIDF}
+            disabled={!cidade || !uf}
           >
-            {buscandoInmet ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Radio className="h-4 w-4 mr-2" />
-            )}
-            {buscandoInmet ? 'Consultando ERA5...' : 'Estimar pela ERA5'}
+            <Calculator className="h-4 w-4 mr-2" />
+            Calcular pela IDF
           </Button>
         </div>
+
 
 
         {rows.length > 0 && (
