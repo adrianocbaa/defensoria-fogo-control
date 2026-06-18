@@ -369,6 +369,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         nome: data.nome,
         municipio: data.municipio,
         n_contrato: data.status === 'planejamento' ? (data.n_contrato?.trim() || null) : data.n_contrato,
+        sei_numero: data.sei_numero?.trim() || null,
         status: data.status,
         tipo: data.tipo,
         valor_total: data.valor_total,
