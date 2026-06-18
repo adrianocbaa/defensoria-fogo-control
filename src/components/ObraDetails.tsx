@@ -205,15 +205,23 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <p className="text-sm">{getStatusLabel(obra.status)}</p>
               </div>
               <div>
+                <span className="text-sm font-medium text-muted-foreground">Tipo:</span>
+                <p className="text-sm">{obra.tipo === 'Adequações' ? 'Custeio' : 'Investimento'}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">Nº do Procedimento SEI:</span>
+                <p className="text-sm">{(obra as any).sei_numero || 'Não informado'}</p>
+              </div>
+              <div>
                 <span className="text-sm font-medium text-muted-foreground">Empresa Responsável:</span>
                 <p className="text-sm">{obra.empresaResponsavel || 'Não informado'}</p>
               </div>
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Fiscal do Contrato:</span>
+                <span className="text-sm font-medium text-muted-foreground">Fiscal Titular:</span>
                 <p className="text-sm">{obra.secretariaResponsavel || 'Não informado'}</p>
               </div>
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Responsável pelo Projeto:</span>
+                <span className="text-sm font-medium text-muted-foreground">Gestor do Contrato:</span>
                 <p className="text-sm">{obra.responsavelProjeto || '-'}</p>
               </div>
             </div>
