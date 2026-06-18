@@ -632,6 +632,12 @@ export function AdminObras() {
         </div>
       </PermissionGuard>
       </div>
+
+      <ObraDetails
+        obra={selectedObra}
+        isOpen={detailsOpen}
+        onClose={() => { setDetailsOpen(false); setSelectedObra(null); }}
+      />
     </SimpleHeader>
   );
 }
