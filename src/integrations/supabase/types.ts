@@ -765,6 +765,48 @@ export type Database = {
           },
         ]
       }
+      dimensionamento_intensidades_pluviometricas: {
+        Row: {
+          cidade: string
+          created_at: string
+          duracao_min: number
+          fonte: string
+          id: string
+          intensidade_mm_h: number
+          observacoes: string | null
+          tempo_retorno_anos: number
+          uf: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cidade: string
+          created_at?: string
+          duracao_min: number
+          fonte: string
+          id?: string
+          intensidade_mm_h: number
+          observacoes?: string | null
+          tempo_retorno_anos: number
+          uf: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cidade?: string
+          created_at?: string
+          duracao_min?: number
+          fonte?: string
+          id?: string
+          intensidade_mm_h?: number
+          observacoes?: string | null
+          tempo_retorno_anos?: number
+          uf?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           id: string
