@@ -65,8 +65,7 @@ export function gerarMemorialPDF({ cadastro, chuva, panos, calhas }: Params) {
       headStyles: { fillColor: [225, 29, 72], textColor: 255 },
       theme: 'grid',
     });
-    // @ts-expect-error lastAutoTable injected by autoTable
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
   };
 
   // ===== Cabeçalho =====
@@ -84,11 +83,10 @@ export function gerarMemorialPDF({ cadastro, chuva, panos, calhas }: Params) {
   const dados: [string, string][] = [
     ['Nome da obra', cadastro.nome_obra || '—'],
     ['Responsável técnico', cadastro.responsavel_tecnico || '—'],
-    ['Registro profissional', cadastro.registro_profissional || '—'],
-    ['Endereço', cadastro.endereco || '—'],
     ['Cidade / UF', `${cadastro.cidade || '—'} / ${cadastro.uf || '—'}`],
     ['Tipo de edificação', cadastro.tipo_edificacao || '—'],
-    ['Data do projeto', cadastro.data_projeto || '—'],
+    ['Data do cálculo', cadastro.data_calculo || '—'],
+    ['Observações', cadastro.observacoes || '—'],
   ];
   tabela([['Campo', 'Valor']], dados);
 
@@ -243,8 +241,7 @@ export function gerarMemorialPDF({ cadastro, chuva, panos, calhas }: Params) {
   doc.line(M, y, M + 90, y);
   doc.setFont('helvetica', 'normal').setFontSize(10);
   doc.text(cadastro.responsavel_tecnico || 'Responsável Técnico', M, y + 5);
-  doc.text(cadastro.registro_profissional || 'Registro profissional', M, y + 10);
-  doc.text('Assinatura do Responsável Técnico', M, y + 18);
+  doc.text('Assinatura do Responsável Técnico', M, y + 13);
 
   // Rodapé com paginação
   const pages = doc.getNumberOfPages();
