@@ -7,12 +7,14 @@ import { cn } from '@/lib/utils';
 import { CadastroObraStep } from '@/components/dimensionamento/calhas/CadastroObraStep';
 import { ChuvaProjetoStep } from '@/components/dimensionamento/calhas/ChuvaProjetoStep';
 import { PanosTelhadoStep } from '@/components/dimensionamento/calhas/PanosTelhadoStep';
+import { CalhasStep } from '@/components/dimensionamento/calhas/CalhasStep';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
 import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
 import { PanosForm } from '@/components/dimensionamento/calhas/panoSchema';
+import { CalhasForm } from '@/components/dimensionamento/calhas/calhaSchema';
 import { toast } from '@/hooks/use-toast';
 
-type StepId = 'cadastro' | 'chuva' | 'panos' | 'calculo' | 'relatorio';
+type StepId = 'cadastro' | 'chuva' | 'panos' | 'calhas' | 'calculo' | 'relatorio';
 
 const STEPS: { id: StepId; label: string; description: string }[] = [
   { id: 'cadastro', label: 'Cadastro da obra', description: 'Identificação do projeto' },
