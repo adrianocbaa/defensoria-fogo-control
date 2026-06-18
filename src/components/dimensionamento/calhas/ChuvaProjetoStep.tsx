@@ -169,8 +169,37 @@ export function ChuvaProjetoStep({
     });
   };
 
+  const handleAplicarNBR = () => {
+    const c = NBR10844_TABELA5.find(
+      (x) => x.uf === nbrUf && x.cidade === nbrCidade,
+    );
+    if (!c) {
+      toast({
+        title: 'Selecione UF e cidade da Tabela 5',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const TR = Number(form.getValues('tempo_retorno_anos')) || 5;
+    const i = intensidadePorTR(c, TR);
+    if (i == null) {
+      toast({ title: 'TR fora do tabelado pela NBR', variant: 'destructive' });
+      return;
+    }
+    form.reset({
+      intensidade_mm_h: i,
+      tempo_retorno_anos: TR <= 1 ? 1 : TR <= 5 ? 5 : 25,
+      duracao_min: 5,
+      fonte: 'Tabela NBR 10844',
+      observacoes_chuva: `NBR 10844:1989 Tabela 5 • ${c.cidade}/${c.uf} • i₁=${c.i1} i₅=${c.i5} i₂₅=${c.i25} mm/h`,
+    });
+    toast({
+      title: 'Intensidade NBR aplicada',
+      description: `${c.cidade}/${c.uf} • ${i} mm/h (TR ${TR <= 1 ? 1 : TR <= 5 ? 5 : 25} anos)`,
+    });
+  };
 
-  const aplicarRegistro = (id: string) => {
+
     const r = rows.find((x) => x.id === id);
     if (!r) return;
     form.reset({
