@@ -76,7 +76,7 @@ export function projetoExemplo(): ProjetoCalhas {
       intensidade_mm_h: 150,
       tempo_retorno_anos: 5,
       duracao_min: 5,
-      fonte: 'NBR 10844 — Tabela 5',
+      fonte: 'Tabela NBR 10844',
     },
     panos: {
       panos: [
