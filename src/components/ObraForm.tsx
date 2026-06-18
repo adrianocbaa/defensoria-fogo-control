@@ -271,6 +271,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       nome: initialData?.nome || '',
       municipio: initialData?.municipio || '',
       n_contrato: initialData?.n_contrato || '',
+      sei_numero: (initialData as any)?.sei_numero || '',
       status: initialData?.status || 'planejamento',
       tipo: (initialData?.tipo as "Reforma" | "Construção" | "Adequações") || 'Reforma',
       valor_total: initialData?.valor_total || 0,
