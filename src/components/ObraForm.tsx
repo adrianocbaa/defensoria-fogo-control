@@ -511,6 +511,21 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
 
             <FormField
               control={form.control}
+              name="sei_numero"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número do Procedimento SEI</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex.: 0001.000123/2026-00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+
+            <FormField
+              control={form.control}
               name="status"
               render={({ field }) => (
                 <FormItem>
