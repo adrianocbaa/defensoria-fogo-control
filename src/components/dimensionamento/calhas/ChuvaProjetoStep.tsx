@@ -189,6 +189,34 @@ export function ChuvaProjetoStep({
           </div>
         </div>
 
+        <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-950/20 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2 text-sm">
+            <Radio className="h-4 w-4 text-sky-600 mt-0.5" />
+            <div>
+              <div className="font-medium">Buscar estação INMET mais próxima</div>
+              <div className="text-xs text-muted-foreground">
+                Estima i₅ a partir das máximas diárias dos últimos 10 anos
+                (desagregação CETESB 24h→5min). Resultado é referência auxiliar — confirme com IDF local.
+              </div>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleBuscarInmet}
+            disabled={buscandoInmet || !cidade || !uf}
+          >
+            {buscandoInmet ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Radio className="h-4 w-4 mr-2" />
+            )}
+            {buscandoInmet ? 'Consultando INMET...' : 'Buscar no INMET'}
+          </Button>
+        </div>
+
+
         {rows.length > 0 && (
           <div className="rounded-md border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-3 space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium">
