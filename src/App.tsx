@@ -185,7 +185,24 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
+
+      <Route
+        path="/dimensionamento"
+        element={
+          <ProtectedRoute>
+            <Dimensionamento />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dimensionamento/calhas"
+        element={
+          <ProtectedRoute>
+            <DimensionamentoCalhas />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Legacy Routes */}
       <Route 
         path="/nucleus/:id" 
