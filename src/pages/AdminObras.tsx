@@ -551,8 +551,8 @@ export function AdminObras() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/obras`)}
-                          title="Visualizar no mapa"
+                          onClick={() => handleViewDetails(obra.id)}
+                          title="Visualizar detalhes"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
