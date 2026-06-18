@@ -833,7 +833,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
               name="fiscal_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fiscal do Contrato</FormLabel>
+                  <FormLabel>Fiscal Titular</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value || ''}
