@@ -178,6 +178,15 @@ export default function DimensionamentoCalhas() {
                 panos={panos.panos}
                 intensidade_mm_h={chuva.intensidade_mm_h}
                 onBack={() => goTo('calculo')}
+                onConfirm={() => goTo('resultados')}
+              />
+            )}
+            {currentStep === 'resultados' && calhas && panos && chuva && (
+              <ResultadosStep
+                calhas={calhas.calhas}
+                panos={panos.panos}
+                intensidade_mm_h={chuva.intensidade_mm_h}
+                onBack={() => goTo('condutores')}
               />
             )}
           </CardContent>

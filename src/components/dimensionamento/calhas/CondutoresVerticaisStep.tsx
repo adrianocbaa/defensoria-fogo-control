@@ -27,6 +27,7 @@ interface Props {
   panos: Pano[];
   intensidade_mm_h: number;
   onBack: () => void;
+  onConfirm?: () => void;
 }
 
 interface LinhaCondutor {
