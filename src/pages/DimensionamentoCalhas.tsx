@@ -5,14 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Waves, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CadastroObraStep } from '@/components/dimensionamento/calhas/CadastroObraStep';
+import { ChuvaProjetoStep } from '@/components/dimensionamento/calhas/ChuvaProjetoStep';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
+import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
 import { toast } from '@/hooks/use-toast';
 
-type StepId = 'cadastro' | 'dados-projeto' | 'calculo' | 'relatorio';
+type StepId = 'cadastro' | 'chuva' | 'calculo' | 'relatorio';
 
 const STEPS: { id: StepId; label: string; description: string }[] = [
   { id: 'cadastro', label: 'Cadastro da obra', description: 'Identificação do projeto' },
-  { id: 'dados-projeto', label: 'Dados do projeto', description: 'Em breve' },
+  { id: 'chuva', label: 'Chuva de projeto', description: 'Intensidade pluviométrica' },
   { id: 'calculo', label: 'Cálculo', description: 'Em breve' },
   { id: 'relatorio', label: 'Relatório', description: 'Em breve' },
 ];
@@ -20,16 +22,25 @@ const STEPS: { id: StepId; label: string; description: string }[] = [
 export default function DimensionamentoCalhas() {
   const [currentStep, setCurrentStep] = useState<StepId>('cadastro');
   const [cadastro, setCadastro] = useState<CadastroObra | null>(null);
+  const [chuva, setChuva] = useState<ChuvaProjeto | null>(null);
 
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
+  const goTo = (id: StepId) => setCurrentStep(id);
+
   const handleCadastroSubmit = (values: CadastroObra) => {
     setCadastro(values);
+    toast({ title: 'Cadastro salvo' });
+    goTo('chuva');
+  };
+
+  const handleChuvaSubmit = (values: ChuvaProjeto) => {
+    setChuva(values);
     toast({
-      title: 'Cadastro salvo',
-      description: 'Pronto para a próxima etapa.',
+      title: 'Chuva de projeto definida',
+      description: `${values.intensidade_mm_h} mm/h • TR ${values.tempo_retorno_anos} anos`,
     });
-    // Próxima etapa será habilitada quando definida
+    // próxima etapa virá depois
   };
 
   return (
@@ -46,13 +57,19 @@ export default function DimensionamentoCalhas() {
             const isActive = step.id === currentStep;
             const isDone = idx < currentIndex;
             const Icon = isDone ? CheckCircle2 : Circle;
+            const clickable = idx <= currentIndex || (idx === 1 && cadastro);
             return (
-              <div
+              <button
+                type="button"
                 key={step.id}
+                onClick={() => clickable && goTo(step.id)}
+                disabled={!clickable}
                 className={cn(
-                  'rounded-lg border p-3 transition-colors',
+                  'text-left rounded-lg border p-3 transition-colors',
                   isActive && 'border-primary bg-primary/5',
                   isDone && 'border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/20',
+                  !clickable && 'opacity-60 cursor-not-allowed',
+                  clickable && !isActive && 'hover:bg-accent',
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -70,7 +87,7 @@ export default function DimensionamentoCalhas() {
                 </div>
                 <div className="mt-1 text-sm font-semibold">{step.label}</div>
                 <div className="text-xs text-muted-foreground">{step.description}</div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -87,6 +104,15 @@ export default function DimensionamentoCalhas() {
               <CadastroObraStep
                 defaultValues={cadastro ?? undefined}
                 onSubmit={handleCadastroSubmit}
+              />
+            )}
+            {currentStep === 'chuva' && (
+              <ChuvaProjetoStep
+                cidade={cadastro?.cidade ?? ''}
+                uf={cadastro?.uf ?? ''}
+                defaultValues={chuva ?? undefined}
+                onSubmit={handleChuvaSubmit}
+                onBack={() => goTo('cadastro')}
               />
             )}
           </CardContent>
