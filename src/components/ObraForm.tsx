@@ -35,7 +35,13 @@ const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   municipio: z.string().min(1, 'Município é obrigatório'),
   n_contrato: z.string().optional(),
-  sei_numero: z.string().optional(),
+  sei_numero: z
+    .string()
+    .optional()
+    .refine(
+      (v) => !v || /^\d{4}\.\d{1}\.\d{9}-\d{1}$/.test(v),
+      'Formato inválido. Use AAAA.D.DDDDDDDDD-D (ex.: 2025.0.000024717-0)'
+    ),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
   tipo: z.enum(['Reforma', 'Construção', 'Adequações']),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
