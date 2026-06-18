@@ -3585,6 +3585,7 @@ export type Database = {
         | "segunda_sub"
         | "contratada"
         | "orcamento"
+        | "dimensionamento"
       unit_type: "KG" | "M" | "LITRO" | "PC" | "CX"
       user_role:
         | "admin"
@@ -3747,6 +3748,7 @@ export const Constants = {
         "segunda_sub",
         "contratada",
         "orcamento",
+        "dimensionamento",
       ],
       unit_type: ["KG", "M", "LITRO", "PC", "CX"],
       user_role: [
