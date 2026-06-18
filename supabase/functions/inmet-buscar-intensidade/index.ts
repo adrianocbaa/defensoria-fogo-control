@@ -1,31 +1,15 @@
-// Edge function: busca dados pluviométricos no INMET (BDMEP) e estima a
-// intensidade de projeto i_5min via fator de desagregação CETESB (24h -> 5min).
-// IMPORTANTE: o valor retornado é uma ESTIMATIVA auxiliar; para projeto
-// definitivo deve-se usar curva IDF local da cidade.
+// Edge function: estima a intensidade de projeto i_5min a partir de série
+// histórica de precipitação diária da reanálise ERA5 (Open-Meteo Archive API).
+// Geocodifica a cidade (Open-Meteo Geocoding), busca máximas anuais dos
+// últimos N anos e aplica o fator de desagregação CETESB (24h -> 5min).
+// IMPORTANTE: valor retornado é ESTIMATIVA auxiliar; para projeto definitivo,
+// utilizar curva IDF local oficial.
 
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-interface InmetEstacao {
-  CD_ESTACAO: string;
-  DC_NOME: string;
-  SG_ESTADO: string;
-  VL_LATITUDE: string;
-  VL_LONGITUDE: string;
-  DT_FIM_OPERACAO: string | null;
-}
-
-interface InmetDiario {
-  DT_MEDICAO: string;
-  CHUVA: string | null;
-}
-
-function normalize(s: string): string {
-  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
-}
-
-// CETESB: razão entre precipitação de 5 min e de 24 h ≈ 0.070
-// Intensidade (mm/h) = P_5min / (5/60) = P_5min * 12
+// CETESB: razão P_5min / P_24h ≈ 0.070
+// i (mm/h) = P_5min / (5/60) = P_5min * 12
 const CETESB_5MIN_24H = 0.070;
 
 Deno.serve(async (req) => {
@@ -59,7 +43,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const cidade = String(body.cidade ?? "").trim();
     const uf = String(body.uf ?? "").trim().toUpperCase();
-    const anos = Math.max(3, Math.min(15, Number(body.anos ?? 10)));
+    const anos = Math.max(3, Math.min(30, Number(body.anos ?? 10)));
 
     if (!cidade || uf.length !== 2) {
       return new Response(
@@ -68,67 +52,79 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 1) Listar estações automáticas e filtrar por UF e nome
-    const estListResp = await fetch("https://apitempo.inmet.gov.br/estacoes/T");
-    if (!estListResp.ok) {
+    // 1) Geocodificar a cidade (Open-Meteo Geocoding) e filtrar pelo UF
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cidade)}&country=BR&count=10&language=pt`;
+    const geoResp = await fetch(geoUrl);
+    if (!geoResp.ok) {
       return new Response(
-        JSON.stringify({ error: `INMET indisponível (${estListResp.status})` }),
+        JSON.stringify({ error: `Falha na geocodificação (${geoResp.status})` }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const estacoes: InmetEstacao[] = await estListResp.json();
-    const estadoEstacoes = estacoes.filter(
-      (e) => e.SG_ESTADO === uf && !e.DT_FIM_OPERACAO,
-    );
-
-    if (!estadoEstacoes.length) {
+    const geo = await geoResp.json();
+    const candidatos: any[] = geo.results ?? [];
+    if (!candidatos.length) {
       return new Response(
-        JSON.stringify({ error: `Nenhuma estação ativa do INMET em ${uf}` }),
+        JSON.stringify({ error: `Cidade "${cidade}" não encontrada` }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const alvo = normalize(cidade);
-    // Match exato > contém > primeira da UF
-    const exata = estadoEstacoes.find((e) => normalize(e.DC_NOME) === alvo);
-    const contem = estadoEstacoes.find((e) => normalize(e.DC_NOME).includes(alvo));
-    const escolhida = exata ?? contem ?? estadoEstacoes[0];
+    // UF brasileiro -> nome do estado (Open-Meteo retorna admin1 como nome)
+    const UF_NOME: Record<string, string> = {
+      AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia",
+      CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás",
+      MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais",
+      PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí",
+      RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RS: "Rio Grande do Sul",
+      RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo",
+      SE: "Sergipe", TO: "Tocantins",
+    };
+    const ufNome = UF_NOME[uf]?.toLowerCase();
+    const norm = (s: string) =>
+      s?.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+    const escolhida =
+      candidatos.find((c) => norm(c.admin1) === norm(UF_NOME[uf] ?? "")) ??
+      candidatos.find((c) => ufNome && norm(c.admin1)?.includes(norm(UF_NOME[uf]))) ??
+      candidatos[0];
 
-    // 2) Buscar precipitação diária dos últimos N anos
-    const hoje = new Date();
-    const inicio = new Date(hoje.getFullYear() - anos, 0, 1);
+    // 2) Buscar precipitação diária histórica (ERA5) dos últimos N anos
+    // ERA5 normalmente tem ~5 dias de defasagem; afastar 7 dias por segurança.
+    const fim = new Date();
+    fim.setDate(fim.getDate() - 7);
+    const inicio = new Date(fim);
+    inicio.setFullYear(fim.getFullYear() - anos);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
-    const dadosResp = await fetch(
-      `https://apitempo.inmet.gov.br/estacao/diaria/${fmt(inicio)}/${fmt(hoje)}/${escolhida.CD_ESTACAO}`,
-    );
-    if (!dadosResp.ok) {
+    const archUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${escolhida.latitude}&longitude=${escolhida.longitude}&start_date=${fmt(inicio)}&end_date=${fmt(fim)}&daily=precipitation_sum&timezone=America%2FSao_Paulo`;
+    const archResp = await fetch(archUrl);
+    if (!archResp.ok) {
       return new Response(
         JSON.stringify({
-          error: `Falha ao buscar série histórica (${dadosResp.status})`,
-          estacao: escolhida,
+          error: `Falha ao buscar série histórica (${archResp.status})`,
+          fonte: "Open-Meteo Archive (ERA5)",
         }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const dados: InmetDiario[] = await dadosResp.json();
+    const arch = await archResp.json();
+    const times: string[] = arch?.daily?.time ?? [];
+    const vals: (number | null)[] = arch?.daily?.precipitation_sum ?? [];
 
     // 3) Máxima anual de precipitação diária
     const porAno = new Map<number, number>();
-    for (const d of dados) {
-      const chuva = d.CHUVA == null ? NaN : Number(d.CHUVA);
-      if (!isFinite(chuva) || chuva <= 0) continue;
-      const ano = Number(d.DT_MEDICAO.slice(0, 4));
-      const atual = porAno.get(ano) ?? 0;
-      if (chuva > atual) porAno.set(ano, chuva);
+    for (let i = 0; i < times.length; i++) {
+      const v = vals[i];
+      if (v == null || !isFinite(v) || v <= 0) continue;
+      const ano = Number(times[i].slice(0, 4));
+      if ((porAno.get(ano) ?? 0) < v) porAno.set(ano, v);
     }
 
     const maximas = [...porAno.values()].sort((a, b) => b - a);
     if (maximas.length < 3) {
       return new Response(
         JSON.stringify({
-          error: "Série histórica insuficiente nesta estação (mínimo 3 anos com dados).",
-          estacao: escolhida,
+          error: "Série histórica insuficiente (mínimo 3 anos com dados).",
           anos_com_dados: maximas.length,
         }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -137,7 +133,7 @@ Deno.serve(async (req) => {
 
     // Estimativa simples: percentil 80 das máximas anuais ≈ TR ~5 anos
     const idx = Math.max(0, Math.floor(maximas.length * 0.2));
-    const p24h_estimada = maximas[idx];
+    const p24h_estimada = +maximas[idx].toFixed(1);
 
     // Desagregação CETESB
     const p5min = p24h_estimada * CETESB_5MIN_24H;
@@ -149,21 +145,22 @@ Deno.serve(async (req) => {
         intensidade_mm_h,
         tempo_retorno_anos: 5,
         duracao_min: 5,
-        metodo: "CETESB (24h→5min, fator 0,070)",
+        metodo: "CETESB (24h→5min, fator 0,070) sobre máximas anuais",
         estacao: {
-          codigo: escolhida.CD_ESTACAO,
-          nome: escolhida.DC_NOME,
-          uf: escolhida.SG_ESTADO,
-          latitude: Number(escolhida.VL_LATITUDE),
-          longitude: Number(escolhida.VL_LONGITUDE),
+          codigo: "ERA5",
+          nome: `${escolhida.name}${escolhida.admin1 ? " / " + escolhida.admin1 : ""}`,
+          uf,
+          latitude: Number(escolhida.latitude),
+          longitude: Number(escolhida.longitude),
         },
         serie: {
           anos_analisados: maximas.length,
-          p24h_max: maximas[0],
+          p24h_max: +maximas[0].toFixed(1),
           p24h_referencia: p24h_estimada,
         },
+        fonte_dados: "Open-Meteo Archive API (reanálise ERA5)",
         aviso:
-          "Estimativa auxiliar baseada em desagregação CETESB. Para projeto definitivo, utilize curva IDF local oficial.",
+          "Estimativa auxiliar baseada em reanálise ERA5 + desagregação CETESB. Para projeto definitivo, utilize curva IDF local oficial.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
