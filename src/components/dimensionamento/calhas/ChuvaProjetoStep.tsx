@@ -199,8 +199,9 @@ export function ChuvaProjetoStep({
     });
   };
 
-
+  const aplicarRegistro = (id: string) => {
     const r = rows.find((x) => x.id === id);
+
     if (!r) return;
     form.reset({
       intensidade_mm_h: Number(r.intensidade_mm_h),
