@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CloudRain, Database, Loader2, Radio, Save, Sparkles } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { CloudRain, Database, Loader2, Save, Sparkles, Calculator } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { calcularIntensidadeIDF } from '@/lib/idfPfafstetter';
+
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
