@@ -437,15 +437,22 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
             <FormField
               control={form.control}
               name="n_contrato"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número do Contrato *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite o número do contrato" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const isPlanejamento = form.watch('status') === 'planejamento';
+                return (
+                  <FormItem>
+                    <FormLabel>Número do Contrato {!isPlanejamento && '*'}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={isPlanejamento ? 'Disponível após "Em Andamento"' : 'Digite o número do contrato'}
+                        disabled={isPlanejamento}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
