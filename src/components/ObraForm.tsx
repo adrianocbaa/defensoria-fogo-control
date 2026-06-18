@@ -34,7 +34,7 @@ import { Label } from '@/components/ui/label';
 const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   municipio: z.string().min(1, 'Município é obrigatório'),
-  n_contrato: z.string().min(1, 'Número do contrato é obrigatório'),
+  n_contrato: z.string().optional(),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
   tipo: z.enum(['Reforma', 'Construção', 'Adequações']),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
@@ -44,7 +44,7 @@ const obraSchema = z.object({
   tempo_obra: z.number().min(0, 'Tempo de obra deve ser positivo').optional(),
   aditivo_prazo: z.number().min(0).optional(),
   previsao_termino: z.string().optional(),
-  data_termino_real: z.string().optional(), // Data real de término da obra
+  data_termino_real: z.string().optional(),
   empresa_id: z.string().optional(),
   empresa_responsavel: z.string().optional(),
   regiao: z.string().optional(),
@@ -54,6 +54,14 @@ const obraSchema = z.object({
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
   rdo_habilitado: z.boolean().default(true),
+}).superRefine((data, ctx) => {
+  if (data.status !== 'planejamento' && !data.n_contrato?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['n_contrato'],
+      message: 'Número do contrato é obrigatório',
+    });
+  }
 });
 
 type ObraFormData = z.infer<typeof obraSchema>;
