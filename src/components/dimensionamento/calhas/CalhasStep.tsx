@@ -138,6 +138,7 @@ function CalhaItem({
 }) {
   const tipo = useWatch({ control: form.control, name: `calhas.${idx}.tipo` });
   const material = useWatch({ control: form.control, name: `calhas.${idx}.material` });
+  const decl = useWatch({ control: form.control, name: `calhas.${idx}.declividade_pct` });
 
   // sincroniza n de Manning quando o material muda (a menos que seja "Outro")
   useEffect(() => {
@@ -162,6 +163,15 @@ function CalhaItem({
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
+
+      {typeof decl === 'number' && decl > 0 && decl < 0.5 && (
+        <div className="rounded-md border border-amber-300/60 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+          ⚠ Declividade abaixo do mínimo recomendado (0,5%). A NBR 10844 admite até
+          0,05%, mas valores baixos comprometem o escoamento e aumentam o risco de
+          acúmulo de sujeira.
+        </div>
+      )}
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
