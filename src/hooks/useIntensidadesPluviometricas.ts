@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface IntensidadeRow {
   id: string;
-  user_id: string;
+  user_id: string | null;
+  is_system: boolean;
   cidade: string;
   uf: string;
   intensidade_mm_h: number;
@@ -29,6 +30,7 @@ export function useIntensidadesPluviometricas(cidade?: string, uf?: string) {
       .select('*')
       .ilike('cidade', cidade.trim())
       .eq('uf', uf)
+      .order('is_system', { ascending: true }) // registros do usuário primeiro
       .order('tempo_retorno_anos', { ascending: false })
       .limit(50);
     if (!error && data) setRows(data as IntensidadeRow[]);
@@ -51,7 +53,7 @@ export function useIntensidadesPluviometricas(cidade?: string, uf?: string) {
   }) => {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) throw new Error('Usuário não autenticado');
-    const payload = { ...input, user_id: auth.user.id };
+    const payload = { ...input, user_id: auth.user.id, is_system: false };
     const { error } = await supabase
       .from('dimensionamento_intensidades_pluviometricas')
       .upsert(payload, {

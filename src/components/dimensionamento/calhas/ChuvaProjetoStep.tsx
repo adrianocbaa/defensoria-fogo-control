@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CloudRain, Database, Save, Sparkles } from 'lucide-react';
+import { CloudRain, Database, Loader2, Radio, Save, Sparkles } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,8 +59,9 @@ export function ChuvaProjetoStep({
     },
   });
 
-  const { rows, salvar } = useIntensidadesPluviometricas(cidade, uf);
+  const { rows, salvar, refetch } = useIntensidadesPluviometricas(cidade, uf);
   const [salvando, setSalvando] = useState(false);
+  const [buscandoInmet, setBuscandoInmet] = useState(false);
   const [sugeriu, setSugeriu] = useState(false);
 
   // Sugestão automática: pega o primeiro registro (maior TR) ao chegar com cidade/UF
@@ -119,6 +121,47 @@ export function ChuvaProjetoStep({
     }
   };
 
+  const handleBuscarInmet = async () => {
+    if (!cidade || !uf) {
+      toast({
+        title: 'Cidade/UF ausentes',
+        description: 'Volte à Etapa 1 e preencha cidade e UF.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      setBuscandoInmet(true);
+      const { data, error } = await supabase.functions.invoke('inmet-buscar-intensidade', {
+        body: { cidade: cidade.trim(), uf, anos: 10 },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Não foi possível obter dados do INMET');
+
+      const obs = `INMET • Estação ${data.estacao.nome} (${data.estacao.codigo}) • ${data.serie.anos_analisados} anos • ${data.metodo}`;
+      form.reset({
+        intensidade_mm_h: data.intensidade_mm_h,
+        tempo_retorno_anos: data.tempo_retorno_anos,
+        duracao_min: data.duracao_min,
+        fonte: 'Estação pluviométrica',
+        observacoes_chuva: obs,
+      });
+
+      toast({
+        title: 'Estimativa do INMET aplicada',
+        description: `${data.intensidade_mm_h} mm/h • ${data.estacao.nome}. Confirme com IDF local antes de finalizar.`,
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Erro ao consultar INMET',
+        description: e?.message ?? 'Tente novamente',
+        variant: 'destructive',
+      });
+    } finally {
+      setBuscandoInmet(false);
+    }
+  };
+
   const aplicarRegistro = (id: string) => {
     const r = rows.find((x) => x.id === id);
     if (!r) return;
@@ -145,6 +188,34 @@ export function ChuvaProjetoStep({
             (1, 5 ou 25 anos). Você pode ajustar e usar dados locais.
           </div>
         </div>
+
+        <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-950/20 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2 text-sm">
+            <Radio className="h-4 w-4 text-sky-600 mt-0.5" />
+            <div>
+              <div className="font-medium">Buscar estação INMET mais próxima</div>
+              <div className="text-xs text-muted-foreground">
+                Estima i₅ a partir das máximas diárias dos últimos 10 anos
+                (desagregação CETESB 24h→5min). Resultado é referência auxiliar — confirme com IDF local.
+              </div>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleBuscarInmet}
+            disabled={buscandoInmet || !cidade || !uf}
+          >
+            {buscandoInmet ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Radio className="h-4 w-4 mr-2" />
+            )}
+            {buscandoInmet ? 'Consultando INMET...' : 'Buscar no INMET'}
+          </Button>
+        </div>
+
 
         {rows.length > 0 && (
           <div className="rounded-md border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-3 space-y-2">

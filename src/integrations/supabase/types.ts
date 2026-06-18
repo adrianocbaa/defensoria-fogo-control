@@ -773,11 +773,12 @@ export type Database = {
           fonte: string
           id: string
           intensidade_mm_h: number
+          is_system: boolean
           observacoes: string | null
           tempo_retorno_anos: number
           uf: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           cidade: string
@@ -786,11 +787,12 @@ export type Database = {
           fonte: string
           id?: string
           intensidade_mm_h: number
+          is_system?: boolean
           observacoes?: string | null
           tempo_retorno_anos: number
           uf: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           cidade?: string
@@ -799,11 +801,12 @@ export type Database = {
           fonte?: string
           id?: string
           intensidade_mm_h?: number
+          is_system?: boolean
           observacoes?: string | null
           tempo_retorno_anos?: number
           uf?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
