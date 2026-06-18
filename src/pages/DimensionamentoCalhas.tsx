@@ -58,6 +58,16 @@ export default function DimensionamentoCalhas() {
       title: 'Panos de telhado cadastrados',
       description: `${values.panos.length} pano(s)`,
     });
+    goTo('calhas');
+  };
+
+  const handleCalhasSubmit = (values: CalhasForm) => {
+    setCalhas(values);
+    const totalDescidas = values.calhas.reduce((s, c) => s + c.pontos_descida.length, 0);
+    toast({
+      title: 'Calhas cadastradas',
+      description: `${values.calhas.length} calha(s) • ${totalDescidas} descida(s)`,
+    });
     // próxima etapa virá depois
   };
 
