@@ -253,30 +253,6 @@ export function ChuvaProjetoStep({
 
 
 
-        <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-950/20 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-start gap-2 text-sm">
-            <Calculator className="h-4 w-4 text-sky-600 mt-0.5" />
-            <div>
-              <div className="font-medium">Calcular pela curva IDF (Pfafstetter)</div>
-              <div className="text-xs text-muted-foreground">
-                Aplica i = K·TR^a / (t+b)^c com coeficientes locais publicados
-                (Pfafstetter 1957, DAEE, Plúvio/UFV). Use TR e duração do
-                formulário abaixo. Cidades sem curva: utilize a Tabela NBR 10844.
-              </div>
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleCalcularIDF}
-            disabled={!cidade || !uf}
-          >
-            <Calculator className="h-4 w-4 mr-2" />
-            Calcular pela IDF
-          </Button>
-        </div>
-
 
 
         {rows.length > 0 && (
