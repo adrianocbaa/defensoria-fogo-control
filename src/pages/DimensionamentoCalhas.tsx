@@ -9,20 +9,22 @@ import { ChuvaProjetoStep } from '@/components/dimensionamento/calhas/ChuvaProje
 import { PanosTelhadoStep } from '@/components/dimensionamento/calhas/PanosTelhadoStep';
 import { CalhasStep } from '@/components/dimensionamento/calhas/CalhasStep';
 import { CalculoStep } from '@/components/dimensionamento/calhas/CalculoStep';
+import { CondutoresVerticaisStep } from '@/components/dimensionamento/calhas/CondutoresVerticaisStep';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
 import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
 import { PanosForm } from '@/components/dimensionamento/calhas/panoSchema';
 import { CalhasForm } from '@/components/dimensionamento/calhas/calhaSchema';
 import { toast } from '@/hooks/use-toast';
 
-type StepId = 'cadastro' | 'chuva' | 'panos' | 'calhas' | 'calculo' | 'relatorio';
+type StepId = 'cadastro' | 'chuva' | 'panos' | 'calhas' | 'calculo' | 'condutores' | 'relatorio';
 
 const STEPS: { id: StepId; label: string; description: string }[] = [
   { id: 'cadastro', label: 'Cadastro da obra', description: 'Identificação do projeto' },
   { id: 'chuva', label: 'Chuva de projeto', description: 'Intensidade pluviométrica' },
   { id: 'panos', label: 'Panos de telhado', description: 'Áreas de contribuição' },
   { id: 'calhas', label: 'Calhas', description: 'Geometria e descidas' },
-  { id: 'calculo', label: 'Cálculo', description: 'Em breve' },
+  { id: 'calculo', label: 'Cálculo hidráulico', description: 'Manning e capacidade' },
+  { id: 'condutores', label: 'Condutores verticais', description: 'Diâmetros por ábaco' },
   { id: 'relatorio', label: 'Relatório', description: 'Em breve' },
 ];
 
@@ -165,6 +167,15 @@ export default function DimensionamentoCalhas() {
                 panos={panos.panos}
                 intensidade_mm_h={chuva.intensidade_mm_h}
                 onBack={() => goTo('calhas')}
+                onConfirm={() => goTo('condutores')}
+              />
+            )}
+            {currentStep === 'condutores' && calhas && panos && chuva && (
+              <CondutoresVerticaisStep
+                calhas={calhas.calhas}
+                panos={panos.panos}
+                intensidade_mm_h={chuva.intensidade_mm_h}
+                onBack={() => goTo('calculo')}
               />
             )}
           </CardContent>
