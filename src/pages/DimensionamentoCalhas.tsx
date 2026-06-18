@@ -130,7 +130,15 @@ export default function DimensionamentoCalhas() {
                 onBack={() => goTo('cadastro')}
               />
             )}
+            {currentStep === 'panos' && (
+              <PanosTelhadoStep
+                defaultValues={panos ?? undefined}
+                onSubmit={handlePanosSubmit}
+                onBack={() => goTo('chuva')}
+              />
+            )}
           </CardContent>
+
         </Card>
       </div>
     </SimpleHeader>
