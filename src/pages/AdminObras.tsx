@@ -20,6 +20,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Eye, Edit, Search, Trash2, Ruler, ClipboardList, ClipboardCheck, BarChart3, Map as MapIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { ObraDetails } from '@/components/ObraDetails';
+import { useObras as useObrasFull } from '@/hooks/useObras';
+import type { Obra as ObraFull } from '@/data/mockObras';
 
 interface Obra {
   id: string;
@@ -114,6 +117,15 @@ export function AdminObras() {
   const [obraRdoProgressos, setObraRdoProgressos] = useState<Record<string, number | null>>({});
   const userRole = useUserRole();
   const navigate = useNavigate();
+  const { obras: obrasFull } = useObrasFull();
+  const [selectedObra, setSelectedObra] = useState<ObraFull | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const handleViewDetails = (obraId: string) => {
+    const found = obrasFull.find(o => o.id === obraId) || null;
+    setSelectedObra(found);
+    setDetailsOpen(true);
+  };
 
   // Pegar IDs das obras para verificar permissões
   const obraIds = useMemo(() => obras.map(o => o.id), [obras]);
@@ -539,8 +551,8 @@ export function AdminObras() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/obras`)}
-                          title="Visualizar no mapa"
+                          onClick={() => handleViewDetails(obra.id)}
+                          title="Visualizar detalhes"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -620,6 +632,12 @@ export function AdminObras() {
         </div>
       </PermissionGuard>
       </div>
+
+      <ObraDetails
+        obra={selectedObra}
+        isOpen={detailsOpen}
+        onClose={() => { setDetailsOpen(false); setSelectedObra(null); }}
+      />
     </SimpleHeader>
   );
 }
