@@ -498,26 +498,39 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
             <FormField
               control={form.control}
               name="tipo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tipoOptions.map((tipo) => (
-                        <SelectItem key={tipo} value={tipo}>
-                          {tipo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const natureza = field.value === 'Adequações' ? 'Custeio' : 'Investimento';
+                const naturezaClass = natureza === 'Custeio'
+                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300';
+                return (
+                  <FormItem>
+                    <FormLabel>Tipo *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {tipoOptions.map((tipo) => (
+                          <SelectItem key={tipo} value={tipo}>
+                            {tipo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {field.value && (
+                      <div className="mt-1">
+                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${naturezaClass}`}>
+                          Natureza: {natureza}
+                        </span>
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
