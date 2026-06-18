@@ -322,6 +322,14 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
     setPhotos(updatedPhotos);
   };
 
+  // Quando o fiscal substituto atual for carregado do banco, atualiza o form
+  useEffect(() => {
+    if (substitutoAtualId !== undefined) {
+      form.setValue('fiscal_substituto_id', substitutoAtualId || '');
+    }
+  }, [substitutoAtualId, form]);
+
+
   // Calcular automaticamente a previsão de término quando data_inicio, tempo_obra ou aditivo_prazo mudarem
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
