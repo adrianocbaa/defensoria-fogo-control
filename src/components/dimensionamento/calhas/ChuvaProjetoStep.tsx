@@ -135,41 +135,8 @@ export function ChuvaProjetoStep({
     }
   };
 
-  const handleCalcularIDF = () => {
-    if (!cidade || !uf) {
-      toast({
-        title: 'Cidade/UF ausentes',
-        description: 'Volte à Etapa 1 e preencha cidade e UF.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    const v = form.getValues();
-    const TR = Number(v.tempo_retorno_anos) || 5;
-    const t = Number(v.duracao_min) || 5;
-    const res = calcularIntensidadeIDF(cidade, uf, TR, t);
-    if (!res) {
-      toast({
-        title: 'Cidade sem curva IDF cadastrada',
-        description: `Não há coeficientes Pfafstetter para ${cidade}/${uf}. Use a Tabela NBR 10844 ou entre o valor manualmente.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    form.reset({
-      intensidade_mm_h: res.intensidade_mm_h,
-      tempo_retorno_anos: TR,
-      duracao_min: t,
-      fonte: 'Curva IDF local',
-      observacoes_chuva: `Pfafstetter (${res.fonte}) • ${res.cidade_base}/${res.uf} • ${res.equacao} • TR=${TR}a • t=${t}min`,
-    });
-    toast({
-      title: 'Intensidade calculada pela IDF',
-      description: `${res.intensidade_mm_h} mm/h • ${res.cidade_base}/${res.uf} • ${res.fonte}`,
-    });
-  };
 
-  const handleAplicarNBR = () => {
+
     const c = NBR10844_TABELA5.find(
       (x) => x.uf === nbrUf && x.cidade === nbrCidade,
     );
