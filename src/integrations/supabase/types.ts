@@ -1737,6 +1737,7 @@ export type Database = {
           regiao: string | null
           responsavel_projeto_id: string | null
           secretaria_responsavel: string | null
+          sei_numero: string | null
           sem_previsao_inauguracao: boolean | null
           status: string
           status_inauguracao: string | null
@@ -1776,6 +1777,7 @@ export type Database = {
           regiao?: string | null
           responsavel_projeto_id?: string | null
           secretaria_responsavel?: string | null
+          sei_numero?: string | null
           sem_previsao_inauguracao?: boolean | null
           status: string
           status_inauguracao?: string | null
@@ -1815,6 +1817,7 @@ export type Database = {
           regiao?: string | null
           responsavel_projeto_id?: string | null
           secretaria_responsavel?: string | null
+          sei_numero?: string | null
           sem_previsao_inauguracao?: boolean | null
           status?: string
           status_inauguracao?: string | null

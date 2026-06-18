@@ -35,6 +35,7 @@ const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   municipio: z.string().min(1, 'Município é obrigatório'),
   n_contrato: z.string().optional(),
+  sei_numero: z.string().optional(),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
   tipo: z.enum(['Reforma', 'Construção', 'Adequações']),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
