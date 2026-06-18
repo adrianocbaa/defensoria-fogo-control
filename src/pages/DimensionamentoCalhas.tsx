@@ -8,6 +8,7 @@ import { CadastroObraStep } from '@/components/dimensionamento/calhas/CadastroOb
 import { ChuvaProjetoStep } from '@/components/dimensionamento/calhas/ChuvaProjetoStep';
 import { PanosTelhadoStep } from '@/components/dimensionamento/calhas/PanosTelhadoStep';
 import { CalhasStep } from '@/components/dimensionamento/calhas/CalhasStep';
+import { CalculoStep } from '@/components/dimensionamento/calhas/CalculoStep';
 import { CadastroObra } from '@/components/dimensionamento/calhas/types';
 import { ChuvaProjeto } from '@/components/dimensionamento/calhas/chuvaSchema';
 import { PanosForm } from '@/components/dimensionamento/calhas/panoSchema';
@@ -68,7 +69,7 @@ export default function DimensionamentoCalhas() {
       title: 'Calhas cadastradas',
       description: `${values.calhas.length} calha(s) • ${totalDescidas} descida(s)`,
     });
-    // próxima etapa virá depois
+    goTo('calculo');
   };
 
 
@@ -156,6 +157,14 @@ export default function DimensionamentoCalhas() {
                 defaultValues={calhas ?? undefined}
                 onSubmit={handleCalhasSubmit}
                 onBack={() => goTo('panos')}
+              />
+            )}
+            {currentStep === 'calculo' && calhas && panos && chuva && (
+              <CalculoStep
+                calhas={calhas.calhas}
+                panos={panos.panos}
+                intensidade_mm_h={chuva.intensidade_mm_h}
+                onBack={() => goTo('calhas')}
               />
             )}
           </CardContent>
