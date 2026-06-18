@@ -864,17 +864,49 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
 
             <FormField
               control={form.control}
+              name="fiscal_substituto_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fiscal Substituto</FormLabel>
+                  <Select
+                    onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
+                    value={field.value || '__none__'}
+                    disabled={!canChangeFiscal}
+                  >
+                    <FormControl>
+                      <SelectTrigger className={!canChangeFiscal ? 'bg-muted cursor-not-allowed' : ''}>
+                        <SelectValue placeholder="Selecione o fiscal substituto" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
+                      {fiscais
+                        .filter((f) => f.user_id !== form.watch('fiscal_id'))
+                        .map((fiscal) => (
+                          <SelectItem key={fiscal.user_id} value={fiscal.user_id}>
+                            {fiscal.display_name || fiscal.email}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="responsavel_projeto_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Responsável pelo Projeto</FormLabel>
+                  <FormLabel>Gestor(a) do Contrato</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value || ''}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o(a) arquiteto(a)" />
+                        <SelectValue placeholder="Selecione o(a) gestor(a) do contrato" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
