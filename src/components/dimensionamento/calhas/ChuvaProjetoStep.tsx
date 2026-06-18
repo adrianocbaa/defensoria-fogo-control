@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CloudRain, Database, Save, Sparkles, Calculator, BookOpen } from 'lucide-react';
+import { CloudRain, Database, Save, Sparkles, BookOpen } from 'lucide-react';
 
-import { calcularIntensidadeIDF } from '@/lib/idfPfafstetter';
 import {
   UFS_NBR,
   cidadesPorUF,
@@ -11,6 +10,7 @@ import {
   NBR10844_TABELA5,
 } from '@/lib/nbr10844Tabela5';
 import { Button } from '@/components/ui/button';
+
 
 
 
@@ -135,42 +135,9 @@ export function ChuvaProjetoStep({
     }
   };
 
-  const handleCalcularIDF = () => {
-    if (!cidade || !uf) {
-      toast({
-        title: 'Cidade/UF ausentes',
-        description: 'Volte à Etapa 1 e preencha cidade e UF.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    const v = form.getValues();
-    const TR = Number(v.tempo_retorno_anos) || 5;
-    const t = Number(v.duracao_min) || 5;
-    const res = calcularIntensidadeIDF(cidade, uf, TR, t);
-    if (!res) {
-      toast({
-        title: 'Cidade sem curva IDF cadastrada',
-        description: `Não há coeficientes Pfafstetter para ${cidade}/${uf}. Use a Tabela NBR 10844 ou entre o valor manualmente.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    form.reset({
-      intensidade_mm_h: res.intensidade_mm_h,
-      tempo_retorno_anos: TR,
-      duracao_min: t,
-      fonte: 'Curva IDF local',
-      observacoes_chuva: `Pfafstetter (${res.fonte}) • ${res.cidade_base}/${res.uf} • ${res.equacao} • TR=${TR}a • t=${t}min`,
-    });
-    toast({
-      title: 'Intensidade calculada pela IDF',
-      description: `${res.intensidade_mm_h} mm/h • ${res.cidade_base}/${res.uf} • ${res.fonte}`,
-    });
-  };
-
   const handleAplicarNBR = () => {
     const c = NBR10844_TABELA5.find(
+
       (x) => x.uf === nbrUf && x.cidade === nbrCidade,
     );
     if (!c) {
@@ -285,30 +252,6 @@ export function ChuvaProjetoStep({
         </div>
 
 
-
-        <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-950/20 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-start gap-2 text-sm">
-            <Calculator className="h-4 w-4 text-sky-600 mt-0.5" />
-            <div>
-              <div className="font-medium">Calcular pela curva IDF (Pfafstetter)</div>
-              <div className="text-xs text-muted-foreground">
-                Aplica i = K·TR^a / (t+b)^c com coeficientes locais publicados
-                (Pfafstetter 1957, DAEE, Plúvio/UFV). Use TR e duração do
-                formulário abaixo. Cidades sem curva: utilize a Tabela NBR 10844.
-              </div>
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleCalcularIDF}
-            disabled={!cidade || !uf}
-          >
-            <Calculator className="h-4 w-4 mr-2" />
-            Calcular pela IDF
-          </Button>
-        </div>
 
 
 
