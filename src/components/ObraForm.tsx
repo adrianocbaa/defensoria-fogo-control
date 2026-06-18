@@ -50,6 +50,7 @@ const obraSchema = z.object({
   regiao: z.string().optional(),
   secretaria_responsavel: z.string().optional(),
   fiscal_id: z.string().optional(),
+  fiscal_substituto_id: z.string().optional(),
   responsavel_projeto_id: z.string().optional(),
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
