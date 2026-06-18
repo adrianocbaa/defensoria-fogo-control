@@ -157,6 +157,23 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
     }
   });
 
+  // Buscar fiscal substituto atual da obra (apenas o primeiro)
+  const { data: substitutoAtualId } = useQuery({
+    queryKey: ['obra-fiscal-substituto', obraId],
+    queryFn: async () => {
+      if (!obraId || obraId === 'nova') return '';
+      const { data } = await supabase
+        .from('obra_fiscal_substitutos')
+        .select('substitute_user_id')
+        .eq('obra_id', obraId)
+        .limit(1)
+        .maybeSingle();
+      return data?.substitute_user_id || '';
+    },
+    enabled: !!obraId && obraId !== 'nova',
+  });
+
+
   // Verificar se existe planilha orçamentária importada (bloqueia campo valor_total)
   const { data: hasPlanilhaImportada = false } = useQuery({
     queryKey: ['planilha-importada', obraId],
