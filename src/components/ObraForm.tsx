@@ -34,7 +34,7 @@ import { Label } from '@/components/ui/label';
 const obraSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   municipio: z.string().min(1, 'Município é obrigatório'),
-  n_contrato: z.string().min(1, 'Número do contrato é obrigatório'),
+  n_contrato: z.string().optional(),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
   tipo: z.enum(['Reforma', 'Construção', 'Adequações']),
   valor_total: z.number().min(0, 'Valor deve ser positivo'),
@@ -44,7 +44,7 @@ const obraSchema = z.object({
   tempo_obra: z.number().min(0, 'Tempo de obra deve ser positivo').optional(),
   aditivo_prazo: z.number().min(0).optional(),
   previsao_termino: z.string().optional(),
-  data_termino_real: z.string().optional(), // Data real de término da obra
+  data_termino_real: z.string().optional(),
   empresa_id: z.string().optional(),
   empresa_responsavel: z.string().optional(),
   regiao: z.string().optional(),
@@ -54,6 +54,14 @@ const obraSchema = z.object({
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
   rdo_habilitado: z.boolean().default(true),
+}).superRefine((data, ctx) => {
+  if (data.status !== 'planejamento' && !data.n_contrato?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['n_contrato'],
+      message: 'Número do contrato é obrigatório',
+    });
+  }
 });
 
 type ObraFormData = z.infer<typeof obraSchema>;
@@ -331,13 +339,13 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       const obraData: any = {
         nome: data.nome,
         municipio: data.municipio,
-        n_contrato: data.n_contrato,
+        n_contrato: data.status === 'planejamento' ? (data.n_contrato?.trim() || null) : data.n_contrato,
         status: data.status,
         tipo: data.tipo,
         valor_total: data.valor_total,
         valor_aditivado: data.valor_aditivado || 0,
         valor_executado: data.valor_executado || 0,
-        data_inicio: data.data_inicio || null,
+        data_inicio: data.status === 'planejamento' ? null : (data.data_inicio || null),
         tempo_obra: data.tempo_obra || null,
         aditivo_prazo: data.aditivo_prazo || null,
         previsao_termino: data.previsao_termino || null,
@@ -429,15 +437,22 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
             <FormField
               control={form.control}
               name="n_contrato"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número do Contrato *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite o número do contrato" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const isPlanejamento = form.watch('status') === 'planejamento';
+                return (
+                  <FormItem>
+                    <FormLabel>Número do Contrato {!isPlanejamento && '*'}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={isPlanejamento ? 'Disponível após "Em Andamento"' : 'Digite o número do contrato'}
+                        disabled={isPlanejamento}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
@@ -591,15 +606,25 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
             <FormField
               control={form.control}
               name="data_inicio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data de Início</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const isPlanejamento = form.watch('status') === 'planejamento';
+                return (
+                  <FormItem>
+                    <FormLabel>Data de Início</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        disabled={isPlanejamento}
+                        {...field}
+                      />
+                    </FormControl>
+                    {isPlanejamento && (
+                      <FormDescription>Disponível após mudar o status para "Em Andamento"</FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
