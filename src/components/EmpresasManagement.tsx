@@ -173,20 +173,33 @@ export function EmpresasManagement() {
 
   const toggleEmpresaActive = async (empresa: Empresa) => {
     try {
+      const newActive = !empresa.is_active;
       const { error } = await supabase
         .from('empresas')
-        .update({ is_active: !empresa.is_active })
+        .update({ is_active: newActive })
         .eq('id', empresa.id);
 
       if (error) throw error;
-      
-      setEmpresas(prev => prev.map(e => 
-        e.id === empresa.id ? { ...e, is_active: !e.is_active } : e
+
+      // Cascata: ao desativar a empresa, bloquear todos os usuários vinculados.
+      // Ao reativar, reativar também os usuários vinculados.
+      const { error: profilesError, count } = await supabase
+        .from('profiles')
+        .update({ is_active: newActive }, { count: 'exact' })
+        .eq('empresa_id', empresa.id);
+
+      if (profilesError) throw profilesError;
+
+      setEmpresas(prev => prev.map(e =>
+        e.id === empresa.id ? { ...e, is_active: newActive } : e
       ));
-      
+
+      const affected = count ?? 0;
       toast({
         title: 'Sucesso',
-        description: empresa.is_active ? 'Empresa desativada' : 'Empresa ativada',
+        description: newActive
+          ? `Empresa ativada${affected ? ` — ${affected} usuário(s) reativado(s)` : ''}`
+          : `Empresa desativada${affected ? ` — ${affected} usuário(s) bloqueado(s)` : ''}`,
       });
     } catch (error) {
       console.error('Error toggling empresa:', error);
