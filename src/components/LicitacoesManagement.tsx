@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, Search, ChevronDown, FileText, Building2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEmpresas } from '@/hooks/useEmpresas';
@@ -18,6 +19,7 @@ import { useEmpresas } from '@/hooks/useEmpresas';
 interface Ata {
   id: string;
   numero_ata: string;
+  is_active: boolean;
   pregao_eletronico: string | null;
   protocolo: string | null;
   created_at: string;
