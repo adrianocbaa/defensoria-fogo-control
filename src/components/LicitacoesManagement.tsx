@@ -434,25 +434,34 @@ export function LicitacoesManagement() {
                     open={expandedAtas.has(ata.id)}
                     onOpenChange={() => toggleAtaExpanded(ata.id)}
                   >
-                    <div className="border rounded-lg">
-                      <CollapsibleTrigger className="w-full">
-                        <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <ChevronDown className={`h-4 w-4 transition-transform ${expandedAtas.has(ata.id) ? 'rotate-180' : ''}`} />
-                            <div className="text-left">
-                              <p className="font-medium">ATA Nº {ata.numero_ata}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {ata.pregao_eletronico && `Pregão: ${ata.pregao_eletronico}`}
-                                {ata.pregao_eletronico && ata.protocolo && ' | '}
-                                {ata.protocolo && `Protocolo: ${ata.protocolo}`}
-                              </p>
+                    <div className={`border rounded-lg ${!ata.is_active ? 'opacity-60' : ''}`}>
+                      <div className="flex items-center gap-2 pr-4">
+                        <CollapsibleTrigger className="flex-1">
+                          <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <ChevronDown className={`h-4 w-4 transition-transform ${expandedAtas.has(ata.id) ? 'rotate-180' : ''}`} />
+                              <div className="text-left">
+                                <p className="font-medium">ATA Nº {ata.numero_ata}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {ata.pregao_eletronico && `Pregão: ${ata.pregao_eletronico}`}
+                                  {ata.pregao_eletronico && ata.protocolo && ' | '}
+                                  {ata.protocolo && `Protocolo: ${ata.protocolo}`}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
                             <Badge variant="secondary">{ata.polos?.length || 0} região(ões)</Badge>
                           </div>
+                        </CollapsibleTrigger>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Switch
+                            checked={ata.is_active}
+                            onCheckedChange={() => toggleAtaActive(ata)}
+                          />
+                          <Badge variant={ata.is_active ? 'default' : 'outline'}>
+                            {ata.is_active ? 'Ativa' : 'Inativa'}
+                          </Badge>
                         </div>
-                      </CollapsibleTrigger>
+                      </div>
                       <CollapsibleContent>
                         <div className="border-t p-4 space-y-4">
                           <div className="flex justify-between items-center">
