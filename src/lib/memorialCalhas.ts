@@ -12,12 +12,22 @@ import {
   diametroComercial,
   capacidadePorDiametro,
 } from '@/lib/condutorVertical';
+import { CLASSIFICACAO_LABEL, type ResultadoAutomatico } from '@/lib/dimensionamentoAutomatico';
+import type { ParametrosAutomaticoForm } from '@/components/dimensionamento/calhas/ParametrosAutomaticoStep';
 
 interface Params {
   cadastro: CadastroObra;
   chuva: ChuvaProjeto;
   panos: Pano[];
   calhas: Calha[];
+}
+
+interface AutomaticoParams {
+  cadastro: CadastroObra;
+  chuva: ChuvaProjeto;
+  panos: Pano[];
+  parametros: ParametrosAutomaticoForm;
+  resultado: ResultadoAutomatico;
 }
 
 export function gerarMemorialPDF({ cadastro, chuva, panos, calhas }: Params) {
