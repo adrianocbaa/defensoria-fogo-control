@@ -206,6 +206,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_active: boolean
           numero_ata: string
           pregao_eletronico: string | null
           protocolo: string | null
@@ -215,6 +216,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_active?: boolean
           numero_ata: string
           pregao_eletronico?: string | null
           protocolo?: string | null
@@ -224,6 +226,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_active?: boolean
           numero_ata?: string
           pregao_eletronico?: string | null
           protocolo?: string | null
