@@ -285,3 +285,198 @@ function agruparCondutores(linhas: { dCom: number | null }[]) {
     `${n} un.`,
   ]);
 }
+
+export function gerarMemorialAutomaticoPDF({
+  cadastro,
+  chuva,
+  panos,
+  parametros,
+  resultado,
+}: AutomaticoParams) {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const M = 18;
+  let y = M;
+
+  const ensure = (need: number) => {
+    if (y + need > pageH - M) {
+      doc.addPage();
+      y = M;
+    }
+  };
+  const h1 = (t: string) => {
+    ensure(14);
+    doc.setFont('helvetica', 'bold').setFontSize(14);
+    doc.text(t, M, y);
+    y += 6;
+    doc.setDrawColor(180);
+    doc.line(M, y, pageW - M, y);
+    y += 4;
+  };
+  const h2 = (t: string) => {
+    ensure(10);
+    doc.setFont('helvetica', 'bold').setFontSize(11);
+    doc.text(t, M, y);
+    y += 5.5;
+  };
+  const p = (t: string) => {
+    doc.setFont('helvetica', 'normal').setFontSize(10);
+    const lines = doc.splitTextToSize(t, pageW - 2 * M);
+    ensure(lines.length * 4.5);
+    doc.text(lines, M, y);
+    y += lines.length * 4.5 + 1;
+  };
+  const tabela = (head: string[][], body: (string | number)[][]) => {
+    autoTable(doc, {
+      head,
+      body,
+      startY: y,
+      margin: { left: M, right: M },
+      styles: { fontSize: 9, cellPadding: 1.8 },
+      headStyles: { fillColor: [225, 29, 72], textColor: 255 },
+      theme: 'grid',
+    });
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+  };
+
+  // Cabeçalho
+  doc.setFont('helvetica', 'bold').setFontSize(16);
+  doc.text('Memorial de Cálculo — Dimensionamento Automático', M, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal').setFontSize(10);
+  doc.text('Conforme ABNT NBR 10844:1989', M, y);
+  y += 4;
+  doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, M, y);
+  y += 8;
+
+  h1('1. Dados da obra');
+  tabela(
+    [['Campo', 'Valor']],
+    [
+      ['Nome da obra', cadastro.nome_obra || '—'],
+      ['Responsável técnico', cadastro.responsavel_tecnico || '—'],
+      ['Cidade / UF', `${cadastro.cidade || '—'} / ${cadastro.uf || '—'}`],
+      ['Tipo de edificação', cadastro.tipo_edificacao || '—'],
+      ['Data do cálculo', cadastro.data_calculo || '—'],
+    ],
+  );
+
+  h1('2. Chuva de projeto e parâmetros');
+  tabela(
+    [['Parâmetro', 'Valor']],
+    [
+      ['Intensidade pluviométrica (I)', `${chuva.intensidade_mm_h} mm/h`],
+      ['Tempo de retorno (TR)', `${chuva.tempo_retorno_anos} anos`],
+      ['Material padrão', parametros.material],
+      ['Coef. Manning (n)', parametros.manning_n.toFixed(3)],
+      ['Declividade adotada', `${parametros.declividade_pct.toFixed(2)} %`],
+      ['Pontos de descida', String(parametros.num_descidas)],
+      ['Fator de segurança alvo', parametros.fs_alvo.toFixed(2)],
+    ],
+  );
+
+  h1('3. Fórmulas utilizadas');
+  p('Vazão de projeto: Q [L/min] = (I × A) / 60');
+  p('Capacidade da calha (Manning): Q [m³/s] = (1/n) · A_m · R_h^(2/3) · i^(1/2)');
+  p('Fator de segurança: FS = Q_capacidade / Q_projeto');
+
+  h1('4. Áreas de contribuição');
+  tabela(
+    [['Pano', 'Tipo', 'Comp. (m)', 'Proj. (m)', 'Incl.', 'Área (m²)']],
+    panos.map((pn) => {
+      const a = calcularAreaContribuicao(pn);
+      return [
+        pn.nome,
+        pn.tipo_telhado,
+        pn.comprimento_m.toFixed(2),
+        pn.projecao_m.toFixed(2),
+        `${pn.inclinacao_valor} ${pn.inclinacao_unidade}`,
+        a.areaContribuicao.toFixed(2),
+      ];
+    }),
+  );
+
+  h1('5. Solução adotada');
+  const rec = resultado.recomendada;
+  if (rec) {
+    tabela(
+      [['Campo', 'Valor']],
+      [
+        ['Calha recomendada', rec.item.nome],
+        ['Tipo', rec.item.tipo],
+        ['Dimensão', rec.dimensaoLabel],
+        ['Material', rec.item.material],
+        ['Capacidade', `${rec.capacidade_Lmin?.toFixed(1) ?? '—'} L/min`],
+        ['Vazão de projeto total', `${resultado.Qtotal_Lmin.toFixed(1)} L/min`],
+        ['Vazão por descida', `${resultado.Qpd_Lmin.toFixed(1)} L/min`],
+        ['Fator de segurança (FS)', rec.fs?.toFixed(2) ?? '—'],
+        ['Pontos de descida', String(parametros.num_descidas)],
+        [
+          'Condutor vertical (mín / adotado)',
+          `${resultado.condutor.diametro_min_mm?.toFixed(0) ?? '—'} mm / Ø ${
+            resultado.condutor.diametro_adotado_mm ?? '—'
+          } mm`,
+        ],
+      ],
+    );
+  } else {
+    p('Nenhuma calha da biblioteca atende com a margem de segurança definida. ' +
+      'Cadastre uma seção maior ou ajuste os parâmetros.');
+  }
+
+  h1('6. Alternativas analisadas');
+  tabela(
+    [['Calha', 'Tipo', 'Dimensão', 'Cap. (L/min)', 'FS', 'Classificação']],
+    resultado.alternativas.map((a) => [
+      a.item.nome,
+      a.item.tipo,
+      a.dimensaoLabel,
+      a.capacidade_Lmin?.toFixed(1) ?? '—',
+      a.fs?.toFixed(2) ?? '—',
+      CLASSIFICACAO_LABEL[a.classificacao],
+    ]),
+  );
+
+  h2('Sugestão — aumentar pontos de descida');
+  p(`Com ${resultado.sugestaoAumentarDescidas.num_descidas} descidas, a vazão por descida cai para ` +
+    `${resultado.sugestaoAumentarDescidas.Qpd_Lmin.toFixed(1)} L/min. ` +
+    (resultado.sugestaoAumentarDescidas.recomendada
+      ? `Calha sugerida: ${resultado.sugestaoAumentarDescidas.recomendada.item.nome} ` +
+        `(${resultado.sugestaoAumentarDescidas.recomendada.dimensaoLabel}, FS ` +
+        `${resultado.sugestaoAumentarDescidas.recomendada.fs?.toFixed(2)}).`
+      : 'Nenhuma calha da biblioteca atende.'));
+
+  h1('7. Observações');
+  p('Os valores dos condutores verticais utilizam tabela parametrizada baseada nos ábacos ' +
+    'da ABNT NBR 10844:1989 (saída em aresta viva, H = L). ' +
+    'É responsabilidade do projetista conferir os nomogramas/ábacos conforme a publicação ' +
+    'oficial da norma antes da emissão definitiva do projeto.');
+
+  // Assinatura
+  ensure(40);
+  y = Math.max(y, pageH - 50);
+  doc.setDrawColor(80);
+  doc.line(M, y, M + 90, y);
+  doc.setFont('helvetica', 'normal').setFontSize(10);
+  doc.text(cadastro.responsavel_tecnico || 'Responsável Técnico', M, y + 5);
+  doc.text('Assinatura do Responsável Técnico', M, y + 13);
+
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(120);
+    doc.text(
+      `${cadastro.nome_obra || 'Memorial de cálculo'}  •  Página ${i}/${pages}`,
+      pageW / 2,
+      pageH - 8,
+      { align: 'center' },
+    );
+    doc.setTextColor(0);
+  }
+
+  const filename = `memorial-calhas-auto-${(cadastro.nome_obra || 'obra')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')}.pdf`;
+  doc.save(filename);
+}
