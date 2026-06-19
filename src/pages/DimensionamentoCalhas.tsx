@@ -208,6 +208,7 @@ export default function DimensionamentoCalhas() {
           <CardContent>
             {currentStep === 'cadastro' && (
               <CadastroObraStep
+                key={`cadastro-${projetoId}`}
                 defaultValues={cadastro ?? undefined}
                 onSubmit={(values) => {
                   setCadastro(values);
@@ -219,6 +220,7 @@ export default function DimensionamentoCalhas() {
 
             {currentStep === 'chuva' && (
               <ChuvaProjetoStep
+                key={`chuva-${projetoId}`}
                 cidade={cadastro?.cidade ?? ''}
                 uf={cadastro?.uf ?? ''}
                 defaultValues={chuva ?? undefined}
@@ -236,6 +238,7 @@ export default function DimensionamentoCalhas() {
 
             {currentStep === 'panos' && (
               <PanosTelhadoStep
+                key={`panos-${projetoId}`}
                 defaultValues={panos ?? undefined}
                 onSubmit={(values) => {
                   setPanos(values);
@@ -252,6 +255,7 @@ export default function DimensionamentoCalhas() {
             {/* === MODO VERIFICAÇÃO === */}
             {modo === 'verificacao' && currentStep === 'calhas' && (
               <CalhasStep
+                key={`calhas-${projetoId}`}
                 defaultValues={calhas ?? undefined}
                 onSubmit={(values) => {
                   setCalhas(values);
