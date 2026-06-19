@@ -203,6 +203,21 @@ export function LicitacoesManagement() {
     }
   };
 
+  const toggleAtaActive = async (ata: Ata) => {
+    try {
+      const { error } = await supabase
+        .from('atas')
+        .update({ is_active: !ata.is_active })
+        .eq('id', ata.id);
+      if (error) throw error;
+      setAtas(prev => prev.map(a => a.id === ata.id ? { ...a, is_active: !a.is_active } : a));
+      toast({ title: 'Sucesso', description: ata.is_active ? 'ATA desativada' : 'ATA ativada' });
+    } catch (error: any) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    }
+  };
+
+
   // Polo Functions
   const openPoloDialog = (ataId: string, polo?: AtaPolo) => {
     setCurrentAtaId(ataId);
