@@ -458,7 +458,16 @@ export function Medicao() {
     // TOTAL CONTRATO = Valor total com BDI e Desconto + soma de TODOS os aditivos bloqueados
     // Se seqLimit for informado, considera apenas aditivos com sequência <= seqLimit
     // Caso contrário, considera TODOS os aditivos bloqueados
-    const valorOriginal = item.totalContrato;
+    //
+    // IMPORTANTE: para itens EXTRACONTRATUAIS o `item.totalContrato` armazenado em
+    // `orcamento_items.total_contrato` já é, por definição, o valor proveniente do
+    // aditivo que criou o item. Se somarmos novamente a contribuição do aditivo a
+    // partir de `aditivo_items`, o total fica dobrado e a medição paga em dobro
+    // (caso real observado: obra de Nobres, 4ª medição, item 27.1).
+    // Para esses itens, zeramos o valor "original" e usamos somente a soma dos
+    // aditivos como fonte de verdade (que já cobre múltiplos aditivos do mesmo item).
+    const ehExtracontratual = item.origem === 'extracontratual';
+    const valorOriginal = ehExtracontratual ? 0 : item.totalContrato;
     const totalAditivos = aditivos
       .filter(a => {
         if (!a.bloqueada) return false;
