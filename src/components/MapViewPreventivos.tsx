@@ -492,5 +492,6 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
         </div>
       )}
     </div>
+    </>
   );
 }
