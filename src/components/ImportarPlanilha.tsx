@@ -28,9 +28,12 @@ interface Item {
 interface ImportarPlanilhaProps {
   onImportar: (dados: Item[], percentualDesconto: number) => void;
   onFechar: () => void;
+  obraId?: string;
 }
 
-const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
+const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
+
+const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProps) => {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
