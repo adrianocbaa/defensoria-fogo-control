@@ -36,7 +36,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
 
     checkUserActive();
-  }, [user, signOut]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   if (loading || checkingActive) {
     return (
