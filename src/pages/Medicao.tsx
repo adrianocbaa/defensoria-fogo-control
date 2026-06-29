@@ -2399,6 +2399,14 @@ export function Medicao() {
       
       // Usar percentual de desconto da obra (cadastrado na importação inicial)
       const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
+      // Exceção: obra de São Félix do Araguaia teve a planilha original elaborada
+      // sem truncamento do desconto, então aqui aplicamos arredondamento para casar
+      // com o valor que foi efetivamente contratado.
+      const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
+      const aplicarDesconto = (totalSemDesconto: number) => {
+        const bruto = (totalSemDesconto - (totalSemDesconto * descontoObra)) * 100;
+        return (obraId === OBRA_SEM_TRUNCAR_DESCONTO ? Math.round(bruto) : Math.trunc(bruto)) / 100;
+      };
       
       let idx;
       if (hasHeader) {
