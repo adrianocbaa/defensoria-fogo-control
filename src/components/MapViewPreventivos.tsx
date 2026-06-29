@@ -9,6 +9,7 @@ import { X, MapPin, Phone, Mail, Droplets, Target, AlertTriangle, Shield } from 
 import { supabase } from '@/integrations/supabase/client';
 import { isBefore, addDays, startOfDay, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Fix Leaflet default icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -19,11 +20,12 @@ L.Icon.Default.mergeOptions({
 });
 
 // Create custom pin icons based on status (SVG data URL for reliability)
-const createPinIcon = (color: 'green' | 'orange' | 'red'): L.Icon => {
+const createPinIcon = (color: 'green' | 'orange' | 'red' | 'gray'): L.Icon => {
   const colorMap = {
     green: '#22c55e',
     orange: '#f59e0b',
     red: '#ef4444',
+    gray: '#9ca3af',
   } as const;
 
   const hex = colorMap[color];
@@ -71,6 +73,8 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [nucleusStatus, setNucleusStatus] = useState<Record<string, NucleusStatus>>({});
+  const [statusLoaded, setStatusLoaded] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'green' | 'orange' | 'red'>('all');
   const isMobile = useIsMobile();
 
   // Fetch status data for all nucleos
@@ -145,6 +149,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
       }
 
       setNucleusStatus(statusMap);
+      setStatusLoaded(true);
 
       // Calculate summary
       if (onStatusLoaded) {
@@ -158,6 +163,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
     };
 
     if (nucleos.length > 0) {
+      setStatusLoaded(false);
       fetchStatusData();
     }
   }, [nucleos]);
@@ -293,8 +299,33 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
   };
 
   const validNucleos = nucleos.filter((n) => n.lat && n.lng);
+  const filterNucleus = (n: NucleoCentral) => {
+    if (statusFilter === 'all') return true;
+    if (!statusLoaded) return true;
+    return nucleusStatus[n.id]?.pinColor === statusFilter;
+  };
+  const visibleNucleos = validNucleos.filter(filterNucleus);
+  const visibleListNucleos = nucleos.filter(filterNucleus);
 
   return (
+    <>
+      <div className="flex items-center gap-3 mb-3">
+        <span className="text-sm text-muted-foreground">Filtrar por situação:</span>
+        <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+          <SelectTrigger className="w-[260px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="green">Regularizados</SelectItem>
+            <SelectItem value="orange">Vencendo (extintor ou alvará)</SelectItem>
+            <SelectItem value="red">Irregulares (extintor ou alvará)</SelectItem>
+          </SelectContent>
+        </Select>
+        {!statusLoaded && (
+          <span className="text-xs text-muted-foreground">Carregando situações…</span>
+        )}
+      </div>
     <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
       <MapContainer
         center={matogrossoCenter}
@@ -328,9 +359,9 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
             });
           }}
         >
-          {validNucleos.map((nucleus) => {
+          {visibleNucleos.map((nucleus) => {
             const status = nucleusStatus[nucleus.id];
-            const pinColor = status?.pinColor || 'green';
+            const pinColor: 'green' | 'orange' | 'red' | 'gray' = statusLoaded && status ? status.pinColor : 'gray';
             const icon = createPinIcon(pinColor);
 
             return (
@@ -352,10 +383,10 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
                   <div className="p-2 min-w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg">
                     <h3 className="font-semibold text-sm mb-1 text-gray-900 truncate">{nucleus.nome}</h3>
                     <p className="text-xs text-gray-500">{nucleus.cidade}</p>
-                    {status && (
+                    {statusLoaded && status && (
                       <div className="mt-1 text-xs">
-                        <span className={`font-medium ${pinColor === 'green' ? 'text-green-600' : pinColor === 'orange' ? 'text-amber-600' : 'text-red-600'}`}>
-                          {pinColor === 'green' ? '✅ Regularizado' : pinColor === 'orange' ? '⚠️ Atenção' : '🔴 Irregular'}
+                        <span className={`font-medium ${status.pinColor === 'green' ? 'text-green-600' : status.pinColor === 'orange' ? 'text-amber-600' : 'text-red-600'}`}>
+                          {status.pinColor === 'green' ? '✅ Regularizado' : status.pinColor === 'orange' ? '⚠️ Atenção' : '🔴 Irregular'}
                         </span>
                       </div>
                     )}
@@ -416,10 +447,10 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
         <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
           <div className="p-4">
             <h3 className="font-semibold text-sm mb-3">
-              Lista de Núcleos ({nucleos.length})
+              Lista de Núcleos ({visibleListNucleos.length})
             </h3>
             <div className="space-y-2">
-              {nucleos.map((nucleus) => (
+              {visibleListNucleos.map((nucleus) => (
                 <button
                   key={nucleus.id}
                   onClick={() => setSelectedNucleus(nucleus)}
@@ -461,5 +492,6 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
         </div>
       )}
     </div>
+    </>
   );
 }
