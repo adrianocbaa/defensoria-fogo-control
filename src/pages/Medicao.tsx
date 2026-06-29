@@ -2805,7 +2805,7 @@ export function Medicao() {
         const banco = idx.banco >= 0 ? String(r[idx.banco] ?? '').trim() : '';
         const quant = parseNumber(idx.quant >= 0 ? r[idx.quant] : 0);
         const totalSemDesconto = parseNumber(idx.totalSemDesconto >= 0 ? r[idx.totalSemDesconto] : 0);
-        const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
+        const valorTotalComDesconto = aplicarDesconto(totalSemDesconto);
         const valorUnitBDI = parseNumber(idx.valorUnitBDI >= 0 ? r[idx.valorUnitBDI] : 0);
 
         const hasAnyContent = code || descricao || und || codigoBanco || quant !== 0 || totalSemDesconto !== 0;
