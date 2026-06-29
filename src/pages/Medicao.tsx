@@ -2752,8 +2752,9 @@ export function Medicao() {
       const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
       const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
       const aplicarDesconto = (totalSemDesconto: number) => {
-        const bruto = (totalSemDesconto - (totalSemDesconto * descontoObra)) * 100;
-        return (obra?.id === OBRA_SEM_TRUNCAR_DESCONTO ? Math.round(bruto) : Math.trunc(bruto)) / 100;
+        const bruto = totalSemDesconto - (totalSemDesconto * descontoObra);
+        if (obra?.id === OBRA_SEM_TRUNCAR_DESCONTO) return bruto;
+        return Math.trunc(bruto * 100) / 100;
       };
       
       let idx;
