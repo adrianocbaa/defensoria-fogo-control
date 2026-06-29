@@ -203,9 +203,8 @@ export function useRdoForm(obraId: string, data: string) {
   });
 
   // Manter ref atualizada para usar no autosave sem causar loop
-  useEffect(() => {
-    saveMutationRef.current = saveMutation;
-  });
+  saveMutationRef.current = saveMutation;
+
 
   // Autosave — usa ref para evitar que saveMutation entre nas deps e cause loop
   // Se o RDO ainda não foi criado (sem id), cria agora antes de salvar as mudanças

@@ -39,17 +39,18 @@ export function useRdoConfig(obraId: string) {
     }) => {
       const { data, error } = await supabase
         .from('rdo_config')
-        .insert({
+        .upsert({
           obra_id: params.obra_id,
           modo_atividades: params.modo_atividades,
           chosen_by: params.chosen_by,
-        })
+        }, { onConflict: 'obra_id' })
         .select()
         .single();
 
       if (error) throw error;
       return data;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rdo-config', obraId] });
       toast.success('Modo de preenchimento definido com sucesso');
