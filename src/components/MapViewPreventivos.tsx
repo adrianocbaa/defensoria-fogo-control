@@ -149,6 +149,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
       }
 
       setNucleusStatus(statusMap);
+      setStatusLoaded(true);
 
       // Calculate summary
       if (onStatusLoaded) {
@@ -162,6 +163,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
     };
 
     if (nucleos.length > 0) {
+      setStatusLoaded(false);
       fetchStatusData();
     }
   }, [nucleos]);
