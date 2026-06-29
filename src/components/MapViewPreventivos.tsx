@@ -9,6 +9,7 @@ import { X, MapPin, Phone, Mail, Droplets, Target, AlertTriangle, Shield } from 
 import { supabase } from '@/integrations/supabase/client';
 import { isBefore, addDays, startOfDay, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Fix Leaflet default icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
