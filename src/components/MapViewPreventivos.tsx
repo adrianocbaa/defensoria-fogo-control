@@ -73,6 +73,8 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [nucleusStatus, setNucleusStatus] = useState<Record<string, NucleusStatus>>({});
+  const [statusLoaded, setStatusLoaded] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'green' | 'orange' | 'red'>('all');
   const isMobile = useIsMobile();
 
   // Fetch status data for all nucleos
