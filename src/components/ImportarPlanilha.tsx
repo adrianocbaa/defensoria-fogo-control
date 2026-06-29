@@ -188,9 +188,12 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
         // Aplicar desconto se informado
         // O desconto é aplicado sobre os valores originais da planilha (Total sem Desconto)
         const descontoFator = descontoValue > 0 ? (1 - descontoValue / 100) : 1
-        
+        const semArredondamentoPorItem = obraId === OBRA_SEM_TRUNCAR_DESCONTO;
+
         const valorTotalComDesconto = descontoValue > 0
-          ? Math.round(totalOriginal * descontoFator * 100) / 100
+          ? (semArredondamentoPorItem
+              ? totalOriginal * descontoFator
+              : Math.round(totalOriginal * descontoFator * 100) / 100)
           : totalOriginal
 
         // Usar total÷quantidade como fonte do valor unitário para preservar
