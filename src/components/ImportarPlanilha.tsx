@@ -28,9 +28,12 @@ interface Item {
 interface ImportarPlanilhaProps {
   onImportar: (dados: Item[], percentualDesconto: number) => void;
   onFechar: () => void;
+  obraId?: string;
 }
 
-const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
+const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
+
+const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProps) => {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
@@ -185,9 +188,12 @@ const ImportarPlanilha = ({ onImportar, onFechar }: ImportarPlanilhaProps) => {
         // Aplicar desconto se informado
         // O desconto é aplicado sobre os valores originais da planilha (Total sem Desconto)
         const descontoFator = descontoValue > 0 ? (1 - descontoValue / 100) : 1
-        
+        const semArredondamentoPorItem = obraId === OBRA_SEM_TRUNCAR_DESCONTO;
+
         const valorTotalComDesconto = descontoValue > 0
-          ? Math.round(totalOriginal * descontoFator * 100) / 100
+          ? (semArredondamentoPorItem
+              ? totalOriginal * descontoFator
+              : Math.round(totalOriginal * descontoFator * 100) / 100)
           : totalOriginal
 
         // Usar total÷quantidade como fonte do valor unitário para preservar
