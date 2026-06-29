@@ -9,7 +9,6 @@ import { X, MapPin, Phone, Mail, Droplets, Target, AlertTriangle, Shield } from 
 import { supabase } from '@/integrations/supabase/client';
 import { isBefore, addDays, startOfDay, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Fix Leaflet default icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -310,19 +309,49 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
 
   return (
     <>
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
         <span className="text-sm text-muted-foreground">Filtrar por situação:</span>
-        <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-          <SelectTrigger className="w-[260px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="green">Regularizados</SelectItem>
-            <SelectItem value="orange">Vencendo (extintor ou alvará)</SelectItem>
-            <SelectItem value="red">Irregulares (extintor ou alvará)</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            type="button"
+            size="sm"
+            variant={statusFilter === 'all' ? 'secondary' : 'outline'}
+            onClick={() => setStatusFilter('all')}
+            className="h-8 gap-1.5"
+          >
+            Todos
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={statusFilter === 'green' ? 'secondary' : 'outline'}
+            onClick={() => setStatusFilter('green')}
+            className="h-8 gap-1.5"
+          >
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            Regularizados
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={statusFilter === 'orange' ? 'secondary' : 'outline'}
+            onClick={() => setStatusFilter('orange')}
+            className="h-8 gap-1.5"
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            Vencendo
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={statusFilter === 'red' ? 'secondary' : 'outline'}
+            onClick={() => setStatusFilter('red')}
+            className="h-8 gap-1.5"
+          >
+            <span className="w-2 h-2 rounded-full bg-red-500" />
+            Irregulares
+          </Button>
+        </div>
         {!statusLoaded && (
           <span className="text-xs text-muted-foreground">Carregando situações…</span>
         )}
