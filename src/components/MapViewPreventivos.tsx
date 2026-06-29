@@ -166,7 +166,8 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
       setStatusLoaded(false);
       fetchStatusData();
     }
-  }, [nucleos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nucleos.map(n => n.id).sort().join(',')]);
 
   // Fit bounds once when nucleos are loaded
   useEffect(() => {
