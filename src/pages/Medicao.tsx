@@ -4304,6 +4304,7 @@ export function Medicao() {
                             <ImportarPlanilha 
                               onImportar={importarDados}
                               onFechar={() => setModalImportarAberto(false)}
+                              obraId={id}
                             />
                           </DialogContent>
                         </Dialog>
