@@ -20,11 +20,12 @@ L.Icon.Default.mergeOptions({
 });
 
 // Create custom pin icons based on status (SVG data URL for reliability)
-const createPinIcon = (color: 'green' | 'orange' | 'red'): L.Icon => {
+const createPinIcon = (color: 'green' | 'orange' | 'red' | 'gray'): L.Icon => {
   const colorMap = {
     green: '#22c55e',
     orange: '#f59e0b',
     red: '#ef4444',
+    gray: '#9ca3af',
   } as const;
 
   const hex = colorMap[color];
