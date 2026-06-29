@@ -299,8 +299,33 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
   };
 
   const validNucleos = nucleos.filter((n) => n.lat && n.lng);
+  const filterNucleus = (n: NucleoCentral) => {
+    if (statusFilter === 'all') return true;
+    if (!statusLoaded) return true;
+    return nucleusStatus[n.id]?.pinColor === statusFilter;
+  };
+  const visibleNucleos = validNucleos.filter(filterNucleus);
+  const visibleListNucleos = nucleos.filter(filterNucleus);
 
   return (
+    <>
+      <div className="flex items-center gap-3 mb-3">
+        <span className="text-sm text-muted-foreground">Filtrar por situação:</span>
+        <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+          <SelectTrigger className="w-[260px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="green">Regularizados</SelectItem>
+            <SelectItem value="orange">Vencendo (extintor ou alvará)</SelectItem>
+            <SelectItem value="red">Irregulares (extintor ou alvará)</SelectItem>
+          </SelectContent>
+        </Select>
+        {!statusLoaded && (
+          <span className="text-xs text-muted-foreground">Carregando situações…</span>
+        )}
+      </div>
     <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
       <MapContainer
         center={matogrossoCenter}
