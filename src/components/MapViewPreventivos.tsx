@@ -383,10 +383,10 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
                   <div className="p-2 min-w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg">
                     <h3 className="font-semibold text-sm mb-1 text-gray-900 truncate">{nucleus.nome}</h3>
                     <p className="text-xs text-gray-500">{nucleus.cidade}</p>
-                    {status && (
+                    {statusLoaded && status && (
                       <div className="mt-1 text-xs">
-                        <span className={`font-medium ${pinColor === 'green' ? 'text-green-600' : pinColor === 'orange' ? 'text-amber-600' : 'text-red-600'}`}>
-                          {pinColor === 'green' ? '✅ Regularizado' : pinColor === 'orange' ? '⚠️ Atenção' : '🔴 Irregular'}
+                        <span className={`font-medium ${status.pinColor === 'green' ? 'text-green-600' : status.pinColor === 'orange' ? 'text-amber-600' : 'text-red-600'}`}>
+                          {status.pinColor === 'green' ? '✅ Regularizado' : status.pinColor === 'orange' ? '⚠️ Atenção' : '🔴 Irregular'}
                         </span>
                       </div>
                     )}
