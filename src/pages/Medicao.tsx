@@ -2399,6 +2399,14 @@ export function Medicao() {
       
       // Usar percentual de desconto da obra (cadastrado na importação inicial)
       const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
+      // Exceção: obra de São Félix do Araguaia teve a planilha original elaborada
+      // sem truncamento do desconto, então aqui aplicamos arredondamento para casar
+      // com o valor que foi efetivamente contratado.
+      const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
+      const aplicarDesconto = (totalSemDesconto: number) => {
+        const bruto = (totalSemDesconto - (totalSemDesconto * descontoObra)) * 100;
+        return (obra?.id === OBRA_SEM_TRUNCAR_DESCONTO ? Math.round(bruto) : Math.trunc(bruto)) / 100;
+      };
       
       let idx;
       if (hasHeader) {
@@ -2482,7 +2490,7 @@ export function Medicao() {
         // Buscar Total sem Desconto e aplicar desconto da obra
         const totalSemDesconto = parseNumber(idx.totalSemDesconto >= 0 ? r[idx.totalSemDesconto] : 0);
         // Aplicar desconto: TRUNCAR(totalSemDesconto - (totalSemDesconto * desconto%), 2)
-        const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
+        const valorTotalComDesconto = aplicarDesconto(totalSemDesconto);
         // Ignorar linhas completamente vazias (considerar valores negativos como conteúdo para supressões)
         const hasAnyContent = code || descricao || und || codigoBanco || quant !== 0 || totalSemDesconto !== 0;
         if (!hasAnyContent) {
@@ -2740,6 +2748,11 @@ export function Medicao() {
       }
       
       const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
+      const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
+      const aplicarDesconto = (totalSemDesconto: number) => {
+        const bruto = (totalSemDesconto - (totalSemDesconto * descontoObra)) * 100;
+        return (obra?.id === OBRA_SEM_TRUNCAR_DESCONTO ? Math.round(bruto) : Math.trunc(bruto)) / 100;
+      };
       
       let idx;
       if (hasHeader) {
@@ -2792,7 +2805,7 @@ export function Medicao() {
         const banco = idx.banco >= 0 ? String(r[idx.banco] ?? '').trim() : '';
         const quant = parseNumber(idx.quant >= 0 ? r[idx.quant] : 0);
         const totalSemDesconto = parseNumber(idx.totalSemDesconto >= 0 ? r[idx.totalSemDesconto] : 0);
-        const valorTotalComDesconto = Math.trunc((totalSemDesconto - (totalSemDesconto * descontoObra)) * 100) / 100;
+        const valorTotalComDesconto = aplicarDesconto(totalSemDesconto);
         const valorUnitBDI = parseNumber(idx.valorUnitBDI >= 0 ? r[idx.valorUnitBDI] : 0);
 
         const hasAnyContent = code || descricao || und || codigoBanco || quant !== 0 || totalSemDesconto !== 0;
