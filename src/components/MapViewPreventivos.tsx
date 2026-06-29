@@ -447,10 +447,10 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
         <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
           <div className="p-4">
             <h3 className="font-semibold text-sm mb-3">
-              Lista de Núcleos ({nucleos.length})
+              Lista de Núcleos ({visibleListNucleos.length})
             </h3>
             <div className="space-y-2">
-              {nucleos.map((nucleus) => (
+              {visibleListNucleos.map((nucleus) => (
                 <button
                   key={nucleus.id}
                   onClick={() => setSelectedNucleus(nucleus)}
