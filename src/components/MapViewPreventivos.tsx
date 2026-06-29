@@ -359,9 +359,9 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
             });
           }}
         >
-          {validNucleos.map((nucleus) => {
+          {visibleNucleos.map((nucleus) => {
             const status = nucleusStatus[nucleus.id];
-            const pinColor = status?.pinColor || 'green';
+            const pinColor: 'green' | 'orange' | 'red' | 'gray' = statusLoaded && status ? status.pinColor : 'gray';
             const icon = createPinIcon(pinColor);
 
             return (
