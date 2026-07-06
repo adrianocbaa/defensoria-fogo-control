@@ -262,6 +262,23 @@ function TiposManutencao() {
 }
 
 export function MaintenanceSettings() {
+  const [section, setSection] = useState<string>('chamados');
+  const [subsection, setSubsection] = useState<string>('tipos');
+
+  const menu = [
+    {
+      id: 'chamados',
+      label: 'Chamados',
+      items: [
+        { id: 'tipos', label: 'Tipos', render: () => <TiposManutencao /> },
+      ],
+    },
+  ];
+
+  const currentGroup = menu.find((m) => m.id === section) ?? menu[0];
+  const currentItem =
+    currentGroup.items.find((i) => i.id === subsection) ?? currentGroup.items[0];
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -270,14 +287,42 @@ export function MaintenanceSettings() {
           Gerencie os cadastros auxiliares do módulo de Manutenção.
         </p>
       </div>
-      <Tabs defaultValue="tipos" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="tipos">Tipos</TabsTrigger>
-        </TabsList>
-        <TabsContent value="tipos">
-          <TiposManutencao />
-        </TabsContent>
-      </Tabs>
+
+      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6">
+        <nav className="space-y-4">
+          {menu.map((group) => (
+            <div key={group.id}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 px-2">
+                {group.label}
+              </p>
+              <div className="flex flex-col gap-1">
+                {group.items.map((item) => {
+                  const active = section === group.id && subsection === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setSection(group.id);
+                        setSubsection(item.id);
+                      }}
+                      className={
+                        'text-left px-3 py-2 rounded-md text-sm transition-colors ' +
+                        (active
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted text-foreground')
+                      }
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div>{currentItem.render()}</div>
+      </div>
     </div>
   );
 }

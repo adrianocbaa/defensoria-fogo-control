@@ -18,6 +18,7 @@ import {
 import { Plus, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, X } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
+import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -46,18 +47,13 @@ interface EditTaskModalProps {
   onUpdateTask: (ticket: Ticket) => void;
 }
 
-const taskTypes = [
-  { value: 'Hidráulica', icon: Droplets },
-  { value: 'Elétrica', icon: Zap },
-  { value: 'Climatização', icon: Wind },
-  { value: 'Segurança', icon: Shield },
-  { value: 'Pintura', icon: PaintRoller },
-  { value: 'Geral', icon: Wrench },
-];
+
+
 
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
   const { isGM, canEdit } = useUserRole();
   const { users: maintenanceUsers } = useMaintenanceUsers();
+  const { types: taskTypes } = useMaintenanceTypes();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -179,7 +175,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       return;
     }
 
-    const selectedTaskType = taskTypes.find(t => t.value === formData.type);
+    const selectedTaskType = taskTypes.find(t => t.nome === formData.type);
     
     const updatedTicket: Ticket = {
       ...ticket,
@@ -259,8 +255,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 </SelectTrigger>
                 <SelectContent>
                   {taskTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.value}
+                    <SelectItem key={type.id} value={type.nome}>
+                      {type.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>

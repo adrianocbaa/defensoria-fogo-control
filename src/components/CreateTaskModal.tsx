@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
+import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 
 interface ServicePhoto {
   id: string;
@@ -62,19 +63,14 @@ interface CreateTaskModalProps {
   onCreateTask: (task: Omit<Ticket, 'id' | 'createdAt'>) => void;
 }
 
-const taskTypes = [
-  { value: 'Hidráulica', icon: Droplets },
-  { value: 'Elétrica', icon: Zap },
-  { value: 'Climatização', icon: Wind },
-  { value: 'Segurança', icon: Shield },
-  { value: 'Pintura', icon: PaintRoller },
-  { value: 'Geral', icon: Wrench },
-];
+
+
 
 export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { users: maintenanceUsers } = useMaintenanceUsers();
+  const { types: taskTypes } = useMaintenanceTypes();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -192,7 +188,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       return;
     }
 
-    const selectedTaskType = taskTypes.find(t => t.value === formData.type);
+    const selectedTaskType = taskTypes.find(t => t.nome === formData.type);
     
     // Criar a tarefa
     onCreateTask({
@@ -329,8 +325,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {taskTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.value}
+                    <SelectItem key={type.id} value={type.nome}>
+                      {type.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
