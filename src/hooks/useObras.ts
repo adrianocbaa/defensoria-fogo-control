@@ -111,8 +111,9 @@ export function useObras(): UseObrasReturn {
         valor_aditivado: Number(obra.valor_aditivado || 0),
         data_termino_real: obra.data_termino_real || undefined,
         tempo_obra: obra.tempo_obra || undefined,
-        aditivo_prazo: obra.aditivo_prazo || undefined
-      }));
+        aditivo_prazo: obra.aditivo_prazo || undefined,
+        sei_numero: (obra as any).sei_numero || undefined,
+      } as Obra));
       
       setObras(obrasFormatadas);
       
