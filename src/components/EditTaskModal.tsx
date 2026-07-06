@@ -255,8 +255,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 </SelectTrigger>
                 <SelectContent>
                   {taskTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.value}
+                    <SelectItem key={type.id} value={type.nome}>
+                      {type.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
