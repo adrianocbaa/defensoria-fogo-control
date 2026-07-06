@@ -145,6 +145,7 @@ export function TravelCalendar() {
     const monthEnd = endOfMonth(currentMonth);
     
     return filteredTravels.filter(travel => {
+      if (!travel.data_ida || !travel.data_volta) return false;
       const startDate = parseISO(travel.data_ida);
       const endDate = parseISO(travel.data_volta);
       return isWithinInterval(startDate, { start: monthStart, end: monthEnd }) ||
