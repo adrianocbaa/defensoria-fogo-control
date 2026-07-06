@@ -114,8 +114,8 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
         .insert([{
           servidor: formData.servidor,
           destino: formData.destino,
-          data_ida: formData.data_ida,
-          data_volta: formData.data_volta,
+          data_ida: semPrevisao ? null : formData.data_ida,
+          data_volta: semPrevisao ? null : formData.data_volta,
           motivo: formData.motivo,
           user_id: user.id
         }]);
@@ -125,11 +125,12 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
       onTravelCreated?.();
       onClose();
       
+      setSemPrevisao(false);
       setFormData({
         servidor: '',
         destino: '',
-        data_ida: '',
-        data_volta: '',
+        data_ida: null,
+        data_volta: null,
         motivo: ''
       });
 
