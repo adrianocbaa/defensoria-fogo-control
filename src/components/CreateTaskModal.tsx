@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
+import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 
 interface ServicePhoto {
   id: string;
