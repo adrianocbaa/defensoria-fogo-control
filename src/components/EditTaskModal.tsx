@@ -614,11 +614,11 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                   Próximo
                 </Button>
               ) : (
-                <Button type="submit">Salvar Alterações</Button>
+                <Button type="button" onClick={handleSubmit}>Salvar Alterações</Button>
               )}
             </div>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
