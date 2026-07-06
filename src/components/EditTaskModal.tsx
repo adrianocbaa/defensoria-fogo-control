@@ -19,6 +19,7 @@ import { Plus, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, X } from 'lucid
 import { useUserRole } from '@/hooks/useUserRole';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -39,6 +40,7 @@ interface Ticket {
   requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
   requestedAt?: string;
+  managerId?: string | null;
 }
 
 interface EditTaskModalProps {
@@ -55,6 +57,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const { isGM, canEdit } = useUserRole();
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
+  const { managers } = useMaintenanceManagers();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -74,6 +77,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
   const [requestedAt, setRequestedAt] = useState<string>('');
+  const [managerId, setManagerId] = useState<string>('');
 
   // Atualizar formulário quando o ticket mudar
   useEffect(() => {
@@ -92,6 +96,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setRequestType(ticket.requestType || '');
       setProcessNumber(ticket.processNumber || '');
       setRequestedAt(ticket.requestedAt || '');
+      setManagerId(ticket.managerId || '');
     }
   }, [ticket]);
 
@@ -194,7 +199,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       materials,
       requestType: isGM ? ticket.requestType : requestType as 'email' | 'processo' | 'direto',
       processNumber: isGM ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined),
-      requestedAt: requestedAt || ticket.requestedAt
+      requestedAt: requestedAt || ticket.requestedAt,
+      managerId: managerId || null
     };
 
     try {
@@ -301,6 +307,22 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               onChange={(e) => setRequestedAt(e.target.value)}
               disabled={isGM}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="manager">Gerente de Manutenção Responsável</Label>
+            <Select value={managerId} onValueChange={setManagerId} disabled={isGM}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um gerente..." />
+              </SelectTrigger>
+              <SelectContent>
+                {managers.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

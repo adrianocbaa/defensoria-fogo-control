@@ -1089,6 +1089,36 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_managers: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       maintenance_tickets: {
         Row: {
           assignee: string
@@ -1096,6 +1126,7 @@ export type Database = {
           created_at: string
           id: string
           location: string
+          manager_id: string | null
           materials: Json | null
           observations: string[] | null
           priority: string
@@ -1116,6 +1147,7 @@ export type Database = {
           created_at?: string
           id?: string
           location: string
+          manager_id?: string | null
           materials?: Json | null
           observations?: string[] | null
           priority: string
@@ -1136,6 +1168,7 @@ export type Database = {
           created_at?: string
           id?: string
           location?: string
+          manager_id?: string | null
           materials?: Json | null
           observations?: string[] | null
           priority?: string
@@ -1151,6 +1184,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_tickets_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_managers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "maintenance_tickets_travel_id_fkey"
             columns: ["travel_id"]

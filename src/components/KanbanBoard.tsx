@@ -44,6 +44,7 @@ interface Ticket extends Omit<MaintenanceTicket, 'created_at' | 'request_type' |
   requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
   requestedAt?: string;
+  managerId?: string | null;
   completedAt?: Date;
 }
 
@@ -288,7 +289,8 @@ export function KanbanBoard() {
         createdAt: new Date(ticket.created_at).toLocaleDateString('pt-BR'),
         requestType: ticket.request_type,
         processNumber: ticket.process_number,
-        requestedAt: ticket.requested_at,
+        requestedAt: (ticket as any).requested_at,
+        managerId: (ticket as any).manager_id ?? null,
         completedAt: ticket.completed_at ? new Date(ticket.completed_at) : undefined,
         icon: getIconForType(ticket.type)
       }));
@@ -425,8 +427,9 @@ export function KanbanBoard() {
       request_type: taskData.requestType,
       process_number: taskData.processNumber,
       requested_at: taskData.requestedAt,
+      manager_id: taskData.managerId ?? null,
       user_id: user?.id
-    };
+    } as any;
 
     await createTicket(dbTicketData);
   };
@@ -455,8 +458,9 @@ export function KanbanBoard() {
       request_type: updatedTicket.requestType,
       process_number: updatedTicket.processNumber,
       requested_at: updatedTicket.requestedAt,
+      manager_id: updatedTicket.managerId ?? null,
       completed_at: updatedTicket.completedAt?.toISOString()
-    };
+    } as any;
 
     await updateTicket(updatedTicket.id, dbTicketData);
   };

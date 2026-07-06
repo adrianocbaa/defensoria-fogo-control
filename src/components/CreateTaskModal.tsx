@@ -32,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 interface ServicePhoto {
   id: string;
@@ -57,6 +58,7 @@ interface Ticket {
   requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
   requestedAt?: string;
+  managerId?: string | null;
   servicePhotos?: ServicePhoto[];
 }
 
@@ -72,6 +74,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const navigate = useNavigate();
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
+  const { managers } = useMaintenanceManagers();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -95,6 +98,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const [requestedAt, setRequestedAt] = useState<string>(getTodayLocal());
+  const [managerId, setManagerId] = useState<string>('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
   const [isTravel, setIsTravel] = useState(false);
   const [travelData, setTravelData] = useState({
@@ -211,6 +215,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       requestType: requestType as 'email' | 'processo' | 'direto',
       processNumber: requestType === 'processo' ? processNumber : undefined,
       requestedAt,
+      managerId: managerId || null,
       servicePhotos
     });
 
@@ -267,6 +272,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setRequestType('');
     setProcessNumber('');
     setRequestedAt(getTodayLocal());
+    setManagerId('');
     setServicePhotos([]);
     setIsTravel(false);
     setTravelData({
@@ -379,6 +385,22 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               onChange={(e) => setRequestedAt(e.target.value)}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="manager">Gerente de Manutenção Responsável</Label>
+            <Select value={managerId} onValueChange={setManagerId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um gerente (opcional)..." />
+              </SelectTrigger>
+              <SelectContent>
+                {managers.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
 
