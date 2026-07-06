@@ -41,7 +41,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 interface Ticket extends Omit<MaintenanceTicket, 'created_at' | 'request_type' | 'process_number' | 'completed_at'> {
   icon: any;
   createdAt: string;
-  requestType?: 'email' | 'processo';
+  requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
   completedAt?: Date;
 }
