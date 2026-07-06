@@ -442,18 +442,12 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
 
           <div className="space-y-2">
             <Label htmlFor="nucleo">Núcleo Requerente</Label>
-            <Select value={nucleoId} onValueChange={setNucleoId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um núcleo (opcional)..." />
-              </SelectTrigger>
-              <SelectContent>
-                {nuclei.map((n) => (
-                  <SelectItem key={n.id} value={n.id}>
-                    {n.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <NucleoCombobox
+              options={nuclei}
+              value={nucleoId}
+              onChange={setNucleoId}
+              placeholder="Selecione um núcleo (opcional)..."
+            />
           </div>
           </div>)}
 
