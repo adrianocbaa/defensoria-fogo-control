@@ -36,10 +36,24 @@ interface MaintenanceType {
   ativo: boolean;
 }
 
-const ICON_OPTIONS = [
-  'Wrench', 'Droplets', 'Zap', 'Wind', 'Shield', 'PaintRoller',
-  'Hammer', 'Cog', 'Package', 'AlertCircle', 'Flame', 'Lightbulb',
+const ICON_OPTIONS: { value: string; label: string }[] = [
+  { value: 'Wrench', label: 'Chave inglesa' },
+  { value: 'Droplets', label: 'Gotas' },
+  { value: 'Zap', label: 'Raio' },
+  { value: 'Wind', label: 'Vento' },
+  { value: 'Shield', label: 'Escudo' },
+  { value: 'PaintRoller', label: 'Rolo de pintura' },
+  { value: 'Hammer', label: 'Martelo' },
+  { value: 'Cog', label: 'Engrenagem' },
+  { value: 'Package', label: 'Caixa' },
+  { value: 'AlertCircle', label: 'Alerta' },
+  { value: 'Flame', label: 'Chama' },
+  { value: 'Lightbulb', label: 'Lâmpada' },
 ];
+
+const ICON_LABEL: Record<string, string> = Object.fromEntries(
+  ICON_OPTIONS.map((i) => [i.value, i.label])
+);
 
 function TiposManutencao() {
   const [types, setTypes] = useState<MaintenanceType[]>([]);
