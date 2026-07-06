@@ -198,7 +198,24 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2 py-1">
+            <Checkbox
+              id="sem-previsao"
+              checked={semPrevisao}
+              onCheckedChange={(checked) => {
+                const isChecked = checked === true;
+                setSemPrevisao(isChecked);
+                if (isChecked) {
+                  setFormData(prev => ({ ...prev, data_ida: null, data_volta: null }));
+                }
+              }}
+            />
+            <Label htmlFor="sem-previsao" className="text-sm font-medium cursor-pointer">
+              Sem previsão de data
+            </Label>
+          </div>
+
+          <div className={`grid grid-cols-2 gap-4 ${semPrevisao ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="space-y-2">
               <Label>Data de Ida</Label>
               <Popover open={dataIdaOpen} onOpenChange={setDataIdaOpen}>
@@ -213,7 +230,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.data_ida 
                       ? format(new Date(formData.data_ida), "dd/MM/yyyy", { locale: ptBR })
-                      : "Selecionar data"
+                      : (semPrevisao ? "Sem previsão" : "Selecionar data")
                     }
                   </Button>
                 </PopoverTrigger>
@@ -248,7 +265,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.data_volta 
                       ? format(new Date(formData.data_volta), "dd/MM/yyyy", { locale: ptBR })
-                      : "Selecionar data"
+                      : (semPrevisao ? "Sem previsão" : "Selecionar data")
                     }
                   </Button>
                 </PopoverTrigger>
