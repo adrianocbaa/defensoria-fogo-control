@@ -140,6 +140,14 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
             </div>
 
             <div className="flex items-center gap-3">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">NÚCLEO REQUERENTE</h3>
+                <p className="text-sm">{nucleoName || 'Não atribuído'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">DATA DE SOLICITAÇÃO</h3>
