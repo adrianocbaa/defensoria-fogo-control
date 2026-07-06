@@ -45,6 +45,7 @@ interface Ticket extends Omit<MaintenanceTicket, 'created_at' | 'request_type' |
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  nucleoId?: string | null;
   completedAt?: Date;
 }
 
