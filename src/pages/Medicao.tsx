@@ -2064,6 +2064,7 @@ export function Medicao() {
       const nomeObra = obra.nome;
       const nomeContrato = obra.n_contrato || '—';
       const nomeEmpresa = obra.empresa_responsavel || '—';
+      const numeroSei = (obra as any).sei_numero || '—';
       const nomeMedicao = medicaoAtualObj.nome;
 
       // Cabeçalho
@@ -2077,6 +2078,7 @@ export function Medicao() {
               <div class="info-col">
                 <div class="info-row"><span class="info-label">Município: </span><span class="info-value">${obra.municipio || '—'}</span></div>
                 <div class="info-row"><span class="info-label">Nº do Contrato: </span><span class="info-value">${nomeContrato}</span></div>
+                <div class="info-row"><span class="info-label">Nº do Procedimento SEI: </span><span class="info-value">${numeroSei}</span></div>
               </div>
               <div class="info-col right">
                 <div class="info-row"><span class="info-label">Data da Medição: </span><span class="info-value">${dataAtual}</span></div>
