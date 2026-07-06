@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { CreateTravelData } from '@/types/travel';
@@ -26,11 +27,12 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [semPrevisao, setSemPrevisao] = useState(false);
   const [formData, setFormData] = useState<CreateTravelData>({
     servidor: '',
     destino: '',
-    data_ida: '',
-    data_volta: '',
+    data_ida: null,
+    data_volta: null,
     motivo: ''
   });
   const [dataIdaOpen, setDataIdaOpen] = useState(false);
@@ -55,22 +57,24 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
       return false;
     }
 
-    if (!formData.data_ida || !formData.data_volta) {
-      toast({
-        title: "Erro",
-        description: "Datas de ida e volta são obrigatórias",
-        variant: "destructive",
-      });
-      return false;
-    }
+    if (!semPrevisao) {
+      if (!formData.data_ida || !formData.data_volta) {
+        toast({
+          title: "Erro",
+          description: "Datas de ida e volta são obrigatórias",
+          variant: "destructive",
+        });
+        return false;
+      }
 
-    if (new Date(formData.data_ida) > new Date(formData.data_volta)) {
-      toast({
-        title: "Erro",
-        description: "Data de ida não pode ser posterior à data de volta",
-        variant: "destructive",
-      });
-      return false;
+      if (new Date(formData.data_ida) > new Date(formData.data_volta)) {
+        toast({
+          title: "Erro",
+          description: "Data de ida não pode ser posterior à data de volta",
+          variant: "destructive",
+        });
+        return false;
+      }
     }
 
     if (!formData.motivo.trim()) {
@@ -110,8 +114,8 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
         .insert([{
           servidor: formData.servidor,
           destino: formData.destino,
-          data_ida: formData.data_ida,
-          data_volta: formData.data_volta,
+          data_ida: semPrevisao ? null : formData.data_ida,
+          data_volta: semPrevisao ? null : formData.data_volta,
           motivo: formData.motivo,
           user_id: user.id
         }]);
@@ -121,11 +125,12 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
       onTravelCreated?.();
       onClose();
       
+      setSemPrevisao(false);
       setFormData({
         servidor: '',
         destino: '',
-        data_ida: '',
-        data_volta: '',
+        data_ida: null,
+        data_volta: null,
         motivo: ''
       });
 
@@ -193,7 +198,24 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center space-x-2 py-1">
+            <Checkbox
+              id="sem-previsao"
+              checked={semPrevisao}
+              onCheckedChange={(checked) => {
+                const isChecked = checked === true;
+                setSemPrevisao(isChecked);
+                if (isChecked) {
+                  setFormData(prev => ({ ...prev, data_ida: null, data_volta: null }));
+                }
+              }}
+            />
+            <Label htmlFor="sem-previsao" className="text-sm font-medium cursor-pointer">
+              Sem previsão de data
+            </Label>
+          </div>
+
+          <div className={`grid grid-cols-2 gap-4 ${semPrevisao ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="space-y-2">
               <Label>Data de Ida</Label>
               <Popover open={dataIdaOpen} onOpenChange={setDataIdaOpen}>
@@ -208,7 +230,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.data_ida 
                       ? format(new Date(formData.data_ida), "dd/MM/yyyy", { locale: ptBR })
-                      : "Selecionar data"
+                      : (semPrevisao ? "Sem previsão" : "Selecionar data")
                     }
                   </Button>
                 </PopoverTrigger>
@@ -243,7 +265,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.data_volta 
                       ? format(new Date(formData.data_volta), "dd/MM/yyyy", { locale: ptBR })
-                      : "Selecionar data"
+                      : (semPrevisao ? "Sem previsão" : "Selecionar data")
                     }
                   </Button>
                 </PopoverTrigger>

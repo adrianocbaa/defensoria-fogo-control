@@ -18,9 +18,10 @@ interface ViewTravelModalProps {
 export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelModalProps) {
   const { canEdit } = useUserRole();
   
-  const dataIda = parseISO(travel.data_ida);
-  const dataVolta = parseISO(travel.data_volta);
-  const duracaoViagem = differenceInDays(dataVolta, dataIda) + 1;
+  const hasDates = !!travel.data_ida && !!travel.data_volta;
+  const dataIda = hasDates ? parseISO(travel.data_ida!) : null;
+  const dataVolta = hasDates ? parseISO(travel.data_volta!) : null;
+  const duracaoViagem = hasDates && dataIda && dataVolta ? differenceInDays(dataVolta, dataIda) + 1 : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -74,7 +75,10 @@ export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelM
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Data de Ida</p>
                       <p className="font-medium">
-                        {format(dataIda, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        {dataIda
+                          ? format(dataIda, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                          : <span className="text-muted-foreground italic">Sem previsão</span>
+                        }
                       </p>
                     </div>
                   </div>
@@ -86,7 +90,10 @@ export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelM
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Data de Volta</p>
                       <p className="font-medium">
-                        {format(dataVolta, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        {dataVolta
+                          ? format(dataVolta, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                          : <span className="text-muted-foreground italic">Sem previsão</span>
+                        }
                       </p>
                     </div>
                   </div>
@@ -96,9 +103,13 @@ export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelM
                   <Clock className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Duração</p>
-                    <Badge variant="secondary">
-                      {duracaoViagem} {duracaoViagem === 1 ? 'dia' : 'dias'}
-                    </Badge>
+                    {duracaoViagem !== null ? (
+                      <Badge variant="secondary">
+                        {duracaoViagem} {duracaoViagem === 1 ? 'dia' : 'dias'}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground italic">Sem previsão</Badge>
+                    )}
                   </div>
                 </div>
               </div>
