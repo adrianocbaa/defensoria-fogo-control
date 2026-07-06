@@ -33,6 +33,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { useNucleiList } from '@/hooks/useNucleiList';
 
 interface ServicePhoto {
   id: string;
