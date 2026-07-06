@@ -10,6 +10,7 @@ import { MaterialsList } from '@/components/inventory/MaterialsList';
 import { StockMovement } from '@/components/inventory/StockMovement';
 import { StockReport } from '@/components/inventory/StockReport';
 import { MobileNotifications } from '@/components/inventory/MobileNotifications';
+import { MaintenanceSettings } from '@/components/MaintenanceSettings';
 
 interface MaintenanceDashboardProps {
   activeSection?: string;
