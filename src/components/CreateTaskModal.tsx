@@ -304,7 +304,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setTravelData({
       cidade: '',
       dataIda: undefined,
-      dataVolta: undefined
+      dataVolta: undefined,
+      semPrevisao: false,
     });
     setCurrentStep(1);
 
