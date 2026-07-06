@@ -215,6 +215,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       requestType: requestType as 'email' | 'processo' | 'direto',
       processNumber: requestType === 'processo' ? processNumber : undefined,
       requestedAt,
+      managerId: managerId || null,
       servicePhotos
     });
 
@@ -271,6 +272,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setRequestType('');
     setProcessNumber('');
     setRequestedAt(getTodayLocal());
+    setManagerId('');
     setServicePhotos([]);
     setIsTravel(false);
     setTravelData({
