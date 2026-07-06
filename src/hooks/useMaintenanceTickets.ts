@@ -16,6 +16,7 @@ export interface MaintenanceTicket {
   request_type?: 'email' | 'processo' | 'direto';
   process_number?: string;
   completed_at?: string;
+  requested_at?: string;
   user_id?: string;
   travel_id?: string;
   created_at: string;

@@ -24,6 +24,7 @@ interface Ticket {
   materials?: { name: string; completed: boolean }[];
   requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
+  requestedAt?: string;
 }
 
 interface ViewTaskModalProps {
@@ -119,6 +120,21 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">SOLICITANTE</h3>
                 <p className="text-sm">{ticket.assignee}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">DATA DE SOLICITAÇÃO</h3>
+                <p className="text-sm">
+                  {ticket.requestedAt
+                    ? (() => {
+                        const [y, m, d] = ticket.requestedAt.split('-').map(Number);
+                        return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+                      })()
+                    : ticket.createdAt}
+                </p>
               </div>
             </div>
 
