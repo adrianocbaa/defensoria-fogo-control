@@ -297,7 +297,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       dataIda: undefined,
       dataVolta: undefined
     });
-    
+    setCurrentStep(1);
+
     setOpen(false);
   };
 
