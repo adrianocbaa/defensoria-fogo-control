@@ -60,6 +60,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
   const { managers } = useMaintenanceManagers();
+  const { nuclei } = useNucleiList();
   
   const [formData, setFormData] = useState({
     title: '',
