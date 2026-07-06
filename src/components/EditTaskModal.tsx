@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/select';
 import { Plus, X } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
@@ -26,32 +25,15 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-
-interface Ticket {
-  id: string;
-  title: string;
-  priority: 'Alta' | 'Média' | 'Baixa';
-  type: string;
-  location: string;
-  assignee: string;
-  createdAt: string;
-  icon: any;
-  status: string;
-  observations?: string[];
-  services?: { name: string; completed: boolean }[];
-  materials?: { name: string; completed: boolean }[];
-  requestType?: 'email' | 'processo' | 'direto';
-  processNumber?: string;
-  requestedAt?: string;
-  managerId?: string | null;
-  nucleoId?: string | null;
-}
+import { TicketServicesEditor } from './TicketServicesEditor';
+import type { TicketService } from '@/hooks/useTicketServices';
+import type { UITicket } from '@/types/maintenanceTicket';
 
 interface EditTaskModalProps {
-  ticket: Ticket | null;
+  ticket: UITicket | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdateTask: (ticket: Ticket) => void;
+  onUpdateTask: (ticket: UITicket) => void | Promise<void>;
 }
 
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
@@ -72,9 +54,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
 
   const [observation, setObservation] = useState('');
   const [observations, setObservations] = useState<string[]>([]);
-  const [services, setServices] = useState<{ name: string; completed: boolean }[]>([]);
+  const [services, setServices] = useState<TicketService[]>([]);
   const [materials, setMaterials] = useState<{ name: string; completed: boolean }[]>([]);
-  const [newService, setNewService] = useState('');
   const [newMaterial, setNewMaterial] = useState('');
   const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
@@ -94,7 +75,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
         status: ticket.status || 'Em andamento',
       });
       setObservations(ticket.observations || []);
-      setServices(ticket.services || []);
+      setServices((ticket.services || []).map((s, i) => ({ ...s, order_index: s.order_index ?? i })));
       setMaterials(ticket.materials || []);
       setRequestType(ticket.requestType || '');
       setProcessNumber(ticket.processNumber || '');
@@ -117,16 +98,6 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const removeObservation = (i: number) =>
     setObservations((prev) => prev.filter((_, idx) => idx !== i));
 
-  const addService = () => {
-    if (newService.trim()) {
-      setServices((prev) => [...prev, { name: newService, completed: false }]);
-      setNewService('');
-    }
-  };
-  const toggleService = (i: number) =>
-    setServices((prev) => prev.map((s, idx) => (idx === i ? { ...s, completed: !s.completed } : s)));
-  const removeService = (i: number) => setServices((prev) => prev.filter((_, idx) => idx !== i));
-
   const addMaterial = () => {
     if (newMaterial.trim()) {
       setMaterials((prev) => [...prev, { name: newMaterial, completed: false }]);
@@ -139,21 +110,18 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     );
   const removeMaterial = (i: number) => setMaterials((prev) => prev.filter((_, idx) => idx !== i));
 
-  const servicesProgress = services.length
-    ? (services.filter((s) => s.completed).length / services.length) * 100
-    : 0;
   const materialsProgress = materials.length
     ? (materials.filter((m) => m.completed).length / materials.length) * 100
     : 0;
 
-  // Preserva o valor original do tipo mesmo que ele não exista mais na lista
+  const allServicesDone = services.length > 0 && services.every((s) => s.completed);
+
   const typeOptions = (() => {
     const list = taskTypes.map((t) => t.nome);
     if (formData.type && !list.includes(formData.type)) return [formData.type, ...list];
     return list;
   })();
 
-  // Preserva o gerente atribuído mesmo se ele não estiver mais na lista atual
   const managerOptions = (() => {
     const base = managers.map((m) => ({ id: m.id, nome: m.nome }));
     if (managerId && !base.some((m) => m.id === managerId)) {
@@ -169,7 +137,9 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     !!formData.location &&
     !!formData.assignee;
 
-  const step2Valid = isGM || (!!requestType && (requestType !== 'processo' || !!processNumber));
+  const step2Valid =
+    services.every((s) => !!s.title.trim()) &&
+    (isGM || (!!requestType && (requestType !== 'processo' || !!processNumber)));
 
   const goNext = () => {
     if (currentStep === 1 && !step1Valid) {
@@ -177,7 +147,11 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       return;
     }
     if (currentStep === 2 && !step2Valid) {
-      toast({ title: 'Preencha os campos obrigatórios da Etapa 2', variant: 'destructive' });
+      toast({
+        title: 'Verifique a Etapa 2',
+        description: 'Todo serviço precisa de título e o tipo de solicitação é obrigatório.',
+        variant: 'destructive',
+      });
       return;
     }
     setCurrentStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
@@ -186,12 +160,23 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
 
   const handleSubmit = async () => {
     if (!ticket) return;
-
     if (!formData.status) return;
+
+    // Regra: para concluir o procedimento, todos os serviços devem estar concluídos.
+    if (formData.status === 'Concluído' && services.length > 0 && !allServicesDone) {
+      toast({
+        title: 'Serviços em aberto',
+        description:
+          'Marque todos os serviços como concluídos antes de concluir o procedimento.',
+        variant: 'destructive',
+      });
+      setCurrentStep(3);
+      return;
+    }
 
     const selectedTaskType = taskTypes.find((t) => t.nome === formData.type);
 
-    const updatedTicket: Ticket = {
+    const updatedTicket: UITicket = {
       ...ticket,
       title: isGM ? ticket.title : formData.title,
       priority: isGM ? ticket.priority : (formData.priority as 'Alta' | 'Média' | 'Baixa'),
@@ -203,9 +188,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       observations,
       services,
       materials,
-      requestType: isGM
-        ? ticket.requestType
-        : (requestType as 'email' | 'processo' | 'direto'),
+      requestType: isGM ? ticket.requestType : (requestType as 'email' | 'processo' | 'direto'),
       processNumber: isGM
         ? ticket.processNumber
         : requestType === 'processo'
@@ -230,12 +213,11 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar Tarefa - {ticket.id}</DialogTitle>
+          <DialogTitle>Editar Procedimento — {ticket.id.slice(0, 8)}</DialogTitle>
         </DialogHeader>
 
-        {/* Indicador de etapas */}
         <div className="flex items-center justify-between mb-2">
           {stepLabels.map((label, idx) => {
             const step = (idx + 1) as 1 | 2 | 3;
@@ -267,12 +249,11 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
           {currentStep === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
+                <Label htmlFor="title">Título do procedimento</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
-                  placeholder="Descreva o problema..."
                   disabled={isGM}
                   required
                 />
@@ -321,7 +302,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Localização</Label>
+                <Label htmlFor="location">Localização padrão</Label>
                 <Input
                   id="location"
                   value={formData.location}
@@ -329,6 +310,9 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                   disabled={isGM}
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  Aplicada aos serviços que não personalizarem cidade/local.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -343,7 +327,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="requestedAt">Data de Solicitação</Label>
+                <Label htmlFor="requestedAt">Data de solicitação</Label>
                 <Input
                   id="requestedAt"
                   type="date"
@@ -354,7 +338,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               </div>
 
               <div className="space-y-2">
-                <Label>Gerente de Manutenção Responsável</Label>
+                <Label>Gerente padrão</Label>
                 <Select value={managerId} onValueChange={setManagerId} disabled={isGM}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um gerente..." />
@@ -370,7 +354,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               </div>
 
               <div className="space-y-2">
-                <Label>Núcleo Requerente</Label>
+                <Label>Núcleo requerente</Label>
                 <NucleoCombobox
                   options={nuclei}
                   value={nucleoId}
@@ -384,38 +368,11 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
 
           {currentStep === 2 && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Serviços</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={newService}
-                    onChange={(e) => setNewService(e.target.value)}
-                    placeholder="Adicionar serviço..."
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
-                  />
-                  <Button type="button" onClick={addService} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                {services.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto space-y-2 p-2 border rounded-md bg-muted/30">
-                    {services.map((s, i) => (
-                      <div key={i} className="flex items-center justify-between gap-2">
-                        <span className="text-sm flex-1">{s.name}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeService(i)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <TicketServicesEditor
+                services={services}
+                onChange={setServices}
+                disabled={isGM}
+              />
 
               <div className="space-y-2">
                 <Label>Materiais</Label>
@@ -488,9 +445,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                   <Label>Tipo de Solicitação *</Label>
                   <RadioGroup
                     value={requestType}
-                    onValueChange={(v) =>
-                      setRequestType(v as 'email' | 'processo' | 'direto')
-                    }
+                    onValueChange={(v) => setRequestType(v as 'email' | 'processo' | 'direto')}
                     className="flex gap-6"
                   >
                     <div className="flex items-center space-x-2">
@@ -526,7 +481,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
           {currentStep === 3 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>Status do procedimento</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(v) => setFormData((p) => ({ ...p, status: v }))}
@@ -538,42 +493,35 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                     <SelectItem value="Pendente">Pendente</SelectItem>
                     <SelectItem value="Em andamento">Em andamento</SelectItem>
                     <SelectItem value="Impedido">Impedido</SelectItem>
-                    <SelectItem value="Concluído">Concluído</SelectItem>
+                    <SelectItem
+                      value="Concluído"
+                      disabled={services.length > 0 && !allServicesDone}
+                    >
+                      Concluído {services.length > 0 && !allServicesDone && '(pendências)'}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
+                {services.length > 0 && !allServicesDone && (
+                  <p className="text-xs text-muted-foreground">
+                    Só é possível concluir o procedimento quando todos os serviços estiverem
+                    marcados como concluídos.
+                  </p>
+                )}
               </div>
 
-              {services.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label>Serviços Executados</Label>
-                    <span className="text-sm text-muted-foreground">
-                      {Math.round(servicesProgress)}%
-                    </span>
-                  </div>
-                  <Progress value={servicesProgress} className="w-full" />
-                  <div className="max-h-48 overflow-y-auto space-y-2 p-2 border rounded-md bg-muted/30">
-                    {services.map((s, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={s.completed}
-                          onCheckedChange={() => toggleService(i)}
-                        />
-                        <span
-                          className={`text-sm ${s.completed ? 'line-through text-muted-foreground' : ''}`}
-                        >
-                          {s.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label>Serviços executados</Label>
+                <TicketServicesEditor
+                  services={services}
+                  onChange={setServices}
+                  executionMode
+                />
+              </div>
 
               {materials.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <Label>Materiais Utilizados</Label>
+                    <Label>Materiais utilizados</Label>
                     <span className="text-sm text-muted-foreground">
                       {Math.round(materialsProgress)}%
                     </span>
@@ -614,7 +562,9 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                   Próximo
                 </Button>
               ) : (
-                <Button type="button" onClick={handleSubmit}>Salvar Alterações</Button>
+                <Button type="button" onClick={handleSubmit}>
+                  Salvar Alterações
+                </Button>
               )}
             </div>
           </div>
