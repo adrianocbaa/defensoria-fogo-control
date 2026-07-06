@@ -98,6 +98,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const [requestedAt, setRequestedAt] = useState<string>(getTodayLocal());
+  const [managerId, setManagerId] = useState<string>('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
   const [isTravel, setIsTravel] = useState(false);
   const [travelData, setTravelData] = useState({
