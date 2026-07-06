@@ -325,8 +325,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {taskTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.value}
+                    <SelectItem key={type.id} value={type.nome}>
+                      {type.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
