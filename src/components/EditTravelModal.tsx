@@ -33,6 +33,7 @@ export function EditTravelModal({
 }: EditTravelModalProps) {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [semPrevisao, setSemPrevisao] = useState(!travel.data_ida || !travel.data_volta);
   const [formData, setFormData] = useState({
     servidor: travel.servidor,
     destino: travel.destino,
