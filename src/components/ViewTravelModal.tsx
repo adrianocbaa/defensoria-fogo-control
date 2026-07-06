@@ -18,9 +18,10 @@ interface ViewTravelModalProps {
 export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelModalProps) {
   const { canEdit } = useUserRole();
   
-  const dataIda = parseISO(travel.data_ida);
-  const dataVolta = parseISO(travel.data_volta);
-  const duracaoViagem = differenceInDays(dataVolta, dataIda) + 1;
+  const hasDates = !!travel.data_ida && !!travel.data_volta;
+  const dataIda = hasDates ? parseISO(travel.data_ida!) : null;
+  const dataVolta = hasDates ? parseISO(travel.data_volta!) : null;
+  const duracaoViagem = hasDates && dataIda && dataVolta ? differenceInDays(dataVolta, dataIda) + 1 : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
