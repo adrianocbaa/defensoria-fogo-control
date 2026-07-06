@@ -109,13 +109,15 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [travelData, setTravelData] = useState({
     cidade: '',
     dataIda: undefined as Date | undefined,
-    dataVolta: undefined as Date | undefined
+    dataVolta: undefined as Date | undefined,
+    semPrevisao: false,
   });
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const { toast } = useToast();
 
+  const travelDatesOk = travelData.semPrevisao || (!!travelData.dataIda && !!travelData.dataVolta);
   const step1Valid = !!(formData.title && formData.priority && formData.type && formData.location && formData.assignee && requestedAt);
-  const step2Valid = !!requestType && (requestType !== 'processo' || !!processNumber) && (!isTravel || (!!travelData.cidade && !!travelData.dataIda && !!travelData.dataVolta));
+  const step2Valid = !!requestType && (requestType !== 'processo' || !!processNumber) && (!isTravel || (!!travelData.cidade && travelDatesOk));
 
   const goNext = () => {
     if (currentStep === 1 && !step1Valid) {
