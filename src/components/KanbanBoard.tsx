@@ -69,10 +69,11 @@ interface DroppableColumnProps {
   onViewTicket: (ticket: Ticket) => void;
   onEditTicket: (ticket: Ticket) => void;
   onMarkAsExecuted?: (ticketId: string) => void;
+  onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
 }
 
-function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, isManutencao }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -102,6 +103,7 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMar
               onViewTicket={onViewTicket}
               onEditTicket={onEditTicket}
               onMarkAsExecuted={onMarkAsExecuted}
+              onDeleteTicket={onDeleteTicket}
               isManutencao={isManutencao}
             />
           ))}
@@ -116,10 +118,11 @@ interface DraggableTicketProps {
   onViewTicket: (ticket: Ticket) => void;
   onEditTicket: (ticket: Ticket) => void;
   onMarkAsExecuted?: (ticketId: string) => void;
+  onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, isManutencao }: DraggableTicketProps) {
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DraggableTicketProps) {
   // Permitir drag para todos os usuários
   const canDrag = true;
   
