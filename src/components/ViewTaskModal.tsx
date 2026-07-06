@@ -54,8 +54,10 @@ const typeIcons = {
 
 export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps) {
   const { managers } = useMaintenanceManagers(false);
+  const { nuclei } = useNucleiList();
   if (!ticket) return null;
   const managerName = ticket.managerId ? managers.find(m => m.id === ticket.managerId)?.nome : null;
+  const nucleoName = ticket.nucleoId ? nuclei.find(n => n.id === ticket.nucleoId)?.name : null;
 
   const getServicesProgress = () => {
     if (!ticket.services || ticket.services.length === 0) return 0;
