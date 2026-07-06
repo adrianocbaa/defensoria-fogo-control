@@ -295,6 +295,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setProcessNumber('');
     setRequestedAt(getTodayLocal());
     setManagerId('');
+    setNucleoId('');
     setServicePhotos([]);
     setIsTravel(false);
     setTravelData({
