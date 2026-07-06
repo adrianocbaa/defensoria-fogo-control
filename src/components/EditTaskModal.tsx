@@ -53,6 +53,7 @@ interface EditTaskModalProps {
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
   const { isGM, canEdit } = useUserRole();
   const { users: maintenanceUsers } = useMaintenanceUsers();
+  const { types: taskTypes } = useMaintenanceTypes();
   
   const [formData, setFormData] = useState({
     title: '',
