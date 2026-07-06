@@ -387,6 +387,22 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="manager">Gerente de Manutenção Responsável</Label>
+            <Select value={managerId} onValueChange={setManagerId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um gerente (opcional)..." />
+              </SelectTrigger>
+              <SelectContent>
+                {managers.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
 
 
 
