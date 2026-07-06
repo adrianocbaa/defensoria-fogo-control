@@ -492,6 +492,14 @@ export function KanbanBoard() {
     });
   };
 
+  const handleDeleteTicket = async (ticketId: string) => {
+    await deleteTicket(ticketId);
+    toast({
+      title: "Tarefa excluída",
+      description: "A tarefa foi removida permanentemente.",
+    });
+  };
+
   return (
     <DndContext
       sensors={sensors}
