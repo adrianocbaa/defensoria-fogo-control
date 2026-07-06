@@ -184,8 +184,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   };
   const goBack = () => setCurrentStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!ticket) return;
 
     if (!formData.status) return;
