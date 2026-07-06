@@ -43,6 +43,7 @@ export function EditTravelModal({
   });
   const [dataIdaOpen, setDataIdaOpen] = useState(false);
   const [dataVoltaOpen, setDataVoltaOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const validateForm = () => {
     if (!formData.servidor.trim()) {
