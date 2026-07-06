@@ -10,6 +10,7 @@ import { MaterialsList } from '@/components/inventory/MaterialsList';
 import { StockMovement } from '@/components/inventory/StockMovement';
 import { StockReport } from '@/components/inventory/StockReport';
 import { MobileNotifications } from '@/components/inventory/MobileNotifications';
+import { MaintenanceSettings } from '@/components/MaintenanceSettings';
 
 interface MaintenanceDashboardProps {
   activeSection?: string;
@@ -66,12 +67,7 @@ export function MaintenanceDashboard({ activeSection = 'overview' }: Maintenance
   }
 
   if (activeSection === 'settings') {
-    return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Configurações</h1>
-        <p className="text-muted-foreground">Configurações do sistema em desenvolvimento...</p>
-      </div>
-    );
+    return <MaintenanceSettings />;
   }
 
   if (activeSection === 'test') {
