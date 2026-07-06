@@ -1,0 +1,1 @@
+ALTER TABLE public.maintenance_tickets ADD COLUMN IF NOT EXISTS requested_at date NOT NULL DEFAULT CURRENT_DATE;

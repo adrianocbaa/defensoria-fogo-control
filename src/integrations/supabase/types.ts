@@ -1101,6 +1101,7 @@ export type Database = {
           priority: string
           process_number: string | null
           request_type: string | null
+          requested_at: string
           services: Json | null
           status: string
           title: string
@@ -1120,6 +1121,7 @@ export type Database = {
           priority: string
           process_number?: string | null
           request_type?: string | null
+          requested_at?: string
           services?: Json | null
           status: string
           title: string
@@ -1139,6 +1141,7 @@ export type Database = {
           priority?: string
           process_number?: string | null
           request_type?: string | null
+          requested_at?: string
           services?: Json | null
           status?: string
           title?: string
