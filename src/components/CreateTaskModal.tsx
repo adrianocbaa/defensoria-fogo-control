@@ -244,10 +244,12 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     // Criar viagem no calendário se necessário
     if (isTravel && travelData.cidade) {
       try {
+        const managerName = managers.find((m) => m.id === managerId)?.nome || formData.assignee;
+        const servidorViagem = managerName.trim().split(/\s+/)[0];
         const { data: createdTravel, error } = await supabase
           .from('travels')
           .insert({
-            servidor: formData.assignee,
+            servidor: servidorViagem,
             destino: travelData.cidade,
             data_ida: travelData.semPrevisao || !travelData.dataIda ? null : format(travelData.dataIda, 'yyyy-MM-dd'),
             data_volta: travelData.semPrevisao || !travelData.dataVolta ? null : format(travelData.dataVolta, 'yyyy-MM-dd'),
