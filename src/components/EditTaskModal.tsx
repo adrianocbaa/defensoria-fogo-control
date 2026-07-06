@@ -463,7 +463,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="processo" id="processo" />
-                  <Label htmlFor="processo">Processo</Label>
+                  <Label htmlFor="processo">SEI</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="direto" id="direto" />
@@ -473,12 +473,12 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               
               {requestType === 'processo' && (
                 <div className="space-y-2">
-                  <Label htmlFor="processNumber">Número do Processo</Label>
+                  <Label htmlFor="processNumber">Número do SEI</Label>
                   <Input
                     id="processNumber"
                     value={processNumber}
                     onChange={(e) => setProcessNumber(e.target.value)}
-                    placeholder="Digite o número do processo..."
+                    placeholder="Digite o número do SEI..."
                     required
                   />
                 </div>
