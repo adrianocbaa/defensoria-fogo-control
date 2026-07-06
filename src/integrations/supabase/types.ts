@@ -1128,6 +1128,7 @@ export type Database = {
           location: string
           manager_id: string | null
           materials: Json | null
+          nucleo_id: string | null
           observations: string[] | null
           priority: string
           process_number: string | null
@@ -1149,6 +1150,7 @@ export type Database = {
           location: string
           manager_id?: string | null
           materials?: Json | null
+          nucleo_id?: string | null
           observations?: string[] | null
           priority: string
           process_number?: string | null
@@ -1170,6 +1172,7 @@ export type Database = {
           location?: string
           manager_id?: string | null
           materials?: Json | null
+          nucleo_id?: string | null
           observations?: string[] | null
           priority?: string
           process_number?: string | null
@@ -1189,6 +1192,27 @@ export type Database = {
             columns: ["manager_id"]
             isOneToOne: false
             referencedRelation: "maintenance_managers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tickets_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tickets_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tickets_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_secure"
             referencedColumns: ["id"]
           },
           {
