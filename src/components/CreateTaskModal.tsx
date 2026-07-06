@@ -56,6 +56,7 @@ interface Ticket {
   materials?: { name: string; completed: boolean }[];
   requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
+  requestedAt?: string;
   servicePhotos?: ServicePhoto[];
 }
 
@@ -89,6 +90,11 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [newMaterial, setNewMaterial] = useState('');
   const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
+  const getTodayLocal = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const [requestedAt, setRequestedAt] = useState<string>(getTodayLocal());
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
   const [isTravel, setIsTravel] = useState(false);
   const [travelData, setTravelData] = useState({
@@ -204,6 +210,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       materials,
       requestType: requestType as 'email' | 'processo' | 'direto',
       processNumber: requestType === 'processo' ? processNumber : undefined,
+      requestedAt,
       servicePhotos
     });
 
@@ -259,6 +266,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setNewMaterial('');
     setRequestType('');
     setProcessNumber('');
+    setRequestedAt(getTodayLocal());
     setServicePhotos([]);
     setIsTravel(false);
     setTravelData({
@@ -361,6 +369,19 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               ))}
             </datalist>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requestedAt">Data de Solicitação *</Label>
+            <Input
+              id="requestedAt"
+              type="date"
+              value={requestedAt}
+              onChange={(e) => setRequestedAt(e.target.value)}
+              required
+            />
+          </div>
+
+
 
 
           {/* Observações */}

@@ -38,6 +38,7 @@ interface Ticket {
   materials?: { name: string; completed: boolean }[];
   requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
+  requestedAt?: string;
 }
 
 interface EditTaskModalProps {
@@ -72,6 +73,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [newMaterial, setNewMaterial] = useState('');
   const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
+  const [requestedAt, setRequestedAt] = useState<string>('');
 
   // Atualizar formulário quando o ticket mudar
   useEffect(() => {
@@ -89,6 +91,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setMaterials(ticket.materials || []);
       setRequestType(ticket.requestType || '');
       setProcessNumber(ticket.processNumber || '');
+      setRequestedAt(ticket.requestedAt || '');
     }
   }, [ticket]);
 
@@ -190,7 +193,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       services,
       materials,
       requestType: isGM ? ticket.requestType : requestType as 'email' | 'processo' | 'direto',
-      processNumber: isGM ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined)
+      processNumber: isGM ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined),
+      requestedAt: requestedAt || ticket.requestedAt
     };
 
     try {
@@ -285,6 +289,17 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               placeholder="Nome do solicitante"
               disabled={isGM}
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requestedAt">Data de Solicitação</Label>
+            <Input
+              id="requestedAt"
+              type="date"
+              value={requestedAt}
+              onChange={(e) => setRequestedAt(e.target.value)}
+              disabled={isGM}
             />
           </div>
 
