@@ -18,6 +18,7 @@ import {
 import { Plus, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, X } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
+import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
