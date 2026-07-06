@@ -204,22 +204,19 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     }
 
     // Validar campos de viagem se necessário
-    if (isTravel && (!travelData.cidade || !travelData.dataIda || !travelData.dataVolta)) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos de viagem.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (isTravel && travelData.dataIda && travelData.dataVolta && travelData.dataIda >= travelData.dataVolta) {
-      toast({
-        title: "Erro",
-        description: "A data de ida deve ser anterior à data de volta.",
-        variant: "destructive"
-      });
-      return;
+    if (isTravel) {
+      if (!travelData.cidade) {
+        toast({ title: 'Erro', description: 'Informe a cidade de destino.', variant: 'destructive' });
+        return;
+      }
+      if (!travelData.semPrevisao && (!travelData.dataIda || !travelData.dataVolta)) {
+        toast({ title: 'Erro', description: 'Preencha as datas ou marque "Sem previsão".', variant: 'destructive' });
+        return;
+      }
+      if (!travelData.semPrevisao && travelData.dataIda && travelData.dataVolta && travelData.dataIda >= travelData.dataVolta) {
+        toast({ title: 'Erro', description: 'A data de ida deve ser anterior à data de volta.', variant: 'destructive' });
+        return;
+      }
     }
 
     const selectedTaskType = taskTypes.find(t => t.nome === formData.type);
