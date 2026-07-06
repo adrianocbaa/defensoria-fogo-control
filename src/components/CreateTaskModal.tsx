@@ -63,14 +63,8 @@ interface CreateTaskModalProps {
   onCreateTask: (task: Omit<Ticket, 'id' | 'createdAt'>) => void;
 }
 
-const taskTypes = [
-  { value: 'Hidráulica', icon: Droplets },
-  { value: 'Elétrica', icon: Zap },
-  { value: 'Climatização', icon: Wind },
-  { value: 'Segurança', icon: Shield },
-  { value: 'Pintura', icon: PaintRoller },
-  { value: 'Geral', icon: Wrench },
-];
+
+
 
 export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const { user } = useAuth();
