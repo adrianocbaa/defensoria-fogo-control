@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { MapPin, Clock, User, FileText, Settings, CheckCircle2, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, UserCheck } from 'lucide-react';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { useNucleiList } from '@/hooks/useNucleiList';
 
 interface Ticket {
   id: string;
@@ -27,6 +28,7 @@ interface Ticket {
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  nucleoId?: string | null;
 }
 
 interface ViewTaskModalProps {
@@ -52,8 +54,10 @@ const typeIcons = {
 
 export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps) {
   const { managers } = useMaintenanceManagers(false);
+  const { nuclei } = useNucleiList();
   if (!ticket) return null;
   const managerName = ticket.managerId ? managers.find(m => m.id === ticket.managerId)?.nome : null;
+  const nucleoName = ticket.nucleoId ? nuclei.find(n => n.id === ticket.nucleoId)?.name : null;
 
   const getServicesProgress = () => {
     if (!ticket.services || ticket.services.length === 0) return 0;
@@ -132,6 +136,14 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">GERENTE RESPONSÁVEL</h3>
                 <p className="text-sm">{managerName || 'Não atribuído'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <h3 className="font-medium text-sm text-muted-foreground">NÚCLEO REQUERENTE</h3>
+                <p className="text-sm">{nucleoName || 'Não atribuído'}</p>
               </div>
             </div>
 

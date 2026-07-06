@@ -20,6 +20,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { useNucleiList } from '@/hooks/useNucleiList';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -41,6 +42,7 @@ interface Ticket {
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  nucleoId?: string | null;
 }
 
 interface EditTaskModalProps {
@@ -58,6 +60,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
   const { managers } = useMaintenanceManagers();
+  const { nuclei } = useNucleiList();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -78,6 +81,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [processNumber, setProcessNumber] = useState('');
   const [requestedAt, setRequestedAt] = useState<string>('');
   const [managerId, setManagerId] = useState<string>('');
+  const [nucleoId, setNucleoId] = useState<string>('');
 
   // Atualizar formulário quando o ticket mudar
   useEffect(() => {
@@ -97,6 +101,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setProcessNumber(ticket.processNumber || '');
       setRequestedAt(ticket.requestedAt || '');
       setManagerId(ticket.managerId || '');
+      setNucleoId(ticket.nucleoId || '');
     }
   }, [ticket]);
 
@@ -200,7 +205,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       requestType: isGM ? ticket.requestType : requestType as 'email' | 'processo' | 'direto',
       processNumber: isGM ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined),
       requestedAt: requestedAt || ticket.requestedAt,
-      managerId: managerId || null
+      managerId: managerId || null,
+      nucleoId: nucleoId || null
     };
 
     try {
@@ -319,6 +325,22 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 {managers.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nucleo">Núcleo Requerente</Label>
+            <Select value={nucleoId} onValueChange={setNucleoId} disabled={isGM}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um núcleo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {nuclei.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.name}
                   </SelectItem>
                 ))}
               </SelectContent>

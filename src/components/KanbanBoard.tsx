@@ -45,6 +45,7 @@ interface Ticket extends Omit<MaintenanceTicket, 'created_at' | 'request_type' |
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  nucleoId?: string | null;
   completedAt?: Date;
 }
 
@@ -291,6 +292,7 @@ export function KanbanBoard() {
         processNumber: ticket.process_number,
         requestedAt: (ticket as any).requested_at,
         managerId: (ticket as any).manager_id ?? null,
+        nucleoId: (ticket as any).nucleo_id ?? null,
         completedAt: ticket.completed_at ? new Date(ticket.completed_at) : undefined,
         icon: getIconForType(ticket.type)
       }));

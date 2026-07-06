@@ -33,6 +33,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { useNucleiList } from '@/hooks/useNucleiList';
 
 interface ServicePhoto {
   id: string;
@@ -59,6 +60,7 @@ interface Ticket {
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  nucleoId?: string | null;
   servicePhotos?: ServicePhoto[];
 }
 
@@ -75,6 +77,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
   const { managers } = useMaintenanceManagers();
+  const { nuclei } = useNucleiList();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -99,6 +102,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   };
   const [requestedAt, setRequestedAt] = useState<string>(getTodayLocal());
   const [managerId, setManagerId] = useState<string>('');
+  const [nucleoId, setNucleoId] = useState<string>('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
   const [isTravel, setIsTravel] = useState(false);
   const [travelData, setTravelData] = useState({
@@ -233,6 +237,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       processNumber: requestType === 'processo' ? processNumber : undefined,
       requestedAt,
       managerId: managerId || null,
+      nucleoId: nucleoId || null,
       servicePhotos
     });
 
@@ -290,6 +295,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setProcessNumber('');
     setRequestedAt(getTodayLocal());
     setManagerId('');
+    setNucleoId('');
     setServicePhotos([]);
     setIsTravel(false);
     setTravelData({
@@ -427,6 +433,22 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 {managers.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nucleo">Núcleo Requerente</Label>
+            <Select value={nucleoId} onValueChange={setNucleoId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um núcleo (opcional)..." />
+              </SelectTrigger>
+              <SelectContent>
+                {nuclei.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.name}
                   </SelectItem>
                 ))}
               </SelectContent>
