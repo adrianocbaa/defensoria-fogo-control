@@ -7,7 +7,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { MapPin, Clock, User, FileText, Settings, CheckCircle2, Wrench, Zap, Droplets, Shield, Wind, PaintRoller } from 'lucide-react';
+import { MapPin, Clock, User, FileText, Settings, CheckCircle2, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, UserCheck } from 'lucide-react';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 interface Ticket {
   id: string;
@@ -25,6 +26,7 @@ interface Ticket {
   requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
   requestedAt?: string;
+  managerId?: string | null;
 }
 
 interface ViewTaskModalProps {
@@ -49,7 +51,9 @@ const typeIcons = {
 };
 
 export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps) {
+  const { managers } = useMaintenanceManagers(false);
   if (!ticket) return null;
+  const managerName = ticket.managerId ? managers.find(m => m.id === ticket.managerId)?.nome : null;
 
   const getServicesProgress = () => {
     if (!ticket.services || ticket.services.length === 0) return 0;
