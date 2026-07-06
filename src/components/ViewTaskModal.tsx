@@ -104,7 +104,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
 
           <Separator />
 
-          {/* Localização e Responsável */}
+          {/* Localização e Solicitante */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -117,7 +117,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
             <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-muted-foreground" />
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">RESPONSÁVEL</h3>
+                <h3 className="font-medium text-sm text-muted-foreground">SOLICITANTE</h3>
                 <p className="text-sm">{ticket.assignee}</p>
               </div>
             </div>

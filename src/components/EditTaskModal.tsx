@@ -277,12 +277,12 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="assignee">Responsável</Label>
+            <Label htmlFor="assignee">Solicitante</Label>
             <Input
               id="assignee"
               value={formData.assignee}
               onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
-              placeholder="Nome do responsável"
+              placeholder="Nome do solicitante"
               disabled={isGM}
               required
             />
