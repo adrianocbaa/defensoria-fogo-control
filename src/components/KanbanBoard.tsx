@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check } from 'lucide-react';
+import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check, Trash2 } from 'lucide-react';
 import { CreateTaskModal } from './CreateTaskModal';
 import { ViewTaskModal } from './ViewTaskModal';
 import { EditTaskModal } from './EditTaskModal';
@@ -69,10 +69,11 @@ interface DroppableColumnProps {
   onViewTicket: (ticket: Ticket) => void;
   onEditTicket: (ticket: Ticket) => void;
   onMarkAsExecuted?: (ticketId: string) => void;
+  onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
 }
 
-function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, isManutencao }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -102,6 +103,7 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMar
               onViewTicket={onViewTicket}
               onEditTicket={onEditTicket}
               onMarkAsExecuted={onMarkAsExecuted}
+              onDeleteTicket={onDeleteTicket}
               isManutencao={isManutencao}
             />
           ))}
@@ -116,10 +118,11 @@ interface DraggableTicketProps {
   onViewTicket: (ticket: Ticket) => void;
   onEditTicket: (ticket: Ticket) => void;
   onMarkAsExecuted?: (ticketId: string) => void;
+  onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, isManutencao }: DraggableTicketProps) {
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DraggableTicketProps) {
   // Permitir drag para todos os usuários
   const canDrag = true;
   
@@ -200,6 +203,20 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   }} className="text-xs">
                     <Check className="mr-2 h-3 w-3" />
                     Executado
+                  </DropdownMenuItem>
+                )}
+                {onDeleteTicket && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Excluir a tarefa "${ticket.title}"? Esta ação não pode ser desfeita.`)) {
+                        onDeleteTicket(ticket.id);
+                      }
+                    }}
+                    className="text-xs text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Excluir
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -475,6 +492,14 @@ export function KanbanBoard() {
     });
   };
 
+  const handleDeleteTicket = async (ticketId: string) => {
+    await deleteTicket(ticketId);
+    toast({
+      title: "Tarefa excluída",
+      description: "A tarefa foi removida permanentemente.",
+    });
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -507,6 +532,7 @@ export function KanbanBoard() {
                 onViewTicket={handleViewTicket}
                 onEditTicket={handleEditTicket}
                 onMarkAsExecuted={handleMarkAsExecuted}
+                onDeleteTicket={!isGM ? handleDeleteTicket : undefined}
                 isManutencao={isGM}
               />
             );
