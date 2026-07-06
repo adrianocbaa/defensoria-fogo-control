@@ -47,14 +47,8 @@ interface EditTaskModalProps {
   onUpdateTask: (ticket: Ticket) => void;
 }
 
-const taskTypes = [
-  { value: 'Hidráulica', icon: Droplets },
-  { value: 'Elétrica', icon: Zap },
-  { value: 'Climatização', icon: Wind },
-  { value: 'Segurança', icon: Shield },
-  { value: 'Pintura', icon: PaintRoller },
-  { value: 'Geral', icon: Wrench },
-];
+
+
 
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
   const { isGM, canEdit } = useUserRole();
