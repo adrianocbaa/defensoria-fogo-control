@@ -36,18 +36,10 @@ import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenance
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
+import { replaceServicesForTicket } from '@/hooks/useTicketServices';
+import type { UITicket } from '@/types/maintenanceTicket';
 
-// Use MaintenanceTicket from the hook but extend it with icon for UI
-interface Ticket extends Omit<MaintenanceTicket, 'created_at' | 'request_type' | 'process_number' | 'completed_at'> {
-  icon: any;
-  createdAt: string;
-  requestType?: 'email' | 'processo' | 'direto';
-  processNumber?: string;
-  requestedAt?: string;
-  managerId?: string | null;
-  nucleoId?: string | null;
-  completedAt?: Date;
-}
+type Ticket = UITicket;
 
 const initialTickets: Record<string, Ticket[]> = {
   'Em Análise': [],
