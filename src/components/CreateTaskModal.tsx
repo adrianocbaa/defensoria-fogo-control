@@ -188,7 +188,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       return;
     }
 
-    const selectedTaskType = taskTypes.find(t => t.value === formData.type);
+    const selectedTaskType = taskTypes.find(t => t.nome === formData.type);
     
     // Criar a tarefa
     onCreateTask({
