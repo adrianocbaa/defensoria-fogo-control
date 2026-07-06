@@ -100,6 +100,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setProcessNumber(ticket.processNumber || '');
       setRequestedAt(ticket.requestedAt || '');
       setManagerId(ticket.managerId || '');
+      setNucleoId(ticket.nucleoId || '');
     }
   }, [ticket]);
 
