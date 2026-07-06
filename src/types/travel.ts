@@ -2,8 +2,8 @@ export interface Travel {
   id: string;
   servidor: string;
   destino: string;
-  data_ida: string;
-  data_volta: string;
+  data_ida: string | null;
+  data_volta: string | null;
   motivo: string;
   user_id?: string;
   created_at?: string;
@@ -13,7 +13,7 @@ export interface Travel {
 export interface CreateTravelData {
   servidor: string;
   destino: string;
-  data_ida: string;
-  data_volta: string;
+  data_ida: string | null;
+  data_volta: string | null;
   motivo: string;
 }
