@@ -643,20 +643,43 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                   />
                 </div>
                 
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sem-previsao"
+                    checked={travelData.semPrevisao}
+                    onCheckedChange={(checked) =>
+                      setTravelData(prev => ({
+                        ...prev,
+                        semPrevisao: !!checked,
+                        dataIda: checked ? undefined : prev.dataIda,
+                        dataVolta: checked ? undefined : prev.dataVolta,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="sem-previsao" className="cursor-pointer">
+                    Sem previsão de datas
+                  </Label>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Data de Ida *</Label>
+                    <Label>Data de Ida {!travelData.semPrevisao && '*'}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
+                          disabled={travelData.semPrevisao}
                           className={cn(
                             "w-full justify-start text-left font-normal",
                             !travelData.dataIda && "text-muted-foreground"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {travelData.dataIda ? format(travelData.dataIda, "dd/MM/yyyy") : "Selecionar data"}
+                          {travelData.semPrevisao
+                            ? "Sem previsão"
+                            : travelData.dataIda
+                              ? format(travelData.dataIda, "dd/MM/yyyy")
+                              : "Selecionar data"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -673,18 +696,23 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Data de Volta *</Label>
+                    <Label>Data de Volta {!travelData.semPrevisao && '*'}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
+                          disabled={travelData.semPrevisao}
                           className={cn(
                             "w-full justify-start text-left font-normal",
                             !travelData.dataVolta && "text-muted-foreground"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {travelData.dataVolta ? format(travelData.dataVolta, "dd/MM/yyyy") : "Selecionar data"}
+                          {travelData.semPrevisao
+                            ? "Sem previsão"
+                            : travelData.dataVolta
+                              ? format(travelData.dataVolta, "dd/MM/yyyy")
+                              : "Selecionar data"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
