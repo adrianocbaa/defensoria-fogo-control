@@ -204,7 +204,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       requestType: isGM ? ticket.requestType : requestType as 'email' | 'processo' | 'direto',
       processNumber: isGM ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined),
       requestedAt: requestedAt || ticket.requestedAt,
-      managerId: managerId || null
+      managerId: managerId || null,
+      nucleoId: nucleoId || null
     };
 
     try {
