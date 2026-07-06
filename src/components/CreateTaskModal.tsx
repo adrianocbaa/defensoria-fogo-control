@@ -106,7 +106,24 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     dataIda: undefined as Date | undefined,
     dataVolta: undefined as Date | undefined
   });
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const { toast } = useToast();
+
+  const step1Valid = !!(formData.title && formData.priority && formData.type && formData.location && formData.assignee && requestedAt);
+  const step2Valid = !!requestType && (requestType !== 'processo' || !!processNumber) && (!isTravel || (!!travelData.cidade && !!travelData.dataIda && !!travelData.dataVolta));
+
+  const goNext = () => {
+    if (currentStep === 1 && !step1Valid) {
+      toast({ title: 'Preencha os campos obrigatórios da Etapa 1', variant: 'destructive' });
+      return;
+    }
+    if (currentStep === 2 && !step2Valid) {
+      toast({ title: 'Preencha os campos obrigatórios da Etapa 2', variant: 'destructive' });
+      return;
+    }
+    setCurrentStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
+  };
+  const goBack = () => setCurrentStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
   const addObservation = () => {
     if (observation.trim()) {
