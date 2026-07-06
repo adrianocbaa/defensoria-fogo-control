@@ -169,7 +169,7 @@ function TiposManutencao() {
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground w-6 text-right">{t.ordem}</span>
                   <span className="font-medium">{t.nome}</span>
-                  <Badge variant="outline" className="text-xs">{t.icone}</Badge>
+                  <Badge variant="outline" className="text-xs">{ICON_LABEL[t.icone] ?? t.icone}</Badge>
                   {!t.ativo && <Badge variant="secondary">Inativo</Badge>}
                 </div>
                 <div className="flex items-center gap-2">
