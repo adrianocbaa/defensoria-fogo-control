@@ -57,22 +57,24 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
       return false;
     }
 
-    if (!formData.data_ida || !formData.data_volta) {
-      toast({
-        title: "Erro",
-        description: "Datas de ida e volta são obrigatórias",
-        variant: "destructive",
-      });
-      return false;
-    }
+    if (!semPrevisao) {
+      if (!formData.data_ida || !formData.data_volta) {
+        toast({
+          title: "Erro",
+          description: "Datas de ida e volta são obrigatórias",
+          variant: "destructive",
+        });
+        return false;
+      }
 
-    if (new Date(formData.data_ida) > new Date(formData.data_volta)) {
-      toast({
-        title: "Erro",
-        description: "Data de ida não pode ser posterior à data de volta",
-        variant: "destructive",
-      });
-      return false;
+      if (new Date(formData.data_ida) > new Date(formData.data_volta)) {
+        toast({
+          title: "Erro",
+          description: "Data de ida não pode ser posterior à data de volta",
+          variant: "destructive",
+        });
+        return false;
+      }
     }
 
     if (!formData.motivo.trim()) {
