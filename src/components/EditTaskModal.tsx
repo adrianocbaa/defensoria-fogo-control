@@ -80,6 +80,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [processNumber, setProcessNumber] = useState('');
   const [requestedAt, setRequestedAt] = useState<string>('');
   const [managerId, setManagerId] = useState<string>('');
+  const [nucleoId, setNucleoId] = useState<string>('');
 
   // Atualizar formulário quando o ticket mudar
   useEffect(() => {
