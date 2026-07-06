@@ -199,7 +199,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       materials,
       requestType: isGM ? ticket.requestType : requestType as 'email' | 'processo' | 'direto',
       processNumber: isGM ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined),
-      requestedAt: requestedAt || ticket.requestedAt
+      requestedAt: requestedAt || ticket.requestedAt,
+      managerId: managerId || null
     };
 
     try {
@@ -306,6 +307,22 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               onChange={(e) => setRequestedAt(e.target.value)}
               disabled={isGM}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="manager">Gerente de Manutenção Responsável</Label>
+            <Select value={managerId} onValueChange={setManagerId} disabled={isGM}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um gerente..." />
+              </SelectTrigger>
+              <SelectContent>
+                {managers.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
