@@ -205,6 +205,20 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                     Executado
                   </DropdownMenuItem>
                 )}
+                {onDeleteTicket && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Excluir a tarefa "${ticket.title}"? Esta ação não pode ser desfeita.`)) {
+                        onDeleteTicket(ticket.id);
+                      }
+                    }}
+                    className="text-xs text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Excluir
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
