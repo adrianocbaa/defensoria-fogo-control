@@ -213,7 +213,7 @@ function TiposManutencao() {
                 className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
               >
                 {ICON_OPTIONS.map((i) => (
-                  <option key={i} value={i}>{i}</option>
+                  <option key={i.value} value={i.value}>{i.label}</option>
                 ))}
               </select>
             </div>
