@@ -147,9 +147,10 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
   };
 
   const getServicesProgress = () => {
-    if (!ticket.services || ticket.services.length === 0) return 0;
-    const completed = ticket.services.filter(s => s.completed).length;
-    return (completed / ticket.services.length) * 100;
+    const svcs = ticket.services ?? [];
+    if (svcs.length === 0) return 0;
+    const completed = svcs.filter(s => s.completed).length;
+    return (completed / svcs.length) * 100;
   };
 
   return (
