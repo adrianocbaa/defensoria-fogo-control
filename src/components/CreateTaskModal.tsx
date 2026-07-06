@@ -346,13 +346,13 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="assignee">Responsável</Label>
+            <Label htmlFor="assignee">Solicitante</Label>
             <Input
               id="assignee"
               list="assignee-suggestions"
               value={formData.assignee}
               onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
-              placeholder="Digite o nome do responsável..."
+              placeholder="Digite o nome do solicitante..."
               required
             />
             <datalist id="assignee-suggestions">
