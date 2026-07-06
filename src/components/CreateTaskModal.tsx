@@ -432,10 +432,9 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               </SelectContent>
             </Select>
           </div>
+          </div>)}
 
-
-
-
+          {currentStep === 2 && (<div className="space-y-4">
           {/* Observações */}
           <div className="space-y-2">
             <Label>Observações</Label>
