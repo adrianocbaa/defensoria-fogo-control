@@ -102,9 +102,16 @@ export function EditTravelModal({
 
     setLoading(true);
     try {
+      const updateData = {
+        servidor: formData.servidor,
+        destino: formData.destino,
+        motivo: formData.motivo,
+        data_ida: semPrevisao ? null : formData.data_ida,
+        data_volta: semPrevisao ? null : formData.data_volta,
+      };
       const { error } = await supabase
         .from('travels')
-        .update(formData)
+        .update(updateData)
         .eq('id', travel.id);
 
       if (error) throw error;
