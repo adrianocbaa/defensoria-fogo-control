@@ -101,6 +101,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   };
   const [requestedAt, setRequestedAt] = useState<string>(getTodayLocal());
   const [managerId, setManagerId] = useState<string>('');
+  const [nucleoId, setNucleoId] = useState<string>('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
   const [isTravel, setIsTravel] = useState(false);
   const [travelData, setTravelData] = useState({
