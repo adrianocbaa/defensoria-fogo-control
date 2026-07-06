@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { MapPin, Clock, User, FileText, Settings, CheckCircle2, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, UserCheck } from 'lucide-react';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { useNucleiList } from '@/hooks/useNucleiList';
 
 interface Ticket {
   id: string;
