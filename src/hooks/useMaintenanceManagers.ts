@@ -16,10 +16,11 @@ export function useMaintenanceManagers(_onlyActive = true) {
   const load = async () => {
     setLoading(true);
     // Busca user_ids que têm o papel "manutencao"
+    // No sistema, o perfil "Manutenção" corresponde ao role 'gm'
     const { data: roles, error: rolesError } = await supabase
       .from('user_roles')
       .select('user_id')
-      .eq('role', 'manutencao' as any)
+      .eq('role', 'gm' as any)
       .limit(10000);
 
     if (rolesError || !roles || roles.length === 0) {
