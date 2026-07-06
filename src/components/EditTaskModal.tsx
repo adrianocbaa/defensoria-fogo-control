@@ -175,7 +175,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       return;
     }
 
-    const selectedTaskType = taskTypes.find(t => t.value === formData.type);
+    const selectedTaskType = taskTypes.find(t => t.nome === formData.type);
     
     const updatedTicket: Ticket = {
       ...ticket,
