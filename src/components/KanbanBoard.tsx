@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check } from 'lucide-react';
+import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check, Trash2 } from 'lucide-react';
 import { CreateTaskModal } from './CreateTaskModal';
 import { ViewTaskModal } from './ViewTaskModal';
 import { EditTaskModal } from './EditTaskModal';
