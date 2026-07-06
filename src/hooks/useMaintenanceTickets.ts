@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import type { TicketService } from './useTicketServices';
 
 export interface MaintenanceTicket {
   id: string;
@@ -11,7 +12,7 @@ export interface MaintenanceTicket {
   assignee: string;
   status: 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído';
   observations?: string[];
-  services?: { name: string; completed: boolean }[];
+  services?: TicketService[];
   materials?: { name: string; completed: boolean }[];
   request_type?: 'email' | 'processo' | 'direto';
   process_number?: string;
@@ -38,7 +39,7 @@ export function useMaintenanceTickets() {
     try {
       const { data, error } = await supabase
         .from('maintenance_tickets')
-        .select('*')
+        .select('*, maintenance_ticket_services(*)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -50,13 +51,32 @@ export function useMaintenanceTickets() {
         'Concluído': []
       } as { [key: string]: MaintenanceTicket[] };
 
-      data?.forEach(ticket => {
+      data?.forEach((ticket: any) => {
         if (groupedTickets[ticket.status]) {
+          const rawServices = (ticket.maintenance_ticket_services ?? []) as any[];
+          const services: TicketService[] = rawServices
+            .slice()
+            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+            .map((r) => ({
+              id: r.id,
+              title: r.title,
+              description: r.description,
+              order_index: r.order_index,
+              completed: r.completed,
+              status: r.status,
+              custom_assignment: r.custom_assignment,
+              nucleo_id: r.nucleo_id,
+              location: r.location,
+              manager_id: r.manager_id,
+              scheduled_date: r.scheduled_date,
+              materials: (r.materials as any) ?? [],
+            }));
+
           groupedTickets[ticket.status].push({
             ...ticket,
             priority: ticket.priority as 'Alta' | 'Média' | 'Baixa',
             status: ticket.status as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído',
-            services: ticket.services as { name: string; completed: boolean }[] || [],
+            services,
             materials: ticket.materials as { name: string; completed: boolean }[] || [],
             request_type: ticket.request_type as 'email' | 'processo' | 'direto' | undefined
           });
@@ -76,20 +96,19 @@ export function useMaintenanceTickets() {
     }
   };
 
-  const createTicket = async (ticketData: Omit<MaintenanceTicket, 'id' | 'created_at' | 'updated_at'>) => {
+  const createTicket = async (ticketData: Omit<MaintenanceTicket, 'id' | 'created_at' | 'updated_at' | 'services'>) => {
     try {
       const { data, error } = await supabase
         .from('maintenance_tickets')
-        .insert([ticketData])
+        .insert([ticketData as any])
         .select()
         .single();
 
       if (error) throw error;
 
-      await fetchTickets();
       toast({
         title: "Sucesso",
-        description: "Ticket criado com sucesso!",
+        description: "Tarefa criada com sucesso!",
       });
 
       return data;
@@ -97,7 +116,7 @@ export function useMaintenanceTickets() {
       console.error('Erro ao criar ticket:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível criar o ticket.",
+        description: "Não foi possível criar a tarefa.",
         variant: "destructive",
       });
       throw error;
@@ -106,23 +125,24 @@ export function useMaintenanceTickets() {
 
   const updateTicket = async (ticketId: string, updates: Partial<MaintenanceTicket>) => {
     try {
+      // não persistir 'services' no update do ticket — vem da tabela filha
+      const { services: _svcs, ...rest } = updates as any;
       const { error } = await supabase
         .from('maintenance_tickets')
-        .update(updates)
+        .update(rest)
         .eq('id', ticketId);
 
       if (error) throw error;
 
-      await fetchTickets();
       toast({
         title: "Sucesso",
-        description: "Ticket atualizado com sucesso!",
+        description: "Tarefa atualizada com sucesso!",
       });
     } catch (error) {
       console.error('Erro ao atualizar ticket:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o ticket.",
+        description: "Não foi possível atualizar a tarefa.",
         variant: "destructive",
       });
       throw error;
