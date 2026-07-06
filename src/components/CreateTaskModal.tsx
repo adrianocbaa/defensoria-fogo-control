@@ -312,9 +312,21 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nova Tarefa de Manutenção</DialogTitle>
+          <DialogTitle>Nova Tarefa de Manutenção — Etapa {currentStep} de 3</DialogTitle>
+          <div className="flex gap-2 pt-2">
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={cn(
+                  'h-1.5 flex-1 rounded-full transition-colors',
+                  currentStep >= s ? 'bg-primary' : 'bg-muted'
+                )}
+              />
+            ))}
+          </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {currentStep === 1 && (<div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Título</Label>
             <Input
