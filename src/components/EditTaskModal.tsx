@@ -57,6 +57,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const { isGM, canEdit } = useUserRole();
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
+  const { managers } = useMaintenanceManagers();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -76,6 +77,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
   const [requestedAt, setRequestedAt] = useState<string>('');
+  const [managerId, setManagerId] = useState<string>('');
 
   // Atualizar formulário quando o ticket mudar
   useEffect(() => {
@@ -94,6 +96,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setRequestType(ticket.requestType || '');
       setProcessNumber(ticket.processNumber || '');
       setRequestedAt(ticket.requestedAt || '');
+      setManagerId(ticket.managerId || '');
     }
   }, [ticket]);
 
