@@ -32,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 interface ServicePhoto {
   id: string;
@@ -57,6 +58,7 @@ interface Ticket {
   requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
   requestedAt?: string;
+  managerId?: string | null;
   servicePhotos?: ServicePhoto[];
 }
 
@@ -72,6 +74,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const navigate = useNavigate();
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
+  const { managers } = useMaintenanceManagers();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
