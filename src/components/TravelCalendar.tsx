@@ -517,6 +517,41 @@ export function TravelCalendar() {
                 })}
             </div>
           </div>
+
+          {/* Viagens sem previsão */}
+          {filteredTravels.some(t => !t.data_ida || !t.data_volta) && (
+            <div className="mt-6 bg-card rounded-lg border shadow-sm p-4">
+              <h3 className="text-lg font-semibold mb-1">Viagens sem previsão</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Viagens cadastradas sem data de ida/volta definida
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredTravels
+                  .filter(t => !t.data_ida || !t.data_volta)
+                  .map(travel => (
+                    <div
+                      key={travel.id}
+                      className="flex items-center gap-3 p-3 rounded-md border bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                      onClick={() => handleViewTravel(travel)}
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center">
+                        <CalendarDays className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{travel.servidor}</p>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          <span className="truncate">{travel.destino}</span>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-amber-700 border-amber-200 bg-amber-50 whitespace-nowrap">
+                        Sem previsão
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
