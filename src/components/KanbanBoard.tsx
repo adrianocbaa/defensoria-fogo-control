@@ -532,6 +532,7 @@ export function KanbanBoard() {
                 onViewTicket={handleViewTicket}
                 onEditTicket={handleEditTicket}
                 onMarkAsExecuted={handleMarkAsExecuted}
+                onDeleteTicket={!isGM ? handleDeleteTicket : undefined}
                 isManutencao={isGM}
               />
             );
