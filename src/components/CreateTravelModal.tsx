@@ -27,11 +27,12 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [semPrevisao, setSemPrevisao] = useState(false);
   const [formData, setFormData] = useState<CreateTravelData>({
     servidor: '',
     destino: '',
-    data_ida: '',
-    data_volta: '',
+    data_ida: null,
+    data_volta: null,
     motivo: ''
   });
   const [dataIdaOpen, setDataIdaOpen] = useState(false);
