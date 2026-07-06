@@ -15,13 +15,19 @@ export function useNucleiList() {
     try {
       setLoading(true);
       const { data, error: dbError } = await supabase
-        .from('nuclei')
-        .select('id, name')
-        .order('name', { ascending: true });
+        .from('nucleos_central')
+        .select('id, nome, cidade')
+        .order('nome', { ascending: true })
+        .limit(10000);
 
       if (dbError) throw dbError;
 
-      setNuclei(data || []);
+      setNuclei(
+        (data || []).map((n: any) => ({
+          id: n.id,
+          name: n.cidade ? `${n.nome} - ${n.cidade}` : n.nome,
+        }))
+      );
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar núcleos');
