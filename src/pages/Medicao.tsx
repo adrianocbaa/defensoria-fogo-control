@@ -2063,11 +2063,7 @@ export function Medicao() {
       // ---- Conteúdo do body: cabeçalho + resumo + tabela ----
       const nomeObra = obra.nome;
       const nomeContrato = obra.n_contrato || '—';
-      const nomeEmpresa = obra.empresa_responsavel || '—';
-      const numeroSei = (obra as any).sei_numero || '—';
       const nomeMedicao = medicaoAtualObj.nome;
-
-      // Cabeçalho
       htmlContent += `
           <div style="padding: 10px 14px;">
             <div class="header">
