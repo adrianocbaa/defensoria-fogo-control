@@ -242,15 +242,15 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     });
 
     // Criar viagem no calendário se necessário
-    if (isTravel && travelData.cidade && travelData.dataIda && travelData.dataVolta) {
+    if (isTravel && travelData.cidade) {
       try {
         const { data: createdTravel, error } = await supabase
           .from('travels')
           .insert({
             servidor: formData.assignee,
             destino: travelData.cidade,
-            data_ida: format(travelData.dataIda, 'yyyy-MM-dd'),
-            data_volta: format(travelData.dataVolta, 'yyyy-MM-dd'),
+            data_ida: travelData.semPrevisao || !travelData.dataIda ? null : format(travelData.dataIda, 'yyyy-MM-dd'),
+            data_volta: travelData.semPrevisao || !travelData.dataVolta ? null : format(travelData.dataVolta, 'yyyy-MM-dd'),
             motivo: formData.title,
             user_id: user.id
           })
