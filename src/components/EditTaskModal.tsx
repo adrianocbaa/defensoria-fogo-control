@@ -42,6 +42,7 @@ interface Ticket {
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  nucleoId?: string | null;
 }
 
 interface EditTaskModalProps {
