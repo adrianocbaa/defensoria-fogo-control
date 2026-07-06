@@ -237,6 +237,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       processNumber: requestType === 'processo' ? processNumber : undefined,
       requestedAt,
       managerId: managerId || null,
+      nucleoId: nucleoId || null,
       servicePhotos
     });
 
