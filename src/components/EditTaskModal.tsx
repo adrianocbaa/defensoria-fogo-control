@@ -36,7 +36,7 @@ interface Ticket {
   observations?: string[];
   services?: { name: string; completed: boolean }[];
   materials?: { name: string; completed: boolean }[];
-  requestType?: 'email' | 'processo';
+  requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
 }
 
@@ -70,7 +70,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [materials, setMaterials] = useState<{ name: string; completed: boolean }[]>([]);
   const [newService, setNewService] = useState('');
   const [newMaterial, setNewMaterial] = useState('');
-  const [requestType, setRequestType] = useState<'email' | 'processo' | ''>('');
+  const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
 
   // Atualizar formulário quando o ticket mudar
@@ -189,7 +189,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       observations,
       services,
       materials,
-      requestType: isGM ? ticket.requestType : requestType as 'email' | 'processo',
+      requestType: isGM ? ticket.requestType : requestType as 'email' | 'processo' | 'direto',
       processNumber: isGM ? ticket.processNumber : (requestType === 'processo' ? processNumber : undefined)
     };
 
@@ -454,7 +454,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               <Label>Tipo de Solicitação *</Label>
               <RadioGroup
                 value={requestType}
-                onValueChange={(value) => setRequestType(value as 'email' | 'processo')}
+                onValueChange={(value) => setRequestType(value as 'email' | 'processo' | 'direto')}
                 className="flex gap-6"
               >
                 <div className="flex items-center space-x-2">
@@ -464,6 +464,10 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="processo" id="processo" />
                   <Label htmlFor="processo">Processo</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="direto" id="direto" />
+                  <Label htmlFor="direto">Direto</Label>
                 </div>
               </RadioGroup>
               

@@ -1,0 +1,2 @@
+ALTER TABLE public.maintenance_tickets DROP CONSTRAINT IF EXISTS maintenance_tickets_request_type_check;
+ALTER TABLE public.maintenance_tickets ADD CONSTRAINT maintenance_tickets_request_type_check CHECK (request_type IN ('email', 'processo', 'direto'));
