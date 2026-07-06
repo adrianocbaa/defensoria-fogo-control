@@ -1188,13 +1188,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "maintenance_tickets_manager_id_fkey"
-            columns: ["manager_id"]
-            isOneToOne: false
-            referencedRelation: "maintenance_managers"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "maintenance_tickets_nucleo_id_fkey"
             columns: ["nucleo_id"]
             isOneToOne: false
