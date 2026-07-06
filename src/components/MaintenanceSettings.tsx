@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 interface MaintenanceType {
   id: string;
@@ -261,111 +262,22 @@ function TiposManutencao() {
   );
 }
 
-interface MaintenanceManager {
-  id: string;
-  nome: string;
-  email: string | null;
-  ordem: number;
-  ativo: boolean;
-}
-
 function GerentesManutencao() {
-  const [managers, setManagers] = useState<MaintenanceManager[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<MaintenanceManager | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<MaintenanceManager | null>(null);
-
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [ordem, setOrdem] = useState(0);
-  const [ativo, setAtivo] = useState(true);
-
-  const load = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('maintenance_managers' as any)
-      .select('*')
-      .order('ordem', { ascending: true });
-    if (error) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
-    } else {
-      setManagers((data as any) || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const openNew = () => {
-    setEditing(null);
-    setNome('');
-    setEmail('');
-    setOrdem((managers[managers.length - 1]?.ordem ?? 0) + 1);
-    setAtivo(true);
-    setDialogOpen(true);
-  };
-
-  const openEdit = (m: MaintenanceManager) => {
-    setEditing(m);
-    setNome(m.nome);
-    setEmail(m.email || '');
-    setOrdem(m.ordem);
-    setAtivo(m.ativo);
-    setDialogOpen(true);
-  };
-
-  const save = async () => {
-    if (!nome.trim()) {
-      toast({ title: 'Informe o nome', variant: 'destructive' });
-      return;
-    }
-    setSaving(true);
-    const payload = { nome: nome.trim(), email: email.trim() || null, ordem, ativo };
-    const { error } = editing
-      ? await supabase.from('maintenance_managers' as any).update(payload).eq('id', editing.id)
-      : await supabase.from('maintenance_managers' as any).insert(payload);
-    setSaving(false);
-    if (error) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      return;
-    }
-    toast({ title: editing ? 'Gerente atualizado' : 'Gerente cadastrado' });
-    setDialogOpen(false);
-    load();
-  };
-
-  const remove = async () => {
-    if (!deleteTarget) return;
-    const { error } = await supabase
-      .from('maintenance_managers' as any)
-      .delete()
-      .eq('id', deleteTarget.id);
-    if (error) {
-      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Gerente excluído' });
-      load();
-    }
-    setDeleteTarget(null);
-  };
+  const { managers, loading, refetch } = useMaintenanceManagers(false);
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <div>
-          <CardTitle>Gerentes de Manutenção</CardTitle>
-          <CardDescription>
-            Cadastre os servidores responsáveis pelos chamados de manutenção.
-          </CardDescription>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Gerentes de Manutenção</CardTitle>
+            <CardDescription>
+              Lista automática dos usuários com perfil "Manutenção" no sistema. Para adicionar
+              ou remover, altere o perfil do usuário em Configurações de Usuários.
+            </CardDescription>
+          </div>
+          <Button variant="outline" onClick={refetch}>Atualizar</Button>
         </div>
-        <Button onClick={openNew}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Gerente
-        </Button>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -374,100 +286,24 @@ function GerentesManutencao() {
           </div>
         ) : managers.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
-            Nenhum gerente cadastrado.
+            Nenhum usuário com perfil "Manutenção" cadastrado.
           </p>
         ) : (
           <div className="divide-y border rounded-md">
             {managers.map((m) => (
               <div key={m.id} className="flex items-center justify-between p-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground w-6 text-right">{m.ordem}</span>
+                <div className="flex flex-col">
                   <span className="font-medium">{m.nome}</span>
-                  {m.email && <span className="text-xs text-muted-foreground">{m.email}</span>}
-                  {!m.ativo && <Badge variant="secondary">Inativo</Badge>}
+                  {m.email && (
+                    <span className="text-xs text-muted-foreground">{m.email}</span>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(m)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(m)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
+                <Badge variant="secondary">Manutenção</Badge>
               </div>
             ))}
           </div>
         )}
       </CardContent>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? 'Editar Gerente' : 'Novo Gerente'}</DialogTitle>
-            <DialogDescription>
-              Cadastre o servidor responsável pelos chamados de manutenção.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="gerente-nome">Nome</Label>
-              <Input
-                id="gerente-nome"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex.: João da Silva"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gerente-email">E-mail (opcional)</Label>
-              <Input
-                id="gerente-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gerente-ordem">Ordem</Label>
-              <Input
-                id="gerente-ordem"
-                type="number"
-                value={ordem}
-                onChange={(e) => setOrdem(Number(e.target.value))}
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <Label htmlFor="gerente-ativo" className="cursor-pointer">Ativo</Label>
-              <Switch id="gerente-ativo" checked={ativo} onCheckedChange={setAtivo} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button onClick={save} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir gerente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O gerente "{deleteTarget?.nome}" será removido. Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={remove}>Excluir</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   );
 }
