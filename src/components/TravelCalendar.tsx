@@ -106,6 +106,7 @@ export function TravelCalendar() {
       // Buscar a viagem associada
       const travel = travels.find(t => t.id === ticket.travel_id);
       if (!travel) return false;
+      if (!travel.data_ida || !travel.data_volta) return false;
       
       const startDate = parseISO(travel.data_ida);
       const endDate = parseISO(travel.data_volta);
