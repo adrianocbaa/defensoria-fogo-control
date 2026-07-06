@@ -7,37 +7,33 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { MapPin, Clock, User, FileText, Settings, CheckCircle2, Wrench, Zap, Droplets, Shield, Wind, PaintRoller, UserCheck } from 'lucide-react';
+import {
+  MapPin,
+  Clock,
+  User,
+  FileText,
+  Settings,
+  CheckCircle2,
+  Wrench,
+  Zap,
+  Droplets,
+  Shield,
+  Wind,
+  PaintRoller,
+  UserCheck,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
-
-interface Ticket {
-  id: string;
-  title: string;
-  priority: 'Alta' | 'Média' | 'Baixa';
-  type: string;
-  location: string;
-  assignee: string;
-  createdAt: string;
-  icon: any;
-  status: string;
-  observations?: string[];
-  services?: { name: string; completed: boolean }[];
-  materials?: { name: string; completed: boolean }[];
-  requestType?: 'email' | 'processo' | 'direto';
-  processNumber?: string;
-  requestedAt?: string;
-  managerId?: string | null;
-  nucleoId?: string | null;
-}
+import type { UITicket } from '@/types/maintenanceTicket';
 
 interface ViewTaskModalProps {
-  ticket: Ticket | null;
+  ticket: UITicket | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const priorityColors = {
+const priorityColors: Record<string, string> = {
   'Alta': 'destructive',
   'Média': 'warning',
   'Baixa': 'secondary'
@@ -50,7 +46,14 @@ const typeIcons = {
   'Segurança': Shield,
   'Pintura': PaintRoller,
   'Geral': Wrench,
-};
+} as const;
+
+function formatBRDate(iso?: string | null) {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+}
 
 export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps) {
   const { managers } = useMaintenanceManagers(false);
@@ -59,21 +62,19 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
   const managerName = ticket.managerId ? managers.find(m => m.id === ticket.managerId)?.nome : null;
   const nucleoName = ticket.nucleoId ? nuclei.find(n => n.id === ticket.nucleoId)?.name : null;
 
-  const getServicesProgress = () => {
-    if (!ticket.services || ticket.services.length === 0) return 0;
-    const completed = ticket.services.filter(s => s.completed).length;
-    return (completed / ticket.services.length) * 100;
-  };
+  const services = ticket.services ?? [];
+  const servicesProgress = services.length
+    ? (services.filter(s => s.completed).length / services.length) * 100
+    : 0;
 
-  const getMaterialsProgress = () => {
-    if (!ticket.materials || ticket.materials.length === 0) return 0;
-    const completed = ticket.materials.filter(m => m.completed).length;
-    return (completed / ticket.materials.length) * 100;
-  };
+  const materials = ticket.materials ?? [];
+  const materialsProgress = materials.length
+    ? (materials.filter(m => m.completed).length / materials.length) * 100
+    : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {(() => {
@@ -83,215 +84,205 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
             {ticket.title}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
-          {/* Informações Básicas */}
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <h3 className="font-medium text-sm text-muted-foreground mb-2">TÍTULO</h3>
-              <p className="text-base">{ticket.title}</p>
+              <h3 className="font-medium text-sm text-muted-foreground mb-1">PRIORIDADE</h3>
+              <Badge variant={priorityColors[ticket.priority] as any}>{ticket.priority}</Badge>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">PRIORIDADE</h3>
-                <Badge variant={priorityColors[ticket.priority] as any}>
-                  {ticket.priority}
-                </Badge>
-              </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">TIPO</h3>
-                <Badge variant="outline">{ticket.type}</Badge>
-              </div>
-            </div>
-
             <div>
-              <h3 className="font-medium text-sm text-muted-foreground mb-2">STATUS</h3>
+              <h3 className="font-medium text-sm text-muted-foreground mb-1">TIPO</h3>
+              <Badge variant="outline">{ticket.type}</Badge>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground mb-1">STATUS</h3>
               <Badge variant="outline">{ticket.status}</Badge>
             </div>
           </div>
 
           <Separator />
 
-          {/* Localização e Solicitante */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center gap-3">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">LOCALIZAÇÃO</h3>
+                <h3 className="font-medium text-xs text-muted-foreground">LOCALIZAÇÃO PADRÃO</h3>
                 <p className="text-sm">{ticket.location}</p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-muted-foreground" />
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">SOLICITANTE</h3>
+                <h3 className="font-medium text-xs text-muted-foreground">SOLICITANTE</h3>
                 <p className="text-sm">{ticket.assignee}</p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               <UserCheck className="h-4 w-4 text-muted-foreground" />
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">GERENTE RESPONSÁVEL</h3>
+                <h3 className="font-medium text-xs text-muted-foreground">GERENTE PADRÃO</h3>
                 <p className="text-sm">{managerName || 'Não atribuído'}</p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">NÚCLEO REQUERENTE</h3>
+                <h3 className="font-medium text-xs text-muted-foreground">NÚCLEO REQUERENTE</h3>
                 <p className="text-sm">{nucleoName || 'Não atribuído'}</p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">DATA DE SOLICITAÇÃO</h3>
-                <p className="text-sm">
-                  {ticket.requestedAt
-                    ? (() => {
-                        const [y, m, d] = ticket.requestedAt.split('-').map(Number);
-                        return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
-                      })()
-                    : ticket.createdAt}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground">CRIADO EM</h3>
-                <p className="text-sm">{ticket.createdAt}</p>
+                <h3 className="font-medium text-xs text-muted-foreground">DATA DE SOLICITAÇÃO</h3>
+                <p className="text-sm">{formatBRDate(ticket.requestedAt) || ticket.createdAt}</p>
               </div>
             </div>
           </div>
 
           <Separator />
 
-          {/* Tipo de Solicitação - sempre mostrar */}
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <h3 className="font-medium text-sm text-muted-foreground">TIPO DE SOLICITAÇÃO</h3>
             </div>
             <p className="text-sm ml-7">
-              {ticket.requestType === 'email' ? 'E-mail' : ticket.requestType === 'direto' ? 'Direto' : 'SEI'}
-              {ticket.processNumber && ` - Nº ${ticket.processNumber}`}
+              {ticket.requestType === 'email'
+                ? 'E-mail'
+                : ticket.requestType === 'direto'
+                  ? 'Direto'
+                  : 'SEI'}
+              {ticket.processNumber && ` — Nº ${ticket.processNumber}`}
             </p>
           </div>
 
-          {/* Serviços - sempre mostrar se existir */}
-          {ticket.services && ticket.services.length > 0 && (
+          {services.length > 0 && (
             <>
               <Separator />
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-medium text-sm text-muted-foreground">SERVIÇOS</h3>
-                </div>
-                
-                <div className="ml-7 space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Progresso</span>
-                      <span className="text-sm text-muted-foreground">{Math.round(getServicesProgress())}%</span>
-                    </div>
-                    <Progress value={getServicesProgress()} className="w-full" />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="font-medium text-sm text-muted-foreground">
+                      SERVIÇOS ({services.length})
+                    </h3>
                   </div>
-                  
-                  <div className="space-y-2">
-                    {ticket.services.map((service, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <CheckCircle2 
-                          className={`h-4 w-4 ${
-                            service.completed 
-                              ? 'text-green-500' 
-                              : 'text-muted-foreground'
-                          }`} 
-                        />
-                        <span className={`text-sm ${
-                          service.completed 
-                            ? 'line-through text-muted-foreground' 
-                            : ''
-                        }`}>
-                          {service.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round(servicesProgress)}%
+                  </span>
                 </div>
-              </div>
-            </>
-          )}
+                <Progress value={servicesProgress} className="w-full" />
 
-          {/* Materiais - sempre mostrar se o campo existir */}
-          {ticket.materials && (
-            <>
-              <Separator />
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-medium text-sm text-muted-foreground">MATERIAIS</h3>
-                </div>
-                
-                <div className="ml-7 space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Progresso</span>
-                      <span className="text-sm text-muted-foreground">{Math.round(getMaterialsProgress())}%</span>
-                    </div>
-                    <Progress value={getMaterialsProgress()} className="w-full" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {ticket.materials.length > 0 ? (
-                      ticket.materials.map((material, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <CheckCircle2 
-                            className={`h-4 w-4 ${
-                              material.completed 
-                                ? 'text-green-500' 
-                                : 'text-muted-foreground'
-                            }`} 
+                <div className="space-y-3">
+                  {services.map((s, index) => {
+                    const svcManager = s.custom_assignment && s.manager_id
+                      ? managers.find(m => m.id === s.manager_id)?.nome
+                      : null;
+                    const svcNucleo = s.custom_assignment && s.nucleo_id
+                      ? nuclei.find(n => n.id === s.nucleo_id)?.name
+                      : null;
+                    return (
+                      <div key={s.id ?? index} className="rounded-md border p-3 bg-muted/20">
+                        <div className="flex items-start gap-2">
+                          <CheckCircle2
+                            className={`h-4 w-4 mt-0.5 ${s.completed ? 'text-green-500' : 'text-muted-foreground'}`}
                           />
-                          <span className={`text-sm ${
-                            material.completed 
-                              ? 'line-through text-muted-foreground' 
-                              : ''
-                          }`}>
-                            {material.name}
-                          </span>
+                          <div className="flex-1 space-y-1">
+                            <div className={`text-sm font-medium ${s.completed ? 'line-through text-muted-foreground' : ''}`}>
+                              {s.title}
+                            </div>
+                            {s.description && (
+                              <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                                {s.description}
+                              </p>
+                            )}
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {s.custom_assignment ? (
+                                <>
+                                  {svcNucleo && (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      Núcleo: {svcNucleo}
+                                    </Badge>
+                                  )}
+                                  {s.location && (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      <MapPin className="h-2.5 w-2.5 mr-1" />
+                                      {s.location}
+                                    </Badge>
+                                  )}
+                                  {svcManager && (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      <UserCheck className="h-2.5 w-2.5 mr-1" />
+                                      {svcManager}
+                                    </Badge>
+                                  )}
+                                  {s.scheduled_date && (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      <CalendarIcon className="h-2.5 w-2.5 mr-1" />
+                                      {formatBRDate(s.scheduled_date)}
+                                    </Badge>
+                                  )}
+                                </>
+                              ) : (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  Herda do procedimento
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-sm text-muted-foreground">
-                        Nenhum material cadastrado
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             </>
           )}
 
-          {/* Observações - sempre mostrar se existir */}
+          {materials.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="font-medium text-sm text-muted-foreground">MATERIAIS</h3>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round(materialsProgress)}%
+                  </span>
+                </div>
+                <Progress value={materialsProgress} className="w-full" />
+                <div className="space-y-1.5">
+                  {materials.map((material, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <CheckCircle2
+                        className={`h-4 w-4 ${material.completed ? 'text-green-500' : 'text-muted-foreground'}`}
+                      />
+                      <span className={`text-sm ${material.completed ? 'line-through text-muted-foreground' : ''}`}>
+                        {material.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           {ticket.observations && ticket.observations.length > 0 && (
             <>
               <Separator />
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <h3 className="font-medium text-sm text-muted-foreground">OBSERVAÇÕES</h3>
-                 <div className="space-y-2 p-3 border rounded-md bg-muted/30">
-                   {ticket.observations.slice().reverse().map((obs, index) => (
-                     <div key={index} className="text-sm text-muted-foreground">
-                       {obs}
-                     </div>
-                   ))}
-                 </div>
+                <div className="space-y-1 p-3 border rounded-md bg-muted/30">
+                  {ticket.observations.slice().reverse().map((obs, index) => (
+                    <div key={index} className="text-sm text-muted-foreground">
+                      {obs}
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
