@@ -115,6 +115,9 @@ export function TravelCalendar() {
   };
 
   const getTravelPosition = (travel: Travel, date: Date) => {
+    if (!travel.data_ida || !travel.data_volta) {
+      return { show: false, position: 'middle' };
+    }
     const startDate = parseISO(travel.data_ida);
     const endDate = parseISO(travel.data_volta);
     
