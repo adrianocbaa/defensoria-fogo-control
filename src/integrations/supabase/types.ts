@@ -1119,6 +1119,96 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_ticket_services: {
+        Row: {
+          completed: boolean
+          created_at: string
+          custom_assignment: boolean
+          description: string | null
+          id: string
+          location: string | null
+          manager_id: string | null
+          materials: Json
+          nucleo_id: string | null
+          order_index: number
+          scheduled_date: string | null
+          status: string
+          ticket_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          custom_assignment?: boolean
+          description?: string | null
+          id?: string
+          location?: string | null
+          manager_id?: string | null
+          materials?: Json
+          nucleo_id?: string | null
+          order_index?: number
+          scheduled_date?: string | null
+          status?: string
+          ticket_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          custom_assignment?: boolean
+          description?: string | null
+          id?: string
+          location?: string | null
+          manager_id?: string | null
+          materials?: Json
+          nucleo_id?: string | null
+          order_index?: number
+          scheduled_date?: string | null
+          status?: string
+          ticket_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_services_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_managers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_ticket_services_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_ticket_services_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_ticket_services_nucleo_id_fkey"
+            columns: ["nucleo_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_ticket_services_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_tickets: {
         Row: {
           assignee: string
