@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 interface MaintenanceType {
   id: string;
