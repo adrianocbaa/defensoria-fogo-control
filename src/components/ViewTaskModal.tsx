@@ -22,7 +22,7 @@ interface Ticket {
   observations?: string[];
   services?: { name: string; completed: boolean }[];
   materials?: { name: string; completed: boolean }[];
-  requestType?: 'email' | 'processo';
+  requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
 }
 
@@ -140,7 +140,7 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
               <h3 className="font-medium text-sm text-muted-foreground">TIPO DE SOLICITAÇÃO</h3>
             </div>
             <p className="text-sm ml-7">
-              {ticket.requestType === 'email' ? 'E-mail' : 'Processo'}
+              {ticket.requestType === 'email' ? 'E-mail' : ticket.requestType === 'direto' ? 'Direto' : 'Processo'}
               {ticket.processNumber && ` - Nº ${ticket.processNumber}`}
             </p>
           </div>

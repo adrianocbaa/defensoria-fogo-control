@@ -54,7 +54,7 @@ interface Ticket {
   observations?: string[];
   services?: { name: string; completed: boolean }[];
   materials?: { name: string; completed: boolean }[];
-  requestType?: 'email' | 'processo';
+  requestType?: 'email' | 'processo' | 'direto';
   processNumber?: string;
   servicePhotos?: ServicePhoto[];
 }
@@ -87,7 +87,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [materials, setMaterials] = useState<{ name: string; completed: boolean }[]>([]);
   const [newService, setNewService] = useState('');
   const [newMaterial, setNewMaterial] = useState('');
-  const [requestType, setRequestType] = useState<'email' | 'processo' | ''>('');
+  const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
   const [isTravel, setIsTravel] = useState(false);
@@ -202,7 +202,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       observations,
       services,
       materials,
-      requestType: requestType as 'email' | 'processo',
+      requestType: requestType as 'email' | 'processo' | 'direto',
       processNumber: requestType === 'processo' ? processNumber : undefined,
       servicePhotos
     });
@@ -499,7 +499,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
             <Label>Tipo de Solicitação *</Label>
             <RadioGroup
               value={requestType}
-              onValueChange={(value) => setRequestType(value as 'email' | 'processo')}
+              onValueChange={(value) => setRequestType(value as 'email' | 'processo' | 'direto')}
               className="flex gap-6"
             >
               <div className="flex items-center space-x-2">
@@ -509,6 +509,10 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="processo" id="processo" />
                 <Label htmlFor="processo">Processo</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="direto" id="direto" />
+                <Label htmlFor="direto">Direto</Label>
               </div>
             </RadioGroup>
             

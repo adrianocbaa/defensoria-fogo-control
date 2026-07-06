@@ -13,7 +13,7 @@ export interface MaintenanceTicket {
   observations?: string[];
   services?: { name: string; completed: boolean }[];
   materials?: { name: string; completed: boolean }[];
-  request_type?: 'email' | 'processo';
+  request_type?: 'email' | 'processo' | 'direto';
   process_number?: string;
   completed_at?: string;
   user_id?: string;
@@ -55,7 +55,7 @@ export function useMaintenanceTickets() {
             status: ticket.status as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído',
             services: ticket.services as { name: string; completed: boolean }[] || [],
             materials: ticket.materials as { name: string; completed: boolean }[] || [],
-            request_type: ticket.request_type as 'email' | 'processo' | undefined
+            request_type: ticket.request_type as 'email' | 'processo' | 'direto' | undefined
           });
         }
       });
