@@ -106,7 +106,24 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     dataIda: undefined as Date | undefined,
     dataVolta: undefined as Date | undefined
   });
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const { toast } = useToast();
+
+  const step1Valid = !!(formData.title && formData.priority && formData.type && formData.location && formData.assignee && requestedAt);
+  const step2Valid = !!requestType && (requestType !== 'processo' || !!processNumber) && (!isTravel || (!!travelData.cidade && !!travelData.dataIda && !!travelData.dataVolta));
+
+  const goNext = () => {
+    if (currentStep === 1 && !step1Valid) {
+      toast({ title: 'Preencha os campos obrigatórios da Etapa 1', variant: 'destructive' });
+      return;
+    }
+    if (currentStep === 2 && !step2Valid) {
+      toast({ title: 'Preencha os campos obrigatórios da Etapa 2', variant: 'destructive' });
+      return;
+    }
+    setCurrentStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
+  };
+  const goBack = () => setCurrentStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
 
   const addObservation = () => {
     if (observation.trim()) {
@@ -280,7 +297,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       dataIda: undefined,
       dataVolta: undefined
     });
-    
+    setCurrentStep(1);
+
     setOpen(false);
   };
 
@@ -294,9 +312,21 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nova Tarefa de Manutenção</DialogTitle>
+          <DialogTitle>Nova Tarefa de Manutenção — Etapa {currentStep} de 3</DialogTitle>
+          <div className="flex gap-2 pt-2">
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={cn(
+                  'h-1.5 flex-1 rounded-full transition-colors',
+                  currentStep >= s ? 'bg-primary' : 'bg-muted'
+                )}
+              />
+            ))}
+          </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {currentStep === 1 && (<div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Título</Label>
             <Input
@@ -402,10 +432,9 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               </SelectContent>
             </Select>
           </div>
+          </div>)}
 
-
-
-
+          {currentStep === 2 && (<div className="space-y-4">
           {/* Observações */}
           <div className="space-y-2">
             <Label>Observações</Label>
@@ -657,20 +686,90 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               </div>
             )}
           </div>
+          </div>)}
 
-          {/* Fotos dos Serviços */}
-          <ServicePhotos 
-            photos={servicePhotos}
-            onPhotosChange={setServicePhotos}
-          />
+          {currentStep === 3 && (<div className="space-y-4">
+            {/* Serviços Executados */}
+            <div className="space-y-2">
+              <Label>Serviços Executados</Label>
+              {services.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado na Etapa 2.</p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Progresso de Execução</span>
+                    <span className="text-sm text-muted-foreground">{Math.round(getServicesProgress())}%</span>
+                  </div>
+                  <Progress value={getServicesProgress()} className="w-full" />
+                  <div className="max-h-48 overflow-y-auto space-y-2 p-2 border rounded-md bg-muted/30">
+                    {services.map((service, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={service.completed}
+                          onCheckedChange={() => toggleService(index)}
+                        />
+                        <span className={`text-sm ${service.completed ? 'line-through text-muted-foreground' : ''}`}>
+                          {service.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              Criar Tarefa
-            </Button>
+            {/* Observação de execução */}
+            <div className="space-y-2">
+              <Label>Observação</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={observation}
+                  onChange={(e) => setObservation(e.target.value)}
+                  placeholder="Adicione uma observação sobre a execução..."
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addObservation())}
+                />
+                <Button type="button" onClick={addObservation} size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {observations.length > 0 && (
+                <div className="max-h-32 overflow-y-auto space-y-1 p-2 border rounded-md bg-muted/30">
+                  {observations.map((obs, index) => (
+                    <div key={index} className="text-sm text-muted-foreground">{obs}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Fotos dos Serviços */}
+            <ServicePhotos
+              photos={servicePhotos}
+              onPhotosChange={setServicePhotos}
+            />
+          </div>)}
+
+          <div className="flex justify-between gap-2 pt-2 border-t">
+            <div>
+              {currentStep > 1 && (
+                <Button type="button" variant="outline" onClick={goBack}>
+                  Voltar
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              {currentStep < 3 ? (
+                <Button type="button" onClick={goNext}>
+                  Próximo
+                </Button>
+              ) : (
+                <Button type="submit">
+                  Criar Tarefa
+                </Button>
+              )}
+            </div>
           </div>
         </form>
       </DialogContent>
