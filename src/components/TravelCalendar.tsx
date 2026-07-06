@@ -89,6 +89,7 @@ export function TravelCalendar() {
 
   const getTravelsForDate = (date: Date) => {
     return filteredTravels.filter(travel => {
+      if (!travel.data_ida || !travel.data_volta) return false;
       const startDate = parseISO(travel.data_ida);
       const endDate = parseISO(travel.data_volta);
       return isWithinInterval(date, { start: startDate, end: endDate });
@@ -105,6 +106,7 @@ export function TravelCalendar() {
       // Buscar a viagem associada
       const travel = travels.find(t => t.id === ticket.travel_id);
       if (!travel) return false;
+      if (!travel.data_ida || !travel.data_volta) return false;
       
       const startDate = parseISO(travel.data_ida);
       const endDate = parseISO(travel.data_volta);
@@ -113,6 +115,9 @@ export function TravelCalendar() {
   };
 
   const getTravelPosition = (travel: Travel, date: Date) => {
+    if (!travel.data_ida || !travel.data_volta) {
+      return { show: false, position: 'middle' };
+    }
     const startDate = parseISO(travel.data_ida);
     const endDate = parseISO(travel.data_volta);
     
@@ -140,6 +145,7 @@ export function TravelCalendar() {
     const monthEnd = endOfMonth(currentMonth);
     
     return filteredTravels.filter(travel => {
+      if (!travel.data_ida || !travel.data_volta) return false;
       const startDate = parseISO(travel.data_ida);
       const endDate = parseISO(travel.data_volta);
       return isWithinInterval(startDate, { start: monthStart, end: monthEnd }) ||
