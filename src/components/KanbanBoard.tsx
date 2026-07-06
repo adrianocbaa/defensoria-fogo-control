@@ -270,7 +270,7 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
 }
 
 export function KanbanBoard() {
-  const { tickets: dbTickets, loading, createTicket, updateTicket, deleteTicket } = useMaintenanceTickets();
+  const { tickets: dbTickets, loading, createTicket, updateTicket, deleteTicket, refetch } = useMaintenanceTickets();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isGM, canEdit } = useUserRole();
@@ -319,7 +319,7 @@ export function KanbanBoard() {
       default: return Wrench;
     }
   }
-  
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -330,8 +330,6 @@ export function KanbanBoard() {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    
-    // Encontrar o ticket ativo
     for (const [status, statusTickets] of Object.entries(tickets)) {
       const ticket = statusTickets.find(t => t.id === active.id);
       if (ticket) {
@@ -343,7 +341,7 @@ export function KanbanBoard() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (!over) {
       setActiveTicket(null);
       return;
@@ -352,10 +350,9 @@ export function KanbanBoard() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Encontrar ticket e status atual
     let sourceStatus = '';
     let ticketToMove: Ticket | null = null;
-    
+
     for (const [status, statusTickets] of Object.entries(tickets)) {
       const ticket = statusTickets.find(t => t.id === activeId);
       if (ticket) {
@@ -370,18 +367,13 @@ export function KanbanBoard() {
       return;
     }
 
-    // Determinar o status de destino
     let targetStatus = '';
-    
-    // Se está sendo arrastado sobre outro ticket, pegar o status desse ticket
     for (const [status, statusTickets] of Object.entries(tickets)) {
       if (statusTickets.find(t => t.id === overId)) {
         targetStatus = status;
         break;
       }
     }
-    
-    // Se não encontrou ticket, verificar se é uma coluna
     if (!targetStatus) {
       const columnNames = Object.keys(tickets);
       if (columnNames.includes(overId)) {
@@ -389,13 +381,11 @@ export function KanbanBoard() {
       }
     }
 
-    // Se não há mudança de status, não fazer nada
     if (!targetStatus || sourceStatus === targetStatus) {
       setActiveTicket(null);
       return;
     }
 
-    // Permitir que usuários de manutenção movam livremente entre suas colunas permitidas
     if (isGM) {
       const allowedStatuses = ['Em andamento', 'Impedido', 'Concluído'];
       if (!allowedStatuses.includes(sourceStatus) || !allowedStatuses.includes(targetStatus)) {
@@ -409,13 +399,27 @@ export function KanbanBoard() {
       }
     }
 
-    // Atualizar ticket no banco de dados
-    updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído' });
+    // Regra: só permite mover para "Concluído" se todos os serviços estiverem concluídos.
+    if (targetStatus === 'Concluído') {
+      const svcs = ticketToMove.services ?? [];
+      if (svcs.length > 0 && !svcs.every(s => s.completed)) {
+        setActiveTicket(null);
+        toast({
+          title: 'Serviços em aberto',
+          description: 'Marque todos os serviços do procedimento como concluídos antes de movê-lo para Concluído.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído' })
+      .then(() => refetch());
 
     setActiveTicket(null);
   };
 
-  const handleCreateTask = async (taskData: Omit<Ticket, 'id' | 'createdAt' | 'icon'>) => {
+  const handleCreateTask = async (taskData: any) => {
     if (!user) {
       toast({
         title: "Acesso negado",
@@ -434,16 +438,29 @@ export function KanbanBoard() {
       assignee: taskData.assignee,
       status: taskData.status,
       observations: taskData.observations || [],
-      services: taskData.services || [],
       materials: taskData.materials || [],
       request_type: taskData.requestType,
       process_number: taskData.processNumber,
       requested_at: taskData.requestedAt,
       manager_id: taskData.managerId ?? null,
-      user_id: user?.id
+      nucleo_id: taskData.nucleoId ?? null,
+      user_id: user?.id,
     } as any;
 
-    await createTicket(dbTicketData);
+    const created = await createTicket(dbTicketData);
+    if (created?.id && Array.isArray(taskData.services) && taskData.services.length > 0) {
+      try {
+        await replaceServicesForTicket(created.id, taskData.services);
+      } catch (err) {
+        console.error('Erro ao salvar serviços da tarefa:', err);
+        toast({
+          title: 'Aviso',
+          description: 'Procedimento criado, mas houve erro ao salvar os serviços.',
+          variant: 'destructive',
+        });
+      }
+    }
+    await refetch();
   };
 
   const handleViewTicket = (ticket: Ticket) => {
@@ -465,16 +482,27 @@ export function KanbanBoard() {
       assignee: updatedTicket.assignee,
       status: updatedTicket.status,
       observations: updatedTicket.observations || [],
-      services: updatedTicket.services || [],
       materials: updatedTicket.materials || [],
       request_type: updatedTicket.requestType,
       process_number: updatedTicket.processNumber,
       requested_at: updatedTicket.requestedAt,
       manager_id: updatedTicket.managerId ?? null,
-      completed_at: updatedTicket.completedAt?.toISOString()
+      nucleo_id: updatedTicket.nucleoId ?? null,
+      completed_at: updatedTicket.completedAt?.toISOString(),
     } as any;
 
     await updateTicket(updatedTicket.id, dbTicketData);
+    try {
+      await replaceServicesForTicket(updatedTicket.id, updatedTicket.services ?? []);
+    } catch (err) {
+      console.error('Erro ao salvar serviços da tarefa:', err);
+      toast({
+        title: 'Aviso',
+        description: 'Procedimento atualizado, mas houve erro ao salvar os serviços.',
+        variant: 'destructive',
+      });
+    }
+    await refetch();
   };
 
   const handleMarkAsExecuted = async (ticketId: string) => {
@@ -492,6 +520,7 @@ export function KanbanBoard() {
       description: "A tarefa foi removida permanentemente.",
     });
   };
+
 
   return (
     <DndContext
