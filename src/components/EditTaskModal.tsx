@@ -263,7 +263,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
           })}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           {currentStep === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
