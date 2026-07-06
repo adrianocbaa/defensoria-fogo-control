@@ -34,6 +34,7 @@ import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
+import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
 
 interface ServicePhoto {
   id: string;
@@ -108,13 +109,15 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [travelData, setTravelData] = useState({
     cidade: '',
     dataIda: undefined as Date | undefined,
-    dataVolta: undefined as Date | undefined
+    dataVolta: undefined as Date | undefined,
+    semPrevisao: false,
   });
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const { toast } = useToast();
 
+  const travelDatesOk = travelData.semPrevisao || (!!travelData.dataIda && !!travelData.dataVolta);
   const step1Valid = !!(formData.title && formData.priority && formData.type && formData.location && formData.assignee && requestedAt);
-  const step2Valid = !!requestType && (requestType !== 'processo' || !!processNumber) && (!isTravel || (!!travelData.cidade && !!travelData.dataIda && !!travelData.dataVolta));
+  const step2Valid = !!requestType && (requestType !== 'processo' || !!processNumber) && (!isTravel || (!!travelData.cidade && travelDatesOk));
 
   const goNext = () => {
     if (currentStep === 1 && !step1Valid) {
@@ -201,22 +204,19 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     }
 
     // Validar campos de viagem se necessário
-    if (isTravel && (!travelData.cidade || !travelData.dataIda || !travelData.dataVolta)) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos de viagem.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (isTravel && travelData.dataIda && travelData.dataVolta && travelData.dataIda >= travelData.dataVolta) {
-      toast({
-        title: "Erro",
-        description: "A data de ida deve ser anterior à data de volta.",
-        variant: "destructive"
-      });
-      return;
+    if (isTravel) {
+      if (!travelData.cidade) {
+        toast({ title: 'Erro', description: 'Informe a cidade de destino.', variant: 'destructive' });
+        return;
+      }
+      if (!travelData.semPrevisao && (!travelData.dataIda || !travelData.dataVolta)) {
+        toast({ title: 'Erro', description: 'Preencha as datas ou marque "Sem previsão".', variant: 'destructive' });
+        return;
+      }
+      if (!travelData.semPrevisao && travelData.dataIda && travelData.dataVolta && travelData.dataIda >= travelData.dataVolta) {
+        toast({ title: 'Erro', description: 'A data de ida deve ser anterior à data de volta.', variant: 'destructive' });
+        return;
+      }
     }
 
     const selectedTaskType = taskTypes.find(t => t.nome === formData.type);
@@ -242,15 +242,15 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     });
 
     // Criar viagem no calendário se necessário
-    if (isTravel && travelData.cidade && travelData.dataIda && travelData.dataVolta) {
+    if (isTravel && travelData.cidade) {
       try {
         const { data: createdTravel, error } = await supabase
           .from('travels')
           .insert({
             servidor: formData.assignee,
             destino: travelData.cidade,
-            data_ida: format(travelData.dataIda, 'yyyy-MM-dd'),
-            data_volta: format(travelData.dataVolta, 'yyyy-MM-dd'),
+            data_ida: travelData.semPrevisao || !travelData.dataIda ? null : format(travelData.dataIda, 'yyyy-MM-dd'),
+            data_volta: travelData.semPrevisao || !travelData.dataVolta ? null : format(travelData.dataVolta, 'yyyy-MM-dd'),
             motivo: formData.title,
             user_id: user.id
           })
@@ -301,7 +301,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setTravelData({
       cidade: '',
       dataIda: undefined,
-      dataVolta: undefined
+      dataVolta: undefined,
+      semPrevisao: false,
     });
     setCurrentStep(1);
 
@@ -441,18 +442,12 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
 
           <div className="space-y-2">
             <Label htmlFor="nucleo">Núcleo Requerente</Label>
-            <Select value={nucleoId} onValueChange={setNucleoId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um núcleo (opcional)..." />
-              </SelectTrigger>
-              <SelectContent>
-                {nuclei.map((n) => (
-                  <SelectItem key={n.id} value={n.id}>
-                    {n.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <NucleoCombobox
+              options={nuclei}
+              value={nucleoId}
+              onChange={setNucleoId}
+              placeholder="Selecione um núcleo (opcional)..."
+            />
           </div>
           </div>)}
 
@@ -648,20 +643,43 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                   />
                 </div>
                 
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sem-previsao"
+                    checked={travelData.semPrevisao}
+                    onCheckedChange={(checked) =>
+                      setTravelData(prev => ({
+                        ...prev,
+                        semPrevisao: !!checked,
+                        dataIda: checked ? undefined : prev.dataIda,
+                        dataVolta: checked ? undefined : prev.dataVolta,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="sem-previsao" className="cursor-pointer">
+                    Sem previsão de datas
+                  </Label>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Data de Ida *</Label>
+                    <Label>Data de Ida {!travelData.semPrevisao && '*'}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
+                          disabled={travelData.semPrevisao}
                           className={cn(
                             "w-full justify-start text-left font-normal",
                             !travelData.dataIda && "text-muted-foreground"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {travelData.dataIda ? format(travelData.dataIda, "dd/MM/yyyy") : "Selecionar data"}
+                          {travelData.semPrevisao
+                            ? "Sem previsão"
+                            : travelData.dataIda
+                              ? format(travelData.dataIda, "dd/MM/yyyy")
+                              : "Selecionar data"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -678,18 +696,23 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Data de Volta *</Label>
+                    <Label>Data de Volta {!travelData.semPrevisao && '*'}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
+                          disabled={travelData.semPrevisao}
                           className={cn(
                             "w-full justify-start text-left font-normal",
                             !travelData.dataVolta && "text-muted-foreground"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {travelData.dataVolta ? format(travelData.dataVolta, "dd/MM/yyyy") : "Selecionar data"}
+                          {travelData.semPrevisao
+                            ? "Sem previsão"
+                            : travelData.dataVolta
+                              ? format(travelData.dataVolta, "dd/MM/yyyy")
+                              : "Selecionar data"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">

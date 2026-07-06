@@ -1,0 +1,3 @@
+ALTER TABLE public.travels
+  ALTER COLUMN data_ida DROP NOT NULL,
+  ALTER COLUMN data_volta DROP NOT NULL;

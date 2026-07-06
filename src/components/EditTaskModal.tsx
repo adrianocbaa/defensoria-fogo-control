@@ -21,6 +21,7 @@ import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
+import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -333,18 +334,13 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
 
           <div className="space-y-2">
             <Label htmlFor="nucleo">Núcleo Requerente</Label>
-            <Select value={nucleoId} onValueChange={setNucleoId} disabled={isGM}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um núcleo..." />
-              </SelectTrigger>
-              <SelectContent>
-                {nuclei.map((n) => (
-                  <SelectItem key={n.id} value={n.id}>
-                    {n.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <NucleoCombobox
+              options={nuclei}
+              value={nucleoId}
+              onChange={setNucleoId}
+              placeholder="Selecione um núcleo..."
+              disabled={isGM}
+            />
           </div>
 
           <div className="space-y-2">

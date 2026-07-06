@@ -3204,8 +3204,8 @@ export type Database = {
       travels: {
         Row: {
           created_at: string
-          data_ida: string
-          data_volta: string
+          data_ida: string | null
+          data_volta: string | null
           destino: string
           id: string
           motivo: string
@@ -3216,8 +3216,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          data_ida: string
-          data_volta: string
+          data_ida?: string | null
+          data_volta?: string | null
           destino: string
           id?: string
           motivo: string
@@ -3228,8 +3228,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          data_ida?: string
-          data_volta?: string
+          data_ida?: string | null
+          data_volta?: string | null
           destino?: string
           id?: string
           motivo?: string
