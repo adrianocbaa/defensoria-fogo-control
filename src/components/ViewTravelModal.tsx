@@ -18,7 +18,15 @@ interface ViewTravelModalProps {
 
 export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelModalProps) {
   const { canEdit } = useUserRole();
-  
+  const { managers } = useMaintenanceManagers();
+
+  const servidoresNomes = (travel.manager_ids ?? [])
+    .map((id) => managers.find((m) => m.id === id)?.nome)
+    .filter(Boolean) as string[];
+  const servidoresLabel = servidoresNomes.length > 0
+    ? servidoresNomes.join(', ')
+    : (travel.servidor || '—');
+
   const hasDates = !!travel.data_ida && !!travel.data_volta;
   const dataIda = hasDates ? parseISO(travel.data_ida!) : null;
   const dataVolta = hasDates ? parseISO(travel.data_volta!) : null;
