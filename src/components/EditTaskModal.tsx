@@ -81,7 +81,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setRequestType(ticket.requestType || '');
       setProcessNumber(ticket.processNumber || '');
       setRequestedAt(ticket.requestedAt || '');
-      setManagerId(ticket.managerId || '');
+      setManagerIds(ticket.managerIds && ticket.managerIds.length > 0 ? ticket.managerIds : (ticket.managerId ? [ticket.managerId] : []));
       setNucleoId(ticket.nucleoId || '');
       setCurrentStep(1);
     }
