@@ -1125,6 +1125,7 @@ export type Database = {
           created_at: string
           custom_assignment: boolean
           description: string | null
+          envolve_viagem: boolean
           id: string
           location: string | null
           manager_id: string | null
@@ -1135,6 +1136,11 @@ export type Database = {
           status: string
           ticket_id: string
           title: string
+          travel_cidade: string | null
+          travel_data_ida: string | null
+          travel_data_volta: string | null
+          travel_id: string | null
+          travel_sem_previsao: boolean
           updated_at: string
         }
         Insert: {
@@ -1142,6 +1148,7 @@ export type Database = {
           created_at?: string
           custom_assignment?: boolean
           description?: string | null
+          envolve_viagem?: boolean
           id?: string
           location?: string | null
           manager_id?: string | null
@@ -1152,6 +1159,11 @@ export type Database = {
           status?: string
           ticket_id: string
           title: string
+          travel_cidade?: string | null
+          travel_data_ida?: string | null
+          travel_data_volta?: string | null
+          travel_id?: string | null
+          travel_sem_previsao?: boolean
           updated_at?: string
         }
         Update: {
@@ -1159,6 +1171,7 @@ export type Database = {
           created_at?: string
           custom_assignment?: boolean
           description?: string | null
+          envolve_viagem?: boolean
           id?: string
           location?: string | null
           manager_id?: string | null
@@ -1169,6 +1182,11 @@ export type Database = {
           status?: string
           ticket_id?: string
           title?: string
+          travel_cidade?: string | null
+          travel_data_ida?: string | null
+          travel_data_volta?: string | null
+          travel_id?: string | null
+          travel_sem_previsao?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -1205,6 +1223,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_ticket_services_travel_id_fkey"
+            columns: ["travel_id"]
+            isOneToOne: false
+            referencedRelation: "travels"
             referencedColumns: ["id"]
           },
         ]

@@ -100,23 +100,15 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [managerId, setManagerId] = useState<string>('');
   const [nucleoId, setNucleoId] = useState<string>('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
-  const [isTravel, setIsTravel] = useState(false);
-  const [travelData, setTravelData] = useState({
-    cidade: '',
-    dataIda: undefined as Date | undefined,
-    dataVolta: undefined as Date | undefined,
-    semPrevisao: false,
-  });
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const { toast } = useToast();
 
-  const travelDatesOk = travelData.semPrevisao || (!!travelData.dataIda && !!travelData.dataVolta);
   const step1Valid = !!(formData.title && formData.priority && formData.type && formData.location && formData.assignee && requestedAt);
   const step2Valid =
     !!requestType &&
     (requestType !== 'processo' || !!processNumber) &&
     services.every((s) => !!s.title.trim()) &&
-    (!isTravel || (!!travelData.cidade && travelDatesOk));
+    services.every((s) => !s.envolve_viagem || (!!s.travel_cidade && (s.travel_sem_previsao || (!!s.travel_data_ida && !!s.travel_data_volta))));
 
   const goNext = () => {
     if (currentStep === 1 && !step1Valid) {
@@ -189,31 +181,34 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       return;
     }
 
-    if (isTravel) {
-      if (!travelData.cidade) {
-        toast({ title: 'Erro', description: 'Informe a cidade de destino.', variant: 'destructive' });
-        return;
-      }
-      if (!travelData.semPrevisao && (!travelData.dataIda || !travelData.dataVolta)) {
-        toast({
-          title: 'Erro',
-          description: 'Preencha as datas ou marque "Sem previsão".',
-          variant: 'destructive',
-        });
-        return;
-      }
-      if (
-        !travelData.semPrevisao &&
-        travelData.dataIda &&
-        travelData.dataVolta &&
-        travelData.dataIda >= travelData.dataVolta
-      ) {
-        toast({
-          title: 'Erro',
-          description: 'A data de ida deve ser anterior à data de volta.',
-          variant: 'destructive',
-        });
-        return;
+    // Validação de viagens por serviço
+    for (const s of services) {
+      if (s.envolve_viagem) {
+        if (!s.travel_cidade) {
+          toast({ title: 'Erro', description: `Informe a cidade do serviço "${s.title || 'sem título'}".`, variant: 'destructive' });
+          return;
+        }
+        if (!s.travel_sem_previsao && (!s.travel_data_ida || !s.travel_data_volta)) {
+          toast({
+            title: 'Erro',
+            description: `Preencha as datas ou marque "Sem previsão" no serviço "${s.title || 'sem título'}".`,
+            variant: 'destructive',
+          });
+          return;
+        }
+        if (
+          !s.travel_sem_previsao &&
+          s.travel_data_ida &&
+          s.travel_data_volta &&
+          s.travel_data_ida >= s.travel_data_volta
+        ) {
+          toast({
+            title: 'Erro',
+            description: `A data de ida deve ser anterior à data de volta no serviço "${s.title || 'sem título'}".`,
+            variant: 'destructive',
+          });
+          return;
+        }
       }
     }
 
@@ -238,42 +233,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       servicePhotos,
     });
 
-    if (isTravel && travelData.cidade) {
-      try {
-        const managerName = managers.find((m) => m.id === managerId)?.nome || formData.assignee;
-        const servidorViagem = managerName.trim().split(/\s+/)[0];
-        const { error } = await supabase
-          .from('travels')
-          .insert({
-            servidor: servidorViagem,
-            destino: travelData.cidade,
-            data_ida:
-              travelData.semPrevisao || !travelData.dataIda
-                ? null
-                : format(travelData.dataIda, 'yyyy-MM-dd'),
-            data_volta:
-              travelData.semPrevisao || !travelData.dataVolta
-                ? null
-                : format(travelData.dataVolta, 'yyyy-MM-dd'),
-            motivo: formData.title,
-            user_id: user.id,
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: 'Sucesso',
-          description: 'Tarefa criada e viagem adicionada ao calendário.',
-        });
-      } catch (error) {
-        console.error('Erro ao criar viagem:', error);
-        toast({
-          title: 'Aviso',
-          description: 'Tarefa criada, mas houve erro ao adicionar a viagem ao calendário.',
-          variant: 'destructive',
-        });
-      }
-    }
+    // Viagens agora são criadas pelo KanbanBoard via replaceServicesForTicket
+    // (uma entrada em `travels` por serviço que tiver "envolve_viagem" ativo).
 
     // Reset
     setFormData({
@@ -295,8 +256,6 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setManagerId('');
     setNucleoId('');
     setServicePhotos([]);
-    setIsTravel(false);
-    setTravelData({ cidade: '', dataIda: undefined, dataVolta: undefined, semPrevisao: false });
     setCurrentStep(1);
     setOpen(false);
   };
@@ -567,125 +526,12 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 )}
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="travel"
-                    checked={isTravel}
-                    onCheckedChange={(checked) => setIsTravel(checked as boolean)}
-                  />
-                  <Label htmlFor="travel">Este procedimento envolve viagem</Label>
-                </div>
-
-                {isTravel && (
-                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                    <div className="space-y-2">
-                      <Label htmlFor="cidade">Cidade de Destino *</Label>
-                      <Input
-                        id="cidade"
-                        value={travelData.cidade}
-                        onChange={(e) =>
-                          setTravelData((prev) => ({ ...prev, cidade: e.target.value }))
-                        }
-                        placeholder="Digite a cidade de destino..."
-                        required={isTravel}
-                      />
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="sem-previsao"
-                        checked={travelData.semPrevisao}
-                        onCheckedChange={(checked) =>
-                          setTravelData((prev) => ({
-                            ...prev,
-                            semPrevisao: !!checked,
-                            dataIda: checked ? undefined : prev.dataIda,
-                            dataVolta: checked ? undefined : prev.dataVolta,
-                          }))
-                        }
-                      />
-                      <Label htmlFor="sem-previsao" className="cursor-pointer">
-                        Sem previsão de datas
-                      </Label>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Data de Ida {!travelData.semPrevisao && '*'}</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              disabled={travelData.semPrevisao}
-                              className={cn(
-                                'w-full justify-start text-left font-normal',
-                                !travelData.dataIda && 'text-muted-foreground'
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {travelData.semPrevisao
-                                ? 'Sem previsão'
-                                : travelData.dataIda
-                                  ? format(travelData.dataIda, 'dd/MM/yyyy')
-                                  : 'Selecionar data'}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={travelData.dataIda}
-                              onSelect={(date) =>
-                                setTravelData((prev) => ({ ...prev, dataIda: date }))
-                              }
-                              disabled={(date) => date < new Date()}
-                              initialFocus
-                              className="p-3 pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Data de Volta {!travelData.semPrevisao && '*'}</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              disabled={travelData.semPrevisao}
-                              className={cn(
-                                'w-full justify-start text-left font-normal',
-                                !travelData.dataVolta && 'text-muted-foreground'
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {travelData.semPrevisao
-                                ? 'Sem previsão'
-                                : travelData.dataVolta
-                                  ? format(travelData.dataVolta, 'dd/MM/yyyy')
-                                  : 'Selecionar data'}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={travelData.dataVolta}
-                              onSelect={(date) =>
-                                setTravelData((prev) => ({ ...prev, dataVolta: date }))
-                              }
-                              disabled={(date) =>
-                                !travelData.dataIda || date <= travelData.dataIda
-                              }
-                              initialFocus
-                              className="p-3 pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <p className="text-xs text-muted-foreground border-t pt-3">
+                💡 Viagens agora são configuradas <strong>por serviço</strong> na etapa
+                anterior. Marque "Este serviço envolve viagem" em cada serviço que
+                precisar de deslocamento — cada um gera uma entrada própria no
+                calendário de viagens, com destino, datas e servidor responsável.
+              </p>
             </div>
           )}
 

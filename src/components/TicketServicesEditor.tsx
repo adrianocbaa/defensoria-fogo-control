@@ -38,6 +38,11 @@ const emptyService = (order: number): TicketService => ({
   manager_id: null,
   scheduled_date: null,
   materials: [],
+  envolve_viagem: false,
+  travel_cidade: null,
+  travel_data_ida: null,
+  travel_data_volta: null,
+  travel_sem_previsao: false,
 });
 
 export function TicketServicesEditor({
@@ -257,6 +262,90 @@ export function TicketServicesEditor({
                     </div>
                   </div>
                 )}
+
+                <div className="pt-2 border-t mt-2 space-y-2">
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Checkbox
+                      checked={!!s.envolve_viagem}
+                      disabled={disabled}
+                      onCheckedChange={(v) =>
+                        update(i, {
+                          envolve_viagem: !!v,
+                          ...(v
+                            ? {}
+                            : {
+                                travel_cidade: null,
+                                travel_data_ida: null,
+                                travel_data_volta: null,
+                                travel_sem_previsao: false,
+                              }),
+                        })
+                      }
+                    />
+                    Este serviço envolve viagem (registrar no calendário)
+                  </label>
+
+                  {s.envolve_viagem && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-6">
+                      <div className="space-y-1 md:col-span-2">
+                        <Label className="text-xs">Cidade de destino *</Label>
+                        <Input
+                          value={s.travel_cidade ?? ''}
+                          onChange={(e) =>
+                            update(i, { travel_cidade: e.target.value || null })
+                          }
+                          placeholder="Ex.: Sinop"
+                          disabled={disabled}
+                        />
+                      </div>
+                      <label className="flex items-center gap-2 text-xs cursor-pointer md:col-span-2">
+                        <Checkbox
+                          checked={!!s.travel_sem_previsao}
+                          disabled={disabled}
+                          onCheckedChange={(v) =>
+                            update(i, {
+                              travel_sem_previsao: !!v,
+                              ...(v
+                                ? { travel_data_ida: null, travel_data_volta: null }
+                                : {}),
+                            })
+                          }
+                        />
+                        Sem previsão de datas
+                      </label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">
+                          Data de ida {!s.travel_sem_previsao && '*'}
+                        </Label>
+                        <Input
+                          type="date"
+                          value={s.travel_data_ida ?? ''}
+                          disabled={disabled || !!s.travel_sem_previsao}
+                          onChange={(e) =>
+                            update(i, { travel_data_ida: e.target.value || null })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">
+                          Data de volta {!s.travel_sem_previsao && '*'}
+                        </Label>
+                        <Input
+                          type="date"
+                          value={s.travel_data_volta ?? ''}
+                          disabled={disabled || !!s.travel_sem_previsao}
+                          onChange={(e) =>
+                            update(i, { travel_data_volta: e.target.value || null })
+                          }
+                        />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground md:col-span-2">
+                        Servidor da viagem = gerente responsável (personalizado ou padrão do procedimento).
+                        Uma entrada será criada em <strong>Viagens</strong> ao salvar.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>

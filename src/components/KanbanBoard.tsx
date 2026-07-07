@@ -36,7 +36,8 @@ import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenance
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
-import { replaceServicesForTicket } from '@/hooks/useTicketServices';
+import { replaceServicesForTicket, type TicketService } from '@/hooks/useTicketServices';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import type { UITicket } from '@/types/maintenanceTicket';
 
 type Ticket = UITicket;
@@ -274,6 +275,16 @@ export function KanbanBoard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isGM, canEdit } = useUserRole();
+  const { managers } = useMaintenanceManagers();
+
+  const resolveServicesServidor = (services: TicketService[] | undefined, fallbackManagerId?: string | null, fallbackAssignee?: string) => {
+    const fallbackManagerName = fallbackManagerId ? managers.find(m => m.id === fallbackManagerId)?.nome : undefined;
+    const fallbackServidor = fallbackManagerName || fallbackAssignee || '—';
+    return (services ?? []).map(s => {
+      const custom = s.custom_assignment && s.manager_id ? managers.find(m => m.id === s.manager_id)?.nome : null;
+      return { ...s, travel_servidor: custom || fallbackManagerName || fallbackAssignee || null };
+    });
+  };
   const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
     'Pendente': [],
     'Em andamento': [],
@@ -450,7 +461,12 @@ export function KanbanBoard() {
     const created = await createTicket(dbTicketData);
     if (created?.id && Array.isArray(taskData.services) && taskData.services.length > 0) {
       try {
-        await replaceServicesForTicket(created.id, taskData.services);
+        const svcs = resolveServicesServidor(taskData.services, taskData.managerId, taskData.assignee);
+        await replaceServicesForTicket(created.id, svcs, {
+          ticketTitle: taskData.title,
+          fallbackServidor: (taskData.managerId ? managers.find(m => m.id === taskData.managerId)?.nome : undefined) || taskData.assignee || '—',
+          userId: user?.id,
+        });
       } catch (err) {
         console.error('Erro ao salvar serviços da tarefa:', err);
         toast({
@@ -493,7 +509,12 @@ export function KanbanBoard() {
 
     await updateTicket(updatedTicket.id, dbTicketData);
     try {
-      await replaceServicesForTicket(updatedTicket.id, updatedTicket.services ?? []);
+      const svcs = resolveServicesServidor(updatedTicket.services ?? [], updatedTicket.managerId, updatedTicket.assignee);
+      await replaceServicesForTicket(updatedTicket.id, svcs, {
+        ticketTitle: updatedTicket.title,
+        fallbackServidor: (updatedTicket.managerId ? managers.find(m => m.id === updatedTicket.managerId)?.nome : undefined) || updatedTicket.assignee || '—',
+        userId: user?.id,
+      });
     } catch (err) {
       console.error('Erro ao salvar serviços da tarefa:', err);
       toast({
