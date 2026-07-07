@@ -103,7 +103,10 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const { toast } = useToast();
 
-  const step1Valid = !!(formData.title && formData.priority && formData.type && formData.location && formData.assignee && requestedAt);
+  const selectedNucleo = nuclei.find((n) => n.id === nucleoId);
+  const derivedLocation = selectedNucleo?.cidade || selectedNucleo?.name || '';
+
+  const step1Valid = !!(formData.title && formData.priority && formData.type && nucleoId && formData.assignee && requestedAt);
   const step2Valid =
     !!requestType &&
     (requestType !== 'processo' || !!processNumber) &&
@@ -174,7 +177,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       !formData.title ||
       !formData.priority ||
       !formData.type ||
-      !formData.location ||
+      !nucleoId ||
       !formData.assignee ||
       !requestType
     ) {
@@ -218,7 +221,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       title: formData.title,
       priority: formData.priority as 'Alta' | 'Média' | 'Baixa',
       type: formData.type,
-      location: formData.location,
+      location: derivedLocation,
       assignee: formData.assignee,
       icon: selectedTaskType?.icon || Wrench,
       status: formData.status,
@@ -339,19 +342,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Localização padrão</Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-                  placeholder="Ex.: Sala 301, Recepção..."
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Aplicada aos serviços que não personalizarem cidade/local.
-                </p>
-              </div>
+              {/* Localização padrão removida: agora derivada do Núcleo Requerente */}
 
               <div className="space-y-2">
                 <Label htmlFor="assignee">Solicitante</Label>
@@ -435,7 +426,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 )}
               </div>
 
-              <TicketServicesEditor services={services} onChange={setServices} />
+              <TicketServicesEditor services={services} onChange={setServices} defaultNucleoCidade={selectedNucleo?.cidade ?? null} />
 
               <div className="space-y-2">
                 <Label>Materiais</Label>

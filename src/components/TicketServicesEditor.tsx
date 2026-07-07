@@ -24,6 +24,8 @@ interface Props {
   /** Se true, mostra checkboxes de conclusão em vez de campos editáveis */
   executionMode?: boolean;
   disabled?: boolean;
+  /** Cidade padrão do procedimento (do núcleo requerente), usada como fallback para viagens */
+  defaultNucleoCidade?: string | null;
 }
 
 const emptyService = (order: number): TicketService => ({
@@ -50,6 +52,7 @@ export function TicketServicesEditor({
   onChange,
   executionMode = false,
   disabled = false,
+  defaultNucleoCidade = null,
 }: Props) {
   const { managers } = useMaintenanceManagers();
   const { nuclei } = useNucleiList();
@@ -209,26 +212,29 @@ export function TicketServicesEditor({
 
                 {s.custom_assignment && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
-                    <div className="space-y-1">
+                    <div className="space-y-1 md:col-span-2">
                       <Label className="text-xs">Núcleo</Label>
                       <NucleoCombobox
                         options={nuclei}
                         value={s.nucleo_id ?? ''}
-                        onChange={(v) => update(i, { nucleo_id: v || null })}
+                        onChange={(v) => {
+                          const chosen = nuclei.find((n) => n.id === v);
+                          const cidade = chosen?.cidade ?? null;
+                          update(i, {
+                            nucleo_id: v || null,
+                            location: cidade,
+                            // Se serviço envolve viagem, também alimenta cidade destino
+                            ...(s.envolve_viagem ? { travel_cidade: cidade } : {}),
+                          });
+                        }}
                         placeholder="Selecione..."
                         disabled={disabled}
                       />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Cidade / local</Label>
-                      <Input
-                        value={s.location ?? ''}
-                        onChange={(e) =>
-                          update(i, { location: e.target.value || null })
-                        }
-                        placeholder="Ex.: Sinop"
-                        disabled={disabled}
-                      />
+                      {s.location && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Cidade: <strong>{s.location}</strong> (obtida do cadastro do núcleo)
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Gerente responsável</Label>
@@ -268,19 +274,25 @@ export function TicketServicesEditor({
                     <Checkbox
                       checked={!!s.envolve_viagem}
                       disabled={disabled}
-                      onCheckedChange={(v) =>
+                      onCheckedChange={(v) => {
+                        const on = !!v;
+                        // Ao ativar viagem: puxa cidade do núcleo (personalizado ou padrão do procedimento)
+                        const chosen = s.nucleo_id
+                          ? nuclei.find((n) => n.id === s.nucleo_id)?.cidade ?? null
+                          : null;
+                        const autoCidade = chosen ?? defaultNucleoCidade ?? null;
                         update(i, {
-                          envolve_viagem: !!v,
-                          ...(v
-                            ? {}
+                          envolve_viagem: on,
+                          ...(on
+                            ? { travel_cidade: s.travel_cidade ?? autoCidade }
                             : {
                                 travel_cidade: null,
                                 travel_data_ida: null,
                                 travel_data_volta: null,
                                 travel_sem_previsao: false,
                               }),
-                        })
-                      }
+                        });
+                      }}
                     />
                     Este serviço envolve viagem (registrar no calendário)
                   </label>
@@ -288,15 +300,17 @@ export function TicketServicesEditor({
                   {s.envolve_viagem && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-6">
                       <div className="space-y-1 md:col-span-2">
-                        <Label className="text-xs">Cidade de destino *</Label>
-                        <Input
-                          value={s.travel_cidade ?? ''}
-                          onChange={(e) =>
-                            update(i, { travel_cidade: e.target.value || null })
-                          }
-                          placeholder="Ex.: Sinop"
-                          disabled={disabled}
-                        />
+                        <Label className="text-xs">Cidade de destino</Label>
+                        <div className="text-sm rounded-md border bg-muted/30 px-3 py-2">
+                          {s.travel_cidade ?? (
+                            <span className="text-muted-foreground italic">
+                              Selecione um núcleo (no procedimento ou personalizado) para definir a cidade.
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Puxada automaticamente do cadastro do núcleo.
+                        </p>
                       </div>
                       <label className="flex items-center gap-2 text-xs cursor-pointer md:col-span-2">
                         <Checkbox
