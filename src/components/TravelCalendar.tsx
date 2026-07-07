@@ -476,13 +476,13 @@ export function TravelCalendar() {
                               zIndex: 10 + travelIndex
                             }}
                             onClick={() => handleViewTravel(travel)}
-                            title={`${travel.servidor} - ${travel.destino}`}
+                            title={`${getTravelServidorNames(travel).join(', ') || travel.servidor} - ${travel.destino}`}
                           >
                             {/* Show content only on start or single day */}
                             {position.position === 'start' || position.position === 'single' ? (
                               <div className="flex items-center gap-1 w-full min-w-0">
                                 <div className="font-medium truncate text-[11px] flex-1">
-                                  {travel.servidor}
+                                  {getTravelServidorLabel(travel)}
                                 </div>
                                 <div className="flex items-center gap-0.5 opacity-75 text-[10px]">
                                   <MapPin className="h-2 w-2 flex-shrink-0" />
