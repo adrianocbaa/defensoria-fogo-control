@@ -43,6 +43,7 @@ const emptyService = (order: number): TicketService => ({
   nucleo_id: null,
   location: null,
   manager_id: null,
+  manager_ids: [],
   scheduled_date: null,
   materials: [],
   envolve_viagem: false,
