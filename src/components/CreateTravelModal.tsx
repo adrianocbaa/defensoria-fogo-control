@@ -34,6 +34,8 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [semPrevisao, setSemPrevisao] = useState(false);
+  const { managers } = useMaintenanceManagers();
+  const [managerIds, setManagerIds] = useState<string[]>([]);
   const [formData, setFormData] = useState<CreateTravelData>({
     servidor: '',
     destino: '',
@@ -45,10 +47,10 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   const [dataVoltaOpen, setDataVoltaOpen] = useState(false);
 
   const validateForm = () => {
-    if (!formData.servidor.trim()) {
+    if (managerIds.length === 0) {
       toast({
         title: "Erro",
-        description: "Nome do servidor é obrigatório",
+        description: "Selecione ao menos um servidor da manutenção",
         variant: "destructive",
       });
       return false;
