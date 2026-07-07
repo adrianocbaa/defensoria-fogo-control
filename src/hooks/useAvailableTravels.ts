@@ -8,6 +8,7 @@ export interface AvailableTravel {
   data_ida: string | null;
   data_volta: string | null;
   motivo: string;
+  manager_ids?: string[];
 }
 
 /**
