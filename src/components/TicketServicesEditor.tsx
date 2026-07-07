@@ -15,6 +15,7 @@ import {
 import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { ManagersMultiSelect } from '@/components/ManagersMultiSelect';
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { useAvailableTravels } from '@/hooks/useAvailableTravels';
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -42,6 +43,7 @@ const emptyService = (order: number): TicketService => ({
   nucleo_id: null,
   location: null,
   manager_id: null,
+  manager_ids: [],
   scheduled_date: null,
   materials: [],
   envolve_viagem: false,
@@ -59,6 +61,7 @@ export function TicketServicesEditor({
   defaultNucleoCidade = null,
 }: Props) {
   const { managers } = useMaintenanceManagers();
+  void managers;
   const { nuclei } = useNucleiList();
   const { travels: availableTravels } = useAvailableTravels();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
@@ -206,6 +209,7 @@ export function TicketServicesEditor({
                               nucleo_id: null,
                               location: null,
                               manager_id: null,
+                              manager_ids: [],
                               scheduled_date: null,
                             }),
                       })
@@ -242,23 +246,18 @@ export function TicketServicesEditor({
                       )}
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Gerente responsável</Label>
-                      <Select
-                        value={s.manager_id ?? ''}
-                        onValueChange={(v) => update(i, { manager_id: v || null })}
+                      <Label className="text-xs">Servidores da manutenção</Label>
+                      <ManagersMultiSelect
+                        value={s.manager_ids ?? (s.manager_id ? [s.manager_id] : [])}
+                        onChange={(ids) =>
+                          update(i, {
+                            manager_ids: ids,
+                            manager_id: ids[0] ?? null,
+                          })
+                        }
                         disabled={disabled}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {managers.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        placeholder="Selecione um ou mais servidores..."
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Data prevista</Label>

@@ -31,9 +31,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useMaintenanceUsers } from '@/hooks/useMaintenanceUsers';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
-import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
+import { ManagersMultiSelect } from '@/components/ManagersMultiSelect';
 import { TicketServicesEditor } from './TicketServicesEditor';
 import type { TicketService } from '@/hooks/useTicketServices';
 
@@ -59,6 +60,7 @@ export interface NewTaskPayload {
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  managerIds?: string[];
   nucleoId?: string | null;
   servicePhotos?: ServicePhoto[];
   icon: any;
@@ -73,7 +75,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const navigate = useNavigate();
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
-  const { managers } = useMaintenanceManagers();
+  
   const { nuclei } = useNucleiList();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -97,7 +99,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const [requestedAt, setRequestedAt] = useState<string>(getTodayLocal());
-  const [managerId, setManagerId] = useState<string>('');
+  const [managerIds, setManagerIds] = useState<string[]>([]);
   const [nucleoId, setNucleoId] = useState<string>('');
   const [servicePhotos, setServicePhotos] = useState<ServicePhoto[]>([]);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -237,7 +239,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       requestType: requestType as 'email' | 'processo' | 'direto',
       processNumber: requestType === 'processo' ? processNumber : undefined,
       requestedAt,
-      managerId: managerId || null,
+      managerId: managerIds[0] ?? null,
+      managerIds,
       nucleoId: nucleoId || null,
       servicePhotos,
     });
@@ -262,7 +265,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setRequestType('');
     setProcessNumber('');
     setRequestedAt(getTodayLocal());
-    setManagerId('');
+    setManagerIds([]);
     setNucleoId('');
     setServicePhotos([]);
     setCurrentStep(1);
@@ -379,19 +382,15 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="manager">Gerente padrão</Label>
-                <Select value={managerId} onValueChange={setManagerId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um gerente (opcional)..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {managers.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Servidores da manutenção (padrão)</Label>
+                <ManagersMultiSelect
+                  value={managerIds}
+                  onChange={setManagerIds}
+                  placeholder="Selecione um ou mais servidores (opcional)..."
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Padrão do procedimento. Cada serviço pode personalizar sua própria lista.
+                </p>
               </div>
 
               <div className="space-y-2">

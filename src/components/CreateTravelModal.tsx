@@ -16,6 +16,12 @@ import { CreateTravelData } from '@/types/travel';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { ManagersMultiSelect } from './ManagersMultiSelect';
+
+function firstName(n: string) {
+  return (n.trim().split(/\s+/)[0] || '').trim();
+}
 
 interface CreateTravelModalProps {
   isOpen: boolean;
@@ -28,6 +34,8 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [semPrevisao, setSemPrevisao] = useState(false);
+  const { managers } = useMaintenanceManagers();
+  const [managerIds, setManagerIds] = useState<string[]>([]);
   const [formData, setFormData] = useState<CreateTravelData>({
     servidor: '',
     destino: '',
@@ -39,10 +47,10 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   const [dataVoltaOpen, setDataVoltaOpen] = useState(false);
 
   const validateForm = () => {
-    if (!formData.servidor.trim()) {
+    if (managerIds.length === 0) {
       toast({
         title: "Erro",
-        description: "Nome do servidor é obrigatório",
+        description: "Selecione ao menos um servidor da manutenção",
         variant: "destructive",
       });
       return false;
@@ -106,18 +114,22 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
     setLoading(true);
     try {
-      setLoading(true);
+      const servidorNames = managerIds
+        .map((id) => managers.find((m) => m.id === id)?.nome)
+        .filter(Boolean) as string[];
+      const servidorJoined = servidorNames.map(firstName).filter(Boolean).join(' / ');
 
       // Criar apenas a viagem
       const { error: travelError } = await supabase
         .from('travels')
         .insert([{
-          servidor: formData.servidor,
+          servidor: servidorJoined,
           destino: formData.destino,
           data_ida: semPrevisao ? null : formData.data_ida,
           data_volta: semPrevisao ? null : formData.data_volta,
           motivo: formData.motivo,
-          user_id: user.id
+          user_id: user.id,
+          manager_ids: managerIds,
         }]);
 
       if (travelError) throw travelError;
@@ -126,6 +138,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
       onClose();
       
       setSemPrevisao(false);
+      setManagerIds([]);
       setFormData({
         servidor: '',
         destino: '',
@@ -171,16 +184,14 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="servidor" className="flex items-center">
+            <Label className="flex items-center">
               <User className="h-4 w-4 mr-2" />
-              Servidor
+              Servidor(es) da manutenção *
             </Label>
-            <Input
-              id="servidor"
-              value={formData.servidor}
-              onChange={(e) => setFormData(prev => ({ ...prev, servidor: e.target.value }))}
-              placeholder="Nome do servidor público"
-              required
+            <ManagersMultiSelect
+              value={managerIds}
+              onChange={setManagerIds}
+              placeholder="Selecione um ou mais servidores..."
             />
           </div>
 

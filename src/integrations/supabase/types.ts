@@ -1129,6 +1129,7 @@ export type Database = {
           id: string
           location: string | null
           manager_id: string | null
+          manager_ids: string[]
           materials: Json
           nucleo_id: string | null
           order_index: number
@@ -1153,6 +1154,7 @@ export type Database = {
           id?: string
           location?: string | null
           manager_id?: string | null
+          manager_ids?: string[]
           materials?: Json
           nucleo_id?: string | null
           order_index?: number
@@ -1177,6 +1179,7 @@ export type Database = {
           id?: string
           location?: string | null
           manager_id?: string | null
+          manager_ids?: string[]
           materials?: Json
           nucleo_id?: string | null
           order_index?: number
@@ -1252,6 +1255,7 @@ export type Database = {
           id: string
           location: string
           manager_id: string | null
+          manager_ids: string[]
           materials: Json | null
           nucleo_id: string | null
           observations: string[] | null
@@ -1274,6 +1278,7 @@ export type Database = {
           id?: string
           location: string
           manager_id?: string | null
+          manager_ids?: string[]
           materials?: Json | null
           nucleo_id?: string | null
           observations?: string[] | null
@@ -1296,6 +1301,7 @@ export type Database = {
           id?: string
           location?: string
           manager_id?: string | null
+          manager_ids?: string[]
           materials?: Json | null
           nucleo_id?: string | null
           observations?: string[] | null
@@ -3333,6 +3339,7 @@ export type Database = {
           data_volta: string | null
           destino: string
           id: string
+          manager_ids: string[]
           motivo: string
           servidor: string
           ticket_id: string | null
@@ -3345,6 +3352,7 @@ export type Database = {
           data_volta?: string | null
           destino: string
           id?: string
+          manager_ids?: string[]
           motivo: string
           servidor: string
           ticket_id?: string | null
@@ -3357,6 +3365,7 @@ export type Database = {
           data_volta?: string | null
           destino?: string
           id?: string
+          manager_ids?: string[]
           motivo?: string
           servidor?: string
           ticket_id?: string | null

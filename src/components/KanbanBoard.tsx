@@ -277,12 +277,29 @@ export function KanbanBoard() {
   const { isGM, canEdit } = useUserRole();
   const { managers } = useMaintenanceManagers();
 
-  const resolveServicesServidor = (services: TicketService[] | undefined, fallbackManagerId?: string | null, fallbackAssignee?: string) => {
-    const fallbackManagerName = fallbackManagerId ? managers.find(m => m.id === fallbackManagerId)?.nome : undefined;
-    const fallbackServidor = fallbackManagerName || fallbackAssignee || '—';
-    return (services ?? []).map(s => {
-      const custom = s.custom_assignment && s.manager_id ? managers.find(m => m.id === s.manager_id)?.nome : null;
-      return { ...s, travel_servidor: custom || fallbackManagerName || fallbackAssignee || null };
+  const namesFromIds = (ids: string[] | undefined | null) =>
+    (ids ?? []).map((id) => managers.find((m) => m.id === id)?.nome).filter(Boolean) as string[];
+  const joinFirstNames = (names: string[]) =>
+    names.map((n) => (n.trim().split(/\s+/)[0] || '').trim()).filter(Boolean).join(' / ');
+
+  const resolveServicesServidor = (
+    services: TicketService[] | undefined,
+    fallbackManagerIds?: string[] | null,
+    fallbackAssignee?: string,
+  ) => {
+    const fallbackNames = namesFromIds(fallbackManagerIds ?? undefined);
+    const fallbackJoined = joinFirstNames(fallbackNames) || fallbackAssignee || '—';
+    return (services ?? []).map((s) => {
+      const svcIds = s.custom_assignment
+        ? (s.manager_ids && s.manager_ids.length > 0
+            ? s.manager_ids
+            : (s.manager_id ? [s.manager_id] : []))
+        : [];
+      const svcNames = namesFromIds(svcIds);
+      const travelIds = svcIds.length > 0 ? svcIds : (fallbackManagerIds ?? []);
+      const travelServidor =
+        svcNames.length > 0 ? joinFirstNames(svcNames) : fallbackJoined;
+      return { ...s, travel_servidor: travelServidor, travel_manager_ids: travelIds };
     });
   };
   const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
@@ -313,6 +330,7 @@ export function KanbanBoard() {
         processNumber: ticket.process_number,
         requestedAt: (ticket as any).requested_at,
         managerId: (ticket as any).manager_id ?? null,
+        managerIds: (ticket as any).manager_ids ?? ((ticket as any).manager_id ? [(ticket as any).manager_id] : []),
         nucleoId: (ticket as any).nucleo_id ?? null,
         completedAt: ticket.completed_at ? new Date(ticket.completed_at) : undefined,
         icon: getIconForType(ticket.type)
@@ -441,6 +459,11 @@ export function KanbanBoard() {
       return;
     }
 
+    const ticketManagerIds: string[] =
+      (taskData.managerIds && taskData.managerIds.length > 0)
+        ? taskData.managerIds
+        : (taskData.managerId ? [taskData.managerId] : []);
+
     const dbTicketData = {
       title: taskData.title,
       priority: taskData.priority,
@@ -453,7 +476,8 @@ export function KanbanBoard() {
       request_type: taskData.requestType,
       process_number: taskData.processNumber,
       requested_at: taskData.requestedAt,
-      manager_id: taskData.managerId ?? null,
+      manager_id: ticketManagerIds[0] ?? null,
+      manager_ids: ticketManagerIds,
       nucleo_id: taskData.nucleoId ?? null,
       user_id: user?.id,
     } as any;
@@ -461,10 +485,13 @@ export function KanbanBoard() {
     const created = await createTicket(dbTicketData);
     if (created?.id && Array.isArray(taskData.services) && taskData.services.length > 0) {
       try {
-        const svcs = resolveServicesServidor(taskData.services, taskData.managerId, taskData.assignee);
+        const svcs = resolveServicesServidor(taskData.services, ticketManagerIds, taskData.assignee);
+        const fallbackServidor =
+          joinFirstNames(namesFromIds(ticketManagerIds)) || taskData.assignee || '—';
         await replaceServicesForTicket(created.id, svcs, {
           ticketTitle: taskData.title,
-          fallbackServidor: (taskData.managerId ? managers.find(m => m.id === taskData.managerId)?.nome : undefined) || taskData.assignee || '—',
+          fallbackServidor,
+          fallbackManagerIds: ticketManagerIds,
           userId: user?.id,
         });
       } catch (err) {
@@ -490,6 +517,11 @@ export function KanbanBoard() {
   };
 
   const handleUpdateTicket = async (updatedTicket: Ticket) => {
+    const ticketManagerIds: string[] =
+      (updatedTicket.managerIds && updatedTicket.managerIds.length > 0)
+        ? updatedTicket.managerIds
+        : (updatedTicket.managerId ? [updatedTicket.managerId] : []);
+
     const dbTicketData = {
       title: updatedTicket.title,
       priority: updatedTicket.priority,
@@ -502,17 +534,21 @@ export function KanbanBoard() {
       request_type: updatedTicket.requestType,
       process_number: updatedTicket.processNumber,
       requested_at: updatedTicket.requestedAt,
-      manager_id: updatedTicket.managerId ?? null,
+      manager_id: ticketManagerIds[0] ?? null,
+      manager_ids: ticketManagerIds,
       nucleo_id: updatedTicket.nucleoId ?? null,
       completed_at: updatedTicket.completedAt?.toISOString(),
     } as any;
 
     await updateTicket(updatedTicket.id, dbTicketData);
     try {
-      const svcs = resolveServicesServidor(updatedTicket.services ?? [], updatedTicket.managerId, updatedTicket.assignee);
+      const svcs = resolveServicesServidor(updatedTicket.services ?? [], ticketManagerIds, updatedTicket.assignee);
+      const fallbackServidor =
+        joinFirstNames(namesFromIds(ticketManagerIds)) || updatedTicket.assignee || '—';
       await replaceServicesForTicket(updatedTicket.id, svcs, {
         ticketTitle: updatedTicket.title,
-        fallbackServidor: (updatedTicket.managerId ? managers.find(m => m.id === updatedTicket.managerId)?.nome : undefined) || updatedTicket.assignee || '—',
+        fallbackServidor,
+        fallbackManagerIds: ticketManagerIds,
         userId: user?.id,
       });
     } catch (err) {

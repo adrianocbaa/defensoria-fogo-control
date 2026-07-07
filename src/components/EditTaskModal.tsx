@@ -18,9 +18,10 @@ import {
 import { Plus, X } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
-import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
+import { ManagersMultiSelect } from '@/components/ManagersMultiSelect';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -39,7 +40,7 @@ interface EditTaskModalProps {
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
   const { isGM } = useUserRole();
   const { types: taskTypes } = useMaintenanceTypes();
-  const { managers } = useMaintenanceManagers();
+  
   const { nuclei } = useNucleiList();
   const { toast } = useToast();
 
@@ -60,7 +61,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
   const [requestedAt, setRequestedAt] = useState<string>('');
-  const [managerId, setManagerId] = useState<string>('');
+  const [managerIds, setManagerIds] = useState<string[]>([]);
   const [nucleoId, setNucleoId] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
@@ -80,7 +81,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setRequestType(ticket.requestType || '');
       setProcessNumber(ticket.processNumber || '');
       setRequestedAt(ticket.requestedAt || '');
-      setManagerId(ticket.managerId || '');
+      setManagerIds(ticket.managerIds && ticket.managerIds.length > 0 ? ticket.managerIds : (ticket.managerId ? [ticket.managerId] : []));
       setNucleoId(ticket.nucleoId || '');
       setCurrentStep(1);
     }
@@ -122,13 +123,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     return list;
   })();
 
-  const managerOptions = (() => {
-    const base = managers.map((m) => ({ id: m.id, nome: m.nome }));
-    if (managerId && !base.some((m) => m.id === managerId)) {
-      return [{ id: managerId, nome: 'Gerente atribuído' }, ...base];
-    }
-    return base;
-  })();
+  // managerOptions removido — substituído por multi-seleção via ManagersMultiSelect
 
   const selectedNucleo = nuclei.find((n) => n.id === nucleoId);
   const derivedLocation = selectedNucleo?.cidade || selectedNucleo?.name || formData.location;
@@ -198,7 +193,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
           ? processNumber
           : undefined,
       requestedAt: requestedAt || ticket.requestedAt,
-      managerId: managerId || null,
+      managerId: managerIds[0] ?? null,
+      managerIds,
       nucleoId: nucleoId || null,
     };
 
@@ -329,19 +325,16 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               </div>
 
               <div className="space-y-2">
-                <Label>Gerente padrão</Label>
-                <Select value={managerId} onValueChange={setManagerId} disabled={isGM}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um gerente..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {managerOptions.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Servidores da manutenção (padrão)</Label>
+                <ManagersMultiSelect
+                  value={managerIds}
+                  onChange={setManagerIds}
+                  disabled={isGM}
+                  placeholder="Selecione um ou mais servidores..."
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Padrão do procedimento. Cada serviço pode personalizar sua própria lista.
+                </p>
               </div>
 
               <div className="space-y-2">

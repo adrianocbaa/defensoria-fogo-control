@@ -11,6 +11,8 @@ export interface TicketService {
   nucleo_id?: string | null;
   location?: string | null;
   manager_id?: string | null;
+  /** IDs dos servidores da manutenção (nova estrutura multi). */
+  manager_ids?: string[];
   scheduled_date?: string | null;
   materials?: { name: string; completed: boolean }[];
   // Viagem por serviço
@@ -22,15 +24,19 @@ export interface TicketService {
   travel_id?: string | null;
   /** true quando `travel_id` aponta para uma viagem existente (não deve ser excluída ao editar/apagar). */
   travel_is_linked?: boolean;
-  /** Nome do servidor a registrar no calendário (apenas transiente na UI, não persistido em maintenance_ticket_services) */
+  /** Nome do servidor (join dos primeiros nomes) para registrar em `travels.servidor` (transiente). */
   travel_servidor?: string | null;
+  /** IDs dos servidores para registrar em `travels.manager_ids` (transiente). */
+  travel_manager_ids?: string[];
 }
 
 export interface ReplaceServicesOptions {
   /** Título do procedimento — usado como "motivo" das viagens criadas */
   ticketTitle: string;
-  /** Fallback de servidor quando o serviço não tiver responsável personalizado */
+  /** Fallback de servidor (texto) quando o serviço não tiver responsável personalizado */
   fallbackServidor: string;
+  /** IDs dos servidores padrão do procedimento (fallback quando o serviço não personalizar) */
+  fallbackManagerIds?: string[];
   /** user_id que dispara a criação das viagens (owner) */
   userId?: string;
 }
@@ -51,7 +57,6 @@ export async function replaceServicesForTicket(
   services: TicketService[],
   opts: ReplaceServicesOptions
 ): Promise<void> {
-  // 1. Buscar serviços atuais (com flag de vínculo) e o travel_id do ticket
   const [{ data: existing, error: fetchErr }, { data: ticketRow, error: ticketErr }] = await Promise.all([
     supabase
       .from('maintenance_ticket_services')
@@ -66,7 +71,6 @@ export async function replaceServicesForTicket(
   if (fetchErr) throw fetchErr;
   if (ticketErr) throw ticketErr;
 
-  // Só apagar viagens que eram "próprias" do serviço (não vinculadas a outros procedimentos)
   const ownedOldTravelIds = (existing ?? [])
     .filter((r: any) => !!r.travel_id && !r.travel_is_linked)
     .map((r: any) => r.travel_id as string);
@@ -75,26 +79,21 @@ export async function replaceServicesForTicket(
     .map((r: any) => r.travel_id as string);
   const protectedTicketTravelId = (ticketRow as any)?.travel_id ?? null;
 
-  // 2. Apagar serviços
   const { error: delErr } = await supabase
     .from('maintenance_ticket_services')
     .delete()
     .eq('ticket_id', ticketId);
   if (delErr) throw delErr;
 
-  // 3. Apagar apenas viagens PRÓPRIAS antigas (viagens vinculadas continuam intactas)
   if (ownedOldTravelIds.length > 0) {
     const { error: oldTravelDelErr } = await supabase.from('travels').delete().in('id', ownedOldTravelIds);
     if (oldTravelDelErr) throw oldTravelDelErr;
   }
-  // Também remover órfãs criadas em salvamentos parciais (mesmo ticket_id), preservando
-  // o travel do procedimento e QUALQUER viagem vinculada (linked).
   let staleTravelDelete = supabase.from('travels').delete().eq('ticket_id', ticketId);
   if (protectedTicketTravelId) {
     staleTravelDelete = staleTravelDelete.neq('id', protectedTicketTravelId);
   }
   if (linkedOldTravelIds.length > 0) {
-    // .not('id', 'in', ...) precisa de sintaxe de lista
     staleTravelDelete = staleTravelDelete.not('id', 'in', `(${linkedOldTravelIds.join(',')})`);
   }
   const { error: staleTravelDelErr } = await staleTravelDelete;
@@ -102,22 +101,25 @@ export async function replaceServicesForTicket(
 
   if (services.length === 0) return;
 
-  // 4. Para cada serviço com viagem, criar entrada em `travels` (se não vinculada)
   const servicesWithTravelIds = await Promise.all(
     services.map(async (s) => {
       let travelId: string | null = null;
       let isLinked = false;
       if (s.envolve_viagem) {
         if (s.travel_is_linked && s.travel_id) {
-          // Reaproveitar viagem existente — não cria nada em travels
           travelId = s.travel_id;
           isLinked = true;
         } else if (s.travel_cidade) {
-          const servidorSource =
-            s.travel_servidor ||
-            (s.custom_assignment ? null : null) ||
-            opts.fallbackServidor;
-          const servidor = firstName(servidorSource) || opts.fallbackServidor || '—';
+          const servidorSource = s.travel_servidor || opts.fallbackServidor;
+          const servidor =
+            (servidorSource || '')
+              .split(/\s*[,/]\s*/)
+              .map((n) => firstName(n))
+              .filter(Boolean)
+              .join(' / ') || opts.fallbackServidor || '—';
+          const managerIds = (s.travel_manager_ids && s.travel_manager_ids.length > 0)
+            ? s.travel_manager_ids
+            : (opts.fallbackManagerIds ?? []);
           const dataIda = s.travel_sem_previsao ? null : s.travel_data_ida || null;
           const dataVolta = s.travel_sem_previsao ? null : s.travel_data_volta || null;
           const { data: travelRow, error: travelErr } = await supabase
@@ -130,6 +132,7 @@ export async function replaceServicesForTicket(
               motivo: opts.ticketTitle,
               ticket_id: ticketId,
               user_id: opts.userId ?? null,
+              manager_ids: managerIds,
             } as any)
             .select('id')
             .single();
@@ -144,33 +147,40 @@ export async function replaceServicesForTicket(
     })
   );
 
-  const rows = servicesWithTravelIds.map(({ s, travelId, isLinked }, i) => ({
-    ticket_id: ticketId,
-    title: s.title,
-    description: s.description ?? null,
-    order_index: s.order_index ?? i,
-    completed: !!s.completed,
-    status: s.status || 'Em Análise',
-    custom_assignment: !!s.custom_assignment,
-    nucleo_id: s.custom_assignment ? s.nucleo_id ?? null : null,
-    location: s.custom_assignment ? s.location ?? null : null,
-    manager_id: s.custom_assignment ? s.manager_id ?? null : null,
-    scheduled_date: s.custom_assignment ? s.scheduled_date ?? null : null,
-    materials: (s.materials ?? []) as any,
-    envolve_viagem: !!s.envolve_viagem,
-    travel_cidade: s.envolve_viagem ? s.travel_cidade ?? null : null,
-    travel_data_ida: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_data_ida ?? null : null,
-    travel_data_volta: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_data_volta ?? null : null,
-    travel_sem_previsao: !!s.travel_sem_previsao,
-    travel_id: travelId,
-    travel_is_linked: isLinked,
-  }));
+  const rows = servicesWithTravelIds.map(({ s, travelId, isLinked }, i) => {
+    const managerIds = s.custom_assignment
+      ? (s.manager_ids && s.manager_ids.length > 0
+          ? s.manager_ids
+          : (s.manager_id ? [s.manager_id] : []))
+      : [];
+    return {
+      ticket_id: ticketId,
+      title: s.title,
+      description: s.description ?? null,
+      order_index: s.order_index ?? i,
+      completed: !!s.completed,
+      status: s.status || 'Em Análise',
+      custom_assignment: !!s.custom_assignment,
+      nucleo_id: s.custom_assignment ? s.nucleo_id ?? null : null,
+      location: s.custom_assignment ? s.location ?? null : null,
+      manager_id: s.custom_assignment ? (managerIds[0] ?? null) : null,
+      manager_ids: managerIds,
+      scheduled_date: s.custom_assignment ? s.scheduled_date ?? null : null,
+      materials: (s.materials ?? []) as any,
+      envolve_viagem: !!s.envolve_viagem,
+      travel_cidade: s.envolve_viagem ? s.travel_cidade ?? null : null,
+      travel_data_ida: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_data_ida ?? null : null,
+      travel_data_volta: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_data_volta ?? null : null,
+      travel_sem_previsao: !!s.travel_sem_previsao,
+      travel_id: travelId,
+      travel_is_linked: isLinked,
+    };
+  });
 
   const { error: insErr } = await supabase
     .from('maintenance_ticket_services')
     .insert(rows as any);
   if (insErr) {
-    // Reverter apenas viagens recém-criadas (não as vinculadas)
     const newTravelIds = servicesWithTravelIds
       .filter(({ isLinked }) => !isLinked)
       .map(({ travelId }) => travelId)
@@ -200,6 +210,7 @@ export async function fetchServicesForTicket(ticketId: string): Promise<TicketSe
     nucleo_id: r.nucleo_id,
     location: r.location,
     manager_id: r.manager_id,
+    manager_ids: r.manager_ids ?? (r.manager_id ? [r.manager_id] : []),
     scheduled_date: r.scheduled_date,
     materials: (r.materials as any) ?? [],
     envolve_viagem: r.envolve_viagem ?? false,

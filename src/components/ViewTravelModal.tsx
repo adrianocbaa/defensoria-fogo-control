@@ -7,6 +7,7 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Travel } from '@/types/travel';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 interface ViewTravelModalProps {
   isOpen: boolean;
@@ -17,7 +18,15 @@ interface ViewTravelModalProps {
 
 export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelModalProps) {
   const { canEdit } = useUserRole();
-  
+  const { managers } = useMaintenanceManagers();
+
+  const servidoresNomes = (travel.manager_ids ?? [])
+    .map((id) => managers.find((m) => m.id === id)?.nome)
+    .filter(Boolean) as string[];
+  const servidoresLabel = servidoresNomes.length > 0
+    ? servidoresNomes.join(', ')
+    : (travel.servidor || '—');
+
   const hasDates = !!travel.data_ida && !!travel.data_volta;
   const dataIda = hasDates ? parseISO(travel.data_ida!) : null;
   const dataVolta = hasDates ? parseISO(travel.data_volta!) : null;
@@ -46,11 +55,13 @@ export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelM
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Servidor</p>
-                    <p className="font-medium">{travel.servidor}</p>
+                <div className="flex items-start space-x-3">
+                  <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Servidor{servidoresNomes.length > 1 ? 'es' : ''}
+                    </p>
+                    <p className="font-medium">{servidoresLabel}</p>
                   </div>
                 </div>
 

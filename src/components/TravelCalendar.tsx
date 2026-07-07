@@ -15,9 +15,10 @@ import { Travel } from '@/types/travel';
 import { EditTravelModal } from './EditTravelModal';
 import { ViewTravelModal } from './ViewTravelModal';
 import { ViewTaskModal } from './ViewTaskModal';
-import { useUserRole } from '@/hooks/useUserRole';
+
 import { toast } from '@/hooks/use-toast';
 import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 export function TravelCalendar() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -39,8 +40,29 @@ export function TravelCalendar() {
   // View modes
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   
-  const { canEdit } = useUserRole();
   const { tickets } = useMaintenanceTickets();
+  const { managers } = useMaintenanceManagers();
+
+  /** Resolve a lista de nomes dos servidores da viagem: prefere manager_ids;
+   *  cai no campo `servidor` (texto legado) quando não houver ids. */
+  const getTravelServidorNames = (travel: Travel): string[] => {
+    if (travel.manager_ids && travel.manager_ids.length > 0) {
+      const names = travel.manager_ids
+        .map((id) => managers.find((m) => m.id === id)?.nome)
+        .filter(Boolean) as string[];
+      if (names.length > 0) return names;
+    }
+    if (travel.servidor) {
+      return travel.servidor.split(/\s*\/\s*/).map((s) => s.trim()).filter(Boolean);
+    }
+    return [];
+  };
+  const getTravelServidorLabel = (travel: Travel) => {
+    const names = getTravelServidorNames(travel);
+    if (names.length === 0) return travel.servidor || '—';
+    // Usa primeiro nome de cada para caber na faixa
+    return names.map((n) => n.trim().split(/\s+/)[0]).join(' / ');
+  };
   
   const fetchTravels = async () => {
     try {
@@ -71,10 +93,13 @@ export function TravelCalendar() {
     let filtered = travels;
     
     // Filtro por servidor
+    // Filtro por servidor (busca em manager_ids + campo legado)
     if (servidorFilter && servidorFilter !== 'all') {
-      filtered = filtered.filter(travel => 
-        travel.servidor.toLowerCase().includes(servidorFilter.toLowerCase())
-      );
+      const needle = servidorFilter.toLowerCase();
+      filtered = filtered.filter((travel) => {
+        const names = getTravelServidorNames(travel).join(' ').toLowerCase();
+        return names.includes(needle) || (travel.servidor ?? '').toLowerCase().includes(needle);
+      });
     }
     
     // Filtro por destino
@@ -186,7 +211,12 @@ export function TravelCalendar() {
     setShowEditModal(false);
   };
 
-  const uniqueServidores = [...new Set(travels.map(travel => travel.servidor))];
+  const uniqueServidores = [...new Set(
+    travels.flatMap((t) => {
+      const names = getTravelServidorNames(t);
+      return names.length > 0 ? names : (t.servidor ? [t.servidor] : []);
+    })
+  )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const uniqueDestinos = [...new Set(travels.map(travel => travel.destino))];
 
   const getDaysInMonth = () => {
@@ -446,13 +476,13 @@ export function TravelCalendar() {
                               zIndex: 10 + travelIndex
                             }}
                             onClick={() => handleViewTravel(travel)}
-                            title={`${travel.servidor} - ${travel.destino}`}
+                            title={`${getTravelServidorNames(travel).join(', ') || travel.servidor} - ${travel.destino}`}
                           >
                             {/* Show content only on start or single day */}
                             {position.position === 'start' || position.position === 'single' ? (
                               <div className="flex items-center gap-1 w-full min-w-0">
                                 <div className="font-medium truncate text-[11px] flex-1">
-                                  {travel.servidor}
+                                  {getTravelServidorLabel(travel)}
                                 </div>
                                 <div className="flex items-center gap-0.5 opacity-75 text-[10px]">
                                   <MapPin className="h-2 w-2 flex-shrink-0" />
@@ -493,16 +523,16 @@ export function TravelCalendar() {
                               zIndex: 5 + taskIndex
                             }}
                             onClick={() => handleViewTask(task)}
-                            title={`${task.assignee} - ${task.title}`}
+                            title={`${getTravelServidorNames(travel).join(', ') || travel.servidor} - ${task.title}`}
                           >
                             {/* Show content only on start or single day */}
                             {position.position === 'start' || position.position === 'single' ? (
                               <div className="flex items-center gap-1 w-full min-w-0">
                                 <div className="font-medium truncate text-[11px] flex-1">
-                                  {task.assignee}
+                                  {getTravelServidorLabel(travel)}
                                 </div>
                                 <div className="flex items-center gap-0.5 opacity-75 text-[10px]">
-                                  <span className="truncate max-w-[50px]">{task.title}</span>
+                                  <span className="truncate max-w-[70px]">{task.title}</span>
                                 </div>
                               </div>
                             ) : (
@@ -538,7 +568,7 @@ export function TravelCalendar() {
                         <CalendarDays className="h-5 w-5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{travel.servidor}</p>
+                        <p className="font-medium truncate">{getTravelServidorNames(travel).join(', ') || travel.servidor}</p>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           <span className="truncate">{travel.destino}</span>

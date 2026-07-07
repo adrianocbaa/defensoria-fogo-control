@@ -19,6 +19,7 @@ export interface MaintenanceTicket {
   completed_at?: string;
   requested_at?: string;
   manager_id?: string | null;
+  manager_ids?: string[];
   nucleo_id?: string | null;
   user_id?: string;
   travel_id?: string;
@@ -68,6 +69,7 @@ export function useMaintenanceTickets() {
               nucleo_id: r.nucleo_id,
               location: r.location,
               manager_id: r.manager_id,
+              manager_ids: r.manager_ids ?? (r.manager_id ? [r.manager_id] : []),
               scheduled_date: r.scheduled_date,
               materials: (r.materials as any) ?? [],
               envolve_viagem: r.envolve_viagem ?? false,

@@ -15,6 +15,12 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Travel } from '@/types/travel';
 import { toast } from '@/hooks/use-toast';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { ManagersMultiSelect } from './ManagersMultiSelect';
+
+function firstName(n: string) {
+  return (n.trim().split(/\s+/)[0] || '').trim();
+}
 
 interface EditTravelModalProps {
   isOpen: boolean;
@@ -31,9 +37,11 @@ export function EditTravelModal({
   onTravelUpdated, 
   onTravelDeleted 
 }: EditTravelModalProps) {
+  const { managers } = useMaintenanceManagers();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [semPrevisao, setSemPrevisao] = useState(!travel.data_ida || !travel.data_volta);
+  const [managerIds, setManagerIds] = useState<string[]>(travel.manager_ids ?? []);
   const [formData, setFormData] = useState({
     servidor: travel.servidor,
     destino: travel.destino,
@@ -46,10 +54,10 @@ export function EditTravelModal({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const validateForm = () => {
-    if (!formData.servidor.trim()) {
+    if (managerIds.length === 0 && !formData.servidor.trim()) {
       toast({
         title: "Erro",
-        description: "Nome do servidor é obrigatório",
+        description: "Selecione ao menos um servidor da manutenção",
         variant: "destructive",
       });
       return false;
@@ -103,12 +111,21 @@ export function EditTravelModal({
 
     setLoading(true);
     try {
+      const servidorFromIds = managerIds.length > 0
+        ? managerIds
+            .map((id) => managers.find((m) => m.id === id)?.nome)
+            .filter(Boolean)
+            .map((n) => firstName(String(n)))
+            .filter(Boolean)
+            .join(' / ')
+        : formData.servidor;
       const updateData = {
-        servidor: formData.servidor,
+        servidor: servidorFromIds || formData.servidor,
         destino: formData.destino,
         motivo: formData.motivo,
         data_ida: semPrevisao ? null : formData.data_ida,
         data_volta: semPrevisao ? null : formData.data_volta,
+        manager_ids: managerIds,
       };
       const { error } = await supabase
         .from('travels')
@@ -197,17 +214,20 @@ export function EditTravelModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="servidor" className="flex items-center">
+            <Label className="flex items-center">
               <User className="h-4 w-4 mr-2" />
-              Servidor
+              Servidor(es) da manutenção *
             </Label>
-            <Input
-              id="servidor"
-              value={formData.servidor}
-              onChange={(e) => setFormData(prev => ({ ...prev, servidor: e.target.value }))}
-              placeholder="Nome do servidor público"
-              required
+            <ManagersMultiSelect
+              value={managerIds}
+              onChange={setManagerIds}
+              placeholder="Selecione um ou mais servidores..."
             />
+            {managerIds.length === 0 && formData.servidor && (
+              <p className="text-[11px] text-muted-foreground">
+                Registro legado: <strong>{formData.servidor}</strong>. Selecione os servidores acima para atualizar.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
