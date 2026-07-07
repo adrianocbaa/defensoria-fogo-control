@@ -335,6 +335,23 @@ export function KanbanBoard() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
+  // Impedimentos
+  const { profile } = useProfile();
+  const allTicketIds = Object.values(tickets).flat().map((t) => t.id);
+  const { impediments, refetch: refetchImpediments } = useTicketImpediments(allTicketIds);
+  const impedimentByTicket: Record<string, TicketImpediment | undefined> = {};
+  for (const imp of impediments) {
+    if (!imp.resolved_at && !impedimentByTicket[imp.ticket_id]) {
+      impedimentByTicket[imp.ticket_id] = imp;
+    }
+  }
+
+  const [impedimentDialog, setImpedimentDialog] = useState<{
+    open: boolean;
+    ticketId: string | null;
+    ticketTitle?: string;
+  }>({ open: false, ticketId: null });
+
   // Convert DB tickets to UI tickets format
   useEffect(() => {
     const convertedTickets = {
