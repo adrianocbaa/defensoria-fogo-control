@@ -43,6 +43,8 @@ export function TravelCalendar() {
   
   const { tickets } = useMaintenanceTickets();
   const { managers } = useMaintenanceManagers();
+  const currentMonthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+  const { usage: monthUsage, limit: dailyLimit, refetch: refetchUsage } = useTravelDaysUsage(currentMonthKey);
 
   /** Resolve a lista de nomes dos servidores da viagem: prefere manager_ids;
    *  cai no campo `servidor` (texto legado) quando não houver ids. */
