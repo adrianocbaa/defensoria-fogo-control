@@ -189,10 +189,21 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
         fileUrl = pub.publicUrl;
         fileName = finalFile.name;
       }
-      await finalizeTicket(ticket.id, {
-        confirmation_file_url: fileUrl,
-        confirmation_file_name: fileName,
-        finalization_note: finalNote.trim() || null,
+      const { data: userRes } = await supabase.auth.getUser();
+      const { error: finErr } = await supabase
+        .from('maintenance_tickets')
+        .update({
+          finalized_at: new Date().toISOString(),
+          finalized_by: userRes.user?.id ?? null,
+          confirmation_file_url: fileUrl,
+          confirmation_file_name: fileName,
+          finalization_note: finalNote.trim() || null,
+        } as any)
+        .eq('id', ticket.id);
+      if (finErr) throw finErr;
+      toast({
+        title: 'Tarefa finalizada',
+        description: 'A tarefa saiu do kanban e foi arquivada nas estatísticas.',
       });
       onChanged?.();
       onOpenChange(false);
