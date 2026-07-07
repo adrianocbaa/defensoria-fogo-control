@@ -187,19 +187,18 @@ const COLUMNS: ColumnDef[] = [
     csv: (r) => r.process_number ?? '',
   },
   {
+    id: 'requested_at',
+    label: 'Solicitado em',
+    sortKey: 'requested_at',
+    cell: (r) => <span className="text-muted-foreground">{formatDate(r.requested_at)}</span>,
+    csv: (r) => formatDate(r.requested_at),
+  },
+  {
     id: 'created_at',
     label: 'Abertura',
     sortKey: 'created_at',
     cell: (r) => <span className="text-muted-foreground">{formatDate(r.created_at)}</span>,
     csv: (r) => formatDate(r.created_at),
-  },
-  {
-    id: 'requested_at',
-    label: 'Solicitado em',
-    sortKey: 'requested_at',
-    defaultVisible: false,
-    cell: (r) => <span className="text-muted-foreground">{formatDate(r.requested_at)}</span>,
-    csv: (r) => formatDate(r.requested_at),
   },
   {
     id: 'completed_at',
