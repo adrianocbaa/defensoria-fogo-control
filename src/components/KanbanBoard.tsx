@@ -411,101 +411,81 @@ export function KanbanBoard() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over) {
-      setActiveTicket(null);
-      return;
-    }
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
+  const attemptMoveTicket = (
+    ticketId: string,
+    targetStatus: string,
+  ): 'moved' | 'awaiting-impediment' | 'blocked' | 'noop' => {
     let sourceStatus = '';
     let ticketToMove: Ticket | null = null;
-
-    for (const [status, statusTickets] of Object.entries(tickets)) {
-      const ticket = statusTickets.find(t => t.id === activeId);
-      if (ticket) {
-        sourceStatus = status;
-        ticketToMove = ticket;
-        break;
-      }
+    for (const [status, arr] of Object.entries(tickets)) {
+      const t = arr.find((t) => t.id === ticketId);
+      if (t) { sourceStatus = status; ticketToMove = t; break; }
     }
-
-    if (!ticketToMove) {
-      setActiveTicket(null);
-      return;
-    }
-
-    let targetStatus = '';
-    for (const [status, statusTickets] of Object.entries(tickets)) {
-      if (statusTickets.find(t => t.id === overId)) {
-        targetStatus = status;
-        break;
-      }
-    }
-    if (!targetStatus) {
-      const columnNames = Object.keys(tickets);
-      if (columnNames.includes(overId)) {
-        targetStatus = overId;
-      }
-    }
-
-    if (!targetStatus || sourceStatus === targetStatus) {
-      setActiveTicket(null);
-      return;
-    }
+    if (!ticketToMove) return 'noop';
+    if (sourceStatus === targetStatus) return 'noop';
 
     if (isGM) {
       const allowedStatuses = ['Em andamento', 'Impedido', 'Concluído'];
       if (!allowedStatuses.includes(sourceStatus) || !allowedStatuses.includes(targetStatus)) {
-        setActiveTicket(null);
         toast({
-          title: "Movimento não permitido",
-          description: "Usuários de manutenção só podem mover tarefas entre Em andamento, Impedido e Concluído",
-          variant: "destructive"
+          title: 'Movimento não permitido',
+          description: 'Usuários de manutenção só podem mover tarefas entre Em andamento, Impedido e Concluído',
+          variant: 'destructive',
         });
-        return;
+        return 'blocked';
       }
     }
 
-    // Regra: só permite mover para "Concluído" se todos os serviços estiverem concluídos.
     if (targetStatus === 'Concluído') {
       const svcs = ticketToMove.services ?? [];
-      if (svcs.length > 0 && !svcs.every(s => s.completed)) {
-        setActiveTicket(null);
+      if (svcs.length > 0 && !svcs.every((s) => s.completed)) {
         toast({
           title: 'Serviços em aberto',
           description: 'Marque todos os serviços do procedimento como concluídos antes de movê-lo para Concluído.',
           variant: 'destructive',
         });
-        return;
+        return 'blocked';
       }
     }
 
-    // Se está movendo PARA "Impedido": pedir motivo antes de confirmar
     if (targetStatus === 'Impedido' && sourceStatus !== 'Impedido') {
-      setActiveTicket(null);
-      setImpedimentDialog({ open: true, ticketId: activeId, ticketTitle: ticketToMove.title });
-      return;
+      setImpedimentDialog({ open: true, ticketId, ticketTitle: ticketToMove.title });
+      return 'awaiting-impediment';
     }
 
-    // Se está saindo de "Impedido": resolver impedimentos ativos
     if (sourceStatus === 'Impedido' && targetStatus !== 'Impedido') {
-      resolveActiveImpediments(activeId, user?.id ?? null, profile?.display_name ?? null)
+      resolveActiveImpediments(ticketId, user?.id ?? null, profile?.display_name ?? null)
         .catch((err) => console.error('Erro ao resolver impedimento:', err))
         .finally(() => refetchImpediments());
     }
 
-    updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído' })
-      .then(() => refetch());
+    updateTicket(ticketId, {
+      status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído',
+    }).then(() => refetch());
+    return 'moved';
+  };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) { setActiveTicket(null); return; }
 
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
+    let targetStatus = '';
+    for (const [status, statusTickets] of Object.entries(tickets)) {
+      if (statusTickets.find((t) => t.id === overId)) { targetStatus = status; break; }
+    }
+    if (!targetStatus) {
+      const columnNames = Object.keys(tickets);
+      if (columnNames.includes(overId)) targetStatus = overId;
+    }
+    if (!targetStatus) { setActiveTicket(null); return; }
+
+    attemptMoveTicket(activeId, targetStatus);
     setActiveTicket(null);
   };
+
 
   const handleCreateTask = async (taskData: any) => {
     if (!user) {
