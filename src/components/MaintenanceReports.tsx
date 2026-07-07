@@ -67,7 +67,7 @@ function formatDate(value?: string | null) {
 }
 
 function daysOpen(row: Row) {
-  const start = parseDate(row.created_at);
+  const start = parseDate(row.requested_at) ?? parseDate(row.created_at);
   if (!start) return 0;
   const end = parseDate(row.finalized_at) ?? parseDate(row.completed_at) ?? new Date();
   return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000));
@@ -187,19 +187,18 @@ const COLUMNS: ColumnDef[] = [
     csv: (r) => r.process_number ?? '',
   },
   {
+    id: 'requested_at',
+    label: 'Solicitado em',
+    sortKey: 'requested_at',
+    cell: (r) => <span className="text-muted-foreground">{formatDate(r.requested_at)}</span>,
+    csv: (r) => formatDate(r.requested_at),
+  },
+  {
     id: 'created_at',
     label: 'Abertura',
     sortKey: 'created_at',
     cell: (r) => <span className="text-muted-foreground">{formatDate(r.created_at)}</span>,
     csv: (r) => formatDate(r.created_at),
-  },
-  {
-    id: 'requested_at',
-    label: 'Solicitado em',
-    sortKey: 'requested_at',
-    defaultVisible: false,
-    cell: (r) => <span className="text-muted-foreground">{formatDate(r.requested_at)}</span>,
-    csv: (r) => formatDate(r.requested_at),
   },
   {
     id: 'completed_at',
