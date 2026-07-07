@@ -233,42 +233,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       servicePhotos,
     });
 
-    if (isTravel && travelData.cidade) {
-      try {
-        const managerName = managers.find((m) => m.id === managerId)?.nome || formData.assignee;
-        const servidorViagem = managerName.trim().split(/\s+/)[0];
-        const { error } = await supabase
-          .from('travels')
-          .insert({
-            servidor: servidorViagem,
-            destino: travelData.cidade,
-            data_ida:
-              travelData.semPrevisao || !travelData.dataIda
-                ? null
-                : format(travelData.dataIda, 'yyyy-MM-dd'),
-            data_volta:
-              travelData.semPrevisao || !travelData.dataVolta
-                ? null
-                : format(travelData.dataVolta, 'yyyy-MM-dd'),
-            motivo: formData.title,
-            user_id: user.id,
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: 'Sucesso',
-          description: 'Tarefa criada e viagem adicionada ao calendário.',
-        });
-      } catch (error) {
-        console.error('Erro ao criar viagem:', error);
-        toast({
-          title: 'Aviso',
-          description: 'Tarefa criada, mas houve erro ao adicionar a viagem ao calendário.',
-          variant: 'destructive',
-        });
-      }
-    }
+    // Viagens agora são criadas pelo KanbanBoard via replaceServicesForTicket
+    // (uma entrada em `travels` por serviço que tiver "envolve_viagem" ativo).
 
     // Reset
     setFormData({
