@@ -38,6 +38,11 @@ const emptyService = (order: number): TicketService => ({
   manager_id: null,
   scheduled_date: null,
   materials: [],
+  envolve_viagem: false,
+  travel_cidade: null,
+  travel_data_ida: null,
+  travel_data_volta: null,
+  travel_sem_previsao: false,
 });
 
 export function TicketServicesEditor({
