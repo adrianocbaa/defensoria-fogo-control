@@ -17,6 +17,8 @@ import { Travel } from '@/types/travel';
 import { toast } from '@/hooks/use-toast';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { ManagersMultiSelect } from './ManagersMultiSelect';
+import { checkTravelLimit, LimitViolation } from '@/lib/travelDaysLimit';
+import { TravelLimitConfirmDialog } from './TravelLimitConfirmDialog';
 
 function firstName(n: string) {
   return (n.trim().split(/\s+/)[0] || '').trim();
@@ -52,6 +54,10 @@ export function EditTravelModal({
   const [dataIdaOpen, setDataIdaOpen] = useState(false);
   const [dataVoltaOpen, setDataVoltaOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [violations, setViolations] = useState<LimitViolation[]>([]);
+  const [confirmLimitOpen, setConfirmLimitOpen] = useState(false);
+
+
 
   const validateForm = () => {
     if (managerIds.length === 0 && !formData.servidor.trim()) {
@@ -104,11 +110,7 @@ export function EditTravelModal({
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
+  const persistUpdate = async () => {
     setLoading(true);
     try {
       const servidorFromIds = managerIds.length > 0
@@ -134,22 +136,36 @@ export function EditTravelModal({
 
       if (error) throw error;
 
-      toast({
-        title: "Sucesso",
-        description: "Viagem atualizada com sucesso",
-      });
-
+      toast({ title: 'Sucesso', description: 'Viagem atualizada com sucesso' });
       onTravelUpdated();
     } catch (error) {
       console.error('Erro ao atualizar viagem:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar viagem",
-        variant: "destructive",
-      });
+      toast({ title: 'Erro', description: 'Erro ao atualizar viagem', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    if (!semPrevisao && formData.data_ida && formData.data_volta && managerIds.length > 0) {
+      const vs = await checkTravelLimit({
+        managerIds,
+        managers,
+        dataIda: formData.data_ida,
+        dataVolta: formData.data_volta,
+        excludeTravelId: travel.id,
+      });
+      if (vs.length > 0) {
+        setViolations(vs);
+        setConfirmLimitOpen(true);
+        return;
+      }
+    }
+
+    await persistUpdate();
   };
 
   const handleDelete = async () => {
@@ -386,6 +402,15 @@ export function EditTravelModal({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+    <TravelLimitConfirmDialog
+      open={confirmLimitOpen}
+      onOpenChange={setConfirmLimitOpen}
+      violations={violations}
+      onConfirm={async () => {
+        setConfirmLimitOpen(false);
+        await persistUpdate();
+      }}
+    />
     </>
   );
 }

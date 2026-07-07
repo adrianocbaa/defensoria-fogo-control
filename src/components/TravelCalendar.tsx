@@ -19,6 +19,7 @@ import { ViewTaskModal } from './ViewTaskModal';
 import { toast } from '@/hooks/use-toast';
 import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { useTravelDaysUsage } from '@/hooks/useTravelDaysUsage';
 
 export function TravelCalendar() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -42,6 +43,8 @@ export function TravelCalendar() {
   
   const { tickets } = useMaintenanceTickets();
   const { managers } = useMaintenanceManagers();
+  const currentMonthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+  const { usage: monthUsage, limit: dailyLimit, refetch: refetchUsage } = useTravelDaysUsage(currentMonthKey);
 
   /** Resolve a lista de nomes dos servidores da viagem: prefere manager_ids;
    *  cai no campo `servidor` (texto legado) quando não houver ids. */
@@ -82,6 +85,7 @@ export function TravelCalendar() {
       });
     } finally {
       setLoading(false);
+      refetchUsage();
     }
   };
 
@@ -354,6 +358,39 @@ export function TravelCalendar() {
                 <Badge variant="secondary" className="w-fit h-6">
                   {getTravelsForMonth().length} viagens
                 </Badge>
+              </div>
+            </div>
+
+            {/* Contabilidade de dias de deslocamento por servidor no mês */}
+            <div className="mt-4">
+              <Label className="text-sm font-medium">
+                Dias de viagem no mês (limite {dailyLimit}/servidor)
+              </Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {managers.length === 0 && (
+                  <span className="text-xs text-muted-foreground">Nenhum servidor cadastrado.</span>
+                )}
+                {managers.map((m) => {
+                  const used = monthUsage[m.id] ?? 0;
+                  const exceeded = used > dailyLimit;
+                  const near = !exceeded && used >= dailyLimit - 2;
+                  return (
+                    <Badge
+                      key={m.id}
+                      variant="outline"
+                      className={
+                        exceeded
+                          ? 'border-destructive text-destructive bg-destructive/10'
+                          : near
+                          ? 'border-amber-500 text-amber-700 bg-amber-50'
+                          : 'border-border'
+                      }
+                      title={`${m.nome}: ${used} de ${dailyLimit} dias`}
+                    >
+                      {m.nome.split(/\s+/)[0]}: {used}/{dailyLimit}
+                    </Badge>
+                  );
+                })}
               </div>
             </div>
           </div>

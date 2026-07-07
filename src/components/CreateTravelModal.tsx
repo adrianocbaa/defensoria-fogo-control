@@ -18,6 +18,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { ManagersMultiSelect } from './ManagersMultiSelect';
+import { checkTravelLimit, LimitViolation } from '@/lib/travelDaysLimit';
+import { TravelLimitConfirmDialog } from './TravelLimitConfirmDialog';
 
 function firstName(n: string) {
   return (n.trim().split(/\s+/)[0] || '').trim();
@@ -45,6 +47,8 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   });
   const [dataIdaOpen, setDataIdaOpen] = useState(false);
   const [dataVoltaOpen, setDataVoltaOpen] = useState(false);
+  const [violations, setViolations] = useState<LimitViolation[]>([]);
+  const [confirmLimitOpen, setConfirmLimitOpen] = useState(false);
 
   const validateForm = () => {
     if (managerIds.length === 0) {
@@ -97,21 +101,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) {
-      toast({
-        title: "Acesso negado",
-        description: "Você precisa fazer login para criar viagens e tarefas.",
-        variant: "destructive",
-      });
-      navigate('/auth');
-      return;
-    }
-    
-    if (!validateForm()) return;
-
+  const persistTravel = async () => {
     setLoading(true);
     try {
       const servidorNames = managerIds
@@ -119,7 +109,6 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
         .filter(Boolean) as string[];
       const servidorJoined = servidorNames.map(firstName).filter(Boolean).join(' / ');
 
-      // Criar apenas a viagem
       const { error: travelError } = await supabase
         .from('travels')
         .insert([{
@@ -128,7 +117,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
           data_ida: semPrevisao ? null : formData.data_ida,
           data_volta: semPrevisao ? null : formData.data_volta,
           motivo: formData.motivo,
-          user_id: user.id,
+          user_id: user!.id,
           manager_ids: managerIds,
         }]);
 
@@ -136,31 +125,55 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
       onTravelCreated?.();
       onClose();
-      
+
       setSemPrevisao(false);
       setManagerIds([]);
-      setFormData({
-        servidor: '',
-        destino: '',
-        data_ida: null,
-        data_volta: null,
-        motivo: ''
-      });
+      setFormData({ servidor: '', destino: '', data_ida: null, data_volta: null, motivo: '' });
 
-      toast({
-        title: "Sucesso",
-        description: "Viagem criada com sucesso!",
-      });
+      toast({ title: 'Sucesso', description: 'Viagem criada com sucesso!' });
     } catch (error) {
       console.error('Erro ao criar viagem:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível criar a viagem. Tente novamente.",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Não foi possível criar a viagem. Tente novamente.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: 'Acesso negado',
+        description: 'Você precisa fazer login para criar viagens e tarefas.',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+      return;
+    }
+
+    if (!validateForm()) return;
+
+    // Sem datas: pula checagem de limite
+    if (!semPrevisao && formData.data_ida && formData.data_volta) {
+      const vs = await checkTravelLimit({
+        managerIds,
+        managers,
+        dataIda: formData.data_ida,
+        dataVolta: formData.data_volta,
+      });
+      if (vs.length > 0) {
+        setViolations(vs);
+        setConfirmLimitOpen(true);
+        return;
+      }
+    }
+
+    await persistTravel();
   };
 
   const handleDateSelect = (date: Date | undefined, field: 'data_ida' | 'data_volta') => {
@@ -173,6 +186,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -331,5 +345,15 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
         </form>
       </DialogContent>
     </Dialog>
+    <TravelLimitConfirmDialog
+      open={confirmLimitOpen}
+      onOpenChange={setConfirmLimitOpen}
+      violations={violations}
+      onConfirm={async () => {
+        setConfirmLimitOpen(false);
+        await persistTravel();
+      }}
+    />
+    </>
   );
 }
