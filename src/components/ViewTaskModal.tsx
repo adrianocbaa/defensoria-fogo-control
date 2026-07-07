@@ -31,7 +31,9 @@ import {
   CheckCheck,
   Loader2,
   ExternalLink,
+  AlertOctagon,
 } from 'lucide-react';
+import { TicketImpedimentsHistory } from './TicketImpedimentsHistory';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -545,6 +547,14 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
               </div>
             </>
           )}
+          <Separator />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertOctagon className="h-4 w-4 text-destructive" />
+              <h3 className="font-medium text-sm">Histórico de impedimentos</h3>
+            </div>
+            <TicketImpedimentsHistory ticketId={ticket?.id} />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

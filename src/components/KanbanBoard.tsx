@@ -3,7 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check, Trash2 } from 'lucide-react';
+import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check, Trash2, AlertOctagon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ImpedimentReasonDialog } from './ImpedimentReasonDialog';
+import { useTicketImpediments, addImpediment, resolveActiveImpediments, type TicketImpediment } from '@/hooks/useTicketImpediments';
+import { useProfile } from '@/hooks/useProfile';
 import { CreateTaskModal } from './CreateTaskModal';
 import { ViewTaskModal } from './ViewTaskModal';
 import { EditTaskModal } from './EditTaskModal';
@@ -64,9 +68,10 @@ interface DroppableColumnProps {
   onMarkAsExecuted?: (ticketId: string) => void;
   onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
+  impedimentByTicket: Record<string, TicketImpediment | undefined>;
 }
 
-function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, impedimentByTicket }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -98,6 +103,7 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMar
               onMarkAsExecuted={onMarkAsExecuted}
               onDeleteTicket={onDeleteTicket}
               isManutencao={isManutencao}
+              activeImpediment={impedimentByTicket[ticket.id]}
             />
           ))}
         </div>
@@ -113,9 +119,10 @@ interface DraggableTicketProps {
   onMarkAsExecuted?: (ticketId: string) => void;
   onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
+  activeImpediment?: TicketImpediment;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DraggableTicketProps) {
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, activeImpediment }: DraggableTicketProps) {
   // Permitir drag para todos os usuários
   const canDrag = true;
   
@@ -169,6 +176,29 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
             {ticket.title}
           </CardTitle>
           <div className="flex items-center gap-1">
+            {activeImpediment && (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="inline-flex"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <AlertOctagon className="h-4 w-4 text-destructive flex-shrink-0" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-xs font-semibold mb-0.5">Impedimento</p>
+                    <p className="text-xs whitespace-pre-wrap">{activeImpediment.motivo}</p>
+                    <p className="text-[10px] mt-1 opacity-70">
+                      {new Date(activeImpediment.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                      {activeImpediment.created_by_name ? ` · ${activeImpediment.created_by_name}` : ''}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <ticket.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -305,6 +335,23 @@ export function KanbanBoard() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
+  // Impedimentos
+  const { profile } = useProfile();
+  const allTicketIds = Object.values(tickets).flat().map((t) => t.id);
+  const { impediments, refetch: refetchImpediments } = useTicketImpediments(allTicketIds);
+  const impedimentByTicket: Record<string, TicketImpediment | undefined> = {};
+  for (const imp of impediments) {
+    if (!imp.resolved_at && !impedimentByTicket[imp.ticket_id]) {
+      impedimentByTicket[imp.ticket_id] = imp;
+    }
+  }
+
+  const [impedimentDialog, setImpedimentDialog] = useState<{
+    open: boolean;
+    ticketId: string | null;
+    ticketTitle?: string;
+  }>({ open: false, ticketId: null });
+
   // Convert DB tickets to UI tickets format
   useEffect(() => {
     const convertedTickets = {
@@ -438,8 +485,24 @@ export function KanbanBoard() {
       }
     }
 
+    // Se está movendo PARA "Impedido": pedir motivo antes de confirmar
+    if (targetStatus === 'Impedido' && sourceStatus !== 'Impedido') {
+      setActiveTicket(null);
+      setImpedimentDialog({ open: true, ticketId: activeId, ticketTitle: ticketToMove.title });
+      return;
+    }
+
+    // Se está saindo de "Impedido": resolver impedimentos ativos
+    if (sourceStatus === 'Impedido' && targetStatus !== 'Impedido') {
+      resolveActiveImpediments(activeId, user?.id ?? null, profile?.display_name ?? null)
+        .catch((err) => console.error('Erro ao resolver impedimento:', err))
+        .finally(() => refetchImpediments());
+    }
+
     updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído' })
       .then(() => refetch());
+
+
 
     setActiveTicket(null);
   };
@@ -609,6 +672,7 @@ export function KanbanBoard() {
                 onMarkAsExecuted={handleMarkAsExecuted}
                 onDeleteTicket={!isGM ? handleDeleteTicket : undefined}
                 isManutencao={isGM}
+                impedimentByTicket={impedimentByTicket}
               />
             );
           })}
@@ -686,6 +750,32 @@ export function KanbanBoard() {
             onUpdateTask={handleUpdateTicket}
           />
         )}
+
+        <ImpedimentReasonDialog
+          open={impedimentDialog.open}
+          onOpenChange={(o) => setImpedimentDialog((s) => ({ ...s, open: o }))}
+          ticketTitle={impedimentDialog.ticketTitle}
+          onConfirm={async (motivo) => {
+            const id = impedimentDialog.ticketId;
+            if (!id) return;
+            try {
+              await addImpediment(id, motivo, user?.id ?? null, profile?.display_name ?? null);
+              await updateTicket(id, { status: 'Impedido' });
+              await Promise.all([refetch(), refetchImpediments()]);
+              toast({ title: 'Impedimento registrado', description: 'Tarefa movida para Impedido.' });
+            } catch (err: any) {
+              console.error(err);
+              toast({
+                title: 'Erro ao registrar impedimento',
+                description: err?.message ?? 'Tente novamente.',
+                variant: 'destructive',
+              });
+            } finally {
+              setImpedimentDialog({ open: false, ticketId: null });
+            }
+          }}
+          onCancel={() => setImpedimentDialog({ open: false, ticketId: null })}
+        />
       </div>
     </DndContext>
   );

@@ -1119,6 +1119,50 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_ticket_impediments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          id: string
+          motivo: string
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          motivo: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          motivo?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_impediments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_ticket_services: {
         Row: {
           completed: boolean
