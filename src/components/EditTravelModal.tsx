@@ -110,11 +110,7 @@ export function EditTravelModal({
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
+  const persistUpdate = async () => {
     setLoading(true);
     try {
       const servidorFromIds = managerIds.length > 0
@@ -140,22 +136,36 @@ export function EditTravelModal({
 
       if (error) throw error;
 
-      toast({
-        title: "Sucesso",
-        description: "Viagem atualizada com sucesso",
-      });
-
+      toast({ title: 'Sucesso', description: 'Viagem atualizada com sucesso' });
       onTravelUpdated();
     } catch (error) {
       console.error('Erro ao atualizar viagem:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar viagem",
-        variant: "destructive",
-      });
+      toast({ title: 'Erro', description: 'Erro ao atualizar viagem', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    if (!semPrevisao && formData.data_ida && formData.data_volta && managerIds.length > 0) {
+      const vs = await checkTravelLimit({
+        managerIds,
+        managers,
+        dataIda: formData.data_ida,
+        dataVolta: formData.data_volta,
+        excludeTravelId: travel.id,
+      });
+      if (vs.length > 0) {
+        setViolations(vs);
+        setConfirmLimitOpen(true);
+        return;
+      }
+    }
+
+    await persistUpdate();
   };
 
   const handleDelete = async () => {
