@@ -26,6 +26,10 @@ export interface UITicket {
   managerIds?: string[];
   nucleoId?: string | null;
   completedAt?: Date;
+  finalizedAt?: string | null;
+  confirmationFileUrl?: string | null;
+  confirmationFileName?: string | null;
+  finalizationNote?: string | null;
   // campos originais (opcionais para compat)
   created_at?: string;
   updated_at?: string;

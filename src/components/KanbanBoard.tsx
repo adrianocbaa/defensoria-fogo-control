@@ -190,15 +190,7 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   <Edit className="mr-2 h-3 w-3" />
                   Editar
                 </DropdownMenuItem>
-                {ticket.status === 'Concluído' && onMarkAsExecuted && !isManutencao && (
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    onMarkAsExecuted(ticket.id);
-                  }} className="text-xs">
-                    <Check className="mr-2 h-3 w-3" />
-                    Executado
-                  </DropdownMenuItem>
-                )}
+                {/* Finalização acontece dentro do modal de visualização (com anexo do e-mail, quando aplicável). */}
                 {onDeleteTicket && (
                   <DropdownMenuItem
                     onClick={(e) => {
@@ -333,6 +325,10 @@ export function KanbanBoard() {
         managerIds: (ticket as any).manager_ids ?? ((ticket as any).manager_id ? [(ticket as any).manager_id] : []),
         nucleoId: (ticket as any).nucleo_id ?? null,
         completedAt: ticket.completed_at ? new Date(ticket.completed_at) : undefined,
+        finalizedAt: (ticket as any).finalized_at ?? null,
+        confirmationFileUrl: (ticket as any).confirmation_file_url ?? null,
+        confirmationFileName: (ticket as any).confirmation_file_name ?? null,
+        finalizationNote: (ticket as any).finalization_note ?? null,
         icon: getIconForType(ticket.type)
       }));
     });
@@ -678,6 +674,7 @@ export function KanbanBoard() {
             ticket={selectedTicket}
             open={viewModalOpen}
             onOpenChange={setViewModalOpen}
+            onChanged={() => refetch()}
           />
         )}
         

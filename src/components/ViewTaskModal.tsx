@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,13 +8,17 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   MapPin,
   Clock,
   User,
   FileText,
   Settings,
-  CheckCircle2,
   Wrench,
   Zap,
   Droplets,
@@ -22,15 +27,24 @@ import {
   PaintRoller,
   UserCheck,
   Calendar as CalendarIcon,
+  Paperclip,
+  CheckCheck,
+  Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
+import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import type { UITicket } from '@/types/maintenanceTicket';
+import type { TicketService } from '@/hooks/useTicketServices';
 
 interface ViewTaskModalProps {
   ticket: UITicket | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onChanged?: () => void;
 }
 
 const priorityColors: Record<string, string> = {
@@ -55,27 +69,155 @@ function formatBRDate(iso?: string | null) {
   return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
 }
 
-export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps) {
+function sanitizeFileName(name: string) {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTaskModalProps) {
   const { managers } = useMaintenanceManagers(false);
   const { nuclei } = useNucleiList();
-  if (!ticket) return null;
-  const ticketManagerIds = (ticket.managerIds && ticket.managerIds.length > 0)
-    ? ticket.managerIds
-    : (ticket.managerId ? [ticket.managerId] : []);
+  const { isGM, canEdit } = useUserRole();
+
+  const [services, setServices] = useState<TicketService[]>([]);
+  const [materials, setMaterials] = useState<{ name: string; completed: boolean }[]>([]);
+  const [savingSvc, setSavingSvc] = useState<string | null>(null);
+  const [savingMat, setSavingMat] = useState<number | null>(null);
+  const [finalizing, setFinalizing] = useState(false);
+  const [finalNote, setFinalNote] = useState('');
+  const [finalFile, setFinalFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    setServices(ticket?.services ?? []);
+    setMaterials(ticket?.materials ?? []);
+    setFinalNote('');
+    setFinalFile(null);
+  }, [ticket?.id, open]);
+
+  const ticketManagerIds = useMemo(() => {
+    if (!ticket) return [];
+    return (ticket.managerIds && ticket.managerIds.length > 0)
+      ? ticket.managerIds
+      : (ticket.managerId ? [ticket.managerId] : []);
+  }, [ticket]);
+
   const ticketManagerNames = ticketManagerIds
     .map((id) => managers.find((m) => m.id === id)?.nome)
     .filter(Boolean) as string[];
-  const nucleoName = ticket.nucleoId ? nuclei.find(n => n.id === ticket.nucleoId)?.name : null;
+  const nucleoName = ticket?.nucleoId ? nuclei.find(n => n.id === ticket.nucleoId)?.name : null;
 
-  const services = ticket.services ?? [];
   const servicesProgress = services.length
     ? (services.filter(s => s.completed).length / services.length) * 100
     : 0;
-
-  const materials = ticket.materials ?? [];
   const materialsProgress = materials.length
     ? (materials.filter(m => m.completed).length / materials.length) * 100
     : 0;
+
+  const canToggle = canEdit || isGM;
+  const isConcluido = ticket?.status === 'Concluído';
+  const requiresAttachment = ticket?.requestType === 'email';
+  // Fiscal (não GM) finaliza. GM apenas move para Concluído.
+  const canFinalize = isConcluido && canEdit && !isGM;
+
+  if (!ticket) return null;
+
+  const toggleService = async (svc: TicketService, checked: boolean) => {
+    if (!canToggle || !svc.id) return;
+    setSavingSvc(svc.id);
+    // otimista
+    setServices(prev => prev.map(s => s.id === svc.id ? { ...s, completed: checked } : s));
+    try {
+      const { error } = await supabase
+        .from('maintenance_ticket_services')
+        .update({ completed: checked } as any)
+        .eq('id', svc.id);
+      if (error) throw error;
+      onChanged?.();
+    } catch (err: any) {
+      // reverte
+      setServices(prev => prev.map(s => s.id === svc.id ? { ...s, completed: !checked } : s));
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o serviço.', variant: 'destructive' });
+    } finally {
+      setSavingSvc(null);
+    }
+  };
+
+  const toggleMaterial = async (index: number, checked: boolean) => {
+    if (!canToggle) return;
+    setSavingMat(index);
+    const next = materials.map((m, i) => i === index ? { ...m, completed: checked } : m);
+    setMaterials(next);
+    try {
+      const { error } = await supabase
+        .from('maintenance_tickets')
+        .update({ materials: next as any })
+        .eq('id', ticket.id);
+      if (error) throw error;
+      onChanged?.();
+    } catch (err: any) {
+      setMaterials(materials);
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o material.', variant: 'destructive' });
+    } finally {
+      setSavingMat(null);
+    }
+  };
+
+  const handleFinalize = async () => {
+    if (!ticket) return;
+    if (requiresAttachment && !finalFile) {
+      toast({
+        title: 'Anexo obrigatório',
+        description: 'Anexe o e-mail de confirmação do núcleo para finalizar tarefas do tipo E-mail.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setFinalizing(true);
+    try {
+      let fileUrl: string | null = null;
+      let fileName: string | null = null;
+      if (finalFile) {
+        const cleanName = sanitizeFileName(finalFile.name);
+        const path = `maintenance-confirmations/${ticket.id}/${Date.now()}_${cleanName}`;
+        const { error: upErr } = await supabase.storage
+          .from('documents')
+          .upload(path, finalFile, { upsert: false, contentType: finalFile.type || undefined });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
+        fileUrl = pub.publicUrl;
+        fileName = finalFile.name;
+      }
+      const { data: userRes } = await supabase.auth.getUser();
+      const { error: finErr } = await supabase
+        .from('maintenance_tickets')
+        .update({
+          finalized_at: new Date().toISOString(),
+          finalized_by: userRes.user?.id ?? null,
+          confirmation_file_url: fileUrl,
+          confirmation_file_name: fileName,
+          finalization_note: finalNote.trim() || null,
+        } as any)
+        .eq('id', ticket.id);
+      if (finErr) throw finErr;
+      toast({
+        title: 'Tarefa finalizada',
+        description: 'A tarefa saiu do kanban e foi arquivada nas estatísticas.',
+      });
+      onChanged?.();
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: 'Erro ao finalizar',
+        description: err?.message || 'Não foi possível concluir a finalização.',
+        variant: 'destructive',
+      });
+    } finally {
+      setFinalizing(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,12 +337,22 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
                     const svcNucleo = s.custom_assignment && s.nucleo_id
                       ? nuclei.find(n => n.id === s.nucleo_id)?.name
                       : null;
+                    const busy = savingSvc === s.id;
                     return (
                       <div key={s.id ?? index} className="rounded-md border p-3 bg-muted/20">
                         <div className="flex items-start gap-2">
-                          <CheckCircle2
-                            className={`h-4 w-4 mt-0.5 ${s.completed ? 'text-green-500' : 'text-muted-foreground'}`}
-                          />
+                          <div className="pt-0.5">
+                            {busy ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : (
+                              <Checkbox
+                                checked={!!s.completed}
+                                onCheckedChange={(v) => toggleService(s, !!v)}
+                                disabled={!canToggle || !s.id}
+                                aria-label="Marcar serviço"
+                              />
+                            )}
+                          </div>
                           <div className="flex-1 space-y-1">
                             <div className={`text-sm font-medium ${s.completed ? 'line-through text-muted-foreground' : ''}`}>
                               {s.title}
@@ -268,16 +420,26 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
                 </div>
                 <Progress value={materialsProgress} className="w-full" />
                 <div className="space-y-1.5">
-                  {materials.map((material, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <CheckCircle2
-                        className={`h-4 w-4 ${material.completed ? 'text-green-500' : 'text-muted-foreground'}`}
-                      />
-                      <span className={`text-sm ${material.completed ? 'line-through text-muted-foreground' : ''}`}>
-                        {material.name}
-                      </span>
-                    </div>
-                  ))}
+                  {materials.map((material, index) => {
+                    const busy = savingMat === index;
+                    return (
+                      <div key={index} className="flex items-center gap-2">
+                        {busy ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Checkbox
+                            checked={!!material.completed}
+                            onCheckedChange={(v) => toggleMaterial(index, !!v)}
+                            disabled={!canToggle}
+                            aria-label="Marcar material"
+                          />
+                        )}
+                        <span className={`text-sm ${material.completed ? 'line-through text-muted-foreground' : ''}`}>
+                          {material.name}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </>
@@ -295,6 +457,91 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
                     </div>
                   ))}
                 </div>
+              </div>
+            </>
+          )}
+
+          {isConcluido && (
+            <>
+              <Separator />
+              <div className="space-y-3 rounded-md border border-primary/30 bg-primary/5 p-4">
+                <div className="flex items-center gap-2">
+                  <CheckCheck className="h-4 w-4 text-primary" />
+                  <h3 className="font-medium text-sm">Finalização pelo fiscal</h3>
+                </div>
+
+                {isGM ? (
+                  <p className="text-xs text-muted-foreground">
+                    Aguardando o fiscal responsável conferir os serviços executados
+                    {requiresAttachment ? ' e anexar o e-mail de confirmação do núcleo' : ''} para
+                    finalizar a tarefa.
+                  </p>
+                ) : !canFinalize ? (
+                  <p className="text-xs text-muted-foreground">
+                    Apenas o fiscal (ou administrador) pode finalizar esta tarefa.
+                  </p>
+                ) : (
+                  <>
+                    {requiresAttachment ? (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">
+                          Anexo do e-mail de confirmação do núcleo <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          type="file"
+                          accept=".pdf,.eml,.msg,.png,.jpg,.jpeg,.doc,.docx"
+                          onChange={(e) => setFinalFile(e.target.files?.[0] ?? null)}
+                        />
+                        {finalFile && (
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <Paperclip className="h-3 w-3" /> {finalFile.name}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Anexo (opcional)</Label>
+                        <Input
+                          type="file"
+                          accept=".pdf,.eml,.msg,.png,.jpg,.jpeg,.doc,.docx"
+                          onChange={(e) => setFinalFile(e.target.files?.[0] ?? null)}
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Observação da finalização (opcional)</Label>
+                      <Textarea
+                        value={finalNote}
+                        onChange={(e) => setFinalNote(e.target.value)}
+                        rows={2}
+                        placeholder="Ex.: confirmação recebida por e-mail em 07/07/2026"
+                      />
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button onClick={handleFinalize} disabled={finalizing} size="sm">
+                        {finalizing ? (
+                          <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Finalizando…</>
+                        ) : (
+                          <><CheckCheck className="h-3.5 w-3.5 mr-1.5" /> Finalizar tarefa</>
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {ticket.confirmationFileUrl && (
+                  <a
+                    href={ticket.confirmationFileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-primary underline inline-flex items-center gap-1"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    {ticket.confirmationFileName || 'Anexo de confirmação'}
+                  </a>
+                )}
               </div>
             </>
           )}
