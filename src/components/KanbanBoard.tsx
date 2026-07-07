@@ -277,12 +277,29 @@ export function KanbanBoard() {
   const { isGM, canEdit } = useUserRole();
   const { managers } = useMaintenanceManagers();
 
-  const resolveServicesServidor = (services: TicketService[] | undefined, fallbackManagerId?: string | null, fallbackAssignee?: string) => {
-    const fallbackManagerName = fallbackManagerId ? managers.find(m => m.id === fallbackManagerId)?.nome : undefined;
-    const fallbackServidor = fallbackManagerName || fallbackAssignee || '—';
-    return (services ?? []).map(s => {
-      const custom = s.custom_assignment && s.manager_id ? managers.find(m => m.id === s.manager_id)?.nome : null;
-      return { ...s, travel_servidor: custom || fallbackManagerName || fallbackAssignee || null };
+  const namesFromIds = (ids: string[] | undefined | null) =>
+    (ids ?? []).map((id) => managers.find((m) => m.id === id)?.nome).filter(Boolean) as string[];
+  const joinFirstNames = (names: string[]) =>
+    names.map((n) => (n.trim().split(/\s+/)[0] || '').trim()).filter(Boolean).join(' / ');
+
+  const resolveServicesServidor = (
+    services: TicketService[] | undefined,
+    fallbackManagerIds?: string[] | null,
+    fallbackAssignee?: string,
+  ) => {
+    const fallbackNames = namesFromIds(fallbackManagerIds ?? undefined);
+    const fallbackJoined = joinFirstNames(fallbackNames) || fallbackAssignee || '—';
+    return (services ?? []).map((s) => {
+      const svcIds = s.custom_assignment
+        ? (s.manager_ids && s.manager_ids.length > 0
+            ? s.manager_ids
+            : (s.manager_id ? [s.manager_id] : []))
+        : [];
+      const svcNames = namesFromIds(svcIds);
+      const travelIds = svcIds.length > 0 ? svcIds : (fallbackManagerIds ?? []);
+      const travelServidor =
+        svcNames.length > 0 ? joinFirstNames(svcNames) : fallbackJoined;
+      return { ...s, travel_servidor: travelServidor, travel_manager_ids: travelIds };
     });
   };
   const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
