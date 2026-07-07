@@ -256,8 +256,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setManagerId('');
     setNucleoId('');
     setServicePhotos([]);
-    setIsTravel(false);
-    setTravelData({ cidade: '', dataIda: undefined, dataVolta: undefined, semPrevisao: false });
+    setCurrentStep(1);
     setCurrentStep(1);
     setOpen(false);
   };
