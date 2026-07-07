@@ -123,13 +123,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     return list;
   })();
 
-  const managerOptions = (() => {
-    const base = managers.map((m) => ({ id: m.id, nome: m.nome }));
-    if (managerId && !base.some((m) => m.id === managerId)) {
-      return [{ id: managerId, nome: 'Gerente atribuído' }, ...base];
-    }
-    return base;
-  })();
+  // managerOptions removido — substituído por multi-seleção via ManagersMultiSelect
 
   const selectedNucleo = nuclei.find((n) => n.id === nucleoId);
   const derivedLocation = selectedNucleo?.cidade || selectedNucleo?.name || formData.location;
