@@ -103,7 +103,10 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const { toast } = useToast();
 
-  const step1Valid = !!(formData.title && formData.priority && formData.type && formData.location && formData.assignee && requestedAt);
+  const selectedNucleo = nuclei.find((n) => n.id === nucleoId);
+  const derivedLocation = selectedNucleo?.cidade || selectedNucleo?.name || '';
+
+  const step1Valid = !!(formData.title && formData.priority && formData.type && nucleoId && formData.assignee && requestedAt);
   const step2Valid =
     !!requestType &&
     (requestType !== 'processo' || !!processNumber) &&
