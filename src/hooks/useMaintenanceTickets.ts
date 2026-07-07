@@ -70,6 +70,12 @@ export function useMaintenanceTickets() {
               manager_id: r.manager_id,
               scheduled_date: r.scheduled_date,
               materials: (r.materials as any) ?? [],
+              envolve_viagem: r.envolve_viagem ?? false,
+              travel_cidade: r.travel_cidade,
+              travel_data_ida: r.travel_data_ida,
+              travel_data_volta: r.travel_data_volta,
+              travel_sem_previsao: r.travel_sem_previsao ?? false,
+              travel_id: r.travel_id,
             }));
 
           groupedTickets[ticket.status].push({
