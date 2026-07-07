@@ -22,6 +22,8 @@ import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { TicketService } from '@/hooks/useTicketServices';
+import { checkTravelLimit, LimitViolation } from '@/lib/travelDaysLimit';
+import { TravelLimitConfirmDialog } from '@/components/TravelLimitConfirmDialog';
 
 interface Props {
   services: TicketService[];
@@ -31,6 +33,10 @@ interface Props {
   disabled?: boolean;
   /** Cidade padrão do procedimento (do núcleo requerente), usada como fallback para viagens */
   defaultNucleoCidade?: string | null;
+  /** Servidores padrão do procedimento (usados em serviços sem responsável personalizado) */
+  defaultManagerIds?: string[];
+  /** Id da viagem já vinculada ao ticket sendo editado (para excluir da contagem) */
+  excludeTravelIds?: string[];
 }
 
 const emptyService = (order: number): TicketService => ({
