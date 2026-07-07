@@ -111,7 +111,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     !!requestType &&
     (requestType !== 'processo' || !!processNumber) &&
     services.every((s) => !!s.title.trim()) &&
-    services.every((s) => !s.envolve_viagem || (!!s.travel_cidade && (s.travel_sem_previsao || (!!s.travel_data_ida && !!s.travel_data_volta))));
+    services.every((s) => !s.envolve_viagem || (s.travel_is_linked ? !!s.travel_id : (!!s.travel_cidade && (s.travel_sem_previsao || (!!s.travel_data_ida && !!s.travel_data_volta)))));
 
   const goNext = () => {
     if (currentStep === 1 && !step1Valid) {
