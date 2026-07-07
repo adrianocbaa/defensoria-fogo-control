@@ -184,16 +184,14 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="servidor" className="flex items-center">
+            <Label className="flex items-center">
               <User className="h-4 w-4 mr-2" />
-              Servidor
+              Servidor(es) da manutenção *
             </Label>
-            <Input
-              id="servidor"
-              value={formData.servidor}
-              onChange={(e) => setFormData(prev => ({ ...prev, servidor: e.target.value }))}
-              placeholder="Nome do servidor público"
-              required
+            <ManagersMultiSelect
+              value={managerIds}
+              onChange={setManagerIds}
+              placeholder="Selecione um ou mais servidores..."
             />
           </div>
 
