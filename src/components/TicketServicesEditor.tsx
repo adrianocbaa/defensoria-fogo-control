@@ -502,6 +502,13 @@ export function TicketServicesEditor({
           </div>
         ))}
       </div>
+      <TravelLimitConfirmDialog
+        open={limitDialog.open}
+        onOpenChange={(o) => setLimitDialog((p) => ({ ...p, open: o }))}
+        violations={limitDialog.violations}
+        onConfirm={limitDialog.onConfirm}
+        onCancel={limitDialog.onCancel}
+      />
     </div>
   );
 }
