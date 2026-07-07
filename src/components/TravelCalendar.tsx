@@ -211,7 +211,12 @@ export function TravelCalendar() {
     setShowEditModal(false);
   };
 
-  const uniqueServidores = [...new Set(travels.map(travel => travel.servidor))];
+  const uniqueServidores = [...new Set(
+    travels.flatMap((t) => {
+      const names = getTravelServidorNames(t);
+      return names.length > 0 ? names : (t.servidor ? [t.servidor] : []);
+    })
+  )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const uniqueDestinos = [...new Set(travels.map(travel => travel.destino))];
 
   const getDaysInMonth = () => {
