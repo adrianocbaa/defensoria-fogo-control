@@ -75,7 +75,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
   const navigate = useNavigate();
   const { users: maintenanceUsers } = useMaintenanceUsers();
   const { types: taskTypes } = useMaintenanceTypes();
-  const { managers } = useMaintenanceManagers();
+  
   const { nuclei } = useNucleiList();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
