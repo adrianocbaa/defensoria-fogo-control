@@ -388,21 +388,97 @@ export function MaintenanceReports() {
     setPeriod('all');
   };
 
-  const exportCsv = () => {
+  const exportXlsx = async () => {
     const cols = visibleColumns;
-    const escape = (v: unknown) => {
-      const s = v == null ? '' : String(v);
-      return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'SIDIF';
+    wb.created = new Date();
+    const ws = wb.addWorksheet('Tarefas', {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+
+    // Column definitions (header + width)
+    ws.columns = cols.map((c) => ({
+      header: c.label,
+      key: c.id,
+      width: Math.min(
+        40,
+        Math.max(
+          12,
+          c.label.length + 2,
+          ...filtered.slice(0, 200).map((r) => String(c.csv(r) ?? '').length + 2),
+        ),
+      ),
+      style: { alignment: { horizontal: c.align === 'right' ? 'right' : 'left' } },
+    }));
+
+    // Style header row
+    const headerRow = ws.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F2937' },
     };
-    const lines = [
-      cols.map((c) => c.label).join(';'),
-      ...filtered.map((r) => cols.map((c) => escape(c.csv(r))).join(';')),
+    headerRow.alignment = { vertical: 'middle' };
+    headerRow.height = 20;
+
+    // Body rows
+    filtered.forEach((r) => {
+      ws.addRow(Object.fromEntries(cols.map((c) => [c.id, c.csv(r)])));
+    });
+
+    // Zebra striping
+    ws.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      if (rowNumber === 1) return;
+      if (rowNumber % 2 === 0) {
+        row.eachCell((cell) => {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF3F4F6' },
+          };
+        });
+      }
+    });
+
+    // AutoFilter across full data range
+    ws.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: Math.max(2, filtered.length + 1), column: cols.length },
+    };
+
+    // Metadata sheet with applied filters
+    const meta = wb.addWorksheet('Filtros aplicados');
+    meta.columns = [
+      { header: 'Filtro', key: 'k', width: 24 },
+      { header: 'Valor', key: 'v', width: 60 },
     ];
-    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    meta.getRow(1).font = { bold: true };
+    const periodLabel = PERIOD_OPTIONS.find((p) => p.value === period)?.label ?? period;
+    meta.addRows([
+      { k: 'Gerado em', v: new Date().toLocaleString('pt-BR') },
+      { k: 'Busca', v: search || '(nenhuma)' },
+      { k: 'Status', v: status === 'all' ? 'Todos' : status },
+      { k: 'Prioridade', v: priority === 'all' ? 'Todas' : priority },
+      { k: 'Período', v: periodLabel },
+      {
+        k: 'Ordenação',
+        v: `${cols.find((c) => c.sortKey === sortKey)?.label ?? sortKey} (${sortDir === 'asc' ? 'crescente' : 'decrescente'})`,
+      },
+      { k: 'Colunas exportadas', v: cols.map((c) => c.label).join(', ') },
+      { k: 'Registros', v: `${filtered.length} de ${rows.length}` },
+    ]);
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `relatorio-tarefas-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `relatorio-tarefas-${new Date().toISOString().slice(0, 10)}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -499,8 +575,8 @@ export function MaintenanceReports() {
                   </div>
                 </PopoverContent>
               </Popover>
-              <Button size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
-                Exportar CSV
+              <Button size="sm" onClick={exportXlsx} disabled={filtered.length === 0}>
+                Exportar Excel
               </Button>
             </div>
           </div>
