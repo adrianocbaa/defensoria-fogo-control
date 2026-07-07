@@ -13,9 +13,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
+import { useAvailableTravels } from '@/hooks/useAvailableTravels';
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { TicketService } from '@/hooks/useTicketServices';
 
 interface Props {
