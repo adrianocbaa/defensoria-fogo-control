@@ -111,12 +111,21 @@ export function EditTravelModal({
 
     setLoading(true);
     try {
+      const servidorFromIds = managerIds.length > 0
+        ? managerIds
+            .map((id) => managers.find((m) => m.id === id)?.nome)
+            .filter(Boolean)
+            .map((n) => firstName(String(n)))
+            .filter(Boolean)
+            .join(' / ')
+        : formData.servidor;
       const updateData = {
-        servidor: formData.servidor,
+        servidor: servidorFromIds || formData.servidor,
         destino: formData.destino,
         motivo: formData.motivo,
         data_ida: semPrevisao ? null : formData.data_ida,
         data_volta: semPrevisao ? null : formData.data_volta,
+        manager_ids: managerIds,
       };
       const { error } = await supabase
         .from('travels')
