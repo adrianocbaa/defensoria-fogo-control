@@ -119,9 +119,10 @@ interface DraggableTicketProps {
   onMarkAsExecuted?: (ticketId: string) => void;
   onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
+  activeImpediment?: TicketImpediment;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DraggableTicketProps) {
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, activeImpediment }: DraggableTicketProps) {
   // Permitir drag para todos os usuários
   const canDrag = true;
   
