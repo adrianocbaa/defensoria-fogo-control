@@ -1,0 +1,427 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowUpDown, Search, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+
+type Row = {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  type: string | null;
+  location: string | null;
+  assignee: string | null;
+  request_type: string | null;
+  process_number: string | null;
+  created_at: string;
+  requested_at: string | null;
+  completed_at: string | null;
+  finalized_at: string | null;
+  services_total: number;
+  services_done: number;
+};
+
+type SortKey = keyof Row;
+type SortDir = 'asc' | 'desc';
+
+const STATUS_OPTIONS = ['Pendente', 'Em andamento', 'Impedido', 'Concluído'];
+const PRIORITY_OPTIONS = ['Alta', 'Média', 'Baixa'];
+const PERIOD_OPTIONS = [
+  { value: 'all', label: 'Todo o período' },
+  { value: '7', label: 'Últimos 7 dias' },
+  { value: '30', label: 'Últimos 30 dias' },
+  { value: '90', label: 'Últimos 90 dias' },
+];
+
+// Manual YYYY-MM-DD parsing to avoid UTC shift on date-only strings
+function parseDate(value?: string | null): Date | null {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDate(value?: string | null) {
+  const d = parseDate(value);
+  if (!d) return '—';
+  return d.toLocaleDateString('pt-BR');
+}
+
+function daysOpen(row: Row) {
+  const start = parseDate(row.created_at);
+  if (!start) return 0;
+  const end = parseDate(row.finalized_at) ?? parseDate(row.completed_at) ?? new Date();
+  return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000));
+}
+
+function priorityBadge(p: string) {
+  const map: Record<string, string> = {
+    Alta: 'bg-destructive/15 text-destructive border-destructive/30',
+    Média: 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400',
+    Baixa: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400',
+  };
+  return map[p] ?? 'bg-muted text-muted-foreground';
+}
+
+function statusBadge(s: string) {
+  const map: Record<string, string> = {
+    Pendente: 'bg-slate-500/15 text-slate-700 border-slate-500/30 dark:text-slate-300',
+    'Em andamento': 'bg-blue-500/15 text-blue-700 border-blue-500/30 dark:text-blue-400',
+    Impedido: 'bg-destructive/15 text-destructive border-destructive/30',
+    Concluído: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400',
+  };
+  return map[s] ?? 'bg-muted text-muted-foreground';
+}
+
+export function MaintenanceReports() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<string>('all');
+  const [priority, setPriority] = useState<string>('all');
+  const [period, setPeriod] = useState<string>('all');
+  const [sortKey, setSortKey] = useState<SortKey>('created_at');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('maintenance_tickets')
+        .select('id,title,status,priority,type,location,assignee,request_type,process_number,created_at,requested_at,completed_at,finalized_at,maintenance_ticket_services(id,completed)')
+        .order('created_at', { ascending: false })
+        .limit(10000);
+      if (cancelled) return;
+      if (error) {
+        console.error('Erro ao carregar relatório:', error);
+        setRows([]);
+      } else {
+        setRows(
+          (data ?? []).map((t: any) => {
+            const services = (t.maintenance_ticket_services ?? []) as { completed: boolean }[];
+            return {
+              id: t.id,
+              title: t.title,
+              status: t.status,
+              priority: t.priority,
+              type: t.type,
+              location: t.location,
+              assignee: t.assignee,
+              request_type: t.request_type,
+              process_number: t.process_number,
+              created_at: t.created_at,
+              requested_at: t.requested_at,
+              completed_at: t.completed_at,
+              finalized_at: t.finalized_at,
+              services_total: services.length,
+              services_done: services.filter((s) => s.completed).length,
+            };
+          }),
+        );
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const days = period === 'all' ? null : Number(period);
+    const cutoff = days ? Date.now() - days * 86400000 : null;
+
+    return rows
+      .filter((r) => {
+        if (status !== 'all' && r.status !== status) return false;
+        if (priority !== 'all' && r.priority !== priority) return false;
+        if (cutoff) {
+          const d = parseDate(r.created_at);
+          if (!d || d.getTime() < cutoff) return false;
+        }
+        if (q) {
+          const hay = [r.title, r.type, r.location, r.assignee, r.process_number]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const av = a[sortKey];
+        const bv = b[sortKey];
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        const cmp = av > bv ? 1 : av < bv ? -1 : 0;
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+  }, [rows, search, status, priority, period, sortKey, sortDir]);
+
+  const totals = useMemo(() => {
+    const byStatus: Record<string, number> = {};
+    STATUS_OPTIONS.forEach((s) => (byStatus[s] = 0));
+    filtered.forEach((r) => {
+      byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
+    });
+    return byStatus;
+  }, [filtered]);
+
+  const toggleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    setStatus('all');
+    setPriority('all');
+    setPeriod('all');
+  };
+
+  const exportCsv = () => {
+    const headers = [
+      'Título',
+      'Status',
+      'Prioridade',
+      'Tipo',
+      'Local',
+      'Responsável',
+      'Origem',
+      'Nº processo',
+      'Abertura',
+      'Solicitado em',
+      'Concluído em',
+      'Finalizado em',
+      'Dias em aberto',
+      'Serviços (feitos/total)',
+    ];
+    const escape = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [
+      headers.join(';'),
+      ...filtered.map((r) =>
+        [
+          r.title,
+          r.status,
+          r.priority,
+          r.type ?? '',
+          r.location ?? '',
+          r.assignee ?? '',
+          r.request_type ?? '',
+          r.process_number ?? '',
+          formatDate(r.created_at),
+          formatDate(r.requested_at),
+          formatDate(r.completed_at),
+          formatDate(r.finalized_at),
+          daysOpen(r),
+          `${r.services_done}/${r.services_total}`,
+        ]
+          .map(escape)
+          .join(';'),
+      ),
+    ];
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-tarefas-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
+    <button
+      type="button"
+      onClick={() => toggleSort(k)}
+      className="flex items-center gap-1 font-medium text-foreground hover:text-primary"
+    >
+      {label}
+      <ArrowUpDown
+        className={cn('h-3 w-3 transition-opacity', sortKey === k ? 'opacity-100' : 'opacity-40')}
+      />
+    </button>
+  );
+
+  const activeFilterCount =
+    (status !== 'all' ? 1 : 0) +
+    (priority !== 'all' ? 1 : 0) +
+    (period !== 'all' ? 1 : 0) +
+    (search ? 1 : 0);
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Sticky filter bar */}
+      <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+        <div className="px-4 py-4 md:px-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+                Relatórios
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Visão em planilha das tarefas cadastradas — {filtered.length} de {rows.length}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeFilterCount > 0 && (
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <X className="mr-1 h-4 w-4" />
+                  Limpar filtros
+                </Button>
+              )}
+              <Button size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
+                Exportar CSV
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-[1fr_repeat(3,minmax(0,180px))]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por título, tipo, local, responsável, processo..."
+                className="pl-9"
+              />
+            </div>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                {STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger><SelectValue placeholder="Prioridade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as prioridades</SelectItem>
+                {PRIORITY_OPTIONS.map((p) => (
+                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger><SelectValue placeholder="Período" /></SelectTrigger>
+              <SelectContent>
+                {PERIOD_OPTIONS.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {STATUS_OPTIONS.map((s) => (
+              <Badge key={s} variant="outline" className={cn('border', statusBadge(s))}>
+                {s}: {totals[s] ?? 0}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="flex-1 overflow-auto">
+        <table className="w-full min-w-[1100px] border-separate border-spacing-0 text-sm">
+          <thead className="sticky top-0 z-[1] bg-muted/60 backdrop-blur">
+            <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="border-b px-3 py-2"><SortHeader label="Título" k="title" /></th>
+              <th className="border-b px-3 py-2"><SortHeader label="Status" k="status" /></th>
+              <th className="border-b px-3 py-2"><SortHeader label="Prioridade" k="priority" /></th>
+              <th className="border-b px-3 py-2"><SortHeader label="Tipo" k="type" /></th>
+              <th className="border-b px-3 py-2"><SortHeader label="Local" k="location" /></th>
+              <th className="border-b px-3 py-2"><SortHeader label="Responsável" k="assignee" /></th>
+              <th className="border-b px-3 py-2"><SortHeader label="Origem" k="request_type" /></th>
+              <th className="border-b px-3 py-2"><SortHeader label="Abertura" k="created_at" /></th>
+              <th className="border-b px-3 py-2"><SortHeader label="Conclusão" k="completed_at" /></th>
+              <th className="border-b px-3 py-2 text-right">Dias</th>
+              <th className="border-b px-3 py-2 text-right">Serviços</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr>
+                <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
+                  Carregando tarefas...
+                </td>
+              </tr>
+            )}
+            {!loading && filtered.length === 0 && (
+              <tr>
+                <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
+                  Nenhuma tarefa encontrada com os filtros atuais.
+                </td>
+              </tr>
+            )}
+            {!loading &&
+              filtered.map((r, idx) => (
+                <tr
+                  key={r.id}
+                  className={cn(
+                    'border-b transition-colors hover:bg-muted/40',
+                    idx % 2 === 1 && 'bg-muted/20',
+                  )}
+                >
+                  <td className="border-b px-3 py-2 font-medium text-foreground">{r.title}</td>
+                  <td className="border-b px-3 py-2">
+                    <Badge variant="outline" className={cn('border font-normal', statusBadge(r.status))}>
+                      {r.status}
+                    </Badge>
+                  </td>
+                  <td className="border-b px-3 py-2">
+                    <Badge variant="outline" className={cn('border font-normal', priorityBadge(r.priority))}>
+                      {r.priority}
+                    </Badge>
+                  </td>
+                  <td className="border-b px-3 py-2 text-muted-foreground">{r.type ?? '—'}</td>
+                  <td className="border-b px-3 py-2 text-muted-foreground">{r.location ?? '—'}</td>
+                  <td className="border-b px-3 py-2 text-muted-foreground">{r.assignee ?? '—'}</td>
+                  <td className="border-b px-3 py-2 text-muted-foreground">
+                    {r.request_type ?? '—'}
+                    {r.process_number ? (
+                      <span className="ml-1 text-xs text-muted-foreground/70">#{r.process_number}</span>
+                    ) : null}
+                  </td>
+                  <td className="border-b px-3 py-2 text-muted-foreground">{formatDate(r.created_at)}</td>
+                  <td className="border-b px-3 py-2 text-muted-foreground">
+                    {formatDate(r.completed_at ?? r.finalized_at)}
+                  </td>
+                  <td className="border-b px-3 py-2 text-right tabular-nums text-muted-foreground">
+                    {daysOpen(r)}
+                  </td>
+                  <td className="border-b px-3 py-2 text-right tabular-nums text-muted-foreground">
+                    {r.services_done}/{r.services_total}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
