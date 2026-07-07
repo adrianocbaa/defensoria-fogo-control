@@ -16,6 +16,12 @@ import { CreateTravelData } from '@/types/travel';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { ManagersMultiSelect } from './ManagersMultiSelect';
+
+function firstName(n: string) {
+  return (n.trim().split(/\s+/)[0] || '').trim();
+}
 
 interface CreateTravelModalProps {
   isOpen: boolean;
