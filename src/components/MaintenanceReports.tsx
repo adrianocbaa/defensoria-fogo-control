@@ -624,7 +624,7 @@ export function MaintenanceReports() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por título, tipo, local, responsável, processo..."
+                placeholder="Buscar por título, tipo, local, responsável, servidor, processo..."
                 className="pl-9"
               />
             </div>
