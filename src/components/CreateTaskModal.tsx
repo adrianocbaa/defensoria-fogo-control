@@ -426,7 +426,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 )}
               </div>
 
-              <TicketServicesEditor services={services} onChange={setServices} />
+              <TicketServicesEditor services={services} onChange={setServices} defaultNucleoCidade={selectedNucleo?.cidade ?? null} />
 
               <div className="space-y-2">
                 <Label>Materiais</Label>
