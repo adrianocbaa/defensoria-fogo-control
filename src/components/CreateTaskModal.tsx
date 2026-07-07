@@ -221,7 +221,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       title: formData.title,
       priority: formData.priority as 'Alta' | 'Média' | 'Baixa',
       type: formData.type,
-      location: formData.location,
+      location: derivedLocation,
       assignee: formData.assignee,
       icon: selectedTaskType?.icon || Wrench,
       status: formData.status,
