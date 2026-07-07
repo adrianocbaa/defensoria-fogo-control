@@ -61,7 +61,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [requestType, setRequestType] = useState<'email' | 'processo' | 'direto' | ''>('');
   const [processNumber, setProcessNumber] = useState('');
   const [requestedAt, setRequestedAt] = useState<string>('');
-  const [managerId, setManagerId] = useState<string>('');
+  const [managerIds, setManagerIds] = useState<string[]>([]);
   const [nucleoId, setNucleoId] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
