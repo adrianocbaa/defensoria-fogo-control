@@ -40,8 +40,29 @@ export function TravelCalendar() {
   // View modes
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   
-  const { canEdit } = useUserRole();
   const { tickets } = useMaintenanceTickets();
+  const { managers } = useMaintenanceManagers();
+
+  /** Resolve a lista de nomes dos servidores da viagem: prefere manager_ids;
+   *  cai no campo `servidor` (texto legado) quando não houver ids. */
+  const getTravelServidorNames = (travel: Travel): string[] => {
+    if (travel.manager_ids && travel.manager_ids.length > 0) {
+      const names = travel.manager_ids
+        .map((id) => managers.find((m) => m.id === id)?.nome)
+        .filter(Boolean) as string[];
+      if (names.length > 0) return names;
+    }
+    if (travel.servidor) {
+      return travel.servidor.split(/\s*\/\s*/).map((s) => s.trim()).filter(Boolean);
+    }
+    return [];
+  };
+  const getTravelServidorLabel = (travel: Travel) => {
+    const names = getTravelServidorNames(travel);
+    if (names.length === 0) return travel.servidor || '—';
+    // Usa primeiro nome de cada para caber na faixa
+    return names.map((n) => n.trim().split(/\s+/)[0]).join(' / ');
+  };
   
   const fetchTravels = async () => {
     try {
