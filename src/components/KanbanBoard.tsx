@@ -17,7 +17,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ArrowRightLeft } from 'lucide-react';
 import {
   DndContext,
   DragEndEvent,
@@ -59,6 +66,8 @@ const priorityColors = {
   'Baixa': 'secondary'
 };
 
+const ALL_STATUSES = ['Pendente', 'Em andamento', 'Impedido', 'Concluído'] as const;
+
 interface DroppableColumnProps {
   id: string;
   title: string;
@@ -69,9 +78,12 @@ interface DroppableColumnProps {
   onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
   impedimentByTicket: Record<string, TicketImpediment | undefined>;
+  onMoveTicket: (ticketId: string, targetStatus: string) => void;
+  allowedTargets: string[];
+  enableDrag?: boolean;
 }
 
-function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, impedimentByTicket }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, impedimentByTicket, onMoveTicket, allowedTargets, enableDrag = true }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -104,6 +116,10 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMar
               onDeleteTicket={onDeleteTicket}
               isManutencao={isManutencao}
               activeImpediment={impedimentByTicket[ticket.id]}
+              onMoveTicket={onMoveTicket}
+              currentStatus={id}
+              allowedTargets={allowedTargets}
+              enableDrag={enableDrag}
             />
           ))}
         </div>
@@ -120,11 +136,15 @@ interface DraggableTicketProps {
   onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
   activeImpediment?: TicketImpediment;
+  onMoveTicket: (ticketId: string, targetStatus: string) => void;
+  currentStatus: string;
+  allowedTargets: string[];
+  enableDrag?: boolean;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, activeImpediment }: DraggableTicketProps) {
-  // Permitir drag para todos os usuários
-  const canDrag = true;
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, activeImpediment, onMoveTicket, currentStatus, allowedTargets, enableDrag = true }: DraggableTicketProps) {
+  // Permitir drag para todos os usuários (desabilitado no mobile via prop)
+  const canDrag = enableDrag;
   
   const {
     attributes,
@@ -211,7 +231,7 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   <MoreVertical className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32">
+              <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem onClick={handleView} className="text-xs">
                   <Eye className="mr-2 h-3 w-3" />
                   Ver
@@ -220,6 +240,31 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   <Edit className="mr-2 h-3 w-3" />
                   Editar
                 </DropdownMenuItem>
+                {allowedTargets.filter((s) => s !== currentStatus).length > 0 && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="text-xs">
+                      <ArrowRightLeft className="mr-2 h-3 w-3" />
+                      Mover para…
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {allowedTargets
+                        .filter((s) => s !== currentStatus)
+                        .map((s) => (
+                          <DropdownMenuItem
+                            key={s}
+                            className="text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMoveTicket(ticket.id, s);
+                            }}
+                          >
+                            {s}
+                          </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+                {onDeleteTicket && <DropdownMenuSeparator />}
                 {/* Finalização acontece dentro do modal de visualização (com anexo do e-mail, quando aplicável). */}
                 {onDeleteTicket && (
                   <DropdownMenuItem
@@ -297,6 +342,7 @@ export function KanbanBoard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isGM, canEdit } = useUserRole();
+  const isMobile = useIsMobile();
   const { managers } = useMaintenanceManagers();
 
   const namesFromIds = (ids: string[] | undefined | null) =>
@@ -411,101 +457,81 @@ export function KanbanBoard() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over) {
-      setActiveTicket(null);
-      return;
-    }
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
+  const attemptMoveTicket = (
+    ticketId: string,
+    targetStatus: string,
+  ): 'moved' | 'awaiting-impediment' | 'blocked' | 'noop' => {
     let sourceStatus = '';
     let ticketToMove: Ticket | null = null;
-
-    for (const [status, statusTickets] of Object.entries(tickets)) {
-      const ticket = statusTickets.find(t => t.id === activeId);
-      if (ticket) {
-        sourceStatus = status;
-        ticketToMove = ticket;
-        break;
-      }
+    for (const [status, arr] of Object.entries(tickets)) {
+      const t = arr.find((t) => t.id === ticketId);
+      if (t) { sourceStatus = status; ticketToMove = t; break; }
     }
-
-    if (!ticketToMove) {
-      setActiveTicket(null);
-      return;
-    }
-
-    let targetStatus = '';
-    for (const [status, statusTickets] of Object.entries(tickets)) {
-      if (statusTickets.find(t => t.id === overId)) {
-        targetStatus = status;
-        break;
-      }
-    }
-    if (!targetStatus) {
-      const columnNames = Object.keys(tickets);
-      if (columnNames.includes(overId)) {
-        targetStatus = overId;
-      }
-    }
-
-    if (!targetStatus || sourceStatus === targetStatus) {
-      setActiveTicket(null);
-      return;
-    }
+    if (!ticketToMove) return 'noop';
+    if (sourceStatus === targetStatus) return 'noop';
 
     if (isGM) {
       const allowedStatuses = ['Em andamento', 'Impedido', 'Concluído'];
       if (!allowedStatuses.includes(sourceStatus) || !allowedStatuses.includes(targetStatus)) {
-        setActiveTicket(null);
         toast({
-          title: "Movimento não permitido",
-          description: "Usuários de manutenção só podem mover tarefas entre Em andamento, Impedido e Concluído",
-          variant: "destructive"
+          title: 'Movimento não permitido',
+          description: 'Usuários de manutenção só podem mover tarefas entre Em andamento, Impedido e Concluído',
+          variant: 'destructive',
         });
-        return;
+        return 'blocked';
       }
     }
 
-    // Regra: só permite mover para "Concluído" se todos os serviços estiverem concluídos.
     if (targetStatus === 'Concluído') {
       const svcs = ticketToMove.services ?? [];
-      if (svcs.length > 0 && !svcs.every(s => s.completed)) {
-        setActiveTicket(null);
+      if (svcs.length > 0 && !svcs.every((s) => s.completed)) {
         toast({
           title: 'Serviços em aberto',
           description: 'Marque todos os serviços do procedimento como concluídos antes de movê-lo para Concluído.',
           variant: 'destructive',
         });
-        return;
+        return 'blocked';
       }
     }
 
-    // Se está movendo PARA "Impedido": pedir motivo antes de confirmar
     if (targetStatus === 'Impedido' && sourceStatus !== 'Impedido') {
-      setActiveTicket(null);
-      setImpedimentDialog({ open: true, ticketId: activeId, ticketTitle: ticketToMove.title });
-      return;
+      setImpedimentDialog({ open: true, ticketId, ticketTitle: ticketToMove.title });
+      return 'awaiting-impediment';
     }
 
-    // Se está saindo de "Impedido": resolver impedimentos ativos
     if (sourceStatus === 'Impedido' && targetStatus !== 'Impedido') {
-      resolveActiveImpediments(activeId, user?.id ?? null, profile?.display_name ?? null)
+      resolveActiveImpediments(ticketId, user?.id ?? null, profile?.display_name ?? null)
         .catch((err) => console.error('Erro ao resolver impedimento:', err))
         .finally(() => refetchImpediments());
     }
 
-    updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído' })
-      .then(() => refetch());
+    updateTicket(ticketId, {
+      status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído',
+    }).then(() => refetch());
+    return 'moved';
+  };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) { setActiveTicket(null); return; }
 
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
+    let targetStatus = '';
+    for (const [status, statusTickets] of Object.entries(tickets)) {
+      if (statusTickets.find((t) => t.id === overId)) { targetStatus = status; break; }
+    }
+    if (!targetStatus) {
+      const columnNames = Object.keys(tickets);
+      if (columnNames.includes(overId)) targetStatus = overId;
+    }
+    if (!targetStatus) { setActiveTicket(null); return; }
+
+    attemptMoveTicket(activeId, targetStatus);
     setActiveTicket(null);
   };
+
 
   const handleCreateTask = async (taskData: any) => {
     if (!user) {
@@ -638,6 +664,12 @@ export function KanbanBoard() {
   };
 
 
+  const visibleStatuses = ALL_STATUSES.filter(
+    (s) => !isGM || ['Em andamento', 'Impedido', 'Concluído'].includes(s),
+  );
+  const allowedTargets = [...visibleStatuses];
+  const [mobileTab, setMobileTab] = useState<string>(visibleStatuses[0]);
+
   return (
     <DndContext
       sensors={sensors}
@@ -645,38 +677,70 @@ export function KanbanBoard() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="p-4 md:p-6">
+        <div className="mb-4 md:mb-6 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
-            <p className="text-muted-foreground">Arraste as tarefas entre as colunas para alterar o status</p>
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
+            <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Arraste as tarefas entre as colunas para alterar o status</p>
+            <p className="text-xs text-muted-foreground md:hidden">Use "Mover para…" no menu do card para trocar de etapa</p>
           </div>
           {!isGM && <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {Object.entries(tickets).map(([status, statusTickets]) => {
-            // Para usuários de manutenção, mostrar apenas as colunas permitidas
-            if (isGM && !['Em andamento', 'Impedido', 'Concluído'].includes(status)) {
-              return null;
-            }
-            
-            return (
+        {isMobile ? (
+          <Tabs value={mobileTab} onValueChange={setMobileTab} className="w-full">
+            <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${visibleStatuses.length}, minmax(0,1fr))` }}>
+              {visibleStatuses.map((status) => {
+                const count = tickets[status]?.length ?? 0;
+                return (
+                  <TabsTrigger key={status} value={status} className="text-[11px] px-1">
+                    <span className="truncate">{status}</span>
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{count}</Badge>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+            {visibleStatuses.map((status) => (
+              <TabsContent key={status} value={status} className="mt-4">
+                <DroppableColumn
+                  id={status}
+                  title={status}
+                  tickets={tickets[status] ?? []}
+                  onViewTicket={handleViewTicket}
+                  onEditTicket={handleEditTicket}
+                  onMarkAsExecuted={handleMarkAsExecuted}
+                  onDeleteTicket={!isGM ? handleDeleteTicket : undefined}
+                  isManutencao={isGM}
+                  impedimentByTicket={impedimentByTicket}
+                  onMoveTicket={attemptMoveTicket}
+                  allowedTargets={allowedTargets}
+                  enableDrag={false}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {visibleStatuses.map((status) => (
               <DroppableColumn
                 key={status}
                 id={status}
                 title={status}
-                tickets={statusTickets}
+                tickets={tickets[status] ?? []}
                 onViewTicket={handleViewTicket}
                 onEditTicket={handleEditTicket}
                 onMarkAsExecuted={handleMarkAsExecuted}
                 onDeleteTicket={!isGM ? handleDeleteTicket : undefined}
                 isManutencao={isGM}
                 impedimentByTicket={impedimentByTicket}
+                onMoveTicket={attemptMoveTicket}
+                allowedTargets={allowedTargets}
+                enableDrag={true}
               />
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+
 
         <DragOverlay>
           {activeTicket ? (
