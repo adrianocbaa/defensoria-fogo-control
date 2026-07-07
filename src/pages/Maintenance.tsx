@@ -11,15 +11,21 @@ export default function Maintenance() {
   return (
     <SimpleHeader>
       <SidebarProvider>
-        <div className="flex w-full min-h-screen">
+        <div className="flex w-full min-h-[calc(100vh-72px)]">
           <MaintenanceSidebar
             activeSection={activeSection}
             onSectionChange={setActiveSection}
           />
           <main className="flex-1 overflow-auto min-w-0">
-            {/* Mobile menu trigger */}
-            <div className="md:hidden sticky top-0 z-20 flex items-center gap-2 border-b bg-background/95 backdrop-blur px-4 py-2">
-              <SidebarTrigger className="h-9 w-9">
+            {/* Menu trigger - always visible so it works on iOS, Android, tablet and desktop */}
+            <div
+              className="sticky top-0 z-30 flex items-center gap-2 border-b bg-background/95 backdrop-blur px-4 py-2"
+              style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+            >
+              <SidebarTrigger
+                aria-label="Abrir menu"
+                className="h-10 w-10 shrink-0 text-foreground"
+              >
                 <Menu className="h-5 w-5" />
               </SidebarTrigger>
               <span className="text-sm font-medium text-foreground">Menu</span>
