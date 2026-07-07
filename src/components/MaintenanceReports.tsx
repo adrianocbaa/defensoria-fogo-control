@@ -32,6 +32,7 @@ type Row = {
   finalized_at: string | null;
   services_total: number;
   services_done: number;
+  servidores: string;
 };
 
 type SortKey = keyof Row;
@@ -153,6 +154,15 @@ const COLUMNS: ColumnDef[] = [
     sortKey: 'assignee',
     cell: (r) => <span className="text-muted-foreground">{r.assignee ?? '—'}</span>,
     csv: (r) => r.assignee ?? '',
+  },
+  {
+    id: 'servidores',
+    label: 'Servidor da manutenção',
+    sortKey: 'servidores',
+    cell: (r) => (
+      <span className="text-muted-foreground">{r.servidores ? r.servidores : '—'}</span>
+    ),
+    csv: (r) => r.servidores ?? '',
   },
   {
     id: 'request',
@@ -280,19 +290,45 @@ export function MaintenanceReports() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('maintenance_tickets')
-        .select('id,title,status,priority,type,location,assignee,request_type,process_number,created_at,requested_at,completed_at,finalized_at,maintenance_ticket_services(id,completed)')
-        .order('created_at', { ascending: false })
-        .limit(10000);
+      const [ticketsRes, managersRes] = await Promise.all([
+        supabase
+          .from('maintenance_tickets')
+          .select('id,title,status,priority,type,location,assignee,request_type,process_number,manager_id,manager_ids,created_at,requested_at,completed_at,finalized_at,maintenance_ticket_services(id,completed,manager_id,manager_ids)')
+          .order('created_at', { ascending: false })
+          .limit(10000),
+        supabase.from('maintenance_managers').select('id,nome').limit(10000),
+      ]);
       if (cancelled) return;
-      if (error) {
-        console.error('Erro ao carregar relatório:', error);
+      if (ticketsRes.error) {
+        console.error('Erro ao carregar relatório:', ticketsRes.error);
         setRows([]);
       } else {
+        const managerNameById = new Map<string, string>(
+          (managersRes.data ?? []).map((m: any) => [m.id as string, (m.nome as string) ?? '']),
+        );
         setRows(
-          (data ?? []).map((t: any) => {
-            const services = (t.maintenance_ticket_services ?? []) as { completed: boolean }[];
+          (ticketsRes.data ?? []).map((t: any) => {
+            const services = (t.maintenance_ticket_services ?? []) as {
+              completed: boolean;
+              manager_id?: string | null;
+              manager_ids?: string[] | null;
+            }[];
+            const ids = new Set<string>();
+            const push = (v?: string | null) => {
+              if (v) ids.add(v);
+            };
+            push(t.manager_id);
+            (t.manager_ids ?? []).forEach(push);
+            services.forEach((s) => {
+              push(s.manager_id);
+              (s.manager_ids ?? []).forEach(push);
+            });
+            const servidores = Array.from(ids)
+              .map((id) => managerNameById.get(id))
+              .filter((n): n is string => !!n && n.trim() !== '')
+              .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+              .join(', ');
+
             return {
               id: t.id,
               title: t.title,
@@ -309,6 +345,7 @@ export function MaintenanceReports() {
               finalized_at: t.finalized_at,
               services_total: services.length,
               services_done: services.filter((s) => s.completed).length,
+              servidores,
             };
           }),
         );
@@ -334,7 +371,7 @@ export function MaintenanceReports() {
           if (!d || d.getTime() < cutoff) return false;
         }
         if (q) {
-          const hay = [r.title, r.type, r.location, r.assignee, r.process_number]
+          const hay = [r.title, r.type, r.location, r.assignee, r.process_number, r.servidores]
             .filter(Boolean)
             .join(' ')
             .toLowerCase();
@@ -587,7 +624,7 @@ export function MaintenanceReports() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por título, tipo, local, responsável, processo..."
+                placeholder="Buscar por título, tipo, local, responsável, servidor, processo..."
                 className="pl-9"
               />
             </div>
