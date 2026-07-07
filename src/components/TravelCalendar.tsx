@@ -297,105 +297,19 @@ export function TravelCalendar() {
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header with improved layout */}
+      {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 px-6 py-4">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Calendário de Viagens</h1>
             <p className="text-muted-foreground">Gerencie viagens de manutenção de servidores</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="h-9"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-            </Button>
-          </div>
+          <Badge variant="secondary" className="h-7 px-3">
+            {getTravelsForMonth().length} viagens em {format(currentMonth, 'MMMM', { locale: ptBR })}
+          </Badge>
         </div>
-
-        {/* Improved Filters */}
-        {showFilters && (
-          <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Filtrar por Servidor</Label>
-                <Select value={servidorFilter} onValueChange={setServidorFilter}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Selecionar servidor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os servidores</SelectItem>
-                    {uniqueServidores.map(servidor => (
-                      <SelectItem key={servidor} value={servidor}>
-                        {servidor}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Destino</Label>
-                <Select value={destinoFilter} onValueChange={setDestinoFilter}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Todos os destinos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os destinos</SelectItem>
-                    {uniqueDestinos.map(destino => (
-                      <SelectItem key={destino} value={destino}>
-                        {destino}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Total do Mês</Label>
-                <Badge variant="secondary" className="w-fit h-6">
-                  {getTravelsForMonth().length} viagens
-                </Badge>
-              </div>
-            </div>
-
-            {/* Contabilidade de dias de deslocamento por servidor no mês */}
-            <div className="mt-4">
-              <Label className="text-sm font-medium">
-                Dias de viagem no mês (limite {dailyLimit}/servidor)
-              </Label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {managers.length === 0 && (
-                  <span className="text-xs text-muted-foreground">Nenhum servidor cadastrado.</span>
-                )}
-                {managers.map((m) => {
-                  const used = monthUsage[m.id] ?? 0;
-                  const exceeded = used > dailyLimit;
-                  const near = !exceeded && used >= dailyLimit - 2;
-                  return (
-                    <Badge
-                      key={m.id}
-                      variant="outline"
-                      className={
-                        exceeded
-                          ? 'border-destructive text-destructive bg-destructive/10'
-                          : near
-                          ? 'border-amber-500 text-amber-700 bg-amber-50'
-                          : 'border-border'
-                      }
-                      title={`${m.nome}: ${used} de ${dailyLimit} dias`}
-                    >
-                      {m.nome.split(/\s+/)[0]}: {used}/{dailyLimit}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
 
       {/* Modern Calendar Layout */}
       <div className="flex-1 p-6 bg-muted/5">
