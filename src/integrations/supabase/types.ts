@@ -1201,21 +1201,21 @@ export type Database = {
             foreignKeyName: "maintenance_ticket_services_nucleo_id_fkey"
             columns: ["nucleo_id"]
             isOneToOne: false
-            referencedRelation: "nuclei"
+            referencedRelation: "nucleos_central"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "maintenance_ticket_services_nucleo_id_fkey"
             columns: ["nucleo_id"]
             isOneToOne: false
-            referencedRelation: "nuclei_public"
+            referencedRelation: "nucleos_central_public"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "maintenance_ticket_services_nucleo_id_fkey"
             columns: ["nucleo_id"]
             isOneToOne: false
-            referencedRelation: "nuclei_secure"
+            referencedRelation: "vw_nucleos_public"
             referencedColumns: ["id"]
           },
           {

@@ -1,0 +1,2 @@
+ALTER TABLE public.maintenance_ticket_services DROP CONSTRAINT IF EXISTS maintenance_ticket_services_nucleo_id_fkey;
+ALTER TABLE public.maintenance_ticket_services ADD CONSTRAINT maintenance_ticket_services_nucleo_id_fkey FOREIGN KEY (nucleo_id) REFERENCES public.nucleos_central(id) ON DELETE SET NULL;
