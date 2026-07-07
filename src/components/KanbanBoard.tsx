@@ -672,6 +672,7 @@ export function KanbanBoard() {
                 onMarkAsExecuted={handleMarkAsExecuted}
                 onDeleteTicket={!isGM ? handleDeleteTicket : undefined}
                 isManutencao={isGM}
+                impedimentByTicket={impedimentByTicket}
               />
             );
           })}
