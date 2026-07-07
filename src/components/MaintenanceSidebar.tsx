@@ -1,16 +1,6 @@
-import { useState } from 'react';
-import { BarChart3, AlertCircle, AlertTriangle, MapPin, Package, ChevronRight, FileText, Users, Wrench, History, Settings, TestTube } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BarChart3, AlertCircle, MapPin, Package, ChevronRight, FileText, Users, Wrench, History, Settings, TestTube } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
 
 const menuItems = [
   { id: 'overview', title: 'Visão Geral', icon: BarChart3 },
@@ -31,11 +21,15 @@ interface MaintenanceSidebarProps {
   onSectionChange?: (section: string) => void;
 }
 
-export function MaintenanceSidebar({ 
-  activeSection = 'overview', 
-  onSectionChange 
+export function MaintenanceSidebar({
+  activeSection = 'overview',
+  onSectionChange,
 }: MaintenanceSidebarProps) {
   const [currentSection, setCurrentSection] = useState(activeSection);
+
+  useEffect(() => {
+    setCurrentSection(activeSection);
+  }, [activeSection]);
 
   const handleSectionClick = (sectionId: string) => {
     setCurrentSection(sectionId);
@@ -43,39 +37,34 @@ export function MaintenanceSidebar({
   };
 
   return (
-    <Sidebar collapsible="offcanvas" className="border-r bg-card">
-      <SidebarContent>
-        <div className="p-4">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Menu Principal</h2>
-        </div>
-        
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const isActive = currentSection === item.id;
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton 
-                      onClick={() => handleSectionClick(item.id)}
-                      className={cn(
-                        "w-full justify-start text-left p-3 rounded-md transition-colors",
-                        isActive 
-                          ? "bg-primary text-primary-foreground" 
-                          : "hover:bg-muted"
-                      )}
-                    >
-                      <item.icon className="mr-3 h-4 w-4" />
-                      <span className="flex-1">{item.title}</span>
-                      {isActive && <ChevronRight className="h-4 w-4" />}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+    <nav className="flex h-full flex-col overflow-y-auto">
+      <div className="p-4">
+        <h2 className="text-lg font-semibold text-foreground">Menu Principal</h2>
+      </div>
+      <ul className="flex flex-col gap-1 px-2 pb-4">
+        {menuItems.map((item) => {
+          const isActive = currentSection === item.id;
+          const Icon = item.icon;
+          return (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() => handleSectionClick(item.id)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-md p-3 text-left text-sm transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-foreground hover:bg-muted'
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1">{item.title}</span>
+                {isActive && <ChevronRight className="h-4 w-4" />}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
