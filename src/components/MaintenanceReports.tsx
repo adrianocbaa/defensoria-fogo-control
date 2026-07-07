@@ -296,7 +296,7 @@ export function MaintenanceReports() {
           .select('id,title,status,priority,type,location,assignee,request_type,process_number,manager_id,manager_ids,created_at,requested_at,completed_at,finalized_at,maintenance_ticket_services(id,completed,manager_id,manager_ids)')
           .order('created_at', { ascending: false })
           .limit(10000),
-        supabase.from('maintenance_managers').select('id,nome').limit(10000),
+        supabase.from('profiles').select('user_id,display_name,email').limit(10000),
       ]);
       if (cancelled) return;
       if (ticketsRes.error) {
