@@ -304,7 +304,10 @@ export function MaintenanceReports() {
         setRows([]);
       } else {
         const managerNameById = new Map<string, string>(
-          (managersRes.data ?? []).map((m: any) => [m.id as string, (m.nome as string) ?? '']),
+          (managersRes.data ?? []).map((m: any) => [
+            m.user_id as string,
+            ((m.display_name as string) ?? (m.email as string) ?? '').trim(),
+          ]),
         );
         setRows(
           (ticketsRes.data ?? []).map((t: any) => {
