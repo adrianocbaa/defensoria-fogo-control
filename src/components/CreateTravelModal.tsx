@@ -242,7 +242,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
                       handleDateSelect(date, 'data_ida');
                       setDataIdaOpen(false);
                     }}
-                    disabled={(date) => date < new Date()}
+                    disabled={false}
                     locale={ptBR}
                     initialFocus
                     className="p-3 pointer-events-auto"
@@ -278,7 +278,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
                       setDataVoltaOpen(false);
                     }}
                     disabled={(date) => {
-                      if (!formData.data_ida) return date < new Date();
+                      if (!formData.data_ida) return false;
                       const minDate = new Date(formData.data_ida);
                       minDate.setHours(0, 0, 0, 0);
                       const currentDate = new Date(date);
