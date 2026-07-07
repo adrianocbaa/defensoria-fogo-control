@@ -18,7 +18,7 @@ import {
 import { Plus, X } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useMaintenanceTypes } from '@/hooks/useMaintenanceTypes';
-import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
 import { ManagersMultiSelect } from '@/components/ManagersMultiSelect';
