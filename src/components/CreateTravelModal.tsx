@@ -187,7 +187,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
   return (
     <>
-
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
