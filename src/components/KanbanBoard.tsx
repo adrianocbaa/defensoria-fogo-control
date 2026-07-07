@@ -342,6 +342,7 @@ export function KanbanBoard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isGM, canEdit } = useUserRole();
+  const isMobile = useIsMobile();
   const { managers } = useMaintenanceManagers();
 
   const namesFromIds = (ids: string[] | undefined | null) =>
