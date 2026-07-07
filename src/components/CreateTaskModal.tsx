@@ -239,7 +239,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       requestType: requestType as 'email' | 'processo' | 'direto',
       processNumber: requestType === 'processo' ? processNumber : undefined,
       requestedAt,
-      managerId: managerId || null,
+      managerId: managerIds[0] ?? null,
+      managerIds,
       nucleoId: nucleoId || null,
       servicePhotos,
     });
