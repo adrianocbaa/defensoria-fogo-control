@@ -142,7 +142,7 @@ interface DraggableTicketProps {
   enableDrag?: boolean;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, activeImpediment, onMoveTicket, currentStatus, allowedTargets, enableDrag = true }: DraggableTicketProps) {
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, activeImpediment, onMoveTicket, currentStatus, allowedTargets = [], enableDrag = true }: DraggableTicketProps) {
   // Permitir drag para todos os usuários (desabilitado no mobile via prop)
   const canDrag = enableDrag;
   
