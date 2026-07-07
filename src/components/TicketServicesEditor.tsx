@@ -212,26 +212,29 @@ export function TicketServicesEditor({
 
                 {s.custom_assignment && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
-                    <div className="space-y-1">
+                    <div className="space-y-1 md:col-span-2">
                       <Label className="text-xs">Núcleo</Label>
                       <NucleoCombobox
                         options={nuclei}
                         value={s.nucleo_id ?? ''}
-                        onChange={(v) => update(i, { nucleo_id: v || null })}
+                        onChange={(v) => {
+                          const chosen = nuclei.find((n) => n.id === v);
+                          const cidade = chosen?.cidade ?? null;
+                          update(i, {
+                            nucleo_id: v || null,
+                            location: cidade,
+                            // Se serviço envolve viagem, também alimenta cidade destino
+                            ...(s.envolve_viagem ? { travel_cidade: cidade } : {}),
+                          });
+                        }}
                         placeholder="Selecione..."
                         disabled={disabled}
                       />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Cidade / local</Label>
-                      <Input
-                        value={s.location ?? ''}
-                        onChange={(e) =>
-                          update(i, { location: e.target.value || null })
-                        }
-                        placeholder="Ex.: Sinop"
-                        disabled={disabled}
-                      />
+                      {s.location && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Cidade: <strong>{s.location}</strong> (obtida do cadastro do núcleo)
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Gerente responsável</Label>
