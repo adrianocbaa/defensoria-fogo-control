@@ -750,6 +750,32 @@ export function KanbanBoard() {
             onUpdateTask={handleUpdateTicket}
           />
         )}
+
+        <ImpedimentReasonDialog
+          open={impedimentDialog.open}
+          onOpenChange={(o) => setImpedimentDialog((s) => ({ ...s, open: o }))}
+          ticketTitle={impedimentDialog.ticketTitle}
+          onConfirm={async (motivo) => {
+            const id = impedimentDialog.ticketId;
+            if (!id) return;
+            try {
+              await addImpediment(id, motivo, user?.id ?? null, profile?.display_name ?? null);
+              await updateTicket(id, { status: 'Impedido' });
+              await Promise.all([refetch(), refetchImpediments()]);
+              toast({ title: 'Impedimento registrado', description: 'Tarefa movida para Impedido.' });
+            } catch (err: any) {
+              console.error(err);
+              toast({
+                title: 'Erro ao registrar impedimento',
+                description: err?.message ?? 'Tente novamente.',
+                variant: 'destructive',
+              });
+            } finally {
+              setImpedimentDialog({ open: false, ticketId: null });
+            }
+          }}
+          onCancel={() => setImpedimentDialog({ open: false, ticketId: null })}
+        />
       </div>
     </DndContext>
   );
