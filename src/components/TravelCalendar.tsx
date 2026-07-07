@@ -93,10 +93,13 @@ export function TravelCalendar() {
     let filtered = travels;
     
     // Filtro por servidor
+    // Filtro por servidor (busca em manager_ids + campo legado)
     if (servidorFilter && servidorFilter !== 'all') {
-      filtered = filtered.filter(travel => 
-        travel.servidor.toLowerCase().includes(servidorFilter.toLowerCase())
-      );
+      const needle = servidorFilter.toLowerCase();
+      filtered = filtered.filter((travel) => {
+        const names = getTravelServidorNames(travel).join(' ').toLowerCase();
+        return names.includes(needle) || (travel.servidor ?? '').toLowerCase().includes(needle);
+      });
     }
     
     // Filtro por destino
