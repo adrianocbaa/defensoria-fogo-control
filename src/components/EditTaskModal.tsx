@@ -304,19 +304,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Localização padrão</Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData((p) => ({ ...p, location: e.target.value }))}
-                  disabled={isGM}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Aplicada aos serviços que não personalizarem cidade/local.
-                </p>
-              </div>
+              {/* Localização padrão removida: derivada do Núcleo Requerente */}
 
               <div className="space-y-2">
                 <Label htmlFor="assignee">Solicitante</Label>
@@ -375,6 +363,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 services={services}
                 onChange={setServices}
                 disabled={isGM}
+                defaultNucleoCidade={selectedNucleo?.cidade ?? null}
               />
 
               <div className="space-y-2">
