@@ -330,6 +330,7 @@ export function KanbanBoard() {
         processNumber: ticket.process_number,
         requestedAt: (ticket as any).requested_at,
         managerId: (ticket as any).manager_id ?? null,
+        managerIds: (ticket as any).manager_ids ?? ((ticket as any).manager_id ? [(ticket as any).manager_id] : []),
         nucleoId: (ticket as any).nucleo_id ?? null,
         completedAt: ticket.completed_at ? new Date(ticket.completed_at) : undefined,
         icon: getIconForType(ticket.type)
