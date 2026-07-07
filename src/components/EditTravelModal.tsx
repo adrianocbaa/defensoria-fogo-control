@@ -402,6 +402,15 @@ export function EditTravelModal({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+    <TravelLimitConfirmDialog
+      open={confirmLimitOpen}
+      onOpenChange={setConfirmLimitOpen}
+      violations={violations}
+      onConfirm={async () => {
+        setConfirmLimitOpen(false);
+        await persistUpdate();
+      }}
+    />
     </>
   );
 }
