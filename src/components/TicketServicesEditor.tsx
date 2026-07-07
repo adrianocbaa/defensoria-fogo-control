@@ -13,9 +13,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
+import { useAvailableTravels } from '@/hooks/useAvailableTravels';
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { TicketService } from '@/hooks/useTicketServices';
 
 interface Props {
@@ -56,6 +60,7 @@ export function TicketServicesEditor({
 }: Props) {
   const { managers } = useMaintenanceManagers();
   const { nuclei } = useNucleiList();
+  const { travels: availableTravels } = useAvailableTravels();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   const update = (idx: number, patch: Partial<TicketService>) => {
@@ -298,65 +303,142 @@ export function TicketServicesEditor({
                   </label>
 
                   {s.envolve_viagem && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-6">
-                      <div className="space-y-1 md:col-span-2">
-                        <Label className="text-xs">Cidade de destino</Label>
-                        <div className="text-sm rounded-md border bg-muted/30 px-3 py-2">
-                          {s.travel_cidade ?? (
-                            <span className="text-muted-foreground italic">
-                              Selecione um núcleo (no procedimento ou personalizado) para definir a cidade.
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Puxada automaticamente do cadastro do núcleo.
-                        </p>
-                      </div>
-                      <label className="flex items-center gap-2 text-xs cursor-pointer md:col-span-2">
-                        <Checkbox
-                          checked={!!s.travel_sem_previsao}
-                          disabled={disabled}
-                          onCheckedChange={(v) =>
+                    <div className="space-y-3 pl-6">
+                      <RadioGroup
+                        value={s.travel_is_linked ? 'linked' : 'new'}
+                        onValueChange={(v) => {
+                          if (v === 'linked') {
                             update(i, {
-                              travel_sem_previsao: !!v,
-                              ...(v
-                                ? { travel_data_ida: null, travel_data_volta: null }
-                                : {}),
-                            })
+                              travel_is_linked: true,
+                              // Ao vincular, limpa campos de "nova viagem"
+                              travel_cidade: null,
+                              travel_data_ida: null,
+                              travel_data_volta: null,
+                              travel_sem_previsao: false,
+                              travel_id: null,
+                            });
+                          } else {
+                            const chosen = s.nucleo_id
+                              ? nuclei.find((n) => n.id === s.nucleo_id)?.cidade ?? null
+                              : null;
+                            update(i, {
+                              travel_is_linked: false,
+                              travel_id: null,
+                              travel_cidade: chosen ?? defaultNucleoCidade ?? null,
+                            });
                           }
-                        />
-                        Sem previsão de datas
-                      </label>
-                      <div className="space-y-1">
-                        <Label className="text-xs">
-                          Data de ida {!s.travel_sem_previsao && '*'}
-                        </Label>
-                        <Input
-                          type="date"
-                          value={s.travel_data_ida ?? ''}
-                          disabled={disabled || !!s.travel_sem_previsao}
-                          onChange={(e) =>
-                            update(i, { travel_data_ida: e.target.value || null })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">
-                          Data de volta {!s.travel_sem_previsao && '*'}
-                        </Label>
-                        <Input
-                          type="date"
-                          value={s.travel_data_volta ?? ''}
-                          disabled={disabled || !!s.travel_sem_previsao}
-                          onChange={(e) =>
-                            update(i, { travel_data_volta: e.target.value || null })
-                          }
-                        />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground md:col-span-2">
-                        Servidor da viagem = gerente responsável (personalizado ou padrão do procedimento).
-                        Uma entrada será criada em <strong>Viagens</strong> ao salvar.
-                      </p>
+                        }}
+                        className="flex flex-col gap-1"
+                      >
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <RadioGroupItem value="new" disabled={disabled} />
+                          Criar nova viagem no calendário
+                        </label>
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <RadioGroupItem value="linked" disabled={disabled} />
+                          Vincular a uma viagem já cadastrada (evita duplicar)
+                        </label>
+                      </RadioGroup>
+
+                      {s.travel_is_linked ? (
+                        <div className="space-y-1">
+                          <Label className="text-xs">Viagem existente *</Label>
+                          <Select
+                            value={s.travel_id ?? ''}
+                            onValueChange={(v) => update(i, { travel_id: v || null })}
+                            disabled={disabled}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma viagem em aberto..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableTravels.length === 0 && (
+                                <div className="px-2 py-4 text-xs text-muted-foreground">
+                                  Nenhuma viagem futura/em aberto cadastrada.
+                                </div>
+                              )}
+                              {availableTravels.map((t) => {
+                                const datas = t.data_ida
+                                  ? `${format(new Date(t.data_ida + 'T12:00:00'), 'dd/MM', { locale: ptBR })}${
+                                      t.data_volta
+                                        ? ' → ' + format(new Date(t.data_volta + 'T12:00:00'), 'dd/MM', { locale: ptBR })
+                                        : ''
+                                    }`
+                                  : 'sem previsão';
+                                return (
+                                  <SelectItem key={t.id} value={t.id}>
+                                    {t.servidor} · {t.destino} · {datas}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[11px] text-muted-foreground">
+                            Nenhuma entrada nova será criada no calendário — o serviço apenas referencia a viagem existente.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div className="space-y-1 md:col-span-2">
+                            <Label className="text-xs">Cidade de destino</Label>
+                            <div className="text-sm rounded-md border bg-muted/30 px-3 py-2">
+                              {s.travel_cidade ?? (
+                                <span className="text-muted-foreground italic">
+                                  Selecione um núcleo (no procedimento ou personalizado) para definir a cidade.
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Puxada automaticamente do cadastro do núcleo.
+                            </p>
+                          </div>
+                          <label className="flex items-center gap-2 text-xs cursor-pointer md:col-span-2">
+                            <Checkbox
+                              checked={!!s.travel_sem_previsao}
+                              disabled={disabled}
+                              onCheckedChange={(v) =>
+                                update(i, {
+                                  travel_sem_previsao: !!v,
+                                  ...(v
+                                    ? { travel_data_ida: null, travel_data_volta: null }
+                                    : {}),
+                                })
+                              }
+                            />
+                            Sem previsão de datas
+                          </label>
+                          <div className="space-y-1">
+                            <Label className="text-xs">
+                              Data de ida {!s.travel_sem_previsao && '*'}
+                            </Label>
+                            <Input
+                              type="date"
+                              value={s.travel_data_ida ?? ''}
+                              disabled={disabled || !!s.travel_sem_previsao}
+                              onChange={(e) =>
+                                update(i, { travel_data_ida: e.target.value || null })
+                              }
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">
+                              Data de volta {!s.travel_sem_previsao && '*'}
+                            </Label>
+                            <Input
+                              type="date"
+                              value={s.travel_data_volta ?? ''}
+                              disabled={disabled || !!s.travel_sem_previsao}
+                              onChange={(e) =>
+                                update(i, { travel_data_volta: e.target.value || null })
+                              }
+                            />
+                          </div>
+                          <p className="text-[11px] text-muted-foreground md:col-span-2">
+                            Servidor da viagem = gerente responsável (personalizado ou padrão do procedimento).
+                            Uma entrada será criada em <strong>Viagens</strong> ao salvar.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
