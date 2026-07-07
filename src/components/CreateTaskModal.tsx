@@ -181,31 +181,34 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       return;
     }
 
-    if (isTravel) {
-      if (!travelData.cidade) {
-        toast({ title: 'Erro', description: 'Informe a cidade de destino.', variant: 'destructive' });
-        return;
-      }
-      if (!travelData.semPrevisao && (!travelData.dataIda || !travelData.dataVolta)) {
-        toast({
-          title: 'Erro',
-          description: 'Preencha as datas ou marque "Sem previsão".',
-          variant: 'destructive',
-        });
-        return;
-      }
-      if (
-        !travelData.semPrevisao &&
-        travelData.dataIda &&
-        travelData.dataVolta &&
-        travelData.dataIda >= travelData.dataVolta
-      ) {
-        toast({
-          title: 'Erro',
-          description: 'A data de ida deve ser anterior à data de volta.',
-          variant: 'destructive',
-        });
-        return;
+    // Validação de viagens por serviço
+    for (const s of services) {
+      if (s.envolve_viagem) {
+        if (!s.travel_cidade) {
+          toast({ title: 'Erro', description: `Informe a cidade do serviço "${s.title || 'sem título'}".`, variant: 'destructive' });
+          return;
+        }
+        if (!s.travel_sem_previsao && (!s.travel_data_ida || !s.travel_data_volta)) {
+          toast({
+            title: 'Erro',
+            description: `Preencha as datas ou marque "Sem previsão" no serviço "${s.title || 'sem título'}".`,
+            variant: 'destructive',
+          });
+          return;
+        }
+        if (
+          !s.travel_sem_previsao &&
+          s.travel_data_ida &&
+          s.travel_data_volta &&
+          s.travel_data_ida >= s.travel_data_volta
+        ) {
+          toast({
+            title: 'Erro',
+            description: `A data de ida deve ser anterior à data de volta no serviço "${s.title || 'sem título'}".`,
+            variant: 'destructive',
+          });
+          return;
+        }
       }
     }
 
