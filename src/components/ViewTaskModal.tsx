@@ -123,11 +123,13 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
                 <p className="text-sm">{ticket.assignee}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-start gap-3">
+              <UserCheck className="h-4 w-4 text-muted-foreground mt-0.5" />
               <div>
-                <h3 className="font-medium text-xs text-muted-foreground">GERENTE PADRÃO</h3>
-                <p className="text-sm">{managerName || 'Não atribuído'}</p>
+                <h3 className="font-medium text-xs text-muted-foreground">
+                  SERVIDOR{ticketManagerNames.length > 1 ? 'ES' : ''} DA MANUTENÇÃO
+                </h3>
+                <p className="text-sm">{ticketManagerNames.length > 0 ? ticketManagerNames.join(', ') : 'Não atribuído'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
