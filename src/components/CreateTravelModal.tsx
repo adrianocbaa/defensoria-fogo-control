@@ -175,55 +175,6 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
     await persistTravel();
   };
-    try {
-      const servidorNames = managerIds
-        .map((id) => managers.find((m) => m.id === id)?.nome)
-        .filter(Boolean) as string[];
-      const servidorJoined = servidorNames.map(firstName).filter(Boolean).join(' / ');
-
-      // Criar apenas a viagem
-      const { error: travelError } = await supabase
-        .from('travels')
-        .insert([{
-          servidor: servidorJoined,
-          destino: formData.destino,
-          data_ida: semPrevisao ? null : formData.data_ida,
-          data_volta: semPrevisao ? null : formData.data_volta,
-          motivo: formData.motivo,
-          user_id: user.id,
-          manager_ids: managerIds,
-        }]);
-
-      if (travelError) throw travelError;
-
-      onTravelCreated?.();
-      onClose();
-      
-      setSemPrevisao(false);
-      setManagerIds([]);
-      setFormData({
-        servidor: '',
-        destino: '',
-        data_ida: null,
-        data_volta: null,
-        motivo: ''
-      });
-
-      toast({
-        title: "Sucesso",
-        description: "Viagem criada com sucesso!",
-      });
-    } catch (error) {
-      console.error('Erro ao criar viagem:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar a viagem. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDateSelect = (date: Date | undefined, field: 'data_ida' | 'data_volta') => {
     if (date) {
