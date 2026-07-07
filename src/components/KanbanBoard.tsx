@@ -36,7 +36,8 @@ import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenance
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
-import { replaceServicesForTicket } from '@/hooks/useTicketServices';
+import { replaceServicesForTicket, type TicketService } from '@/hooks/useTicketServices';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import type { UITicket } from '@/types/maintenanceTicket';
 
 type Ticket = UITicket;
