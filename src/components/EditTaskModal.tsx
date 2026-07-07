@@ -130,11 +130,14 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
     return base;
   })();
 
+  const selectedNucleo = nuclei.find((n) => n.id === nucleoId);
+  const derivedLocation = selectedNucleo?.cidade || selectedNucleo?.name || formData.location;
+
   const step1Valid =
     !!formData.title &&
     !!formData.priority &&
     !!formData.type &&
-    !!formData.location &&
+    !!nucleoId &&
     !!formData.assignee;
 
   const step2Valid =
@@ -181,7 +184,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       title: isGM ? ticket.title : formData.title,
       priority: isGM ? ticket.priority : (formData.priority as 'Alta' | 'Média' | 'Baixa'),
       type: isGM ? ticket.type : formData.type,
-      location: isGM ? ticket.location : formData.location,
+      location: isGM ? ticket.location : derivedLocation,
       assignee: isGM ? ticket.assignee : formData.assignee,
       icon: selectedTaskType?.icon || ticket.icon,
       status: formData.status,
