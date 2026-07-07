@@ -245,23 +245,18 @@ export function TicketServicesEditor({
                       )}
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Gerente responsável</Label>
-                      <Select
-                        value={s.manager_id ?? ''}
-                        onValueChange={(v) => update(i, { manager_id: v || null })}
+                      <Label className="text-xs">Servidores da manutenção</Label>
+                      <ManagersMultiSelect
+                        value={s.manager_ids ?? (s.manager_id ? [s.manager_id] : [])}
+                        onChange={(ids) =>
+                          update(i, {
+                            manager_ids: ids,
+                            manager_id: ids[0] ?? null,
+                          })
+                        }
                         disabled={disabled}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {managers.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        placeholder="Selecione um ou mais servidores..."
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Data prevista</Label>
