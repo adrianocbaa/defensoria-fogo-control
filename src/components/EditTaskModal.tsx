@@ -193,7 +193,8 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
           ? processNumber
           : undefined,
       requestedAt: requestedAt || ticket.requestedAt,
-      managerId: managerId || null,
+      managerId: managerIds[0] ?? null,
+      managerIds,
       nucleoId: nucleoId || null,
     };
 
