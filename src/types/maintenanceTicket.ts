@@ -22,6 +22,8 @@ export interface UITicket {
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  /** IDs de todos os servidores da manutenção envolvidos (nova estrutura). */
+  managerIds?: string[];
   nucleoId?: string | null;
   completedAt?: Date;
   // campos originais (opcionais para compat)
