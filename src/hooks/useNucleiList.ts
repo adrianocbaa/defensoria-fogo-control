@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 export interface NucleoItem {
   id: string;
   name: string;
+  nome?: string;
+  cidade?: string;
 }
 
 export function useNucleiList() {
@@ -26,6 +28,8 @@ export function useNucleiList() {
         (data || []).map((n: any) => ({
           id: n.id,
           name: n.cidade ? `${n.nome} - ${n.cidade}` : n.nome,
+          nome: n.nome,
+          cidade: n.cidade,
         }))
       );
       setError(null);
