@@ -186,32 +186,38 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
 
     // Validação de viagens por serviço
     for (const s of services) {
-      if (s.envolve_viagem) {
-        if (!s.travel_cidade) {
-          toast({ title: 'Erro', description: `Informe a cidade do serviço "${s.title || 'sem título'}".`, variant: 'destructive' });
+      if (!s.envolve_viagem) continue;
+      if (s.travel_is_linked) {
+        if (!s.travel_id) {
+          toast({ title: 'Erro', description: `Selecione a viagem existente no serviço "${s.title || 'sem título'}".`, variant: 'destructive' });
           return;
         }
-        if (!s.travel_sem_previsao && (!s.travel_data_ida || !s.travel_data_volta)) {
-          toast({
-            title: 'Erro',
-            description: `Preencha as datas ou marque "Sem previsão" no serviço "${s.title || 'sem título'}".`,
-            variant: 'destructive',
-          });
-          return;
-        }
-        if (
-          !s.travel_sem_previsao &&
-          s.travel_data_ida &&
-          s.travel_data_volta &&
-          s.travel_data_ida >= s.travel_data_volta
-        ) {
-          toast({
-            title: 'Erro',
-            description: `A data de ida deve ser anterior à data de volta no serviço "${s.title || 'sem título'}".`,
-            variant: 'destructive',
-          });
-          return;
-        }
+        continue;
+      }
+      if (!s.travel_cidade) {
+        toast({ title: 'Erro', description: `Informe a cidade do serviço "${s.title || 'sem título'}".`, variant: 'destructive' });
+        return;
+      }
+      if (!s.travel_sem_previsao && (!s.travel_data_ida || !s.travel_data_volta)) {
+        toast({
+          title: 'Erro',
+          description: `Preencha as datas ou marque "Sem previsão" no serviço "${s.title || 'sem título'}".`,
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (
+        !s.travel_sem_previsao &&
+        s.travel_data_ida &&
+        s.travel_data_volta &&
+        s.travel_data_ida >= s.travel_data_volta
+      ) {
+        toast({
+          title: 'Erro',
+          description: `A data de ida deve ser anterior à data de volta no serviço "${s.title || 'sem título'}".`,
+          variant: 'destructive',
+        });
+        return;
       }
     }
 
