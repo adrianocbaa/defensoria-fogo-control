@@ -261,6 +261,7 @@ export function MaintenanceReports() {
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [visibleIds, setVisibleIds] = useState<string[]>(() => loadVisibleColumns());
+  const [openTicketId, setOpenTicketId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
