@@ -1251,7 +1251,12 @@ export type Database = {
         Row: {
           assignee: string
           completed_at: string | null
+          confirmation_file_name: string | null
+          confirmation_file_url: string | null
           created_at: string
+          finalization_note: string | null
+          finalized_at: string | null
+          finalized_by: string | null
           id: string
           location: string
           manager_id: string | null
@@ -1274,7 +1279,12 @@ export type Database = {
         Insert: {
           assignee: string
           completed_at?: string | null
+          confirmation_file_name?: string | null
+          confirmation_file_url?: string | null
           created_at?: string
+          finalization_note?: string | null
+          finalized_at?: string | null
+          finalized_by?: string | null
           id?: string
           location: string
           manager_id?: string | null
@@ -1297,7 +1307,12 @@ export type Database = {
         Update: {
           assignee?: string
           completed_at?: string | null
+          confirmation_file_name?: string | null
+          confirmation_file_url?: string | null
           created_at?: string
+          finalization_note?: string | null
+          finalized_at?: string | null
+          finalized_by?: string | null
           id?: string
           location?: string
           manager_id?: string | null

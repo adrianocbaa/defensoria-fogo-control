@@ -23,6 +23,11 @@ export interface MaintenanceTicket {
   nucleo_id?: string | null;
   user_id?: string;
   travel_id?: string;
+  finalized_at?: string | null;
+  finalized_by?: string | null;
+  confirmation_file_url?: string | null;
+  confirmation_file_name?: string | null;
+  finalization_note?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +46,7 @@ export function useMaintenanceTickets() {
       const { data, error } = await supabase
         .from('maintenance_tickets')
         .select('*, maintenance_ticket_services(*)')
+        .is('finalized_at', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
