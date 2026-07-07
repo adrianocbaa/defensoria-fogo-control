@@ -587,8 +587,9 @@ export function MaintenanceReports() {
               filtered.map((r, idx) => (
                 <tr
                   key={r.id}
+                  onClick={() => setOpenTicketId(r.id)}
                   className={cn(
-                    'border-b transition-colors hover:bg-muted/40',
+                    'cursor-pointer border-b transition-colors hover:bg-muted/40',
                     idx % 2 === 1 && 'bg-muted/20',
                   )}
                 >
@@ -605,6 +606,12 @@ export function MaintenanceReports() {
           </tbody>
         </table>
       </div>
+
+      <TicketDetailsSheet
+        ticketId={openTicketId}
+        open={openTicketId !== null}
+        onOpenChange={(v) => !v && setOpenTicketId(null)}
+      />
     </div>
   );
 }
