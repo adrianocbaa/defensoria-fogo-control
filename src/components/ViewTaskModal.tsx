@@ -31,7 +31,9 @@ import {
   CheckCheck,
   Loader2,
   ExternalLink,
+  AlertOctagon,
 } from 'lucide-react';
+import { TicketImpedimentsHistory } from './TicketImpedimentsHistory';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { useUserRole } from '@/hooks/useUserRole';
