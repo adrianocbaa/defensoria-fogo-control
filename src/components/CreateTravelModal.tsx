@@ -345,5 +345,15 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
         </form>
       </DialogContent>
     </Dialog>
+    <TravelLimitConfirmDialog
+      open={confirmLimitOpen}
+      onOpenChange={setConfirmLimitOpen}
+      violations={violations}
+      onConfirm={async () => {
+        setConfirmLimitOpen(false);
+        await persistTravel();
+      }}
+    />
+    </>
   );
 }
