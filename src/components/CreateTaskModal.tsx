@@ -177,7 +177,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
       !formData.title ||
       !formData.priority ||
       !formData.type ||
-      !formData.location ||
+      !nucleoId ||
       !formData.assignee ||
       !requestType
     ) {
