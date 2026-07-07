@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { TicketDetailsSheet } from '@/components/TicketDetailsSheet';
 
 type Row = {
   id: string;
