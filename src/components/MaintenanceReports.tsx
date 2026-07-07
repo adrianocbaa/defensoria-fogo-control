@@ -32,6 +32,7 @@ type Row = {
   finalized_at: string | null;
   services_total: number;
   services_done: number;
+  servidores: string;
 };
 
 type SortKey = keyof Row;
