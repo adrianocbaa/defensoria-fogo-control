@@ -7,6 +7,7 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Travel } from '@/types/travel';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 interface ViewTravelModalProps {
   isOpen: boolean;
