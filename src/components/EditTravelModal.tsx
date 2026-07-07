@@ -37,9 +37,11 @@ export function EditTravelModal({
   onTravelUpdated, 
   onTravelDeleted 
 }: EditTravelModalProps) {
+  const { managers } = useMaintenanceManagers();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [semPrevisao, setSemPrevisao] = useState(!travel.data_ida || !travel.data_volta);
+  const [managerIds, setManagerIds] = useState<string[]>(travel.manager_ids ?? []);
   const [formData, setFormData] = useState({
     servidor: travel.servidor,
     destino: travel.destino,
@@ -52,10 +54,10 @@ export function EditTravelModal({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const validateForm = () => {
-    if (!formData.servidor.trim()) {
+    if (managerIds.length === 0 && !formData.servidor.trim()) {
       toast({
         title: "Erro",
-        description: "Nome do servidor é obrigatório",
+        description: "Selecione ao menos um servidor da manutenção",
         variant: "destructive",
       });
       return false;
