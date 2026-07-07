@@ -360,6 +360,39 @@ export function TravelCalendar() {
                 </Badge>
               </div>
             </div>
+
+            {/* Contabilidade de dias de deslocamento por servidor no mês */}
+            <div className="mt-4">
+              <Label className="text-sm font-medium">
+                Dias de viagem no mês (limite {dailyLimit}/servidor)
+              </Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {managers.length === 0 && (
+                  <span className="text-xs text-muted-foreground">Nenhum servidor cadastrado.</span>
+                )}
+                {managers.map((m) => {
+                  const used = monthUsage[m.id] ?? 0;
+                  const exceeded = used > dailyLimit;
+                  const near = !exceeded && used >= dailyLimit - 2;
+                  return (
+                    <Badge
+                      key={m.id}
+                      variant="outline"
+                      className={
+                        exceeded
+                          ? 'border-destructive text-destructive bg-destructive/10'
+                          : near
+                          ? 'border-amber-500 text-amber-700 bg-amber-50'
+                          : 'border-border'
+                      }
+                      title={`${m.nome}: ${used} de ${dailyLimit} dias`}
+                    >
+                      {m.nome.split(/\s+/)[0]}: {used}/{dailyLimit}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>
