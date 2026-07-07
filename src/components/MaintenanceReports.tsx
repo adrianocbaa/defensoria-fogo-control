@@ -156,6 +156,15 @@ const COLUMNS: ColumnDef[] = [
     csv: (r) => r.assignee ?? '',
   },
   {
+    id: 'servidores',
+    label: 'Servidor da manutenção',
+    sortKey: 'servidores',
+    cell: (r) => (
+      <span className="text-muted-foreground">{r.servidores ? r.servidores : '—'}</span>
+    ),
+    csv: (r) => r.servidores ?? '',
+  },
+  {
     id: 'request',
     label: 'Origem',
     sortKey: 'request_type',
