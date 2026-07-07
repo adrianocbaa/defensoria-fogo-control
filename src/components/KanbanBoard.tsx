@@ -176,6 +176,29 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
             {ticket.title}
           </CardTitle>
           <div className="flex items-center gap-1">
+            {activeImpediment && (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="inline-flex"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <AlertOctagon className="h-4 w-4 text-destructive flex-shrink-0" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-xs font-semibold mb-0.5">Impedimento</p>
+                    <p className="text-xs whitespace-pre-wrap">{activeImpediment.motivo}</p>
+                    <p className="text-[10px] mt-1 opacity-70">
+                      {new Date(activeImpediment.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                      {activeImpediment.created_by_name ? ` · ${activeImpediment.created_by_name}` : ''}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <ticket.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
