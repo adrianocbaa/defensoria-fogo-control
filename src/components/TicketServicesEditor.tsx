@@ -208,6 +208,7 @@ export function TicketServicesEditor({
                               nucleo_id: null,
                               location: null,
                               manager_id: null,
+                              manager_ids: [],
                               scheduled_date: null,
                             }),
                       })
