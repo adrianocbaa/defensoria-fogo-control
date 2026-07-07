@@ -43,7 +43,7 @@ export function MaintenanceSidebar({
   };
 
   return (
-    <Sidebar className="border-r bg-card">
+    <Sidebar collapsible="offcanvas" className="border-r bg-card">
       <SidebarContent>
         <div className="p-4">
           <h2 className="text-lg font-semibold text-foreground mb-4">Menu Principal</h2>
