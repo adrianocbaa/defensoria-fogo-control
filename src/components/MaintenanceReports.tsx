@@ -67,7 +67,7 @@ function formatDate(value?: string | null) {
 }
 
 function daysOpen(row: Row) {
-  const start = parseDate(row.created_at);
+  const start = parseDate(row.requested_at) ?? parseDate(row.created_at);
   if (!start) return 0;
   const end = parseDate(row.finalized_at) ?? parseDate(row.completed_at) ?? new Date();
   return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000));
