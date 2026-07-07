@@ -61,6 +61,7 @@ export function TicketServicesEditor({
   defaultNucleoCidade = null,
 }: Props) {
   const { managers } = useMaintenanceManagers();
+  void managers;
   const { nuclei } = useNucleiList();
   const { travels: availableTravels } = useAvailableTravels();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
