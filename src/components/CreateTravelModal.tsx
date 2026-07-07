@@ -47,6 +47,8 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
   });
   const [dataIdaOpen, setDataIdaOpen] = useState(false);
   const [dataVoltaOpen, setDataVoltaOpen] = useState(false);
+  const [violations, setViolations] = useState<LimitViolation[]>([]);
+  const [confirmLimitOpen, setConfirmLimitOpen] = useState(false);
 
   const validateForm = () => {
     if (managerIds.length === 0) {
