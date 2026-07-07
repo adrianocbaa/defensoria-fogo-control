@@ -66,6 +66,8 @@ const priorityColors = {
   'Baixa': 'secondary'
 };
 
+const ALL_STATUSES = ['Pendente', 'Em andamento', 'Impedido', 'Concluído'] as const;
+
 interface DroppableColumnProps {
   id: string;
   title: string;
@@ -76,9 +78,12 @@ interface DroppableColumnProps {
   onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
   impedimentByTicket: Record<string, TicketImpediment | undefined>;
+  onMoveTicket: (ticketId: string, targetStatus: string) => void;
+  allowedTargets: string[];
+  enableDrag?: boolean;
 }
 
-function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, impedimentByTicket }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, impedimentByTicket, onMoveTicket, allowedTargets, enableDrag = true }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -111,6 +116,10 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMar
               onDeleteTicket={onDeleteTicket}
               isManutencao={isManutencao}
               activeImpediment={impedimentByTicket[ticket.id]}
+              onMoveTicket={onMoveTicket}
+              currentStatus={id}
+              allowedTargets={allowedTargets}
+              enableDrag={enableDrag}
             />
           ))}
         </div>
@@ -127,11 +136,15 @@ interface DraggableTicketProps {
   onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
   activeImpediment?: TicketImpediment;
+  onMoveTicket: (ticketId: string, targetStatus: string) => void;
+  currentStatus: string;
+  allowedTargets: string[];
+  enableDrag?: boolean;
 }
 
-function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, activeImpediment }: DraggableTicketProps) {
-  // Permitir drag para todos os usuários
-  const canDrag = true;
+function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, activeImpediment, onMoveTicket, currentStatus, allowedTargets, enableDrag = true }: DraggableTicketProps) {
+  // Permitir drag para todos os usuários (desabilitado no mobile via prop)
+  const canDrag = enableDrag;
   
   const {
     attributes,
