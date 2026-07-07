@@ -275,6 +275,16 @@ export function KanbanBoard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isGM, canEdit } = useUserRole();
+  const { managers } = useMaintenanceManagers();
+
+  const resolveServicesServidor = (services: TicketService[] | undefined, fallbackManagerId?: string | null, fallbackAssignee?: string) => {
+    const fallbackManagerName = fallbackManagerId ? managers.find(m => m.id === fallbackManagerId)?.nome : undefined;
+    const fallbackServidor = fallbackManagerName || fallbackAssignee || '—';
+    return (services ?? []).map(s => {
+      const custom = s.custom_assignment && s.manager_id ? managers.find(m => m.id === s.manager_id)?.nome : null;
+      return { ...s, travel_servidor: custom || fallbackManagerName || fallbackAssignee || null };
+    });
+  };
   const [tickets, setTickets] = useState<{ [key: string]: Ticket[] }>({
     'Pendente': [],
     'Em andamento': [],
