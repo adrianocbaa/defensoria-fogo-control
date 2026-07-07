@@ -257,7 +257,6 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
     setNucleoId('');
     setServicePhotos([]);
     setCurrentStep(1);
-    setCurrentStep(1);
     setOpen(false);
   };
 
