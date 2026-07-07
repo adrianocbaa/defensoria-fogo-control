@@ -663,6 +663,12 @@ export function KanbanBoard() {
   };
 
 
+  const visibleStatuses = ALL_STATUSES.filter(
+    (s) => !isGM || ['Em andamento', 'Impedido', 'Concluído'].includes(s),
+  );
+  const allowedTargets = [...visibleStatuses];
+  const [mobileTab, setMobileTab] = useState<string>(visibleStatuses[0]);
+
   return (
     <DndContext
       sensors={sensors}
@@ -670,38 +676,70 @@ export function KanbanBoard() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="p-4 md:p-6">
+        <div className="mb-4 md:mb-6 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
-            <p className="text-muted-foreground">Arraste as tarefas entre as colunas para alterar o status</p>
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
+            <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Arraste as tarefas entre as colunas para alterar o status</p>
+            <p className="text-xs text-muted-foreground md:hidden">Use "Mover para…" no menu do card para trocar de etapa</p>
           </div>
           {!isGM && <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {Object.entries(tickets).map(([status, statusTickets]) => {
-            // Para usuários de manutenção, mostrar apenas as colunas permitidas
-            if (isGM && !['Em andamento', 'Impedido', 'Concluído'].includes(status)) {
-              return null;
-            }
-            
-            return (
+        {isMobile ? (
+          <Tabs value={mobileTab} onValueChange={setMobileTab} className="w-full">
+            <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${visibleStatuses.length}, minmax(0,1fr))` }}>
+              {visibleStatuses.map((status) => {
+                const count = tickets[status]?.length ?? 0;
+                return (
+                  <TabsTrigger key={status} value={status} className="text-[11px] px-1">
+                    <span className="truncate">{status}</span>
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{count}</Badge>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+            {visibleStatuses.map((status) => (
+              <TabsContent key={status} value={status} className="mt-4">
+                <DroppableColumn
+                  id={status}
+                  title={status}
+                  tickets={tickets[status] ?? []}
+                  onViewTicket={handleViewTicket}
+                  onEditTicket={handleEditTicket}
+                  onMarkAsExecuted={handleMarkAsExecuted}
+                  onDeleteTicket={!isGM ? handleDeleteTicket : undefined}
+                  isManutencao={isGM}
+                  impedimentByTicket={impedimentByTicket}
+                  onMoveTicket={attemptMoveTicket}
+                  allowedTargets={allowedTargets}
+                  enableDrag={false}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {visibleStatuses.map((status) => (
               <DroppableColumn
                 key={status}
                 id={status}
                 title={status}
-                tickets={statusTickets}
+                tickets={tickets[status] ?? []}
                 onViewTicket={handleViewTicket}
                 onEditTicket={handleEditTicket}
                 onMarkAsExecuted={handleMarkAsExecuted}
                 onDeleteTicket={!isGM ? handleDeleteTicket : undefined}
                 isManutencao={isGM}
                 impedimentByTicket={impedimentByTicket}
+                onMoveTicket={attemptMoveTicket}
+                allowedTargets={allowedTargets}
+                enableDrag={true}
               />
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+
 
         <DragOverlay>
           {activeTicket ? (
