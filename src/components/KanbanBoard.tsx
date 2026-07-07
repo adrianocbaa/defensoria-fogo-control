@@ -509,7 +509,12 @@ export function KanbanBoard() {
 
     await updateTicket(updatedTicket.id, dbTicketData);
     try {
-      await replaceServicesForTicket(updatedTicket.id, updatedTicket.services ?? []);
+      const svcs = resolveServicesServidor(updatedTicket.services ?? [], updatedTicket.managerId, updatedTicket.assignee);
+      await replaceServicesForTicket(updatedTicket.id, svcs, {
+        ticketTitle: updatedTicket.title,
+        fallbackServidor: (updatedTicket.managerId ? managers.find(m => m.id === updatedTicket.managerId)?.nome : undefined) || updatedTicket.assignee || '—',
+        userId: user?.id,
+      });
     } catch (err) {
       console.error('Erro ao salvar serviços da tarefa:', err);
       toast({
