@@ -11,6 +11,7 @@ import { StockMovement } from '@/components/inventory/StockMovement';
 import { StockReport } from '@/components/inventory/StockReport';
 import { MobileNotifications } from '@/components/inventory/MobileNotifications';
 import { MaintenanceSettings } from '@/components/MaintenanceSettings';
+import { MaintenanceReports } from '@/components/MaintenanceReports';
 
 interface MaintenanceDashboardProps {
   activeSection?: string;
@@ -58,12 +59,7 @@ export function MaintenanceDashboard({ activeSection = 'overview' }: Maintenance
   }
 
   if (activeSection === 'reports') {
-    return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Relatórios</h1>
-        <p className="text-muted-foreground">Sistema de relatórios em desenvolvimento...</p>
-      </div>
-    );
+    return <MaintenanceReports />;
   }
 
   if (activeSection === 'settings') {
