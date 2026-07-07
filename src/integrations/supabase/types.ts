@@ -1140,6 +1140,7 @@ export type Database = {
           travel_data_ida: string | null
           travel_data_volta: string | null
           travel_id: string | null
+          travel_is_linked: boolean
           travel_sem_previsao: boolean
           updated_at: string
         }
@@ -1163,6 +1164,7 @@ export type Database = {
           travel_data_ida?: string | null
           travel_data_volta?: string | null
           travel_id?: string | null
+          travel_is_linked?: boolean
           travel_sem_previsao?: boolean
           updated_at?: string
         }
@@ -1186,6 +1188,7 @@ export type Database = {
           travel_data_ida?: string | null
           travel_data_volta?: string | null
           travel_id?: string | null
+          travel_is_linked?: boolean
           travel_sem_previsao?: boolean
           updated_at?: string
         }
