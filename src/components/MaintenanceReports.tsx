@@ -371,7 +371,7 @@ export function MaintenanceReports() {
           if (!d || d.getTime() < cutoff) return false;
         }
         if (q) {
-          const hay = [r.title, r.type, r.location, r.assignee, r.process_number]
+          const hay = [r.title, r.type, r.location, r.assignee, r.process_number, r.servidores]
             .filter(Boolean)
             .join(' ')
             .toLowerCase();
