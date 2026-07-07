@@ -188,7 +188,7 @@ const COLUMNS: ColumnDef[] = [
   },
   {
     id: 'requested_at',
-    label: 'Solicitado em',
+    label: 'Solicitado',
     sortKey: 'requested_at',
     cell: (r) => <span className="text-muted-foreground">{formatDate(r.requested_at)}</span>,
     csv: (r) => formatDate(r.requested_at),
@@ -211,7 +211,7 @@ const COLUMNS: ColumnDef[] = [
   },
   {
     id: 'finalized_at',
-    label: 'Finalizado em',
+    label: 'Finalizado',
     sortKey: 'finalized_at',
     defaultVisible: false,
     cell: (r) => <span className="text-muted-foreground">{formatDate(r.finalized_at)}</span>,
