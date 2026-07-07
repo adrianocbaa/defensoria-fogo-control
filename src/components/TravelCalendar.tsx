@@ -568,7 +568,7 @@ export function TravelCalendar() {
                         <CalendarDays className="h-5 w-5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{travel.servidor}</p>
+                        <p className="font-medium truncate">{getTravelServidorNames(travel).join(', ') || travel.servidor}</p>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           <span className="truncate">{travel.destino}</span>
