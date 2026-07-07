@@ -296,7 +296,7 @@ export function MaintenanceReports() {
           .select('id,title,status,priority,type,location,assignee,request_type,process_number,manager_id,manager_ids,created_at,requested_at,completed_at,finalized_at,maintenance_ticket_services(id,completed,manager_id,manager_ids)')
           .order('created_at', { ascending: false })
           .limit(10000),
-        supabase.from('maintenance_managers').select('id,nome').limit(10000),
+        supabase.from('profiles').select('user_id,display_name,email').limit(10000),
       ]);
       if (cancelled) return;
       if (ticketsRes.error) {
@@ -304,7 +304,10 @@ export function MaintenanceReports() {
         setRows([]);
       } else {
         const managerNameById = new Map<string, string>(
-          (managersRes.data ?? []).map((m: any) => [m.id as string, (m.nome as string) ?? '']),
+          (managersRes.data ?? []).map((m: any) => [
+            m.user_id as string,
+            ((m.display_name as string) ?? (m.email as string) ?? '').trim(),
+          ]),
         );
         setRows(
           (ticketsRes.data ?? []).map((t: any) => {
