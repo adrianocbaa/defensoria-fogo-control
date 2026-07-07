@@ -485,8 +485,24 @@ export function KanbanBoard() {
       }
     }
 
+    // Se está movendo PARA "Impedido": pedir motivo antes de confirmar
+    if (targetStatus === 'Impedido' && sourceStatus !== 'Impedido') {
+      setActiveTicket(null);
+      setImpedimentDialog({ open: true, ticketId: activeId, ticketTitle: ticketToMove.title });
+      return;
+    }
+
+    // Se está saindo de "Impedido": resolver impedimentos ativos
+    if (sourceStatus === 'Impedido' && targetStatus !== 'Impedido') {
+      resolveActiveImpediments(activeId, user?.id ?? null, profile?.display_name ?? null)
+        .catch((err) => console.error('Erro ao resolver impedimento:', err))
+        .finally(() => refetchImpediments());
+    }
+
     updateTicket(activeId, { status: targetStatus as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído' })
       .then(() => refetch());
+
+
 
     setActiveTicket(null);
   };
