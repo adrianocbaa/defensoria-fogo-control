@@ -382,19 +382,15 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="manager">Gerente padrão</Label>
-                <Select value={managerId} onValueChange={setManagerId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um gerente (opcional)..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {managers.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Servidores da manutenção (padrão)</Label>
+                <ManagersMultiSelect
+                  value={managerIds}
+                  onChange={setManagerIds}
+                  placeholder="Selecione um ou mais servidores (opcional)..."
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Padrão do procedimento. Cada serviço pode personalizar sua própria lista.
+                </p>
               </div>
 
               <div className="space-y-2">
