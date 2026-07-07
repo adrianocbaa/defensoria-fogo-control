@@ -60,6 +60,7 @@ export function TicketServicesEditor({
 }: Props) {
   const { managers } = useMaintenanceManagers();
   const { nuclei } = useNucleiList();
+  const { travels: availableTravels } = useAvailableTravels();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   const update = (idx: number, patch: Partial<TicketService>) => {
