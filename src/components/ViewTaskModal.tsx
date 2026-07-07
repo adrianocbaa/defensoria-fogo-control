@@ -59,7 +59,12 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
   const { managers } = useMaintenanceManagers(false);
   const { nuclei } = useNucleiList();
   if (!ticket) return null;
-  const managerName = ticket.managerId ? managers.find(m => m.id === ticket.managerId)?.nome : null;
+  const ticketManagerIds = (ticket.managerIds && ticket.managerIds.length > 0)
+    ? ticket.managerIds
+    : (ticket.managerId ? [ticket.managerId] : []);
+  const ticketManagerNames = ticketManagerIds
+    .map((id) => managers.find((m) => m.id === id)?.nome)
+    .filter(Boolean) as string[];
   const nucleoName = ticket.nucleoId ? nuclei.find(n => n.id === ticket.nucleoId)?.name : null;
 
   const services = ticket.services ?? [];
