@@ -499,8 +499,102 @@ export function TravelCalendar() {
             </div>
           </div>
 
+          {/* Diárias do mês por servidor */}
+          <div className="mt-6 bg-card rounded-lg border shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-md bg-primary/10 text-primary">
+                  <Plane className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold leading-tight">
+                    Diárias de {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Limite de {dailyLimit} dias de deslocamento por servidor no mês
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {managers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum servidor cadastrado.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {managers.map((m) => {
+                  const used = monthUsage[m.id] ?? 0;
+                  const pct = Math.min(100, (used / dailyLimit) * 100);
+                  const exceeded = used > dailyLimit;
+                  const near = !exceeded && used >= dailyLimit - 2;
+                  const barColor = exceeded
+                    ? 'bg-destructive'
+                    : near
+                    ? 'bg-amber-500'
+                    : 'bg-primary';
+                  const ringColor = exceeded
+                    ? 'ring-destructive/30 border-destructive/40'
+                    : near
+                    ? 'ring-amber-400/30 border-amber-400/40'
+                    : 'ring-transparent border-border';
+                  const remaining = Math.max(0, dailyLimit - used);
+                  const initials = m.nome
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((p) => p[0])
+                    .join('')
+                    .toUpperCase();
+                  return (
+                    <div
+                      key={m.id}
+                      className={`rounded-lg border ring-1 ${ringColor} bg-muted/20 p-3 transition-colors`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
+                          {initials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate" title={m.nome}>
+                            {m.nome}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {exceeded
+                              ? `Excedeu em ${used - dailyLimit} ${used - dailyLimit === 1 ? 'dia' : 'dias'}`
+                              : `${remaining} ${remaining === 1 ? 'dia restante' : 'dias restantes'}`}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div
+                            className={`text-lg font-bold leading-none ${
+                              exceeded
+                                ? 'text-destructive'
+                                : near
+                                ? 'text-amber-600'
+                                : 'text-foreground'
+                            }`}
+                          >
+                            {used}
+                            <span className="text-xs font-normal text-muted-foreground">
+                              /{dailyLimit}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full ${barColor} transition-all`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Viagens sem previsão */}
           {filteredTravels.some(t => !t.data_ida || !t.data_volta) && (
+
             <div className="mt-6 bg-card rounded-lg border shadow-sm p-4">
               <h3 className="text-lg font-semibold mb-1">Viagens sem previsão</h3>
               <p className="text-sm text-muted-foreground mb-4">
