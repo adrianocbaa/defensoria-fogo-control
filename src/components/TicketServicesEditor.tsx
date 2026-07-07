@@ -274,19 +274,25 @@ export function TicketServicesEditor({
                     <Checkbox
                       checked={!!s.envolve_viagem}
                       disabled={disabled}
-                      onCheckedChange={(v) =>
+                      onCheckedChange={(v) => {
+                        const on = !!v;
+                        // Ao ativar viagem: puxa cidade do núcleo (personalizado ou padrão do procedimento)
+                        const chosen = s.nucleo_id
+                          ? nuclei.find((n) => n.id === s.nucleo_id)?.cidade ?? null
+                          : null;
+                        const autoCidade = chosen ?? defaultNucleoCidade ?? null;
                         update(i, {
-                          envolve_viagem: !!v,
-                          ...(v
-                            ? {}
+                          envolve_viagem: on,
+                          ...(on
+                            ? { travel_cidade: s.travel_cidade ?? autoCidade }
                             : {
                                 travel_cidade: null,
                                 travel_data_ida: null,
                                 travel_data_volta: null,
                                 travel_sem_previsao: false,
                               }),
-                        })
-                      }
+                        });
+                      }}
                     />
                     Este serviço envolve viagem (registrar no calendário)
                   </label>
@@ -294,15 +300,17 @@ export function TicketServicesEditor({
                   {s.envolve_viagem && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-6">
                       <div className="space-y-1 md:col-span-2">
-                        <Label className="text-xs">Cidade de destino *</Label>
-                        <Input
-                          value={s.travel_cidade ?? ''}
-                          onChange={(e) =>
-                            update(i, { travel_cidade: e.target.value || null })
-                          }
-                          placeholder="Ex.: Sinop"
-                          disabled={disabled}
-                        />
+                        <Label className="text-xs">Cidade de destino</Label>
+                        <div className="text-sm rounded-md border bg-muted/30 px-3 py-2">
+                          {s.travel_cidade ?? (
+                            <span className="text-muted-foreground italic">
+                              Selecione um núcleo (no procedimento ou personalizado) para definir a cidade.
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Puxada automaticamente do cadastro do núcleo.
+                        </p>
                       </div>
                       <label className="flex items-center gap-2 text-xs cursor-pointer md:col-span-2">
                         <Checkbox
