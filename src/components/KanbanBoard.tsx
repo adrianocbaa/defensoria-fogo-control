@@ -190,15 +190,7 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   <Edit className="mr-2 h-3 w-3" />
                   Editar
                 </DropdownMenuItem>
-                {ticket.status === 'Concluído' && onMarkAsExecuted && !isManutencao && (
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    onMarkAsExecuted(ticket.id);
-                  }} className="text-xs">
-                    <Check className="mr-2 h-3 w-3" />
-                    Executado
-                  </DropdownMenuItem>
-                )}
+                {/* Finalização acontece dentro do modal de visualização (com anexo do e-mail, quando aplicável). */}
                 {onDeleteTicket && (
                   <DropdownMenuItem
                     onClick={(e) => {
