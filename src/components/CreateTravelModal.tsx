@@ -18,6 +18,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { ManagersMultiSelect } from './ManagersMultiSelect';
+import { checkTravelLimit, LimitViolation } from '@/lib/travelDaysLimit';
+import { TravelLimitConfirmDialog } from './TravelLimitConfirmDialog';
 
 function firstName(n: string) {
   return (n.trim().split(/\s+/)[0] || '').trim();
