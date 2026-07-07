@@ -60,6 +60,7 @@ export interface NewTaskPayload {
   processNumber?: string;
   requestedAt?: string;
   managerId?: string | null;
+  managerIds?: string[];
   nucleoId?: string | null;
   servicePhotos?: ServicePhoto[];
   icon: any;
