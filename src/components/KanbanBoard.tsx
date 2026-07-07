@@ -68,6 +68,7 @@ interface DroppableColumnProps {
   onMarkAsExecuted?: (ticketId: string) => void;
   onDeleteTicket?: (ticketId: string) => void;
   isManutencao?: boolean;
+  impedimentByTicket: Record<string, TicketImpediment | undefined>;
 }
 
 function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DroppableColumnProps) {
