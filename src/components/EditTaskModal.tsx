@@ -357,6 +357,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                 onChange={setServices}
                 disabled={isGM}
                 defaultNucleoCidade={selectedNucleo?.cidade ?? null}
+                defaultManagerIds={managerIds}
               />
 
               <div className="space-y-2">

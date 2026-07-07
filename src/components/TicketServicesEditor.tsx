@@ -22,6 +22,8 @@ import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { TicketService } from '@/hooks/useTicketServices';
+import { checkTravelLimit, LimitViolation } from '@/lib/travelDaysLimit';
+import { TravelLimitConfirmDialog } from '@/components/TravelLimitConfirmDialog';
 
 interface Props {
   services: TicketService[];
@@ -31,6 +33,10 @@ interface Props {
   disabled?: boolean;
   /** Cidade padrão do procedimento (do núcleo requerente), usada como fallback para viagens */
   defaultNucleoCidade?: string | null;
+  /** Servidores padrão do procedimento (usados em serviços sem responsável personalizado) */
+  defaultManagerIds?: string[];
+  /** Id da viagem já vinculada ao ticket sendo editado (para excluir da contagem) */
+  excludeTravelIds?: string[];
 }
 
 const emptyService = (order: number): TicketService => ({
@@ -59,16 +65,62 @@ export function TicketServicesEditor({
   executionMode = false,
   disabled = false,
   defaultNucleoCidade = null,
+  defaultManagerIds = [],
+  excludeTravelIds = [],
 }: Props) {
   const { managers } = useMaintenanceManagers();
-  void managers;
   const { nuclei } = useNucleiList();
   const { travels: availableTravels } = useAvailableTravels();
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [limitDialog, setLimitDialog] = useState<{
+    open: boolean;
+    violations: LimitViolation[];
+    onConfirm: () => void;
+    onCancel: () => void;
+  }>({ open: false, violations: [], onConfirm: () => {}, onCancel: () => {} });
 
   const update = (idx: number, patch: Partial<TicketService>) => {
     onChange(services.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
   };
+
+  /** Após alterar datas de viagem de um serviço, checa o limite mensal
+   *  do(s) servidor(es). Se ultrapassar e usuário cancelar → limpa as datas. */
+  const runTravelLimitCheck = async (
+    idx: number,
+    nextService: TicketService,
+  ) => {
+    if (!nextService.envolve_viagem) return;
+    if (nextService.travel_is_linked) return;
+    if (nextService.travel_sem_previsao) return;
+    if (!nextService.travel_data_ida || !nextService.travel_data_volta) return;
+    if (nextService.travel_data_ida >= nextService.travel_data_volta) return;
+    const effectiveIds =
+      nextService.custom_assignment
+        ? (nextService.manager_ids ?? (nextService.manager_id ? [nextService.manager_id] : []))
+        : defaultManagerIds;
+    if (!effectiveIds || effectiveIds.length === 0) return;
+
+    const violations = await checkTravelLimit({
+      managerIds: effectiveIds,
+      managers: managers.map((m: any) => ({ id: m.id, nome: m.nome })),
+      dataIda: nextService.travel_data_ida,
+      dataVolta: nextService.travel_data_volta,
+      excludeTravelId: nextService.travel_id ?? excludeTravelIds[0],
+    });
+    if (violations.length === 0) return;
+
+    setLimitDialog({
+      open: true,
+      violations,
+      onConfirm: () => setLimitDialog((p) => ({ ...p, open: false })),
+      onCancel: () => {
+        setLimitDialog((p) => ({ ...p, open: false }));
+        // reverte datas — força escolha de outro servidor / sem previsão
+        update(idx, { travel_data_ida: null, travel_data_volta: null });
+      },
+    });
+  };
+
   const remove = (idx: number) => {
     onChange(services.filter((_, i) => i !== idx).map((s, i) => ({ ...s, order_index: i })));
   };
@@ -414,9 +466,11 @@ export function TicketServicesEditor({
                               type="date"
                               value={s.travel_data_ida ?? ''}
                               disabled={disabled || !!s.travel_sem_previsao}
-                              onChange={(e) =>
-                                update(i, { travel_data_ida: e.target.value || null })
-                              }
+                              onChange={(e) => {
+                                const v = e.target.value || null;
+                                update(i, { travel_data_ida: v });
+                                runTravelLimitCheck(i, { ...s, travel_data_ida: v });
+                              }}
                             />
                           </div>
                           <div className="space-y-1">
@@ -427,9 +481,11 @@ export function TicketServicesEditor({
                               type="date"
                               value={s.travel_data_volta ?? ''}
                               disabled={disabled || !!s.travel_sem_previsao}
-                              onChange={(e) =>
-                                update(i, { travel_data_volta: e.target.value || null })
-                              }
+                              onChange={(e) => {
+                                const v = e.target.value || null;
+                                update(i, { travel_data_volta: v });
+                                runTravelLimitCheck(i, { ...s, travel_data_volta: v });
+                              }}
                             />
                           </div>
                           <p className="text-[11px] text-muted-foreground md:col-span-2">
@@ -446,6 +502,13 @@ export function TicketServicesEditor({
           </div>
         ))}
       </div>
+      <TravelLimitConfirmDialog
+        open={limitDialog.open}
+        onOpenChange={(o) => setLimitDialog((p) => ({ ...p, open: o }))}
+        violations={limitDialog.violations}
+        onConfirm={limitDialog.onConfirm}
+        onCancel={limitDialog.onCancel}
+      />
     </div>
   );
 }

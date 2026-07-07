@@ -431,7 +431,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 )}
               </div>
 
-              <TicketServicesEditor services={services} onChange={setServices} defaultNucleoCidade={selectedNucleo?.cidade ?? null} />
+              <TicketServicesEditor services={services} onChange={setServices} defaultNucleoCidade={selectedNucleo?.cidade ?? null} defaultManagerIds={managerIds} />
 
               <div className="space-y-2">
                 <Label>Materiais</Label>
