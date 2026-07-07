@@ -523,16 +523,16 @@ export function TravelCalendar() {
                               zIndex: 5 + taskIndex
                             }}
                             onClick={() => handleViewTask(task)}
-                            title={`${task.assignee} - ${task.title}`}
+                            title={`${getTravelServidorNames(travel).join(', ') || travel.servidor} - ${task.title}`}
                           >
                             {/* Show content only on start or single day */}
                             {position.position === 'start' || position.position === 'single' ? (
                               <div className="flex items-center gap-1 w-full min-w-0">
                                 <div className="font-medium truncate text-[11px] flex-1">
-                                  {task.assignee}
+                                  {getTravelServidorLabel(travel)}
                                 </div>
                                 <div className="flex items-center gap-0.5 opacity-75 text-[10px]">
-                                  <span className="truncate max-w-[50px]">{task.title}</span>
+                                  <span className="truncate max-w-[70px]">{task.title}</span>
                                 </div>
                               </div>
                             ) : (
