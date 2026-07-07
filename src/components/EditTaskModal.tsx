@@ -40,7 +40,7 @@ interface EditTaskModalProps {
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
   const { isGM } = useUserRole();
   const { types: taskTypes } = useMaintenanceTypes();
-  const { managers } = useMaintenanceManagers();
+  
   const { nuclei } = useNucleiList();
   const { toast } = useToast();
 
