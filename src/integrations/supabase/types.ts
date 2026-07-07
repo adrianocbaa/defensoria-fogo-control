@@ -1194,8 +1194,15 @@ export type Database = {
             foreignKeyName: "maintenance_ticket_services_manager_id_fkey"
             columns: ["manager_id"]
             isOneToOne: false
-            referencedRelation: "maintenance_managers"
-            referencedColumns: ["id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "maintenance_ticket_services_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_secure"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "maintenance_ticket_services_nucleo_id_fkey"

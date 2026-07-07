@@ -48,15 +48,24 @@ export async function replaceServicesForTicket(
   opts: ReplaceServicesOptions
 ): Promise<void> {
   // 1. Buscar serviços atuais para conhecer os travel_ids existentes
-  const { data: existing, error: fetchErr } = await supabase
+  const [{ data: existing, error: fetchErr }, { data: ticketRow, error: ticketErr }] = await Promise.all([
+    supabase
     .from('maintenance_ticket_services')
     .select('id, travel_id')
-    .eq('ticket_id', ticketId);
+      .eq('ticket_id', ticketId),
+    supabase
+      .from('maintenance_tickets')
+      .select('travel_id')
+      .eq('id', ticketId)
+      .maybeSingle(),
+  ]);
   if (fetchErr) throw fetchErr;
+  if (ticketErr) throw ticketErr;
 
   const oldTravelIds = (existing ?? [])
     .map((r: any) => r.travel_id)
     .filter((id: string | null): id is string => !!id);
+  const protectedTicketTravelId = (ticketRow as any)?.travel_id ?? null;
 
   // 2. Apagar serviços (cascade não afeta travels — ON DELETE SET NULL)
   const { error: delErr } = await supabase
@@ -65,10 +74,17 @@ export async function replaceServicesForTicket(
     .eq('ticket_id', ticketId);
   if (delErr) throw delErr;
 
-  // 3. Apagar as viagens antigas vinculadas
+  // 3. Apagar viagens antigas vinculadas aos serviços, incluindo órfãs de salvamentos parciais
   if (oldTravelIds.length > 0) {
-    await supabase.from('travels').delete().in('id', oldTravelIds);
+    const { error: oldTravelDelErr } = await supabase.from('travels').delete().in('id', oldTravelIds);
+    if (oldTravelDelErr) throw oldTravelDelErr;
   }
+  let staleTravelDelete = supabase.from('travels').delete().eq('ticket_id', ticketId);
+  if (protectedTicketTravelId) {
+    staleTravelDelete = staleTravelDelete.neq('id', protectedTicketTravelId);
+  }
+  const { error: staleTravelDelErr } = await staleTravelDelete;
+  if (staleTravelDelErr) throw staleTravelDelErr;
 
   if (services.length === 0) return;
 
@@ -131,7 +147,15 @@ export async function replaceServicesForTicket(
   const { error: insErr } = await supabase
     .from('maintenance_ticket_services')
     .insert(rows as any);
-  if (insErr) throw insErr;
+  if (insErr) {
+    const newTravelIds = servicesWithTravelIds
+      .map(({ travelId }) => travelId)
+      .filter((id): id is string => !!id);
+    if (newTravelIds.length > 0) {
+      await supabase.from('travels').delete().in('id', newTravelIds);
+    }
+    throw insErr;
+  }
 }
 
 export async function fetchServicesForTicket(ticketId: string): Promise<TicketService[]> {
