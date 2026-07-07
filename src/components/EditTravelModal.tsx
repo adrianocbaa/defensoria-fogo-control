@@ -15,6 +15,12 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Travel } from '@/types/travel';
 import { toast } from '@/hooks/use-toast';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { ManagersMultiSelect } from './ManagersMultiSelect';
+
+function firstName(n: string) {
+  return (n.trim().split(/\s+/)[0] || '').trim();
+}
 
 interface EditTravelModalProps {
   isOpen: boolean;
