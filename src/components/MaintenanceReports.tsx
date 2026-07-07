@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpDown, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ArrowUpDown, Columns3, Search, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -42,6 +44,8 @@ const PERIOD_OPTIONS = [
   { value: '30', label: 'Últimos 30 dias' },
   { value: '90', label: 'Últimos 90 dias' },
 ];
+
+const COLUMNS_STORAGE_KEY = 'maintenance-reports.visible-columns.v1';
 
 // Manual YYYY-MM-DD parsing to avoid UTC shift on date-only strings
 function parseDate(value?: string | null): Date | null {
@@ -86,6 +90,166 @@ function statusBadge(s: string) {
   return map[s] ?? 'bg-muted text-muted-foreground';
 }
 
+type ColumnDef = {
+  id: string;
+  label: string;
+  sortKey?: SortKey;
+  align?: 'left' | 'right';
+  defaultVisible?: boolean;
+  required?: boolean;
+  cell: (r: Row) => ReactNode;
+  csv: (r: Row) => string | number;
+};
+
+const COLUMNS: ColumnDef[] = [
+  {
+    id: 'title',
+    label: 'Título',
+    sortKey: 'title',
+    required: true,
+    cell: (r) => <span className="font-medium text-foreground">{r.title}</span>,
+    csv: (r) => r.title,
+  },
+  {
+    id: 'status',
+    label: 'Status',
+    sortKey: 'status',
+    cell: (r) => (
+      <Badge variant="outline" className={cn('border font-normal', statusBadge(r.status))}>
+        {r.status}
+      </Badge>
+    ),
+    csv: (r) => r.status,
+  },
+  {
+    id: 'priority',
+    label: 'Prioridade',
+    sortKey: 'priority',
+    cell: (r) => (
+      <Badge variant="outline" className={cn('border font-normal', priorityBadge(r.priority))}>
+        {r.priority}
+      </Badge>
+    ),
+    csv: (r) => r.priority,
+  },
+  {
+    id: 'type',
+    label: 'Tipo',
+    sortKey: 'type',
+    cell: (r) => <span className="text-muted-foreground">{r.type ?? '—'}</span>,
+    csv: (r) => r.type ?? '',
+  },
+  {
+    id: 'location',
+    label: 'Local',
+    sortKey: 'location',
+    cell: (r) => <span className="text-muted-foreground">{r.location ?? '—'}</span>,
+    csv: (r) => r.location ?? '',
+  },
+  {
+    id: 'assignee',
+    label: 'Responsável',
+    sortKey: 'assignee',
+    cell: (r) => <span className="text-muted-foreground">{r.assignee ?? '—'}</span>,
+    csv: (r) => r.assignee ?? '',
+  },
+  {
+    id: 'request',
+    label: 'Origem',
+    sortKey: 'request_type',
+    cell: (r) => (
+      <span className="text-muted-foreground">
+        {r.request_type ?? '—'}
+        {r.process_number ? (
+          <span className="ml-1 text-xs text-muted-foreground/70">#{r.process_number}</span>
+        ) : null}
+      </span>
+    ),
+    csv: (r) => `${r.request_type ?? ''}${r.process_number ? ` #${r.process_number}` : ''}`,
+  },
+  {
+    id: 'process_number',
+    label: 'Nº processo',
+    sortKey: 'process_number',
+    defaultVisible: false,
+    cell: (r) => <span className="text-muted-foreground">{r.process_number ?? '—'}</span>,
+    csv: (r) => r.process_number ?? '',
+  },
+  {
+    id: 'created_at',
+    label: 'Abertura',
+    sortKey: 'created_at',
+    cell: (r) => <span className="text-muted-foreground">{formatDate(r.created_at)}</span>,
+    csv: (r) => formatDate(r.created_at),
+  },
+  {
+    id: 'requested_at',
+    label: 'Solicitado em',
+    sortKey: 'requested_at',
+    defaultVisible: false,
+    cell: (r) => <span className="text-muted-foreground">{formatDate(r.requested_at)}</span>,
+    csv: (r) => formatDate(r.requested_at),
+  },
+  {
+    id: 'completed_at',
+    label: 'Conclusão',
+    sortKey: 'completed_at',
+    cell: (r) => (
+      <span className="text-muted-foreground">{formatDate(r.completed_at ?? r.finalized_at)}</span>
+    ),
+    csv: (r) => formatDate(r.completed_at ?? r.finalized_at),
+  },
+  {
+    id: 'finalized_at',
+    label: 'Finalizado em',
+    sortKey: 'finalized_at',
+    defaultVisible: false,
+    cell: (r) => <span className="text-muted-foreground">{formatDate(r.finalized_at)}</span>,
+    csv: (r) => formatDate(r.finalized_at),
+  },
+  {
+    id: 'days',
+    label: 'Dias',
+    align: 'right',
+    cell: (r) => (
+      <span className="tabular-nums text-muted-foreground">{daysOpen(r)}</span>
+    ),
+    csv: (r) => daysOpen(r),
+  },
+  {
+    id: 'services',
+    label: 'Serviços',
+    align: 'right',
+    cell: (r) => (
+      <span className="tabular-nums text-muted-foreground">
+        {r.services_done}/{r.services_total}
+      </span>
+    ),
+    csv: (r) => `${r.services_done}/${r.services_total}`,
+  },
+];
+
+const DEFAULT_VISIBLE = COLUMNS.filter((c) => c.defaultVisible !== false).map((c) => c.id);
+
+function loadVisibleColumns(): string[] {
+  if (typeof window === 'undefined') return DEFAULT_VISIBLE;
+  try {
+    const raw = window.localStorage.getItem(COLUMNS_STORAGE_KEY);
+    if (!raw) return DEFAULT_VISIBLE;
+    const parsed = JSON.parse(raw) as string[];
+    if (!Array.isArray(parsed)) return DEFAULT_VISIBLE;
+    const known = new Set(COLUMNS.map((c) => c.id));
+    const filtered = parsed.filter((id) => known.has(id));
+    // Ensure required columns are always present
+    COLUMNS.forEach((c) => {
+      if (c.required && !filtered.includes(c.id)) filtered.push(c.id);
+    });
+    return filtered.length > 0 ? filtered : DEFAULT_VISIBLE;
+  } catch {
+    return DEFAULT_VISIBLE;
+  }
+}
+
 export function MaintenanceReports() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +259,20 @@ export function MaintenanceReports() {
   const [period, setPeriod] = useState<string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [visibleIds, setVisibleIds] = useState<string[]>(() => loadVisibleColumns());
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(visibleIds));
+    } catch {
+      // ignore
+    }
+  }, [visibleIds]);
+
+  const visibleColumns = useMemo(
+    () => COLUMNS.filter((c) => visibleIds.includes(c.id)),
+    [visibleIds],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -191,6 +369,16 @@ export function MaintenanceReports() {
     }
   };
 
+  const toggleColumn = (id: string) => {
+    setVisibleIds((prev) => {
+      const col = COLUMNS.find((c) => c.id === id);
+      if (col?.required) return prev;
+      return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+    });
+  };
+
+  const resetColumns = () => setVisibleIds(DEFAULT_VISIBLE);
+
   const clearFilters = () => {
     setSearch('');
     setStatus('all');
@@ -199,48 +387,14 @@ export function MaintenanceReports() {
   };
 
   const exportCsv = () => {
-    const headers = [
-      'Título',
-      'Status',
-      'Prioridade',
-      'Tipo',
-      'Local',
-      'Responsável',
-      'Origem',
-      'Nº processo',
-      'Abertura',
-      'Solicitado em',
-      'Concluído em',
-      'Finalizado em',
-      'Dias em aberto',
-      'Serviços (feitos/total)',
-    ];
+    const cols = visibleColumns;
     const escape = (v: unknown) => {
       const s = v == null ? '' : String(v);
       return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const lines = [
-      headers.join(';'),
-      ...filtered.map((r) =>
-        [
-          r.title,
-          r.status,
-          r.priority,
-          r.type ?? '',
-          r.location ?? '',
-          r.assignee ?? '',
-          r.request_type ?? '',
-          r.process_number ?? '',
-          formatDate(r.created_at),
-          formatDate(r.requested_at),
-          formatDate(r.completed_at),
-          formatDate(r.finalized_at),
-          daysOpen(r),
-          `${r.services_done}/${r.services_total}`,
-        ]
-          .map(escape)
-          .join(';'),
-      ),
+      cols.map((c) => c.label).join(';'),
+      ...filtered.map((r) => cols.map((c) => escape(c.csv(r))).join(';')),
     ];
     const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -270,6 +424,8 @@ export function MaintenanceReports() {
     (period !== 'all' ? 1 : 0) +
     (search ? 1 : 0);
 
+  const colSpan = Math.max(1, visibleColumns.length);
+
   return (
     <div className="flex h-full flex-col">
       {/* Sticky filter bar */}
@@ -291,6 +447,56 @@ export function MaintenanceReports() {
                   Limpar filtros
                 </Button>
               )}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns3 className="mr-1 h-4 w-4" />
+                    Colunas
+                    <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                      {visibleColumns.length}/{COLUMNS.length}
+                    </Badge>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-0">
+                  <div className="flex items-center justify-between border-b px-3 py-2">
+                    <span className="text-sm font-medium">Colunas visíveis</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={resetColumns}
+                    >
+                      Restaurar
+                    </Button>
+                  </div>
+                  <div className="max-h-80 overflow-auto py-1">
+                    {COLUMNS.map((c) => {
+                      const checked = visibleIds.includes(c.id);
+                      return (
+                        <label
+                          key={c.id}
+                          className={cn(
+                            'flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted/50',
+                            c.required && 'cursor-not-allowed opacity-60',
+                          )}
+                        >
+                          <Checkbox
+                            checked={checked}
+                            disabled={c.required}
+                            onCheckedChange={() => toggleColumn(c.id)}
+                          />
+                          <span>{c.label}</span>
+                          {c.required && (
+                            <span className="ml-auto text-[10px] uppercase text-muted-foreground">
+                              fixa
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
                 Exportar CSV
               </Button>
@@ -350,30 +556,27 @@ export function MaintenanceReports() {
         <table className="w-full min-w-[1100px] border-separate border-spacing-0 text-sm">
           <thead className="sticky top-0 z-[1] bg-muted/60 backdrop-blur">
             <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
-              <th className="border-b px-3 py-2"><SortHeader label="Título" k="title" /></th>
-              <th className="border-b px-3 py-2"><SortHeader label="Status" k="status" /></th>
-              <th className="border-b px-3 py-2"><SortHeader label="Prioridade" k="priority" /></th>
-              <th className="border-b px-3 py-2"><SortHeader label="Tipo" k="type" /></th>
-              <th className="border-b px-3 py-2"><SortHeader label="Local" k="location" /></th>
-              <th className="border-b px-3 py-2"><SortHeader label="Responsável" k="assignee" /></th>
-              <th className="border-b px-3 py-2"><SortHeader label="Origem" k="request_type" /></th>
-              <th className="border-b px-3 py-2"><SortHeader label="Abertura" k="created_at" /></th>
-              <th className="border-b px-3 py-2"><SortHeader label="Conclusão" k="completed_at" /></th>
-              <th className="border-b px-3 py-2 text-right">Dias</th>
-              <th className="border-b px-3 py-2 text-right">Serviços</th>
+              {visibleColumns.map((c) => (
+                <th
+                  key={c.id}
+                  className={cn('border-b px-3 py-2', c.align === 'right' && 'text-right')}
+                >
+                  {c.sortKey ? <SortHeader label={c.label} k={c.sortKey} /> : c.label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={colSpan} className="px-4 py-10 text-center text-muted-foreground">
                   Carregando tarefas...
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={colSpan} className="px-4 py-10 text-center text-muted-foreground">
                   Nenhuma tarefa encontrada com os filtros atuais.
                 </td>
               </tr>
@@ -387,36 +590,14 @@ export function MaintenanceReports() {
                     idx % 2 === 1 && 'bg-muted/20',
                   )}
                 >
-                  <td className="border-b px-3 py-2 font-medium text-foreground">{r.title}</td>
-                  <td className="border-b px-3 py-2">
-                    <Badge variant="outline" className={cn('border font-normal', statusBadge(r.status))}>
-                      {r.status}
-                    </Badge>
-                  </td>
-                  <td className="border-b px-3 py-2">
-                    <Badge variant="outline" className={cn('border font-normal', priorityBadge(r.priority))}>
-                      {r.priority}
-                    </Badge>
-                  </td>
-                  <td className="border-b px-3 py-2 text-muted-foreground">{r.type ?? '—'}</td>
-                  <td className="border-b px-3 py-2 text-muted-foreground">{r.location ?? '—'}</td>
-                  <td className="border-b px-3 py-2 text-muted-foreground">{r.assignee ?? '—'}</td>
-                  <td className="border-b px-3 py-2 text-muted-foreground">
-                    {r.request_type ?? '—'}
-                    {r.process_number ? (
-                      <span className="ml-1 text-xs text-muted-foreground/70">#{r.process_number}</span>
-                    ) : null}
-                  </td>
-                  <td className="border-b px-3 py-2 text-muted-foreground">{formatDate(r.created_at)}</td>
-                  <td className="border-b px-3 py-2 text-muted-foreground">
-                    {formatDate(r.completed_at ?? r.finalized_at)}
-                  </td>
-                  <td className="border-b px-3 py-2 text-right tabular-nums text-muted-foreground">
-                    {daysOpen(r)}
-                  </td>
-                  <td className="border-b px-3 py-2 text-right tabular-nums text-muted-foreground">
-                    {r.services_done}/{r.services_total}
-                  </td>
+                  {visibleColumns.map((c) => (
+                    <td
+                      key={c.id}
+                      className={cn('border-b px-3 py-2', c.align === 'right' && 'text-right')}
+                    >
+                      {c.cell(r)}
+                    </td>
+                  ))}
                 </tr>
               ))}
           </tbody>
