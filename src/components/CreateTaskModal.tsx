@@ -342,19 +342,7 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Localização padrão</Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-                  placeholder="Ex.: Sala 301, Recepção..."
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Aplicada aos serviços que não personalizarem cidade/local.
-                </p>
-              </div>
+              {/* Localização padrão removida: agora derivada do Núcleo Requerente */}
 
               <div className="space-y-2">
                 <Label htmlFor="assignee">Solicitante</Label>
