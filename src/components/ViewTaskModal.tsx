@@ -184,9 +184,14 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
 
                 <div className="space-y-3">
                   {services.map((s, index) => {
-                    const svcManager = s.custom_assignment && s.manager_id
-                      ? managers.find(m => m.id === s.manager_id)?.nome
-                      : null;
+                    const svcManagerIds = s.custom_assignment
+                      ? (s.manager_ids && s.manager_ids.length > 0
+                          ? s.manager_ids
+                          : (s.manager_id ? [s.manager_id] : []))
+                      : [];
+                    const svcManagerNames = svcManagerIds
+                      .map((id) => managers.find((m) => m.id === id)?.nome)
+                      .filter(Boolean) as string[];
                     const svcNucleo = s.custom_assignment && s.nucleo_id
                       ? nuclei.find(n => n.id === s.nucleo_id)?.name
                       : null;
@@ -219,12 +224,12 @@ export function ViewTaskModal({ ticket, open, onOpenChange }: ViewTaskModalProps
                                       {s.location}
                                     </Badge>
                                   )}
-                                  {svcManager && (
-                                    <Badge variant="outline" className="text-[10px]">
+                                  {svcManagerNames.map((nome) => (
+                                    <Badge key={nome} variant="outline" className="text-[10px]">
                                       <UserCheck className="h-2.5 w-2.5 mr-1" />
-                                      {svcManager}
+                                      {nome}
                                     </Badge>
-                                  )}
+                                  ))}
                                   {s.scheduled_date && (
                                     <Badge variant="outline" className="text-[10px]">
                                       <CalendarIcon className="h-2.5 w-2.5 mr-1" />
