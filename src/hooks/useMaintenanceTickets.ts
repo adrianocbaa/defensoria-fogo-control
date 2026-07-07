@@ -69,6 +69,7 @@ export function useMaintenanceTickets() {
               nucleo_id: r.nucleo_id,
               location: r.location,
               manager_id: r.manager_id,
+              manager_ids: r.manager_ids ?? (r.manager_id ? [r.manager_id] : []),
               scheduled_date: r.scheduled_date,
               materials: (r.materials as any) ?? [],
               envolve_viagem: r.envolve_viagem ?? false,
