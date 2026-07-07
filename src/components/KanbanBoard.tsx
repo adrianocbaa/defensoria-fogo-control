@@ -231,7 +231,7 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   <MoreVertical className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32">
+              <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem onClick={handleView} className="text-xs">
                   <Eye className="mr-2 h-3 w-3" />
                   Ver
@@ -240,6 +240,31 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   <Edit className="mr-2 h-3 w-3" />
                   Editar
                 </DropdownMenuItem>
+                {allowedTargets.filter((s) => s !== currentStatus).length > 0 && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="text-xs">
+                      <ArrowRightLeft className="mr-2 h-3 w-3" />
+                      Mover para…
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {allowedTargets
+                        .filter((s) => s !== currentStatus)
+                        .map((s) => (
+                          <DropdownMenuItem
+                            key={s}
+                            className="text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMoveTicket(ticket.id, s);
+                            }}
+                          >
+                            {s}
+                          </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+                {onDeleteTicket && <DropdownMenuSeparator />}
                 {/* Finalização acontece dentro do modal de visualização (com anexo do e-mail, quando aplicável). */}
                 {onDeleteTicket && (
                   <DropdownMenuItem
