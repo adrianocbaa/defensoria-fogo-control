@@ -71,7 +71,7 @@ interface DroppableColumnProps {
   impedimentByTicket: Record<string, TicketImpediment | undefined>;
 }
 
-function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao }: DroppableColumnProps) {
+function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMarkAsExecuted, onDeleteTicket, isManutencao, impedimentByTicket }: DroppableColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: id,
   });
@@ -103,6 +103,7 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMar
               onMarkAsExecuted={onMarkAsExecuted}
               onDeleteTicket={onDeleteTicket}
               isManutencao={isManutencao}
+              activeImpediment={impedimentByTicket[ticket.id]}
             />
           ))}
         </div>
