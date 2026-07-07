@@ -188,6 +188,43 @@ export function useMaintenanceTickets() {
     }
   };
 
+  const finalizeTicket = async (
+    ticketId: string,
+    payload: {
+      confirmation_file_url?: string | null;
+      confirmation_file_name?: string | null;
+      finalization_note?: string | null;
+    },
+  ) => {
+    try {
+      const { data: userRes } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from('maintenance_tickets')
+        .update({
+          finalized_at: new Date().toISOString(),
+          finalized_by: userRes.user?.id ?? null,
+          confirmation_file_url: payload.confirmation_file_url ?? null,
+          confirmation_file_name: payload.confirmation_file_name ?? null,
+          finalization_note: payload.finalization_note ?? null,
+        } as any)
+        .eq('id', ticketId);
+      if (error) throw error;
+      await fetchTickets();
+      toast({
+        title: 'Tarefa finalizada',
+        description: 'A tarefa saiu do kanban e foi arquivada nas estatísticas.',
+      });
+    } catch (error) {
+      console.error('Erro ao finalizar ticket:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível finalizar a tarefa.',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchTickets();
   }, []);
@@ -198,6 +235,7 @@ export function useMaintenanceTickets() {
     createTicket,
     updateTicket,
     deleteTicket,
+    finalizeTicket,
     refetch: fetchTickets
   };
 }
