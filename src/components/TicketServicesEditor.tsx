@@ -466,9 +466,11 @@ export function TicketServicesEditor({
                               type="date"
                               value={s.travel_data_ida ?? ''}
                               disabled={disabled || !!s.travel_sem_previsao}
-                              onChange={(e) =>
-                                update(i, { travel_data_ida: e.target.value || null })
-                              }
+                              onChange={(e) => {
+                                const v = e.target.value || null;
+                                update(i, { travel_data_ida: v });
+                                runTravelLimitCheck(i, { ...s, travel_data_ida: v });
+                              }}
                             />
                           </div>
                           <div className="space-y-1">
@@ -479,9 +481,11 @@ export function TicketServicesEditor({
                               type="date"
                               value={s.travel_data_volta ?? ''}
                               disabled={disabled || !!s.travel_sem_previsao}
-                              onChange={(e) =>
-                                update(i, { travel_data_volta: e.target.value || null })
-                              }
+                              onChange={(e) => {
+                                const v = e.target.value || null;
+                                update(i, { travel_data_volta: v });
+                                runTravelLimitCheck(i, { ...s, travel_data_volta: v });
+                              }}
                             />
                           </div>
                           <p className="text-[11px] text-muted-foreground md:col-span-2">
