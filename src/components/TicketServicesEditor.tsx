@@ -15,6 +15,7 @@ import {
 import { NucleoCombobox } from '@/components/ui/nucleo-combobox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { ManagersMultiSelect } from '@/components/ManagersMultiSelect';
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { useAvailableTravels } from '@/hooks/useAvailableTravels';
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
