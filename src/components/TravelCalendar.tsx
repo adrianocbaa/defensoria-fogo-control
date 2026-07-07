@@ -18,6 +18,7 @@ import { ViewTaskModal } from './ViewTaskModal';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from '@/hooks/use-toast';
 import { useMaintenanceTickets, MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
+import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 
 export function TravelCalendar() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
