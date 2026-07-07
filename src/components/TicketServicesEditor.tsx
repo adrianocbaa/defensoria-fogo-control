@@ -24,6 +24,8 @@ interface Props {
   /** Se true, mostra checkboxes de conclusão em vez de campos editáveis */
   executionMode?: boolean;
   disabled?: boolean;
+  /** Cidade padrão do procedimento (do núcleo requerente), usada como fallback para viagens */
+  defaultNucleoCidade?: string | null;
 }
 
 const emptyService = (order: number): TicketService => ({
@@ -50,6 +52,7 @@ export function TicketServicesEditor({
   onChange,
   executionMode = false,
   disabled = false,
+  defaultNucleoCidade = null,
 }: Props) {
   const { managers } = useMaintenanceManagers();
   const { nuclei } = useNucleiList();
