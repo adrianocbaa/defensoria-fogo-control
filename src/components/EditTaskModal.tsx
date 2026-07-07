@@ -325,19 +325,16 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
               </div>
 
               <div className="space-y-2">
-                <Label>Gerente padrão</Label>
-                <Select value={managerId} onValueChange={setManagerId} disabled={isGM}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um gerente..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {managerOptions.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Servidores da manutenção (padrão)</Label>
+                <ManagersMultiSelect
+                  value={managerIds}
+                  onChange={setManagerIds}
+                  disabled={isGM}
+                  placeholder="Selecione um ou mais servidores..."
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Padrão do procedimento. Cada serviço pode personalizar sua própria lista.
+                </p>
               </div>
 
               <div className="space-y-2">
