@@ -114,18 +114,22 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
 
     setLoading(true);
     try {
-      setLoading(true);
+      const servidorNames = managerIds
+        .map((id) => managers.find((m) => m.id === id)?.nome)
+        .filter(Boolean) as string[];
+      const servidorJoined = servidorNames.map(firstName).filter(Boolean).join(' / ');
 
       // Criar apenas a viagem
       const { error: travelError } = await supabase
         .from('travels')
         .insert([{
-          servidor: formData.servidor,
+          servidor: servidorJoined,
           destino: formData.destino,
           data_ida: semPrevisao ? null : formData.data_ida,
           data_volta: semPrevisao ? null : formData.data_volta,
           motivo: formData.motivo,
-          user_id: user.id
+          user_id: user.id,
+          manager_ids: managerIds,
         }]);
 
       if (travelError) throw travelError;
@@ -134,6 +138,7 @@ export function CreateTravelModal({ isOpen, onClose, onTravelCreated }: CreateTr
       onClose();
       
       setSemPrevisao(false);
+      setManagerIds([]);
       setFormData({
         servidor: '',
         destino: '',
