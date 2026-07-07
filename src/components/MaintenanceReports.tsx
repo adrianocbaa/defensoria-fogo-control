@@ -575,8 +575,8 @@ export function MaintenanceReports() {
                   </div>
                 </PopoverContent>
               </Popover>
-              <Button size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
-                Exportar CSV
+              <Button size="sm" onClick={exportXlsx} disabled={filtered.length === 0}>
+                Exportar Excel
               </Button>
             </div>
           </div>
