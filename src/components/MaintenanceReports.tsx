@@ -281,19 +281,45 @@ export function MaintenanceReports() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('maintenance_tickets')
-        .select('id,title,status,priority,type,location,assignee,request_type,process_number,created_at,requested_at,completed_at,finalized_at,maintenance_ticket_services(id,completed)')
-        .order('created_at', { ascending: false })
-        .limit(10000);
+      const [ticketsRes, managersRes] = await Promise.all([
+        supabase
+          .from('maintenance_tickets')
+          .select('id,title,status,priority,type,location,assignee,request_type,process_number,manager_id,manager_ids,created_at,requested_at,completed_at,finalized_at,maintenance_ticket_services(id,completed,manager_id,manager_ids)')
+          .order('created_at', { ascending: false })
+          .limit(10000),
+        supabase.from('maintenance_managers').select('id,nome').limit(10000),
+      ]);
       if (cancelled) return;
-      if (error) {
-        console.error('Erro ao carregar relatório:', error);
+      if (ticketsRes.error) {
+        console.error('Erro ao carregar relatório:', ticketsRes.error);
         setRows([]);
       } else {
+        const managerNameById = new Map<string, string>(
+          (managersRes.data ?? []).map((m: any) => [m.id as string, (m.nome as string) ?? '']),
+        );
         setRows(
-          (data ?? []).map((t: any) => {
-            const services = (t.maintenance_ticket_services ?? []) as { completed: boolean }[];
+          (ticketsRes.data ?? []).map((t: any) => {
+            const services = (t.maintenance_ticket_services ?? []) as {
+              completed: boolean;
+              manager_id?: string | null;
+              manager_ids?: string[] | null;
+            }[];
+            const ids = new Set<string>();
+            const push = (v?: string | null) => {
+              if (v) ids.add(v);
+            };
+            push(t.manager_id);
+            (t.manager_ids ?? []).forEach(push);
+            services.forEach((s) => {
+              push(s.manager_id);
+              (s.manager_ids ?? []).forEach(push);
+            });
+            const servidores = Array.from(ids)
+              .map((id) => managerNameById.get(id))
+              .filter((n): n is string => !!n && n.trim() !== '')
+              .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+              .join(', ');
+
             return {
               id: t.id,
               title: t.title,
@@ -310,6 +336,7 @@ export function MaintenanceReports() {
               finalized_at: t.finalized_at,
               services_total: services.length,
               services_done: services.filter((s) => s.completed).length,
+              servidores,
             };
           }),
         );
