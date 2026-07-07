@@ -85,6 +85,7 @@ export function TravelCalendar() {
       });
     } finally {
       setLoading(false);
+      refetchUsage();
     }
   };
 
