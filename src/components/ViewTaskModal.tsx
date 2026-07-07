@@ -35,7 +35,6 @@ import {
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useMaintenanceTickets } from '@/hooks/useMaintenanceTickets';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { UITicket } from '@/types/maintenanceTicket';
@@ -81,7 +80,6 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
   const { managers } = useMaintenanceManagers(false);
   const { nuclei } = useNucleiList();
   const { isGM, canEdit } = useUserRole();
-  const { finalizeTicket } = useMaintenanceTickets();
 
   const [services, setServices] = useState<TicketService[]>([]);
   const [materials, setMaterials] = useState<{ name: string; completed: boolean }[]>([]);
