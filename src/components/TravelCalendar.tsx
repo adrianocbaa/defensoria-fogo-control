@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarDays, Plus, MapPin, User, Clock, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, Plus, MapPin, User, Clock, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
 import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -297,105 +297,19 @@ export function TravelCalendar() {
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header with improved layout */}
+      {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 px-6 py-4">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Calendário de Viagens</h1>
             <p className="text-muted-foreground">Gerencie viagens de manutenção de servidores</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="h-9"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-            </Button>
-          </div>
+          <Badge variant="secondary" className="h-7 px-3">
+            {getTravelsForMonth().length} viagens em {format(currentMonth, 'MMMM', { locale: ptBR })}
+          </Badge>
         </div>
-
-        {/* Improved Filters */}
-        {showFilters && (
-          <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Filtrar por Servidor</Label>
-                <Select value={servidorFilter} onValueChange={setServidorFilter}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Selecionar servidor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os servidores</SelectItem>
-                    {uniqueServidores.map(servidor => (
-                      <SelectItem key={servidor} value={servidor}>
-                        {servidor}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Destino</Label>
-                <Select value={destinoFilter} onValueChange={setDestinoFilter}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Todos os destinos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os destinos</SelectItem>
-                    {uniqueDestinos.map(destino => (
-                      <SelectItem key={destino} value={destino}>
-                        {destino}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Total do Mês</Label>
-                <Badge variant="secondary" className="w-fit h-6">
-                  {getTravelsForMonth().length} viagens
-                </Badge>
-              </div>
-            </div>
-
-            {/* Contabilidade de dias de deslocamento por servidor no mês */}
-            <div className="mt-4">
-              <Label className="text-sm font-medium">
-                Dias de viagem no mês (limite {dailyLimit}/servidor)
-              </Label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {managers.length === 0 && (
-                  <span className="text-xs text-muted-foreground">Nenhum servidor cadastrado.</span>
-                )}
-                {managers.map((m) => {
-                  const used = monthUsage[m.id] ?? 0;
-                  const exceeded = used > dailyLimit;
-                  const near = !exceeded && used >= dailyLimit - 2;
-                  return (
-                    <Badge
-                      key={m.id}
-                      variant="outline"
-                      className={
-                        exceeded
-                          ? 'border-destructive text-destructive bg-destructive/10'
-                          : near
-                          ? 'border-amber-500 text-amber-700 bg-amber-50'
-                          : 'border-border'
-                      }
-                      title={`${m.nome}: ${used} de ${dailyLimit} dias`}
-                    >
-                      {m.nome.split(/\s+/)[0]}: {used}/{dailyLimit}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
 
       {/* Modern Calendar Layout */}
       <div className="flex-1 p-6 bg-muted/5">
@@ -585,8 +499,102 @@ export function TravelCalendar() {
             </div>
           </div>
 
+          {/* Diárias do mês por servidor */}
+          <div className="mt-6 bg-card rounded-lg border shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-md bg-primary/10 text-primary">
+                  <Plane className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold leading-tight">
+                    Diárias de {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Limite de {dailyLimit} dias de deslocamento por servidor no mês
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {managers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum servidor cadastrado.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {managers.map((m) => {
+                  const used = monthUsage[m.id] ?? 0;
+                  const pct = Math.min(100, (used / dailyLimit) * 100);
+                  const exceeded = used > dailyLimit;
+                  const near = !exceeded && used >= dailyLimit - 2;
+                  const barColor = exceeded
+                    ? 'bg-destructive'
+                    : near
+                    ? 'bg-amber-500'
+                    : 'bg-primary';
+                  const ringColor = exceeded
+                    ? 'ring-destructive/30 border-destructive/40'
+                    : near
+                    ? 'ring-amber-400/30 border-amber-400/40'
+                    : 'ring-transparent border-border';
+                  const remaining = Math.max(0, dailyLimit - used);
+                  const initials = m.nome
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((p) => p[0])
+                    .join('')
+                    .toUpperCase();
+                  return (
+                    <div
+                      key={m.id}
+                      className={`rounded-lg border ring-1 ${ringColor} bg-muted/20 p-3 transition-colors`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
+                          {initials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate" title={m.nome}>
+                            {m.nome}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {exceeded
+                              ? `Excedeu em ${used - dailyLimit} ${used - dailyLimit === 1 ? 'dia' : 'dias'}`
+                              : `${remaining} ${remaining === 1 ? 'dia restante' : 'dias restantes'}`}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div
+                            className={`text-lg font-bold leading-none ${
+                              exceeded
+                                ? 'text-destructive'
+                                : near
+                                ? 'text-amber-600'
+                                : 'text-foreground'
+                            }`}
+                          >
+                            {used}
+                            <span className="text-xs font-normal text-muted-foreground">
+                              /{dailyLimit}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full ${barColor} transition-all`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Viagens sem previsão */}
           {filteredTravels.some(t => !t.data_ida || !t.data_volta) && (
+
             <div className="mt-6 bg-card rounded-lg border shadow-sm p-4">
               <h3 className="text-lg font-semibold mb-1">Viagens sem previsão</h3>
               <p className="text-sm text-muted-foreground mb-4">
