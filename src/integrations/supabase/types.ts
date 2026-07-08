@@ -3397,6 +3397,7 @@ export type Database = {
           data_ida: string | null
           data_volta: string | null
           destino: string
+          diarias: number | null
           id: string
           manager_ids: string[]
           motivo: string
@@ -3410,6 +3411,7 @@ export type Database = {
           data_ida?: string | null
           data_volta?: string | null
           destino: string
+          diarias?: number | null
           id?: string
           manager_ids?: string[]
           motivo: string
@@ -3423,6 +3425,7 @@ export type Database = {
           data_ida?: string | null
           data_volta?: string | null
           destino?: string
+          diarias?: number | null
           id?: string
           manager_ids?: string[]
           motivo?: string

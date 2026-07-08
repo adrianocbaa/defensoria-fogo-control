@@ -11,6 +11,9 @@ export interface Travel {
   /** IDs dos servidores da manutenção envolvidos (nova estrutura multi). */
   manager_ids?: string[];
   ticket_id?: string | null;
+  /** Quantidade de diárias solicitadas (0.5, 1.0, 1.5, ...). Usado para
+   *  calcular a data de volta automaticamente e para o controle mensal. */
+  diarias?: number | null;
 }
 
 export interface CreateTravelData {
@@ -20,4 +23,5 @@ export interface CreateTravelData {
   data_volta: string | null;
   motivo: string;
   manager_ids?: string[];
+  diarias?: number | null;
 }
