@@ -114,7 +114,11 @@ export function ViewTravelModal({ isOpen, onClose, travel, onEdit }: ViewTravelM
                   <Clock className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Duração</p>
-                    {duracaoViagem !== null ? (
+                    {travel.diarias ? (
+                      <Badge variant="secondary">
+                        {Number(travel.diarias).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {Number(travel.diarias) === 1 ? 'diária' : 'diárias'}
+                      </Badge>
+                    ) : duracaoViagem !== null ? (
                       <Badge variant="secondary">
                         {duracaoViagem} {duracaoViagem === 1 ? 'dia' : 'dias'}
                       </Badge>
