@@ -278,7 +278,7 @@ export function EditTravelModal({ isOpen, onClose, travel, onTravelUpdated, onTr
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>Tem certeza que deseja excluir esta viagem? Esta ação não pode ser desfeita.</AlertDialogDescription>
+            <AlertDialogDescription>Tem certeza que deseja excluir esta viagem? Tarefas de manutenção vinculadas a ela serão automaticamente desvinculadas (não serão excluídas). Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
