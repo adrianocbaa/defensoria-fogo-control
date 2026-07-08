@@ -1,0 +1,2 @@
+ALTER TABLE public.travels ADD COLUMN IF NOT EXISTS diarias numeric(4,1);
+COMMENT ON COLUMN public.travels.diarias IS 'Quantidade de diárias solicitadas (0.5, 1.0, 1.5, ...). 0.5 = retorna no mesmo dia até 18h; 1.0 = retorna no dia seguinte até 12h; 1.5 = retorna no dia seguinte até 18h; e assim por diante.';

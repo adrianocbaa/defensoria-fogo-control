@@ -25,25 +25,25 @@ export function TravelLimitConfirmDialog({ open, onOpenChange, violations, onCon
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Limite de dias de viagem ultrapassado</AlertDialogTitle>
+          <AlertDialogTitle>Limite de diárias mensais ultrapassado</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3">
               <p>
                 O agendamento faria os seguintes servidores ultrapassarem o limite mensal de{' '}
-                <strong>10 dias</strong> de deslocamento:
+                <strong>10 diárias</strong>:
               </p>
               <ul className="list-disc pl-5 space-y-1 text-sm">
                 {violations.map((v) => (
                   <li key={`${v.managerId}-${v.monthKey}`}>
-                    <strong>{v.managerName}</strong> — {v.monthLabel}: já possui {v.usedBefore} dia(s),
+                    <strong>{v.managerName}</strong> — {v.monthLabel}: já possui {v.usedBefore} diária(s),
                     esta viagem adiciona {v.added}, totalizando{' '}
-                    <strong className="text-destructive">{v.totalAfter}</strong> dias (limite {v.limit}).
+                    <strong className="text-destructive">{v.totalAfter}</strong> diárias (limite {v.limit}).
                   </li>
                 ))}
               </ul>
               <p className="pt-2">
                 Existe anuência da administração superior para seguir com a demanda? Caso não haja,
-                troque o servidor ou deixe as datas como <em>sem previsão</em>.
+                troque o servidor ou deixe a viagem como <em>sem previsão</em>.
               </p>
             </div>
           </AlertDialogDescription>

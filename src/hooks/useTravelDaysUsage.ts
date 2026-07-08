@@ -24,11 +24,10 @@ export function useTravelDaysUsage(monthKey: string) {
     const last = `${monthKey}-${String(lastDay).padStart(2, '0')}`;
     const { data, error } = await supabase
       .from('travels')
-      .select('id, data_ida, data_volta, manager_ids')
+      .select('id, data_ida, data_volta, manager_ids, diarias')
       .not('data_ida', 'is', null)
-      .not('data_volta', 'is', null)
       .lte('data_ida', last)
-      .gte('data_volta', first)
+      .gte('data_ida', first)
       .limit(10000);
 
     if (error) {
