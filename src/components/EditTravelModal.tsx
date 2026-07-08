@@ -139,9 +139,17 @@ export function EditTravelModal({ isOpen, onClose, travel, onTravelUpdated, onTr
   const handleDelete = async () => {
     setDeleteLoading(true);
     try {
+      // Desvincular tarefas/serviços que apontam para esta viagem antes de excluir
+      const [{ error: errServices }, { error: errTickets }] = await Promise.all([
+        supabase.from('maintenance_ticket_services').update({ travel_id: null }).eq('travel_id', travel.id),
+        supabase.from('maintenance_tickets').update({ travel_id: null }).eq('travel_id', travel.id),
+      ]);
+      if (errServices) throw errServices;
+      if (errTickets) throw errTickets;
+
       const { error } = await supabase.from('travels').delete().eq('id', travel.id);
       if (error) throw error;
-      toast({ title: 'Sucesso', description: 'Viagem excluída com sucesso' });
+      toast({ title: 'Sucesso', description: 'Viagem excluída e tarefas vinculadas foram desvinculadas' });
       onTravelDeleted();
     } catch (error) {
       console.error('Erro ao excluir viagem:', error);
@@ -270,7 +278,7 @@ export function EditTravelModal({ isOpen, onClose, travel, onTravelUpdated, onTr
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>Tem certeza que deseja excluir esta viagem? Esta ação não pode ser desfeita.</AlertDialogDescription>
+            <AlertDialogDescription>Tem certeza que deseja excluir esta viagem? Tarefas de manutenção vinculadas a ela serão automaticamente desvinculadas (não serão excluídas). Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
