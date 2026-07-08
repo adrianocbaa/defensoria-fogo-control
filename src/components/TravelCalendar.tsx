@@ -511,7 +511,7 @@ export function TravelCalendar() {
                     Diárias de {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Limite de {dailyLimit} dias de deslocamento por servidor no mês
+                    Limite de {dailyLimit} diárias por servidor no mês
                   </p>
                 </div>
               </div>
@@ -558,8 +558,8 @@ export function TravelCalendar() {
                           </p>
                           <p className="text-[11px] text-muted-foreground">
                             {exceeded
-                              ? `Excedeu em ${used - dailyLimit} ${used - dailyLimit === 1 ? 'dia' : 'dias'}`
-                              : `${remaining} ${remaining === 1 ? 'dia restante' : 'dias restantes'}`}
+                              ? `Excedeu em ${(used - dailyLimit).toLocaleString('pt-BR')} diária(s)`
+                              : `${remaining.toLocaleString('pt-BR')} diária(s) restante(s)`}
                           </p>
                         </div>
                         <div className="text-right shrink-0">
@@ -572,7 +572,7 @@ export function TravelCalendar() {
                                 : 'text-foreground'
                             }`}
                           >
-                            {used}
+                            {used.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}
                             <span className="text-xs font-normal text-muted-foreground">
                               /{dailyLimit}
                             </span>
