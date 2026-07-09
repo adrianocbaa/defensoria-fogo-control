@@ -27,10 +27,16 @@ export function useAvailableTravels() {
     setLoading(true);
     const today = new Date();
     const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    // Considera "em aberto" viagens que:
+    // - ainda não começaram (data_ida >= hoje), OU
+    // - estão em andamento (data_volta >= hoje), OU
+    // - não têm previsão (data_ida IS NULL).
+    // Isso permite vincular a viagens que começaram no passado mas ainda
+    // não terminaram (ex.: 30/06 → 03/07 quando hoje é 02/07).
     const { data, error } = await supabase
       .from('travels')
       .select('id, servidor, destino, data_ida, data_volta, motivo, manager_ids')
-      .or(`data_ida.gte.${iso},data_ida.is.null`)
+      .or(`data_ida.gte.${iso},data_volta.gte.${iso},data_ida.is.null`)
       .order('data_ida', { ascending: true, nullsFirst: false })
       .limit(10000);
     if (!error) setTravels((data ?? []) as AvailableTravel[]);
