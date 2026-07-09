@@ -27,17 +27,17 @@ export function useAvailableTravels() {
     setLoading(true);
     const today = new Date();
     const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    // Considera "em aberto" viagens que:
-    // - ainda não começaram (data_ida >= hoje), OU
-    // - estão em andamento (data_volta >= hoje), OU
-    // - não têm previsão (data_ida IS NULL).
-    // Isso permite vincular a viagens que começaram no passado mas ainda
-    // não terminaram (ex.: 30/06 → 03/07 quando hoje é 02/07).
+    // Janela para trás: também lista viagens recentes já concluídas (últimos
+    // 90 dias) para permitir vincular um serviço a uma viagem que já ocorreu
+    // — evita duplicar no calendário quando o serviço é cadastrado depois.
+    const past = new Date(today);
+    past.setDate(past.getDate() - 90);
+    const pastIso = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}-${String(past.getDate()).padStart(2, '0')}`;
     const { data, error } = await supabase
       .from('travels')
       .select('id, servidor, destino, data_ida, data_volta, motivo, manager_ids')
-      .or(`data_ida.gte.${iso},data_volta.gte.${iso},data_ida.is.null`)
-      .order('data_ida', { ascending: true, nullsFirst: false })
+      .or(`data_ida.gte.${pastIso},data_volta.gte.${iso},data_ida.is.null`)
+      .order('data_ida', { ascending: false, nullsFirst: false })
       .limit(10000);
     if (!error) setTravels((data ?? []) as AvailableTravel[]);
     setLoading(false);
