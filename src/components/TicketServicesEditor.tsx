@@ -453,7 +453,7 @@ export function TicketServicesEditor({
                                 update(i, {
                                   travel_sem_previsao: !!v,
                                   ...(v
-                                    ? { travel_data_ida: null, travel_data_volta: null }
+                                    ? { travel_data_ida: null, travel_data_volta: null, travel_diarias: null }
                                     : {}),
                                 })
                               }
@@ -470,26 +470,54 @@ export function TicketServicesEditor({
                               disabled={disabled || !!s.travel_sem_previsao}
                               onChange={(e) => {
                                 const v = e.target.value || null;
-                                update(i, { travel_data_ida: v });
-                                runTravelLimitCheck(i, { ...s, travel_data_ida: v });
+                                const volta = v && s.travel_diarias
+                                  ? computeReturnDate(v, s.travel_diarias)
+                                  : null;
+                                update(i, { travel_data_ida: v, travel_data_volta: volta });
+                                runTravelLimitCheck(i, { ...s, travel_data_ida: v, travel_data_volta: volta });
                               }}
                             />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">
-                              Data de volta {!s.travel_sem_previsao && '*'}
+                              Diárias {!s.travel_sem_previsao && '*'}
                             </Label>
-                            <Input
-                              type="date"
-                              value={s.travel_data_volta ?? ''}
+                            <Select
+                              value={s.travel_diarias ? String(s.travel_diarias) : ''}
                               disabled={disabled || !!s.travel_sem_previsao}
-                              onChange={(e) => {
-                                const v = e.target.value || null;
-                                update(i, { travel_data_volta: v });
-                                runTravelLimitCheck(i, { ...s, travel_data_volta: v });
+                              onValueChange={(val) => {
+                                const d = Number(val);
+                                const volta = s.travel_data_ida
+                                  ? computeReturnDate(s.travel_data_ida, d)
+                                  : null;
+                                update(i, { travel_diarias: d, travel_data_volta: volta });
+                                runTravelLimitCheck(i, { ...s, travel_diarias: d, travel_data_volta: volta });
                               }}
-                            />
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DIARIAS_OPTIONS.map((d) => (
+                                  <SelectItem key={d} value={String(d)}>
+                                    {d.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{' '}
+                                    {d === 1 ? 'diária' : 'diárias'}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
+                          {!s.travel_sem_previsao && s.travel_data_ida && s.travel_diarias && s.travel_data_volta && (
+                            <div className="md:col-span-2 rounded-md border bg-muted/40 px-3 py-2 text-[11px] space-y-0.5">
+                              <div>
+                                Data de volta prevista:{' '}
+                                <strong>
+                                  {format(new Date(s.travel_data_volta + 'T12:00:00'), "EEEE, dd/MM/yyyy", { locale: ptBR })}
+                                </strong>
+                              </div>
+                              <div className="text-muted-foreground">{diariasHint(s.travel_diarias)}</div>
+                            </div>
+                          )}
                           <p className="text-[11px] text-muted-foreground md:col-span-2">
                             Servidor da viagem = gerente responsável (personalizado ou padrão do procedimento).
                             Uma entrada será criada em <strong>Viagens</strong> ao salvar.
