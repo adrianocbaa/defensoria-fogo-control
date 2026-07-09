@@ -93,8 +93,7 @@ export function TicketServicesEditor({
     if (!nextService.envolve_viagem) return;
     if (nextService.travel_is_linked) return;
     if (nextService.travel_sem_previsao) return;
-    if (!nextService.travel_data_ida || !nextService.travel_data_volta) return;
-    if (nextService.travel_data_ida >= nextService.travel_data_volta) return;
+    if (!nextService.travel_data_ida || !nextService.travel_diarias) return;
     const effectiveIds =
       nextService.custom_assignment
         ? (nextService.manager_ids ?? (nextService.manager_id ? [nextService.manager_id] : []))
@@ -105,7 +104,7 @@ export function TicketServicesEditor({
       managerIds: effectiveIds,
       managers: managers.map((m: any) => ({ id: m.id, nome: m.nome })),
       dataIda: nextService.travel_data_ida,
-      dataVolta: nextService.travel_data_volta,
+      diarias: nextService.travel_diarias,
       excludeTravelId: nextService.travel_id ?? excludeTravelIds[0],
     });
     if (violations.length === 0) return;
@@ -116,8 +115,8 @@ export function TicketServicesEditor({
       onConfirm: () => setLimitDialog((p) => ({ ...p, open: false })),
       onCancel: () => {
         setLimitDialog((p) => ({ ...p, open: false }));
-        // reverte datas — força escolha de outro servidor / sem previsão
-        update(idx, { travel_data_ida: null, travel_data_volta: null });
+        // reverte diárias — força escolha de outro servidor / sem previsão
+        update(idx, { travel_diarias: null, travel_data_volta: null });
       },
     });
   };
