@@ -20,6 +20,8 @@ export interface TicketService {
   travel_cidade?: string | null;
   travel_data_ida?: string | null;
   travel_data_volta?: string | null;
+  /** Quantidade de diárias (0.5, 1, 1.5, ...). A data de volta é calculada automaticamente. */
+  travel_diarias?: number | null;
   travel_sem_previsao?: boolean;
   travel_id?: string | null;
   /** true quando `travel_id` aponta para uma viagem existente (não deve ser excluída ao editar/apagar). */
