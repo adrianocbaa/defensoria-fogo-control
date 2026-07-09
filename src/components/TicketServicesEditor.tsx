@@ -24,8 +24,6 @@ import { ptBR } from 'date-fns/locale';
 import type { TicketService } from '@/hooks/useTicketServices';
 import { checkTravelLimit, LimitViolation, DIARIAS_OPTIONS, computeReturnDate, diariasHint } from '@/lib/travelDaysLimit';
 import { TravelLimitConfirmDialog } from '@/components/TravelLimitConfirmDialog';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface Props {
   services: TicketService[];
