@@ -175,6 +175,7 @@ export async function replaceServicesForTicket(
       travel_cidade: s.envolve_viagem ? s.travel_cidade ?? null : null,
       travel_data_ida: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_data_ida ?? null : null,
       travel_data_volta: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_data_volta ?? null : null,
+      travel_diarias: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_diarias ?? null : null,
       travel_sem_previsao: !!s.travel_sem_previsao,
       travel_id: travelId,
       travel_is_linked: isLinked,
