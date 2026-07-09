@@ -56,6 +56,7 @@ const emptyService = (order: number): TicketService => ({
   travel_cidade: null,
   travel_data_ida: null,
   travel_data_volta: null,
+  travel_diarias: null,
   travel_sem_previsao: false,
 });
 
