@@ -45,6 +45,18 @@ const getStatusLabel = (status: ObraStatus) => {
   }
 };
 
+const toDMS = (value: number, isLat: boolean) => {
+  const abs = Math.abs(value);
+  const deg = Math.floor(abs);
+  const minFloat = (abs - deg) * 60;
+  const min = Math.floor(minFloat);
+  const sec = ((minFloat - min) * 60).toFixed(2);
+  const hemi = isLat ? (value >= 0 ? 'N' : 'S') : (value >= 0 ? 'E' : 'W');
+  return `${deg}°${min}'${sec}"${hemi}`;
+};
+
+const formatCoordDMS = (lat: number, lng: number) => `${toDMS(lat, true)} ${toDMS(lng, false)}`;
+
 const formatDate = (dateString: string) => {
   // Parse date string as local date to avoid timezone issues
   if (dateString.includes('T')) {
