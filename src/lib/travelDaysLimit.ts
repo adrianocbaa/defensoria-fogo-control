@@ -178,6 +178,7 @@ export async function checkTravelLimit(params: {
 
   const sortedMonths = [...monthsInvolved].sort();
   const [fy, fm] = sortedMonths[0].split('-').map(Number);
+  const [ly, lm] = sortedMonths[sortedMonths.length - 1].split('-').map(Number);
   const rangeStartDate = new Date(fy, fm - 1, 1);
   rangeStartDate.setDate(rangeStartDate.getDate() - 30);
   const rangeStart = toYMD(rangeStartDate);
