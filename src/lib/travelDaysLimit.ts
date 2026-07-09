@@ -3,9 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 /** Limite máximo de **diárias** por servidor por mês. */
 export const TRAVEL_DAYS_LIMIT_PER_MONTH = 10;
 
-/** Opções permitidas de diárias no formulário (0.5 em 0.5, até 5). */
+/** Opções permitidas de diárias no formulário (0.5 em 0.5, até 10). */
 export const DIARIAS_OPTIONS: number[] = [
   0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5,
+  5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10,
 ];
 
 /** Parse manual de YYYY-MM-DD para evitar problemas de timezone (UTC). */
