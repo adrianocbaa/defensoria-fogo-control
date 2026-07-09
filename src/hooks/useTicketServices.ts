@@ -124,6 +124,7 @@ export async function replaceServicesForTicket(
             : (opts.fallbackManagerIds ?? []);
           const dataIda = s.travel_sem_previsao ? null : s.travel_data_ida || null;
           const dataVolta = s.travel_sem_previsao ? null : s.travel_data_volta || null;
+          const diariasQty = s.travel_sem_previsao ? null : (s.travel_diarias ?? null);
           const { data: travelRow, error: travelErr } = await supabase
             .from('travels')
             .insert({
@@ -131,6 +132,7 @@ export async function replaceServicesForTicket(
               destino: s.travel_cidade,
               data_ida: dataIda,
               data_volta: dataVolta,
+              diarias: diariasQty,
               motivo: opts.ticketTitle,
               ticket_id: ticketId,
               user_id: opts.userId ?? null,
