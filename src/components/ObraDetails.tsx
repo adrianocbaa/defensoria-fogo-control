@@ -236,6 +236,19 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <span className="text-sm font-medium text-muted-foreground">Gestor do Contrato:</span>
                 <p className="text-sm">{obra.responsavelProjeto || '-'}</p>
               </div>
+              {obra.coordenadas && obra.coordenadas[0] != null && obra.coordenadas[1] != null && (
+                <div className="md:col-span-2">
+                  <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> Localização:
+                  </span>
+                  <p className="text-sm">
+                    Coordenadas: {obra.coordenadas[0].toFixed(6)}, {obra.coordenadas[1].toFixed(6)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Graus: {formatCoordDMS(obra.coordenadas[0], obra.coordenadas[1])}
+                  </p>
+                </div>
+              )}
             </div>
           </AccordionContent>
         </AccordionItem>
