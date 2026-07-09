@@ -20,6 +20,8 @@ export interface TicketService {
   travel_cidade?: string | null;
   travel_data_ida?: string | null;
   travel_data_volta?: string | null;
+  /** Quantidade de diárias (0.5, 1, 1.5, ...). A data de volta é calculada automaticamente. */
+  travel_diarias?: number | null;
   travel_sem_previsao?: boolean;
   travel_id?: string | null;
   /** true quando `travel_id` aponta para uma viagem existente (não deve ser excluída ao editar/apagar). */
@@ -122,6 +124,7 @@ export async function replaceServicesForTicket(
             : (opts.fallbackManagerIds ?? []);
           const dataIda = s.travel_sem_previsao ? null : s.travel_data_ida || null;
           const dataVolta = s.travel_sem_previsao ? null : s.travel_data_volta || null;
+          const diariasQty = s.travel_sem_previsao ? null : (s.travel_diarias ?? null);
           const { data: travelRow, error: travelErr } = await supabase
             .from('travels')
             .insert({
@@ -129,6 +132,7 @@ export async function replaceServicesForTicket(
               destino: s.travel_cidade,
               data_ida: dataIda,
               data_volta: dataVolta,
+              diarias: diariasQty,
               motivo: opts.ticketTitle,
               ticket_id: ticketId,
               user_id: opts.userId ?? null,
@@ -171,6 +175,7 @@ export async function replaceServicesForTicket(
       travel_cidade: s.envolve_viagem ? s.travel_cidade ?? null : null,
       travel_data_ida: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_data_ida ?? null : null,
       travel_data_volta: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_data_volta ?? null : null,
+      travel_diarias: s.envolve_viagem && !s.travel_sem_previsao ? s.travel_diarias ?? null : null,
       travel_sem_previsao: !!s.travel_sem_previsao,
       travel_id: travelId,
       travel_is_linked: isLinked,
@@ -217,6 +222,7 @@ export async function fetchServicesForTicket(ticketId: string): Promise<TicketSe
     travel_cidade: r.travel_cidade,
     travel_data_ida: r.travel_data_ida,
     travel_data_volta: r.travel_data_volta,
+    travel_diarias: r.travel_diarias != null ? Number(r.travel_diarias) : null,
     travel_sem_previsao: r.travel_sem_previsao ?? false,
     travel_id: r.travel_id,
     travel_is_linked: r.travel_is_linked ?? false,

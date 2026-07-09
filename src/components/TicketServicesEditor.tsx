@@ -22,7 +22,7 @@ import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { TicketService } from '@/hooks/useTicketServices';
-import { checkTravelLimit, LimitViolation } from '@/lib/travelDaysLimit';
+import { checkTravelLimit, LimitViolation, DIARIAS_OPTIONS, computeReturnDate, diariasHint } from '@/lib/travelDaysLimit';
 import { TravelLimitConfirmDialog } from '@/components/TravelLimitConfirmDialog';
 
 interface Props {
@@ -56,6 +56,7 @@ const emptyService = (order: number): TicketService => ({
   travel_cidade: null,
   travel_data_ida: null,
   travel_data_volta: null,
+  travel_diarias: null,
   travel_sem_previsao: false,
 });
 
@@ -92,8 +93,7 @@ export function TicketServicesEditor({
     if (!nextService.envolve_viagem) return;
     if (nextService.travel_is_linked) return;
     if (nextService.travel_sem_previsao) return;
-    if (!nextService.travel_data_ida || !nextService.travel_data_volta) return;
-    if (nextService.travel_data_ida >= nextService.travel_data_volta) return;
+    if (!nextService.travel_data_ida || !nextService.travel_diarias) return;
     const effectiveIds =
       nextService.custom_assignment
         ? (nextService.manager_ids ?? (nextService.manager_id ? [nextService.manager_id] : []))
@@ -104,7 +104,7 @@ export function TicketServicesEditor({
       managerIds: effectiveIds,
       managers: managers.map((m: any) => ({ id: m.id, nome: m.nome })),
       dataIda: nextService.travel_data_ida,
-      dataVolta: nextService.travel_data_volta,
+      diarias: nextService.travel_diarias,
       excludeTravelId: nextService.travel_id ?? excludeTravelIds[0],
     });
     if (violations.length === 0) return;
@@ -115,8 +115,8 @@ export function TicketServicesEditor({
       onConfirm: () => setLimitDialog((p) => ({ ...p, open: false })),
       onCancel: () => {
         setLimitDialog((p) => ({ ...p, open: false }));
-        // reverte datas — força escolha de outro servidor / sem previsão
-        update(idx, { travel_data_ida: null, travel_data_volta: null });
+        // reverte diárias — força escolha de outro servidor / sem previsão
+        update(idx, { travel_diarias: null, travel_data_volta: null });
       },
     });
   };
@@ -345,6 +345,7 @@ export function TicketServicesEditor({
                                 travel_cidade: null,
                                 travel_data_ida: null,
                                 travel_data_volta: null,
+                                travel_diarias: null,
                                 travel_sem_previsao: false,
                               }),
                         });
@@ -365,6 +366,7 @@ export function TicketServicesEditor({
                               travel_cidade: null,
                               travel_data_ida: null,
                               travel_data_volta: null,
+                              travel_diarias: null,
                               travel_sem_previsao: false,
                               travel_id: null,
                             });
@@ -451,7 +453,7 @@ export function TicketServicesEditor({
                                 update(i, {
                                   travel_sem_previsao: !!v,
                                   ...(v
-                                    ? { travel_data_ida: null, travel_data_volta: null }
+                                    ? { travel_data_ida: null, travel_data_volta: null, travel_diarias: null }
                                     : {}),
                                 })
                               }
@@ -468,26 +470,54 @@ export function TicketServicesEditor({
                               disabled={disabled || !!s.travel_sem_previsao}
                               onChange={(e) => {
                                 const v = e.target.value || null;
-                                update(i, { travel_data_ida: v });
-                                runTravelLimitCheck(i, { ...s, travel_data_ida: v });
+                                const volta = v && s.travel_diarias
+                                  ? computeReturnDate(v, s.travel_diarias)
+                                  : null;
+                                update(i, { travel_data_ida: v, travel_data_volta: volta });
+                                runTravelLimitCheck(i, { ...s, travel_data_ida: v, travel_data_volta: volta });
                               }}
                             />
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs">
-                              Data de volta {!s.travel_sem_previsao && '*'}
+                              Diárias {!s.travel_sem_previsao && '*'}
                             </Label>
-                            <Input
-                              type="date"
-                              value={s.travel_data_volta ?? ''}
+                            <Select
+                              value={s.travel_diarias ? String(s.travel_diarias) : ''}
                               disabled={disabled || !!s.travel_sem_previsao}
-                              onChange={(e) => {
-                                const v = e.target.value || null;
-                                update(i, { travel_data_volta: v });
-                                runTravelLimitCheck(i, { ...s, travel_data_volta: v });
+                              onValueChange={(val) => {
+                                const d = Number(val);
+                                const volta = s.travel_data_ida
+                                  ? computeReturnDate(s.travel_data_ida, d)
+                                  : null;
+                                update(i, { travel_diarias: d, travel_data_volta: volta });
+                                runTravelLimitCheck(i, { ...s, travel_diarias: d, travel_data_volta: volta });
                               }}
-                            />
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DIARIAS_OPTIONS.map((d) => (
+                                  <SelectItem key={d} value={String(d)}>
+                                    {d.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{' '}
+                                    {d === 1 ? 'diária' : 'diárias'}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
+                          {!s.travel_sem_previsao && s.travel_data_ida && s.travel_diarias && s.travel_data_volta && (
+                            <div className="md:col-span-2 rounded-md border bg-muted/40 px-3 py-2 text-[11px] space-y-0.5">
+                              <div>
+                                Data de volta prevista:{' '}
+                                <strong>
+                                  {format(new Date(s.travel_data_volta + 'T12:00:00'), "EEEE, dd/MM/yyyy", { locale: ptBR })}
+                                </strong>
+                              </div>
+                              <div className="text-muted-foreground">{diariasHint(s.travel_diarias)}</div>
+                            </div>
+                          )}
                           <p className="text-[11px] text-muted-foreground md:col-span-2">
                             Servidor da viagem = gerente responsável (personalizado ou padrão do procedimento).
                             Uma entrada será criada em <strong>Viagens</strong> ao salvar.

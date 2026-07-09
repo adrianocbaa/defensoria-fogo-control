@@ -1,0 +1,1 @@
+ALTER TABLE public.maintenance_ticket_services ADD COLUMN IF NOT EXISTS travel_diarias numeric(3,1);
