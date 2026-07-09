@@ -19,15 +19,20 @@ export function useTravelDaysUsage(monthKey: string) {
       return;
     }
     const [y, m] = monthKey.split('-').map(Number);
-    const first = `${monthKey}-01`;
     const lastDay = new Date(y, m, 0).getDate();
     const last = `${monthKey}-${String(lastDay).padStart(2, '0')}`;
+    // Amplia a janela para trás (~30 dias) para capturar viagens iniciadas
+    // no mês anterior que se estendem para dentro deste mês (diárias podem
+    // atravessar a virada de mês, até 20 dias no máximo).
+    const lookbackStart = new Date(y, m - 1, 1);
+    lookbackStart.setDate(lookbackStart.getDate() - 30);
+    const lookbackStartStr = `${lookbackStart.getFullYear()}-${String(lookbackStart.getMonth() + 1).padStart(2, '0')}-${String(lookbackStart.getDate()).padStart(2, '0')}`;
     const { data, error } = await supabase
       .from('travels')
       .select('id, data_ida, data_volta, manager_ids, diarias')
       .not('data_ida', 'is', null)
       .lte('data_ida', last)
-      .gte('data_ida', first)
+      .gte('data_ida', lookbackStartStr)
       .limit(10000);
 
     if (error) {
