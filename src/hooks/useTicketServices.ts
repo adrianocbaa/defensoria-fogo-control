@@ -222,6 +222,7 @@ export async function fetchServicesForTicket(ticketId: string): Promise<TicketSe
     travel_cidade: r.travel_cidade,
     travel_data_ida: r.travel_data_ida,
     travel_data_volta: r.travel_data_volta,
+    travel_diarias: r.travel_diarias != null ? Number(r.travel_diarias) : null,
     travel_sem_previsao: r.travel_sem_previsao ?? false,
     travel_id: r.travel_id,
     travel_is_linked: r.travel_is_linked ?? false,
