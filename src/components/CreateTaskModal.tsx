@@ -200,23 +200,10 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
         toast({ title: 'Erro', description: `Informe a cidade do serviço "${s.title || 'sem título'}".`, variant: 'destructive' });
         return;
       }
-      if (!s.travel_sem_previsao && (!s.travel_data_ida || !s.travel_data_volta)) {
+      if (!s.travel_sem_previsao && (!s.travel_data_ida || !s.travel_diarias)) {
         toast({
           title: 'Erro',
-          description: `Preencha as datas ou marque "Sem previsão" no serviço "${s.title || 'sem título'}".`,
-          variant: 'destructive',
-        });
-        return;
-      }
-      if (
-        !s.travel_sem_previsao &&
-        s.travel_data_ida &&
-        s.travel_data_volta &&
-        s.travel_data_ida >= s.travel_data_volta
-      ) {
-        toast({
-          title: 'Erro',
-          description: `A data de ida deve ser anterior à data de volta no serviço "${s.title || 'sem título'}".`,
+          description: `Informe data de ida e diárias, ou marque "Sem previsão" no serviço "${s.title || 'sem título'}".`,
           variant: 'destructive',
         });
         return;
