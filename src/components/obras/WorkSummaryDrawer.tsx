@@ -172,18 +172,20 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
           </button>
         </div>
 
-        <div className="mt-4 flex items-center gap-2">
-          <Button
-            variant="outline"
-            className="flex-1 border-primary/40 text-primary hover:bg-primary/5"
-            onClick={() => navigate(`/obras/${obra.id}`)}
-          >
-            Ver página completa
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Mais ações">
-            <MenuIcon className="h-4 w-4" />
-          </Button>
-        </div>
+        <PermissionGuard requiresEdit showMessage={false}>
+          <div className="mt-4 flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 border-primary/40 text-primary hover:bg-primary/5"
+              onClick={() => navigate(`/admin/obras/${obra.id}/editar`)}
+            >
+              Ver página completa
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Mais ações" onClick={() => navigate('/admin/obras')}>
+              <MenuIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </PermissionGuard>
       </div>
 
       {/* Body */}
