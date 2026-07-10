@@ -666,15 +666,15 @@ const AuthPage = () => {
         </div>
 
         {/* --- Bottom: institutional signature --- */}
-        <div className="relative z-10 text-[12px] leading-relaxed text-white/60">
-          <p className="font-medium text-white/80">Defensoria Pública do Estado de Mato Grosso</p>
+        <div className="relative z-10 text-[13px] leading-relaxed text-white/60">
+          <p className="font-semibold text-white/85 text-[14px]">Defensoria Pública do Estado de Mato Grosso</p>
           <p>Diretoria de Infraestrutura Física</p>
         </div>
       </aside>
 
       {/* =================== RIGHT — Authentication =================== */}
       <section
-        className="w-full lg:w-[48%] flex flex-col relative"
+        className="w-full lg:w-[45%] flex flex-col relative"
         style={{ background: '#F6F8F7' }}
       >
         {/* Mobile top strip */}
@@ -691,24 +691,24 @@ const AuthPage = () => {
           />
         </div>
 
-        <div className="flex-1 flex items-center justify-center px-5 sm:px-8 py-10 sm:py-14">
-          <div className="w-full max-w-[440px]">
+        <div className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-10 xl:px-14 py-10 sm:py-14">
+          <div className="w-full max-w-[460px]">
             {/* Card */}
             <div
-              className="rounded-2xl bg-white border border-black/[0.06] p-9 sm:p-10 shadow-[0_10px_40px_-12px_rgba(15,81,50,0.15),0_2px_6px_-2px_rgba(15,23,15,0.06)] animate-fade-in"
+              className="rounded-2xl bg-white border border-black/[0.06] p-10 sm:p-11 shadow-[0_20px_50px_-20px_rgba(15,81,50,0.22),0_4px_12px_-4px_rgba(15,23,15,0.08)] animate-fade-in"
             >
               {/* Header */}
-              <div className="mb-7 flex flex-col items-center text-center">
+              <div className="mb-8 flex flex-col items-center text-center">
                 <div
-                  className="h-14 w-14 rounded-full flex items-center justify-center mb-4"
+                  className="h-16 w-16 rounded-full flex items-center justify-center mb-5"
                   style={{ background: '#E7F3EC' }}
                 >
-                  <UserRound className="h-7 w-7 text-[#0F5132]" strokeWidth={1.75} />
+                  <UserRound className="h-8 w-8 text-[#0F5132]" strokeWidth={1.75} />
                 </div>
-                <h2 className="text-[28px] font-semibold text-foreground tracking-tight leading-tight">
+                <h2 className="text-[30px] font-semibold text-foreground tracking-tight leading-[1.15]">
                   Bem-vindo ao SiDIF
                 </h2>
-                <p className="text-[15px] text-muted-foreground mt-1.5">
+                <p className="text-[15px] text-muted-foreground mt-2">
                   Acesse sua conta institucional para continuar.
                 </p>
               </div>
@@ -717,9 +717,9 @@ const AuthPage = () => {
             </div>
 
             {/* Footer under card */}
-            <div className="mt-6 flex items-center justify-center gap-2 text-muted-foreground">
+            <div className="mt-7 flex items-center justify-center gap-2 text-muted-foreground">
               <Shield className="h-3.5 w-3.5" strokeWidth={2} />
-              <p className="text-[12px]">
+              <p className="text-[13px]">
                 Ambiente seguro <span className="mx-1.5 opacity-50">•</span> Versão 2.0.0
               </p>
             </div>
