@@ -369,11 +369,11 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
 
       {/* Footer */}
       <div className="shrink-0 space-y-2 border-t border-home-border bg-card px-6 py-4">
-        <Button className="w-full" onClick={() => navigate(`/obras/${obra.id}`)}>
+        <Button className="w-full" onClick={() => navigate(`/admin/obras/${obra.id}/editar`)}>
           Ver Detalhes Completos
         </Button>
         <PermissionGuard requiresEdit showMessage={false}>
-          <Button variant="outline" className="w-full" onClick={() => navigate(`/admin/obras/editar/${obra.id}`)}>
+          <Button variant="outline" className="w-full" onClick={() => navigate(`/admin/obras/${obra.id}/editar`)}>
             Editar Obra
           </Button>
         </PermissionGuard>
