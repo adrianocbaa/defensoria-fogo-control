@@ -466,7 +466,7 @@ const AuthPage = () => {
     >
       {/* =================== LEFT — Institutional panel =================== */}
       <aside
-        className="hidden lg:flex lg:w-[52%] relative overflow-hidden flex-col justify-between p-12 xl:p-16 text-white"
+        className="hidden lg:flex lg:w-[55%] relative overflow-hidden flex-col justify-between px-14 py-14 xl:px-20 xl:py-16 text-white"
         style={{
           background:
             'linear-gradient(155deg, #073D28 0%, #0F5132 45%, #0F5132 65%, #0a4429 100%)',
@@ -475,68 +475,140 @@ const AuthPage = () => {
         {/* Blueprint / architectural line overlay */}
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
-          viewBox="0 0 800 900"
+          viewBox="0 0 800 1000"
           preserveAspectRatio="xMidYMid slice"
           aria-hidden="true"
         >
           <defs>
-            <linearGradient id="bp-fade" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#D9F2E3" stopOpacity="0.10" />
-              <stop offset="100%" stopColor="#D9F2E3" stopOpacity="0.02" />
-            </linearGradient>
             <pattern id="bp-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#D9F2E3" strokeOpacity="0.05" strokeWidth="0.5" />
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#D9F2E3" strokeOpacity="0.045" strokeWidth="0.5" />
+            </pattern>
+            <pattern id="bp-grid-major" width="200" height="200" patternUnits="userSpaceOnUse">
+              <path d="M 200 0 L 0 0 0 200" fill="none" stroke="#D9F2E3" strokeOpacity="0.07" strokeWidth="0.6" />
             </pattern>
           </defs>
-          <rect width="800" height="900" fill="url(#bp-grid)" />
+          <rect width="800" height="1000" fill="url(#bp-grid)" />
+          <rect width="800" height="1000" fill="url(#bp-grid-major)" />
 
-          {/* Building elevation outline */}
-          <g stroke="url(#bp-fade)" strokeWidth="1.1" fill="none" opacity="0.55">
-            <rect x="120" y="520" width="560" height="260" />
-            <line x1="120" y1="600" x2="680" y2="600" />
-            <line x1="120" y1="680" x2="680" y2="680" />
-            {/* window mullions */}
-            {Array.from({ length: 11 }).map((_, i) => (
+          {/* ---- Floor plan (top-right area) ---- */}
+          <g stroke="#D9F2E3" strokeOpacity="0.22" strokeWidth="1" fill="none">
+            {/* Outer walls */}
+            <rect x="440" y="70" width="300" height="220" strokeWidth="1.4" />
+            {/* Interior partitions */}
+            <line x1="580" y1="70" x2="580" y2="200" />
+            <line x1="440" y1="200" x2="740" y2="200" />
+            <line x1="660" y1="200" x2="660" y2="290" />
+            {/* Door swings (arcs) */}
+            <path d="M 560 200 A 20 20 0 0 1 580 220" />
+            <path d="M 660 220 A 20 20 0 0 1 680 240" />
+            {/* Door openings (breaks in walls) */}
+            <line x1="558" y1="200" x2="580" y2="200" stroke="#0F5132" strokeWidth="2.2" strokeOpacity="1" />
+            <line x1="660" y1="220" x2="660" y2="242" stroke="#0F5132" strokeWidth="2.2" strokeOpacity="1" />
+            {/* Furniture hints */}
+            <rect x="460" y="90" width="60" height="30" strokeOpacity="0.16" />
+            <circle cx="500" cy="160" r="14" strokeOpacity="0.16" />
+            <rect x="610" y="90" width="110" height="20" strokeOpacity="0.16" />
+            {/* Stairs */}
+            <g strokeOpacity="0.18">
+              <rect x="680" y="220" width="50" height="60" />
+              <line x1="680" y1="235" x2="730" y2="235" />
+              <line x1="680" y1="250" x2="730" y2="250" />
+              <line x1="680" y1="265" x2="730" y2="265" />
+            </g>
+          </g>
+
+          {/* Dimension line above floor plan */}
+          <g stroke="#D9F2E3" strokeOpacity="0.28" strokeWidth="0.6" fill="none">
+            <line x1="440" y1="50" x2="740" y2="50" />
+            <line x1="440" y1="44" x2="440" y2="56" />
+            <line x1="740" y1="44" x2="740" y2="56" />
+            <line x1="590" y1="44" x2="590" y2="56" />
+          </g>
+          <text x="510" y="42" fill="#D9F2E3" fillOpacity="0.35" fontSize="9" fontFamily="Inter, sans-serif">12.40</text>
+          <text x="650" y="42" fill="#D9F2E3" fillOpacity="0.35" fontSize="9" fontFamily="Inter, sans-serif">12.40</text>
+
+          {/* ---- Column grid (left side, top) ---- */}
+          <g stroke="#D9F2E3" strokeOpacity="0.14" strokeWidth="0.6" strokeDasharray="4 4">
+            {[80, 200, 320].map((x) => (
+              <line key={`ax-${x}`} x1={x} y1="60" x2={x} y2="380" />
+            ))}
+            {[80, 200, 320].map((y) => (
+              <line key={`ay-${y}`} x1="40" y1={y} x2="380" y2={y} />
+            ))}
+          </g>
+          {/* Axis bubbles */}
+          <g fill="none" stroke="#D9F2E3" strokeOpacity="0.35" strokeWidth="0.8">
+            {[
+              { cx: 80, cy: 40, t: 'A' },
+              { cx: 200, cy: 40, t: 'B' },
+              { cx: 320, cy: 40, t: 'C' },
+              { cx: 20, cy: 80, t: '1' },
+              { cx: 20, cy: 200, t: '2' },
+              { cx: 20, cy: 320, t: '3' },
+            ].map((c) => (
+              <g key={`axi-${c.t}`}>
+                <circle cx={c.cx} cy={c.cy} r="10" />
+                <text
+                  x={c.cx}
+                  y={c.cy + 3}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#D9F2E3"
+                  fillOpacity="0.5"
+                  fontFamily="Inter, sans-serif"
+                >
+                  {c.t}
+                </text>
+              </g>
+            ))}
+          </g>
+          {/* Columns at intersections */}
+          <g fill="#D9F2E3" fillOpacity="0.35">
+            {[80, 200, 320].flatMap((x) =>
+              [80, 200, 320].map((y) => (
+                <rect key={`col-${x}-${y}`} x={x - 4} y={y - 4} width="8" height="8" />
+              ))
+            )}
+          </g>
+
+          {/* ---- Building facade (bottom, full width) ---- */}
+          <g stroke="#D9F2E3" strokeOpacity="0.32" strokeWidth="1.1" fill="none">
+            {/* Ground line */}
+            <line x1="40" y1="880" x2="760" y2="880" strokeOpacity="0.45" />
+            {/* Base slab */}
+            <rect x="80" y="640" width="640" height="240" strokeWidth="1.4" />
+            {/* Floor lines */}
+            <line x1="80" y1="720" x2="720" y2="720" />
+            <line x1="80" y1="800" x2="720" y2="800" />
+            {/* Vertical mullions — regular rhythm */}
+            {Array.from({ length: 15 }).map((_, i) => (
               <line
-                key={`mul-${i}`}
-                x1={120 + (i + 1) * (560 / 12)}
-                y1="520"
-                x2={120 + (i + 1) * (560 / 12)}
-                y2="780"
+                key={`m-${i}`}
+                x1={80 + (i + 1) * (640 / 16)}
+                y1="640"
+                x2={80 + (i + 1) * (640 / 16)}
+                y2="880"
+                strokeOpacity="0.18"
               />
             ))}
-            {/* roof triangle */}
-            <polyline points="120,520 400,430 680,520" />
-            {/* entrance */}
-            <rect x="370" y="700" width="60" height="80" />
-            <line x1="400" y1="700" x2="400" y2="780" />
+            {/* Roof cornice */}
+            <line x1="60" y1="640" x2="740" y2="640" strokeOpacity="0.45" />
+            {/* Entrance */}
+            <rect x="378" y="810" width="44" height="70" strokeOpacity="0.5" />
+            <line x1="400" y1="810" x2="400" y2="880" strokeOpacity="0.35" />
+            {/* Flag pole */}
+            <line x1="720" y1="640" x2="720" y2="560" strokeOpacity="0.35" />
+            <line x1="720" y1="560" x2="750" y2="560" strokeOpacity="0.35" />
           </g>
 
-          {/* Floor-plan fragment */}
-          <g stroke="#D9F2E3" strokeOpacity="0.12" strokeWidth="0.9" fill="none">
-            <rect x="60" y="80" width="300" height="200" />
-            <line x1="60" y1="180" x2="360" y2="180" />
-            <line x1="200" y1="80" x2="200" y2="280" />
-            <line x1="280" y1="180" x2="280" y2="280" />
-            <circle cx="200" cy="180" r="18" />
-            <path d="M 60 130 L 100 130" strokeDasharray="3 3" />
-            <path d="M 200 220 L 200 260" strokeDasharray="3 3" />
+          {/* Dimension line below facade */}
+          <g stroke="#D9F2E3" strokeOpacity="0.32" strokeWidth="0.6" fill="none">
+            <line x1="80" y1="920" x2="720" y2="920" />
+            <line x1="80" y1="914" x2="80" y2="926" />
+            <line x1="720" y1="914" x2="720" y2="926" />
+            <line x1="400" y1="914" x2="400" y2="926" />
           </g>
-
-          {/* Section arc / curve */}
-          <g stroke="#D9F2E3" strokeOpacity="0.09" strokeWidth="0.8" fill="none">
-            <path d="M 500 100 Q 720 260 500 420" />
-            <path d="M 520 130 Q 700 260 520 390" />
-            <path d="M 540 160 Q 680 260 540 360" />
-          </g>
-
-          {/* Dimension line */}
-          <g stroke="#D9F2E3" strokeOpacity="0.18" strokeWidth="0.6" fill="none">
-            <line x1="80" y1="830" x2="720" y2="830" />
-            <line x1="80" y1="825" x2="80" y2="835" />
-            <line x1="720" y1="825" x2="720" y2="835" />
-            <line x1="400" y1="825" x2="400" y2="835" />
-          </g>
+          <text x="380" y="943" fill="#D9F2E3" fillOpacity="0.4" fontSize="10" fontFamily="Inter, sans-serif">64.00 m</text>
         </svg>
 
         {/* Soft radial vignette */}
@@ -558,23 +630,23 @@ const AuthPage = () => {
         </div>
 
         {/* --- Middle: headline + institutional blocks --- */}
-        <div className="relative z-10 space-y-12 max-w-[560px]">
-          <div className="space-y-5">
+        <div className="relative z-10 space-y-14 max-w-[620px]">
+          <div className="space-y-6">
             <h1
-              className="text-[44px] xl:text-[52px] leading-[1.08] font-semibold tracking-tight"
+              className="text-[46px] xl:text-[56px] leading-[1.05] font-semibold tracking-tight"
               style={fontStack}
             >
-              Infraestrutura pública gerida com{' '}
-              <span className="text-[#D9F2E3] font-bold">mais controle</span>.
+              Infraestrutura pública<br />
+              gerida com <span className="text-[#D9F2E3] font-bold">mais controle</span>.
             </h1>
-            <p className="text-[16px] xl:text-[17px] text-white/75 leading-relaxed max-w-[500px]">
+            <p className="text-[17px] xl:text-[18px] text-white/75 leading-relaxed max-w-[520px]">
               Obras, contratos, medições, fiscalizações e manutenção em um único ambiente
               institucional.
             </p>
           </div>
 
           {/* Three institutional blocks */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             {[
               { icon: Building2, title: 'Gestão de obras' },
               { icon: ClipboardCheck, title: 'Controle de medições' },
@@ -582,27 +654,27 @@ const AuthPage = () => {
             ].map(({ icon: Icon, title }) => (
               <div
                 key={title}
-                className="rounded-xl border border-white/15 bg-white/[0.06] backdrop-blur-[2px] px-4 py-5 flex flex-col items-start gap-3 hover:bg-white/[0.09] transition-colors"
+                className="rounded-2xl border border-white/[0.18] bg-white/[0.08] backdrop-blur-[3px] px-5 py-6 flex flex-col items-start gap-4 hover:bg-white/[0.11] hover:border-white/25 transition-colors"
               >
-                <div className="h-9 w-9 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center">
-                  <Icon className="h-[18px] w-[18px] text-[#D9F2E3]" strokeWidth={1.75} />
+                <div className="h-12 w-12 rounded-xl bg-[#D9F2E3]/10 border border-white/20 flex items-center justify-center">
+                  <Icon className="h-[22px] w-[22px] text-[#D9F2E3]" strokeWidth={1.75} />
                 </div>
-                <p className="text-[13px] font-medium leading-snug text-white/90">{title}</p>
+                <p className="text-[14px] font-medium leading-snug text-white">{title}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* --- Bottom: institutional signature --- */}
-        <div className="relative z-10 text-[12px] leading-relaxed text-white/60">
-          <p className="font-medium text-white/80">Defensoria Pública do Estado de Mato Grosso</p>
+        <div className="relative z-10 text-[13px] leading-relaxed text-white/60">
+          <p className="font-semibold text-white/85 text-[14px]">Defensoria Pública do Estado de Mato Grosso</p>
           <p>Diretoria de Infraestrutura Física</p>
         </div>
       </aside>
 
       {/* =================== RIGHT — Authentication =================== */}
       <section
-        className="w-full lg:w-[48%] flex flex-col relative"
+        className="w-full lg:w-[45%] flex flex-col relative"
         style={{ background: '#F6F8F7' }}
       >
         {/* Mobile top strip */}
@@ -619,24 +691,24 @@ const AuthPage = () => {
           />
         </div>
 
-        <div className="flex-1 flex items-center justify-center px-5 sm:px-8 py-10 sm:py-14">
-          <div className="w-full max-w-[440px]">
+        <div className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-10 xl:px-14 py-10 sm:py-14">
+          <div className="w-full max-w-[460px]">
             {/* Card */}
             <div
-              className="rounded-2xl bg-white border border-black/[0.06] p-9 sm:p-10 shadow-[0_10px_40px_-12px_rgba(15,81,50,0.15),0_2px_6px_-2px_rgba(15,23,15,0.06)] animate-fade-in"
+              className="rounded-2xl bg-white border border-black/[0.06] p-10 sm:p-11 shadow-[0_20px_50px_-20px_rgba(15,81,50,0.22),0_4px_12px_-4px_rgba(15,23,15,0.08)] animate-fade-in"
             >
               {/* Header */}
-              <div className="mb-7 flex flex-col items-center text-center">
+              <div className="mb-8 flex flex-col items-center text-center">
                 <div
-                  className="h-14 w-14 rounded-full flex items-center justify-center mb-4"
+                  className="h-16 w-16 rounded-full flex items-center justify-center mb-5"
                   style={{ background: '#E7F3EC' }}
                 >
-                  <UserRound className="h-7 w-7 text-[#0F5132]" strokeWidth={1.75} />
+                  <UserRound className="h-8 w-8 text-[#0F5132]" strokeWidth={1.75} />
                 </div>
-                <h2 className="text-[28px] font-semibold text-foreground tracking-tight leading-tight">
+                <h2 className="text-[30px] font-semibold text-foreground tracking-tight leading-[1.15]">
                   Bem-vindo ao SiDIF
                 </h2>
-                <p className="text-[15px] text-muted-foreground mt-1.5">
+                <p className="text-[15px] text-muted-foreground mt-2">
                   Acesse sua conta institucional para continuar.
                 </p>
               </div>
@@ -645,9 +717,9 @@ const AuthPage = () => {
             </div>
 
             {/* Footer under card */}
-            <div className="mt-6 flex items-center justify-center gap-2 text-muted-foreground">
+            <div className="mt-7 flex items-center justify-center gap-2 text-muted-foreground">
               <Shield className="h-3.5 w-3.5" strokeWidth={2} />
-              <p className="text-[12px]">
+              <p className="text-[13px]">
                 Ambiente seguro <span className="mx-1.5 opacity-50">•</span> Versão 2.0.0
               </p>
             </div>
