@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
+import '@fontsource/playfair-display/700.css'
 import './index.css'
 
 // Unregister any existing Service Workers to avoid stale caches in normal tabs
