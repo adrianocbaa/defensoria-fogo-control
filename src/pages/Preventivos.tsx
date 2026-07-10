@@ -94,7 +94,7 @@ const Preventivos = () => {
                   onViewDetails={(id) => navigate(`/preventivos/${id}`)}
                   statusFilter="all"
                   selectedNucleusId={selectedId}
-                  onSelectNucleus={setSelectedId}
+                  onSelectNucleus={handleSelect}
                   onStatusMapChange={setStatusMap}
                   hideBuiltInList
                   hideSelectedSidebar
@@ -107,12 +107,18 @@ const Preventivos = () => {
                 nucleos={filteredNucleos}
                 statusMap={statusMap}
                 selectedId={selectedId}
-                onSelect={setSelectedId}
+                onSelect={handleSelect}
                 onOpenDetails={(id) => navigate(`/preventivos/${id}`)}
               />
             </div>
           </div>
         </div>
+
+        <NucleusDetailsDrawer
+          nucleoId={selectedId}
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+        />
 
         {/* Empty state */}
         {filteredNucleos.length === 0 && !loading && (
