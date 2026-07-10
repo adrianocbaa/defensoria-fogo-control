@@ -20,12 +20,23 @@ import {
   type AuthLoginData, 
   type AuthSignupData 
 } from '@/lib/validations';
+import { useSidifPublicStats, useCountUp } from '@/hooks/useSidifPublicStats';
 
 const AuthPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { signIn, signUp, resetPassword, loading } = useAuth();
   const { toast } = useToast();
+
+  // Live public stats for the left panel
+  const { stats } = useSidifPublicStats();
+  const obrasCount = useCountUp(stats?.obras_ativas ?? 0);
+  const medicoesCount = useCountUp(stats?.medicoes_mes ?? 0);
+  const nucleosCount = useCountUp(stats?.nucleos ?? 0);
+  const obrasBarPct = stats && stats.obras_ativas > 0
+    ? Math.min(100, Math.max(8, (stats.obras_ativas / Math.max(stats.obras_ativas, 20)) * 100))
+    : 0;
+
 
   // Rate limiters for login attempts
   const loginRateLimiter = createRateLimiter(5, 15 * 60 * 1000); // 5 attempts per 15 minutes
@@ -573,9 +584,12 @@ const AuthPage = () => {
             <p className="text-[10px] uppercase tracking-widest text-primary-foreground/60 mb-2 font-semibold">
               Obras em acompanhamento
             </p>
-            <p className="text-4xl" style={serif}>142</p>
+            <p className="text-4xl tabular-nums" style={serif}>{obrasCount}</p>
             <div className="mt-4 h-1 w-full bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-primary-foreground/70 w-3/4" />
+              <div
+                className="h-full bg-primary-foreground/70 transition-[width] duration-1000 ease-out"
+                style={{ width: `${obrasBarPct}%` }}
+              />
             </div>
           </div>
 
@@ -584,13 +598,13 @@ const AuthPage = () => {
               <p className="text-[10px] uppercase tracking-widest text-primary-foreground/60 mb-2 font-semibold">
                 Medições (mês)
               </p>
-              <p className="text-3xl" style={serif}>38</p>
+              <p className="text-3xl tabular-nums" style={serif}>{medicoesCount}</p>
             </div>
             <div className="p-5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <p className="text-[10px] uppercase tracking-widest text-primary-foreground/60 mb-2 font-semibold">
                 Núcleos ativos
               </p>
-              <p className="text-3xl" style={serif}>15</p>
+              <p className="text-3xl tabular-nums" style={serif}>{nucleosCount}</p>
             </div>
           </div>
         </div>
