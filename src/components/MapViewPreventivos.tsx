@@ -349,55 +349,59 @@ export function MapViewPreventivos({
   const visibleNucleos = validNucleos.filter(filterNucleus);
   const visibleListNucleos = nucleos.filter(filterNucleus);
 
+  const showInternalFilterBar = statusFilterProp === undefined;
+
   return (
     <>
-      <div className="flex items-center gap-3 mb-3 flex-wrap">
-        <span className="text-sm text-muted-foreground">Filtrar por situação:</span>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            type="button"
-            size="sm"
-            variant={statusFilter === 'all' ? 'secondary' : 'outline'}
-            onClick={() => setStatusFilter('all')}
-            className="h-8 gap-1.5"
-          >
-            Todos
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={statusFilter === 'green' ? 'secondary' : 'outline'}
-            onClick={() => setStatusFilter('green')}
-            className="h-8 gap-1.5"
-          >
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            Regularizados
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={statusFilter === 'orange' ? 'secondary' : 'outline'}
-            onClick={() => setStatusFilter('orange')}
-            className="h-8 gap-1.5"
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            Vencendo
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={statusFilter === 'red' ? 'secondary' : 'outline'}
-            onClick={() => setStatusFilter('red')}
-            className="h-8 gap-1.5"
-          >
-            <span className="w-2 h-2 rounded-full bg-red-500" />
-            Irregulares
-          </Button>
+      {showInternalFilterBar && (
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <span className="text-sm text-muted-foreground">Filtrar por situação:</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              size="sm"
+              variant={statusFilter === 'all' ? 'secondary' : 'outline'}
+              onClick={() => setStatusFilter('all')}
+              className="h-8 gap-1.5"
+            >
+              Todos
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={statusFilter === 'green' ? 'secondary' : 'outline'}
+              onClick={() => setStatusFilter('green')}
+              className="h-8 gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              Regularizados
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={statusFilter === 'orange' ? 'secondary' : 'outline'}
+              onClick={() => setStatusFilter('orange')}
+              className="h-8 gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Vencendo
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={statusFilter === 'red' ? 'secondary' : 'outline'}
+              onClick={() => setStatusFilter('red')}
+              className="h-8 gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-red-500" />
+              Irregulares
+            </Button>
+          </div>
+          {!statusLoaded && (
+            <span className="text-xs text-muted-foreground">Carregando situações…</span>
+          )}
         </div>
-        {!statusLoaded && (
-          <span className="text-xs text-muted-foreground">Carregando situações…</span>
-        )}
-      </div>
+      )}
     <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
       <MapContainer
         center={matogrossoCenter}
