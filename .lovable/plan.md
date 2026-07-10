@@ -1,52 +1,89 @@
-## Objetivo
+# Novo layout do módulo Obras (Etapa 1 — Análise e Plano)
 
-Refatorar `PreventivosEdit.tsx` para usar o novo padrão visual do SiDIF (sidebar `PreventivosLayout` + `PreventivosPageHeader`) reproduzindo fielmente o Frame-1.png, preservando 100% das funcionalidades atuais.
+Escopo: **somente a página `/obras`** (mapa) + drawer de resumo. Preservação integral de dados, rotas, permissões e regras. Nenhuma remoção sem aprovação.
 
-## Análise da tela atual (funcionalidades a preservar)
+## 1. Situação atual mapeada
 
-**Dados carregados/salvos** (Supabase):
-- `nucleos_central` (leitura): nome, cidade, endereço, telefones, email
-- `nuclei` (upsert): `fire_department_license_valid_until`, `fire_department_license_document_url`
-- `fire_extinguishers` (delete + insert em cascata): type, location, capacity, expiration_date, hydrostatic_test, support_type, has_vertical_signage, status derivado
-- `hydrants` (delete + insert): location, status, hose_expiration_date, has_register/hose/key/coupling/adapter/nozzle
-- `documents` (delete + insert): name, type, url, size
+**Rota / página**: `/obras` → `src/pages/Obras.tsx` (envolvida em `SimpleHeader`).
+**Componentes envolvidos**:
+- `SimpleHeader` (cabeçalho global atual)
+- `PageHeader` (título + botões Estatísticas / Painel de Obras / Ver como Lista)
+- `ObrasFilters` (Status, Tipo, Município + limpar)
+- `ObrasMap` (Leaflet / OpenStreetMap, clusters, pins coloridos por status, popups)
+- `ObraDetails` (drawer/sheet com informações gerais, prazos, financeiro, fotos, documentos, medições)
+- `PhotoGalleryCollapsible`, `MedicaoProgressBar`, `ErrorState`
 
-**Ações existentes que devem continuar existindo:**
-- Alvará: toggle "Possui AVCB" + data de validade + URL de documento
-- Extintores: adicionar, copiar, remover, editar campos (tipo ABC/H2O/PQS/CO2, capacidade auto p/ H2O, local, vencimento, teste hidrostático, tipo suporte parede/tripé, sinalização vertical)
-- Hidrantes: adicionar, remover, editar (local, status, validade mangueira, 6 acessórios)
-- Documentos: componente `DocumentUpload` para adicionar + listagem + remover
-- Salvar / Cancelar / redirecionar para `/preventivos/:id`
+**Dados / hooks**:
+- `useObras` → `obras` + `empresas(razao_social)` + `profiles` (fiscal/responsável)
+- `useMedicoesFinanceiro(obraId)` → marcos, total contrato, valor acumulado
+- `useRdoProgressByObra(obraId)` → avanço físico
+- Permissões via `useUserRole` (`canEdit`, `isContratada`) e `PermissionGuard`
 
-## Discrepâncias Figma × sistema atual
+**Rotas relacionadas (preservar)**:
+- `/dashboard` (Estatísticas)
+- `/admin/obras` (Painel de Obras)
+- `/admin/obras/lista` (Ver como Lista)
+- `/obras/:id` já não é ativa aqui; abre no drawer — botão "Ver Detalhes Completos" e "Editar" atuais continuam levando aos fluxos existentes.
 
-O Figma mostra apenas: Alvará (com toggle e data), extintores/hidrantes/documentos em estado vazio. **Não representa** os detalhes internos dos formulários de extintor e hidrante nem a ação "Copiar extintor". Estes serão mantidos usando o mesmo estilo visual (cards internos, borda leve, dashed empty state) sem remoção de campos.
+**Tabelas / storage**: `obras`, `empresas`, `profiles`, `medicoes`, `medicao_items`, `aditivos`, `rdo_*`, buckets `documents`, `avatars`.
 
-O sistema atual **não possui** os campos citados na spec (número do alvará, órgão emissor, observações, número de patrimônio, data de fabricação, fabricante, fotos por item, etc.). **Não serão criados** — apenas os campos existentes serão exibidos, conforme a regra "não invente campos / não altere schema sem aprovação".
+## 2. Diferenças Figma × atual
 
-## Escopo de alterações
+| Elemento | Atual | Figma | Ação |
+|---|---|---|---|
+| Chrome global | `SimpleHeader` (top nav) | Sidebar lateral fixa + cabeçalho da página com breadcrumb, busca, sino, avatar | Trocar `SimpleHeader` por `AppSidebar` novo + novo `WorksPageHeader` **apenas nesta página** |
+| Botões ação | `PageHeader` (ícones grandes) | Botões outline "Estatísticas / Painel de Obras / Ver como Lista" abaixo do header | Reposicionar mantendo rotas |
+| KPIs | não existem no topo | 5 cards: Total, Em Andamento, Concluídas, Planejadas, Paralisadas (com barra colorida à esquerda) | Adicionar `WorksStats` derivado de `useObras` (clicáveis → aplicar filtro de status) |
+| Chips filtros | não existem | Chips "Status: X ⊗ / Município: Y ⊗ / Limpar todos" + contador "X de Y obras exibidas" | Adicionar `ActiveFilters` |
+| Filtros | Sidebar interna com Aplicar/Limpar/Resetar | Igual, com botão de colapsar (setinha) reproduzindo Frame-3 | Refatorar `ObrasFilters` visual; painel colapsável com tira estreita quando fechado |
+| Mapa | Leaflet OSM, clusters, pins por status | Mesmo (preservar) | Nenhuma mudança funcional |
+| Drawer obra | Sheet à direita com blocos Card, largura ~440–500 | Painel lateral clean: título grande, sub município, badges status/tipo, botão outline verde "Ver página completa", 3 mini-cards (Avanço Físico / Financeiro / Prazo), seções colapsáveis: Informações Gerais, Prazos, Financeiras, Álbum de Fotos (n), Documentos (n); rodapé "Ver Detalhes Completos" (verde sólido) + "Editar Obra" (outline) | Reescrever `ObraDetails` (mantendo todos os campos e ações atuais) |
 
-**Único arquivo editado:** `src/pages/PreventivosEdit.tsx`
+## 3. Arquivos a criar/editar
 
-Manter toda a lógica de fetch/save/handlers existente. Trocar apenas o shell visual:
+**Criar**
+- `src/components/obras/AppSidebar.tsx` *(clone do padrão já usado em Preventivos — Dashboard, Preventivos, Manutenção, **Obras (ativo)**, Almoxarifado, Teletrabalho, Orçamento, Configurações, Sair, avatar/nome do usuário)*
+- `src/components/obras/ObrasLayout.tsx` *(SidebarProvider + slot de header + main)*
+- `src/components/obras/WorksPageHeader.tsx` *(breadcrumb "Dashboard / Obras", título "Mapa de Obras", subtítulo, busca, sino, avatar)*
+- `src/components/obras/WorksStats.tsx` *(5 KPI cards clicáveis)*
+- `src/components/obras/ActiveFilters.tsx` *(chips + contador)*
+- `src/components/obras/WorkSummaryDrawer.tsx` *(novo drawer — envolve `ObraDetails` refeito ou substitui)*
 
-1. Substituir `<SimpleHeader>` por `<PreventivosLayout header={...}>` + `<PreventivosPageHeader>` (mesmo padrão de `Preventivos.tsx` e `PreventivosDetails.tsx`).
-2. Cabeçalho: breadcrumb `Dashboard / Preventivos / [Nome] / Editar`, link "Voltar" com seta, título grande "Editar Dados de Preventivos" + subtítulo com nome do núcleo.
-3. Cards no estilo Frame-1: fundo branco, borda cinza clara, título forte, contador circular em pill à direita para seções com lista.
-4. Seção "Informações Básicas (Somente Leitura)" com aviso em pill/alert azul-claro contendo o ícone de info e o texto da spec; inputs desabilitados em cinza.
-5. Alvará: toggle verde (usar `Switch` do shadcn no lugar do Checkbox) + campo de data quando ativo.
-6. Extintores / Hidrantes: card com contador; quando vazio → moldura tracejada com mensagem + botão "+ Adicionar" outline verde (padrão Figma); quando preenchido → lista dos formulários atuais mantendo todos os campos e o botão "Adicionar" no topo à direita.
-7. Documentos: bloco cinza-claro interno com "Nome do Documento *" + "Tipo" (select) + área tracejada de upload + botão verde "Enviar Documento" (reaproveitando `DocumentUpload` internamente, apenas com estilo ajustado se necessário — sem alterar a lógica do componente).
-8. Rodapé: "Cancelar" como link à esquerda + botão verde "Salvar Alterações" com ícone à direita.
-9. Aplicar `PermissionGuard`/`useUserRole` para ocultar botões de adicionar/remover/salvar quando o usuário não puder editar (mantendo comportamento atual — hoje qualquer usuário autenticado vê os botões; adicionar guarda mínima usando `canEdit`).
+**Editar**
+- `src/pages/Obras.tsx` — trocar `SimpleHeader`/`PageHeader` pelo novo layout; conectar KPIs/chips ao estado de filtros existente; preservar `ObrasMap` intacto.
+- `src/components/ObrasFilters.tsx` — restyle (mesma API/campos); adicionar botão colapsar.
+- `src/components/ObraDetails.tsx` — restyle para casar com Frame-5, mantendo TODOS os campos, fotos, documentos, medições, botões (Ver Detalhes / Editar).
 
-## Fora de escopo (confirmar)
+**Não tocar**
+- `ObrasMap.tsx`, `useObras`, `useMedicoesFinanceiro`, `useRdoProgressByObra`, `AdminObras*`, `ObrasLista.tsx`, rotas, RLS, migrations, buckets, hooks financeiros.
 
-- **Novos campos de banco** (número de alvará, órgão emissor, observações, patrimônio, fabricante, fotos por extintor/hidrante, etc.) — não criar sem aprovação explícita.
-- **Alerta de "alterações não salvas"** (`beforeunload` + bloqueio de navegação) — não existe hoje; posso adicionar se você confirmar.
-- **Novas seções preventivas** (sinalização, iluminação de emergência, detectores, brigada, etc.) — não existem no schema atual; não serão criadas.
-- **Salvamento individual por item** — hoje é tudo salvo em lote no submit (delete+insert). Mantido como está.
+## 4. Preservação de funcionalidades (nada será removido)
 
-## Testes pós-implementação
+- Tipos disponíveis atuais: **Reforma, Construção, Adequações**. O Figma mostra também "Ampliação" e "Manutenção" — irei **exibir apenas os tipos reais existentes** (não vou inventar). Se quiser habilitar Ampliação/Manutenção, aviso e peço aprovação (envolveria mudança de dados).
+- Todos os campos atuais do `ObraDetails` (empresa, fiscal, gestor, SEI, contrato, coordenadas, medições, RDO progresso, aditivo prazo, tempo obra, etc.) serão mantidos — os que não couberem no bloco principal do Figma vão para seções colapsáveis (accordion) já previstas no design.
+- Botões "Estatísticas", "Painel de Obras", "Ver como Lista" continuam apontando para as rotas atuais.
+- Permissões (`PermissionGuard requiresEdit`, `useUserRole`) preservadas para "Editar Obra" e "Ver como Lista".
 
-Typecheck + verificação visual em desktop de: carregamento, toggle alvará, adicionar/editar/remover extintor, adicionar/remover hidrante, upload/remover documento, salvar, cancelar, console limpo.
+## 5. Campos ausentes no banco
+
+Nenhum campo novo é necessário. O layout do Figma é subconjunto do que já existe.
+
+## 6. Itens que exigirão sua aprovação antes de qualquer remoção
+
+- Substituir `SimpleHeader` **apenas nesta página** por sidebar nova (as demais páginas continuam com `SimpleHeader` como estão hoje, exceto Preventivos que já usa sidebar). Confirmar OK.
+- Se quiser rolar o novo shell para todas as páginas do sistema, isso seria uma tarefa separada (não incluída aqui).
+
+## 7. Responsividade
+
+- Desktop ≥1280: sidebar fixa, filtros à esquerda, mapa central, drawer direita ~460px.
+- Notebook 1024–1279: filtros colapsáveis (Frame-3), drawer 420px.
+- Tablet <1024: sidebar em drawer; filtros em bottom sheet; drawer da obra ocupa até 90% da largura.
+- Mobile <640: mapa full; filtros e resumo da obra em bottom sheet.
+
+## 8. Validação após implementação
+
+Carregamento, clusters, filtros (aplicar/limpar/chips/colapsar), KPIs clicáveis, seleção de pin, drawer (abrir/fechar X e Esc), campos completos (fiscal, gestor, financeiro, medições, fotos, docs), botões (Ver Detalhes, Editar, Estatísticas, Painel, Lista), permissões, sem regressão no console, sem alteração em outras páginas.
+
+---
+
+Se aprovar, sigo direto para a Etapa 2 (implementação visual, sem tocar dados, rotas ou permissões).
