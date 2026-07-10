@@ -57,10 +57,6 @@ export function PreventivosPageHeader({ onOpenMenu, globalSearch, onGlobalSearch
             )}
           </button>
 
-          <Avatar className="h-10 w-10 border border-home-border">
-            <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
-            <AvatarFallback className="text-xs">{initials || 'U'}</AvatarFallback>
-          </Avatar>
         </div>
       </div>
     </header>
