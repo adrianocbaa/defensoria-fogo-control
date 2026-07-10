@@ -473,7 +473,7 @@ export function AdminObras() {
             </Button>
             {!userRole.isContratada && (
               <Button asChild variant="outline" size="sm" className="gap-2">
-                <Link to="/dashboard">
+                <Link to="/admin/obras/estatisticas">
                   <BarChart3 className="h-4 w-4" />
                   Estatísticas
                 </Link>

@@ -30,6 +30,7 @@ import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
 import Obras from "./pages/Obras";
 import { AdminObras } from "./pages/AdminObras";
+import { AdminObrasEstatisticas } from "./pages/AdminObrasEstatisticas";
 import { AdminObraEdit } from "./pages/AdminObraEdit";
 import { AdminObraNova } from "./pages/AdminObraNova";
 import { ObrasLista } from "./pages/ObrasLista";
@@ -407,6 +408,14 @@ const AppRoutes = () => {
             <ObrasLista />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/admin/obras/estatisticas"
+        element={
+          <ProtectedRoute>
+            <AdminObrasEstatisticas />
+          </ProtectedRoute>
+        }
       />
       
       {/* Prototype Routes */}
