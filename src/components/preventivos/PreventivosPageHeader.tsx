@@ -1,8 +1,5 @@
 import { Bell, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/contexts/AuthContext';
 import { useObraNotifications } from '@/hooks/useObraNotifications';
 import { useNavigate } from 'react-router-dom';
 import { SidebarMenuButton } from './PreventivosLayout';
@@ -14,19 +11,8 @@ interface PreventivosPageHeaderProps {
 }
 
 export function PreventivosPageHeader({ onOpenMenu, globalSearch, onGlobalSearchChange }: PreventivosPageHeaderProps) {
-  const { profile } = useProfile();
-  const { user } = useAuth();
   const { unreadCount, markAllAsRead } = useObraNotifications();
   const navigate = useNavigate();
-
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Usuário';
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
   const handleBell = () => {
     markAllAsRead();
