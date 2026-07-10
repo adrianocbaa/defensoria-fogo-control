@@ -9,6 +9,7 @@ import { PreventivosPageHeader } from '@/components/preventivos/PreventivosPageH
 import { PreventiveStats } from '@/components/preventivos/PreventiveStats';
 import { PreventiveFilters, PreventivosStatusFilter } from '@/components/preventivos/PreventiveFilters';
 import { NucleiList } from '@/components/preventivos/NucleiList';
+import { NucleusDetailsDrawer } from '@/components/preventivos/NucleusDetailsDrawer';
 import { MapViewPreventivos } from '@/components/MapViewPreventivos';
 
 const Preventivos = () => {
@@ -19,7 +20,13 @@ const Preventivos = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<PreventivosStatusFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [statusMap, setStatusMap] = useState<Record<string, 'green' | 'orange' | 'red'>>({});
+
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+    setDrawerOpen(true);
+  };
 
   const counts = useMemo(() => {
     const values = Object.values(statusMap);
@@ -87,7 +94,7 @@ const Preventivos = () => {
                   onViewDetails={(id) => navigate(`/preventivos/${id}`)}
                   statusFilter="all"
                   selectedNucleusId={selectedId}
-                  onSelectNucleus={setSelectedId}
+                  onSelectNucleus={handleSelect}
                   onStatusMapChange={setStatusMap}
                   hideBuiltInList
                   hideSelectedSidebar
@@ -100,12 +107,18 @@ const Preventivos = () => {
                 nucleos={filteredNucleos}
                 statusMap={statusMap}
                 selectedId={selectedId}
-                onSelect={setSelectedId}
+                onSelect={handleSelect}
                 onOpenDetails={(id) => navigate(`/preventivos/${id}`)}
               />
             </div>
           </div>
         </div>
+
+        <NucleusDetailsDrawer
+          nucleoId={selectedId}
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+        />
 
         {/* Empty state */}
         {filteredNucleos.length === 0 && !loading && (

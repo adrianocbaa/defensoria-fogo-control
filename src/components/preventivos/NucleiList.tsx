@@ -33,7 +33,6 @@ export function NucleiList({ nucleos, statusMap, selectedId, onSelect, onOpenDet
                   <button
                     type="button"
                     onClick={() => onSelect(n.id)}
-                    onDoubleClick={() => onOpenDetails?.(n.id)}
                     className={cn(
                       'flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors',
                       active ? 'bg-success/10' : 'hover:bg-home-bg',
