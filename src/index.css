@@ -83,7 +83,29 @@ All colors MUST be HSL.
     --row-lv1-bg: 214 100% 95%; /* azul claro */
     --row-lv2-bg: 150 60% 94%;  /* verde claro */
     --row-lv3-bg: 0 0% 100%;    /* branco */
+
+    /* Home / App shell tokens */
+    --home-bg: 150 20% 98%;
+    --home-surface: 0 0% 100%;
+    --home-border: 150 15% 90%;
+    --home-muted: 215 15% 45%;
+
+    --home-sidebar-bg: 145 55% 18%;
+    --home-sidebar-fg: 150 25% 92%;
+    --home-sidebar-muted: 150 20% 65%;
+    --home-sidebar-active: 142 65% 42%;
+    --home-sidebar-active-fg: 0 0% 100%;
+    --home-sidebar-border: 145 40% 26%;
+
+    --module-icon-bg: 142 55% 94%;
+    --module-icon-fg: 142 65% 30%;
+    --dev-badge-bg: 220 15% 94%;
+    --dev-badge-fg: 220 10% 40%;
+    --pending-bg: 35 100% 96%;
+    --pending-border: 35 90% 80%;
+    --pending-fg: 28 85% 42%;
   }
+
 
   .dark {
     --background: 222.2 84% 4.9%;
