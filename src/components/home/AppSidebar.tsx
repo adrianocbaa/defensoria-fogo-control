@@ -71,7 +71,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         <img
           src={logoSidif}
           alt="SiDIF"
-          className="h-18 w-auto origin-left scale-[1.3] object-contain object-left brightness-0 invert -translate-x-3"
+          className="h-18 w-auto origin-left scale-[1.3] object-contain object-left brightness-0 invert -translate-x-5"
         />
       </div>
 
