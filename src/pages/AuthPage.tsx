@@ -20,6 +20,7 @@ import {
   type AuthLoginData, 
   type AuthSignupData 
 } from '@/lib/validations';
+import { useSidifPublicStats, useCountUp } from '@/hooks/useSidifPublicStats';
 
 const AuthPage = () => {
   const navigate = useNavigate();
