@@ -64,16 +64,42 @@ interface MapViewPreventivosProps {
   nucleos: NucleoCentral[];
   onViewDetails: (nucleusId: string) => void;
   onStatusLoaded?: (summary: PreventivosStatusSummary) => void;
+  /** Controlled status filter (from parent). If provided, hides built-in filter bar. */
+  statusFilter?: 'all' | 'green' | 'orange' | 'red';
+  /** Controlled selected id (from parent list). Centers map on change. */
+  selectedNucleusId?: string | null;
+  onSelectNucleus?: (id: string) => void;
+  /** Emit per-id status map for external filtering/lists. */
+  onStatusMapChange?: (map: Record<string, 'green' | 'orange' | 'red'>) => void;
+  /** Hide the built-in floating right-side list (parent renders it). */
+  hideBuiltInList?: boolean;
+  /** Hide the built-in floating selection card. */
+  hideSelectedSidebar?: boolean;
+  /** Custom map height (CSS). Default 600px. */
+  height?: string;
 }
 
-export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: MapViewPreventivosProps) {
+export function MapViewPreventivos({
+  nucleos,
+  onViewDetails,
+  onStatusLoaded,
+  statusFilter: statusFilterProp,
+  selectedNucleusId,
+  onSelectNucleus,
+  onStatusMapChange,
+  hideBuiltInList,
+  hideSelectedSidebar,
+  height,
+}: MapViewPreventivosProps) {
   const mapRef = useRef<L.Map | null>(null);
   const hasFittedBounds = useRef(false);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [nucleusStatus, setNucleusStatus] = useState<Record<string, NucleusStatus>>({});
   const [statusLoaded, setStatusLoaded] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'green' | 'orange' | 'red'>('all');
+  const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'green' | 'orange' | 'red'>('all');
+  const statusFilter = statusFilterProp ?? internalStatusFilter;
+  const setStatusFilter = (v: 'all' | 'green' | 'orange' | 'red') => setInternalStatusFilter(v);
   const isMobile = useIsMobile();
 
   // Fetch status data for all nucleos
@@ -159,6 +185,12 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
           urgente: values.filter(s => s.pinColor === 'red').length,
         });
       }
+
+      if (onStatusMapChange) {
+        const simple: Record<string, 'green' | 'orange' | 'red'> = {};
+        for (const [id, s] of Object.entries(statusMap)) simple[id] = s.pinColor;
+        onStatusMapChange(simple);
+      }
     };
 
     if (nucleos.length > 0) {
@@ -181,10 +213,20 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
 
   const handleMarkerClick = useCallback((nucleus: NucleoCentral) => {
     setSelectedNucleus(nucleus);
+    onSelectNucleus?.(nucleus.id);
     if (isMobile) {
       setShowMobileModal(true);
     }
-  }, [isMobile]);
+  }, [isMobile, onSelectNucleus]);
+
+  // React to controlled selectedNucleusId: flyTo marker
+  useEffect(() => {
+    if (!selectedNucleusId || !mapRef.current) return;
+    const n = nucleos.find((x) => x.id === selectedNucleusId);
+    if (n?.lat && n.lng) {
+      mapRef.current.flyTo([n.lat, n.lng], Math.max(mapRef.current.getZoom(), 9), { duration: 0.8 });
+    }
+  }, [selectedNucleusId, nucleos]);
 
   const matogrossoCenter: [number, number] = [-15.601411, -56.097892];
 
@@ -307,56 +349,60 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
   const visibleNucleos = validNucleos.filter(filterNucleus);
   const visibleListNucleos = nucleos.filter(filterNucleus);
 
+  const showInternalFilterBar = statusFilterProp === undefined;
+
   return (
     <>
-      <div className="flex items-center gap-3 mb-3 flex-wrap">
-        <span className="text-sm text-muted-foreground">Filtrar por situação:</span>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            type="button"
-            size="sm"
-            variant={statusFilter === 'all' ? 'secondary' : 'outline'}
-            onClick={() => setStatusFilter('all')}
-            className="h-8 gap-1.5"
-          >
-            Todos
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={statusFilter === 'green' ? 'secondary' : 'outline'}
-            onClick={() => setStatusFilter('green')}
-            className="h-8 gap-1.5"
-          >
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            Regularizados
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={statusFilter === 'orange' ? 'secondary' : 'outline'}
-            onClick={() => setStatusFilter('orange')}
-            className="h-8 gap-1.5"
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            Vencendo
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={statusFilter === 'red' ? 'secondary' : 'outline'}
-            onClick={() => setStatusFilter('red')}
-            className="h-8 gap-1.5"
-          >
-            <span className="w-2 h-2 rounded-full bg-red-500" />
-            Irregulares
-          </Button>
+      {showInternalFilterBar && (
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <span className="text-sm text-muted-foreground">Filtrar por situação:</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              size="sm"
+              variant={statusFilter === 'all' ? 'secondary' : 'outline'}
+              onClick={() => setStatusFilter('all')}
+              className="h-8 gap-1.5"
+            >
+              Todos
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={statusFilter === 'green' ? 'secondary' : 'outline'}
+              onClick={() => setStatusFilter('green')}
+              className="h-8 gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              Regularizados
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={statusFilter === 'orange' ? 'secondary' : 'outline'}
+              onClick={() => setStatusFilter('orange')}
+              className="h-8 gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Vencendo
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={statusFilter === 'red' ? 'secondary' : 'outline'}
+              onClick={() => setStatusFilter('red')}
+              className="h-8 gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-red-500" />
+              Irregulares
+            </Button>
+          </div>
+          {!statusLoaded && (
+            <span className="text-xs text-muted-foreground">Carregando situações…</span>
+          )}
         </div>
-        {!statusLoaded && (
-          <span className="text-xs text-muted-foreground">Carregando situações…</span>
-        )}
-      </div>
-    <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
+      )}
+    <div className="relative w-full border rounded-lg overflow-hidden z-0" style={{ height: height ?? '600px' }}>
       <MapContainer
         center={matogrossoCenter}
         zoom={7}
@@ -453,7 +499,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
       `}</style>
 
       {/* Desktop Sidebar */}
-      {!isMobile && selectedNucleus && (
+      {!hideSelectedSidebar && !isMobile && selectedNucleus && (
         <div className="absolute top-4 left-4 w-80 bg-white rounded-lg shadow-lg border z-[1000]">
           <div className="p-4">
             <div className="flex items-start justify-between mb-4">
@@ -473,7 +519,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
       )}
 
       {/* Desktop: Nucleus list sidebar */}
-      {!isMobile && (
+      {!hideBuiltInList && !isMobile && (
         <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
           <div className="p-4">
             <h3 className="font-semibold text-sm mb-3">
@@ -496,6 +542,7 @@ export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: M
           </div>
         </div>
       )}
+
 
       {/* Mobile Modal */}
       {isMobile && selectedNucleus && showMobileModal && (

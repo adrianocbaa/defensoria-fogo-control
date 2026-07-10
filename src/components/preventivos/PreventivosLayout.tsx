@@ -1,0 +1,55 @@
+import { ReactNode, useState } from 'react';
+import { AppSidebar } from '@/components/home/AppSidebar';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
+
+interface PreventivosLayoutProps {
+  children: ReactNode;
+  header: (ctx: { openMenu: () => void }) => ReactNode;
+}
+
+export function PreventivosLayout({ children, header }: PreventivosLayoutProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen w-full bg-home-bg">
+      <div className="flex min-h-screen w-full">
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:flex sticky top-0 h-screen w-[240px] shrink-0 border-r border-home-sidebar-border">
+          <AppSidebar />
+        </aside>
+
+        {/* Mobile drawer */}
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent side="left" className="w-[260px] p-0 bg-home-sidebar-bg border-home-sidebar-border">
+            <AppSidebar onNavigate={() => setMobileOpen(false)} />
+          </SheetContent>
+        </Sheet>
+
+        {/* Main area */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {header({ openMenu: () => setMobileOpen(true) })}
+          <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+            {children}
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SidebarMenuButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="lg:hidden"
+      onClick={onClick}
+      aria-label="Abrir menu"
+    >
+      <Menu className="h-5 w-5" />
+    </Button>
+  );
+}
