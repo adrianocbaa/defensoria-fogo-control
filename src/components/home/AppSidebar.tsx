@@ -67,7 +67,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   return (
     <aside className="flex h-full w-full flex-col bg-home-sidebar-bg text-home-sidebar-fg">
       {/* Logo */}
-      <div className="relative flex items-center px-3 py-6 h-[84px] shrink-0 overflow-hidden">
+      <div className="relative flex items-center px-1 py-6 h-[84px] shrink-0 overflow-hidden">
         <img
           src={logoSidif}
           alt="SiDIF"
