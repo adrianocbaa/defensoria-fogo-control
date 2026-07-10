@@ -28,6 +28,16 @@ const AuthPage = () => {
   const { signIn, signUp, resetPassword, loading } = useAuth();
   const { toast } = useToast();
 
+  // Live public stats for the left panel
+  const { stats } = useSidifPublicStats();
+  const obrasCount = useCountUp(stats?.obras_ativas ?? 0);
+  const medicoesCount = useCountUp(stats?.medicoes_mes ?? 0);
+  const nucleosCount = useCountUp(stats?.nucleos ?? 0);
+  const obrasBarPct = stats && stats.obras_ativas > 0
+    ? Math.min(100, Math.max(8, (stats.obras_ativas / Math.max(stats.obras_ativas, 20)) * 100))
+    : 0;
+
+
   // Rate limiters for login attempts
   const loginRateLimiter = createRateLimiter(5, 15 * 60 * 1000); // 5 attempts per 15 minutes
   const signupRateLimiter = createRateLimiter(3, 60 * 60 * 1000); // 3 attempts per hour
