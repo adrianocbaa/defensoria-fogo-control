@@ -1,12 +1,12 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, LogOut, type LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from '@/hooks/useProfile';
-import { useUserSectors } from '@/hooks/useUserSectors';
-import { MODULES, SIDEBAR_GROUPS } from './modulesConfig';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import logoSidif from '@/assets/logo-sidif.png';
+import { NavLink, useLocation } from "react-router-dom";
+import { LayoutDashboard, Settings, LogOut, type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
+import { useUserSectors } from "@/hooks/useUserSectors";
+import { MODULES, SIDEBAR_GROUPS } from "./modulesConfig";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import logoSidif from "@/assets/logo-sidif.png";
 
 interface AppSidebarProps {
   onNavigate?: () => void;
@@ -30,11 +30,11 @@ function SidebarItem({
       to={to}
       onClick={onClick}
       className={cn(
-        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-home-sidebar-active/70',
+        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-home-sidebar-active/70",
         active
-          ? 'bg-home-sidebar-active text-home-sidebar-active-fg shadow-sm'
-          : 'text-home-sidebar-fg/85 hover:bg-white/5 hover:text-home-sidebar-fg'
+          ? "bg-home-sidebar-active text-home-sidebar-active-fg shadow-sm"
+          : "text-home-sidebar-fg/85 hover:bg-white/5 hover:text-home-sidebar-fg",
       )}
     >
       <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
@@ -51,18 +51,17 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const { sectors } = useUserSectors();
 
   const isActive = (path: string) => {
-    if (path === '/') return pathname === '/';
-    return pathname === path || pathname.startsWith(path + '/');
+    if (path === "/") return pathname === "/";
+    return pathname === path || pathname.startsWith(path + "/");
   };
 
-  const displayName =
-    profile?.display_name || user?.email?.split('@')[0] || 'Usuário';
+  const displayName = profile?.display_name || user?.email?.split("@")[0] || "Usuário";
   const initials = displayName
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
     .filter(Boolean)
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   return (
@@ -72,27 +71,20 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         <img
           src={logoSidif}
           alt="SiDIF"
-          className="h-10 w-auto origin-left scale-[1.7] object-contain object-left brightness-0 invert"
+          className="h-18 w-auto origin-left scale-[1.7] object-contain object-left brightness-0 invert"
         />
       </div>
-
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="space-y-1">
-          <SidebarItem
-            to="/"
-            icon={LayoutDashboard}
-            label="Dashboard"
-            active={isActive('/')}
-            onClick={onNavigate}
-          />
+          <SidebarItem to="/" icon={LayoutDashboard} label="Dashboard" active={isActive("/")} onClick={onNavigate} />
         </div>
 
         {SIDEBAR_GROUPS.map((group) => {
           const items = group.ids
             .map((id) => MODULES.find((m) => m.id === id))
-            .filter((m): m is NonNullable<typeof m> => !!m && sectors.includes(m.id) && m.path !== '#');
+            .filter((m): m is NonNullable<typeof m> => !!m && sectors.includes(m.id) && m.path !== "#");
           if (items.length === 0) return null;
           return (
             <div key={group.label} className="mt-6">
@@ -123,7 +115,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             to="/profile"
             icon={Settings}
             label="Configurações"
-            active={isActive('/profile')}
+            active={isActive("/profile")}
             onClick={onNavigate}
           />
           <button
@@ -133,9 +125,9 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               signOut();
             }}
             className={cn(
-              'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-              'text-home-sidebar-fg/85 hover:bg-white/5 hover:text-home-sidebar-fg',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-home-sidebar-active/70'
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              "text-home-sidebar-fg/85 hover:bg-white/5 hover:text-home-sidebar-fg",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-home-sidebar-active/70",
             )}
           >
             <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
@@ -147,13 +139,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
           <Avatar className="h-9 w-9 border border-home-sidebar-border">
             <AvatarImage src={profile?.avatar_url || undefined} alt="" />
             <AvatarFallback className="bg-home-sidebar-active text-home-sidebar-active-fg text-xs">
-              {initials || 'U'}
+              {initials || "U"}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-home-sidebar-fg">
-              {displayName}
-            </p>
+            <p className="truncate text-sm font-semibold text-home-sidebar-fg">{displayName}</p>
           </div>
         </div>
       </div>
