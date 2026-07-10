@@ -16,13 +16,16 @@ export function PreventivosLayout({ children, header }: PreventivosLayoutProps) 
     <div className="min-h-screen w-full bg-home-bg">
       <div className="flex min-h-screen w-full">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex sticky top-0 h-screen w-[240px] shrink-0 border-r border-home-sidebar-border">
+        <div className="sticky top-0 hidden h-screen w-64 shrink-0 md:block">
           <AppSidebar />
-        </aside>
+        </div>
 
         {/* Mobile drawer */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="left" className="w-[260px] p-0 bg-home-sidebar-bg border-home-sidebar-border">
+          <SheetContent
+            side="left"
+            className="w-72 border-0 bg-home-sidebar-bg p-0 text-home-sidebar-fg"
+          >
             <AppSidebar onNavigate={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
@@ -45,7 +48,7 @@ export function SidebarMenuButton({ onClick }: { onClick: () => void }) {
       type="button"
       variant="ghost"
       size="icon"
-      className="lg:hidden"
+      className="md:hidden"
       onClick={onClick}
       aria-label="Abrir menu"
     >
