@@ -18,10 +18,11 @@ export function useSidifPublicStats() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase.rpc('get_sidif_public_stats' as never);
+      const { data, error } = await (supabase.rpc as any)('get_sidif_public_stats');
       if (cancelled) return;
-      if (!error && data && Array.isArray(data) && data.length > 0) {
-        const row = data[0] as any;
+      const rows = data as any;
+      if (!error && Array.isArray(rows) && rows.length > 0) {
+        const row = rows[0];
         setStats({
           obras_ativas: Number(row.obras_ativas) || 0,
           medicoes_mes: Number(row.medicoes_mes) || 0,
