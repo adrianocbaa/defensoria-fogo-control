@@ -3906,6 +3906,14 @@ export type Database = {
         }[]
       }
       get_rdo_progress_by_obra: { Args: { p_obra_id: string }; Returns: number }
+      get_sidif_public_stats: {
+        Args: never
+        Returns: {
+          medicoes_mes: number
+          nucleos: number
+          obras_ativas: number
+        }[]
+      }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
       has_role: {
         Args: {
