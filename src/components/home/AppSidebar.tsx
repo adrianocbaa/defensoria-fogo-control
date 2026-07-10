@@ -6,7 +6,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useUserSectors } from '@/hooks/useUserSectors';
 import { MODULES, SIDEBAR_GROUPS } from './modulesConfig';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import logoSidif from '@/assets/logo-sidif-new.png';
+import logoSidif from '@/assets/logo-sidif.png';
 
 interface AppSidebarProps {
   onNavigate?: () => void;
