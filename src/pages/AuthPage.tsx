@@ -630,23 +630,23 @@ const AuthPage = () => {
         </div>
 
         {/* --- Middle: headline + institutional blocks --- */}
-        <div className="relative z-10 space-y-12 max-w-[560px]">
-          <div className="space-y-5">
+        <div className="relative z-10 space-y-14 max-w-[620px]">
+          <div className="space-y-6">
             <h1
-              className="text-[44px] xl:text-[52px] leading-[1.08] font-semibold tracking-tight"
+              className="text-[46px] xl:text-[56px] leading-[1.05] font-semibold tracking-tight"
               style={fontStack}
             >
-              Infraestrutura pública gerida com{' '}
-              <span className="text-[#D9F2E3] font-bold">mais controle</span>.
+              Infraestrutura pública<br />
+              gerida com <span className="text-[#D9F2E3] font-bold">mais controle</span>.
             </h1>
-            <p className="text-[16px] xl:text-[17px] text-white/75 leading-relaxed max-w-[500px]">
+            <p className="text-[17px] xl:text-[18px] text-white/75 leading-relaxed max-w-[520px]">
               Obras, contratos, medições, fiscalizações e manutenção em um único ambiente
               institucional.
             </p>
           </div>
 
           {/* Three institutional blocks */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             {[
               { icon: Building2, title: 'Gestão de obras' },
               { icon: ClipboardCheck, title: 'Controle de medições' },
@@ -654,12 +654,12 @@ const AuthPage = () => {
             ].map(({ icon: Icon, title }) => (
               <div
                 key={title}
-                className="rounded-xl border border-white/15 bg-white/[0.06] backdrop-blur-[2px] px-4 py-5 flex flex-col items-start gap-3 hover:bg-white/[0.09] transition-colors"
+                className="rounded-2xl border border-white/[0.18] bg-white/[0.08] backdrop-blur-[3px] px-5 py-6 flex flex-col items-start gap-4 hover:bg-white/[0.11] hover:border-white/25 transition-colors"
               >
-                <div className="h-9 w-9 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center">
-                  <Icon className="h-[18px] w-[18px] text-[#D9F2E3]" strokeWidth={1.75} />
+                <div className="h-12 w-12 rounded-xl bg-[#D9F2E3]/10 border border-white/20 flex items-center justify-center">
+                  <Icon className="h-[22px] w-[22px] text-[#D9F2E3]" strokeWidth={1.75} />
                 </div>
-                <p className="text-[13px] font-medium leading-snug text-white/90">{title}</p>
+                <p className="text-[14px] font-medium leading-snug text-white">{title}</p>
               </div>
             ))}
           </div>
