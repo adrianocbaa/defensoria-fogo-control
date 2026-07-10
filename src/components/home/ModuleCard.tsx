@@ -12,9 +12,9 @@ export function ModuleCard({ module }: ModuleCardProps) {
   const content = (
     <>
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-home-module-icon-bg">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-home-module-icon-bg">
           <Icon
-            className="h-5 w-5 text-home-module-icon-fg"
+            className="h-[22px] w-[22px] text-home-module-icon-fg"
             strokeWidth={1.75}
           />
         </div>
@@ -24,15 +24,18 @@ export function ModuleCard({ module }: ModuleCardProps) {
           </span>
         )}
       </div>
-      <div className="mt-6">
-        <h3 className="text-base font-semibold text-foreground">{title}</h3>
-        <p className="mt-1 text-sm text-home-muted">{category}</p>
+      <div className="mt-10">
+        <h3 className="text-[17px] font-semibold leading-tight text-foreground">
+          {title}
+        </h3>
+        <p className="mt-1.5 text-sm text-home-muted">{category}</p>
       </div>
     </>
   );
 
   const baseClasses = cn(
-    'flex h-full flex-col rounded-2xl border border-home-border bg-home-surface p-5 text-left transition-all',
+    'flex h-full min-h-[176px] flex-col rounded-2xl border border-home-border bg-home-surface p-6 text-left transition-all',
+
     inDevelopment
       ? 'cursor-not-allowed opacity-70'
       : 'hover:-translate-y-0.5 hover:border-home-module-icon-fg/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
