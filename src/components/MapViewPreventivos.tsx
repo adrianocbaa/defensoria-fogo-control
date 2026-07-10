@@ -185,6 +185,12 @@ export function MapViewPreventivos({
           urgente: values.filter(s => s.pinColor === 'red').length,
         });
       }
+
+      if (onStatusMapChange) {
+        const simple: Record<string, 'green' | 'orange' | 'red'> = {};
+        for (const [id, s] of Object.entries(statusMap)) simple[id] = s.pinColor;
+        onStatusMapChange(simple);
+      }
     };
 
     if (nucleos.length > 0) {
