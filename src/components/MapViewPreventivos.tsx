@@ -499,7 +499,7 @@ export function MapViewPreventivos({
       `}</style>
 
       {/* Desktop Sidebar */}
-      {!isMobile && selectedNucleus && (
+      {!hideSelectedSidebar && !isMobile && selectedNucleus && (
         <div className="absolute top-4 left-4 w-80 bg-white rounded-lg shadow-lg border z-[1000]">
           <div className="p-4">
             <div className="flex items-start justify-between mb-4">
@@ -519,7 +519,7 @@ export function MapViewPreventivos({
       )}
 
       {/* Desktop: Nucleus list sidebar */}
-      {!isMobile && (
+      {!hideBuiltInList && !isMobile && (
         <div className="absolute top-4 right-4 w-64 bg-white rounded-lg shadow-lg border max-h-[500px] overflow-y-auto z-[1000]">
           <div className="p-4">
             <h3 className="font-semibold text-sm mb-3">
@@ -542,6 +542,7 @@ export function MapViewPreventivos({
           </div>
         </div>
       )}
+
 
       {/* Mobile Modal */}
       {isMobile && selectedNucleus && showMobileModal && (
