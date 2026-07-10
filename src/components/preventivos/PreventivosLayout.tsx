@@ -48,7 +48,7 @@ export function SidebarMenuButton({ onClick }: { onClick: () => void }) {
       type="button"
       variant="ghost"
       size="icon"
-      className="lg:hidden"
+      className="md:hidden"
       onClick={onClick}
       aria-label="Abrir menu"
     >
