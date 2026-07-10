@@ -77,15 +77,15 @@ export default function MainDashboard() {
           onOpenMenu={() => setMobileOpen(true)}
         />
 
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 md:px-8 md:py-10">
+        <main className="mx-auto w-full max-w-[1240px] flex-1 px-6 py-10 md:px-12 md:py-14">
           {/* Greeting */}
-          <section className="mb-10">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-[32px]">
+          <section className="mb-12">
+            <h1 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-3xl md:text-[36px] lg:text-[40px]">
               Olá, {firstName}. O que você deseja acessar hoje?
             </h1>
           </section>
 
-          <div className="space-y-10">
+          <div className="space-y-12">
             <QuickAccess items={quickItems} />
 
             <ModuleGrid
@@ -97,7 +97,7 @@ export default function MainDashboard() {
               }
             />
 
-            <section className="grid gap-4 lg:grid-cols-3">
+            <section className="grid gap-5 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <RecentActivity />
               </div>
@@ -105,6 +105,7 @@ export default function MainDashboard() {
             </section>
           </div>
         </main>
+
       </div>
     </div>
   );
