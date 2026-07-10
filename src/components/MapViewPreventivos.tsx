@@ -64,16 +64,42 @@ interface MapViewPreventivosProps {
   nucleos: NucleoCentral[];
   onViewDetails: (nucleusId: string) => void;
   onStatusLoaded?: (summary: PreventivosStatusSummary) => void;
+  /** Controlled status filter (from parent). If provided, hides built-in filter bar. */
+  statusFilter?: 'all' | 'green' | 'orange' | 'red';
+  /** Controlled selected id (from parent list). Centers map on change. */
+  selectedNucleusId?: string | null;
+  onSelectNucleus?: (id: string) => void;
+  /** Emit per-id status map for external filtering/lists. */
+  onStatusMapChange?: (map: Record<string, 'green' | 'orange' | 'red'>) => void;
+  /** Hide the built-in floating right-side list (parent renders it). */
+  hideBuiltInList?: boolean;
+  /** Hide the built-in floating selection card. */
+  hideSelectedSidebar?: boolean;
+  /** Custom map height (CSS). Default 600px. */
+  height?: string;
 }
 
-export function MapViewPreventivos({ nucleos, onViewDetails, onStatusLoaded }: MapViewPreventivosProps) {
+export function MapViewPreventivos({
+  nucleos,
+  onViewDetails,
+  onStatusLoaded,
+  statusFilter: statusFilterProp,
+  selectedNucleusId,
+  onSelectNucleus,
+  onStatusMapChange,
+  hideBuiltInList,
+  hideSelectedSidebar,
+  height,
+}: MapViewPreventivosProps) {
   const mapRef = useRef<L.Map | null>(null);
   const hasFittedBounds = useRef(false);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleoCentral | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [nucleusStatus, setNucleusStatus] = useState<Record<string, NucleusStatus>>({});
   const [statusLoaded, setStatusLoaded] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'green' | 'orange' | 'red'>('all');
+  const [internalStatusFilter, setInternalStatusFilter] = useState<'all' | 'green' | 'orange' | 'red'>('all');
+  const statusFilter = statusFilterProp ?? internalStatusFilter;
+  const setStatusFilter = (v: 'all' | 'green' | 'orange' | 'red') => setInternalStatusFilter(v);
   const isMobile = useIsMobile();
 
   // Fetch status data for all nucleos
