@@ -144,7 +144,7 @@ export function AdminObrasEstatisticas() {
           medicaoIds.length ? supabase.from('medicao_items').select(`medicao_id, total, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`).in('medicao_id', medicaoIds) : Promise.resolve({ data: [] } as any),
         ]);
 
-        const medicaoItems = resolveItensEfetivos(medicaoItemsRes.data || []);
+        const medicaoItems = resolveItensEfetivos(medicaoItemsRes.data || []) as any[];
         const rdoMap = new Map<string, number>();
         (rdoProgress.data || []).forEach((r: any) => rdoMap.set(r.obra_id, Number(r.progress)));
 
