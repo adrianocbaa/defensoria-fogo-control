@@ -11,9 +11,19 @@ interface WorksPageHeaderProps {
   onOpenMenu: () => void;
   globalSearch: string;
   onGlobalSearchChange: (v: string) => void;
+  breadcrumb?: string;
+  title?: string;
+  subtitle?: string;
 }
 
-export function WorksPageHeader({ onOpenMenu, globalSearch, onGlobalSearchChange }: WorksPageHeaderProps) {
+export function WorksPageHeader({
+  onOpenMenu,
+  globalSearch,
+  onGlobalSearchChange,
+  breadcrumb = 'Dashboard / Obras',
+  title = 'Mapa de Obras',
+  subtitle = 'Visualize e acompanhe o andamento das obras públicas',
+}: WorksPageHeaderProps) {
   const { unreadCount, markAllAsRead } = useObraNotifications();
   const { profile } = useProfile();
   const { user } = useAuth();
@@ -39,10 +49,11 @@ export function WorksPageHeader({ onOpenMenu, globalSearch, onGlobalSearchChange
         <ObrasSidebarMenuButton onClick={onOpenMenu} />
 
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] text-home-muted">Dashboard / Obras</p>
-          <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-foreground">Mapa de Obras</h1>
-          <p className="mt-1 text-sm text-home-muted">Visualize e acompanhe o andamento das obras públicas</p>
+          <p className="text-[13px] text-home-muted">{breadcrumb}</p>
+          <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-foreground">{title}</h1>
+          <p className="mt-1 text-sm text-home-muted">{subtitle}</p>
         </div>
+
 
         <div className="flex items-center gap-3 self-start pt-1">
           <div className="relative hidden md:block w-[280px] lg:w-[380px]">
