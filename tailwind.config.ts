@@ -70,8 +70,28 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				home: {
+					bg: 'hsl(var(--home-bg))',
+					surface: 'hsl(var(--home-surface))',
+					border: 'hsl(var(--home-border))',
+					muted: 'hsl(var(--home-muted))',
+					'sidebar-bg': 'hsl(var(--home-sidebar-bg))',
+					'sidebar-fg': 'hsl(var(--home-sidebar-fg))',
+					'sidebar-muted': 'hsl(var(--home-sidebar-muted))',
+					'sidebar-active': 'hsl(var(--home-sidebar-active))',
+					'sidebar-active-fg': 'hsl(var(--home-sidebar-active-fg))',
+					'sidebar-border': 'hsl(var(--home-sidebar-border))',
+					'module-icon-bg': 'hsl(var(--module-icon-bg))',
+					'module-icon-fg': 'hsl(var(--module-icon-fg))',
+					'dev-bg': 'hsl(var(--dev-badge-bg))',
+					'dev-fg': 'hsl(var(--dev-badge-fg))',
+					'pending-bg': 'hsl(var(--pending-bg))',
+					'pending-border': 'hsl(var(--pending-border))',
+					'pending-fg': 'hsl(var(--pending-fg))',
 				}
 			},
+
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
