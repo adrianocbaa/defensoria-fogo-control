@@ -466,7 +466,7 @@ const AuthPage = () => {
     >
       {/* =================== LEFT — Institutional panel =================== */}
       <aside
-        className="hidden lg:flex lg:w-[52%] relative overflow-hidden flex-col justify-between p-12 xl:p-16 text-white"
+        className="hidden lg:flex lg:w-[55%] relative overflow-hidden flex-col justify-between px-14 py-14 xl:px-20 xl:py-16 text-white"
         style={{
           background:
             'linear-gradient(155deg, #073D28 0%, #0F5132 45%, #0F5132 65%, #0a4429 100%)',
