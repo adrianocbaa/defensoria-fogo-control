@@ -213,10 +213,20 @@ export function MapViewPreventivos({
 
   const handleMarkerClick = useCallback((nucleus: NucleoCentral) => {
     setSelectedNucleus(nucleus);
+    onSelectNucleus?.(nucleus.id);
     if (isMobile) {
       setShowMobileModal(true);
     }
-  }, [isMobile]);
+  }, [isMobile, onSelectNucleus]);
+
+  // React to controlled selectedNucleusId: flyTo marker
+  useEffect(() => {
+    if (!selectedNucleusId || !mapRef.current) return;
+    const n = nucleos.find((x) => x.id === selectedNucleusId);
+    if (n?.lat && n.lng) {
+      mapRef.current.flyTo([n.lat, n.lng], Math.max(mapRef.current.getZoom(), 9), { duration: 0.8 });
+    }
+  }, [selectedNucleusId, nucleos]);
 
   const matogrossoCenter: [number, number] = [-15.601411, -56.097892];
 
