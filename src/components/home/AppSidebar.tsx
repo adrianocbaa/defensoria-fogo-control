@@ -68,12 +68,14 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   return (
     <aside className="flex h-full w-full flex-col bg-home-sidebar-bg text-home-sidebar-fg">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-home-sidebar-active">
-          <img src={logoSidif} alt="" className="h-6 w-6 object-contain" />
-        </div>
-        <span className="text-lg font-bold tracking-tight">SiDIF</span>
+      <div className="flex items-center px-5 py-6">
+        <img
+          src={logoSidif}
+          alt="SiDIF"
+          className="h-9 w-auto object-contain brightness-0 invert"
+        />
       </div>
+
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
