@@ -1,89 +1,107 @@
-# Novo layout do módulo Obras (Etapa 1 — Análise e Plano)
+# Etapa 1 — Análise da página "Gerenciar Obras"
 
-Escopo: **somente a página `/obras`** (mapa) + drawer de resumo. Preservação integral de dados, rotas, permissões e regras. Nenhuma remoção sem aprovação.
+Conforme sua exigência, esta etapa é apenas de **análise**. Nada será alterado até sua aprovação.
 
-## 1. Situação atual mapeada
+## 1. Mapeamento atual
 
-**Rota / página**: `/obras` → `src/pages/Obras.tsx` (envolvida em `SimpleHeader`).
-**Componentes envolvidos**:
-- `SimpleHeader` (cabeçalho global atual)
-- `PageHeader` (título + botões Estatísticas / Painel de Obras / Ver como Lista)
-- `ObrasFilters` (Status, Tipo, Município + limpar)
-- `ObrasMap` (Leaflet / OpenStreetMap, clusters, pins coloridos por status, popups)
-- `ObraDetails` (drawer/sheet com informações gerais, prazos, financeiro, fotos, documentos, medições)
-- `PhotoGalleryCollapsible`, `MedicaoProgressBar`, `ErrorState`
 
-**Dados / hooks**:
-- `useObras` → `obras` + `empresas(razao_social)` + `profiles` (fiscal/responsável)
-- `useMedicoesFinanceiro(obraId)` → marcos, total contrato, valor acumulado
-- `useRdoProgressByObra(obraId)` → avanço físico
-- Permissões via `useUserRole` (`canEdit`, `isContratada`) e `PermissionGuard`
+| Item                    | Situação hoje                                                                                                                                                                                       |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rota                    | `/admin/obras`                                                                                                                                                                                      |
+| Componente principal    | `src/pages/AdminObras.tsx`                                                                                                                                                                          |
+| Chrome                  | `SimpleHeader` + `PageHeader`                                                                                                                                                                       |
+| Detalhes                | drawer `ObraDetails` (compartilhado)                                                                                                                                                                |
+| Progresso               | `ObraProgressCell` interno + `MedicaoProgressBar`                                                                                                                                                   |
+| Estados                 | `LoadingStates.TableSkeleton`                                                                                                                                                                       |
+| Permissões              | `useUserRole`, `useObraActionPermissions`, `PermissionGuard`                                                                                                                                        |
+| Hooks de dados          | `useObras` (full), `useMedicoesFinanceiro`, RPC `get_rdo_progress_batch`                                                                                                                            |
+| Tabelas Supabase        | `obras`, `user_obra_access`, `orcamento_items`, `aditivo_sessions`, `aditivo_items`, `medicao_sessions`, `medicao_items`, indiretas: `empresas`, `profiles`, `rdo_*`                                |
+| Fonte de dados          | Query direta em `obras` (filtrada por `user_obra_access` se contratada) + cálculo financeiro via `calcularFinanceiroMedicao`                                                                        |
+| Rotas irmãs preservadas | `/dashboard` (Estatísticas), `/obras` (Mapa), `/admin/obras/lista` (Lista simples), `/admin/obras/nova`, `/admin/obras/:id/editar`, `/medicao/:id`, `/obras/:id/rdo/resumo`, `/obras/:id/checklist` |
 
-**Rotas relacionadas (preservar)**:
-- `/dashboard` (Estatísticas)
-- `/admin/obras` (Painel de Obras)
-- `/admin/obras/lista` (Ver como Lista)
-- `/obras/:id` já não é ativa aqui; abre no drawer — botão "Ver Detalhes Completos" e "Editar" atuais continuam levando aos fluxos existentes.
 
-**Tabelas / storage**: `obras`, `empresas`, `profiles`, `medicoes`, `medicao_items`, `aditivos`, `rdo_*`, buckets `documents`, `avatars`.
+## 2. Funcionalidades hoje disponíveis
 
-## 2. Diferenças Figma × atual
+- Busca por nome/município/tipo (texto único)
+- Filtro por status (Todos / Em Andamento / Paralisado / Concluído — botões)
+- Filtro por ano de início (`Select`)
+- Ordenação fixa por status (em_andamento → planejamento → paralisada → concluida) + data prevista de término (sem ordenação por coluna)
+- Sem paginação (renderiza tudo)
+- Colunas: Nome · Município · Tipo · Status · Valor · Progresso (RDO + Medição, dois trilhos) · Ações
+- Cabeçalho da página: botões **Estatísticas**, **Mapa de Obras**, **Nova Obra**
+- Ações por linha:
+  - Ver detalhes (drawer `ObraDetails`)
+  - Medição (`/medicao/:id`)
+  - RDO (`/obras/:id/rdo/resumo`, condicional a `rdo_habilitado`)
+  - Checklist (`/obras/:id/checklist`)
+  - Editar (permissão granular `useObraActionPermissions`)
+  - Excluir (permissão granular + `window.confirm`)
+- Contratada vê apenas obras liberadas em `user_obra_access`
+- Bloco informativo para perfis apenas-visualização
+- Sem exportação, sem importação, sem seleção em lote, sem duplicar/arquivar, sem personalização de colunas
 
-| Elemento | Atual | Figma | Ação |
-|---|---|---|---|
-| Chrome global | `SimpleHeader` (top nav) | Sidebar lateral fixa + cabeçalho da página com breadcrumb, busca, sino, avatar | Trocar `SimpleHeader` por `AppSidebar` novo + novo `WorksPageHeader` **apenas nesta página** |
-| Botões ação | `PageHeader` (ícones grandes) | Botões outline "Estatísticas / Painel de Obras / Ver como Lista" abaixo do header | Reposicionar mantendo rotas |
-| KPIs | não existem no topo | 5 cards: Total, Em Andamento, Concluídas, Planejadas, Paralisadas (com barra colorida à esquerda) | Adicionar `WorksStats` derivado de `useObras` (clicáveis → aplicar filtro de status) |
-| Chips filtros | não existem | Chips "Status: X ⊗ / Município: Y ⊗ / Limpar todos" + contador "X de Y obras exibidas" | Adicionar `ActiveFilters` |
-| Filtros | Sidebar interna com Aplicar/Limpar/Resetar | Igual, com botão de colapsar (setinha) reproduzindo Frame-3 | Refatorar `ObrasFilters` visual; painel colapsável com tira estreita quando fechado |
-| Mapa | Leaflet OSM, clusters, pins por status | Mesmo (preservar) | Nenhuma mudança funcional |
-| Drawer obra | Sheet à direita com blocos Card, largura ~440–500 | Painel lateral clean: título grande, sub município, badges status/tipo, botão outline verde "Ver página completa", 3 mini-cards (Avanço Físico / Financeiro / Prazo), seções colapsáveis: Informações Gerais, Prazos, Financeiras, Álbum de Fotos (n), Documentos (n); rodapé "Ver Detalhes Completos" (verde sólido) + "Editar Obra" (outline) | Reescrever `ObraDetails` (mantendo todos os campos e ações atuais) |
+## 3. Tabela comparativa Figma × Sistema
 
-## 3. Arquivos a criar/editar
 
-**Criar**
-- `src/components/obras/AppSidebar.tsx` *(clone do padrão já usado em Preventivos — Dashboard, Preventivos, Manutenção, **Obras (ativo)**, Almoxarifado, Teletrabalho, Orçamento, Configurações, Sair, avatar/nome do usuário)*
-- `src/components/obras/ObrasLayout.tsx` *(SidebarProvider + slot de header + main)*
-- `src/components/obras/WorksPageHeader.tsx` *(breadcrumb "Dashboard / Obras", título "Mapa de Obras", subtítulo, busca, sino, avatar)*
-- `src/components/obras/WorksStats.tsx` *(5 KPI cards clicáveis)*
-- `src/components/obras/ActiveFilters.tsx` *(chips + contador)*
-- `src/components/obras/WorkSummaryDrawer.tsx` *(novo drawer — envolve `ObraDetails` refeito ou substitui)*
+| Funcionalidade atual                                                             | Aparece no Figma?                            | Como será preservada                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sidebar `SimpleHeader`                                                           | Não (Figma usa nova sidebar SiDIF)           | Trocar apenas nesta página para `ObrasLayout` já existente (mesmo padrão do `/obras`)                                                                                                                                                                                   |
+| Breadcrumb / título                                                              | Sim ("Dashboard / Obras" + "Mapa de Obras")  | Usar `WorksPageHeader`; título permanece **"Gerenciar Obras"** (não "Mapa de Obras")                                                                                                                                                                                    |
+| Botões Estatísticas / Painel / Ver como Mapa / Ver como Lista                    | Parcial (4 abas no Figma)                    | Nova barra de navegação do módulo com 4 acessos: **Mapa de Obras** (`/obras`), **Estatísticas** (`/dashboard`), **Painel de Obras** (`/admin/obras/painel` — confirmar rota), **Gerenciar Obras** (ativa). Botão **Nova Obra** preservado como ação principal do header |
+| KPIs (Total/Em Andamento/Concluídas/Planejadas/Paralisadas)                      | Sim                                          | Novo componente `WorksStats` calculado a partir de `obras`; clique aplica filtro de status                                                                                                                                                                              |
+| Busca por nome/município/tipo                                                    | Sim (busca global no header + campo interno) | Preserva campo de busca; busca global do header fica visual (padrão do novo SiDIF)                                                                                                                                                                                      |
+| Filtro por status (botões)                                                       | Sim, como chips ativos + filtros             | Migrar para painel de filtros + chips removíveis (`ActiveFilters`)                                                                                                                                                                                                      |
+| Filtro por ano de início                                                         | Não visível                                  | **Preservar** dentro do painel de filtros (drawer/popover "Filtros")                                                                                                                                                                                                    |
+| Ordenação por status+prazo                                                       | Não visível                                  | Preservar ordenação padrão + habilitar cabeçalhos clicáveis (indicadores ▲▼) nas colunas Nome, Município, Status, Execução, Prazo, Valor, Fiscal                                                                                                                        |
+| Coluna Tipo                                                                      | Sim                                          | Mantida                                                                                                                                                                                                                                                                 |
+| Coluna Prazo                                                                     | Sim                                          | **Nova** — usar `previsao_termino` formatado dd/mm/aaaa; "—" quando ausente                                                                                                                                                                                             |
+| Coluna Fiscal                                                                    | Sim                                          | **Nova** — usar `fiscal_id → profiles.display_name` (já disponível em `useObras`); "Não informado" quando ausente                                                                                                                                                       |
+| Coluna Valor                                                                     | Sim                                          | Manter cálculo atual `obraValores` (total contrato via `calcularFinanceiroMedicao`), formato R$                                                                                                                                                                         |
+| Coluna Execução (barra + %)                                                      | Sim (barra única azul)                       | Manter `ObraProgressCell` (RDO + Medição). Se decidirmos simplificar para uma barra só, **peço aprovação** — proposta é manter as duas trilhas                                                                                                                          |
+| Ação Ver                                                                         | Sim                                          | Botão "Ver" na coluna Ação abre drawer `ObraDetails`                                                                                                                                                                                                                    |
+| Ações Medição / RDO / Checklist / Editar / Excluir                               | Não visíveis                                 | Recolher num **menu ⋯** ao lado do botão "Ver", preservando 100% e respeitando `useObraActionPermissions`                                                                                                                                                               |
+| Confirmação de exclusão                                                          | Existe (`window.confirm`)                    | Substituir por `AlertDialog` do shadcn (melhora UX, mesma regra)                                                                                                                                                                                                        |
+| Nova Obra                                                                        | Existe                                       | Botão `+ Nova Obra` mantido no header (ação principal), preservando `PermissionGuard requiresEdit`                                                                                                                                                                      |
+| Filtro por município / fiscal / empresa / período                                | Não existe hoje                              | **Não criar** sem pedido explícito (você mencionou "demais filtros atualmente existentes" — como não há, nada a adicionar)                                                                                                                                              |
+| Paginação                                                                        | Não existe hoje                              | **Adicionar** paginação client-side (10/25/50 por página) com contador "Exibindo X–Y de N" — informe se prefere manter sem paginação                                                                                                                                    |
+| Chips de filtros ativos + "Limpar todos"                                         | Sim                                          | Novo `ActiveFilterChips` sobre os filtros existentes                                                                                                                                                                                                                    |
+| Bloco "permissão de visualização"                                                | Existe                                       | Mantido no rodapé                                                                                                                                                                                                                                                       |
+| Contratada com `user_obra_access`                                                | Existe                                       | Preservado (mesma query)                                                                                                                                                                                                                                                |
+| Exportação / importação / lote / duplicar / arquivar / personalização de colunas | Não existem                                  | Não criar                                                                                                                                                                                                                                                               |
 
-**Editar**
-- `src/pages/Obras.tsx` — trocar `SimpleHeader`/`PageHeader` pelo novo layout; conectar KPIs/chips ao estado de filtros existente; preservar `ObrasMap` intacto.
-- `src/components/ObrasFilters.tsx` — restyle (mesma API/campos); adicionar botão colapsar.
-- `src/components/ObraDetails.tsx` — restyle para casar com Frame-5, mantendo TODOS os campos, fotos, documentos, medições, botões (Ver Detalhes / Editar).
 
-**Não tocar**
-- `ObrasMap.tsx`, `useObras`, `useMedicoesFinanceiro`, `useRdoProgressByObra`, `AdminObras*`, `ObrasLista.tsx`, rotas, RLS, migrations, buckets, hooks financeiros.
+## 4. Pontos que precisam da sua decisão antes de eu implementar
 
-## 4. Preservação de funcionalidades (nada será removido)
+1. **Rota "Painel de Obras"**: a rota existe? Se sim, qual? (Não localizei um `/admin/obras/painel`; hoje só há `AdminObras` = lista.) Se não existir, removo esse botão da navegação do módulo.
+2. **Barra de Execução**: manter as duas trilhas atuais (RDO + Medição) ou consolidar em uma única barra como no Figma? Recomendo **manter as duas** — nada é perdido.
+3. **Paginação**: adicionar paginação client-side (o Figma mostra "Página 1 de 3") ou manter renderização completa como hoje?
+4. **Sidebar**: confirma trocar `SimpleHeader` por `ObrasLayout` (nova sidebar SiDIF) **apenas** em `/admin/obras`, sem tocar em outras páginas admin?
+5. **Confirmação de exclusão**: posso migrar `window.confirm` para `AlertDialog`? (mesma regra, apenas visual)
 
-- Tipos disponíveis atuais: **Reforma, Construção, Adequações**. O Figma mostra também "Ampliação" e "Manutenção" — irei **exibir apenas os tipos reais existentes** (não vou inventar). Se quiser habilitar Ampliação/Manutenção, aviso e peço aprovação (envolveria mudança de dados).
-- Todos os campos atuais do `ObraDetails` (empresa, fiscal, gestor, SEI, contrato, coordenadas, medições, RDO progresso, aditivo prazo, tempo obra, etc.) serão mantidos — os que não couberem no bloco principal do Figma vão para seções colapsáveis (accordion) já previstas no design.
-- Botões "Estatísticas", "Painel de Obras", "Ver como Lista" continuam apontando para as rotas atuais.
-- Permissões (`PermissionGuard requiresEdit`, `useUserRole`) preservadas para "Editar Obra" e "Ver como Lista".
+## 5. O que NÃO será feito nesta etapa
 
-## 5. Campos ausentes no banco
+- Nenhuma edição de arquivo
+- Nenhuma alteração de banco, RLS, rotas ou permissões
+- Nenhuma remoção de coluna, botão ou ação
+- Nenhum dado simulado
 
-Nenhum campo novo é necessário. O layout do Figma é subconjunto do que já existe.
+Aguardo sua aprovação (e respostas dos 5 itens acima) para seguir para a Etapa 2 (implementação).  
+  
+**Rota “Painel de Obras”**  
+Como não foi localizada uma rota específica para “Painel de Obras”, não remova o botão definitivamente. Oculte-o temporariamente nesta implementação ou mantenha-o desabilitado com indicação “Em desenvolvimento”, sem criar rota fictícia. Caso exista alguma funcionalidade equivalente já implementada, reaproveite-a.
 
-## 6. Itens que exigirão sua aprovação antes de qualquer remoção
+**Barra de Execução**  
+Mantenha as duas trilhas atuais, uma para **RDO** e outra para **Medição**. Não consolidar em uma única barra, pois representam informações diferentes e a consolidação poderia ocultar dados importantes. Adapte o layout do Figma para exibir as duas de forma clara.
 
-- Substituir `SimpleHeader` **apenas nesta página** por sidebar nova (as demais páginas continuam com `SimpleHeader` como estão hoje, exceto Preventivos que já usa sidebar). Confirmar OK.
-- Se quiser rolar o novo shell para todas as páginas do sistema, isso seria uma tarefa separada (não incluída aqui).
+**Paginação**  
+Adicione paginação client-side, mantendo inicialmente 10 obras por página, com seletor de quantidade por página se for simples de implementar. Não altere a consulta nem a estrutura dos dados. Caso o volume cresça no futuro, deixaremos preparado para paginação server-side.
 
-## 7. Responsividade
+**Sidebar**  
+Confirmo substituir o `SimpleHeader` por `ObrasLayout` apenas na rota `/admin/obras` nesta etapa. Não alterar outras páginas administrativas nem outras rotas do módulo sem nova aprovação.
 
-- Desktop ≥1280: sidebar fixa, filtros à esquerda, mapa central, drawer direita ~460px.
-- Notebook 1024–1279: filtros colapsáveis (Frame-3), drawer 420px.
-- Tablet <1024: sidebar em drawer; filtros em bottom sheet; drawer da obra ocupa até 90% da largura.
-- Mobile <640: mapa full; filtros e resumo da obra em bottom sheet.
+**Confirmação de exclusão**  
+Pode migrar de `window.confirm` para `AlertDialog`, mantendo exatamente a mesma regra de permissão, validação e exclusão. A mudança deve ser apenas visual, sem alterar o comportamento funcional.  
+  
 
-## 8. Validação após implementação
 
-Carregamento, clusters, filtros (aplicar/limpar/chips/colapsar), KPIs clicáveis, seleção de pin, drawer (abrir/fechar X e Esc), campos completos (fiscal, gestor, financeiro, medições, fotos, docs), botões (Ver Detalhes, Editar, Estatísticas, Painel, Lista), permissões, sem regressão no console, sem alteração em outras páginas.
-
----
-
-Se aprovar, sigo direto para a Etapa 2 (implementação visual, sem tocar dados, rotas ou permissões).
+&nbsp;
