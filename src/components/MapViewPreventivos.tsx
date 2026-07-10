@@ -402,7 +402,7 @@ export function MapViewPreventivos({
           )}
         </div>
       )}
-    <div className="relative w-full h-[600px] border rounded-lg overflow-hidden z-0">
+    <div className="relative w-full border rounded-lg overflow-hidden z-0" style={{ height: height ?? '600px' }}>
       <MapContainer
         center={matogrossoCenter}
         zoom={7}
