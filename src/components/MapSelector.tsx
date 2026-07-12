@@ -19,13 +19,25 @@ interface MapSelectorProps {
   onLocationSelect: (lat: number, lng: number) => void;
   initialCoordinates?: { lat: number; lng: number };
   address?: string; // Para geocoding automático
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function MapSelector({ onLocationSelect, initialCoordinates, address }: MapSelectorProps) {
+export function MapSelector({ onLocationSelect, initialCoordinates, address, open, onOpenChange, hideTrigger }: MapSelectorProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const marker = useRef<L.Marker | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = open !== undefined;
+  const isOpen = isControlled ? open! : internalOpen;
+  const setIsOpen = (v: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(v);
+    } else {
+      setInternalOpen(v);
+    }
+  };
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(
     initialCoordinates || null
   );
