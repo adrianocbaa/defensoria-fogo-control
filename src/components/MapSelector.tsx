@@ -19,13 +19,25 @@ interface MapSelectorProps {
   onLocationSelect: (lat: number, lng: number) => void;
   initialCoordinates?: { lat: number; lng: number };
   address?: string; // Para geocoding automático
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function MapSelector({ onLocationSelect, initialCoordinates, address }: MapSelectorProps) {
+export function MapSelector({ onLocationSelect, initialCoordinates, address, open, onOpenChange, hideTrigger }: MapSelectorProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const marker = useRef<L.Marker | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = open !== undefined;
+  const isOpen = isControlled ? open! : internalOpen;
+  const setIsOpen = (v: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(v);
+    } else {
+      setInternalOpen(v);
+    }
+  };
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(
     initialCoordinates || null
   );
@@ -315,15 +327,17 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address }: M
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="w-full">
-          <MapPin className="h-4 w-4 mr-2" />
-          {selectedCoords 
-            ? `Localização: ${selectedCoords.lat.toFixed(6)}, ${selectedCoords.lng.toFixed(6)}`
-            : 'Selecionar no Mapa'
-          }
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" className="w-full">
+            <MapPin className="h-4 w-4 mr-2" />
+            {selectedCoords 
+              ? `Localização: ${selectedCoords.lat.toFixed(6)}, ${selectedCoords.lng.toFixed(6)}`
+              : 'Selecionar no Mapa'
+            }
+          </Button>
+        </DialogTrigger>
+      )}
       
       <DialogContent className="max-w-4xl h-[600px]">
         <DialogHeader>
