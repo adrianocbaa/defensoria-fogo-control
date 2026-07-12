@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useBlocker } from 'react-router-dom';
+// react-router useBlocker requires a data router; we rely on beforeunload only.
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmpresas } from '@/hooks/useEmpresas';
