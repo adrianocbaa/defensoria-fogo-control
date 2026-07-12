@@ -365,7 +365,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty, isSubmitting]);
 
-  const blocker = { state: 'unblocked' as const, reset: undefined as undefined | (() => void), proceed: undefined as undefined | (() => void) };
+  const blocker: { state: string; reset?: () => void; proceed?: () => void } = { state: 'unblocked' };
 
   const onSubmit = async (data: ObraFormData) => {
     if (!user) {
