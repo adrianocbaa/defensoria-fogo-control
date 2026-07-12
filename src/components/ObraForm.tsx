@@ -554,7 +554,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       [!!values.empresa_id || !!values.empresa_responsavel, 1],
       [!!values.data_inicio || values.status === 'planejamento', 1],
       [!!values.fiscal_id, 1],
-      [hasCoordinates, 1],
+      [!!hasCoordinates, 1],
     ];
     const total = required.reduce((s, [_, w]) => s + w, 0);
     const done = required.reduce((s, [ok, w]) => s + (ok ? w : 0), 0);
