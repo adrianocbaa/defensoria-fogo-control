@@ -1066,16 +1066,6 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                     </FormItem>
                   )} />
 
-                  <FormField control={form.control} name="secretaria_responsavel" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Secretaria Responsável (texto livre)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Opcional" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormDescription>Campo legado preservado por compatibilidade.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
                 </CardContent>
               </Card>
             </section>
