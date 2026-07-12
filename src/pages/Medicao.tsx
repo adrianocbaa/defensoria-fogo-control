@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { SimpleHeader } from '@/components/SimpleHeader';
+import { ObrasLayout } from '@/components/obras/ObrasLayout';
+import { WorksPageHeader } from '@/components/obras/WorksPageHeader';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -4094,29 +4095,27 @@ export function Medicao() {
   const valorAcumuladoTotal = valorAcumuladoCalculado;
 
   return (
-    <SimpleHeader>
-      <div className="medicao-page min-h-screen bg-gray-50 py-3">
+    <ObrasLayout
+      header={({ openMenu }) => (
+        <WorksPageHeader
+          onOpenMenu={openMenu}
+          globalSearch=""
+          onGlobalSearchChange={() => {}}
+          breadcrumb={`Dashboard / Obras / ${obra.nome} / Medição`}
+          title={`Medição — ${obra.nome}`}
+          subtitle={obra.municipio}
+        />
+      )}
+    >
+      <div className="medicao-page w-full">
         <div className="content-root w-full">
-        {/* Cabeçalho */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <FileText className="h-6 w-6" />
-                  Sistema de Medição - {obra.nome}
-                </CardTitle>
-                <p className="text-muted-foreground">
-                  {obra.municipio}
-                </p>
-              </div>
-              <Button variant="outline" onClick={() => navigate('/admin/obras')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
+        <div className="mb-4 flex justify-end">
+          <Button variant="outline" onClick={() => navigate('/admin/obras')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+        </div>
+
 
         {/* Sistema de Abas */}
         <Tabs defaultValue="medicao-atual" className="w-full">
@@ -5105,6 +5104,6 @@ export function Medicao() {
         />
         </div>
       </div>
-    </SimpleHeader>
+    </ObrasLayout>
   );
 }
