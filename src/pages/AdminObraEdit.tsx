@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { SimpleHeader } from '@/components/SimpleHeader';
+import { ObrasLayout } from '@/components/obras/ObrasLayout';
+import { WorksPageHeader } from '@/components/obras/WorksPageHeader';
 import { ObraPermissionGuard, ObraPermissionRole } from '@/components/ObraPermissionGuard';
 import { ObraForm } from '@/components/ObraForm';
 import * as LoadingStates from '@/components/LoadingStates';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ObraData {
@@ -36,6 +35,7 @@ export function AdminObraEdit() {
   const navigate = useNavigate();
   const [obra, setObra] = useState<ObraData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [globalSearch, setGlobalSearch] = useState('');
 
   const isNewObra = id === 'nova';
 
@@ -67,51 +67,35 @@ export function AdminObraEdit() {
     fetchObra();
   }, [id, isNewObra, navigate]);
 
-  const handleSuccess = () => {
-    navigate('/admin/obras');
-  };
+  const handleSuccess = () => navigate('/admin/obras');
+  const handleCancel = () => navigate('/admin/obras');
 
-  const handleCancel = () => {
-    navigate('/admin/obras');
-  };
-
-  if (loading) {
-    return <LoadingStates.FormSkeleton />;
-  }
+  const title = isNewObra ? 'Nova Obra' : 'Editar Obra';
+  const subtitle = isNewObra ? 'Cadastre uma nova obra pública' : 'Edite as informações da obra';
+  const breadcrumb = `Dashboard / Obras / ${title}`;
 
   return (
-    <SimpleHeader>
-      {/* Para nova obra, usar apenas verificação de role. Para edição, verificar permissão granular */}
-      <ObraPermissionGuard obraId={isNewObra ? undefined : id} roleCheckOnly={isNewObra}>
-        {(permissionRole: ObraPermissionRole) => {
-          // Apenas admin e titular podem alterar o fiscal do contrato
-          const canChangeFiscal = permissionRole === 'admin' || permissionRole === 'titular';
-          
-          return (
-            <div className="container mx-auto py-6 space-y-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/admin/obras')}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar
-                </Button>
-                <div>
-                  <h1 className="text-3xl font-bold">
-                    {isNewObra ? 'Nova Obra' : 'Editar Obra'}
-                  </h1>
-                  <p className="text-muted-foreground mt-2">
-                    {isNewObra 
-                      ? 'Cadastre uma nova obra pública' 
-                      : 'Edite as informações da obra'
-                    }
-                  </p>
-                </div>
-              </div>
+    <ObrasLayout
+      header={({ openMenu }) => (
+        <WorksPageHeader
+          onOpenMenu={openMenu}
+          globalSearch={globalSearch}
+          onGlobalSearchChange={setGlobalSearch}
+          breadcrumb={breadcrumb}
+          title={title}
+          subtitle={subtitle}
+        />
+      )}
+    >
+      {loading ? (
+        <LoadingStates.FormSkeleton />
+      ) : (
+        <ObraPermissionGuard obraId={isNewObra ? undefined : id} roleCheckOnly={isNewObra}>
+          {(permissionRole: ObraPermissionRole) => {
+            const canChangeFiscal = permissionRole === 'admin' || permissionRole === 'titular';
 
-              <div className="max-w-4xl">
+            return (
+              <div className="mx-auto w-full max-w-[1280px]">
                 <ObraForm
                   obraId={id}
                   initialData={obra ? {
@@ -126,10 +110,10 @@ export function AdminObraEdit() {
                   canChangeFiscal={canChangeFiscal}
                 />
               </div>
-            </div>
-          );
-        }}
-      </ObraPermissionGuard>
-    </SimpleHeader>
+            );
+          }}
+        </ObraPermissionGuard>
+      )}
+    </ObrasLayout>
   );
 }
