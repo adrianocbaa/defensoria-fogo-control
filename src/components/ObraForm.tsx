@@ -1244,15 +1244,15 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         </Card>
       </aside>
 
-      {/* Map Selector */}
-      {showMapSelector && (
-        <div className="fixed inset-0 z-50">
-          <MapSelector
-            onLocationSelect={handleLocationSelect}
-            initialCoordinates={hasCoordinates ? { lat: coordinates[0]!, lng: coordinates[1]! } : undefined}
-          />
-        </div>
-      )}
+      {/* Map Selector (controlled) */}
+      <MapSelector
+        open={showMapSelector}
+        onOpenChange={setShowMapSelector}
+        hideTrigger
+        onLocationSelect={handleLocationSelect}
+        initialCoordinates={hasCoordinates ? { lat: coordinates[0]!, lng: coordinates[1]! } : undefined}
+      />
+
 
       {/* Dialog de Conclusão (preservado) */}
       <Dialog open={showConclusaoDialog} onOpenChange={setShowConclusaoDialog}>
