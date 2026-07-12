@@ -5104,6 +5104,6 @@ export function Medicao() {
         />
         </div>
       </div>
-    </SimpleHeader>
+    </ObrasLayout>
   );
 }
