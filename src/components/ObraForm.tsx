@@ -125,9 +125,9 @@ interface StepDef {
 
 const STEPS: StepDef[] = [
   { key: 1, label: 'Identificação', short: 'Identificação', fields: ['nome', 'municipio', 'sei_numero', 'status', 'tipo'] },
-  { key: 2, label: 'Contrato e Valores', short: 'Contrato', fields: ['n_contrato', 'valor_total', 'valor_aditivado', 'valor_executado', 'empresa_id', 'empresa_responsavel', 'regiao'] },
+  { key: 2, label: 'Contrato e Valores', short: 'Contrato', fields: ['n_contrato', 'valor_total', 'valor_aditivado', 'valor_executado', 'empresa_id', 'regiao'] },
   { key: 3, label: 'Prazos', short: 'Prazos', fields: ['data_inicio', 'tempo_obra', 'aditivo_prazo', 'previsao_termino'] },
-  { key: 4, label: 'Responsáveis', short: 'Responsáveis', fields: ['fiscal_id', 'fiscal_substituto_id', 'responsavel_projeto_id', 'secretaria_responsavel'] },
+  { key: 4, label: 'Responsáveis', short: 'Responsáveis', fields: ['fiscal_id', 'fiscal_substituto_id', 'responsavel_projeto_id'] },
   { key: 5, label: 'Configurações', short: 'Configurações', fields: ['rdo_habilitado'] },
   { key: 6, label: 'Fotos e Documentos', short: 'Anexos', fields: [] },
   { key: 7, label: 'Revisão', short: 'Revisão', fields: [] },
