@@ -125,9 +125,9 @@ interface StepDef {
 
 const STEPS: StepDef[] = [
   { key: 1, label: 'Identificação', short: 'Identificação', fields: ['nome', 'municipio', 'sei_numero', 'status', 'tipo'] },
-  { key: 2, label: 'Contrato e Valores', short: 'Contrato', fields: ['n_contrato', 'valor_total', 'valor_aditivado', 'valor_executado', 'empresa_id', 'empresa_responsavel', 'regiao'] },
+  { key: 2, label: 'Contrato e Valores', short: 'Contrato', fields: ['n_contrato', 'valor_total', 'valor_aditivado', 'valor_executado', 'empresa_id', 'regiao'] },
   { key: 3, label: 'Prazos', short: 'Prazos', fields: ['data_inicio', 'tempo_obra', 'aditivo_prazo', 'previsao_termino'] },
-  { key: 4, label: 'Responsáveis', short: 'Responsáveis', fields: ['fiscal_id', 'fiscal_substituto_id', 'responsavel_projeto_id', 'secretaria_responsavel'] },
+  { key: 4, label: 'Responsáveis', short: 'Responsáveis', fields: ['fiscal_id', 'fiscal_substituto_id', 'responsavel_projeto_id'] },
   { key: 5, label: 'Configurações', short: 'Configurações', fields: ['rdo_habilitado'] },
   { key: 6, label: 'Fotos e Documentos', short: 'Anexos', fields: [] },
   { key: 7, label: 'Revisão', short: 'Revisão', fields: [] },
@@ -799,16 +799,6 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                     </FormItem>
                   )} />
 
-                  <FormField control={form.control} name="empresa_responsavel" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Empresa Responsável (texto livre)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Opcional — usado quando a empresa não está cadastrada" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormDescription>Campo legado preservado por compatibilidade.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
 
                   <FormField control={form.control} name="regiao" render={({ field }) => (
                     <FormItem>
@@ -1066,16 +1056,6 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                     </FormItem>
                   )} />
 
-                  <FormField control={form.control} name="secretaria_responsavel" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Secretaria Responsável (texto livre)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Opcional" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormDescription>Campo legado preservado por compatibilidade.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
                 </CardContent>
               </Card>
             </section>
@@ -1169,7 +1149,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                     <ReviewRow label="Fiscal Titular" value={fiscalLabel} />
                     <ReviewRow label="Fiscal Substituto" value={substitutoLabel} />
                     <ReviewRow label="Gestor(a) do Contrato" value={gestorLabel} />
-                    <ReviewRow label="Secretaria (legado)" value={values.secretaria_responsavel} />
+                    
                   </ReviewBlock>
                   <ReviewBlock title="Configurações" onEdit={() => goToStep(5)}>
                     <ReviewRow label="RDO Habilitado" value={values.rdo_habilitado ? 'Sim' : 'Não'} />
