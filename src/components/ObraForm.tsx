@@ -1149,7 +1149,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                     <ReviewRow label="Fiscal Titular" value={fiscalLabel} />
                     <ReviewRow label="Fiscal Substituto" value={substitutoLabel} />
                     <ReviewRow label="Gestor(a) do Contrato" value={gestorLabel} />
-                    <ReviewRow label="Secretaria (legado)" value={values.secretaria_responsavel} />
+                    
                   </ReviewBlock>
                   <ReviewBlock title="Configurações" onEdit={() => goToStep(5)}>
                     <ReviewRow label="RDO Habilitado" value={values.rdo_habilitado ? 'Sim' : 'Não'} />
