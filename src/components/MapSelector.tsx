@@ -327,15 +327,17 @@ export function MapSelector({ onLocationSelect, initialCoordinates, address, ope
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="w-full">
-          <MapPin className="h-4 w-4 mr-2" />
-          {selectedCoords 
-            ? `Localização: ${selectedCoords.lat.toFixed(6)}, ${selectedCoords.lng.toFixed(6)}`
-            : 'Selecionar no Mapa'
-          }
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" className="w-full">
+            <MapPin className="h-4 w-4 mr-2" />
+            {selectedCoords 
+              ? `Localização: ${selectedCoords.lat.toFixed(6)}, ${selectedCoords.lng.toFixed(6)}`
+              : 'Selecionar no Mapa'
+            }
+          </Button>
+        </DialogTrigger>
+      )}
       
       <DialogContent className="max-w-4xl h-[600px]">
         <DialogHeader>
