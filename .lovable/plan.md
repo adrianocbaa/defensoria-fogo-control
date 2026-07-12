@@ -1,107 +1,152 @@
-# Etapa 1 — Análise da página "Gerenciar Obras"
+# Etapa 1 — Análise das telas atuais Nova/Editar Obra
 
-Conforme sua exigência, esta etapa é apenas de **análise**. Nada será alterado até sua aprovação.
+Conforme sua regra, **nesta fase não altero nenhum arquivo, migração, rota ou banco**. Apresento abaixo o levantamento completo do que existe hoje e como cada item será preservado no novo fluxo por etapas do Figma. Aguardo aprovação antes de iniciar a Etapa 2.
 
-## 1. Mapeamento atual
-
-
-| Item                    | Situação hoje                                                                                                                                                                                       |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rota                    | `/admin/obras`                                                                                                                                                                                      |
-| Componente principal    | `src/pages/AdminObras.tsx`                                                                                                                                                                          |
-| Chrome                  | `SimpleHeader` + `PageHeader`                                                                                                                                                                       |
-| Detalhes                | drawer `ObraDetails` (compartilhado)                                                                                                                                                                |
-| Progresso               | `ObraProgressCell` interno + `MedicaoProgressBar`                                                                                                                                                   |
-| Estados                 | `LoadingStates.TableSkeleton`                                                                                                                                                                       |
-| Permissões              | `useUserRole`, `useObraActionPermissions`, `PermissionGuard`                                                                                                                                        |
-| Hooks de dados          | `useObras` (full), `useMedicoesFinanceiro`, RPC `get_rdo_progress_batch`                                                                                                                            |
-| Tabelas Supabase        | `obras`, `user_obra_access`, `orcamento_items`, `aditivo_sessions`, `aditivo_items`, `medicao_sessions`, `medicao_items`, indiretas: `empresas`, `profiles`, `rdo_*`                                |
-| Fonte de dados          | Query direta em `obras` (filtrada por `user_obra_access` se contratada) + cálculo financeiro via `calcularFinanceiroMedicao`                                                                        |
-| Rotas irmãs preservadas | `/dashboard` (Estatísticas), `/obras` (Mapa), `/admin/obras/lista` (Lista simples), `/admin/obras/nova`, `/admin/obras/:id/editar`, `/medicao/:id`, `/obras/:id/rdo/resumo`, `/obras/:id/checklist` |
+## 1. Rotas atuais
 
 
-## 2. Funcionalidades hoje disponíveis
-
-- Busca por nome/município/tipo (texto único)
-- Filtro por status (Todos / Em Andamento / Paralisado / Concluído — botões)
-- Filtro por ano de início (`Select`)
-- Ordenação fixa por status (em_andamento → planejamento → paralisada → concluida) + data prevista de término (sem ordenação por coluna)
-- Sem paginação (renderiza tudo)
-- Colunas: Nome · Município · Tipo · Status · Valor · Progresso (RDO + Medição, dois trilhos) · Ações
-- Cabeçalho da página: botões **Estatísticas**, **Mapa de Obras**, **Nova Obra**
-- Ações por linha:
-  - Ver detalhes (drawer `ObraDetails`)
-  - Medição (`/medicao/:id`)
-  - RDO (`/obras/:id/rdo/resumo`, condicional a `rdo_habilitado`)
-  - Checklist (`/obras/:id/checklist`)
-  - Editar (permissão granular `useObraActionPermissions`)
-  - Excluir (permissão granular + `window.confirm`)
-- Contratada vê apenas obras liberadas em `user_obra_access`
-- Bloco informativo para perfis apenas-visualização
-- Sem exportação, sem importação, sem seleção em lote, sem duplicar/arquivar, sem personalização de colunas
-
-## 3. Tabela comparativa Figma × Sistema
+| Ação           | Rota                               | Página                                                                                                     |
+| -------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Criação        | `/admin/obras/nova`                | `src/pages/AdminObraNova.tsx` → `PermissionGuard requiresEdit` → `ObraForm obraId="nova"`                  |
+| Criação (alt.) | `/admin/obras/:id` com `id="nova"` | `src/pages/AdminObraEdit.tsx` (mesmo fluxo, sem PermissionGuard granular, usa `roleCheckOnly`)             |
+| Edição         | `/admin/obras/:id`                 | `src/pages/AdminObraEdit.tsx` → `ObraPermissionGuard` → `ObraForm` com `canChangeFiscal` derivado do papel |
+| Voltar         | `/admin/obras`                     | `AdminObras.tsx`                                                                                           |
 
 
-| Funcionalidade atual                                                             | Aparece no Figma?                            | Como será preservada                                                                                                                                                                                                                                                    |
-| -------------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sidebar `SimpleHeader`                                                           | Não (Figma usa nova sidebar SiDIF)           | Trocar apenas nesta página para `ObrasLayout` já existente (mesmo padrão do `/obras`)                                                                                                                                                                                   |
-| Breadcrumb / título                                                              | Sim ("Dashboard / Obras" + "Mapa de Obras")  | Usar `WorksPageHeader`; título permanece **"Gerenciar Obras"** (não "Mapa de Obras")                                                                                                                                                                                    |
-| Botões Estatísticas / Painel / Ver como Mapa / Ver como Lista                    | Parcial (4 abas no Figma)                    | Nova barra de navegação do módulo com 4 acessos: **Mapa de Obras** (`/obras`), **Estatísticas** (`/dashboard`), **Painel de Obras** (`/admin/obras/painel` — confirmar rota), **Gerenciar Obras** (ativa). Botão **Nova Obra** preservado como ação principal do header |
-| KPIs (Total/Em Andamento/Concluídas/Planejadas/Paralisadas)                      | Sim                                          | Novo componente `WorksStats` calculado a partir de `obras`; clique aplica filtro de status                                                                                                                                                                              |
-| Busca por nome/município/tipo                                                    | Sim (busca global no header + campo interno) | Preserva campo de busca; busca global do header fica visual (padrão do novo SiDIF)                                                                                                                                                                                      |
-| Filtro por status (botões)                                                       | Sim, como chips ativos + filtros             | Migrar para painel de filtros + chips removíveis (`ActiveFilters`)                                                                                                                                                                                                      |
-| Filtro por ano de início                                                         | Não visível                                  | **Preservar** dentro do painel de filtros (drawer/popover "Filtros")                                                                                                                                                                                                    |
-| Ordenação por status+prazo                                                       | Não visível                                  | Preservar ordenação padrão + habilitar cabeçalhos clicáveis (indicadores ▲▼) nas colunas Nome, Município, Status, Execução, Prazo, Valor, Fiscal                                                                                                                        |
-| Coluna Tipo                                                                      | Sim                                          | Mantida                                                                                                                                                                                                                                                                 |
-| Coluna Prazo                                                                     | Sim                                          | **Nova** — usar `previsao_termino` formatado dd/mm/aaaa; "—" quando ausente                                                                                                                                                                                             |
-| Coluna Fiscal                                                                    | Sim                                          | **Nova** — usar `fiscal_id → profiles.display_name` (já disponível em `useObras`); "Não informado" quando ausente                                                                                                                                                       |
-| Coluna Valor                                                                     | Sim                                          | Manter cálculo atual `obraValores` (total contrato via `calcularFinanceiroMedicao`), formato R$                                                                                                                                                                         |
-| Coluna Execução (barra + %)                                                      | Sim (barra única azul)                       | Manter `ObraProgressCell` (RDO + Medição). Se decidirmos simplificar para uma barra só, **peço aprovação** — proposta é manter as duas trilhas                                                                                                                          |
-| Ação Ver                                                                         | Sim                                          | Botão "Ver" na coluna Ação abre drawer `ObraDetails`                                                                                                                                                                                                                    |
-| Ações Medição / RDO / Checklist / Editar / Excluir                               | Não visíveis                                 | Recolher num **menu ⋯** ao lado do botão "Ver", preservando 100% e respeitando `useObraActionPermissions`                                                                                                                                                               |
-| Confirmação de exclusão                                                          | Existe (`window.confirm`)                    | Substituir por `AlertDialog` do shadcn (melhora UX, mesma regra)                                                                                                                                                                                                        |
-| Nova Obra                                                                        | Existe                                       | Botão `+ Nova Obra` mantido no header (ação principal), preservando `PermissionGuard requiresEdit`                                                                                                                                                                      |
-| Filtro por município / fiscal / empresa / período                                | Não existe hoje                              | **Não criar** sem pedido explícito (você mencionou "demais filtros atualmente existentes" — como não há, nada a adicionar)                                                                                                                                              |
-| Paginação                                                                        | Não existe hoje                              | **Adicionar** paginação client-side (10/25/50 por página) com contador "Exibindo X–Y de N" — informe se prefere manter sem paginação                                                                                                                                    |
-| Chips de filtros ativos + "Limpar todos"                                         | Sim                                          | Novo `ActiveFilterChips` sobre os filtros existentes                                                                                                                                                                                                                    |
-| Bloco "permissão de visualização"                                                | Existe                                       | Mantido no rodapé                                                                                                                                                                                                                                                       |
-| Contratada com `user_obra_access`                                                | Existe                                       | Preservado (mesma query)                                                                                                                                                                                                                                                |
-| Exportação / importação / lote / duplicar / arquivar / personalização de colunas | Não existem                                  | Não criar                                                                                                                                                                                                                                                               |
+Ambas as páginas hoje renderizam **o mesmo componente monolítico** `src/components/ObraForm.tsx` (~1139 linhas).
+
+## 2. Componentes utilizados
+
+- `ObraForm` (form principal, monolítico)
+- `MapSelector` (seleção lat/lng)
+- `PhotoUpload` + `PhotoGalleryCollapsible` (upload/listagem de fotos com pastas por mês)
+- `DocumentsUpload` (upload de documentos)
+- shadcn `Form`, `Input`, `Select`, `Switch`, `Textarea`, `Dialog`
+- `SimpleHeader`, `PermissionGuard`, `ObraPermissionGuard`, `LoadingStates.FormSkeleton`
+
+## 3. Schema Zod (validações atuais) — `obraSchema`
 
 
-## 4. Pontos que precisam da sua decisão antes de eu implementar
+| Campo                                 | Tipo      | Obrigatório        | Regra especial                                                                           |
+| ------------------------------------- | --------- | ------------------ | ---------------------------------------------------------------------------------------- |
+| `nome`                                | string    | Sim                | min 1                                                                                    |
+| `municipio`                           | string    | Sim                | min 1                                                                                    |
+| `n_contrato`                          | string    | Condicional        | Obrigatório se `status !== 'planejamento'`                                               |
+| `sei_numero`                          | string    | Não                | regex `AAAA.D.DDDDDDDDD-D`                                                               |
+| `status`                              | enum      | Sim                | `planejamento` | `em_andamento` | `concluida` | `paralisada`                             |
+| `tipo`                                | enum      | Sim                | `Reforma` | `Construção` | `Adequações`                                                  |
+| `valor_total`                         | number ≥0 | Sim                | Bloqueado quando existe planilha orçamentária importada                                  |
+| `valor_aditivado`                     | number ≥0 | Não                | Derivado de `aditivo_sessions` bloqueadas quando há planilha                             |
+| `valor_executado`                     | number ≥0 | Não                | Derivado de `medicao_items` (`total_congelado ?? total`) quando há planilha              |
+| `data_inicio`                         | string    | Condicional        | Salvo como null se status = `planejamento`                                               |
+| `tempo_obra`                          | number    | Não                | Entra no cálculo de `previsao_termino`                                                   |
+| `aditivo_prazo`                       | number    | Não                | Entra no cálculo de `previsao_termino`                                                   |
+| `previsao_termino`                    | string    | Calculado          | `addDays(data_inicio, tempo_obra + aditivo_prazo)` via `form.watch`                      |
+| `data_termino_real`                   | string    | Condicional        | Só salvo se `status = concluida` (via `showConclusaoDialog`)                             |
+| `empresa_id`                          | string    | Não                | Filtra `regiao` via `ata_polos.empresa_id`                                               |
+| `empresa_responsavel`                 | string    | Não                | Texto livre legado                                                                       |
+| `regiao`                              | string    | Não                | Vem de `ata_polos.polo`                                                                  |
+| `secretaria_responsavel`              | string    | Não                | Texto legado                                                                             |
+| `fiscal_id`                           | string    | Não                | FK para `profiles` (setor `dif`). Editável somente por admin/titular (`canChangeFiscal`) |
+| `fiscal_substituto_id`                | string    | Não                | Persistido em `obra_fiscal_substitutos` (delete-all + insert 1)                          |
+| `responsavel_projeto_id`              | string    | Não                | FK para `profiles` (setor `dif`)                                                         |
+| `coordinates_lat` / `coordinates_lng` | number    | Não                | Via `MapSelector`                                                                        |
+| `rdo_habilitado`                      | boolean   | Sim (default true) | Regra RDO existente                                                                      |
 
-1. **Rota "Painel de Obras"**: a rota existe? Se sim, qual? (Não localizei um `/admin/obras/painel`; hoje só há `AdminObras` = lista.) Se não existir, removo esse botão da navegação do módulo.
-2. **Barra de Execução**: manter as duas trilhas atuais (RDO + Medição) ou consolidar em uma única barra como no Figma? Recomendo **manter as duas** — nada é perdido.
-3. **Paginação**: adicionar paginação client-side (o Figma mostra "Página 1 de 3") ou manter renderização completa como hoje?
-4. **Sidebar**: confirma trocar `SimpleHeader` por `ObrasLayout` (nova sidebar SiDIF) **apenas** em `/admin/obras`, sem tocar em outras páginas admin?
-5. **Confirmação de exclusão**: posso migrar `window.confirm` para `AlertDialog`? (mesma regra, apenas visual)
 
-## 5. O que NÃO será feito nesta etapa
+## 4. Tabelas envolvidas
 
-- Nenhuma edição de arquivo
-- Nenhuma alteração de banco, RLS, rotas ou permissões
-- Nenhuma remoção de coluna, botão ou ação
-- Nenhum dado simulado
+- `obras` (principal, update/insert)
+- `obra_fiscal_substitutos` (sync 1:1 via delete + insert)
+- `profiles` (leitura de fiscais/arquitetos DIF)
+- `empresas` (`useEmpresas`)
+- `ata_polos` (regiões filtradas por empresa)
+- `orcamento_items` (detecta planilha importada)
+- `aditivo_sessions` + `aditivo_items` (valor aditivado derivado)
+- `medicao_sessions` + `medicao_items` (valor pago derivado)
+- Storage: bucket usado por `PhotoUpload` e `DocumentsUpload` (pasta `obras/AAAA-MM/…`)
 
-Aguardo sua aprovação (e respostas dos 5 itens acima) para seguir para a Etapa 2 (implementação).  
+## 5. Hooks e queries atuais
+
+- `useAuth`, `useEmpresas`
+- `useQuery`: `regioes-ata`, `fiscais-obras-dif`, `arquitetos-obras-dif`, `obra-fiscal-substituto`, `planilha-importada`, `valores-calculados-obra`
+- `form.watch` para recálculo de previsão de término
+- `PermissionGuard requiresEdit` (criação), `ObraPermissionGuard` (edição, retorna `role`)
+
+## 6. Regras condicionais / por status
+
+- `n_contrato` obrigatório se status ≠ `planejamento`
+- `data_inicio` salva `null` se status = `planejamento`
+- `data_termino_real` só salva se status = `concluida` (fluxo `showConclusaoDialog` + `pendingStatusChange`)
+- `valor_total` bloqueado quando `hasPlanilhaImportada`
+- `valor_aditivado`/`valor_executado` sobrescritos pelo derivado quando `hasPlanilhaImportada`
+- `regiao` depende de `empresa_id`
+- `fiscal_id` só editável para admin/titular (`canChangeFiscal`)
+
+## 7. Fotos e documentos
+
+- Fotos: seleção mês/ano, pastas `obras/AAAA-MM/…`, capa (`isCover`), edição de data do álbum, limite atual conforme `PhotoUpload`
+- Documentos: `DocumentsUpload` grava em `documents` (name/type/url), tipos e limites atuais preservados
+
+## 8. Fluxo de submit atual
+
+1. Monta `obraData` respeitando regras por status
+2. `insert` (criação) ou `update` (edição) em `obras`
+3. Sincroniza `obra_fiscal_substitutos` (delete-all + insert do selecionado)
+4. `toast.success` + `onSuccess()` → redirect `/admin/obras`
+
+## 9. Mapeamento Figma × Sistema (preservação)
+
+
+| Funcionalidade atual                                                                                          | Etapa do novo layout                 | Como será preservada                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `nome`, `municipio`, `sei_numero`, `status`, `tipo`                                                           | 1. Identificação                     | Mesmos campos e validações Zod; mesma condicional `status`→`n_contrato` disparada mesmo se o campo estiver em outra etapa                                                                                    |
+| `MapSelector`, `coordinates_lat/lng`                                                                          | 1. Identificação (bloco Localização) | Componente atual reutilizado dentro do card do Figma; estados "sem localização / com coordenadas / alterar" apenas visuais                                                                                   |
+| `n_contrato`, `valor_total`, `valor_aditivado`, `valor_executado`, `empresa_id/empresa_responsavel`, `regiao` | 2. Contrato e Valores                | Mesmos hooks (`useEmpresas`, `regioes-ata`, `valores-calculados-obra`, `planilha-importada`); "Valor Final" será **apenas exibição derivada** (`valor_total + valor_aditivado`), sem nova fórmula persistida |
+| `data_inicio`, `tempo_obra`, `aditivo_prazo`, `previsao_termino`, `data_termino_real` + `showConclusaoDialog` | 3. Prazos                            | Mesmo `useEffect` de recálculo; mesmo Dialog de conclusão; resumo visual apenas leitura                                                                                                                      |
+| `empresa_id`, `regiao`, `fiscal_id`, `fiscal_substituto_id`, `responsavel_projeto_id` + `canChangeFiscal`     | 4. Responsáveis                      | Mesmas queries `fiscais-obras-dif`/`arquitetos-obras-dif`; `fiscal_id` continua desabilitado sem permissão                                                                                                   |
+| `rdo_habilitado` (Switch)                                                                                     | 5. Configurações                     | Mesmo campo; texto explicativo melhorado sem alterar regra                                                                                                                                                   |
+| `PhotoUpload`, `PhotoGalleryCollapsible`, `DocumentsUpload`                                                   | 6. Fotos e Documentos                | Componentes reaproveitados dentro do novo card, sem tocar em storage/pastas/limites                                                                                                                          |
+| `onSubmit` (insert/update + sync substituto)                                                                  | 7. Revisão → botão final             | Um único submit no final; Revisão apenas lê do form state; ações "Editar" navegam para a etapa correspondente                                                                                                |
+| `PermissionGuard`/`ObraPermissionGuard`                                                                       | Envolve toda a página                | Mantidos como hoje; sem "esconder e pronto"                                                                                                                                                                  |
+| Redirect `/admin/obras`                                                                                       | Pós-submit                           | Mesmo `onSuccess`/`onCancel`                                                                                                                                                                                 |
+| Header antigo                                                                                                 | Novo cabeçalho + breadcrumb          | Barra horizontal verde removida visualmente **apenas** por este pedido explícito do usuário                                                                                                                  |
+
+
+## 10. Funcionalidades atuais NÃO visíveis explicitamente no Figma
+
+Serão preservadas, aguardo apenas confirmação de onde exibi-las:
+
+1. **Dialog de conclusão** (`showConclusaoDialog` + `data_termino_real`) — sugestão: mantido como Dialog acionado ao mudar status na etapa 1 ou 3.
+2. `**sei_numero**` com máscara — cabe em Identificação.
+3. `**empresa_responsavel` (texto legado)** vs `empresa_id` — hoje coexistem; manter ambos ou consolidar? (recomendo manter ambos).
+4. `**secretaria_responsavel` (texto legado)** — coexiste com `fiscal_id`; manter.
+5. **Bloqueio de `valor_total**` quando há planilha importada — exibir badge "Calculado pela planilha".
+6. **Derivação de `valor_aditivado`/`valor_executado**` — exibir como "Calculado" quando `hasPlanilhaImportada`.
+7. `**isCover` em fotos** e **edição de data de álbum** — manter na etapa 6.
+8. `**canChangeFiscal**` — mantido como disabled state na etapa 4.
+
+## 11. Decisões que precisam da sua aprovação antes de eu prosseguir
+
+1. **Rota**: manter as duas rotas atuais (`/admin/obras/nova` e `/admin/obras/:id`) apontando para o novo `WorkFormPage`? (recomendo sim, sem migração de rota)
+2. **Rascunho**: conforme item 11 do seu pedido — apresento agora as opções A/B/C e aguardo escolha; até lá o botão "Salvar rascunho" fica **oculto** (não simulado).
+3. **Alterações não salvas**: implementar `UnsavedChangesDialog` com `beforeunload` + bloqueio de `react-router`? (recomendo sim, é aditivo)
+4. **Validação por etapa**: usar `form.trigger([campos da etapa])` do RHF para validar somente aquela etapa antes de avançar, preservando o `superRefine` global no submit final. Ok?
+5. **Revisão**: as ações "Editar" apenas navegam para a etapa; o submit real só acontece no botão final da Revisão. Confirma?
+6. `**empresa_responsavel` legado** e `**secretaria_responsavel` legado**: manter ambos os campos coexistindo com `empresa_id`/`fiscal_id` (como hoje), ou você quer discutir consolidação em um pedido separado?
+7. **Dialog de conclusão de obra**: manter exatamente como está (abre ao trocar status para `concluida`), inclusive dentro do novo stepper?
+
+## 12. O que NÃO farei sem autorização
+
+- Nenhuma alteração de banco/migração
+- Nenhuma remoção de campo, rota, hook, query ou componente
+- Nenhuma mudança em `MapSelector`, `PhotoUpload`, `DocumentsUpload`, buckets, pastas ou limites
+- Nenhuma nova fórmula de valor/prazo — apenas exibição derivada
+- Nenhuma persistência de rascunho
+- Nenhuma alteração em `PermissionGuard`/`ObraPermissionGuard` ou RLS
+
+---
+
+**Próximo passo**: aguardo sua aprovação desta análise + respostas às 7 decisões do item 11 para então elaborar o plano detalhado da Etapa 2 (estrutura de componentes `WorkFormPage`/steps + adaptação do `ObraForm` atual como fonte única de verdade do RHF).  
   
-**Rota “Painel de Obras”**  
-Como não foi localizada uma rota específica para “Painel de Obras”, não remova o botão definitivamente. Oculte-o temporariamente nesta implementação ou mantenha-o desabilitado com indicação “Em desenvolvimento”, sem criar rota fictícia. Caso exista alguma funcionalidade equivalente já implementada, reaproveite-a.
-
-**Barra de Execução**  
-Mantenha as duas trilhas atuais, uma para **RDO** e outra para **Medição**. Não consolidar em uma única barra, pois representam informações diferentes e a consolidação poderia ocultar dados importantes. Adapte o layout do Figma para exibir as duas de forma clara.
-
-**Paginação**  
-Adicione paginação client-side, mantendo inicialmente 10 obras por página, com seletor de quantidade por página se for simples de implementar. Não altere a consulta nem a estrutura dos dados. Caso o volume cresça no futuro, deixaremos preparado para paginação server-side.
-
-**Sidebar**  
-Confirmo substituir o `SimpleHeader` por `ObrasLayout` apenas na rota `/admin/obras` nesta etapa. Não alterar outras páginas administrativas nem outras rotas do módulo sem nova aprovação.
-
-**Confirmação de exclusão**  
-Pode migrar de `window.confirm` para `AlertDialog`, mantendo exatamente a mesma regra de permissão, validação e exclusão. A mudança deve ser apenas visual, sem alterar o comportamento funcional.  
-  
-
-
-&nbsp;
+Plano aprovado, desde que todas as funcionalidades atuais das telas Nova Obra e Editar Obra sejam preservadas. Não remova, desvincule, substitua ou altere campos, regras, rotas, uploads, cálculos, permissões ou integrações. Caso surja qualquer conflito entre o Figma e o funcionamento atual, interrompa a implementação e solicite minha decisão antes de prosseguir.
