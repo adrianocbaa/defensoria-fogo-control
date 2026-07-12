@@ -365,9 +365,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty, isSubmitting]);
 
-  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
-    isDirty && !isSubmitting && currentLocation.pathname !== nextLocation.pathname
-  );
+  const blocker = { state: 'unblocked' as const, reset: undefined as undefined | (() => void), proceed: undefined as undefined | (() => void) };
 
   const onSubmit = async (data: ObraFormData) => {
     if (!user) {
