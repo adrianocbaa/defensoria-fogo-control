@@ -1,152 +1,138 @@
-# Etapa 1 — Análise das telas atuais Nova/Editar Obra
+# Etapa 1 — Auditoria do Sistema de Medições
 
-Conforme sua regra, **nesta fase não altero nenhum arquivo, migração, rota ou banco**. Apresento abaixo o levantamento completo do que existe hoje e como cada item será preservado no novo fluxo por etapas do Figma. Aguardo aprovação antes de iniciar a Etapa 2.
+Conforme solicitado, esta etapa é **apenas de leitura**: nenhum arquivo, migração, tabela, RPC ou dependência será alterado. O objetivo é mapear o funcionamento atual antes de aplicar o novo layout do Figma.
 
-## 1. Rotas atuais
-
-
-| Ação           | Rota                               | Página                                                                                                     |
-| -------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Criação        | `/admin/obras/nova`                | `src/pages/AdminObraNova.tsx` → `PermissionGuard requiresEdit` → `ObraForm obraId="nova"`                  |
-| Criação (alt.) | `/admin/obras/:id` com `id="nova"` | `src/pages/AdminObraEdit.tsx` (mesmo fluxo, sem PermissionGuard granular, usa `roleCheckOnly`)             |
-| Edição         | `/admin/obras/:id`                 | `src/pages/AdminObraEdit.tsx` → `ObraPermissionGuard` → `ObraForm` com `canChangeFiscal` derivado do papel |
-| Voltar         | `/admin/obras`                     | `AdminObras.tsx`                                                                                           |
+## 1. Rotas e componentes
 
 
-Ambas as páginas hoje renderizam **o mesmo componente monolítico** `src/components/ObraForm.tsx` (~1139 linhas).
-
-## 2. Componentes utilizados
-
-- `ObraForm` (form principal, monolítico)
-- `MapSelector` (seleção lat/lng)
-- `PhotoUpload` + `PhotoGalleryCollapsible` (upload/listagem de fotos com pastas por mês)
-- `DocumentsUpload` (upload de documentos)
-- shadcn `Form`, `Input`, `Select`, `Switch`, `Textarea`, `Dialog`
-- `SimpleHeader`, `PermissionGuard`, `ObraPermissionGuard`, `LoadingStates.FormSkeleton`
-
-## 3. Schema Zod (validações atuais) — `obraSchema`
+| Item                | Local atual                                                                                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rota autenticada    | `/medicao/:id` → `src/pages/Medicao.tsx` (5.109 linhas, componente único que concentra tudo)                                                                                                                                                                  |
+| Rota pública        | `/public/obras/:id/medicao` → `src/pages/PublicMedicao.tsx`                                                                                                                                                                                                   |
+| Registro em rotas   | `src/App.tsx` (linhas 38, 103)                                                                                                                                                                                                                                |
+| Navegação interna   | `Tabs` do shadcn dentro da própria página, com valores `medicao-atual`, `analise-financeira`, `gestao` (linhas 4123–4715). Não são rotas — é estado interno via `<Tabs>`                                                                                      |
+| Cabeçalho atual     | `SimpleHeader` + `PageHeader` + `body.classList.add('medicao-layout-wide')` (largura customizada)                                                                                                                                                             |
+| Modais/relatórios   | `NovaMedicaoDialog`, `NovoAditivoModal`, `RelatorioMedicaoModal`, `AjustarMedicaoCongeladaModal`, `ExportMedicaoDialog`, `ImportarPlanilha`, `ImportarDoRDO`, `ImportarCronograma`, `CronogramaView`, `ResumoContrato`, `ObraAuditLogs`, `MedicaoProgressBar` |
+| Geração de Word/PDF | `src/components/RelatorioWordExport.ts` (1.358 linhas) + `src/lib/pdfExport.ts` + `src/lib/excelUtils.ts`                                                                                                                                                     |
 
 
-| Campo                                 | Tipo      | Obrigatório        | Regra especial                                                                           |
-| ------------------------------------- | --------- | ------------------ | ---------------------------------------------------------------------------------------- |
-| `nome`                                | string    | Sim                | min 1                                                                                    |
-| `municipio`                           | string    | Sim                | min 1                                                                                    |
-| `n_contrato`                          | string    | Condicional        | Obrigatório se `status !== 'planejamento'`                                               |
-| `sei_numero`                          | string    | Não                | regex `AAAA.D.DDDDDDDDD-D`                                                               |
-| `status`                              | enum      | Sim                | `planejamento` | `em_andamento` | `concluida` | `paralisada`                             |
-| `tipo`                                | enum      | Sim                | `Reforma` | `Construção` | `Adequações`                                                  |
-| `valor_total`                         | number ≥0 | Sim                | Bloqueado quando existe planilha orçamentária importada                                  |
-| `valor_aditivado`                     | number ≥0 | Não                | Derivado de `aditivo_sessions` bloqueadas quando há planilha                             |
-| `valor_executado`                     | number ≥0 | Não                | Derivado de `medicao_items` (`total_congelado ?? total`) quando há planilha              |
-| `data_inicio`                         | string    | Condicional        | Salvo como null se status = `planejamento`                                               |
-| `tempo_obra`                          | number    | Não                | Entra no cálculo de `previsao_termino`                                                   |
-| `aditivo_prazo`                       | number    | Não                | Entra no cálculo de `previsao_termino`                                                   |
-| `previsao_termino`                    | string    | Calculado          | `addDays(data_inicio, tempo_obra + aditivo_prazo)` via `form.watch`                      |
-| `data_termino_real`                   | string    | Condicional        | Só salvo se `status = concluida` (via `showConclusaoDialog`)                             |
-| `empresa_id`                          | string    | Não                | Filtra `regiao` via `ata_polos.empresa_id`                                               |
-| `empresa_responsavel`                 | string    | Não                | Texto livre legado                                                                       |
-| `regiao`                              | string    | Não                | Vem de `ata_polos.polo`                                                                  |
-| `secretaria_responsavel`              | string    | Não                | Texto legado                                                                             |
-| `fiscal_id`                           | string    | Não                | FK para `profiles` (setor `dif`). Editável somente por admin/titular (`canChangeFiscal`) |
-| `fiscal_substituto_id`                | string    | Não                | Persistido em `obra_fiscal_substitutos` (delete-all + insert 1)                          |
-| `responsavel_projeto_id`              | string    | Não                | FK para `profiles` (setor `dif`)                                                         |
-| `coordinates_lat` / `coordinates_lng` | number    | Não                | Via `MapSelector`                                                                        |
-| `rdo_habilitado`                      | boolean   | Sim (default true) | Regra RDO existente                                                                      |
+## 2. Banco de dados
 
 
-## 4. Tabelas envolvidas
-
-- `obras` (principal, update/insert)
-- `obra_fiscal_substitutos` (sync 1:1 via delete + insert)
-- `profiles` (leitura de fiscais/arquitetos DIF)
-- `empresas` (`useEmpresas`)
-- `ata_polos` (regiões filtradas por empresa)
-- `orcamento_items` (detecta planilha importada)
-- `aditivo_sessions` + `aditivo_items` (valor aditivado derivado)
-- `medicao_sessions` + `medicao_items` (valor pago derivado)
-- Storage: bucket usado por `PhotoUpload` e `DocumentsUpload` (pasta `obras/AAAA-MM/…`)
-
-## 5. Hooks e queries atuais
-
-- `useAuth`, `useEmpresas`
-- `useQuery`: `regioes-ata`, `fiscais-obras-dif`, `arquitetos-obras-dif`, `obra-fiscal-substituto`, `planilha-importada`, `valores-calculados-obra`
-- `form.watch` para recálculo de previsão de término
-- `PermissionGuard requiresEdit` (criação), `ObraPermissionGuard` (edição, retorna `role`)
-
-## 6. Regras condicionais / por status
-
-- `n_contrato` obrigatório se status ≠ `planejamento`
-- `data_inicio` salva `null` se status = `planejamento`
-- `data_termino_real` só salva se status = `concluida` (fluxo `showConclusaoDialog` + `pendingStatusChange`)
-- `valor_total` bloqueado quando `hasPlanilhaImportada`
-- `valor_aditivado`/`valor_executado` sobrescritos pelo derivado quando `hasPlanilhaImportada`
-- `regiao` depende de `empresa_id`
-- `fiscal_id` só editável para admin/titular (`canChangeFiscal`)
-
-## 7. Fotos e documentos
-
-- Fotos: seleção mês/ano, pastas `obras/AAAA-MM/…`, capa (`isCover`), edição de data do álbum, limite atual conforme `PhotoUpload`
-- Documentos: `DocumentsUpload` grava em `documents` (name/type/url), tipos e limites atuais preservados
-
-## 8. Fluxo de submit atual
-
-1. Monta `obraData` respeitando regras por status
-2. `insert` (criação) ou `update` (edição) em `obras`
-3. Sincroniza `obra_fiscal_substitutos` (delete-all + insert do selecionado)
-4. `toast.success` + `onSuccess()` → redirect `/admin/obras`
-
-## 9. Mapeamento Figma × Sistema (preservação)
+| Categoria             | Objetos                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tabelas               | `medicao_sessions`, `medicao_items`, `aditivo_sessions`, `aditivo_items`, `aditivos`, `medicoes`, `medicao_rdo_imports`, `orcamento_items`, `orcamento_itens`, `orcamentos`, `cronograma_financeiro`, `cronograma_items`, `cronograma_periodos`, `obras`, `obra_action_logs`, `rdo_activities`, `rdo_reports`, `user_obra_access`, `user_roles`, `profiles` |
+| Snapshot/congelamento | Colunas `qtd_congelado`, `pct_congelado`, `total_congelado` em `medicao_items` — resolvidas por `resolveItensEfetivos` em `src/lib/medicaoSnapshot.ts`                                                                                                                                                                                                      |
+| RPCs relevantes       | Progresso físico (RDO), cálculo de progresso de obra, `has_role`                                                                                                                                                                                                                                                                                            |
+| RLS                   | Políticas nas tabelas `medicao_*` (5–10 policies cada), `aditivo_*`, `orcamento_*`, `obras` (11), `user_obra_access` (visibilidade contratada)                                                                                                                                                                                                              |
+| Storage               | Bucket de fotos do RDO (usado pelo relatório) e uploads manuais do relatório                                                                                                                                                                                                                                                                                |
 
 
-| Funcionalidade atual                                                                                          | Etapa do novo layout                 | Como será preservada                                                                                                                                                                                         |
-| ------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `nome`, `municipio`, `sei_numero`, `status`, `tipo`                                                           | 1. Identificação                     | Mesmos campos e validações Zod; mesma condicional `status`→`n_contrato` disparada mesmo se o campo estiver em outra etapa                                                                                    |
-| `MapSelector`, `coordinates_lat/lng`                                                                          | 1. Identificação (bloco Localização) | Componente atual reutilizado dentro do card do Figma; estados "sem localização / com coordenadas / alterar" apenas visuais                                                                                   |
-| `n_contrato`, `valor_total`, `valor_aditivado`, `valor_executado`, `empresa_id/empresa_responsavel`, `regiao` | 2. Contrato e Valores                | Mesmos hooks (`useEmpresas`, `regioes-ata`, `valores-calculados-obra`, `planilha-importada`); "Valor Final" será **apenas exibição derivada** (`valor_total + valor_aditivado`), sem nova fórmula persistida |
-| `data_inicio`, `tempo_obra`, `aditivo_prazo`, `previsao_termino`, `data_termino_real` + `showConclusaoDialog` | 3. Prazos                            | Mesmo `useEffect` de recálculo; mesmo Dialog de conclusão; resumo visual apenas leitura                                                                                                                      |
-| `empresa_id`, `regiao`, `fiscal_id`, `fiscal_substituto_id`, `responsavel_projeto_id` + `canChangeFiscal`     | 4. Responsáveis                      | Mesmas queries `fiscais-obras-dif`/`arquitetos-obras-dif`; `fiscal_id` continua desabilitado sem permissão                                                                                                   |
-| `rdo_habilitado` (Switch)                                                                                     | 5. Configurações                     | Mesmo campo; texto explicativo melhorado sem alterar regra                                                                                                                                                   |
-| `PhotoUpload`, `PhotoGalleryCollapsible`, `DocumentsUpload`                                                   | 6. Fotos e Documentos                | Componentes reaproveitados dentro do novo card, sem tocar em storage/pastas/limites                                                                                                                          |
-| `onSubmit` (insert/update + sync substituto)                                                                  | 7. Revisão → botão final             | Um único submit no final; Revisão apenas lê do form state; ações "Editar" navegam para a etapa correspondente                                                                                                |
-| `PermissionGuard`/`ObraPermissionGuard`                                                                       | Envolve toda a página                | Mantidos como hoje; sem "esconder e pronto"                                                                                                                                                                  |
-| Redirect `/admin/obras`                                                                                       | Pós-submit                           | Mesmo `onSuccess`/`onCancel`                                                                                                                                                                                 |
-| Header antigo                                                                                                 | Novo cabeçalho + breadcrumb          | Barra horizontal verde removida visualmente **apenas** por este pedido explícito do usuário                                                                                                                  |
+## 3. Fórmulas (nenhuma será tocada)
+
+Todas concentradas em `src/pages/Medicao.tsx` + `src/lib/medicaoCalculo.ts` + `src/hooks/useMedicoesFinanceiro.ts`.
 
 
-## 10. Funcionalidades atuais NÃO visíveis explicitamente no Figma
+| Fórmula                                     | Função/hook                                                                                                                            | Arquivo                                              |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Valor inicial do contrato                   | `obras.valor_total`                                                                                                                    | `useMedicoesFinanceiro`                              |
+| Total de aditivos                           | soma `aditivo_items.total` das sessões bloqueadas + `obras.valor_aditivado`                                                            | `useMedicoesFinanceiro`, `calcularFinanceiroMedicao` |
+| Valor pós-aditivo                           | `totalContratoOrcamento + totalAditivo`                                                                                                | `calcularFinanceiroMedicao`                          |
+| Total contrato c/ aditivos (por item)       | `calcularTotalContratoComAditivos(item, medicaoSeq)`                                                                                   | `Medicao.tsx`                                        |
+| Executado/Acumulado por marco               | `calcularFinanceiroMedicao` (marcos)                                                                                                   | `medicaoCalculo.ts`                                  |
+| Percentual executado                        | `valorAcumulado / totalContrato`                                                                                                       | `medicaoCalculo.ts`                                  |
+| Administração local                         | cálculo cumulativo específico (ver mem `local-administration-calculation-logic`) — `Medicao.tsx` linhas ~815                           | `Medicao.tsx`                                        |
+| Acrescidos / decrescidos / extracontratuais | derivados de `orcamento_items.origem` e `aditivo_items` (ver mems `aditivo-suppression-logic`, `total-contrato-extracontratual-logic`) | `Medicao.tsx`, `medicaoCalculo.ts`                   |
+| Quantidade / % / total por medição          | inputs manuais + `atualizarMedicao()` (linha 1023)                                                                                     | `Medicao.tsx`                                        |
+| Acumulado por item                          | percorrer sessões até a atual                                                                                                          | `Medicao.tsx`                                        |
+| Congelamento                                | `qtd_congelado/pct_congelado/total_congelado` via `resolveItensEfetivos`                                                               | `medicaoSnapshot.ts`                                 |
+| Cronograma previsto/executado/desvio        | `CronogramaComparativo`, `CronogramaView`, `useCronogramaFinanceiro`                                                                   | componentes citados                                  |
+| Progresso da obra                           | RPC `calculo-progresso` (ver mem `calculo-progresso-rpc-logic`)                                                                        | Supabase                                             |
 
-Serão preservadas, aguardo apenas confirmação de onde exibi-las:
 
-1. **Dialog de conclusão** (`showConclusaoDialog` + `data_termino_real`) — sugestão: mantido como Dialog acionado ao mudar status na etapa 1 ou 3.
-2. `**sei_numero**` com máscara — cabe em Identificação.
-3. `**empresa_responsavel` (texto legado)** vs `empresa_id` — hoje coexistem; manter ambos ou consolidar? (recomendo manter ambos).
-4. `**secretaria_responsavel` (texto legado)** — coexiste com `fiscal_id`; manter.
-5. **Bloqueio de `valor_total**` quando há planilha importada — exibir badge "Calculado pela planilha".
-6. **Derivação de `valor_aditivado`/`valor_executado**` — exibir como "Calculado" quando `hasPlanilhaImportada`.
-7. `**isCover` em fotos** e **edição de data de álbum** — manter na etapa 6.
-8. `**canChangeFiscal**` — mantido como disabled state na etapa 4.
+Regras preservadas de memória: arredondamento a 2 casas, `limit(10000)`, hierarquia macro/micro estrita, hierarquia de descontos de aditivo, congelamento imutável pós-bloqueio.
 
-## 11. Decisões que precisam da sua aprovação antes de eu prosseguir
+## 4. Importações
 
-1. **Rota**: manter as duas rotas atuais (`/admin/obras/nova` e `/admin/obras/:id`) apontando para o novo `WorkFormPage`? (recomendo sim, sem migração de rota)
-2. **Rascunho**: conforme item 11 do seu pedido — apresento agora as opções A/B/C e aguardo escolha; até lá o botão "Salvar rascunho" fica **oculto** (não simulado).
-3. **Alterações não salvas**: implementar `UnsavedChangesDialog` com `beforeunload` + bloqueio de `react-router`? (recomendo sim, é aditivo)
-4. **Validação por etapa**: usar `form.trigger([campos da etapa])` do RHF para validar somente aquela etapa antes de avançar, preservando o `superRefine` global no submit final. Ok?
-5. **Revisão**: as ações "Editar" apenas navegam para a etapa; o submit real só acontece no botão final da Revisão. Confirma?
-6. `**empresa_responsavel` legado** e `**secretaria_responsavel` legado**: manter ambos os campos coexistindo com `empresa_id`/`fiscal_id` (como hoje), ou você quer discutir consolidação em um pedido separado?
-7. **Dialog de conclusão de obra**: manter exatamente como está (abre ao trocar status para `concluida`), inclusive dentro do novo stepper?
 
-## 12. O que NÃO farei sem autorização
+| Importação            | Componente                                        | Regras críticas                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Planilha orçamentária | `ImportarPlanilha.tsx`                            | Formatos xlsx/csv via `excelUtils.readExcelFile/readCsvAsExcel`; mapeamento por cabeçalhos existentes; hierarquia por código; itens originais x extracontratuais; normalização de arredondamento (mem `spreadsheet-import-logic`) |
+| Última medição        | Interno em `Medicao.tsx`                          | Reaproveita última sessão bloqueada como base                                                                                                                                                                                     |
+| Importar do RDO       | `ImportarDoRDO.tsx` + `useRdoActivitiesAcumulado` | Filtragem por critério (mem `rdo-import-criteria`), dedup (mem `rdo-import-duplicate-prevention`)                                                                                                                                 |
+| Cronograma financeiro | `ImportarCronograma.tsx`                          | Grava em `cronograma_*`, permissão DELETE necessária (mem `rls-cronograma-delete-permission`)                                                                                                                                     |
+| Exportação            | `ExportMedicaoDialog.tsx` + `writeExcelFile`      | Mantém cabeçalhos `Medicao{N}_QNT/PCT/TOTAL`                                                                                                                                                                                      |
 
-- Nenhuma alteração de banco/migração
-- Nenhuma remoção de campo, rota, hook, query ou componente
-- Nenhuma mudança em `MapSelector`, `PhotoUpload`, `DocumentsUpload`, buckets, pastas ou limites
-- Nenhuma nova fórmula de valor/prazo — apenas exibição derivada
-- Nenhuma persistência de rascunho
-- Nenhuma alteração em `PermissionGuard`/`ObraPermissionGuard` ou RLS
+
+## 5. Estados da medição
+
+Regidos por `medicao_sessions.status`:
+
+- **aberta** → editável; `total` recalculado dinamicamente.
+- **bloqueada** → grava `*_congelado`; `resolveItemEfetivo` passa a devolver os valores congelados; ajustes só via `AjustarMedicaoCongeladaModal`.
+- **reaberta** → volta a `aberta`, mas valores congelados anteriores permanecem até novo save (verificar handler em `useMedicaoSessions`).
+- **excluída** → `deleteSession` remove itens antes da sessão.
+- **primeira medição** → aditivo com sequência 0 é considerado (mem `aditivo-starting-measurement-logic`).
+
+## 6. Permissões
+
+- `useUserRole` (admin) e `useCanEditObra` (fiscal/gestor/contratada via `user_obra_access`).
+- Aba **Gestão** só aparece quando `canEdit` (linha 4126).
+- Contratada tem visibilidade restrita (mems `contratada-project-visibility-logic`, `permission-substitutos-planning-edit`).
+- Ações bloqueio/reabertura/exclusão/aditivo/publicação seguem RLS das tabelas correspondentes.
+
+## 7. Relatórios
+
+- Modal: `RelatorioMedicaoModal.tsx` (2.035 linhas) — coleta período, fiscal, cargo, fotos, legendas.
+- Geração Word: `RelatorioWordExport.ts` (docx), com conclusão automática, resumo financeiro, anexos, ordenação — **não deve ser alterado**.
+- PDF: `pdfExport.ts` (margens/paginação, mem `pdf-export-logic`).
+- Gráficos: `MedicaoProgressBar`, `CronogramaComparativo` (mems `graph-display-formatting`, `technical-report-graph-units`).
+
+## 8. Compatibilidade Figma → sistema atual
+
+
+| Tela Figma                               | Corresponde a                                                                                     | Preservação                                                                                      |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Medição Atual — Desktop                  | `<TabsContent value="medicao-atual">` (linha 4130)                                                | Reusar tabela hierárquica, cards financeiros vindos de `useMedicoesFinanceiro`, ações existentes |
+| Medição Atual — Bloqueada                | Mesma tab quando `session.status='bloqueada'`                                                     | Manter `AjustarMedicaoCongeladaModal`                                                            |
+| Análise Financeira — Resumo/Gráficos     | `<TabsContent value="analise-financeira">` (linha 4697) + `ResumoContrato` + `MedicaoProgressBar` | Manter dados/séries                                                                              |
+| Análise Financeira — Desvios/Cronograma  | `CronogramaComparativo` + `CronogramaView`                                                        | Manter fórmulas de desvio                                                                        |
+| Gestão                                   | `<TabsContent value="gestao">` (linha 4715) + `ObraAuditLogs` + lista de aditivos/sessões         | Manter ações CRUD                                                                                |
+| Modal Importar Planilha                  | `ImportarPlanilha.tsx`                                                                            | Manter parser/mapeamento                                                                         |
+| Modal Confirmar Exclusão                 | `AlertDialog` já existente + `confirm state` (linha 159)                                          | Trocar apenas visual                                                                             |
+| Relatório — Dados/Fotos/Revisão          | `RelatorioMedicaoModal.tsx` (adicionar apenas passo "Revisão")                                    | Não tocar em `RelatorioWordExport.ts`                                                            |
+| Responsivo Notebook/Tablet/Mobile        | Hoje: `medicao-layout-wide` + tabela horizontal                                                   | Adicionar layout adaptativo sem esconder dados                                                   |
+| Estados Carregamento/Erro/Vazio/Editável | `LoadingStates` + estados internos                                                                | Reforçar visual (skeleton, empty state)                                                          |
+
+
+## 9. Layout compartilhado a reutilizar
+
+- `ObrasLayout` + `AppSidebar` (mesmo padrão aplicado em Nova Obra / Editar Obra / Gerenciar Obras / Estatísticas).
+- Remover `SimpleHeader`/`PageHeader` locais e a classe `medicao-layout-wide` (avaliar se largura extra continua necessária dentro do layout compartilhado; se sim, aplicar via container interno).
+- Manter item "Obra" ativo na sidebar.
+- Cabeçalho da página: breadcrumb + título "Sistema de Medição" + nome da obra, município, contrato, status, botão voltar.
+
+## 10. Riscos identificados (para discussão antes da Etapa 2)
+
+1. `**Medicao.tsx` com 5.109 linhas** concentra estado, cálculos e UI. Um redesenho seguro exige dividir em componentes de apresentação por seção (cards, tabela, análise, gestão) **sem mover funções de cálculo**. Peço confirmação de que essa segmentação — apenas extraindo JSX, mantendo estados e handlers no arquivo pai via props — é aceitável.
+2. `**medicao-layout-wide**` força `body` a ganhar largura; ao entrar no `ObrasLayout` isso pode conflitar com o `main` já com padding. Proposta: aplicar largura no container interno da página, preservando o comportamento visual da tabela.
+3. **Tab "Gestão"** hoje só aparece com `canEdit`. Manter essa regra idêntica.
+4. **Nenhuma alteração em Supabase, RPCs, hooks de cálculo, importadores, gerador Word/PDF, cronograma ou schema** será feita sem autorização expressa via novo plano.
+
+## O que virá na Etapa 2 (apenas para referência, não será executado agora)
+
+Sequência de commits proposta, cada um exclusivamente visual/estrutural:
+
+1. `layout-base-medicoes` — envolver `Medicao.tsx` em `ObrasLayout` + novo header, remover `SimpleHeader`.
+2. `medicao-atual-ui` — extrair cards financeiros e barra da medição em subcomponentes; aplicar visual do Figma.
+3. `analise-financeira-ui` — reorganizar `ResumoContrato` + gráficos conforme Figma.
+4. `gestao-ui` — timeline/cards para histórico, listagem de aditivos e sessões.
+5. `relatorio-ui` — adicionar passo Revisão dentro de `RelatorioMedicaoModal` sem alterar geração.
+6. `responsividade-medicoes` — adaptações 1280/768/375 preservando todos os dados técnicos.
+7. `testes-regressao-medicoes` — checklist de comparação antes/depois.
 
 ---
 
-**Próximo passo**: aguardo sua aprovação desta análise + respostas às 7 decisões do item 11 para então elaborar o plano detalhado da Etapa 2 (estrutura de componentes `WorkFormPage`/steps + adaptação do `ObraForm` atual como fonte única de verdade do RHF).  
+**Aguardo aprovação desta auditoria** (ou correções) antes de qualquer alteração de código.  
   
-Plano aprovado, desde que todas as funcionalidades atuais das telas Nova Obra e Editar Obra sejam preservadas. Não remova, desvincule, substitua ou altere campos, regras, rotas, uploads, cálculos, permissões ou integrações. Caso surja qualquer conflito entre o Figma e o funcionamento atual, interrompa a implementação e solicite minha decisão antes de prosseguir.
+Plano aprovado apenas quanto à refatoração visual. Antes de implementar, confirme por escrito que nenhuma fórmula, importação, RPC, estrutura de banco, regra de congelamento, cálculo de acumulado, lógica de aditivos, cronograma ou geração de relatório será modificada. Caso identifique necessidade de qualquer alteração funcional durante a execução, interrompa o trabalho e solicite minha autorização antes de prosseguir.
