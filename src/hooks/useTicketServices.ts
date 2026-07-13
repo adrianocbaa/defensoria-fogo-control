@@ -233,5 +233,7 @@ export async function fetchServicesForTicket(ticketId: string): Promise<TicketSe
     travel_sem_previsao: r.travel_sem_previsao ?? false,
     travel_id: r.travel_id,
     travel_is_linked: r.travel_is_linked ?? false,
+    reference_photos: Array.isArray(r.reference_photos) ? r.reference_photos : [],
+    execution_photos: Array.isArray(r.execution_photos) ? r.execution_photos : [],
   }));
 }
