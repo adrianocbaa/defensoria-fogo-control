@@ -1,0 +1,254 @@
+import { useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Camera, Upload, X, Loader2, ImageIcon, Eye } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
+import { ImageProcessor } from '@/components/ImageProcessor';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+
+export interface TaskPhoto {
+  id: string;
+  url: string;
+  path: string;
+  description?: string;
+  uploaded_at: string;
+  uploaded_by?: string | null;
+  uploaded_by_name?: string | null;
+}
+
+interface Props {
+  photos: TaskPhoto[];
+  onChange: (photos: TaskPhoto[]) => void;
+  /**
+   * 'reference' — foto de briefing (fiscal → manutenção), sem marca d'água.
+   * 'execution' — comprovação de execução (manutenção → fiscal), com marca d'água SIDIF.
+   */
+  mode?: 'reference' | 'execution';
+  disabled?: boolean;
+  /** Somente leitura: exibe fotos, sem controles de upload/remover. */
+  readOnly?: boolean;
+  /** Pasta lógica para organizar no bucket. */
+  folder?: string;
+  /** Label opcional. */
+  label?: string;
+  /** Compacto: sem título/label externo. */
+  compact?: boolean;
+}
+
+function sanitize(name: string) {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+export function TaskPhotoUploader({
+  photos,
+  onChange,
+  mode = 'reference',
+  disabled = false,
+  readOnly = false,
+  folder = 'maintenance',
+  label,
+  compact = false,
+}: Props) {
+  const { user } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<TaskPhoto | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const applyWatermark = mode === 'execution';
+
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || !user) return;
+    setUploading(true);
+    const newPhotos: TaskPhoto[] = [];
+    let userName: string | null = null;
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      userName = profile?.display_name ?? user.email ?? null;
+    } catch { /* ignore */ }
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) {
+        toast({ title: 'Tipo inválido', description: `${file.name} não é imagem.`, variant: 'destructive' });
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: 'Arquivo muito grande', description: `${file.name} passa de 10MB.`, variant: 'destructive' });
+        continue;
+      }
+      try {
+        let blob: Blob = file;
+        if (applyWatermark) {
+          try {
+            blob = await ImageProcessor.processImageWithWatermark(file);
+          } catch (err) {
+            console.warn('Falha ao aplicar marca d\'água, seguindo com original', err);
+          }
+        }
+        const cleanName = sanitize(file.name);
+        const path = `${folder}/${user.id}/${mode}/${Date.now()}_${cleanName}`;
+        const { error: upErr } = await supabase.storage
+          .from('service-photos')
+          .upload(path, blob, { upsert: false, contentType: 'image/jpeg' });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from('service-photos').getPublicUrl(path);
+        newPhotos.push({
+          id: crypto.randomUUID(),
+          url: pub.publicUrl,
+          path,
+          uploaded_at: new Date().toISOString(),
+          uploaded_by: user.id,
+          uploaded_by_name: userName,
+        });
+      } catch (err: any) {
+        console.error('Erro no upload:', err);
+        toast({ title: 'Erro no upload', description: err?.message ?? 'Falha ao enviar foto.', variant: 'destructive' });
+      }
+    }
+    if (newPhotos.length > 0) {
+      onChange([...photos, ...newPhotos]);
+      toast({ title: 'Fotos enviadas', description: `${newPhotos.length} foto(s) adicionada(s).` });
+    }
+    setUploading(false);
+  };
+
+  const removePhoto = async (photo: TaskPhoto) => {
+    onChange(photos.filter(p => p.id !== photo.id));
+    if (photo.path) {
+      try {
+        await supabase.storage.from('service-photos').remove([photo.path]);
+      } catch (err) {
+        console.warn('Não foi possível apagar do storage:', err);
+      }
+    }
+  };
+
+  const showControls = !readOnly && !disabled;
+  const badgeText = mode === 'execution' ? 'Execução' : 'Referência';
+  const badgeClass = mode === 'execution'
+    ? 'bg-emerald-600 text-white'
+    : 'bg-amber-500 text-white';
+
+  return (
+    <div className="space-y-2">
+      {label && !compact && (
+        <div className="flex items-center gap-2">
+          <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {label}
+          </span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${badgeClass}`}>{badgeText}</span>
+        </div>
+      )}
+
+      {showControls && (
+        <div className="flex gap-2">
+          <Input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => { uploadFiles(e.target.files); e.target.value = ''; }}
+          />
+          <Input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => { uploadFiles(e.target.files); e.target.value = ''; }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Camera className="h-3.5 w-3.5 mr-1.5" />}
+            Câmera
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            <Upload className="h-3.5 w-3.5 mr-1.5" />
+            Enviar
+          </Button>
+        </div>
+      )}
+
+      {photos.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground italic">
+          {readOnly ? 'Nenhuma foto anexada.' : 'Nenhuma foto ainda. Use câmera ou envie do dispositivo.'}
+        </p>
+      ) : (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {photos.map((photo) => (
+            <div key={photo.id} className="relative group aspect-square rounded-md overflow-hidden border bg-muted">
+              <img
+                src={photo.url}
+                alt={photo.description ?? 'foto'}
+                className="w-full h-full object-cover cursor-pointer"
+                loading="lazy"
+                onClick={() => setPreview(photo)}
+              />
+              <button
+                type="button"
+                onClick={() => setPreview(photo)}
+                className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors"
+                aria-label="Ver foto"
+              >
+                <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100" />
+              </button>
+              {showControls && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-1 right-1 h-6 w-6 p-0 opacity-80"
+                  onClick={(e) => { e.stopPropagation(); removePhoto(photo); }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+              {photo.uploaded_by_name && (
+                <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-1 py-0.5 truncate">
+                  {photo.uploaded_by_name}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-3xl">
+          {preview && (
+            <div className="space-y-2">
+              <img src={preview.url} alt="Foto" className="w-full max-h-[70vh] object-contain rounded" />
+              <div className="text-xs text-muted-foreground">
+                {preview.uploaded_by_name && <>Enviada por <strong>{preview.uploaded_by_name}</strong> · </>}
+                {new Date(preview.uploaded_at).toLocaleString('pt-BR')}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
