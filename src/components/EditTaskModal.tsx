@@ -351,6 +351,20 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                   disabled={isGM}
                 />
               </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <Label>Fotos de referência do procedimento</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Anexe fotos mostrando onde ou o que deve ser executado. Elas ficam visíveis para a equipe de manutenção.
+                </p>
+                <TaskPhotoUploader
+                  photos={referencePhotos}
+                  onChange={setReferencePhotos}
+                  mode="reference"
+                  disabled={isGM}
+                  folder="reference-tickets"
+                />
+              </div>
             </div>
           )}
 
