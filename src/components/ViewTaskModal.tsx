@@ -147,6 +147,44 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
     }
   };
 
+  const updateServicePhotos = async (
+    svc: TicketService,
+    field: 'reference_photos' | 'execution_photos',
+    photos: TaskPhoto[],
+  ) => {
+    if (!svc.id) return;
+    const prev = services;
+    setServices((ss) => ss.map((s) => (s.id === svc.id ? { ...s, [field]: photos } : s)));
+    try {
+      const { error } = await supabase
+        .from('maintenance_ticket_services')
+        .update({ [field]: photos } as any)
+        .eq('id', svc.id);
+      if (error) throw error;
+      onChanged?.();
+    } catch (err: any) {
+      setServices(prev);
+      toast({ title: 'Erro ao salvar fotos', description: err?.message ?? 'Tente novamente.', variant: 'destructive' });
+    }
+  };
+
+  const updateTicketReferencePhotos = async (photos: TaskPhoto[]) => {
+    if (!ticket) return;
+    const prev = ticket.referencePhotos ?? [];
+    try {
+      const { error } = await supabase
+        .from('maintenance_tickets')
+        .update({ reference_photos: photos } as any)
+        .eq('id', ticket.id);
+      if (error) throw error;
+      // Muta localmente para refletir na sessão até o próximo fetch
+      (ticket as any).referencePhotos = photos;
+      onChanged?.();
+    } catch (err: any) {
+      (ticket as any).referencePhotos = prev;
+      toast({ title: 'Erro ao salvar fotos', description: err?.message ?? 'Tente novamente.', variant: 'destructive' });
+    }
+
   const toggleMaterial = async (index: number, checked: boolean) => {
     if (!canToggle) return;
     setSavingMat(index);
