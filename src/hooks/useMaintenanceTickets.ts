@@ -227,6 +227,25 @@ export function useMaintenanceTickets() {
 
   useEffect(() => {
     fetchTickets();
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRefetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchTickets();
+      }, 250);
+    };
+
+    const channel = supabase
+      .channel('maintenance-kanban-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_tickets' }, scheduleRefetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_ticket_services' }, scheduleRefetch)
+      .subscribe();
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return {
