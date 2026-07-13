@@ -665,9 +665,7 @@ export function KanbanBoard() {
   };
 
 
-  const visibleStatuses = ALL_STATUSES.filter(
-    (s) => !isGM || ['Em andamento', 'Impedido', 'Concluído'].includes(s),
-  );
+  const visibleStatuses = [...ALL_STATUSES];
   const allowedTargets = [...visibleStatuses];
   const [mobileTab, setMobileTab] = useState<string>(visibleStatuses[0]);
 
