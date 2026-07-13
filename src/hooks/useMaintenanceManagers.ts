@@ -7,6 +7,7 @@ export interface MaintenanceManager {
   email?: string | null;
   ordem: number;
   ativo: boolean;
+  is_maintenance_responsible?: boolean;
 }
 
 export function useMaintenanceManagers(_onlyActive = true) {
@@ -15,40 +16,43 @@ export function useMaintenanceManagers(_onlyActive = true) {
 
   const load = async () => {
     setLoading(true);
-    // Busca user_ids que têm o papel "manutencao"
-    // No sistema, o perfil "Manutenção" corresponde ao role 'gm'
-    const { data: roles, error: rolesError } = await supabase
+
+    // 1) Usuários com role 'gm' (servidores da manutenção clássicos)
+    const { data: roles } = await supabase
       .from('user_roles')
       .select('user_id')
       .eq('role', 'gm' as any)
       .limit(10000);
+    const gmIds = new Set<string>((roles ?? []).map((r: any) => r.user_id));
 
-    if (rolesError || !roles || roles.length === 0) {
+    // 2) Perfis marcados como Responsável pela Manutenção (fiscais + manutenção)
+    const { data: flagged } = await (supabase.from('profiles') as any)
+      .select('user_id, display_name, email')
+      .eq('is_maintenance_responsible', true)
+      .limit(10000);
+    const flaggedIds = new Set<string>((flagged ?? []).map((p: any) => p.user_id));
+
+    const allIds = Array.from(new Set<string>([...gmIds, ...flaggedIds]));
+    if (allIds.length === 0) {
       setManagers([]);
       setLoading(false);
       return;
     }
 
-    const userIds = roles.map((r: any) => r.user_id);
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles } = await supabase
       .from('profiles')
       .select('user_id, display_name, email')
-      .in('user_id', userIds)
+      .in('user_id', allIds)
       .limit(10000);
 
-    if (profilesError || !profiles) {
-      setManagers([]);
-      setLoading(false);
-      return;
-    }
-
-    const list: MaintenanceManager[] = profiles
+    const list: MaintenanceManager[] = (profiles ?? [])
       .map((p: any, idx: number) => ({
         id: p.user_id,
         nome: p.display_name || p.email || 'Sem nome',
         email: p.email,
         ordem: idx + 1,
         ativo: true,
+        is_maintenance_responsible: flaggedIds.has(p.user_id),
       }))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
