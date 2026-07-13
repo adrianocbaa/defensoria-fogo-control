@@ -733,7 +733,7 @@ export function KanbanBoard() {
           <Tabs value={mobileTab} onValueChange={setMobileTab} className="w-full">
             <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${visibleStatuses.length}, minmax(0,1fr))` }}>
               {visibleStatuses.map((status) => {
-                const count = tickets[status]?.length ?? 0;
+                const count = filteredTickets[status]?.length ?? 0;
                 return (
                   <TabsTrigger key={status} value={status} className="text-[11px] px-1">
                     <span className="truncate">{status}</span>
@@ -747,7 +747,7 @@ export function KanbanBoard() {
                 <DroppableColumn
                   id={status}
                   title={status}
-                  tickets={tickets[status] ?? []}
+                  tickets={filteredTickets[status] ?? []}
                   onViewTicket={handleViewTicket}
                   onEditTicket={handleEditTicket}
                   onMarkAsExecuted={handleMarkAsExecuted}
@@ -768,7 +768,7 @@ export function KanbanBoard() {
                 key={status}
                 id={status}
                 title={status}
-                tickets={tickets[status] ?? []}
+                tickets={filteredTickets[status] ?? []}
                 onViewTicket={handleViewTicket}
                 onEditTicket={handleEditTicket}
                 onMarkAsExecuted={handleMarkAsExecuted}
