@@ -56,7 +56,7 @@ export function ResumoContrato({
   marcos = [],
   totalContrato,
 }: ResumoContratoProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  
   
   // Calcular dados do resumo conforme especificação
   const calcularResumo = (): { linhas: ResumoAditivoData[]; valorFinalContrato: number } => {
