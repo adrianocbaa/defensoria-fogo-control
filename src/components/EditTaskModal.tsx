@@ -85,6 +85,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setRequestedAt(ticket.requestedAt || '');
       setManagerIds(ticket.managerIds && ticket.managerIds.length > 0 ? ticket.managerIds : (ticket.managerId ? [ticket.managerId] : []));
       setNucleoId(ticket.nucleoId || '');
+      setReferencePhotos(ticket.referencePhotos ?? []);
       setCurrentStep(1);
     }
   }, [ticket]);
