@@ -151,27 +151,48 @@ export function TicketServicesEditor({
               </span>
             </div>
             <Progress value={progress} className="w-full" />
-            <div className="space-y-2 p-2 border rounded-md bg-muted/30 max-h-72 overflow-y-auto">
+            <div className="space-y-3 p-2 border rounded-md bg-muted/30 max-h-[520px] overflow-y-auto">
               {services.map((s, i) => (
-                <div key={s.id ?? i} className="flex items-start gap-2">
-                  <Checkbox
-                    checked={s.completed}
-                    disabled={disabled}
-                    onCheckedChange={(v) => update(i, { completed: !!v })}
-                  />
-                  <div className="flex-1">
-                    <div
-                      className={`text-sm ${
-                        s.completed ? 'line-through text-muted-foreground' : ''
-                      }`}
-                    >
-                      {s.title || <em className="text-muted-foreground">Sem título</em>}
-                    </div>
-                    {s.description && (
-                      <div className="text-xs text-muted-foreground">
-                        {s.description}
+                <div key={s.id ?? i} className="border rounded-md p-3 bg-background space-y-3">
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      checked={s.completed}
+                      disabled={disabled}
+                      onCheckedChange={(v) => update(i, { completed: !!v })}
+                    />
+                    <div className="flex-1">
+                      <div className={`text-sm font-medium ${s.completed ? 'line-through text-muted-foreground' : ''}`}>
+                        {s.title || <em className="text-muted-foreground">Sem título</em>}
                       </div>
-                    )}
+                      {s.description && (
+                        <div className="text-xs text-muted-foreground">
+                          {s.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {(s.reference_photos && s.reference_photos.length > 0) && (
+                    <div className="pl-6">
+                      <TaskPhotoUploader
+                        photos={s.reference_photos}
+                        onChange={() => {}}
+                        mode="reference"
+                        readOnly
+                        label="Referência do fiscal"
+                      />
+                    </div>
+                  )}
+
+                  <div className="pl-6">
+                    <TaskPhotoUploader
+                      photos={s.execution_photos ?? []}
+                      onChange={(ph) => update(i, { execution_photos: ph })}
+                      mode="execution"
+                      disabled={disabled}
+                      label="Fotos da execução"
+                      folder={`service-execution/${s.id ?? 'new'}`}
+                    />
                   </div>
                 </div>
               ))}
