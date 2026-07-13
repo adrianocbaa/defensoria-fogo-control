@@ -132,36 +132,35 @@ export function ResumoContrato({
 
   return (
     <Card className="mb-6">
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center gap-2 cursor-pointer hover:text-gray-600 transition-colors">
-                <CardTitle className="text-lg font-bold text-gray-800">
-                  RESUMO DO CONTRATO
-                </CardTitle>
-                {isExpanded ? 
-                  <ChevronUp className="h-5 w-5" /> : 
-                  <ChevronDown className="h-5 w-5" />
-                }
-              </div>
-            </CollapsibleTrigger>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={exportarPDF}>
-                <FileDown className="h-4 w-4 mr-2" />
-                PDF
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportarExcel}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Excel
-              </Button>
-            </div>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-bold">Resumo do Contrato</CardTitle>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={exportarPDF}
+              title="Exportar PDF"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <FileText className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={exportarExcel}
+              title="Exportar Excel"
+              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+            >
+              <FileSpreadsheet className="h-5 w-5" />
+            </Button>
           </div>
-        </CardHeader>
+        </div>
+      </CardHeader>
 
+      <>
+        <CardContent className="p-0">
 
-        <CollapsibleContent>
-          <CardContent className="p-0">
             <div className="overflow-x-auto">
               {linhas.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
