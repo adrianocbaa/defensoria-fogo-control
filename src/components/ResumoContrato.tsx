@@ -345,8 +345,8 @@ export function ResumoContrato({
               </div>
             )}
           </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
+      </>
     </Card>
+
   );
 }
