@@ -351,6 +351,21 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
             </p>
           </div>
 
+          <Separator />
+          <div className="space-y-2">
+            <TaskPhotoUploader
+              photos={ticket.referencePhotos ?? []}
+              onChange={updateTicketReferencePhotos}
+              mode="reference"
+              disabled={isGM}
+              readOnly={isGM}
+              label="Fotos de referência do procedimento"
+              folder="reference-tickets"
+            />
+          </div>
+
+
+
           {services.length > 0 && (
             <>
               <Separator />
