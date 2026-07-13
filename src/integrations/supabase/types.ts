@@ -1098,6 +1098,7 @@ export type Database = {
           nome: string
           ordem: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -1107,6 +1108,7 @@ export type Database = {
           nome: string
           ordem?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -1116,6 +1118,7 @@ export type Database = {
           nome?: string
           ordem?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2490,6 +2493,7 @@ export type Database = {
           force_password_change: boolean | null
           id: string
           is_active: boolean
+          is_maintenance_responsible: boolean
           language: string | null
           phone: string | null
           position: string | null
@@ -2511,6 +2515,7 @@ export type Database = {
           force_password_change?: boolean | null
           id?: string
           is_active?: boolean
+          is_maintenance_responsible?: boolean
           language?: string | null
           phone?: string | null
           position?: string | null
@@ -2532,6 +2537,7 @@ export type Database = {
           force_password_change?: boolean | null
           id?: string
           is_active?: boolean
+          is_maintenance_responsible?: boolean
           language?: string | null
           phone?: string | null
           position?: string | null
@@ -3924,6 +3930,14 @@ export type Database = {
         Returns: boolean
       }
       can_edit_rdo: { Args: { user_uuid?: string }; Returns: boolean }
+      can_view_maintenance_ticket: {
+        Args: {
+          _ticket_manager_ids: string[]
+          _ticket_user_id: string
+          _user_id?: string
+        }
+        Returns: boolean
+      }
       can_view_sensitive_data: {
         Args: { user_uuid?: string }
         Returns: boolean
