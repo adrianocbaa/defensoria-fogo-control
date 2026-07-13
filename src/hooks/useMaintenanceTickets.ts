@@ -28,6 +28,7 @@ export interface MaintenanceTicket {
   confirmation_file_url?: string | null;
   confirmation_file_name?: string | null;
   finalization_note?: string | null;
+  reference_photos?: any[];
   created_at: string;
   updated_at: string;
 }
