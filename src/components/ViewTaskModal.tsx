@@ -41,6 +41,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { UITicket } from '@/types/maintenanceTicket';
 import type { TicketService } from '@/hooks/useTicketServices';
+import { TaskPhotoUploader, type TaskPhoto } from '@/components/maintenance/TaskPhotoUploader';
 
 interface ViewTaskModalProps {
   ticket: UITicket | null;
