@@ -199,6 +199,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       managerId: managerIds[0] ?? null,
       managerIds,
       nucleoId: nucleoId || null,
+      referencePhotos,
     };
 
     try {
