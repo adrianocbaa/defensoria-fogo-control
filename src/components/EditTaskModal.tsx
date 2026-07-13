@@ -64,6 +64,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [requestedAt, setRequestedAt] = useState<string>('');
   const [managerIds, setManagerIds] = useState<string[]>([]);
   const [nucleoId, setNucleoId] = useState<string>('');
+  const [referencePhotos, setReferencePhotos] = useState<TaskPhoto[]>([]);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
