@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileDown, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { MedicaoProgressBar, MedicaoMarcoBar } from '@/components/MedicaoProgressBar';
 
 interface Item {
   id: number;
+
   item: string;
   codigo: string;
   valorTotal: number;
@@ -56,7 +56,7 @@ export function ResumoContrato({
   marcos = [],
   totalContrato,
 }: ResumoContratoProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  
   
   // Calcular dados do resumo conforme especificação
   const calcularResumo = (): { linhas: ResumoAditivoData[]; valorFinalContrato: number } => {
@@ -132,36 +132,35 @@ export function ResumoContrato({
 
   return (
     <Card className="mb-6">
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center gap-2 cursor-pointer hover:text-gray-600 transition-colors">
-                <CardTitle className="text-lg font-bold text-gray-800">
-                  RESUMO DO CONTRATO
-                </CardTitle>
-                {isExpanded ? 
-                  <ChevronUp className="h-5 w-5" /> : 
-                  <ChevronDown className="h-5 w-5" />
-                }
-              </div>
-            </CollapsibleTrigger>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={exportarPDF}>
-                <FileDown className="h-4 w-4 mr-2" />
-                PDF
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportarExcel}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Excel
-              </Button>
-            </div>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-bold">Resumo do Contrato</CardTitle>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={exportarPDF}
+              title="Exportar PDF"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <FileText className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={exportarExcel}
+              title="Exportar Excel"
+              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+            >
+              <FileSpreadsheet className="h-5 w-5" />
+            </Button>
           </div>
-        </CardHeader>
+        </div>
+      </CardHeader>
 
+      <>
+        <CardContent className="p-0">
 
-        <CollapsibleContent>
-          <CardContent className="p-0">
             <div className="overflow-x-auto">
               {linhas.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
@@ -216,22 +215,23 @@ export function ResumoContrato({
                   </TableHeader>
                   <TableBody>
                     {/* TOTAL GERAL DO ADITIVO */}
-                    <TableRow className="bg-orange-50 hover:bg-orange-50">
-                      <TableCell className="font-semibold text-orange-600">
+                    <TableRow className="bg-green-50 hover:bg-green-50">
+                      <TableCell className="font-semibold text-green-700">
                         TOTAL GERAL DO ADITIVO
                       </TableCell>
                       <TableCell></TableCell>
                       {linhas.map((linha) => (
                         <React.Fragment key={`total-${linha.aditivo.id}`}>
-                          <TableCell className="text-center font-bold text-orange-600 border-l border-orange-200">
+                          <TableCell className="text-center font-bold text-green-700 border-l border-green-200">
                             {formatCurrency(linha.totalGeral)}
                           </TableCell>
-                          <TableCell className="text-center font-semibold text-orange-600">
+                          <TableCell className="text-center font-semibold text-green-700">
                             {linha.percAcumulado.toFixed(2)}%
                           </TableCell>
                         </React.Fragment>
                       ))}
                     </TableRow>
+
 
                     {/* TOTAL DE SERVIÇOS ACRESCIDOS */}
                     <TableRow className="hover:bg-gray-50">
@@ -346,8 +346,8 @@ export function ResumoContrato({
               </div>
             )}
           </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
+      </>
     </Card>
+
   );
 }
