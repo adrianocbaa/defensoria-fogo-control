@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera, FileIcon, ZoomIn } from 'lucide-react';
+import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera, FileIcon, ZoomIn, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { exportarWord } from './RelatorioWordExport';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
