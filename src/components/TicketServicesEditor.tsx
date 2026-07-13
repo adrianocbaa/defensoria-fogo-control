@@ -549,6 +549,20 @@ export function TicketServicesEditor({
                     </div>
                   )}
                 </div>
+
+                <div className="pt-2 border-t mt-2">
+                  <TaskPhotoUploader
+                    photos={s.reference_photos ?? []}
+                    onChange={(ph) => update(i, { reference_photos: ph })}
+                    mode="reference"
+                    disabled={disabled}
+                    label="Fotos de referência deste serviço"
+                    folder={`service-reference/${s.id ?? 'new'}`}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Ajuda a equipe de manutenção a identificar o local exato do serviço.
+                  </p>
+                </div>
               </>
             )}
           </div>
