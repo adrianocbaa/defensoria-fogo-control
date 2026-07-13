@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { TaskPhoto } from '@/components/maintenance/TaskPhotoUploader';
 
 export interface TicketService {
   id?: string;
@@ -30,6 +31,10 @@ export interface TicketService {
   travel_servidor?: string | null;
   /** IDs dos servidores para registrar em `travels.manager_ids` (transiente). */
   travel_manager_ids?: string[];
+  /** Fotos de referência anexadas pelo fiscal (o que/onde executar). */
+  reference_photos?: TaskPhoto[];
+  /** Fotos de execução anexadas pela manutenção (comprovação). */
+  execution_photos?: TaskPhoto[];
 }
 
 export interface ReplaceServicesOptions {
