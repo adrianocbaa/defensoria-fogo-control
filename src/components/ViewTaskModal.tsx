@@ -456,6 +456,26 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
                             </div>
                           </div>
                         </div>
+
+                        <div className="pl-6 mt-3 space-y-3">
+                          <TaskPhotoUploader
+                            photos={s.reference_photos ?? []}
+                            onChange={(ph) => updateServicePhotos(s, 'reference_photos', ph)}
+                            mode="reference"
+                            disabled={!canToggle || isGM}
+                            readOnly={isGM}
+                            label="Referência do fiscal"
+                            folder={`service-reference/${s.id ?? 'x'}`}
+                          />
+                          <TaskPhotoUploader
+                            photos={s.execution_photos ?? []}
+                            onChange={(ph) => updateServicePhotos(s, 'execution_photos', ph)}
+                            mode="execution"
+                            disabled={!canToggle}
+                            label="Fotos da execução"
+                            folder={`service-execution/${s.id ?? 'x'}`}
+                          />
+                        </div>
                       </div>
                     );
                   })}
