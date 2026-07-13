@@ -4101,19 +4101,55 @@ export function Medicao() {
           onOpenMenu={openMenu}
           globalSearch=""
           onGlobalSearchChange={() => {}}
-          breadcrumb={`Dashboard / Obras / ${obra.nome} / Medição`}
-          title={`Medição — ${obra.nome}`}
-          subtitle={obra.municipio}
+          breadcrumb={`Dashboard > Obras > ${obra.nome} > Medições`}
+          title="Sistema de Medição"
+          subtitle=""
         />
       )}
     >
       <div className="medicao-page w-full">
         <div className="content-root w-full">
-        <div className="mb-4 flex justify-end">
+        {/* Toolbar de Ações */}
+        <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
           <Button variant="outline" onClick={() => navigate('/admin/obras')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
+          <Button variant="outline" onClick={() => navigate(`/admin/obras/${id}/editar`)}>
+            <Eye className="h-4 w-4 mr-2" />
+            Ver detalhes da obra
+          </Button>
+          <Button
+            className="bg-green-600 hover:bg-green-700 text-white"
+            disabled={!medicaoAtual}
+            onClick={() => setExportDialogAberto(true)}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+        </div>
+
+        {/* Barra de contexto da obra */}
+        <div className="mb-6 rounded-lg border bg-card p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Obra</div>
+              <div className="text-sm font-semibold mt-0.5">{obra.nome}</div>
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Município</div>
+              <div className="text-sm font-semibold mt-0.5">{obra.municipio || '—'}</div>
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Contrato</div>
+              <div className="text-sm font-semibold mt-0.5">{obra.n_contrato || '—'}</div>
+            </div>
+            <div className="flex items-start">
+              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 uppercase text-[10px] tracking-wide">
+                Em andamento
+              </Badge>
+            </div>
+          </div>
         </div>
 
 
@@ -4127,74 +4163,115 @@ export function Medicao() {
 
           {/* ABA 1: MEDIÇÃO ATUAL */}
           <TabsContent value="medicao-atual" className="space-y-6">
-            {/* Indicador da Medição Selecionada */}
-            {medicaoAtual && (
-              <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                <span className="text-sm font-medium text-muted-foreground">Visualizando:</span>
-                <select
-                  className="text-sm font-semibold bg-primary text-primary-foreground px-3 py-1 rounded-md cursor-pointer"
-                  value={medicaoAtual}
-                  onChange={(e) => setMedicaoAtual(Number(e.target.value))}
-                >
-                  {medicoes.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.nome}{m.bloqueada ? ' (Bloqueada)' : ''}
-                    </option>
-                  ))}
-                </select>
-                {medicoes.find(m => m.id === medicaoAtual)?.bloqueada && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Lock className="h-3 w-3 mr-1" />
-                    Bloqueada
-                  </Badge>
-                )}
-                {isAdmin && medicoes.find(m => m.id === medicaoAtual)?.bloqueada && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="ml-auto h-7 text-xs"
-                    onClick={() => setModalAjustarCongeladaOpen(true)}
-                  >
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Ajustar valores congelados
-                  </Button>
-                )}
-              </div>
-            )}
+            {/* Card Seletor da Medição */}
+            {medicaoAtual && (() => {
+              const medObj = medicoes.find(m => m.id === medicaoAtual);
+              const criadaEm = medObj?.dataBloqueio ? new Date(medObj.dataBloqueio).toLocaleDateString('pt-BR') : null;
+              return (
+                <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-card p-4">
+                  <div className="flex items-center gap-3">
+                    <select
+                      className="text-lg font-bold bg-transparent border-0 focus:outline-none cursor-pointer pr-6"
+                      value={medicaoAtual}
+                      onChange={(e) => setMedicaoAtual(Number(e.target.value))}
+                    >
+                      {medicoes.map(m => (
+                        <option key={m.id} value={m.id}>{m.nome}</option>
+                      ))}
+                    </select>
+                    {medObj?.bloqueada ? (
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                        <Lock className="h-3 w-3 mr-1" /> Bloqueada
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Aberta</Badge>
+                    )}
+                  </div>
+                  {criadaEm && (
+                    <div className="text-xs text-muted-foreground">
+                      <div>Criada em {criadaEm}</div>
+                      {medObj?.usuarioBloqueio && <div className="font-semibold text-foreground">{medObj.usuarioBloqueio}</div>}
+                    </div>
+                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    {isAdmin && medObj?.bloqueada && (
+                      <Button size="sm" variant="outline" onClick={() => setModalAjustarCongeladaOpen(true)}>
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Ajustar valores congelados
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (!medObj?.bloqueada) {
+                          toast.error('Salve e bloqueie a medição antes de gerar o relatório');
+                          return;
+                        }
+                        setModalRelatorioAberto(true);
+                      }}
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      Relatório
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
             
             {/* Resumo Financeiro Detalhado */}
+            <TooltipProvider delayDuration={200}>
             <div className="cards-grid">
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Valor Inicial do Contrato</div>
-                  <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.valorInicialContrato)}</div>
+                  <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span>Valor Inicial</span>
+                    <Tooltip><TooltipTrigger><Eye className="h-3 w-3 opacity-50" /></TooltipTrigger><TooltipContent>Valor inicial do contrato</TooltipContent></Tooltip>
+                  </div>
+                  <div className="text-2xl font-bold mt-1">{formatCurrency(resumoFinanceiro.valorInicialContrato)}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Total Geral do Aditivo</div>
-                  <div className="text-2xl font-bold text-blue-600">{formatCurrency(resumoFinanceiro.totalGeralAditivo)}</div>
+                  <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span>Total de Aditivos</span>
+                    <Tooltip><TooltipTrigger><Eye className="h-3 w-3 opacity-50" /></TooltipTrigger><TooltipContent>Soma de todos os aditivos publicados</TooltipContent></Tooltip>
+                  </div>
+                  <div className="text-2xl font-bold mt-1 text-blue-600">{formatCurrency(resumoFinanceiro.totalGeralAditivo)}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Valor Contrato Pós Aditivo</div>
-                  <div className="text-2xl font-bold text-green-700">{formatCurrency(resumoFinanceiro.valorContratoPosAditivo)}</div>
+                  <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span>Pós-Aditivo</span>
+                    <Tooltip><TooltipTrigger><Eye className="h-3 w-3 opacity-50" /></TooltipTrigger><TooltipContent>Valor total do contrato após aditivos</TooltipContent></Tooltip>
+                  </div>
+                  <div className="text-2xl font-bold mt-1 text-green-700">{formatCurrency(resumoFinanceiro.valorContratoPosAditivo)}</div>
+                  {resumoFinanceiro.totalGeralAditivo !== 0 && (
+                    <Badge className="mt-1 bg-green-100 text-green-700 hover:bg-green-100 text-[10px] uppercase tracking-wide">Pós-Aditivo</Badge>
+                  )}
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Serviços Executados</div>
-                  <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalServicosExecutados)}</div>
+                  <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span>Executado</span>
+                    <Tooltip><TooltipTrigger><Eye className="h-3 w-3 opacity-50" /></TooltipTrigger><TooltipContent>Valor executado no período atual</TooltipContent></Tooltip>
+                  </div>
+                  <div className="text-2xl font-bold mt-1 text-orange-600">{formatCurrency(totalServicosExecutados)}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">Ref. período atual</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Valor Acumulado</div>
-                  <div className="text-2xl font-bold text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
+                  <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span>Acumulado</span>
+                    <Tooltip><TooltipTrigger><Eye className="h-3 w-3 opacity-50" /></TooltipTrigger><TooltipContent>Valor acumulado do contrato</TooltipContent></Tooltip>
+                  </div>
+                  <div className="text-2xl font-bold mt-1 text-cyan-600">{formatCurrency(valorAcumuladoTotal)}</div>
                   {resumoFinanceiro.valorContratoPosAditivo > 0 && (
-                    <div className="text-sm font-semibold text-cyan-700 mt-1">
-                      {Math.min((valorAcumuladoTotal / resumoFinanceiro.valorContratoPosAditivo) * 100, 100).toFixed(1)}%
+                    <div className="text-sm font-semibold text-cyan-700 mt-0.5">
+                      {Math.min((valorAcumuladoTotal / resumoFinanceiro.valorContratoPosAditivo) * 100, 100).toFixed(2)}%
                     </div>
                   )}
                 </CardContent>
@@ -4202,13 +4279,13 @@ export function Medicao() {
               {canEdit && (
                 <Card>
                   <CardContent className="p-4">
-                    <div className="text-sm text-muted-foreground flex items-center justify-between">
-                      <span>Desconto da Obra</span>
+                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span>Desconto</span>
                       {!editandoDesconto && (
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-6 w-6"
+                          className="h-5 w-5"
                           onClick={() => {
                             setNovoDesconto(String(obra?.percentual_desconto ?? 0));
                             setEditandoDesconto(true);
@@ -4239,14 +4316,15 @@ export function Medicao() {
                         </Button>
                       </div>
                     ) : (
-                      <div className="text-2xl font-bold text-purple-600">
-                        {(obra?.percentual_desconto ?? 0).toFixed(2)}%
+                      <div className="text-2xl font-bold mt-1">
+                        {formatCurrency(((obra?.percentual_desconto ?? 0) / 100) * resumoFinanceiro.valorContratoPosAditivo)}
                       </div>
                     )}
                   </CardContent>
                 </Card>
               )}
             </div>
+            </TooltipProvider>
             {/* Tabela Principal */}
             <Card className="shadow-lg">
               <CardHeader>
