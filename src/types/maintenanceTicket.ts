@@ -1,4 +1,5 @@
 import type { TicketService } from '@/hooks/useTicketServices';
+import type { TaskPhoto } from '@/components/maintenance/TaskPhotoUploader';
 
 /**
  * Tipo unificado usado pelos modais e pelo Kanban.
