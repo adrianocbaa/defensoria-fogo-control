@@ -4821,25 +4821,25 @@ export function Medicao() {
 
       {/* ABA 3: GESTÃO */}
       <TabsContent value="gestao" className="space-y-6">
-        {/* Medições */}
+        {/* Medições Realizadas */}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                Medições
-              </CardTitle>
+              <CardTitle>Medições Realizadas</CardTitle>
               <div className="flex items-center gap-2">
                 {canEdit && (
                   <>
-                    <ImportarCronograma 
-                      obraId={obra.id} 
+                    <ImportarCronograma
+                      obraId={obra.id}
                       onSuccess={async () => {
                         await logCronogramaImportado(obra.id, 0);
                         toast.success('Cronograma importado com sucesso!');
                       }}
                     />
-                    <Button onClick={criarNovaMedicao} className="flex items-center gap-2">
+                    <Button
+                      onClick={criarNovaMedicao}
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                    >
                       <Plus className="h-4 w-4" />
                       Nova Medição
                     </Button>
@@ -4850,113 +4850,101 @@ export function Medicao() {
           </CardHeader>
           <CardContent>
             <TooltipProvider>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="space-y-2">
                 {medicoes.map((m) => {
-                  const isActive = medicaoAtual === m.id;
-                  const label = `${m.bloqueada ? '🔒' : '✏️'} ${m.id}ª Medição`;
-                  const iso = m.dataBloqueio ? new Date(m.dataBloqueio).toISOString() : '';
+                  const marco = dadosMedicaoFinanceiro.marcos.find((mk) => mk.sequencia === m.id);
+                  const valorMed = marco?.valorMedicao ?? 0;
+                  const dataStr = m.dataBloqueio ? new Date(m.dataBloqueio).toLocaleDateString('pt-BR') : null;
                   return (
-                    <div key={m.id} className="flex items-center gap-2">
-                      <Button
-                        variant={isActive ? 'secondary' : 'outline'}
-                        size="sm"
-                        className="h-8 rounded-full px-3"
-                        onClick={() => setMedicaoAtual(m.id)}
-                        title={m.bloqueada && m.dataBloqueio ? relativeTimePTBR(m.dataBloqueio) : ''}
-                      >
-                        {label}
-                      </Button>
-
-                      {isActive && (
-                        <>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Ações da medição">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="min-w-[200px]">
-                              {m.bloqueada ? (
-                                <>
-                                  {isAdmin && (
-                                    <DropdownMenuItem
-                                      onSelect={(e) => {
-                                        e.preventDefault();
-                                        setConfirm({ open: true, type: 'reabrir-medicao', medicaoId: m.id });
-                                      }}
-                                    >
-                                      🔓 Reabrir
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
-                                    }}
-                                  >
-                                    🗑️ Excluir
-                                  </DropdownMenuItem>
-                                </>
+                    <div
+                      key={m.id}
+                      className="flex flex-wrap items-center gap-4 rounded-lg border bg-card p-4 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-[180px]">
+                        {m.bloqueada ? (
+                          <Lock className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <span className="font-semibold">{m.id}ª Medição</span>
+                        {m.bloqueada ? (
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Concluída</Badge>
+                        ) : (
+                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Aberta</Badge>
+                        )}
+                      </div>
+                      {dataStr && (
+                        <div className="text-xs text-muted-foreground flex-1 min-w-[180px]">
+                          <div>{m.bloqueada ? 'Concluída' : 'Criada'} em {dataStr}</div>
+                          {m.usuarioBloqueio && (
+                            <div className="font-semibold text-foreground">{m.usuarioBloqueio}</div>
+                          )}
+                        </div>
+                      )}
+                      <div className={`ml-auto text-lg font-bold ${m.bloqueada ? 'text-green-700' : 'text-muted-foreground'}`}>
+                        {formatCurrency(valorMed)}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ações da medição">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="min-w-[200px]">
+                          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setMedicaoAtual(m.id); }}>
+                            👁️ Visualizar
+                          </DropdownMenuItem>
+                          {m.bloqueada ? (
+                            <>
+                              {isAdmin && (
+                                <DropdownMenuItem
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    setConfirm({ open: true, type: 'reabrir-medicao', medicaoId: m.id });
+                                  }}
+                                >
+                                  🔓 Reabrir
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
+                                }}
+                              >
+                                🗑️ Excluir
+                              </DropdownMenuItem>
+                            </>
+                          ) : (
+                            <>
+                              {isAdmin ? (
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); salvarEBloquearMedicao(m.id); }}>
+                                  ✅ Salvar e Bloquear
+                                </DropdownMenuItem>
                               ) : (
                                 <>
-                                  {isAdmin ? (
-                                    <DropdownMenuItem
-                                      onSelect={(e) => {
-                                        e.preventDefault();
-                                        salvarEBloquearMedicao(m.id);
-                                      }}
-                                    >
-                                      ✅ Salvar e Bloquear
-                                    </DropdownMenuItem>
-                                  ) : (
-                                    <>
-                                      <DropdownMenuItem
-                                        onSelect={(e) => {
-                                          e.preventDefault();
-                                          salvarMedicao(m.id);
-                                        }}
-                                      >
-                                        💾 Salvar
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onSelect={(e) => {
-                                          e.preventDefault();
-                                          bloquearMedicao(m.id);
-                                        }}
-                                      >
-                                        🔒 Bloquear
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onSelect={(e) => {
-                                      e.preventDefault();
-                                      setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
-                                    }}
-                                  >
-                                    🗑️ Excluir
+                                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); salvarMedicao(m.id); }}>
+                                    💾 Salvar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); bloquearMedicao(m.id); }}>
+                                    🔒 Bloquear
                                   </DropdownMenuItem>
                                 </>
                               )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-
-                          {m.bloqueada && m.dataBloqueio && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="secondary" className="text-xs text-muted-foreground">
-                                  Concluída · {formatDateTimePTBR(m.dataBloqueio)}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <span>{iso}</span>
-                              </TooltipContent>
-                            </Tooltip>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setConfirm({ open: true, type: 'excluir-medicao', medicaoId: m.id });
+                                }}
+                              >
+                                🗑️ Excluir
+                              </DropdownMenuItem>
+                            </>
                           )}
-                        </>
-                      )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   );
                 })}
@@ -4965,25 +4953,24 @@ export function Medicao() {
           </CardContent>
         </Card>
 
-        {/* Aditivos */}
+        {/* Aditivos de Contrato */}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Aditivos
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant={mostrarAditivos ? 'secondary' : 'outline'}
+              <CardTitle>Aditivos de Contrato</CardTitle>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
                   onClick={() => setMostrarAditivos(!mostrarAditivos)}
-                  className="flex items-center gap-2"
+                  className="text-sm font-medium text-green-700 hover:text-green-800 hover:underline"
                 >
-                  {mostrarAditivos ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  {mostrarAditivos ? 'Ocultar' : 'Mostrar'} Aditivos
-                </Button>
+                  {mostrarAditivos ? 'Ocultar Aditivos' : 'Mostrar Aditivos'}
+                </button>
                 {canEdit && (
-                  <Button onClick={() => setNovoAditivoAberto(true)} className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setNovoAditivoAberto(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                  >
                     <Plus className="h-4 w-4" />
                     Novo Aditivo
                   </Button>
@@ -4992,15 +4979,13 @@ export function Medicao() {
                   open={novoAditivoAberto}
                   onOpenChange={setNovoAditivoAberto}
                   onConfirm={confirmarNovoAditivo}
-                  sequenciasDisponiveis={(() => { 
-                    const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; 
-                    // Incluir opção 0 (Antes da 1ª Medição) + todas as medições existentes + próxima
-                    return [0, ...Array.from({ length: maxSeq + 1 }, (_, i) => i + 1)]; 
+                  sequenciasDisponiveis={(() => {
+                    const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0;
+                    return [0, ...Array.from({ length: maxSeq + 1 }, (_, i) => i + 1)];
                   })()}
-                  defaultSequencia={(() => { 
-                    // Se não há medições, sugerir 0 (antes da 1ª medição)
-                    const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0; 
-                    return maxSeq === 0 ? 0 : maxSeq + 1; 
+                  defaultSequencia={(() => {
+                    const maxSeq = medicoes.length ? Math.max(...medicoes.map(m => m.id)) : 0;
+                    return maxSeq === 0 ? 0 : maxSeq + 1;
                   })()}
                 />
               </div>
@@ -5008,90 +4993,80 @@ export function Medicao() {
           </CardHeader>
           {mostrarAditivos && (
             <CardContent>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="space-y-2">
                 {aditivos.map((a) => (
-                  <div key={a.id} className="flex items-center gap-2">
-                    <Badge variant="outline" className="h-8 rounded-full px-3 text-sm">
-                      {a.nome}
-                    </Badge>
-                    <Badge variant={a.bloqueada ? 'default' : 'secondary'} className="text-xs">
-                      {a.bloqueada ? 'Publicado' : 'Rascunho'}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Ações do aditivo">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="min-w-[200px]">
-                        {a.bloqueada ? (
-                          <>
-                            {canEdit && (
-                              <>
-                                <DropdownMenuItem
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    editarAditivo(a.id);
-                                  }}
-                                >
-                                  ✏️ Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
-                                  }}
-                                >
-                                  🗑️ Excluir
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            {canEdit && (
-                              <>
-                                <DropdownMenuItem
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    setReimportarAditivoId(a.id);
-                                    fileInputReimportRef.current?.click();
-                                  }}
-                                >
-                                  📥 Importar Planilha
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    salvarAditivo(a.id);
-                                  }}
-                                >
-                                  💾 Salvar rascunho
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    publicarAditivo(a.id);
-                                  }}
-                                >
-                                  ✅ Salvar e Publicar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
-                                  }}
-                                >
-                                  🗑️ Excluir
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <div
+                    key={a.id}
+                    className="flex items-center gap-3 rounded-lg border bg-card p-4 hover:bg-muted/30 transition-colors"
+                  >
+                    <span className="font-bold uppercase tracking-wide">{a.nome}</span>
+                    {a.bloqueada ? (
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Publicado</Badge>
+                    ) : (
+                      <Badge variant="secondary">Rascunho</Badge>
+                    )}
+                    <div className="ml-auto">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ações do aditivo">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="min-w-[200px]">
+                          {a.bloqueada ? (
+                            <>
+                              {canEdit && (
+                                <>
+                                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); editarAditivo(a.id); }}>
+                                    ✏️ Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                                    }}
+                                  >
+                                    🗑️ Excluir
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {canEdit && (
+                                <>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setReimportarAditivoId(a.id);
+                                      fileInputReimportRef.current?.click();
+                                    }}
+                                  >
+                                    📥 Importar Planilha
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); salvarAditivo(a.id); }}>
+                                    💾 Salvar rascunho
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); publicarAditivo(a.id); }}>
+                                    ✅ Salvar e Publicar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setConfirm({ open: true, type: 'excluir-aditivo', aditivoId: a.id });
+                                    }}
+                                  >
+                                    🗑️ Excluir
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -5099,10 +5074,11 @@ export function Medicao() {
           )}
         </Card>
 
-        {/* Histórico de Alterações */}
+        {/* Histórico de Ações */}
         <ObraAuditLogs obraId={obra.id} />
       </TabsContent>
     </Tabs>
+
 
     {/* Modal Relatório Técnico */}
     {obra && medicaoAtual && (
