@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check, Trash2, AlertOctagon } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check, Trash2, AlertOctagon, Users } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ImpedimentReasonDialog } from './ImpedimentReasonDialog';
 import { useTicketImpediments, addImpediment, resolveActiveImpediments, type TicketImpediment } from '@/hooks/useTicketImpediments';
