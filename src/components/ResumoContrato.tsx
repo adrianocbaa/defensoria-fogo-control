@@ -215,22 +215,23 @@ export function ResumoContrato({
                   </TableHeader>
                   <TableBody>
                     {/* TOTAL GERAL DO ADITIVO */}
-                    <TableRow className="bg-orange-50 hover:bg-orange-50">
-                      <TableCell className="font-semibold text-orange-600">
+                    <TableRow className="bg-green-50 hover:bg-green-50">
+                      <TableCell className="font-semibold text-green-700">
                         TOTAL GERAL DO ADITIVO
                       </TableCell>
                       <TableCell></TableCell>
                       {linhas.map((linha) => (
                         <React.Fragment key={`total-${linha.aditivo.id}`}>
-                          <TableCell className="text-center font-bold text-orange-600 border-l border-orange-200">
+                          <TableCell className="text-center font-bold text-green-700 border-l border-green-200">
                             {formatCurrency(linha.totalGeral)}
                           </TableCell>
-                          <TableCell className="text-center font-semibold text-orange-600">
+                          <TableCell className="text-center font-semibold text-green-700">
                             {linha.percAcumulado.toFixed(2)}%
                           </TableCell>
                         </React.Fragment>
                       ))}
                     </TableRow>
+
 
                     {/* TOTAL DE SERVIÇOS ACRESCIDOS */}
                     <TableRow className="hover:bg-gray-50">
