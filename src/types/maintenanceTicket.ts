@@ -1,4 +1,5 @@
 import type { TicketService } from '@/hooks/useTicketServices';
+import type { TaskPhoto } from '@/components/maintenance/TaskPhotoUploader';
 
 /**
  * Tipo unificado usado pelos modais e pelo Kanban.
@@ -30,6 +31,8 @@ export interface UITicket {
   confirmationFileUrl?: string | null;
   confirmationFileName?: string | null;
   finalizationNote?: string | null;
+  /** Fotos de referência no nível do procedimento (fiscal → manutenção). */
+  referencePhotos?: TaskPhoto[];
   // campos originais (opcionais para compat)
   created_at?: string;
   updated_at?: string;

@@ -423,6 +423,7 @@ export function KanbanBoard() {
         confirmationFileUrl: (ticket as any).confirmation_file_url ?? null,
         confirmationFileName: (ticket as any).confirmation_file_name ?? null,
         finalizationNote: (ticket as any).finalization_note ?? null,
+        referencePhotos: Array.isArray((ticket as any).reference_photos) ? (ticket as any).reference_photos : [],
         icon: getIconForType(ticket.type)
       }));
     });
@@ -623,6 +624,7 @@ export function KanbanBoard() {
       manager_ids: ticketManagerIds,
       nucleo_id: updatedTicket.nucleoId ?? null,
       completed_at: updatedTicket.completedAt?.toISOString(),
+      reference_photos: (updatedTicket.referencePhotos ?? []) as any,
     } as any;
 
     await updateTicket(updatedTicket.id, dbTicketData);

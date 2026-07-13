@@ -27,6 +27,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { TicketServicesEditor } from './TicketServicesEditor';
+import { TaskPhotoUploader, type TaskPhoto } from '@/components/maintenance/TaskPhotoUploader';
 import type { TicketService } from '@/hooks/useTicketServices';
 import type { UITicket } from '@/types/maintenanceTicket';
 
@@ -63,6 +64,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
   const [requestedAt, setRequestedAt] = useState<string>('');
   const [managerIds, setManagerIds] = useState<string[]>([]);
   const [nucleoId, setNucleoId] = useState<string>('');
+  const [referencePhotos, setReferencePhotos] = useState<TaskPhoto[]>([]);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
@@ -83,6 +85,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       setRequestedAt(ticket.requestedAt || '');
       setManagerIds(ticket.managerIds && ticket.managerIds.length > 0 ? ticket.managerIds : (ticket.managerId ? [ticket.managerId] : []));
       setNucleoId(ticket.nucleoId || '');
+      setReferencePhotos(ticket.referencePhotos ?? []);
       setCurrentStep(1);
     }
   }, [ticket]);
@@ -196,6 +199,7 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
       managerId: managerIds[0] ?? null,
       managerIds,
       nucleoId: nucleoId || null,
+      referencePhotos,
     };
 
     try {
@@ -345,6 +349,20 @@ export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: Edit
                   onChange={setNucleoId}
                   placeholder="Selecione um núcleo..."
                   disabled={isGM}
+                />
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <Label>Fotos de referência do procedimento</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Anexe fotos mostrando onde ou o que deve ser executado. Elas ficam visíveis para a equipe de manutenção.
+                </p>
+                <TaskPhotoUploader
+                  photos={referencePhotos}
+                  onChange={setReferencePhotos}
+                  mode="reference"
+                  disabled={isGM}
+                  folder="reference-tickets"
                 />
               </div>
             </div>

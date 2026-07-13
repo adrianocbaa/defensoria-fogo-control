@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { TaskPhoto } from '@/components/maintenance/TaskPhotoUploader';
 
 export interface TicketService {
   id?: string;
@@ -30,6 +31,10 @@ export interface TicketService {
   travel_servidor?: string | null;
   /** IDs dos servidores para registrar em `travels.manager_ids` (transiente). */
   travel_manager_ids?: string[];
+  /** Fotos de referência anexadas pelo fiscal (o que/onde executar). */
+  reference_photos?: TaskPhoto[];
+  /** Fotos de execução anexadas pela manutenção (comprovação). */
+  execution_photos?: TaskPhoto[];
 }
 
 export interface ReplaceServicesOptions {
@@ -179,6 +184,8 @@ export async function replaceServicesForTicket(
       travel_sem_previsao: !!s.travel_sem_previsao,
       travel_id: travelId,
       travel_is_linked: isLinked,
+      reference_photos: (s.reference_photos ?? []) as any,
+      execution_photos: (s.execution_photos ?? []) as any,
     };
   });
 
@@ -226,5 +233,7 @@ export async function fetchServicesForTicket(ticketId: string): Promise<TicketSe
     travel_sem_previsao: r.travel_sem_previsao ?? false,
     travel_id: r.travel_id,
     travel_is_linked: r.travel_is_linked ?? false,
+    reference_photos: Array.isArray(r.reference_photos) ? r.reference_photos : [],
+    execution_photos: Array.isArray(r.execution_photos) ? r.execution_photos : [],
   }));
 }
