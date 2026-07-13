@@ -1173,6 +1173,7 @@ export type Database = {
           custom_assignment: boolean
           description: string | null
           envolve_viagem: boolean
+          execution_photos: Json
           id: string
           location: string | null
           manager_id: string | null
@@ -1180,6 +1181,7 @@ export type Database = {
           materials: Json
           nucleo_id: string | null
           order_index: number
+          reference_photos: Json
           scheduled_date: string | null
           status: string
           ticket_id: string
@@ -1199,6 +1201,7 @@ export type Database = {
           custom_assignment?: boolean
           description?: string | null
           envolve_viagem?: boolean
+          execution_photos?: Json
           id?: string
           location?: string | null
           manager_id?: string | null
@@ -1206,6 +1209,7 @@ export type Database = {
           materials?: Json
           nucleo_id?: string | null
           order_index?: number
+          reference_photos?: Json
           scheduled_date?: string | null
           status?: string
           ticket_id: string
@@ -1225,6 +1229,7 @@ export type Database = {
           custom_assignment?: boolean
           description?: string | null
           envolve_viagem?: boolean
+          execution_photos?: Json
           id?: string
           location?: string | null
           manager_id?: string | null
@@ -1232,6 +1237,7 @@ export type Database = {
           materials?: Json
           nucleo_id?: string | null
           order_index?: number
+          reference_photos?: Json
           scheduled_date?: string | null
           status?: string
           ticket_id?: string
@@ -1316,6 +1322,7 @@ export type Database = {
           observations: string[] | null
           priority: string
           process_number: string | null
+          reference_photos: Json
           request_type: string | null
           requested_at: string
           services: Json | null
@@ -1344,6 +1351,7 @@ export type Database = {
           observations?: string[] | null
           priority: string
           process_number?: string | null
+          reference_photos?: Json
           request_type?: string | null
           requested_at?: string
           services?: Json | null
@@ -1372,6 +1380,7 @@ export type Database = {
           observations?: string[] | null
           priority?: string
           process_number?: string | null
+          reference_photos?: Json
           request_type?: string | null
           requested_at?: string
           services?: Json | null
