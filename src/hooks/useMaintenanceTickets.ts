@@ -85,6 +85,8 @@ export function useMaintenanceTickets() {
               travel_data_volta: r.travel_data_volta,
               travel_sem_previsao: r.travel_sem_previsao ?? false,
               travel_id: r.travel_id,
+              reference_photos: Array.isArray(r.reference_photos) ? r.reference_photos : [],
+              execution_photos: Array.isArray(r.execution_photos) ? r.execution_photos : [],
             }));
 
           groupedTickets[ticket.status].push({
@@ -93,6 +95,7 @@ export function useMaintenanceTickets() {
             status: ticket.status as 'Pendente' | 'Em andamento' | 'Impedido' | 'Concluído',
             services,
             materials: ticket.materials as { name: string; completed: boolean }[] || [],
+            reference_photos: Array.isArray(ticket.reference_photos) ? ticket.reference_photos : [],
             request_type: ticket.request_type as 'email' | 'processo' | 'direto' | undefined
           });
         }
