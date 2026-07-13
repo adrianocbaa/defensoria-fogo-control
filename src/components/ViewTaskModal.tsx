@@ -184,6 +184,9 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
       (ticket as any).referencePhotos = prev;
       toast({ title: 'Erro ao salvar fotos', description: err?.message ?? 'Tente novamente.', variant: 'destructive' });
     }
+  };
+
+
 
   const toggleMaterial = async (index: number, checked: boolean) => {
     if (!canToggle) return;
