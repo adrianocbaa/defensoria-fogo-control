@@ -158,6 +158,8 @@ export function Medicao() {
   const [mostrarAditivos, setMostrarAditivos] = useState(true);
   const [novoAditivoAberto, setNovoAditivoAberto] = useState(false);
   const [confirm, setConfirm] = useState<{ open: boolean; type?: 'reabrir-medicao' | 'excluir-medicao' | 'excluir-aditivo' | 'limpar-planilha'; medicaoId?: number; aditivoId?: number }>({ open: false });
+  const [excluirMedicaoConfirmText, setExcluirMedicaoConfirmText] = useState('');
+
   const [editandoDesconto, setEditandoDesconto] = useState(false);
   const [novoDesconto, setNovoDesconto] = useState('');
   const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
