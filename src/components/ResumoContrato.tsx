@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileDown, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { MedicaoProgressBar, MedicaoMarcoBar } from '@/components/MedicaoProgressBar';
 
 interface Item {
   id: number;
+
   item: string;
   codigo: string;
   valorTotal: number;
