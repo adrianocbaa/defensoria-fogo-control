@@ -1689,13 +1689,18 @@ export function RelatorioMedicaoModal({
             <TabsTrigger value="dados">Dados do Relatório</TabsTrigger>
             <TabsTrigger value="fotos" className="flex items-center gap-2">
               <Camera className="h-4 w-4" />
-              Anexo Fotográfico ({fotosRelatorio.length})
+              Anexo Fotográfico
+              {fotosRelatorio.length > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold h-5 min-w-5 px-1.5">
+                  {fotosRelatorio.length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dados" className="space-y-4 mt-4">
-            {/* Período */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Período + Data */}
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="periodoInicio">Período Início</Label>
                 <Input
@@ -1714,37 +1719,46 @@ export function RelatorioMedicaoModal({
                   onChange={(e) => setPeriodoFim(e.target.value)}
                 />
               </div>
-            </div>
-
-            {/* Data do Relatório */}
-            <div>
-              <Label htmlFor="dataRelatorio">Data do Relatório</Label>
-              <Input
-                id="dataRelatorio"
-                type="date"
-                value={dataRelatorio}
-                onChange={(e) => setDataRelatorio(e.target.value)}
-              />
+              <div>
+                <Label htmlFor="dataRelatorio">Data do Relatório</Label>
+                <Input
+                  id="dataRelatorio"
+                  type="date"
+                  value={dataRelatorio}
+                  onChange={(e) => setDataRelatorio(e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Serviços Executados */}
             <div>
-              <Label htmlFor="servicosExecutados">5. DOS SERVIÇOS EXECUTADOS (Preenchimento do Fiscal)</Label>
+              <Label htmlFor="servicosExecutados" className="text-sm font-semibold">
+                5. DOS SERVIÇOS EXECUTADOS <span className="font-normal text-muted-foreground">(Preenchimento do Fiscal)</span>
+              </Label>
               <Textarea
                 id="servicosExecutados"
-                placeholder="Descreva os serviços executados durante o período da medição...&#10;&#10;Exemplo:&#10;1. Execução de pintura de parede e calçada;&#10;2. Demolição de contrapiso e execução de rampa;"
+                placeholder="Descreva os serviços executados durante o período da medição..."
                 value={servicosExecutados}
                 onChange={(e) => setServicosExecutados(e.target.value)}
-                rows={6}
-                className="mt-1"
+                rows={5}
+                className="mt-2"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Exemplo: Execução de fundações profundas, montagem de cimbramento e concretagem da laje L02...
+              </p>
             </div>
 
             {/* Conclusão - Preview */}
-            <div className="bg-muted/50 p-3 rounded-lg border">
-              <Label className="text-muted-foreground text-xs">6. CONCLUSÃO (gerada automaticamente)</Label>
-              <p className="text-sm mt-1">
-                Sendo assim, e conforme as informações expostas na tabela 3, a <strong>{numeroMedicaoExtenso(medicaoAtual)}</strong> medição contratual resultou no valor de <strong>{formatMoney(totais.executado)}</strong> ({formatMoneyExtenso(totais.executado)}) a ser pago à empresa <strong>{obra.empresa_responsavel || '[Empresa]'}</strong>.
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm font-semibold">6. CONCLUSÃO <span className="font-normal text-muted-foreground">(gerada automaticamente)</span></Label>
+                <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  <FileText className="h-3 w-3" />
+                  Gerado automaticamente
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Sendo assim, e conforme as informações expostas na tabela 3, a <strong className="text-foreground">{numeroMedicaoExtenso(medicaoAtual)}</strong> medição contratual resultou no valor de <strong className="text-foreground">{formatMoney(totais.executado)}</strong> ({formatMoneyExtenso(totais.executado)}) a ser pago à empresa <strong className="text-foreground">{obra.empresa_responsavel || '[Empresa]'}</strong>.
               </p>
             </div>
 
@@ -1770,20 +1784,29 @@ export function RelatorioMedicaoModal({
               </div>
             </div>
 
-            {/* Resumo */}
-            <div className="bg-muted p-4 rounded-lg">
-              <h4 className="font-semibold mb-2">Resumo da Medição</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>Valor do Contrato:</div>
-                <div className="font-medium">{formatMoney(totais.contrato)}</div>
-                <div>Valor desta Medição:</div>
-                <div className="font-medium">{formatMoney(totais.executado)}</div>
-                <div>Valor Acumulado:</div>
-                <div className="font-medium">{formatMoney(totais.executadoAcum)}</div>
-                <div>% Executado:</div>
-                <div className="font-medium">{totais.percentual.toFixed(2)}%</div>
+            {/* Resumo - 4 colunas */}
+            <div className="bg-muted/40 border rounded-lg p-4">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Resumo da Medição</h4>
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Valor do Contrato</div>
+                  <div className="font-semibold text-sm">{formatMoney(totais.contrato)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Esta Medição</div>
+                  <div className="font-semibold text-sm">{formatMoney(totais.executado)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Acumulado</div>
+                  <div className="font-semibold text-sm">{formatMoney(totais.executadoAcum)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">% Executado</div>
+                  <div className="font-semibold text-sm text-green-700">{totais.percentual.toFixed(2)}%</div>
+                </div>
               </div>
             </div>
+
           </TabsContent>
 
           <TabsContent value="fotos" className="space-y-4 mt-4">
