@@ -785,6 +785,35 @@ export default function AdminPanel() {
                               </div>
                             </div>
 
+                            {/* Responsável pela Manutenção (fiscal ou servidor) */}
+                            <div className="flex items-center justify-between p-3 border rounded-md bg-background">
+                              <div>
+                                <Label htmlFor={`${profile.user_id}-maint-resp`} className="cursor-pointer">
+                                  Responsável pela Manutenção
+                                </Label>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Permite atribuir este usuário como responsável por tarefas de manutenção (servidor ou fiscal do setor).
+                                </p>
+                              </div>
+                              <Switch
+                                id={`${profile.user_id}-maint-resp`}
+                                checked={!!profile.is_maintenance_responsible}
+                                onCheckedChange={async (checked) => {
+                                  const { error } = await (supabase.from('profiles') as any)
+                                    .update({ is_maintenance_responsible: checked })
+                                    .eq('user_id', profile.user_id);
+                                  if (error) {
+                                    toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+                                    return;
+                                  }
+                                  setProfiles((prev) => prev.map((p) =>
+                                    p.user_id === profile.user_id ? { ...p, is_maintenance_responsible: checked } : p
+                                  ));
+                                  toast({ title: checked ? 'Marcado como responsável' : 'Removido dos responsáveis' });
+                                }}
+                              />
+                            </div>
+
                             {/* User Obra Access Manager for Contratada users */}
                             {profile.role === 'contratada' && (
                               <UserObraAccessManager 
