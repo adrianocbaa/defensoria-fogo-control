@@ -1685,7 +1685,7 @@ export function RelatorioMedicaoModal({
         </DialogHeader>
 
         <Tabs defaultValue="dados" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dados">Dados do Relatório</TabsTrigger>
             <TabsTrigger value="fotos" className="flex items-center gap-2">
               <Camera className="h-4 w-4" />
@@ -1696,7 +1696,9 @@ export function RelatorioMedicaoModal({
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="revisao">Revisão</TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="dados" className="space-y-4 mt-4">
             {/* Período + Data */}
