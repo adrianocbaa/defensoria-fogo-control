@@ -624,6 +624,7 @@ export function KanbanBoard() {
       manager_ids: ticketManagerIds,
       nucleo_id: updatedTicket.nucleoId ?? null,
       completed_at: updatedTicket.completedAt?.toISOString(),
+      reference_photos: (updatedTicket.referencePhotos ?? []) as any,
     } as any;
 
     await updateTicket(updatedTicket.id, dbTicketData);
