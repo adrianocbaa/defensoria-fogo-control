@@ -4163,59 +4163,90 @@ export function Medicao() {
 
           {/* ABA 1: MEDIÇÃO ATUAL */}
           <TabsContent value="medicao-atual" className="space-y-6">
-            {/* Card Seletor da Medição */}
+            {/* Banner de Bloqueio + Card Seletor da Medição */}
             {medicaoAtual && (() => {
               const medObj = medicoes.find(m => m.id === medicaoAtual);
               const criadaEm = medObj?.dataBloqueio ? new Date(medObj.dataBloqueio).toLocaleDateString('pt-BR') : null;
+              const autor = medObj?.usuarioBloqueio;
               return (
-                <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-3">
-                    <select
-                      className="text-lg font-bold bg-transparent border-0 focus:outline-none cursor-pointer pr-6"
-                      value={medicaoAtual}
-                      onChange={(e) => setMedicaoAtual(Number(e.target.value))}
-                    >
-                      {medicoes.map(m => (
-                        <option key={m.id} value={m.id}>{m.nome}</option>
-                      ))}
-                    </select>
-                    {medObj?.bloqueada ? (
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                        <Lock className="h-3 w-3 mr-1" /> Bloqueada
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Aberta</Badge>
-                    )}
-                  </div>
-                  {criadaEm && (
-                    <div className="text-xs text-muted-foreground">
-                      <div>Criada em {criadaEm}</div>
-                      {medObj?.usuarioBloqueio && <div className="font-semibold text-foreground">{medObj.usuarioBloqueio}</div>}
+                <>
+                  {medObj?.bloqueada && (
+                    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+                      <Lock className="h-5 w-5 text-amber-600 shrink-0" />
+                      <div className="text-sm text-amber-900 font-medium flex-1 min-w-[200px]">
+                        Esta medição está bloqueada. Os valores foram congelados
+                        {criadaEm ? ` em ${criadaEm}` : ''}
+                        {autor ? ` por ${autor}` : ''}.
+                      </div>
+                      <div className="flex items-center gap-2 ml-auto">
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-amber-400 text-amber-700 hover:bg-amber-100"
+                            onClick={() => setModalAjustarCongeladaOpen(true)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Ajustar valores
+                          </Button>
+                        )}
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-amber-400 text-amber-700 hover:bg-amber-100"
+                            onClick={() => reabrirMedicao(medicaoAtual)}
+                          >
+                            <Unlock className="h-3 w-3 mr-1" />
+                            Desbloquear
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   )}
-                  <div className="ml-auto flex items-center gap-2">
-                    {isAdmin && medObj?.bloqueada && (
-                      <Button size="sm" variant="outline" onClick={() => setModalAjustarCongeladaOpen(true)}>
-                        <Pencil className="h-3 w-3 mr-1" />
-                        Ajustar valores congelados
-                      </Button>
+                  <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-card p-4">
+                    <div className="flex items-center gap-3">
+                      <select
+                        className="text-lg font-bold bg-transparent border-0 focus:outline-none cursor-pointer pr-6"
+                        value={medicaoAtual}
+                        onChange={(e) => setMedicaoAtual(Number(e.target.value))}
+                      >
+                        {medicoes.map(m => (
+                          <option key={m.id} value={m.id}>{m.nome}</option>
+                        ))}
+                      </select>
+                      {medObj?.bloqueada ? (
+                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
+                          <Lock className="h-3 w-3 mr-1" /> Bloqueada
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Aberta</Badge>
+                      )}
+                    </div>
+                    {!medObj?.bloqueada && criadaEm && (
+                      <div className="text-xs text-muted-foreground">
+                        <div>Criada em {criadaEm}</div>
+                        {autor && <div className="font-semibold text-foreground">{autor}</div>}
+                      </div>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        if (!medObj?.bloqueada) {
-                          toast.error('Salve e bloqueie a medição antes de gerar o relatório');
-                          return;
-                        }
-                        setModalRelatorioAberto(true);
-                      }}
-                    >
-                      <FileText className="h-3 w-3 mr-1" />
-                      Relatório
-                    </Button>
+                    <div className="ml-auto flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (!medObj?.bloqueada) {
+                            toast.error('Salve e bloqueie a medição antes de gerar o relatório');
+                            return;
+                          }
+                          setModalRelatorioAberto(true);
+                        }}
+                      >
+                        <FileText className="h-3 w-3 mr-1" />
+                        Relatório
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                </>
               );
             })()}
             
