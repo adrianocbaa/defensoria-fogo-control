@@ -27,6 +27,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { TicketServicesEditor } from './TicketServicesEditor';
+import { TaskPhotoUploader, type TaskPhoto } from '@/components/maintenance/TaskPhotoUploader';
 import type { TicketService } from '@/hooks/useTicketServices';
 import type { UITicket } from '@/types/maintenanceTicket';
 
