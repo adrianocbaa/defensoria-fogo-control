@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical, Download, Pencil, X } from 'lucide-react';
+import { ArrowLeft, Calculator, FileText, Plus, Trash2, Upload, Eye, EyeOff, Settings, Zap, Check, Lock, Unlock, MoreVertical, Download, Pencil, X, AlertCircle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -158,6 +158,8 @@ export function Medicao() {
   const [mostrarAditivos, setMostrarAditivos] = useState(true);
   const [novoAditivoAberto, setNovoAditivoAberto] = useState(false);
   const [confirm, setConfirm] = useState<{ open: boolean; type?: 'reabrir-medicao' | 'excluir-medicao' | 'excluir-aditivo' | 'limpar-planilha'; medicaoId?: number; aditivoId?: number }>({ open: false });
+  const [excluirMedicaoConfirmText, setExcluirMedicaoConfirmText] = useState('');
+
   const [editandoDesconto, setEditandoDesconto] = useState(false);
   const [novoDesconto, setNovoDesconto] = useState('');
   const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
@@ -5126,12 +5128,14 @@ export function Medicao() {
     />
 
     {/* Confirmações - Movido para fora das Tabs para aparecer em qualquer aba */}
-    <AlertDialog open={confirm.open} onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}>
+    <AlertDialog
+      open={confirm.open && confirm.type !== 'excluir-medicao'}
+      onOpenChange={(open) => setConfirm((c) => ({ ...c, open }))}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
             {confirm.type === 'reabrir-medicao' && 'Reabrir medição?'}
-            {confirm.type === 'excluir-medicao' && 'Excluir medição?'}
             {confirm.type === 'excluir-aditivo' && 'Excluir aditivo?'}
             {confirm.type === 'limpar-planilha' && 'Excluir planilha orçamentária?'}
           </AlertDialogTitle>
@@ -5150,7 +5154,7 @@ export function Medicao() {
                 </p>
               </div>
             )}
-            {(confirm.type === 'excluir-medicao' || confirm.type === 'excluir-aditivo') && 'Esta ação não pode ser desfeita.'}
+            {confirm.type === 'excluir-aditivo' && 'Esta ação não pode ser desfeita.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -5159,9 +5163,6 @@ export function Medicao() {
             onClick={() => {
               if (confirm.type === 'reabrir-medicao' && confirm.medicaoId != null) {
                 reabrirMedicao(confirm.medicaoId);
-              }
-              if (confirm.type === 'excluir-medicao' && confirm.medicaoId != null) {
-                excluirMedicao(confirm.medicaoId);
               }
               if (confirm.type === 'excluir-aditivo' && confirm.aditivoId != null) {
                 excluirAditivo(confirm.aditivoId);
@@ -5178,6 +5179,73 @@ export function Medicao() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    {/* Modal específico de Excluir Medição - exige digitar EXCLUIR */}
+    <Dialog
+      open={confirm.open && confirm.type === 'excluir-medicao'}
+      onOpenChange={(open) => {
+        if (!open) {
+          setExcluirMedicaoConfirmText('');
+          setConfirm({ open: false });
+        }
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-destructive">Excluir Medição</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col items-center text-center gap-4 py-2">
+          <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-base">
+              Tem certeza que deseja excluir a {confirm.medicaoId}ª Medição?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Todos os dados de medição, valores e histórico relacionados serão perdidos permanentemente.
+            </p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="confirmExcluirMedicao" className="text-sm font-medium">
+            Digite <span className="font-bold">EXCLUIR</span> para confirmar
+          </label>
+          <Input
+            id="confirmExcluirMedicao"
+            value={excluirMedicaoConfirmText}
+            onChange={(e) => setExcluirMedicaoConfirmText(e.target.value)}
+            autoComplete="off"
+            autoFocus
+          />
+        </div>
+        <div className="flex justify-between gap-2 pt-2 border-t -mx-6 px-6 -mb-6 pb-6 bg-muted/30 mt-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setExcluirMedicaoConfirmText('');
+              setConfirm({ open: false });
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            disabled={excluirMedicaoConfirmText.trim().toUpperCase() !== 'EXCLUIR'}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+            onClick={() => {
+              if (confirm.medicaoId != null) {
+                excluirMedicao(confirm.medicaoId);
+              }
+              setExcluirMedicaoConfirmText('');
+              setConfirm({ open: false });
+            }}
+          >
+            Excluir Medição
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
 
         {/* Input oculto para reimportar planilha de aditivo */}
         <input
