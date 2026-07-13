@@ -671,6 +671,28 @@ export function KanbanBoard() {
   const allowedTargets = [...visibleStatuses];
   const [mobileTab, setMobileTab] = useState<string>(visibleStatuses[0]);
 
+  // Filtro por servidor responsável
+  const [managerFilter, setManagerFilter] = useState<string>('all');
+
+  // Lista de servidores que aparecem em pelo menos uma tarefa visível
+  const availableManagerFilters = useMemo(() => {
+    const idsInUse = new Set<string>();
+    Object.values(tickets).flat().forEach((t) => {
+      (t.managerIds ?? []).forEach((id) => idsInUse.add(id));
+    });
+    return managers.filter((m) => idsInUse.has(m.id));
+  }, [tickets, managers]);
+
+  // Aplica o filtro
+  const filteredTickets = useMemo(() => {
+    if (managerFilter === 'all') return tickets;
+    const out: { [key: string]: Ticket[] } = {};
+    for (const [status, list] of Object.entries(tickets)) {
+      out[status] = list.filter((t) => (t.managerIds ?? []).includes(managerFilter));
+    }
+    return out;
+  }, [tickets, managerFilter]);
+
   return (
     <DndContext
       sensors={sensors}
@@ -679,14 +701,33 @@ export function KanbanBoard() {
       onDragEnd={handleDragEnd}
     >
       <div className="p-4 md:p-6">
-        <div className="mb-4 md:mb-6 flex items-start justify-between gap-3">
+        <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-3">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
             <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Arraste as tarefas entre as colunas para alterar o status</p>
             <p className="text-xs text-muted-foreground md:hidden">Use "Mover para…" no menu do card para trocar de etapa</p>
           </div>
-          {!isGM && <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />}
+          <div className="flex items-center gap-2 flex-wrap">
+            {availableManagerFilters.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <Select value={managerFilter} onValueChange={setManagerFilter}>
+                  <SelectTrigger className="h-9 w-[220px]">
+                    <SelectValue placeholder="Filtrar por servidor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os servidores</SelectItem>
+                    {availableManagerFilters.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {!isGM && <CreateTaskModal onCreateTask={(task) => handleCreateTask(task as any)} />}
+          </div>
         </div>
+
 
         {isMobile ? (
           <Tabs value={mobileTab} onValueChange={setMobileTab} className="w-full">
