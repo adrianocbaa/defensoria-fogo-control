@@ -1811,174 +1811,172 @@ export function RelatorioMedicaoModal({
 
           <TabsContent value="fotos" className="space-y-4 mt-4">
             {/* Data da Vistoria */}
-            <div>
+            <div className="max-w-xs">
               <Label htmlFor="dataVistoria">Data da Vistoria (Anexo 01)</Label>
               <Input
                 id="dataVistoria"
                 type="date"
                 value={dataVistoria}
                 onChange={(e) => setDataVistoria(e.target.value)}
-                placeholder="Se não informada, usa a data do relatório"
               />
             </div>
 
-            {/* Upload de fotos */}
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-                id="photo-upload"
-              />
-              <label htmlFor="photo-upload" className="cursor-pointer">
-                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  Clique para adicionar fotos do computador
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  ou arraste e solte aqui
-                </p>
-              </label>
-            </div>
+            <div className="grid grid-cols-2 gap-6">
+              {/* Coluna Esquerda */}
+              <div className="space-y-4">
+                {/* Upload dropzone */}
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center bg-muted/30">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="photo-upload"
+                  />
+                  <label htmlFor="photo-upload" className="cursor-pointer block">
+                    <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-sm font-medium">
+                      Arraste fotos aqui ou clique para selecionar
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Formatos aceitos: JPG, PNG
+                    </p>
+                  </label>
+                </div>
 
-            {/* Fotos do RDO */}
-            {periodoInicio && periodoFim && (
-              <div className="space-y-3">
-                <Label>Fotos do RDO ({periodoInicio} a {periodoFim})</Label>
-                {loadingRdoMedias ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="ml-2 text-sm">Carregando fotos do RDO...</span>
+                {/* Fotos do RDO */}
+                {periodoInicio && periodoFim && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">
+                      Fotos do RDO ({format(new Date(periodoInicio + 'T12:00:00'), 'dd/MM')} a {format(new Date(periodoFim + 'T12:00:00'), 'dd/MM')})
+                    </h4>
+                    {loadingRdoMedias ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="ml-2 text-sm">Carregando fotos do RDO...</span>
+                      </div>
+                    ) : Object.keys(rdoMediasByDate).length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-6">
+                        Nenhuma foto encontrada
+                      </p>
+                    ) : (
+                      <ScrollArea className="h-56 border rounded-lg p-2">
+                        {Object.entries(rdoMediasByDate).map(([date, medias]) => {
+                          const allSelected = medias.every(m => selectedRdoIds.has(m.id));
+                          return (
+                            <div key={date} className="mb-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Checkbox
+                                  checked={allSelected}
+                                  onCheckedChange={(checked) => selectAllFromDate(date, !!checked)}
+                                />
+                                <span className="font-medium text-sm">
+                                  {format(new Date(date + 'T12:00:00'), 'dd/MM/yyyy')} ({medias.length} fotos)
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-4 gap-2 ml-6">
+                                {medias.map(media => (
+                                  <div
+                                    key={media.id}
+                                    className={`relative cursor-pointer rounded border-2 overflow-hidden ${
+                                      selectedRdoIds.has(media.id) ? 'border-primary' : 'border-transparent'
+                                    }`}
+                                    onClick={() => toggleRdoPhoto(media)}
+                                  >
+                                    <img src={media.file_url} alt="" className="w-full h-14 object-cover" />
+                                    {selectedRdoIds.has(media.id) && (
+                                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                        <div className="bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                                          ✓
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </ScrollArea>
+                    )}
                   </div>
-                ) : Object.keys(rdoMediasByDate).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nenhuma foto encontrada no RDO para este período.
+                )}
+              </div>
+
+              {/* Coluna Direita - Fotos Selecionadas */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-sm">
+                    Fotos Selecionadas ({fotosRelatorio.length})
+                  </h4>
+                  {fotosRelatorio.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        fotosRelatorio.forEach(f => removeFoto(f.id));
+                      }}
+                      className="text-xs font-medium text-destructive hover:underline"
+                    >
+                      Remover todas
+                    </button>
+                  )}
+                </div>
+
+                {fotosRelatorio.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8 border rounded-lg">
+                    Nenhuma foto selecionada. O ANEXO 01 não será incluído no relatório.
                   </p>
                 ) : (
-                  <ScrollArea className="h-48 border rounded-lg p-2">
-                    {Object.entries(rdoMediasByDate).map(([date, medias]) => {
-                      const allSelected = medias.every(m => selectedRdoIds.has(m.id));
-                      return (
-                        <div key={date} className="mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Checkbox
-                              checked={allSelected}
-                              onCheckedChange={(checked) => selectAllFromDate(date, !!checked)}
+                  <ScrollArea className="h-[420px] pr-2">
+                    <div className="grid grid-cols-3 gap-3">
+                      {fotosRelatorio.map((foto, index) => (
+                        <div key={foto.id} className="border rounded-lg overflow-hidden bg-card">
+                          <div className="relative group aspect-video bg-muted">
+                            <img
+                              src={foto.url}
+                              alt=""
+                              className="w-full h-full object-cover cursor-pointer"
+                              onClick={() => setZoomImageUrl(foto.url)}
                             />
-                            <span className="font-medium text-sm">
-                              {format(new Date(date + 'T12:00:00'), 'dd/MM/yyyy')} ({medias.length} fotos)
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeFoto(foto.id)}
+                              className="absolute top-1 right-1 h-5 w-5 rounded-full bg-white shadow flex items-center justify-center text-destructive hover:bg-destructive hover:text-white transition"
+                              title="Remover"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
                           </div>
-                          <div className="grid grid-cols-6 gap-2 ml-6">
-                            {medias.map(media => (
-                              <div
-                                key={media.id}
-                                className={`relative cursor-pointer rounded border-2 overflow-hidden ${
-                                  selectedRdoIds.has(media.id) ? 'border-primary' : 'border-transparent'
-                                }`}
-                                onClick={() => toggleRdoPhoto(media)}
-                              >
-                                <img
-                                  src={media.file_url}
-                                  alt=""
-                                  className="w-full h-12 object-cover"
-                                />
-                                {selectedRdoIds.has(media.id) && (
-                                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                    <div className="bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                                      ✓
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                          <div className="p-2 space-y-1">
+                            <div className="text-xs font-semibold">{index + 1}</div>
+                            <Input
+                              placeholder="Sem legenda"
+                              value={foto.legenda}
+                              onChange={(e) => updateLegenda(foto.id, e.target.value)}
+                              className="h-7 text-xs"
+                            />
                           </div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </ScrollArea>
                 )}
               </div>
-            )}
+            </div>
 
-            {/* Lista de fotos selecionadas com legendas */}
-            {fotosRelatorio.length > 0 && (
-              <div className="space-y-3">
-                <Label>Fotos Selecionadas ({fotosRelatorio.length})</Label>
-                <ScrollArea className="h-64 border rounded-lg p-2">
-                  {fotosRelatorio.map((foto, index) => (
-                    <div key={foto.id} className="flex items-start gap-3 mb-3 p-2 bg-muted/50 rounded">
-                      <div className="flex flex-col gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6"
-                          onClick={() => moveFoto(index, 'up')}
-                          disabled={index === 0}
-                        >
-                          <GripVertical className="h-4 w-4" />
-                        </Button>
-                        <span className="text-xs text-center font-medium">{index + 1}</span>
-                      </div>
-                      <div className="relative group">
-                        <img
-                          src={foto.url}
-                          alt=""
-                          className="w-16 h-16 object-cover rounded border"
-                        />
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          className="absolute inset-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70"
-                          onClick={() => setZoomImageUrl(foto.url)}
-                          title="Ampliar imagem"
-                        >
-                          <ZoomIn className="h-5 w-5 text-white" />
-                        </Button>
-                      </div>
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Legenda da foto (ex: Execução de pintura em parede)"
-                          value={foto.legenda}
-                          onChange={(e) => updateLegenda(foto.id, e.target.value)}
-                          className="text-sm"
-                        />
-                        <div className="flex items-center gap-2 mt-1">
-                          {foto.fromRdo && (
-                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                              RDO {foto.data ? format(new Date(foto.data + 'T12:00:00'), 'dd/MM') : ''}
-                            </span>
-                          )}
-                          {!foto.fromRdo && (
-                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                              Upload
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => removeFoto(foto.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </ScrollArea>
+            {/* Alerta de fotos sem legenda */}
+            {fotosRelatorio.filter(f => !f.legenda?.trim()).length > 0 && (
+              <div className="flex justify-center">
+                <div className="inline-flex items-center gap-2 rounded-md bg-yellow-50 border border-yellow-200 px-3 py-2 text-sm text-yellow-800">
+                  <span className="text-yellow-600">⚠</span>
+                  {fotosRelatorio.filter(f => !f.legenda?.trim()).length} fotos sem legenda
+                </div>
               </div>
-            )}
-
-            {fotosRelatorio.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhuma foto selecionada. O ANEXO 01 não será incluído no relatório.
-              </p>
             )}
           </TabsContent>
         </Tabs>
+
 
         <DialogFooter className="flex gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
