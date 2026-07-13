@@ -472,11 +472,10 @@ export function KanbanBoard() {
     if (sourceStatus === targetStatus) return 'noop';
 
     if (isGM) {
-      const allowedStatuses = ['Em andamento', 'Impedido', 'Concluído'];
-      if (!allowedStatuses.includes(sourceStatus) || !allowedStatuses.includes(targetStatus)) {
+      if (targetStatus === 'Concluído') {
         toast({
-          title: 'Movimento não permitido',
-          description: 'Usuários de manutenção só podem mover tarefas entre Em andamento, Impedido e Concluído',
+          title: 'Ação não permitida',
+          description: 'Apenas administradores/fiscais podem concluir tarefas.',
           variant: 'destructive',
         });
         return 'blocked';
