@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera, FileIcon, ZoomIn } from 'lucide-react';
+import { FileText, Download, Loader2, Upload, Image, X, GripVertical, Camera, FileIcon, ZoomIn, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { exportarWord } from './RelatorioWordExport';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -1685,7 +1685,7 @@ export function RelatorioMedicaoModal({
         </DialogHeader>
 
         <Tabs defaultValue="dados" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dados">Dados do Relatório</TabsTrigger>
             <TabsTrigger value="fotos" className="flex items-center gap-2">
               <Camera className="h-4 w-4" />
@@ -1696,7 +1696,9 @@ export function RelatorioMedicaoModal({
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="revisao">Revisão</TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="dados" className="space-y-4 mt-4">
             {/* Período + Data */}
@@ -1975,7 +1977,117 @@ export function RelatorioMedicaoModal({
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="revisao" className="space-y-6 mt-4">
+            {/* Bloco Dados do Relatório */}
+            {(() => {
+              const dadosOk = !!(periodoInicio && periodoFim && dataRelatorio && servicosExecutados.trim() && fiscalNome.trim());
+              const formatBR = (d: string) => d ? format(new Date(d + 'T12:00:00'), 'dd/MM/yyyy') : '—';
+              const kFmt = (v: number) => {
+                if (Math.abs(v) >= 1000) return `${(v/1000).toFixed(1)}k`;
+                return v.toFixed(0);
+              };
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    {dadosOk ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                    )}
+                    <h3 className="font-semibold text-base">Dados do Relatório</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 pl-7">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Período</div>
+                      <div className="font-semibold text-sm">{formatBR(periodoInicio)} a {formatBR(periodoFim)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Data</div>
+                      <div className="font-semibold text-sm">{formatBR(dataRelatorio)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Fiscal</div>
+                      <div className="font-semibold text-sm">{fiscalNome || '—'}</div>
+                    </div>
+                  </div>
+
+                  <div className="pl-7 space-y-2">
+                    <div className="text-sm font-semibold">Serviços Executados</div>
+                    <div className="bg-muted/40 rounded-lg p-3 text-sm text-muted-foreground min-h-[52px]">
+                      {servicosExecutados || <span className="italic">Não preenchido</span>}
+                    </div>
+                  </div>
+
+                  <div className="pl-7 space-y-2">
+                    <div className="text-sm font-semibold">Resumo Financeiro</div>
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Contrato</div>
+                        <div className="font-bold text-lg">{kFmt(totais.contrato)}</div>
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Medição</div>
+                        <div className="font-bold text-lg">{kFmt(totais.executado)}</div>
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Acumulado</div>
+                        <div className="font-bold text-lg">{kFmt(totais.executadoAcum)}</div>
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <div className="text-xs text-muted-foreground">Exec</div>
+                        <div className="font-bold text-lg text-green-700">{totais.percentual.toFixed(0)}%</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Bloco Anexo Fotográfico */}
+            {(() => {
+              const semLegenda = fotosRelatorio.filter(f => !f.legenda?.trim()).length;
+              const anexoOk = fotosRelatorio.length > 0 && semLegenda === 0;
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {anexoOk ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                      )}
+                      <h3 className="font-semibold text-base">Anexo Fotográfico</h3>
+                    </div>
+                    {semLegenda > 0 && (
+                      <span className="rounded-md bg-yellow-50 border border-yellow-200 px-2 py-1 text-xs font-medium text-yellow-800">
+                        {semLegenda} Pendência{semLegenda === 1 ? '' : 's'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="pl-7 flex items-center gap-3">
+                    <div className="text-sm text-muted-foreground">
+                      {fotosRelatorio.length} foto{fotosRelatorio.length === 1 ? '' : 's'} selecionada{fotosRelatorio.length === 1 ? '' : 's'}
+                    </div>
+                    <div className="flex gap-1">
+                      {fotosRelatorio.slice(0, 4).map(foto => (
+                        <div key={foto.id} className="w-10 h-10 rounded border overflow-hidden bg-muted">
+                          <img src={foto.url} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                      {fotosRelatorio.length > 4 && (
+                        <div className="w-10 h-10 rounded border bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                          +{fotosRelatorio.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </TabsContent>
         </Tabs>
+
 
 
         <DialogFooter className="flex gap-2 sm:gap-2">
