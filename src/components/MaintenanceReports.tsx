@@ -726,6 +726,9 @@ export function MaintenanceReports() {
         ticketId={openTicketId}
         open={openTicketId !== null}
         onOpenChange={(v) => !v && setOpenTicketId(null)}
+        onDeleted={(deletedId) => {
+          setRows((prev) => prev.filter((r) => r.id !== deletedId));
+        }}
       />
     </div>
   );

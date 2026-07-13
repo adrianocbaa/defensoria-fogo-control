@@ -9,8 +9,20 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Circle, Clock, MapPin, User } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, MapPin, User, Paperclip, Download, Trash2, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 type ServiceRow = {
   id: string;
@@ -40,6 +52,9 @@ type TicketDetail = {
   requested_at: string | null;
   completed_at: string | null;
   finalized_at: string | null;
+  confirmation_file_url: string | null;
+  confirmation_file_name: string | null;
+  finalization_note: string | null;
   services: ServiceRow[];
 };
 
@@ -90,17 +105,51 @@ function priorityBadge(p: string) {
   return map[p] ?? 'bg-muted text-muted-foreground';
 }
 
+/**
+ * Extrai o "path" dentro do bucket a partir da URL pública/salva no banco.
+ * Ex.: .../storage/v1/object/(public|sign)/documents/<path>?...
+ */
+function extractDocumentsPath(url: string | null): string | null {
+  if (!url) return null;
+  const m = url.match(/\/storage\/v1\/object\/(?:public|sign)\/documents\/([^?]+)/);
+  if (!m) return null;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return m[1];
+  }
+}
+
+async function openConfirmationAttachment(url: string) {
+  const path = extractDocumentsPath(url);
+  if (path) {
+    const { data, error } = await supabase.storage
+      .from('documents')
+      .createSignedUrl(path, 60 * 10); // 10 min
+    if (!error && data?.signedUrl) {
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+  }
+  // Fallback: URL salva
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 export function TicketDetailsSheet({
   ticketId,
   open,
   onOpenChange,
+  onDeleted,
 }: {
   ticketId: string | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onDeleted?: (ticketId: string) => void;
 }) {
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!open || !ticketId) return;
@@ -111,7 +160,7 @@ export function TicketDetailsSheet({
       const { data, error } = await supabase
         .from('maintenance_tickets')
         .select(
-          'id,title,status,priority,type,location,assignee,request_type,process_number,observations,created_at,requested_at,completed_at,finalized_at,maintenance_ticket_services(id,title,description,order_index,completed,status,location,scheduled_date,updated_at,created_at)',
+          'id,title,status,priority,type,location,assignee,request_type,process_number,observations,created_at,requested_at,completed_at,finalized_at,confirmation_file_url,confirmation_file_name,finalization_note,maintenance_ticket_services(id,title,description,order_index,completed,status,location,scheduled_date,updated_at,created_at)',
         )
         .eq('id', ticketId)
         .maybeSingle();
@@ -141,6 +190,31 @@ export function TicketDetailsSheet({
     if (!acc) return s.updated_at;
     return new Date(s.updated_at) > new Date(acc) ? s.updated_at : acc;
   }, null);
+
+  const handleDelete = async () => {
+    if (!ticket) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('maintenance_tickets')
+        .delete()
+        .eq('id', ticket.id);
+      if (error) throw error;
+      toast({ title: 'Tarefa excluída', description: 'A tarefa foi removida permanentemente.' });
+      onDeleted?.(ticket.id);
+      setDeleteOpen(false);
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error('Erro ao excluir tarefa:', err);
+      toast({
+        title: 'Erro ao excluir',
+        description: err?.message ?? 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -186,6 +260,49 @@ export function TicketDetailsSheet({
                 fullWidth
               />
             </div>
+
+            {/* Anexo de finalização */}
+            {(ticket.confirmation_file_url || ticket.finalization_note) && (
+              <>
+                <Separator className="my-4" />
+                <div>
+                  <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+                    <Paperclip className="h-4 w-4" />
+                    Anexo de finalização
+                  </h3>
+                  {ticket.confirmation_file_url ? (
+                    <div className="flex items-center justify-between gap-2 rounded border bg-muted/30 px-3 py-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-foreground">
+                          {ticket.confirmation_file_name || 'Anexo de confirmação'}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          Anexado ao finalizar a tarefa
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openConfirmationAttachment(ticket.confirmation_file_url!)}
+                      >
+                        <Download className="mr-1 h-3.5 w-3.5" />
+                        Abrir
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Nenhum arquivo anexado.</p>
+                  )}
+                  {ticket.finalization_note && (
+                    <div className="mt-2 rounded border bg-muted/20 px-3 py-2 text-sm text-foreground">
+                      <div className="mb-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Observação da finalização
+                      </div>
+                      {ticket.finalization_note}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             {ticket.observations && ticket.observations.length > 0 && (
               <>
@@ -236,6 +353,45 @@ export function TicketDetailsSheet({
                 </ul>
               </section>
             )}
+
+            {/* Ações destrutivas */}
+            <Separator className="my-4" />
+            <div className="flex justify-end">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="mr-1 h-4 w-4" />
+                Excluir tarefa
+              </Button>
+            </div>
+
+            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir esta tarefa?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    A tarefa <strong>{ticket.title}</strong> e todos os seus serviços serão removidos
+                    permanentemente. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDelete();
+                    }}
+                    disabled={deleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </>
         )}
       </SheetContent>
