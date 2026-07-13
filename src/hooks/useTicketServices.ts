@@ -184,6 +184,8 @@ export async function replaceServicesForTicket(
       travel_sem_previsao: !!s.travel_sem_previsao,
       travel_id: travelId,
       travel_is_linked: isLinked,
+      reference_photos: (s.reference_photos ?? []) as any,
+      execution_photos: (s.execution_photos ?? []) as any,
     };
   });
 
