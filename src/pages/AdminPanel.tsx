@@ -41,6 +41,7 @@ interface Profile {
   created_at: string;
   is_active: boolean;
   empresa_id: string | null;
+  is_maintenance_responsible?: boolean;
 }
 
 export default function AdminPanel() {
@@ -73,9 +74,9 @@ export default function AdminPanel() {
 
   const fetchProfiles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, user_id, display_name, email, role, sectors, setores_atuantes, created_at, is_active, empresa_id')
+      const { data, error } = await (supabase
+        .from('profiles') as any)
+        .select('id, user_id, display_name, email, role, sectors, setores_atuantes, created_at, is_active, empresa_id, is_maintenance_responsible')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
