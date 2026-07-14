@@ -572,11 +572,11 @@ export function KanbanBoard() {
           fallbackManagerIds: ticketManagerIds,
           userId: user?.id,
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao salvar serviços da tarefa:', err);
         toast({
           title: 'Aviso',
-          description: 'Procedimento criado, mas houve erro ao salvar os serviços.',
+          description: `Procedimento criado, mas houve erro ao salvar os serviços: ${err?.message ?? err}`,
           variant: 'destructive',
         });
       }
@@ -630,11 +630,11 @@ export function KanbanBoard() {
         fallbackManagerIds: ticketManagerIds,
         userId: user?.id,
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao salvar serviços da tarefa:', err);
       toast({
         title: 'Aviso',
-        description: 'Procedimento atualizado, mas houve erro ao salvar os serviços.',
+        description: `Procedimento atualizado, mas houve erro ao salvar os serviços: ${err?.message ?? err}`,
         variant: 'destructive',
       });
     }

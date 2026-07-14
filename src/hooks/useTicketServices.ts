@@ -108,53 +108,73 @@ export async function replaceServicesForTicket(
 
   if (services.length === 0) return;
 
-  const servicesWithTravelIds = await Promise.all(
-    services.map(async (s) => {
-      let travelId: string | null = null;
-      let isLinked = false;
-      if (s.envolve_viagem) {
-        if (s.travel_is_linked && s.travel_id) {
+  // Processa sequencialmente para permitir que serviços "linked" resolvam
+  // referências a viagens que estão sendo criadas por serviços anteriores
+  // neste mesmo modal (id sinalizado como `local:<index>`).
+  const localTravelMap = new Map<number, string>();
+  const servicesWithTravelIds: Array<{ s: TicketService; travelId: string | null; isLinked: boolean }> = [];
+
+  for (let idx = 0; idx < services.length; idx++) {
+    const s = services[idx];
+    let travelId: string | null = null;
+    let isLinked = false;
+
+    if (s.envolve_viagem) {
+      if (s.travel_is_linked && s.travel_id) {
+        // Referência a viagem em memória (criada por outro serviço deste modal)
+        if (typeof s.travel_id === 'string' && s.travel_id.startsWith('local:')) {
+          const refIdx = Number(s.travel_id.slice('local:'.length));
+          const resolved = localTravelMap.get(refIdx);
+          if (resolved) {
+            travelId = resolved;
+            isLinked = true;
+          } else {
+            console.warn(`Serviço ${idx}: referência local:${refIdx} não encontrada — viagem descartada.`);
+          }
+        } else {
           travelId = s.travel_id;
           isLinked = true;
-        } else if (s.travel_cidade) {
-          const servidorSource = s.travel_servidor || opts.fallbackServidor;
-          const servidor =
-            (servidorSource || '')
-              .split(/\s*[,/]\s*/)
-              .map((n) => firstName(n))
-              .filter(Boolean)
-              .join(' / ') || opts.fallbackServidor || '—';
-          const managerIds = (s.travel_manager_ids && s.travel_manager_ids.length > 0)
-            ? s.travel_manager_ids
-            : (opts.fallbackManagerIds ?? []);
-          const dataIda = s.travel_sem_previsao ? null : s.travel_data_ida || null;
-          const dataVolta = s.travel_sem_previsao ? null : s.travel_data_volta || null;
-          const diariasQty = s.travel_sem_previsao ? null : (s.travel_diarias ?? null);
-          const { data: travelRow, error: travelErr } = await supabase
-            .from('travels')
-            .insert({
-              servidor,
-              destino: s.travel_cidade,
-              data_ida: dataIda,
-              data_volta: dataVolta,
-              diarias: diariasQty,
-              motivo: opts.ticketTitle,
-              ticket_id: ticketId,
-              user_id: opts.userId ?? null,
-              manager_ids: managerIds,
-            } as any)
-            .select('id')
-            .single();
-          if (travelErr) {
-            console.error('Erro ao criar viagem do serviço:', travelErr);
-          } else {
-            travelId = travelRow?.id ?? null;
-          }
+        }
+      } else if (s.travel_cidade) {
+        const servidorSource = s.travel_servidor || opts.fallbackServidor;
+        const servidor =
+          (servidorSource || '')
+            .split(/\s*[,/]\s*/)
+            .map((n) => firstName(n))
+            .filter(Boolean)
+            .join(' / ') || opts.fallbackServidor || '—';
+        const managerIds = (s.travel_manager_ids && s.travel_manager_ids.length > 0)
+          ? s.travel_manager_ids
+          : (opts.fallbackManagerIds ?? []);
+        const dataIda = s.travel_sem_previsao ? null : s.travel_data_ida || null;
+        const dataVolta = s.travel_sem_previsao ? null : s.travel_data_volta || null;
+        const diariasQty = s.travel_sem_previsao ? null : (s.travel_diarias ?? null);
+        const { data: travelRow, error: travelErr } = await supabase
+          .from('travels')
+          .insert({
+            servidor,
+            destino: s.travel_cidade,
+            data_ida: dataIda,
+            data_volta: dataVolta,
+            diarias: diariasQty,
+            motivo: opts.ticketTitle,
+            ticket_id: ticketId,
+            user_id: opts.userId ?? null,
+            manager_ids: managerIds,
+          } as any)
+          .select('id')
+          .single();
+        if (travelErr) {
+          console.error('Erro ao criar viagem do serviço:', travelErr);
+        } else if (travelRow?.id) {
+          travelId = travelRow.id;
+          localTravelMap.set(idx, travelRow.id);
         }
       }
-      return { s, travelId, isLinked };
-    })
-  );
+    }
+
+    servicesWithTravelIds.push({ s, travelId, isLinked });
+  }
 
   const rows = servicesWithTravelIds.map(({ s, travelId, isLinked }, i) => {
     const managerIds = s.custom_assignment
