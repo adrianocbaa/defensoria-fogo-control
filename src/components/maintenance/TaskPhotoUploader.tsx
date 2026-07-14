@@ -63,7 +63,18 @@ export function TaskPhotoUploader({
   const applyWatermark = mode === 'execution';
 
   const uploadFiles = async (files: FileList | null) => {
-    if (!files || !user) return;
+    if (!files || files.length === 0) {
+      console.warn('[TaskPhotoUploader] Nenhum arquivo selecionado.');
+      return;
+    }
+    if (!user) {
+      toast({
+        title: 'Sessão expirada',
+        description: 'Faça login novamente para enviar fotos.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setUploading(true);
     const newPhotos: TaskPhoto[] = [];
     let userName: string | null = null;
@@ -88,19 +99,25 @@ export function TaskPhotoUploader({
       }
       try {
         let blob: Blob = file;
+        let contentType = file.type || 'image/jpeg';
         if (applyWatermark) {
           try {
             blob = await ImageProcessor.processImageWithWatermark(file);
+            contentType = 'image/jpeg';
           } catch (err) {
             console.warn('Falha ao aplicar marca d\'água, seguindo com original', err);
           }
         }
         const cleanName = sanitize(file.name);
         const path = `${folder}/${user.id}/${mode}/${Date.now()}_${cleanName}`;
+        console.log('[TaskPhotoUploader] Upload iniciado', { path, size: blob.size, contentType });
         const { error: upErr } = await supabase.storage
           .from('service-photos')
-          .upload(path, blob, { upsert: false, contentType: 'image/jpeg' });
-        if (upErr) throw upErr;
+          .upload(path, blob, { upsert: false, contentType });
+        if (upErr) {
+          console.error('[TaskPhotoUploader] Erro no upload storage:', upErr);
+          throw upErr;
+        }
         const { data: pub } = supabase.storage.from('service-photos').getPublicUrl(path);
         newPhotos.push({
           id: crypto.randomUUID(),
@@ -111,13 +128,20 @@ export function TaskPhotoUploader({
           uploaded_by_name: userName,
         });
       } catch (err: any) {
-        console.error('Erro no upload:', err);
-        toast({ title: 'Erro no upload', description: err?.message ?? 'Falha ao enviar foto.', variant: 'destructive' });
+        console.error('[TaskPhotoUploader] Erro no upload:', err);
+        toast({
+          title: 'Erro no upload',
+          description: err?.message ?? err?.error ?? JSON.stringify(err) ?? 'Falha ao enviar foto.',
+          variant: 'destructive',
+        });
       }
     }
     if (newPhotos.length > 0) {
       onChange([...photos, ...newPhotos]);
-      toast({ title: 'Fotos enviadas', description: `${newPhotos.length} foto(s) adicionada(s).` });
+      toast({
+        title: 'Fotos enviadas',
+        description: `${newPhotos.length} foto(s) adicionada(s). Lembre-se de clicar em SALVAR para gravar as fotos no procedimento.`,
+      });
     }
     setUploading(false);
   };
