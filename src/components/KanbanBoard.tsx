@@ -472,16 +472,8 @@ export function KanbanBoard() {
     if (!ticketToMove) return 'noop';
     if (sourceStatus === targetStatus) return 'noop';
 
-    if (isGM) {
-      if (targetStatus === 'Concluído') {
-        toast({
-          title: 'Ação não permitida',
-          description: 'Apenas administradores/fiscais podem concluir tarefas.',
-          variant: 'destructive',
-        });
-        return 'blocked';
-      }
-    }
+
+
 
     if (targetStatus === 'Concluído') {
       const svcs = ticketToMove.services ?? [];
