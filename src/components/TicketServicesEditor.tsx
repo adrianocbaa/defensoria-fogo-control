@@ -416,42 +416,64 @@ export function TicketServicesEditor({
                       </RadioGroup>
 
                       {s.travel_is_linked ? (
-                        <div className="space-y-1">
-                          <Label className="text-xs">Viagem existente *</Label>
-                          <Select
-                            value={s.travel_id ?? ''}
-                            onValueChange={(v) => update(i, { travel_id: v || null })}
-                            disabled={disabled}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma viagem em aberto..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableTravels.length === 0 && (
-                                <div className="px-2 py-4 text-xs text-muted-foreground">
-                                  Nenhuma viagem futura/em aberto cadastrada.
-                                </div>
-                              )}
-                              {availableTravels.map((t) => {
-                                const datas = t.data_ida
-                                  ? `${format(new Date(t.data_ida + 'T12:00:00'), 'dd/MM', { locale: ptBR })}${
-                                      t.data_volta
-                                        ? ' → ' + format(new Date(t.data_volta + 'T12:00:00'), 'dd/MM', { locale: ptBR })
-                                        : ''
-                                    }`
-                                  : 'sem previsão';
-                                return (
-                                  <SelectItem key={t.id} value={t.id}>
-                                    {t.servidor} · {t.destino} · {datas}
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
-                          <p className="text-[11px] text-muted-foreground">
-                            Nenhuma entrada nova será criada no calendário — o serviço apenas referencia a viagem existente.
-                          </p>
-                        </div>
+                        (() => {
+                          // Viagens sendo criadas por serviços anteriores no mesmo modal
+                          const localTravels = services
+                            .map((os, oi) => ({ os, oi }))
+                            .filter(({ os, oi }) =>
+                              oi < i &&
+                              os.envolve_viagem &&
+                              !os.travel_is_linked &&
+                              !!os.travel_cidade,
+                            )
+                            .map(({ os, oi }) => ({
+                              id: `local:${oi}`,
+                              servidor: `(deste procedimento) Serviço ${oi + 1}`,
+                              destino: os.travel_cidade!,
+                              data_ida: os.travel_sem_previsao ? null : os.travel_data_ida ?? null,
+                              data_volta: os.travel_sem_previsao ? null : os.travel_data_volta ?? null,
+                            }));
+                          const combined = [...localTravels, ...availableTravels];
+                          return (
+                            <div className="space-y-1">
+                              <Label className="text-xs">Viagem existente *</Label>
+                              <Select
+                                value={s.travel_id ?? ''}
+                                onValueChange={(v) => update(i, { travel_id: v || null })}
+                                disabled={disabled}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma viagem em aberto..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {combined.length === 0 && (
+                                    <div className="px-2 py-4 text-xs text-muted-foreground">
+                                      Nenhuma viagem em aberto. Cadastre uma no serviço anterior ou em Viagens.
+                                    </div>
+                                  )}
+                                  {combined.map((t) => {
+                                    const datas = t.data_ida
+                                      ? `${format(new Date(t.data_ida + 'T12:00:00'), 'dd/MM', { locale: ptBR })}${
+                                          t.data_volta
+                                            ? ' → ' + format(new Date(t.data_volta + 'T12:00:00'), 'dd/MM', { locale: ptBR })
+                                            : ''
+                                        }`
+                                      : 'sem previsão';
+                                    return (
+                                      <SelectItem key={t.id} value={t.id}>
+                                        {t.servidor} · {t.destino} · {datas}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
+                              <p className="text-[11px] text-muted-foreground">
+                                Nenhuma entrada nova será criada no calendário — o serviço apenas referencia a viagem existente
+                                (inclui viagens que serão criadas por serviços anteriores neste mesmo procedimento).
+                              </p>
+                            </div>
+                          );
+                        })()
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div className="space-y-1 md:col-span-2">
