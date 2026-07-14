@@ -152,7 +152,14 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
     field: 'reference_photos' | 'execution_photos',
     photos: TaskPhoto[],
   ) => {
-    if (!svc.id) return;
+    if (!svc.id) {
+      toast({
+        title: 'Serviço ainda não salvo',
+        description: 'Salve o procedimento antes de anexar fotos neste serviço.',
+        variant: 'destructive',
+      });
+      return;
+    }
     const prev = services;
     setServices((ss) => ss.map((s) => (s.id === svc.id ? { ...s, [field]: photos } : s)));
     try {
@@ -161,8 +168,10 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
         .update({ [field]: photos } as any)
         .eq('id', svc.id);
       if (error) throw error;
+      toast({ title: 'Fotos salvas', description: 'As alterações foram gravadas.' });
       onChanged?.();
     } catch (err: any) {
+      console.error('[ViewTaskModal] Erro ao salvar fotos:', err);
       setServices(prev);
       toast({ title: 'Erro ao salvar fotos', description: err?.message ?? 'Tente novamente.', variant: 'destructive' });
     }
