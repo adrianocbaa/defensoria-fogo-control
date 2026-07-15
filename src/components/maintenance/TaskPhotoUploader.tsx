@@ -104,10 +104,15 @@ export function TaskPhotoUploader({
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<TaskPhoto | null>(null);
+  const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const applyWatermark = mode === 'execution';
+
+  const updateQueueItem = (id: string, patch: Partial<UploadItem>) => {
+    setUploadQueue((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  };
 
   const uploadFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) {
@@ -123,6 +128,17 @@ export function TaskPhotoUploader({
       return;
     }
     setUploading(true);
+
+    // Build initial queue with local previews
+    const queueItems: (UploadItem & { file: File })[] = Array.from(files).map((file) => ({
+      id: crypto.randomUUID(),
+      name: file.name,
+      previewUrl: URL.createObjectURL(file),
+      status: 'uploading' as UploadStatus,
+      file,
+    }));
+    setUploadQueue((prev) => [...prev, ...queueItems.map(({ file: _f, ...rest }) => rest)]);
+
     const newPhotos: TaskPhoto[] = [];
     let userName: string | null = null;
     try {
@@ -134,13 +150,16 @@ export function TaskPhotoUploader({
       userName = profile?.display_name ?? user.email ?? null;
     } catch { /* ignore */ }
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (let i = 0; i < queueItems.length; i++) {
+      const item = queueItems[i];
+      const file = item.file;
       if (!file.type.startsWith('image/')) {
+        updateQueueItem(item.id, { status: 'error', error: 'Tipo inválido' });
         toast({ title: 'Tipo inválido', description: `${file.name} não é imagem.`, variant: 'destructive' });
         continue;
       }
       if (file.size > 10 * 1024 * 1024) {
+        updateQueueItem(item.id, { status: 'error', error: 'Arquivo > 10MB' });
         toast({ title: 'Arquivo muito grande', description: `${file.name} passa de 10MB.`, variant: 'destructive' });
         continue;
       }
@@ -155,8 +174,6 @@ export function TaskPhotoUploader({
             blob = await normalizeToJpeg(file);
           }
         } else {
-          // Normaliza qualquer imagem (inclusive HEIC do iPhone) para JPEG.
-          // Isso evita rejeição de mime pelo bucket e falhas silenciosas no celular.
           try {
             blob = await normalizeToJpeg(file);
           } catch (err) {
@@ -184,11 +201,14 @@ export function TaskPhotoUploader({
           uploaded_by: user.id,
           uploaded_by_name: userName,
         });
+        updateQueueItem(item.id, { status: 'done' });
       } catch (err: any) {
         console.error('[TaskPhotoUploader] Erro no upload:', err);
+        const msg = err?.message ?? err?.error ?? 'Falha ao enviar foto.';
+        updateQueueItem(item.id, { status: 'error', error: String(msg) });
         toast({
           title: 'Erro no upload',
-          description: err?.message ?? err?.error ?? JSON.stringify(err) ?? 'Falha ao enviar foto.',
+          description: String(msg),
           variant: 'destructive',
         });
       }
@@ -201,7 +221,36 @@ export function TaskPhotoUploader({
       });
     }
     setUploading(false);
+
+    // Auto-clear successful items after a short delay; keep errors visible
+    setTimeout(() => {
+      setUploadQueue((prev) => {
+        const toRevoke = prev.filter((it) => it.status === 'done' && queueItems.some((q) => q.id === it.id));
+        toRevoke.forEach((it) => URL.revokeObjectURL(it.previewUrl));
+        return prev.filter((it) => !(it.status === 'done' && queueItems.some((q) => q.id === it.id)));
+      });
+    }, 2500);
   };
+
+  const dismissQueueItem = (id: string) => {
+    setUploadQueue((prev) => {
+      const target = prev.find((it) => it.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((it) => it.id !== id);
+    });
+  };
+
+  const removePhoto = async (photo: TaskPhoto) => {
+    onChange(photos.filter(p => p.id !== photo.id));
+    if (photo.path) {
+      try {
+        await supabase.storage.from('service-photos').remove([photo.path]);
+      } catch (err) {
+        console.warn('Não foi possível apagar do storage:', err);
+      }
+    }
+  };
+
 
   const removePhoto = async (photo: TaskPhoto) => {
     onChange(photos.filter(p => p.id !== photo.id));
