@@ -1,12 +1,21 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, Upload, X, Loader2, ImageIcon, Eye } from 'lucide-react';
+import { Camera, Upload, X, Loader2, ImageIcon, Eye, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { ImageProcessor } from '@/components/ImageProcessor';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+
+type UploadStatus = 'uploading' | 'done' | 'error';
+interface UploadItem {
+  id: string;
+  name: string;
+  previewUrl: string;
+  status: UploadStatus;
+  error?: string;
+}
 
 export interface TaskPhoto {
   id: string;
