@@ -1,12 +1,21 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, Upload, X, Loader2, ImageIcon, Eye } from 'lucide-react';
+import { Camera, Upload, X, Loader2, ImageIcon, Eye, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { ImageProcessor } from '@/components/ImageProcessor';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+
+type UploadStatus = 'uploading' | 'done' | 'error';
+interface UploadItem {
+  id: string;
+  name: string;
+  previewUrl: string;
+  status: UploadStatus;
+  error?: string;
+}
 
 export interface TaskPhoto {
   id: string;
@@ -95,10 +104,15 @@ export function TaskPhotoUploader({
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<TaskPhoto | null>(null);
+  const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const applyWatermark = mode === 'execution';
+
+  const updateQueueItem = (id: string, patch: Partial<UploadItem>) => {
+    setUploadQueue((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  };
 
   const uploadFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) {
@@ -114,6 +128,17 @@ export function TaskPhotoUploader({
       return;
     }
     setUploading(true);
+
+    // Build initial queue with local previews
+    const queueItems: (UploadItem & { file: File })[] = Array.from(files).map((file) => ({
+      id: crypto.randomUUID(),
+      name: file.name,
+      previewUrl: URL.createObjectURL(file),
+      status: 'uploading' as UploadStatus,
+      file,
+    }));
+    setUploadQueue((prev) => [...prev, ...queueItems.map(({ file: _f, ...rest }) => rest)]);
+
     const newPhotos: TaskPhoto[] = [];
     let userName: string | null = null;
     try {
@@ -125,13 +150,16 @@ export function TaskPhotoUploader({
       userName = profile?.display_name ?? user.email ?? null;
     } catch { /* ignore */ }
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (let i = 0; i < queueItems.length; i++) {
+      const item = queueItems[i];
+      const file = item.file;
       if (!file.type.startsWith('image/')) {
+        updateQueueItem(item.id, { status: 'error', error: 'Tipo inválido' });
         toast({ title: 'Tipo inválido', description: `${file.name} não é imagem.`, variant: 'destructive' });
         continue;
       }
       if (file.size > 10 * 1024 * 1024) {
+        updateQueueItem(item.id, { status: 'error', error: 'Arquivo > 10MB' });
         toast({ title: 'Arquivo muito grande', description: `${file.name} passa de 10MB.`, variant: 'destructive' });
         continue;
       }
@@ -146,8 +174,6 @@ export function TaskPhotoUploader({
             blob = await normalizeToJpeg(file);
           }
         } else {
-          // Normaliza qualquer imagem (inclusive HEIC do iPhone) para JPEG.
-          // Isso evita rejeição de mime pelo bucket e falhas silenciosas no celular.
           try {
             blob = await normalizeToJpeg(file);
           } catch (err) {
@@ -175,11 +201,14 @@ export function TaskPhotoUploader({
           uploaded_by: user.id,
           uploaded_by_name: userName,
         });
+        updateQueueItem(item.id, { status: 'done' });
       } catch (err: any) {
         console.error('[TaskPhotoUploader] Erro no upload:', err);
+        const msg = err?.message ?? err?.error ?? 'Falha ao enviar foto.';
+        updateQueueItem(item.id, { status: 'error', error: String(msg) });
         toast({
           title: 'Erro no upload',
-          description: err?.message ?? err?.error ?? JSON.stringify(err) ?? 'Falha ao enviar foto.',
+          description: String(msg),
           variant: 'destructive',
         });
       }
@@ -192,6 +221,23 @@ export function TaskPhotoUploader({
       });
     }
     setUploading(false);
+
+    // Auto-clear successful items after a short delay; keep errors visible
+    setTimeout(() => {
+      setUploadQueue((prev) => {
+        const toRevoke = prev.filter((it) => it.status === 'done' && queueItems.some((q) => q.id === it.id));
+        toRevoke.forEach((it) => URL.revokeObjectURL(it.previewUrl));
+        return prev.filter((it) => !(it.status === 'done' && queueItems.some((q) => q.id === it.id)));
+      });
+    }, 2500);
+  };
+
+  const dismissQueueItem = (id: string) => {
+    setUploadQueue((prev) => {
+      const target = prev.find((it) => it.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((it) => it.id !== id);
+    });
   };
 
   const removePhoto = async (photo: TaskPhoto) => {
@@ -204,6 +250,9 @@ export function TaskPhotoUploader({
       }
     }
   };
+
+
+
 
   const showControls = !readOnly && !disabled;
   const badgeText = mode === 'execution' ? 'Execução' : 'Referência';
@@ -263,6 +312,64 @@ export function TaskPhotoUploader({
           </Button>
         </div>
       )}
+
+      {uploadQueue.length > 0 && (
+        <div className="space-y-1.5 rounded-md border bg-muted/30 p-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+            Progresso do upload
+          </div>
+          <ul className="space-y-1.5">
+            {uploadQueue.map((item) => (
+              <li key={item.id} className="flex items-center gap-2 text-xs">
+                <div className="relative h-9 w-9 shrink-0 rounded overflow-hidden border bg-background">
+                  <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
+                  {item.status === 'uploading' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <Loader2 className="h-4 w-4 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate">{item.name}</div>
+                  <div className="flex items-center gap-1">
+                    {item.status === 'uploading' && (
+                      <span className="text-muted-foreground">Enviando…</span>
+                    )}
+                    {item.status === 'done' && (
+                      <span className="flex items-center gap-1 text-emerald-600">
+                        <CheckCircle2 className="h-3 w-3" /> Concluído
+                      </span>
+                    )}
+                    {item.status === 'error' && (
+                      <span className="flex items-center gap-1 text-destructive">
+                        <AlertCircle className="h-3 w-3" /> Falhou{item.error ? ` — ${item.error}` : ''}
+                      </span>
+                    )}
+                  </div>
+                  {item.status === 'uploading' && (
+                    <div className="mt-1 h-1 w-full overflow-hidden rounded bg-muted">
+                      <div className="h-full w-1/2 animate-pulse bg-primary" />
+                    </div>
+                  )}
+                </div>
+                {item.status !== 'uploading' && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => dismissQueueItem(item.id)}
+                    aria-label="Dispensar"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
 
       {photos.length === 0 ? (
         <p className="text-[11px] text-muted-foreground italic">
