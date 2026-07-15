@@ -44,6 +44,44 @@ function sanitize(name: string) {
     .replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
+/**
+ * Redesenha a imagem em um canvas e devolve um Blob JPEG.
+ * Resolve dois problemas no celular:
+ * - iPhone envia HEIC/HEIF, que o bucket rejeita.
+ * - Alguns navegadores mandam mime vazio ao usar a câmera.
+ * Reduz também para no máximo 2560px no lado maior.
+ */
+async function normalizeToJpeg(file: File): Promise<Blob> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = (e) => reject(e);
+      el.src = url;
+    });
+    const maxSide = 2560;
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.round(img.naturalWidth * scale);
+    const h = Math.round(img.naturalHeight * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('canvas 2d indisponível');
+    ctx.drawImage(img, 0, 0, w, h);
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error('canvas.toBlob vazio'))),
+        'image/jpeg',
+        0.9,
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function TaskPhotoUploader({
   photos,
   onChange,
@@ -99,17 +137,27 @@ export function TaskPhotoUploader({
       }
       try {
         let blob: Blob = file;
-        let contentType = file.type || 'image/jpeg';
+        let contentType = 'image/jpeg';
         if (applyWatermark) {
           try {
             blob = await ImageProcessor.processImageWithWatermark(file);
-            contentType = 'image/jpeg';
           } catch (err) {
-            console.warn('Falha ao aplicar marca d\'água, seguindo com original', err);
+            console.warn('Falha ao aplicar marca d\'água, normalizando sem marca', err);
+            blob = await normalizeToJpeg(file);
+          }
+        } else {
+          // Normaliza qualquer imagem (inclusive HEIC do iPhone) para JPEG.
+          // Isso evita rejeição de mime pelo bucket e falhas silenciosas no celular.
+          try {
+            blob = await normalizeToJpeg(file);
+          } catch (err) {
+            console.warn('Falha ao normalizar imagem, enviando original', err);
+            blob = file;
+            contentType = file.type || 'image/jpeg';
           }
         }
-        const cleanName = sanitize(file.name);
-        const path = `${folder}/${user.id}/${mode}/${Date.now()}_${cleanName}`;
+        const cleanName = sanitize(file.name).replace(/\.(heic|heif|HEIC|HEIF)$/i, '.jpg');
+        const path = `${folder}/${user.id}/${mode}/${Date.now()}_${i}_${cleanName}`;
         console.log('[TaskPhotoUploader] Upload iniciado', { path, size: blob.size, contentType });
         const { error: upErr } = await supabase.storage
           .from('service-photos')

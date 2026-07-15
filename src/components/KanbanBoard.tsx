@@ -18,9 +18,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -242,28 +239,27 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   Editar
                 </DropdownMenuItem>
                 {allowedTargets.filter((s) => s !== currentStatus).length > 0 && (
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="text-xs">
-                      <ArrowRightLeft className="mr-2 h-3 w-3" />
-                      Mover para…
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      {allowedTargets
-                        .filter((s) => s !== currentStatus)
-                        .map((s) => (
-                          <DropdownMenuItem
-                            key={s}
-                            className="text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMoveTicket(ticket.id, s);
-                            }}
-                          >
-                            {s}
-                          </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                      <ArrowRightLeft className="h-3 w-3" />
+                      Mover para
+                    </div>
+                    {allowedTargets
+                      .filter((s) => s !== currentStatus)
+                      .map((s) => (
+                        <DropdownMenuItem
+                          key={s}
+                          className="text-xs pl-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMoveTicket(ticket.id, s);
+                          }}
+                        >
+                          {s}
+                        </DropdownMenuItem>
+                      ))}
+                  </>
                 )}
                 {onDeleteTicket && <DropdownMenuSeparator />}
                 {/* Finalização acontece dentro do modal de visualização (com anexo do e-mail, quando aplicável). */}
@@ -696,7 +692,7 @@ export function KanbanBoard() {
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
             <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Arraste as tarefas entre as colunas para alterar o status</p>
-            <p className="text-xs text-muted-foreground md:hidden">Use "Mover para…" no menu do card para trocar de etapa</p>
+            <p className="text-xs text-muted-foreground md:hidden">Toque nos três pontos do card para mover entre etapas</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {availableManagerFilters.length > 0 && (
