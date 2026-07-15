@@ -44,6 +44,44 @@ function sanitize(name: string) {
     .replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
+/**
+ * Redesenha a imagem em um canvas e devolve um Blob JPEG.
+ * Resolve dois problemas no celular:
+ * - iPhone envia HEIC/HEIF, que o bucket rejeita.
+ * - Alguns navegadores mandam mime vazio ao usar a câmera.
+ * Reduz também para no máximo 2560px no lado maior.
+ */
+async function normalizeToJpeg(file: File): Promise<Blob> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = (e) => reject(e);
+      el.src = url;
+    });
+    const maxSide = 2560;
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.round(img.naturalWidth * scale);
+    const h = Math.round(img.naturalHeight * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('canvas 2d indisponível');
+    ctx.drawImage(img, 0, 0, w, h);
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error('canvas.toBlob vazio'))),
+        'image/jpeg',
+        0.9,
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function TaskPhotoUploader({
   photos,
   onChange,
