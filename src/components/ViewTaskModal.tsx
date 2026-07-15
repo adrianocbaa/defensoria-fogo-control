@@ -34,6 +34,7 @@ import {
   AlertOctagon,
 } from 'lucide-react';
 import { TicketImpedimentsHistory } from './TicketImpedimentsHistory';
+import { TicketStatusHistory } from './TicketStatusHistory';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
 import { useNucleiList } from '@/hooks/useNucleiList';
 import { useUserRole } from '@/hooks/useUserRole';
