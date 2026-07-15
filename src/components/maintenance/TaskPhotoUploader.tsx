@@ -252,16 +252,7 @@ export function TaskPhotoUploader({
   };
 
 
-  const removePhoto = async (photo: TaskPhoto) => {
-    onChange(photos.filter(p => p.id !== photo.id));
-    if (photo.path) {
-      try {
-        await supabase.storage.from('service-photos').remove([photo.path]);
-      } catch (err) {
-        console.warn('Não foi possível apagar do storage:', err);
-      }
-    }
-  };
+
 
   const showControls = !readOnly && !disabled;
   const badgeText = mode === 'execution' ? 'Execução' : 'Referência';
