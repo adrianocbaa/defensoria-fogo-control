@@ -99,17 +99,27 @@ export function TaskPhotoUploader({
       }
       try {
         let blob: Blob = file;
-        let contentType = file.type || 'image/jpeg';
+        let contentType = 'image/jpeg';
         if (applyWatermark) {
           try {
             blob = await ImageProcessor.processImageWithWatermark(file);
-            contentType = 'image/jpeg';
           } catch (err) {
-            console.warn('Falha ao aplicar marca d\'água, seguindo com original', err);
+            console.warn('Falha ao aplicar marca d\'água, normalizando sem marca', err);
+            blob = await normalizeToJpeg(file);
+          }
+        } else {
+          // Normaliza qualquer imagem (inclusive HEIC do iPhone) para JPEG.
+          // Isso evita rejeição de mime pelo bucket e falhas silenciosas no celular.
+          try {
+            blob = await normalizeToJpeg(file);
+          } catch (err) {
+            console.warn('Falha ao normalizar imagem, enviando original', err);
+            blob = file;
+            contentType = file.type || 'image/jpeg';
           }
         }
-        const cleanName = sanitize(file.name);
-        const path = `${folder}/${user.id}/${mode}/${Date.now()}_${cleanName}`;
+        const cleanName = sanitize(file.name).replace(/\.(heic|heif|HEIC|HEIF)$/i, '.jpg');
+        const path = `${folder}/${user.id}/${mode}/${Date.now()}_${i}_${cleanName}`;
         console.log('[TaskPhotoUploader] Upload iniciado', { path, size: blob.size, contentType });
         const { error: upErr } = await supabase.storage
           .from('service-photos')
