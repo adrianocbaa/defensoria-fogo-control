@@ -313,6 +313,64 @@ export function TaskPhotoUploader({
         </div>
       )}
 
+      {uploadQueue.length > 0 && (
+        <div className="space-y-1.5 rounded-md border bg-muted/30 p-2">
+          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+            Progresso do upload
+          </div>
+          <ul className="space-y-1.5">
+            {uploadQueue.map((item) => (
+              <li key={item.id} className="flex items-center gap-2 text-xs">
+                <div className="relative h-9 w-9 shrink-0 rounded overflow-hidden border bg-background">
+                  <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
+                  {item.status === 'uploading' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <Loader2 className="h-4 w-4 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate">{item.name}</div>
+                  <div className="flex items-center gap-1">
+                    {item.status === 'uploading' && (
+                      <span className="text-muted-foreground">Enviando…</span>
+                    )}
+                    {item.status === 'done' && (
+                      <span className="flex items-center gap-1 text-emerald-600">
+                        <CheckCircle2 className="h-3 w-3" /> Concluído
+                      </span>
+                    )}
+                    {item.status === 'error' && (
+                      <span className="flex items-center gap-1 text-destructive">
+                        <AlertCircle className="h-3 w-3" /> Falhou{item.error ? ` — ${item.error}` : ''}
+                      </span>
+                    )}
+                  </div>
+                  {item.status === 'uploading' && (
+                    <div className="mt-1 h-1 w-full overflow-hidden rounded bg-muted">
+                      <div className="h-full w-1/2 animate-pulse bg-primary" />
+                    </div>
+                  )}
+                </div>
+                {item.status !== 'uploading' && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => dismissQueueItem(item.id)}
+                    aria-label="Dispensar"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+
       {photos.length === 0 ? (
         <p className="text-[11px] text-muted-foreground italic">
           {readOnly ? 'Nenhuma foto anexada.' : 'Nenhuma foto ainda. Use câmera ou envie do dispositivo.'}
