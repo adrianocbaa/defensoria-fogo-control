@@ -692,7 +692,7 @@ export function KanbanBoard() {
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">Chamados de Manutenção</h2>
             <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Arraste as tarefas entre as colunas para alterar o status</p>
-            <p className="text-xs text-muted-foreground md:hidden">Use "Mover para…" no menu do card para trocar de etapa</p>
+            <p className="text-xs text-muted-foreground md:hidden">Toque nos três pontos do card para mover entre etapas</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {availableManagerFilters.length > 0 && (
