@@ -1303,6 +1303,44 @@ export type Database = {
           },
         ]
       }
+      maintenance_ticket_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          changed_by_name: string | null
+          from_status: string | null
+          id: string
+          ticket_id: string
+          to_status: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          from_status?: string | null
+          id?: string
+          ticket_id: string
+          to_status: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          from_status?: string | null
+          id?: string
+          ticket_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_status_history_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_tickets: {
         Row: {
           assignee: string
