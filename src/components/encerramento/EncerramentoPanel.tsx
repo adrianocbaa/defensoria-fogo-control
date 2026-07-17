@@ -187,7 +187,7 @@ function DocCard({
 
 
 export function EncerramentoPanel({ obraId }: Props) {
-  const { data, isLoading, error } = useEncerramentoData(obraId);
+  const { data, isLoading, error, refetch } = useEncerramentoData(obraId);
 
   if (isLoading) {
     return (
