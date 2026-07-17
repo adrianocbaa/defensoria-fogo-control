@@ -509,36 +509,27 @@ async function fetchAnexoItems(obraId: string): Promise<AnexoItem[]> {
       .limit(10000);
     if (error || !data) return [];
 
-    // Buscar quantidades EXECUTADAS acumuladas (QNT do Acumulado nas medições).
-    // Cada medicao_items guarda o acumulado da sessão; pegamos o valor da sessão
-    // mais recente por item_code (congelado quando disponível, senão qtd).
+    // Buscar quantidades EXECUTADAS ACUMULADAS (QNT do Acumulado nas medições).
+    // Cada linha de medicao_items guarda a quantidade DAQUELA sessão; para obter
+    // o acumulado precisamos SOMAR todas as sessões (congelado quando disponível).
     const executadoPorItem = new Map<string, number>();
     const { data: sessions } = await supabase
       .from('medicao_sessions')
-      .select('id, sequencia')
+      .select('id')
       .eq('obra_id', obraId)
-      .order('sequencia', { ascending: true })
       .limit(10000);
     const sessionIds = (sessions || []).map((s: any) => s.id);
     if (sessionIds.length) {
       const { data: items } = await supabase
         .from('medicao_items')
-        .select('item_code, qtd, qtd_congelado, medicao_id')
+        .select('item_code, qtd, qtd_congelado')
         .in('medicao_id', sessionIds)
         .limit(100000);
-      const seqById = new Map<string, number>();
-      (sessions || []).forEach((s: any) => seqById.set(s.id, Number(s.sequencia || 0)));
-      const latestSeq = new Map<string, number>();
       for (const it of (items || []) as any[]) {
         const code = String(it.item_code || '').trim();
         if (!code) continue;
-        const seq = seqById.get(it.medicao_id) ?? 0;
-        const prev = latestSeq.get(code);
-        if (prev === undefined || seq >= prev) {
-          latestSeq.set(code, seq);
-          const q = it.qtd_congelado != null ? Number(it.qtd_congelado) : Number(it.qtd || 0);
-          executadoPorItem.set(code, q);
-        }
+        const q = it.qtd_congelado != null ? Number(it.qtd_congelado) : Number(it.qtd || 0);
+        executadoPorItem.set(code, (executadoPorItem.get(code) || 0) + q);
       }
     }
 
