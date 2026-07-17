@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, FileCheck2, FileText, Info, Loader2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,11 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useEncerramentoData } from '@/hooks/useEncerramentoData';
 import { validaDocumento } from '@/lib/encerramento/validation';
+import { gerarDocumentoEncerramento, nomeArquivoDocumento } from '@/lib/encerramento/docGenerator';
+import { supabase } from '@/integrations/supabase/client';
 import type { EncerramentoData, EncerramentoTipo, ValidationResult } from '@/lib/encerramento/types';
 
 interface Props {
   obraId: string;
 }
+
 
 const DOC_META: Record<EncerramentoTipo, { titulo: string; descricao: string }> = {
   TRP: {
