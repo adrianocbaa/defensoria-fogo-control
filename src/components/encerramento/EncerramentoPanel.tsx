@@ -290,6 +290,8 @@ export function EncerramentoPanel({ obraId }: Props) {
 
       <ObraArtsManager obraId={obraId} onChanged={() => refetch()} />
 
+      <SistemasServicosSelector obraId={obraId} onChanged={() => refetch()} />
+
       <div className="grid grid-cols-1 gap-3">
         <DocCard tipo="TRP" data={data} obraId={obraId} />
         <DocCard tipo="TRD" data={data} obraId={obraId} />
