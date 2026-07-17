@@ -145,8 +145,7 @@ function buildFooter() {
 
 function assinaturaFiscal(data: EncerramentoData) {
   const { obra } = data;
-  const fiscalNome = (obra as any).fiscal_nome || '________________________________';
-  const crea = (obra as any).fiscal_conselho || '';
+  const fiscalNome = (obra as any).fiscal_nome || '';
   return [
     new Paragraph({ spacing: { before: 480, after: 0 }, children: [] }),
     new Paragraph({
@@ -156,7 +155,7 @@ function assinaturaFiscal(data: EncerramentoData) {
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: fiscalNome, bold: true, size: 24 })],
+      children: [new TextRun({ text: fiscalNome || ' ', bold: true, size: 24 })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -167,15 +166,9 @@ function assinaturaFiscal(data: EncerramentoData) {
       spacing: { after: 240 },
       children: [new TextRun({ text: 'Defensoria Pública do Estado de Mato Grosso', italics: true, size: 22 })],
     }),
-    ...(crea
-      ? [new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 240 },
-          children: [new TextRun({ text: crea, italics: true, size: 22 })],
-        })]
-      : []),
   ];
 }
+
 
 
 function assinaturaEmpresa(data: EncerramentoData) {
