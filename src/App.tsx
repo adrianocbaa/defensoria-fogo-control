@@ -226,6 +226,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+      <Route
+        path="/admin/encerramento"
+        element={
+          <ProtectedRoute>
+            <AdminEncerramento />
+          </ProtectedRoute>
+        }
+      />
       <Route 
         path="/maintenance" 
         element={
