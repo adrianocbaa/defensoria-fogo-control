@@ -997,6 +997,34 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                       <div><div className="text-xs text-muted-foreground">Término previsto</div><div className="font-medium">{values.previsao_termino || '—'}</div></div>
                     </div>
                   </div>
+
+                  <div className="md:col-span-2 pt-4 border-t">
+                    <h4 className="text-sm font-semibold mb-3">Encerramento da Obra</h4>
+                    <p className="text-xs text-muted-foreground mb-3">Dados usados na geração de TRP, TRD e ACT.</p>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <FormField control={form.control} name="data_recebimento_provisorio" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recebimento Provisório (TRP)</FormLabel>
+                          <FormControl><Input type="date" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="data_recebimento_definitivo" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recebimento Definitivo (TRD)</FormLabel>
+                          <FormControl><Input type="date" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="numero_art_execucao" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nº ART/RRT de Execução</FormLabel>
+                          <FormControl><Input placeholder="Ex.: MT20250012345" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </section>
