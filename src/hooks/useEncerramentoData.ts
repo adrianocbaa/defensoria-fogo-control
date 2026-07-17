@@ -101,6 +101,7 @@ export function useEncerramentoData(obraId: string | null | undefined) {
         valor_final: financeiro.totalContrato || 0,
         valor_executado: financeiro.valorAcumulado || 0,
         fiscal_nome: fiscalNome,
+        aditivos_arts,
       };
 
 
