@@ -366,12 +366,26 @@ function buildACT(data: EncerramentoData) {
   ];
 }
 
+async function fetchLogo(): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(logoAsset.url);
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
 export async function gerarDocumentoEncerramento(
   tipo: EncerramentoTipo,
   data: EncerramentoData,
 ): Promise<Blob> {
   const children =
     tipo === 'TRP' ? buildTRP(data) : tipo === 'TRD' ? buildTRD(data) : buildACT(data);
+
+  const logoData = await fetchLogo();
+  const header = await buildHeader(logoData);
+  const footer = buildFooter();
 
   const doc = new Document({
     creator: 'SIDIF',
@@ -388,9 +402,11 @@ export async function gerarDocumentoEncerramento(
               height: 16838,
               orientation: PageOrientation.PORTRAIT,
             },
-            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+            margin: { top: 2000, right: 1440, bottom: 1600, left: 1440 },
           },
         },
+        headers: { default: header },
+        footers: { default: footer },
         children,
       },
     ],
@@ -398,6 +414,7 @@ export async function gerarDocumentoEncerramento(
 
   return await Packer.toBlob(doc);
 }
+
 
 export function nomeArquivoDocumento(tipo: EncerramentoTipo, data: EncerramentoData) {
   const contrato = (data.obra.n_contrato || 'sem-contrato').replace(/[^\w-]+/g, '_');
