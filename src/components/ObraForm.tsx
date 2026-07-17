@@ -75,6 +75,10 @@ const obraSchema = z.object({
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
   rdo_habilitado: z.boolean().default(true),
+  endereco_completo: z.string().optional(),
+  numero_art_execucao: z.string().optional(),
+  data_recebimento_provisorio: z.string().optional(),
+  data_recebimento_definitivo: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.status !== 'planejamento' && !data.n_contrato?.trim()) {
     ctx.addIssue({
