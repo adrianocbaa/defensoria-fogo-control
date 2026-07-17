@@ -34,9 +34,11 @@ export function validaDocumento(tipo: EncerramentoTipo, data: EncerramentoData):
   const avisos: ValidationIssue[] = [];
   const { obra } = data;
 
+  const artsContrato = (obra.arts || []).filter((a) => !a.aditivo_session_id);
+
   if (tipo === 'TRP') {
     if (!obra.data_recebimento_provisorio) push(erros, 'obra.data_recebimento_provisorio', 'Informe a data do recebimento provisório');
-    if (!obra.numero_art_execucao) push(avisos, 'obra.numero_art_execucao', 'Nº da ART/RRT de execução recomendado no TRP', 'aviso');
+    if (artsContrato.length === 0) push(avisos, 'obra.arts', 'Recomenda-se cadastrar ao menos uma ART/RRT do contrato', 'aviso');
   }
 
   if (tipo === 'TRD') {
@@ -49,7 +51,7 @@ export function validaDocumento(tipo: EncerramentoTipo, data: EncerramentoData):
 
   if (tipo === 'ACT') {
     if (!obra.data_termino_real) push(erros, 'obra.data_termino_real', 'ACT exige data de término real da obra');
-    if (!obra.numero_art_execucao) push(erros, 'obra.numero_art_execucao', 'Nº da ART/RRT de execução é obrigatório no ACT');
+    if (artsContrato.length === 0) push(erros, 'obra.arts', 'Cadastre ao menos uma ART/RRT vinculada ao contrato para emitir o ACT');
     if (obra.valor_executado <= 0) push(avisos, 'obra.valor_executado', 'Valor executado da obra está zerado', 'aviso');
   }
 
