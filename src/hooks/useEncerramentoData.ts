@@ -1,0 +1,92 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { EncerramentoData, EncerramentoDPG, EncerramentoEmpresa, EncerramentoInstitucional, EncerramentoObra } from '@/lib/encerramento/types';
+import { useMedicoesFinanceiro } from './useMedicoesFinanceiro';
+
+/**
+ * Fase 3 — Motor de dados para Documentos de Encerramento (TRP/TRD/ACT).
+ * Consolida obra + empresa contratada + DPG em exercício + institucional + valores das medições.
+ */
+export function useEncerramentoData(obraId: string | null | undefined) {
+  const { dados: financeiro } = useMedicoesFinanceiro(obraId || '');
+
+  const query = useQuery({
+    enabled: !!obraId,
+    queryKey: ['encerramento-data', obraId],
+    queryFn: async (): Promise<Omit<EncerramentoData, never>> => {
+      if (!obraId) throw new Error('obraId requerido');
+
+      const { data: obraRow, error: obraErr } = await supabase
+        .from('obras')
+        .select('id, nome, municipio, endereco_completo, n_contrato, sei_numero, data_inicio, previsao_termino, data_termino_real, data_recebimento_provisorio, data_recebimento_definitivo, numero_art_execucao, status, empresa_id')
+        .eq('id', obraId)
+        .maybeSingle();
+      if (obraErr) throw obraErr;
+      if (!obraRow) throw new Error('Obra não encontrada');
+
+      const [empresaRes, dpgRes, instRes] = await Promise.all([
+        obraRow.empresa_id
+          ? supabase
+              .from('empresas')
+              .select('id, razao_social, cnpj, endereco, numero, bairro, cidade, uf, cep, representante_legal_nome, representante_legal_cpf, representante_legal_cargo, responsavel_tecnico_nome, responsavel_tecnico_cpf, responsavel_tecnico_profissao, conselho_tipo, conselho_numero, conselho_uf')
+              .eq('id', obraRow.empresa_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null } as any),
+        supabase
+          .from('dpg_gestao')
+          .select('id, nome, cargo, condicao, texto_cargo_documento, cpf, assinatura_url, vigencia_inicio, vigencia_fim, ativo')
+          .eq('ativo', true)
+          .lte('vigencia_inicio', new Date().toISOString().slice(0, 10))
+          .order('vigencia_inicio', { ascending: false })
+          .limit(5),
+        supabase.from('config_institucional').select('cnpj, razao_social, endereco, sigla, brasao_url').limit(1).maybeSingle(),
+      ]);
+
+      const empresa = (empresaRes as any).data as EncerramentoEmpresa | null;
+      const dpgList = (dpgRes.data || []) as any[];
+      const hoje = new Date().toISOString().slice(0, 10);
+      const dpgAtivo = dpgList.find((d) => !d.vigencia_fim || d.vigencia_fim >= hoje) || null;
+      const dpg: EncerramentoDPG | null = dpgAtivo
+        ? {
+            id: dpgAtivo.id,
+            nome: dpgAtivo.nome,
+            cargo: dpgAtivo.cargo,
+            condicao: dpgAtivo.condicao,
+            texto_cargo_documento: dpgAtivo.texto_cargo_documento,
+            cpf: dpgAtivo.cpf,
+            assinatura_url: dpgAtivo.assinatura_url,
+          }
+        : null;
+      const institucional = (instRes.data as EncerramentoInstitucional | null) || null;
+
+      const obra: EncerramentoObra = {
+        id: obraRow.id,
+        nome: obraRow.nome,
+        municipio: obraRow.municipio,
+        endereco_completo: obraRow.endereco_completo,
+        n_contrato: obraRow.n_contrato,
+        sei_numero: obraRow.sei_numero,
+        data_inicio: obraRow.data_inicio,
+        previsao_termino: obraRow.previsao_termino,
+        data_termino_real: (obraRow as any).data_termino_real ?? null,
+        data_recebimento_provisorio: obraRow.data_recebimento_provisorio,
+        data_recebimento_definitivo: obraRow.data_recebimento_definitivo,
+        numero_art_execucao: obraRow.numero_art_execucao,
+        status: obraRow.status,
+        valor_inicial: financeiro.valorTotalOriginal || 0,
+        valor_aditivado: financeiro.totalAditivo || 0,
+        valor_final: financeiro.totalContrato || 0,
+        valor_executado: financeiro.valorAcumulado || 0,
+      };
+
+      return { obra, empresa, dpg, institucional };
+    },
+  });
+
+  return {
+    data: query.data as EncerramentoData | undefined,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
