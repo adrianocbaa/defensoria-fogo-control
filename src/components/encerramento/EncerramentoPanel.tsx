@@ -12,6 +12,7 @@ import { gerarDocumentoEncerramento, nomeArquivoDocumento } from '@/lib/encerram
 import { supabase } from '@/integrations/supabase/client';
 import type { EncerramentoData, EncerramentoTipo, ValidationResult } from '@/lib/encerramento/types';
 import { ObraArtsManager } from './ObraArtsManager';
+import { SistemasServicosSelector } from './SistemasServicosSelector';
 
 interface Props {
   obraId: string;
@@ -288,6 +289,8 @@ export function EncerramentoPanel({ obraId }: Props) {
       </Card>
 
       <ObraArtsManager obraId={obraId} onChanged={() => refetch()} />
+
+      <SistemasServicosSelector obraId={obraId} onChanged={() => refetch()} />
 
       <div className="grid grid-cols-1 gap-3">
         <DocCard tipo="TRP" data={data} obraId={obraId} />

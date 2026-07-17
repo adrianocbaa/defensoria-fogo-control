@@ -18,11 +18,25 @@ export function useEncerramentoData(obraId: string | null | undefined) {
 
       const { data: obraRow, error: obraErr } = await supabase
         .from('obras')
-        .select('id, nome, municipio, endereco_completo, n_contrato, sei_numero, data_inicio, previsao_termino, data_termino_real, data_recebimento_provisorio, data_recebimento_definitivo, status, empresa_id, fiscal_id, objeto_contrato, descricao_imovel')
+        .select('id, nome, municipio, endereco_completo, n_contrato, sei_numero, data_inicio, previsao_termino, data_termino_real, data_recebimento_provisorio, data_recebimento_definitivo, status, empresa_id, fiscal_id, nucleo_nome, sistemas_servicos_ids')
         .eq('id', obraId)
         .maybeSingle();
       if (obraErr) throw obraErr;
       if (!obraRow) throw new Error('Obra não encontrada');
+
+      // Buscar textos dos sistemas/serviços selecionados
+      const sistemasIds: string[] = ((obraRow as any).sistemas_servicos_ids || []) as string[];
+      let sistemas_servicos_textos: string[] = [];
+      if (sistemasIds.length > 0) {
+        const { data: catRows } = await supabase
+          .from('catalogo_sistemas_servicos')
+          .select('id, texto_documento, ordem')
+          .in('id', sistemasIds);
+        // preservar ordem "ordem"
+        sistemas_servicos_textos = (catRows || [])
+          .sort((a: any, b: any) => (a.ordem ?? 0) - (b.ordem ?? 0))
+          .map((r: any) => r.texto_documento);
+      }
 
       let fiscalNome: string | null = null;
       if ((obraRow as any).fiscal_id) {
@@ -115,8 +129,9 @@ export function useEncerramentoData(obraId: string | null | undefined) {
         valor_final: financeiro.totalContrato || 0,
         valor_executado: financeiro.valorAcumulado || 0,
         fiscal_nome: fiscalNome,
-        objeto_contrato: (obraRow as any).objeto_contrato ?? null,
-        descricao_imovel: (obraRow as any).descricao_imovel ?? null,
+        nucleo_nome: (obraRow as any).nucleo_nome ?? null,
+        sistemas_servicos_ids: sistemasIds,
+        sistemas_servicos_textos,
         arts,
       };
 

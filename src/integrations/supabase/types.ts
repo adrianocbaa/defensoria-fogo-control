@@ -2483,6 +2483,7 @@ export type Database = {
           municipio: string
           n_contrato: string | null
           nome: string
+          nucleo_nome: string | null
           numero_art_execucao: string | null
           objeto_contrato: string | null
           obra_bloqueada: boolean | null
@@ -2537,6 +2538,7 @@ export type Database = {
           municipio: string
           n_contrato?: string | null
           nome: string
+          nucleo_nome?: string | null
           numero_art_execucao?: string | null
           objeto_contrato?: string | null
           obra_bloqueada?: boolean | null
@@ -2591,6 +2593,7 @@ export type Database = {
           municipio?: string
           n_contrato?: string | null
           nome?: string
+          nucleo_nome?: string | null
           numero_art_execucao?: string | null
           objeto_contrato?: string | null
           obra_bloqueada?: boolean | null
