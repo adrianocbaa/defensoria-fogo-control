@@ -1041,6 +1041,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                       )} />
                     </div>
                   </div>
+                </CardContent>
               </Card>
             </section>
 
