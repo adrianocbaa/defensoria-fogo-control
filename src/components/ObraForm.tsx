@@ -417,8 +417,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         
         data_recebimento_provisorio: data.data_recebimento_provisorio || null,
         data_recebimento_definitivo: data.data_recebimento_definitivo || null,
-        objeto_contrato: data.objeto_contrato?.trim() || null,
-        descricao_imovel: data.descricao_imovel?.trim() || null,
+        nucleo_nome: data.nucleo_nome?.trim() || null,
       };
 
 
