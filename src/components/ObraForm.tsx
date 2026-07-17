@@ -651,6 +651,14 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                     </FormItem>
                   )} />
 
+                  <FormField control={form.control} name="endereco_completo" render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Endereço Completo</FormLabel>
+                      <FormControl><Input placeholder="Rua, número, bairro, CEP — usado nos documentos de encerramento" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
                   <FormField control={form.control} name="sei_numero" render={({ field }) => {
                     const formatSei = (raw: string) => {
                       const d = raw.replace(/\D/g, '').slice(0, 15);
