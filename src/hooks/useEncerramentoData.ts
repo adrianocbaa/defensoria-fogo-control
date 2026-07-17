@@ -7,11 +7,12 @@ import { useMedicoesFinanceiro } from './useMedicoesFinanceiro';
  * Fase 3 — Motor de dados para Documentos de Encerramento (TRP/TRD/ACT).
  */
 export function useEncerramentoData(obraId: string | null | undefined) {
-  const { dados: financeiro } = useMedicoesFinanceiro(obraId || '');
+  const { dados: financeiro, loading: loadingFinanceiro } = useMedicoesFinanceiro(obraId || '');
 
   const query = useQuery({
-    enabled: !!obraId,
-    queryKey: ['encerramento-data', obraId],
+    enabled: !!obraId && !loadingFinanceiro,
+    queryKey: ['encerramento-data', obraId, financeiro.valorTotalOriginal, financeiro.totalAditivo, financeiro.totalContrato, financeiro.valorAcumulado],
+
     queryFn: async (): Promise<Omit<EncerramentoData, never>> => {
       if (!obraId) throw new Error('obraId requerido');
 
