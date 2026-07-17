@@ -145,6 +145,15 @@ export function EmpresasManagement() {
         cidade: formData.cidade || null,
         uf: formData.uf || null,
         cep: formData.cep || null,
+        representante_legal_nome: formData.representante_legal_nome || null,
+        representante_legal_cpf: formData.representante_legal_cpf || null,
+        representante_legal_cargo: formData.representante_legal_cargo || null,
+        responsavel_tecnico_nome: formData.responsavel_tecnico_nome || null,
+        responsavel_tecnico_cpf: formData.responsavel_tecnico_cpf || null,
+        responsavel_tecnico_profissao: formData.responsavel_tecnico_profissao || null,
+        conselho_tipo: formData.conselho_tipo || null,
+        conselho_numero: formData.conselho_numero || null,
+        conselho_uf: formData.conselho_uf || null,
       };
 
       if (editingEmpresa) {
