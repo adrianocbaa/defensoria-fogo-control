@@ -19,6 +19,11 @@ export interface EncerramentoObra {
   valor_final: number;
   valor_executado: number;
   fiscal_nome?: string | null;
+  aditivos_arts?: Array<{
+    sequencia: number;
+    tipo_aditivo: string | null;
+    numero_art: string | null;
+  }>;
 }
 
 
