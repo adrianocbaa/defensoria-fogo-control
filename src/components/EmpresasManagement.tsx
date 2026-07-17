@@ -120,20 +120,6 @@ export function EmpresasManagement() {
       conselho_numero: empresa.conselho_numero || '',
       conselho_uf: empresa.conselho_uf || '',
     });
-
-  const openEditDialog = (empresa: Empresa) => {
-    setEditingEmpresa(empresa);
-    setFormData({
-      cnpj: empresa.cnpj,
-      razao_social: empresa.razao_social,
-      nome_fantasia: empresa.nome_fantasia || '',
-      email: empresa.email || '',
-      telefone: empresa.telefone || '',
-      endereco: empresa.endereco || '',
-      cidade: empresa.cidade || '',
-      uf: empresa.uf || '',
-      cep: empresa.cep || '',
-    });
     setIsDialogOpen(true);
   };
 
