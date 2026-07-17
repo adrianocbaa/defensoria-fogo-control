@@ -40,6 +40,8 @@ import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
 import { generatePdfFromElementAutoPage } from '@/lib/pdfExport';
+import { EncerramentoPanel } from '@/components/encerramento/EncerramentoPanel';
+
 
 interface Obra {
   id: string;
@@ -4157,11 +4159,13 @@ export function Medicao() {
 
         {/* Sistema de Abas */}
         <Tabs defaultValue="medicao-atual" className="w-full">
-          <TabsList className={`grid w-full ${canEdit ? 'grid-cols-3' : 'grid-cols-2'} mb-6`}>
+          <TabsList className={`grid w-full ${canEdit ? 'grid-cols-4' : 'grid-cols-2'} mb-6`}>
             <TabsTrigger value="medicao-atual">Medição Atual</TabsTrigger>
             <TabsTrigger value="analise-financeira">Análise Financeira</TabsTrigger>
             {canEdit && <TabsTrigger value="gestao">Gestão</TabsTrigger>}
+            {canEdit && <TabsTrigger value="encerramento">Encerramento</TabsTrigger>}
           </TabsList>
+
 
           {/* ABA 1: MEDIÇÃO ATUAL */}
           <TabsContent value="medicao-atual" className="space-y-6">
@@ -5079,7 +5083,14 @@ export function Medicao() {
         {/* Histórico de Ações */}
         <ObraAuditLogs obraId={obra.id} />
       </TabsContent>
+
+      {canEdit && (
+        <TabsContent value="encerramento" className="space-y-6">
+          <EncerramentoPanel obraId={obra.id} />
+        </TabsContent>
+      )}
     </Tabs>
+
 
 
     {/* Modal Relatório Técnico */}
