@@ -40,6 +40,8 @@ import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
 import { generatePdfFromElementAutoPage } from '@/lib/pdfExport';
+import { EncerramentoPanel } from '@/components/encerramento/EncerramentoPanel';
+
 
 interface Obra {
   id: string;
