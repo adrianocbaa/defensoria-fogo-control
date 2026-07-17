@@ -249,8 +249,12 @@ export function EncerramentoPanel({ obraId }: Props) {
               <p className="font-medium">{data.obra.data_recebimento_definitivo || '—'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">ART/RRT de execução</p>
-              <p className="font-medium">{data.obra.numero_art_execucao || '—'}</p>
+              <p className="text-muted-foreground text-xs">ARTs cadastradas</p>
+              <p className="font-medium">
+                {data.obra.arts.length > 0
+                  ? `${data.obra.arts.length} registro${data.obra.arts.length > 1 ? 's' : ''}`
+                  : <span className="text-destructive">Nenhuma</span>}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Valor executado</p>
