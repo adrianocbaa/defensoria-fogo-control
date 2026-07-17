@@ -312,6 +312,8 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       
       data_recebimento_provisorio: (initialData as any)?.data_recebimento_provisorio || '',
       data_recebimento_definitivo: (initialData as any)?.data_recebimento_definitivo || '',
+      objeto_contrato: (initialData as any)?.objeto_contrato || '',
+      descricao_imovel: (initialData as any)?.descricao_imovel || '',
     },
   });
 
