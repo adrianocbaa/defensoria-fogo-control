@@ -503,31 +503,62 @@ async function fetchAnexoItems(obraId: string): Promise<AnexoItem[]> {
   try {
     const { data, error } = await supabase
       .from('orcamento_items_hierarquia')
-      .select('item, codigo, banco, descricao, unidade, quantidade, is_macro, ordem')
+      .select('item, codigo, banco, descricao, unidade, is_macro, ordem')
       .eq('obra_id', obraId)
       .order('ordem', { ascending: true })
       .limit(10000);
     if (error || !data) return [];
 
-    // Aggregate by item code (sum contract + aditivos)
+    // Buscar quantidades EXECUTADAS acumuladas (QNT do Acumulado nas medições).
+    // Cada medicao_items guarda o acumulado da sessão; pegamos o valor da sessão
+    // mais recente por item_code (congelado quando disponível, senão qtd).
+    const executadoPorItem = new Map<string, number>();
+    const { data: sessions } = await supabase
+      .from('medicao_sessions')
+      .select('id, sequencia')
+      .eq('obra_id', obraId)
+      .order('sequencia', { ascending: true })
+      .limit(10000);
+    const sessionIds = (sessions || []).map((s: any) => s.id);
+    if (sessionIds.length) {
+      const { data: items } = await supabase
+        .from('medicao_items')
+        .select('item_code, qtd, qtd_congelado, medicao_id')
+        .in('medicao_id', sessionIds)
+        .limit(100000);
+      const seqById = new Map<string, number>();
+      (sessions || []).forEach((s: any) => seqById.set(s.id, Number(s.sequencia || 0)));
+      const latestSeq = new Map<string, number>();
+      for (const it of (items || []) as any[]) {
+        const code = String(it.item_code || '').trim();
+        if (!code) continue;
+        const seq = seqById.get(it.medicao_id) ?? 0;
+        const prev = latestSeq.get(code);
+        if (prev === undefined || seq >= prev) {
+          latestSeq.set(code, seq);
+          const q = it.qtd_congelado != null ? Number(it.qtd_congelado) : Number(it.qtd || 0);
+          executadoPorItem.set(code, q);
+        }
+      }
+    }
+
+    // Consolida hierarquia (contrato + aditivos) preservando estrutura;
+    // para itens folha, usa a quantidade EXECUTADA acumulada.
     const map = new Map<string, AnexoItem>();
     for (const r of data as any[]) {
       const key = `${r.item ?? ''}||${r.codigo ?? ''}||${r.descricao ?? ''}`;
-      const existing = map.get(key);
-      if (existing) {
-        if (!existing.is_macro) existing.quantidade += Number(r.quantidade || 0);
-      } else {
-        map.set(key, {
-          item: r.item ?? '',
-          codigo: r.codigo ?? '',
-          banco: r.banco ?? '',
-          descricao: r.descricao ?? '',
-          unidade: r.unidade ?? '',
-          quantidade: Number(r.quantidade || 0),
-          is_macro: !!r.is_macro,
-          ordem: Number(r.ordem || 0),
-        });
-      }
+      if (map.has(key)) continue;
+      const itemCode = String(r.item ?? '').trim();
+      map.set(key, {
+        item: r.item ?? '',
+        codigo: r.codigo ?? '',
+        banco: r.banco ?? '',
+        descricao: r.descricao ?? '',
+        unidade: r.unidade ?? '',
+        quantidade: r.is_macro ? 0 : Number(executadoPorItem.get(itemCode) ?? 0),
+        is_macro: !!r.is_macro,
+        ordem: Number(r.ordem || 0),
+      });
     }
     return Array.from(map.values()).sort((a, b) => a.ordem - b.ordem);
   } catch {
