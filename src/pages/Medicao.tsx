@@ -5081,7 +5081,14 @@ export function Medicao() {
         {/* Histórico de Ações */}
         <ObraAuditLogs obraId={obra.id} />
       </TabsContent>
+
+      {canEdit && (
+        <TabsContent value="encerramento" className="space-y-6">
+          <EncerramentoPanel obraId={obra.id} />
+        </TabsContent>
+      )}
     </Tabs>
+
 
 
     {/* Modal Relatório Técnico */}
