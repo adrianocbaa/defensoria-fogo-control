@@ -326,23 +326,39 @@ function buildACT(data: EncerramentoData) {
       : []),
     P([new TextRun({ text: 'Valor final do contrato: ', bold: true, size: 24 }), new TextRun({ text: `${BRL(obra.valor_final)}.`, size: 24 })]),
     P([new TextRun({ text: 'Período de execução: ', bold: true, size: 24 }), new TextRun({ text: `${fmtDate(obra.data_inicio)} a ${fmtDate(obra.data_termino_real || obra.previsao_termino)}.`, size: 24 })]),
-    ...(obra.numero_art_execucao
-      ? [P([new TextRun({ text: 'ART de Execução do Contrato: ', bold: true, size: 24 }), new TextRun({ text: `${obra.numero_art_execucao}.`, size: 24 })])]
-      : []),
-    ...((obra.aditivos_arts || []).filter(a => a.numero_art).map((a) => {
-      const tipoLabel = (() => {
-        const t = (a.tipo_aditivo || '').toLowerCase();
-        if (t.includes('prazo') && (t.includes('valor') || t.includes('quantitativo'))) return 'prazo e valor';
-        if (t.includes('prazo')) return 'prazo';
-        if (t.includes('supress')) return 'supressão';
-        if (t.includes('valor') || t.includes('quantitativo') || t.includes('acresc')) return 'valor';
-        return a.tipo_aditivo || 'aditivo';
-      })();
-      return P([
-        new TextRun({ text: `ART do ${a.sequencia}º Aditivo (${tipoLabel}): `, bold: true, size: 24 }),
-        new TextRun({ text: `${a.numero_art}.`, size: 24 }),
-      ]);
-    })),
+    ...(() => {
+      const tipoLabel = (t: string | null | undefined): string => {
+        const v = (t || '').toLowerCase();
+        if (v === 'execucao' || v.includes('execu')) return 'execução';
+        if (v === 'projeto') return 'projeto';
+        if (v === 'complementar') return 'complementar';
+        if (v === 'fiscalizacao' || v.includes('fiscal')) return 'fiscalização';
+        if (v === 'prazo_valor' || (v.includes('prazo') && (v.includes('valor') || v.includes('quantitativo')))) return 'prazo e valor';
+        if (v === 'prazo' || v.includes('prazo')) return 'prazo';
+        if (v === 'supressao' || v.includes('supress')) return 'supressão';
+        if (v === 'valor' || v.includes('valor') || v.includes('quantitativo') || v.includes('acresc')) return 'valor';
+        return t || 'aditivo';
+      };
+      const artsContrato = (obra.arts || []).filter((a) => !a.aditivo_session_id);
+      const artsAditivo = (obra.arts || []).filter((a) => !!a.aditivo_session_id);
+      artsAditivo.sort((a, b) => (a.aditivo_sequencia ?? 0) - (b.aditivo_sequencia ?? 0));
+
+      const paragraphs: Paragraph[] = [];
+      artsContrato.forEach((a) => {
+        paragraphs.push(P([
+          new TextRun({ text: `ART do Contrato (${tipoLabel(a.tipo)}): `, bold: true, size: 24 }),
+          new TextRun({ text: `${a.numero_art}.`, size: 24 }),
+        ]));
+      });
+      artsAditivo.forEach((a) => {
+        const seq = a.aditivo_sequencia ?? '—';
+        paragraphs.push(P([
+          new TextRun({ text: `ART do ${seq}º Aditivo (${tipoLabel(a.tipo || a.aditivo_tipo)}): `, bold: true, size: 24 }),
+          new TextRun({ text: `${a.numero_art}.`, size: 24 }),
+        ]));
+      });
+      return paragraphs;
+    })(),
 
 
     P([
