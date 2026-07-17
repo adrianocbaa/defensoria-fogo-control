@@ -565,6 +565,14 @@ export default function AdminPanel() {
                 <RotateCcw className="h-4 w-4" />
                 Recuperar Dados Excluídos
               </Button>
+              <Button
+                onClick={() => navigate('/admin/encerramento')}
+                variant="outline"
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Docs de Encerramento (Config)
+              </Button>
             </div>
 
             <Card>
