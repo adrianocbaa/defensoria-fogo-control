@@ -411,7 +411,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         created_by: user.id,
         rdo_habilitado: data.rdo_habilitado,
         endereco_completo: data.endereco_completo?.trim() || null,
-        numero_art_execucao: data.numero_art_execucao?.trim() || null,
+        
         data_recebimento_provisorio: data.data_recebimento_provisorio || null,
         data_recebimento_definitivo: data.data_recebimento_definitivo || null,
       };
