@@ -307,7 +307,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       coordinates_lng: initialData?.coordinates_lng,
       rdo_habilitado: (initialData as any)?.rdo_habilitado ?? true,
       endereco_completo: (initialData as any)?.endereco_completo || '',
-      numero_art_execucao: (initialData as any)?.numero_art_execucao || '',
+      
       data_recebimento_provisorio: (initialData as any)?.data_recebimento_provisorio || '',
       data_recebimento_definitivo: (initialData as any)?.data_recebimento_definitivo || '',
     },
