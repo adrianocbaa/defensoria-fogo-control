@@ -17,7 +17,7 @@ export function useEncerramentoData(obraId: string | null | undefined) {
 
       const { data: obraRow, error: obraErr } = await supabase
         .from('obras')
-        .select('id, nome, municipio, endereco_completo, n_contrato, sei_numero, data_inicio, previsao_termino, data_termino_real, data_recebimento_provisorio, data_recebimento_definitivo, status, empresa_id, fiscal_id')
+        .select('id, nome, municipio, endereco_completo, n_contrato, sei_numero, data_inicio, previsao_termino, data_termino_real, data_recebimento_provisorio, data_recebimento_definitivo, status, empresa_id, fiscal_id, objeto_contrato, descricao_imovel')
         .eq('id', obraId)
         .maybeSingle();
       if (obraErr) throw obraErr;
@@ -114,6 +114,8 @@ export function useEncerramentoData(obraId: string | null | undefined) {
         valor_final: financeiro.totalContrato || 0,
         valor_executado: financeiro.valorAcumulado || 0,
         fiscal_nome: fiscalNome,
+        objeto_contrato: (obraRow as any).objeto_contrato ?? null,
+        descricao_imovel: (obraRow as any).descricao_imovel ?? null,
         arts,
       };
 

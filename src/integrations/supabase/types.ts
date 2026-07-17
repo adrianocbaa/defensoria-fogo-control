@@ -2469,6 +2469,7 @@ export type Database = {
           data_recebimento_provisorio: string | null
           data_termino_real: string | null
           descricao_edificacao_custom: string | null
+          descricao_imovel: string | null
           descricao_tecnica_imovel: string | null
           documentos: Json | null
           empresa_id: string | null
@@ -2522,6 +2523,7 @@ export type Database = {
           data_recebimento_provisorio?: string | null
           data_termino_real?: string | null
           descricao_edificacao_custom?: string | null
+          descricao_imovel?: string | null
           descricao_tecnica_imovel?: string | null
           documentos?: Json | null
           empresa_id?: string | null
@@ -2575,6 +2577,7 @@ export type Database = {
           data_recebimento_provisorio?: string | null
           data_termino_real?: string | null
           descricao_edificacao_custom?: string | null
+          descricao_imovel?: string | null
           descricao_tecnica_imovel?: string | null
           documentos?: Json | null
           empresa_id?: string | null

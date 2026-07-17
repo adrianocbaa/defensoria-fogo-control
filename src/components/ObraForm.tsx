@@ -11,6 +11,7 @@ import { useEmpresas } from '@/hooks/useEmpresas';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
@@ -79,6 +80,8 @@ const obraSchema = z.object({
   
   data_recebimento_provisorio: z.string().optional(),
   data_recebimento_definitivo: z.string().optional(),
+  objeto_contrato: z.string().optional(),
+  descricao_imovel: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.status !== 'planejamento' && !data.n_contrato?.trim()) {
     ctx.addIssue({
@@ -310,6 +313,8 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       
       data_recebimento_provisorio: (initialData as any)?.data_recebimento_provisorio || '',
       data_recebimento_definitivo: (initialData as any)?.data_recebimento_definitivo || '',
+      objeto_contrato: (initialData as any)?.objeto_contrato || '',
+      descricao_imovel: (initialData as any)?.descricao_imovel || '',
     },
   });
 
@@ -414,6 +419,8 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         
         data_recebimento_provisorio: data.data_recebimento_provisorio || null,
         data_recebimento_definitivo: data.data_recebimento_definitivo || null,
+        objeto_contrato: data.objeto_contrato?.trim() || null,
+        descricao_imovel: data.descricao_imovel?.trim() || null,
       };
 
 
@@ -1013,6 +1020,22 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                         <FormItem>
                           <FormLabel>Recebimento Definitivo (TRD)</FormLabel>
                           <FormControl><Input type="date" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 gap-6">
+                      <FormField control={form.control} name="objeto_contrato" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Objeto do contrato</FormLabel>
+                          <FormControl><Textarea rows={4} placeholder="Ex.: Contratação de empresa especializada para prestação de serviços de reforma predial..." {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="descricao_imovel" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição do imóvel</FormLabel>
+                          <FormControl><Textarea rows={3} placeholder="Ex.: Edificação térrea composta de sistema de materiais mistos, com rede lógica cabeada e instalações elétricas de baixa tensão." {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />

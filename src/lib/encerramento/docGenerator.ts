@@ -8,9 +8,17 @@ import {
   Header,
   Footer,
   ImageRun,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  ShadingType,
+  HeightRule,
 } from 'docx';
 import type { EncerramentoData, EncerramentoTipo } from './types';
 import logoAsset from '@/assets/dpmt-logo.png.asset.json';
+import { supabase } from '@/integrations/supabase/client';
 
 
 const BRL = (v: number) =>
@@ -278,7 +286,84 @@ function buildTRD(data: EncerramentoData) {
 }
 
 // ============= ACT =============
-function buildACT(data: EncerramentoData) {
+interface AnexoItem {
+  item: string;
+  codigo: string;
+  banco: string;
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  is_macro: boolean;
+  ordem: number;
+}
+
+function buildAnexoQuantitativos(items: AnexoItem[]): Paragraph[] {
+  if (!items.length) return [];
+  const border = { style: BorderStyle.SINGLE, size: 4, color: '999999' };
+  const borders = { top: border, bottom: border, left: border, right: border };
+
+  const header = new TableRow({
+    tableHeader: true,
+    children: ['Item', 'Código', 'Banco', 'Descrição', 'Und', 'Quant.'].map((t, i) =>
+      new TableCell({
+        borders,
+        width: { size: [700, 1200, 1000, 4300, 700, 900][i], type: WidthType.DXA },
+        shading: { fill: 'D9E7DC', type: ShadingType.CLEAR },
+        margins: { top: 60, bottom: 60, left: 100, right: 100 },
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: t, bold: true, size: 20 })] })],
+      })
+    ),
+  });
+
+  const cellText = (text: string, opts: { bold?: boolean; align?: any; size?: number } = {}) =>
+    new Paragraph({
+      alignment: opts.align ?? AlignmentType.LEFT,
+      spacing: { after: 0, line: 260 },
+      children: [new TextRun({ text, bold: opts.bold, size: opts.size ?? 18 })],
+    });
+
+  const fmtQtd = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+
+  const bodyRows = items.map((it) => {
+    const shade = it.is_macro ? { fill: 'F0F4EE', type: ShadingType.CLEAR } : undefined;
+    const cells = [
+      { text: it.item || '', align: AlignmentType.LEFT },
+      { text: it.codigo || '', align: AlignmentType.LEFT },
+      { text: it.banco || '', align: AlignmentType.LEFT },
+      { text: it.descricao || '', align: AlignmentType.LEFT },
+      { text: it.unidade || '', align: AlignmentType.CENTER },
+      { text: it.is_macro ? '' : fmtQtd(it.quantidade), align: AlignmentType.RIGHT },
+    ];
+    const widths = [700, 1200, 1000, 4300, 700, 900];
+    return new TableRow({
+      children: cells.map((c, i) => new TableCell({
+        borders,
+        width: { size: widths[i], type: WidthType.DXA },
+        shading: shade,
+        margins: { top: 40, bottom: 40, left: 100, right: 100 },
+        children: [cellText(c.text, { bold: it.is_macro, align: c.align })],
+      })),
+    });
+  });
+
+  const table = new Table({
+    width: { size: 8800, type: WidthType.DXA },
+    columnWidths: [700, 1200, 1000, 4300, 700, 900],
+    rows: [header, ...bodyRows],
+  });
+
+  return [
+    new Paragraph({ children: [], pageBreakBefore: true }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 240 },
+      children: [new TextRun({ text: 'Anexo 1 – Planilha de Quantitativos', bold: true, size: 26 })],
+    }),
+    table as unknown as Paragraph,
+  ];
+}
+
+function buildACT(data: EncerramentoData, anexoItems: AnexoItem[] = []) {
   const { obra, empresa, dpg, institucional } = data;
   const conselho = [empresa?.conselho_tipo, empresa?.conselho_numero].filter(Boolean).join(' Nº ');
   const conselhoUF = empresa?.conselho_uf ? `/${empresa.conselho_uf}` : '';
@@ -360,6 +445,18 @@ function buildACT(data: EncerramentoData) {
       return paragraphs;
     })(),
 
+    ...(obra.objeto_contrato
+      ? [P([
+          new TextRun({ text: 'Objeto do contrato: ', bold: true, size: 24 }),
+          new TextRun({ text: obra.objeto_contrato, size: 24 }),
+        ], { indent: true, spacing: 240 })]
+      : []),
+    ...(obra.descricao_imovel
+      ? [P([
+          new TextRun({ text: 'Descrição do imóvel: ', bold: true, size: 24 }),
+          new TextRun({ text: obra.descricao_imovel, size: 24 }),
+        ], { indent: true, spacing: 240 })]
+      : []),
 
     P([
       'Declaramos ainda que os compromissos assumidos foram cumpridos satisfatoriamente, nada constando ' +
@@ -387,6 +484,8 @@ function buildACT(data: EncerramentoData) {
       spacing: { after: 240 },
       children: [new TextRun({ text: 'Defensoria Pública do Estado de Mato Grosso', italics: true, size: 22 })],
     }),
+
+    ...buildAnexoQuantitativos(anexoItems),
   ];
 }
 
@@ -400,12 +499,53 @@ async function fetchLogo(): Promise<ArrayBuffer | null> {
   }
 }
 
+async function fetchAnexoItems(obraId: string): Promise<AnexoItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from('orcamento_items_hierarquia')
+      .select('item, codigo, banco, descricao, unidade, quantidade, is_macro, ordem')
+      .eq('obra_id', obraId)
+      .order('ordem', { ascending: true })
+      .limit(10000);
+    if (error || !data) return [];
+
+    // Aggregate by item code (sum contract + aditivos)
+    const map = new Map<string, AnexoItem>();
+    for (const r of data as any[]) {
+      const key = `${r.item ?? ''}||${r.codigo ?? ''}||${r.descricao ?? ''}`;
+      const existing = map.get(key);
+      if (existing) {
+        if (!existing.is_macro) existing.quantidade += Number(r.quantidade || 0);
+      } else {
+        map.set(key, {
+          item: r.item ?? '',
+          codigo: r.codigo ?? '',
+          banco: r.banco ?? '',
+          descricao: r.descricao ?? '',
+          unidade: r.unidade ?? '',
+          quantidade: Number(r.quantidade || 0),
+          is_macro: !!r.is_macro,
+          ordem: Number(r.ordem || 0),
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.ordem - b.ordem);
+  } catch {
+    return [];
+  }
+}
+
 export async function gerarDocumentoEncerramento(
   tipo: EncerramentoTipo,
   data: EncerramentoData,
 ): Promise<Blob> {
-  const children =
-    tipo === 'TRP' ? buildTRP(data) : tipo === 'TRD' ? buildTRD(data) : buildACT(data);
+  let children;
+  if (tipo === 'TRP') children = buildTRP(data);
+  else if (tipo === 'TRD') children = buildTRD(data);
+  else {
+    const anexo = await fetchAnexoItems(data.obra.id);
+    children = buildACT(data, anexo);
+  }
 
   const logoData = await fetchLogo();
   const header = await buildHeader(logoData);
