@@ -1,5 +1,35 @@
 export type EncerramentoTipo = 'TRP' | 'TRD' | 'ACT';
 
+export type ArtTipo =
+  | 'execucao'
+  | 'projeto'
+  | 'complementar'
+  | 'fiscalizacao'
+  | 'prazo'
+  | 'valor'
+  | 'prazo_valor'
+  | 'supressao';
+
+export const ART_TIPO_LABEL: Record<string, string> = {
+  execucao: 'Execução',
+  projeto: 'Projeto',
+  complementar: 'Complementar',
+  fiscalizacao: 'Fiscalização',
+  prazo: 'Prazo',
+  valor: 'Valor',
+  prazo_valor: 'Prazo e valor',
+  supressao: 'Supressão',
+};
+
+export interface EncerramentoArt {
+  id: string;
+  numero_art: string;
+  tipo: ArtTipo | string;
+  aditivo_session_id: string | null;
+  aditivo_sequencia: number | null;
+  aditivo_tipo: string | null;
+}
+
 export interface EncerramentoObra {
   id: string;
   nome: string;
@@ -12,18 +42,13 @@ export interface EncerramentoObra {
   data_termino_real: string | null;
   data_recebimento_provisorio: string | null;
   data_recebimento_definitivo: string | null;
-  numero_art_execucao: string | null;
   status: string;
   valor_inicial: number;
   valor_aditivado: number;
   valor_final: number;
   valor_executado: number;
   fiscal_nome?: string | null;
-  aditivos_arts?: Array<{
-    sequencia: number;
-    tipo_aditivo: string | null;
-    numero_art: string | null;
-  }>;
+  arts: EncerramentoArt[];
 }
 
 

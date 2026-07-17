@@ -76,7 +76,7 @@ const obraSchema = z.object({
   coordinates_lng: z.number().optional(),
   rdo_habilitado: z.boolean().default(true),
   endereco_completo: z.string().optional(),
-  numero_art_execucao: z.string().optional(),
+  
   data_recebimento_provisorio: z.string().optional(),
   data_recebimento_definitivo: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -307,7 +307,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       coordinates_lng: initialData?.coordinates_lng,
       rdo_habilitado: (initialData as any)?.rdo_habilitado ?? true,
       endereco_completo: (initialData as any)?.endereco_completo || '',
-      numero_art_execucao: (initialData as any)?.numero_art_execucao || '',
+      
       data_recebimento_provisorio: (initialData as any)?.data_recebimento_provisorio || '',
       data_recebimento_definitivo: (initialData as any)?.data_recebimento_definitivo || '',
     },
@@ -411,7 +411,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         created_by: user.id,
         rdo_habilitado: data.rdo_habilitado,
         endereco_completo: data.endereco_completo?.trim() || null,
-        numero_art_execucao: data.numero_art_execucao?.trim() || null,
+        
         data_recebimento_provisorio: data.data_recebimento_provisorio || null,
         data_recebimento_definitivo: data.data_recebimento_definitivo || null,
       };
@@ -1000,8 +1000,8 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
 
                   <div className="md:col-span-2 pt-4 border-t">
                     <h4 className="text-sm font-semibold mb-3">Encerramento da Obra</h4>
-                    <p className="text-xs text-muted-foreground mb-3">Dados usados na geração de TRP, TRD e ACT.</p>
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <p className="text-xs text-muted-foreground mb-3">Datas usadas na geração de TRP e TRD. As ARTs/RRTs são gerenciadas na aba <strong>Encerramento</strong> do módulo de Medição.</p>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <FormField control={form.control} name="data_recebimento_provisorio" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Recebimento Provisório (TRP)</FormLabel>
@@ -1013,13 +1013,6 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                         <FormItem>
                           <FormLabel>Recebimento Definitivo (TRD)</FormLabel>
                           <FormControl><Input type="date" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="numero_art_execucao" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nº ART/RRT de Execução</FormLabel>
-                          <FormControl><Input placeholder="Ex.: MT20250012345" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />

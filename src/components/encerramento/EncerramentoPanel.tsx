@@ -11,6 +11,7 @@ import { validaDocumento } from '@/lib/encerramento/validation';
 import { gerarDocumentoEncerramento, nomeArquivoDocumento } from '@/lib/encerramento/docGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import type { EncerramentoData, EncerramentoTipo, ValidationResult } from '@/lib/encerramento/types';
+import { ObraArtsManager } from './ObraArtsManager';
 
 interface Props {
   obraId: string;
@@ -187,7 +188,7 @@ function DocCard({
 
 
 export function EncerramentoPanel({ obraId }: Props) {
-  const { data, isLoading, error } = useEncerramentoData(obraId);
+  const { data, isLoading, error, refetch } = useEncerramentoData(obraId);
 
   if (isLoading) {
     return (
@@ -249,8 +250,12 @@ export function EncerramentoPanel({ obraId }: Props) {
               <p className="font-medium">{data.obra.data_recebimento_definitivo || '—'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">ART/RRT de execução</p>
-              <p className="font-medium">{data.obra.numero_art_execucao || '—'}</p>
+              <p className="text-muted-foreground text-xs">ARTs cadastradas</p>
+              <p className="font-medium">
+                {data.obra.arts.length > 0
+                  ? `${data.obra.arts.length} registro${data.obra.arts.length > 1 ? 's' : ''}`
+                  : <span className="text-destructive">Nenhuma</span>}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Valor executado</p>
@@ -281,6 +286,8 @@ export function EncerramentoPanel({ obraId }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <ObraArtsManager obraId={obraId} onChanged={() => refetch()} />
 
       <div className="grid grid-cols-1 gap-3">
         <DocCard tipo="TRP" data={data} obraId={obraId} />
