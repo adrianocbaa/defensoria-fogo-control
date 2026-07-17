@@ -11,6 +11,7 @@ import { validaDocumento } from '@/lib/encerramento/validation';
 import { gerarDocumentoEncerramento, nomeArquivoDocumento } from '@/lib/encerramento/docGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import type { EncerramentoData, EncerramentoTipo, ValidationResult } from '@/lib/encerramento/types';
+import { ObraArtsManager } from './ObraArtsManager';
 
 interface Props {
   obraId: string;
