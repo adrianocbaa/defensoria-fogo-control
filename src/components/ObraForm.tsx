@@ -75,6 +75,10 @@ const obraSchema = z.object({
   coordinates_lat: z.number().optional(),
   coordinates_lng: z.number().optional(),
   rdo_habilitado: z.boolean().default(true),
+  endereco_completo: z.string().optional(),
+  numero_art_execucao: z.string().optional(),
+  data_recebimento_provisorio: z.string().optional(),
+  data_recebimento_definitivo: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.status !== 'planejamento' && !data.n_contrato?.trim()) {
     ctx.addIssue({
@@ -302,6 +306,10 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       coordinates_lat: initialData?.coordinates_lat,
       coordinates_lng: initialData?.coordinates_lng,
       rdo_habilitado: (initialData as any)?.rdo_habilitado ?? true,
+      endereco_completo: (initialData as any)?.endereco_completo || '',
+      numero_art_execucao: (initialData as any)?.numero_art_execucao || '',
+      data_recebimento_provisorio: (initialData as any)?.data_recebimento_provisorio || '',
+      data_recebimento_definitivo: (initialData as any)?.data_recebimento_definitivo || '',
     },
   });
 
@@ -402,7 +410,12 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         documentos: documents,
         created_by: user.id,
         rdo_habilitado: data.rdo_habilitado,
+        endereco_completo: data.endereco_completo?.trim() || null,
+        numero_art_execucao: data.numero_art_execucao?.trim() || null,
+        data_recebimento_provisorio: data.data_recebimento_provisorio || null,
+        data_recebimento_definitivo: data.data_recebimento_definitivo || null,
       };
+
 
       let savedObraId = obraId;
       if (obraId && obraId !== 'nova') {
@@ -634,6 +647,14 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                     <FormItem>
                       <FormLabel>Município *</FormLabel>
                       <FormControl><Input placeholder="Digite o município" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="endereco_completo" render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Endereço Completo</FormLabel>
+                      <FormControl><Input placeholder="Rua, número, bairro, CEP — usado nos documentos de encerramento" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -974,6 +995,34 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                       <div><div className="text-xs text-muted-foreground">Aditivo</div><div className="font-medium">{values.aditivo_prazo ?? 0} d</div></div>
                       <div><div className="text-xs text-muted-foreground">Prazo total</div><div className="font-medium">{(values.tempo_obra ?? 0) + (values.aditivo_prazo ?? 0)} d</div></div>
                       <div><div className="text-xs text-muted-foreground">Término previsto</div><div className="font-medium">{values.previsao_termino || '—'}</div></div>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 pt-4 border-t">
+                    <h4 className="text-sm font-semibold mb-3">Encerramento da Obra</h4>
+                    <p className="text-xs text-muted-foreground mb-3">Dados usados na geração de TRP, TRD e ACT.</p>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <FormField control={form.control} name="data_recebimento_provisorio" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recebimento Provisório (TRP)</FormLabel>
+                          <FormControl><Input type="date" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="data_recebimento_definitivo" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recebimento Definitivo (TRD)</FormLabel>
+                          <FormControl><Input type="date" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="numero_art_execucao" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nº ART/RRT de Execução</FormLabel>
+                          <FormControl><Input placeholder="Ex.: MT20250012345" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </div>
                   </div>
                 </CardContent>

@@ -33,7 +33,7 @@ export function EmpresasManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingEmpresa, setEditingEmpresa] = useState<Empresa | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     cnpj: '',
     razao_social: '',
     nome_fantasia: '',
@@ -43,7 +43,17 @@ export function EmpresasManagement() {
     cidade: '',
     uf: '',
     cep: '',
-  });
+    representante_legal_nome: '',
+    representante_legal_cpf: '',
+    representante_legal_cargo: '',
+    responsavel_tecnico_nome: '',
+    responsavel_tecnico_cpf: '',
+    responsavel_tecnico_profissao: '',
+    conselho_tipo: '',
+    conselho_numero: '',
+    conselho_uf: '',
+  };
+  const [formData, setFormData] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -84,21 +94,11 @@ export function EmpresasManagement() {
 
   const openCreateDialog = () => {
     setEditingEmpresa(null);
-    setFormData({
-      cnpj: '',
-      razao_social: '',
-      nome_fantasia: '',
-      email: '',
-      telefone: '',
-      endereco: '',
-      cidade: '',
-      uf: '',
-      cep: '',
-    });
+    setFormData(emptyForm);
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (empresa: Empresa) => {
+  const openEditDialog = (empresa: any) => {
     setEditingEmpresa(empresa);
     setFormData({
       cnpj: empresa.cnpj,
@@ -110,6 +110,15 @@ export function EmpresasManagement() {
       cidade: empresa.cidade || '',
       uf: empresa.uf || '',
       cep: empresa.cep || '',
+      representante_legal_nome: empresa.representante_legal_nome || '',
+      representante_legal_cpf: empresa.representante_legal_cpf || '',
+      representante_legal_cargo: empresa.representante_legal_cargo || '',
+      responsavel_tecnico_nome: empresa.responsavel_tecnico_nome || '',
+      responsavel_tecnico_cpf: empresa.responsavel_tecnico_cpf || '',
+      responsavel_tecnico_profissao: empresa.responsavel_tecnico_profissao || '',
+      conselho_tipo: empresa.conselho_tipo || '',
+      conselho_numero: empresa.conselho_numero || '',
+      conselho_uf: empresa.conselho_uf || '',
     });
     setIsDialogOpen(true);
   };
@@ -136,6 +145,15 @@ export function EmpresasManagement() {
         cidade: formData.cidade || null,
         uf: formData.uf || null,
         cep: formData.cep || null,
+        representante_legal_nome: formData.representante_legal_nome || null,
+        representante_legal_cpf: formData.representante_legal_cpf || null,
+        representante_legal_cargo: formData.representante_legal_cargo || null,
+        responsavel_tecnico_nome: formData.responsavel_tecnico_nome || null,
+        responsavel_tecnico_cpf: formData.responsavel_tecnico_cpf || null,
+        responsavel_tecnico_profissao: formData.responsavel_tecnico_profissao || null,
+        conselho_tipo: formData.conselho_tipo || null,
+        conselho_numero: formData.conselho_numero || null,
+        conselho_uf: formData.conselho_uf || null,
       };
 
       if (editingEmpresa) {
@@ -479,6 +497,74 @@ export function EmpresasManagement() {
                   placeholder="MT"
                   maxLength={2}
                 />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-semibold mb-3">Representante Legal (para documentos de encerramento)</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input value={formData.representante_legal_nome}
+                    onChange={(e) => setFormData(p => ({ ...p, representante_legal_nome: e.target.value }))}
+                    placeholder="Nome completo" />
+                </div>
+                <div className="space-y-2">
+                  <Label>CPF</Label>
+                  <Input value={formData.representante_legal_cpf}
+                    onChange={(e) => setFormData(p => ({ ...p, representante_legal_cpf: e.target.value }))}
+                    placeholder="000.000.000-00" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Input value={formData.representante_legal_cargo}
+                    onChange={(e) => setFormData(p => ({ ...p, representante_legal_cargo: e.target.value }))}
+                    placeholder="Sócio, Diretor..." />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-semibold mb-3">Responsável Técnico</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input value={formData.responsavel_tecnico_nome}
+                    onChange={(e) => setFormData(p => ({ ...p, responsavel_tecnico_nome: e.target.value }))}
+                    placeholder="Nome do RT" />
+                </div>
+                <div className="space-y-2">
+                  <Label>CPF</Label>
+                  <Input value={formData.responsavel_tecnico_cpf}
+                    onChange={(e) => setFormData(p => ({ ...p, responsavel_tecnico_cpf: e.target.value }))}
+                    placeholder="000.000.000-00" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Profissão</Label>
+                  <Input value={formData.responsavel_tecnico_profissao}
+                    onChange={(e) => setFormData(p => ({ ...p, responsavel_tecnico_profissao: e.target.value }))}
+                    placeholder="Engenheiro Civil, Arquiteto..." />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mt-3">
+                <div className="space-y-2">
+                  <Label>Conselho</Label>
+                  <Input value={formData.conselho_tipo}
+                    onChange={(e) => setFormData(p => ({ ...p, conselho_tipo: e.target.value.toUpperCase() }))}
+                    placeholder="CREA, CAU..." maxLength={10} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nº do Registro</Label>
+                  <Input value={formData.conselho_numero}
+                    onChange={(e) => setFormData(p => ({ ...p, conselho_numero: e.target.value }))}
+                    placeholder="123456" />
+                </div>
+                <div className="space-y-2">
+                  <Label>UF do Conselho</Label>
+                  <Input value={formData.conselho_uf}
+                    onChange={(e) => setFormData(p => ({ ...p, conselho_uf: e.target.value.toUpperCase() }))}
+                    placeholder="MT" maxLength={2} />
+                </div>
               </div>
             </div>
           </div>
