@@ -209,7 +209,7 @@ function buildTRP(data: EncerramentoData) {
   const unidade = obra.nome;
   const prazoObservacao = (obra as any).prazo_observacao_dias ?? 90;
   return [
-    ...cabecalhoInstitucional(data),
+
     dataEmissaoTopo(data),
     titulo('TERMO DE RECEBIMENTO PROVISÓRIO'),
     P([
@@ -254,7 +254,7 @@ function buildTRD(data: EncerramentoData) {
       : 'para atender às necessidades do';
 
   return [
-    ...cabecalhoInstitucional(data),
+
     dataEmissaoTopo(data),
     titulo('TERMO DE RECEBIMENTO DEFINITIVO'),
     P([
@@ -298,7 +298,7 @@ function buildACT(data: EncerramentoData) {
   ].filter(Boolean).join(', ');
 
   return [
-    ...cabecalhoInstitucional(data),
+
     dataEmissaoTopo(data),
     titulo('ATESTADO DE CAPACIDADE TÉCNICA'),
     P([
