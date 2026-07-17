@@ -445,6 +445,18 @@ function buildACT(data: EncerramentoData, anexoItems: AnexoItem[] = []) {
       return paragraphs;
     })(),
 
+    ...(obra.objeto_contrato
+      ? [P([
+          new TextRun({ text: 'Objeto do contrato: ', bold: true, size: 24 }),
+          new TextRun({ text: obra.objeto_contrato, size: 24 }),
+        ], { indent: true, spacing: 240 })]
+      : []),
+    ...(obra.descricao_imovel
+      ? [P([
+          new TextRun({ text: 'Descrição do imóvel: ', bold: true, size: 24 }),
+          new TextRun({ text: obra.descricao_imovel, size: 24 }),
+        ], { indent: true, spacing: 240 })]
+      : []),
 
     P([
       'Declaramos ainda que os compromissos assumidos foram cumpridos satisfatoriamente, nada constando ' +
@@ -472,6 +484,8 @@ function buildACT(data: EncerramentoData, anexoItems: AnexoItem[] = []) {
       spacing: { after: 240 },
       children: [new TextRun({ text: 'Defensoria Pública do Estado de Mato Grosso', italics: true, size: 22 })],
     }),
+
+    ...buildAnexoQuantitativos(anexoItems),
   ];
 }
 
