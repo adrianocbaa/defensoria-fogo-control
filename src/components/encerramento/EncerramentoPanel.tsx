@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, FileCheck2, FileText, Info, Loader2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,11 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useEncerramentoData } from '@/hooks/useEncerramentoData';
 import { validaDocumento } from '@/lib/encerramento/validation';
+import { gerarDocumentoEncerramento, nomeArquivoDocumento } from '@/lib/encerramento/docGenerator';
+import { supabase } from '@/integrations/supabase/client';
 import type { EncerramentoData, EncerramentoTipo, ValidationResult } from '@/lib/encerramento/types';
 
 interface Props {
   obraId: string;
 }
+
 
 const DOC_META: Record<EncerramentoTipo, { titulo: string; descricao: string }> = {
   TRP: {
@@ -54,12 +57,79 @@ function StatusBadge({ result }: { result: ValidationResult }) {
 function DocCard({
   tipo,
   data,
+  obraId,
 }: {
   tipo: EncerramentoTipo;
   data: EncerramentoData;
+  obraId: string;
 }) {
   const result = useMemo(() => validaDocumento(tipo, data), [tipo, data]);
   const meta = DOC_META[tipo];
+  const [gerando, setGerando] = useState(false);
+
+  const handleGerar = async () => {
+    setGerando(true);
+    try {
+      const blob = await gerarDocumentoEncerramento(tipo, data);
+      const filename = nomeArquivoDocumento(tipo, data);
+
+      // Upload para storage
+      const timestamp = Date.now();
+      const path = `${obraId}/${tipo}/${timestamp}_${filename}`;
+      const { error: upErr } = await supabase.storage
+        .from('documentos-encerramento')
+        .upload(path, blob, {
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          upsert: false,
+        });
+      if (upErr) throw upErr;
+
+      // Descobrir próxima versão
+      const { data: existentes } = await supabase
+        .from('documentos_encerramento')
+        .select('versao')
+        .eq('obra_id', obraId)
+        .eq('tipo', tipo)
+        .order('versao', { ascending: false })
+        .limit(1);
+      const proxVersao = (existentes?.[0]?.versao ?? 0) + 1;
+
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      const { data: prof } = uid
+        ? await supabase.from('profiles').select('display_name').eq('user_id', uid).maybeSingle()
+        : { data: null } as any;
+
+      const { error: insErr } = await supabase.from('documentos_encerramento').insert({
+        obra_id: obraId,
+        tipo,
+        versao: proxVersao,
+        status: 'emitido',
+        arquivo_docx_path: path,
+        snapshot_dados: data as any,
+        gerado_por: uid,
+        gerado_por_nome: prof?.display_name || null,
+      });
+      if (insErr) throw insErr;
+
+      // Download local
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      toast.success(`${tipo} gerado (v${proxVersao}) e arquivado com sucesso.`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Erro ao gerar ${tipo}: ${e?.message || e}`);
+    } finally {
+      setGerando(false);
+    }
+  };
 
   return (
     <Card className="border-l-4" style={{ borderLeftColor: result.ok ? '#16a34a' : '#dc2626' }}>
@@ -101,30 +171,20 @@ function DocCard({
           </div>
         )}
         <div className="flex flex-wrap gap-2 pt-1">
-          <Button
-            size="sm"
-            disabled={!result.ok}
-            onClick={() =>
-              toast.info('Geração de PDF/DOCX será habilitada na próxima fase (Fase 5).')
-            }
-          >
-            <FileText className="h-4 w-4 mr-1" /> Gerar {tipo}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!result.ok}
-            onClick={() =>
-              toast.info('Assinaturas eletrônicas serão liberadas junto com a geração de documentos.')
-            }
-          >
-            Coletar assinaturas
+          <Button size="sm" disabled={!result.ok || gerando} onClick={handleGerar}>
+            {gerando ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <FileText className="h-4 w-4 mr-1" />
+            )}
+            {gerando ? 'Gerando…' : `Gerar ${tipo} (DOCX)`}
           </Button>
         </div>
       </CardContent>
     </Card>
   );
 }
+
 
 export function EncerramentoPanel({ obraId }: Props) {
   const { data, isLoading, error } = useEncerramentoData(obraId);
@@ -223,9 +283,10 @@ export function EncerramentoPanel({ obraId }: Props) {
       </Card>
 
       <div className="grid grid-cols-1 gap-3">
-        <DocCard tipo="TRP" data={data} />
-        <DocCard tipo="TRD" data={data} />
-        <DocCard tipo="ACT" data={data} />
+        <DocCard tipo="TRP" data={data} obraId={obraId} />
+        <DocCard tipo="TRD" data={data} obraId={obraId} />
+        <DocCard tipo="ACT" data={data} obraId={obraId} />
+
       </div>
     </div>
   );
