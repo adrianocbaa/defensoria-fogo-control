@@ -8,9 +8,17 @@ import {
   Header,
   Footer,
   ImageRun,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  ShadingType,
+  HeightRule,
 } from 'docx';
 import type { EncerramentoData, EncerramentoTipo } from './types';
 import logoAsset from '@/assets/dpmt-logo.png.asset.json';
+import { supabase } from '@/integrations/supabase/client';
 
 
 const BRL = (v: number) =>
