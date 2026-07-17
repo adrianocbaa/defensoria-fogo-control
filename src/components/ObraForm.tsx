@@ -1000,8 +1000,8 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
 
                   <div className="md:col-span-2 pt-4 border-t">
                     <h4 className="text-sm font-semibold mb-3">Encerramento da Obra</h4>
-                    <p className="text-xs text-muted-foreground mb-3">Dados usados na geração de TRP, TRD e ACT.</p>
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <p className="text-xs text-muted-foreground mb-3">Datas usadas na geração de TRP e TRD. As ARTs/RRTs são gerenciadas na aba <strong>Encerramento</strong> do módulo de Medição.</p>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       <FormField control={form.control} name="data_recebimento_provisorio" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Recebimento Provisório (TRP)</FormLabel>
@@ -1013,13 +1013,6 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                         <FormItem>
                           <FormLabel>Recebimento Definitivo (TRD)</FormLabel>
                           <FormControl><Input type="date" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="numero_art_execucao" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nº ART/RRT de Execução</FormLabel>
-                          <FormControl><Input placeholder="Ex.: MT20250012345" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
