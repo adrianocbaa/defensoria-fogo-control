@@ -33,7 +33,7 @@ export function EmpresasManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingEmpresa, setEditingEmpresa] = useState<Empresa | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     cnpj: '',
     razao_social: '',
     nome_fantasia: '',
@@ -43,7 +43,17 @@ export function EmpresasManagement() {
     cidade: '',
     uf: '',
     cep: '',
-  });
+    representante_legal_nome: '',
+    representante_legal_cpf: '',
+    representante_legal_cargo: '',
+    responsavel_tecnico_nome: '',
+    responsavel_tecnico_cpf: '',
+    responsavel_tecnico_profissao: '',
+    conselho_tipo: '',
+    conselho_numero: '',
+    conselho_uf: '',
+  };
+  const [formData, setFormData] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
