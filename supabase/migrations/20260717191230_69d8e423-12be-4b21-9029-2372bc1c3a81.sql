@@ -1,0 +1,1 @@
+ALTER TABLE public.obras ADD COLUMN IF NOT EXISTS descricao_imovel TEXT;
