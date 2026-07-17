@@ -283,9 +283,10 @@ export function EncerramentoPanel({ obraId }: Props) {
       </Card>
 
       <div className="grid grid-cols-1 gap-3">
-        <DocCard tipo="TRP" data={data} />
-        <DocCard tipo="TRD" data={data} />
-        <DocCard tipo="ACT" data={data} />
+        <DocCard tipo="TRP" data={data} obraId={obraId} />
+        <DocCard tipo="TRD" data={data} obraId={obraId} />
+        <DocCard tipo="ACT" data={data} obraId={obraId} />
+
       </div>
     </div>
   );
