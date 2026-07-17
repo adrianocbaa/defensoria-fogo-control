@@ -2306,6 +2306,54 @@ export type Database = {
           },
         ]
       }
+      obra_arts: {
+        Row: {
+          aditivo_session_id: string | null
+          created_at: string
+          id: string
+          numero_art: string
+          obra_id: string
+          ordem: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          aditivo_session_id?: string | null
+          created_at?: string
+          id?: string
+          numero_art: string
+          obra_id: string
+          ordem?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          aditivo_session_id?: string | null
+          created_at?: string
+          id?: string
+          numero_art?: string
+          obra_id?: string
+          ordem?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_arts_aditivo_session_id_fkey"
+            columns: ["aditivo_session_id"]
+            isOneToOne: false
+            referencedRelation: "aditivo_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_arts_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obra_checklist_items: {
         Row: {
           created_at: string | null
