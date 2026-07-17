@@ -94,19 +94,32 @@ export function EmpresasManagement() {
 
   const openCreateDialog = () => {
     setEditingEmpresa(null);
-    setFormData({
-      cnpj: '',
-      razao_social: '',
-      nome_fantasia: '',
-      email: '',
-      telefone: '',
-      endereco: '',
-      cidade: '',
-      uf: '',
-      cep: '',
-    });
+    setFormData(emptyForm);
     setIsDialogOpen(true);
   };
+
+  const openEditDialog = (empresa: any) => {
+    setEditingEmpresa(empresa);
+    setFormData({
+      cnpj: empresa.cnpj,
+      razao_social: empresa.razao_social,
+      nome_fantasia: empresa.nome_fantasia || '',
+      email: empresa.email || '',
+      telefone: empresa.telefone || '',
+      endereco: empresa.endereco || '',
+      cidade: empresa.cidade || '',
+      uf: empresa.uf || '',
+      cep: empresa.cep || '',
+      representante_legal_nome: empresa.representante_legal_nome || '',
+      representante_legal_cpf: empresa.representante_legal_cpf || '',
+      representante_legal_cargo: empresa.representante_legal_cargo || '',
+      responsavel_tecnico_nome: empresa.responsavel_tecnico_nome || '',
+      responsavel_tecnico_cpf: empresa.responsavel_tecnico_cpf || '',
+      responsavel_tecnico_profissao: empresa.responsavel_tecnico_profissao || '',
+      conselho_tipo: empresa.conselho_tipo || '',
+      conselho_numero: empresa.conselho_numero || '',
+      conselho_uf: empresa.conselho_uf || '',
+    });
 
   const openEditDialog = (empresa: Empresa) => {
     setEditingEmpresa(empresa);
