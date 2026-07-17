@@ -48,6 +48,8 @@ export interface EncerramentoObra {
   valor_final: number;
   valor_executado: number;
   fiscal_nome?: string | null;
+  objeto_contrato?: string | null;
+  descricao_imovel?: string | null;
   arts: EncerramentoArt[];
 }
 
