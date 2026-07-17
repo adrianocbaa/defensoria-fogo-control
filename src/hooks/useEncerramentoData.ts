@@ -34,6 +34,18 @@ export function useEncerramentoData(obraId: string | null | undefined) {
         fiscalNome = fiscalProfile?.display_name ?? null;
       }
 
+      const { data: aditivosRows } = await supabase
+        .from('aditivo_sessions')
+        .select('sequencia, tipo_aditivo, numero_art, status')
+        .eq('obra_id', obraId)
+        .eq('status', 'bloqueada')
+        .order('sequencia', { ascending: true });
+      const aditivos_arts = (aditivosRows || []).map((a: any) => ({
+        sequencia: a.sequencia,
+        tipo_aditivo: a.tipo_aditivo,
+        numero_art: a.numero_art,
+      }));
+
 
       const [empresaRes, dpgRes, instRes] = await Promise.all([
         obraRow.empresa_id
