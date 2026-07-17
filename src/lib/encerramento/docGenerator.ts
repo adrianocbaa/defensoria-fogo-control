@@ -5,8 +5,13 @@ import {
   TextRun,
   AlignmentType,
   PageOrientation,
+  Header,
+  Footer,
+  ImageRun,
 } from 'docx';
 import type { EncerramentoData, EncerramentoTipo } from './types';
+import logoAsset from '@/assets/dpmt-logo.png.asset.json';
+
 
 const BRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
