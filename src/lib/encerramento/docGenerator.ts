@@ -327,8 +327,23 @@ function buildACT(data: EncerramentoData) {
     P([new TextRun({ text: 'Valor final do contrato: ', bold: true, size: 24 }), new TextRun({ text: `${BRL(obra.valor_final)}.`, size: 24 })]),
     P([new TextRun({ text: 'Período de execução: ', bold: true, size: 24 }), new TextRun({ text: `${fmtDate(obra.data_inicio)} a ${fmtDate(obra.data_termino_real || obra.previsao_termino)}.`, size: 24 })]),
     ...(obra.numero_art_execucao
-      ? [P([new TextRun({ text: 'ART de Execução: ', bold: true, size: 24 }), new TextRun({ text: `${obra.numero_art_execucao}.`, size: 24 })])]
+      ? [P([new TextRun({ text: 'ART de Execução do Contrato: ', bold: true, size: 24 }), new TextRun({ text: `${obra.numero_art_execucao}.`, size: 24 })])]
       : []),
+    ...((obra.aditivos_arts || []).filter(a => a.numero_art).map((a) => {
+      const tipoLabel = (() => {
+        const t = (a.tipo_aditivo || '').toLowerCase();
+        if (t.includes('prazo') && (t.includes('valor') || t.includes('quantitativo'))) return 'prazo e valor';
+        if (t.includes('prazo')) return 'prazo';
+        if (t.includes('supress')) return 'supressão';
+        if (t.includes('valor') || t.includes('quantitativo') || t.includes('acresc')) return 'valor';
+        return a.tipo_aditivo || 'aditivo';
+      })();
+      return P([
+        new TextRun({ text: `ART do ${a.sequencia}º Aditivo (${tipoLabel}): `, bold: true, size: 24 }),
+        new TextRun({ text: `${a.numero_art}.`, size: 24 }),
+      ]);
+    })),
+
 
     P([
       'Declaramos ainda que os compromissos assumidos foram cumpridos satisfatoriamente, nada constando ' +
