@@ -80,8 +80,7 @@ const obraSchema = z.object({
   
   data_recebimento_provisorio: z.string().optional(),
   data_recebimento_definitivo: z.string().optional(),
-  objeto_contrato: z.string().optional(),
-  descricao_imovel: z.string().optional(),
+  nucleo_nome: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.status !== 'planejamento' && !data.n_contrato?.trim()) {
     ctx.addIssue({
