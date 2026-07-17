@@ -18,7 +18,9 @@ export interface EncerramentoObra {
   valor_aditivado: number;
   valor_final: number;
   valor_executado: number;
+  fiscal_nome?: string | null;
 }
+
 
 export interface EncerramentoEmpresa {
   id: string;

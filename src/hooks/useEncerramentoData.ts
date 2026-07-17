@@ -18,11 +18,22 @@ export function useEncerramentoData(obraId: string | null | undefined) {
 
       const { data: obraRow, error: obraErr } = await supabase
         .from('obras')
-        .select('id, nome, municipio, endereco_completo, n_contrato, sei_numero, data_inicio, previsao_termino, data_termino_real, data_recebimento_provisorio, data_recebimento_definitivo, numero_art_execucao, status, empresa_id')
+        .select('id, nome, municipio, endereco_completo, n_contrato, sei_numero, data_inicio, previsao_termino, data_termino_real, data_recebimento_provisorio, data_recebimento_definitivo, numero_art_execucao, status, empresa_id, fiscal_id')
         .eq('id', obraId)
         .maybeSingle();
       if (obraErr) throw obraErr;
       if (!obraRow) throw new Error('Obra não encontrada');
+
+      let fiscalNome: string | null = null;
+      if ((obraRow as any).fiscal_id) {
+        const { data: fiscalProfile } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('user_id', (obraRow as any).fiscal_id)
+          .maybeSingle();
+        fiscalNome = fiscalProfile?.display_name ?? null;
+      }
+
 
       const [empresaRes, dpgRes, instRes] = await Promise.all([
         obraRow.empresa_id
@@ -77,7 +88,9 @@ export function useEncerramentoData(obraId: string | null | undefined) {
         valor_aditivado: financeiro.totalAditivo || 0,
         valor_final: financeiro.totalContrato || 0,
         valor_executado: financeiro.valorAcumulado || 0,
+        fiscal_nome: fiscalNome,
       };
+
 
       return { obra, empresa, dpg, institucional };
     },
