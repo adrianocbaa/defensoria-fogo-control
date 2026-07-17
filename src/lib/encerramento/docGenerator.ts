@@ -97,53 +97,58 @@ function dataEmissaoTopo(data: EncerramentoData) {
   });
 }
 
-function cabecalhoInstitucional(data: EncerramentoData) {
-  const inst = data.institucional;
-  return [
+async function buildHeader(logoData: ArrayBuffer | null) {
+  const paragraphs: Paragraph[] = [];
+  if (logoData) {
+    paragraphs.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 80 },
+        children: [
+          new ImageRun({
+            type: 'png',
+            data: logoData,
+            transformation: { width: 240, height: 70 },
+          } as any),
+        ],
+      })
+    );
+  }
+  paragraphs.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 60 },
+      spacing: { after: 120 },
       children: [
-        new TextRun({
-          text: (inst?.razao_social || 'DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO').toUpperCase(),
-          bold: true,
-          size: 24,
-        }),
+        new TextRun({ text: 'DIRETORIA DE INFRAESTRUTURA FÍSICA', bold: true, size: 22 }),
       ],
-    }),
+    })
+  );
+  return new Header({ children: paragraphs });
+}
+
+function buildFooter() {
+  const line = (text: string) =>
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 60 },
-      children: [
-        new TextRun({ text: 'Diretoria de Infraestrutura Física', italics: true, size: 20 }),
-      ],
-    }),
-    ...(inst?.endereco
-      ? [new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 40 },
-          children: [new TextRun({ text: inst.endereco, size: 18 })],
-        })]
-      : []),
-    ...(inst?.cnpj
-      ? [new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 240 },
-          children: [new TextRun({ text: `CNPJ: ${inst.cnpj}`, size: 18 })],
-        })]
-      : [new Paragraph({ spacing: { after: 240 }, children: [] })]),
-  ];
+      spacing: { after: 20 },
+      children: [new TextRun({ text, size: 18 })],
+    });
+  return new Footer({
+    children: [
+      line('Rua 02, Esquina com Rua C, Setor A, Quadra 04, Lote 04 – Centro Político Administrativo,'),
+      line('Cep 78049-912 – Cuiabá-MT'),
+      line('Contato: (65) 99952-1867 – Site: www.defensoriapublica.mt.gov.br'),
+      line('E-mail: dif@dp.mt.gov.br'),
+    ],
+  });
 }
 
 function assinaturaFiscal(data: EncerramentoData) {
-  const { obra, empresa } = data;
-  // Fiscal: prioriza o representante legal do cadastro do contrato → aqui não temos fiscal ainda,
-  // então mantemos flexível usando os campos disponíveis.
+  const { obra } = data;
   const fiscalNome = (obra as any).fiscal_nome || '________________________________';
-  const fiscalCargo = (obra as any).fiscal_cargo || 'Fiscal do Contrato';
   const crea = (obra as any).fiscal_conselho || '';
   return [
-    new Paragraph({ spacing: { before: 560, after: 0 }, children: [] }),
+    new Paragraph({ spacing: { before: 480, after: 0 }, children: [] }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 40 },
@@ -155,21 +160,23 @@ function assinaturaFiscal(data: EncerramentoData) {
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: `${fiscalCargo} nº ${obra.n_contrato || '____/____-DP-MT'}`, italics: true, size: 22 })],
+      children: [new TextRun({ text: `Fiscal do Contrato nº ${obra.n_contrato || '____/____'}`, italics: true, size: 22 })],
     }),
-    ...(crea
-      ? [new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: crea, italics: true, size: 22 })],
-        })]
-      : []),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 240 },
       children: [new TextRun({ text: 'Defensoria Pública do Estado de Mato Grosso', italics: true, size: 22 })],
     }),
+    ...(crea
+      ? [new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 240 },
+          children: [new TextRun({ text: crea, italics: true, size: 22 })],
+        })]
+      : []),
   ];
 }
+
 
 function assinaturaEmpresa(data: EncerramentoData) {
   const { empresa } = data;
