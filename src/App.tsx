@@ -26,6 +26,7 @@ import PublicObraDetalhes from "./pages/PublicObraDetalhes";
 import PublicRDO from "./pages/PublicRDO";
 import PublicRDODiario from "./pages/PublicRDODiario";
 import AdminPanel from "./pages/AdminPanel";
+import AdminEncerramento from "./pages/AdminEncerramento";
 import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
 import Obras from "./pages/Obras";
