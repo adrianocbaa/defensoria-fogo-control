@@ -39,7 +39,7 @@ export function useEncerramentoData(obraId: string | null | undefined) {
           .lte('vigencia_inicio', new Date().toISOString().slice(0, 10))
           .order('vigencia_inicio', { ascending: false })
           .limit(5),
-        supabase.from('config_institucional').select('cnpj, razao_social, endereco, sigla, brasao_url').limit(1).maybeSingle(),
+        supabase.from('config_institucional').select('cnpj, razao_social, endereco, cidade').limit(1).maybeSingle(),
       ]);
 
       const empresa = (empresaRes as any).data as EncerramentoEmpresa | null;

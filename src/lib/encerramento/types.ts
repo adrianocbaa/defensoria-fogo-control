@@ -52,11 +52,10 @@ export interface EncerramentoDPG {
 }
 
 export interface EncerramentoInstitucional {
-  cnpj: string;
+  cnpj: string | null;
   razao_social: string;
   endereco: string | null;
-  sigla: string | null;
-  brasao_url: string | null;
+  cidade: string;
 }
 
 export interface EncerramentoData {
