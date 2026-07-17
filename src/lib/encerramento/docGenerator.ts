@@ -286,7 +286,84 @@ function buildTRD(data: EncerramentoData) {
 }
 
 // ============= ACT =============
-function buildACT(data: EncerramentoData) {
+interface AnexoItem {
+  item: string;
+  codigo: string;
+  banco: string;
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  is_macro: boolean;
+  ordem: number;
+}
+
+function buildAnexoQuantitativos(items: AnexoItem[]): Paragraph[] {
+  if (!items.length) return [];
+  const border = { style: BorderStyle.SINGLE, size: 4, color: '999999' };
+  const borders = { top: border, bottom: border, left: border, right: border };
+
+  const header = new TableRow({
+    tableHeader: true,
+    children: ['Item', 'Código', 'Banco', 'Descrição', 'Und', 'Quant.'].map((t, i) =>
+      new TableCell({
+        borders,
+        width: { size: [700, 1200, 1000, 4300, 700, 900][i], type: WidthType.DXA },
+        shading: { fill: 'D9E7DC', type: ShadingType.CLEAR },
+        margins: { top: 60, bottom: 60, left: 100, right: 100 },
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: t, bold: true, size: 20 })] })],
+      })
+    ),
+  });
+
+  const cellText = (text: string, opts: { bold?: boolean; align?: any; size?: number } = {}) =>
+    new Paragraph({
+      alignment: opts.align ?? AlignmentType.LEFT,
+      spacing: { after: 0, line: 260 },
+      children: [new TextRun({ text, bold: opts.bold, size: opts.size ?? 18 })],
+    });
+
+  const fmtQtd = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+
+  const bodyRows = items.map((it) => {
+    const shade = it.is_macro ? { fill: 'F0F4EE', type: ShadingType.CLEAR } : undefined;
+    const cells = [
+      { text: it.item || '', align: AlignmentType.LEFT },
+      { text: it.codigo || '', align: AlignmentType.LEFT },
+      { text: it.banco || '', align: AlignmentType.LEFT },
+      { text: it.descricao || '', align: AlignmentType.LEFT },
+      { text: it.unidade || '', align: AlignmentType.CENTER },
+      { text: it.is_macro ? '' : fmtQtd(it.quantidade), align: AlignmentType.RIGHT },
+    ];
+    const widths = [700, 1200, 1000, 4300, 700, 900];
+    return new TableRow({
+      children: cells.map((c, i) => new TableCell({
+        borders,
+        width: { size: widths[i], type: WidthType.DXA },
+        shading: shade,
+        margins: { top: 40, bottom: 40, left: 100, right: 100 },
+        children: [cellText(c.text, { bold: it.is_macro, align: c.align })],
+      })),
+    });
+  });
+
+  const table = new Table({
+    width: { size: 8800, type: WidthType.DXA },
+    columnWidths: [700, 1200, 1000, 4300, 700, 900],
+    rows: [header, ...bodyRows],
+  });
+
+  return [
+    new Paragraph({ children: [], pageBreakBefore: true }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 120, after: 240 },
+      children: [new TextRun({ text: 'Anexo 1 – Planilha de Quantitativos', bold: true, size: 26 })],
+    }),
+    table as unknown as Paragraph,
+  ];
+}
+
+function buildACT(data: EncerramentoData, anexoItems: AnexoItem[] = []) {
   const { obra, empresa, dpg, institucional } = data;
   const conselho = [empresa?.conselho_tipo, empresa?.conselho_numero].filter(Boolean).join(' Nº ');
   const conselhoUF = empresa?.conselho_uf ? `/${empresa.conselho_uf}` : '';
