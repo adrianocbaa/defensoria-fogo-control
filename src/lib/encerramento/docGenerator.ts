@@ -499,12 +499,53 @@ async function fetchLogo(): Promise<ArrayBuffer | null> {
   }
 }
 
+async function fetchAnexoItems(obraId: string): Promise<AnexoItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from('orcamento_items_hierarquia')
+      .select('item, codigo, banco, descricao, unidade, quantidade, is_macro, ordem')
+      .eq('obra_id', obraId)
+      .order('ordem', { ascending: true })
+      .limit(10000);
+    if (error || !data) return [];
+
+    // Aggregate by item code (sum contract + aditivos)
+    const map = new Map<string, AnexoItem>();
+    for (const r of data as any[]) {
+      const key = `${r.item ?? ''}||${r.codigo ?? ''}||${r.descricao ?? ''}`;
+      const existing = map.get(key);
+      if (existing) {
+        if (!existing.is_macro) existing.quantidade += Number(r.quantidade || 0);
+      } else {
+        map.set(key, {
+          item: r.item ?? '',
+          codigo: r.codigo ?? '',
+          banco: r.banco ?? '',
+          descricao: r.descricao ?? '',
+          unidade: r.unidade ?? '',
+          quantidade: Number(r.quantidade || 0),
+          is_macro: !!r.is_macro,
+          ordem: Number(r.ordem || 0),
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.ordem - b.ordem);
+  } catch {
+    return [];
+  }
+}
+
 export async function gerarDocumentoEncerramento(
   tipo: EncerramentoTipo,
   data: EncerramentoData,
 ): Promise<Blob> {
-  const children =
-    tipo === 'TRP' ? buildTRP(data) : tipo === 'TRD' ? buildTRD(data) : buildACT(data);
+  let children;
+  if (tipo === 'TRP') children = buildTRP(data);
+  else if (tipo === 'TRD') children = buildTRD(data);
+  else {
+    const anexo = await fetchAnexoItems(data.obra.id);
+    children = buildACT(data, anexo);
+  }
 
   const logoData = await fetchLogo();
   const header = await buildHeader(logoData);
