@@ -129,8 +129,9 @@ export function useEncerramentoData(obraId: string | null | undefined) {
         valor_final: financeiro.totalContrato || 0,
         valor_executado: financeiro.valorAcumulado || 0,
         fiscal_nome: fiscalNome,
-        objeto_contrato: (obraRow as any).objeto_contrato ?? null,
-        descricao_imovel: (obraRow as any).descricao_imovel ?? null,
+        nucleo_nome: (obraRow as any).nucleo_nome ?? null,
+        sistemas_servicos_ids: sistemasIds,
+        sistemas_servicos_textos,
         arts,
       };
 
