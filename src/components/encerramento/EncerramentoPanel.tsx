@@ -104,7 +104,7 @@ function DocCard({
         obra_id: obraId,
         tipo,
         versao: proxVersao,
-        status: 'emitido',
+        status: 'gerado',
         arquivo_docx_path: path,
         snapshot_dados: data as any,
         gerado_por: uid,
