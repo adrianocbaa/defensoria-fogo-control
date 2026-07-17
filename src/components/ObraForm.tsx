@@ -1022,17 +1022,13 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                       )} />
                     </div>
                     <div className="mt-4 grid grid-cols-1 gap-6">
-                      <FormField control={form.control} name="objeto_contrato" render={({ field }) => (
+                      <FormField control={form.control} name="nucleo_nome" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Objeto do contrato</FormLabel>
-                          <FormControl><Textarea rows={4} placeholder="Ex.: Contratação de empresa especializada para prestação de serviços de reforma predial..." {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="descricao_imovel" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descrição do imóvel</FormLabel>
-                          <FormControl><Textarea rows={3} placeholder="Ex.: Edificação térrea composta de sistema de materiais mistos, com rede lógica cabeada e instalações elétricas de baixa tensão." {...field} /></FormControl>
+                          <FormLabel>Nome do núcleo (para documentos de encerramento)</FormLabel>
+                          <FormControl><Input placeholder="Ex.: Poconé, Rondonópolis Criminal…" {...field} value={field.value as string ?? ''} /></FormControl>
+                          <p className="text-xs text-muted-foreground">
+                            Utilizado nos textos do ACT: "Núcleo de {'{nome}'}". Se vazio, será usado o município da obra.
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )} />
