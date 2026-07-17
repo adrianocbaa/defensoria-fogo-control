@@ -25,7 +25,7 @@ const fmtDateExtenso = (d?: string | null) => {
   return `${day} de ${meses[m - 1]} de ${y}`;
 };
 
-function P(text: string, opts: { bold?: boolean; align?: AlignmentType; size?: number; spacing?: number } = {}) {
+function P(text: string, opts: { bold?: boolean; align?: (typeof AlignmentType)[keyof typeof AlignmentType]; size?: number; spacing?: number } = {}) {
   return new Paragraph({
     alignment: opts.align ?? AlignmentType.JUSTIFIED,
     spacing: { after: opts.spacing ?? 160, line: 300 },
