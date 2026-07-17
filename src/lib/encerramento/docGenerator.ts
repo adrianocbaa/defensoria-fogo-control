@@ -445,18 +445,43 @@ function buildACT(data: EncerramentoData, anexoItems: AnexoItem[] = []) {
       return paragraphs;
     })(),
 
-    ...(obra.objeto_contrato
-      ? [P([
-          new TextRun({ text: 'Objeto do contrato: ', bold: true, size: 24 }),
-          new TextRun({ text: obra.objeto_contrato, size: 24 }),
-        ], { indent: true, spacing: 240 })]
-      : []),
-    ...(obra.descricao_imovel
-      ? [P([
-          new TextRun({ text: 'Descrição do imóvel: ', bold: true, size: 24 }),
-          new TextRun({ text: obra.descricao_imovel, size: 24 }),
-        ], { indent: true, spacing: 240 })]
-      : []),
+    ...(() => {
+      const nucleo = (obra.nucleo_nome && obra.nucleo_nome.trim()) || obra.municipio || '________';
+      const objetoTxt =
+        'Contratação de empresa especializada para prestação de serviços de reforma predial (serviços comuns de engenharia), ' +
+        'com fornecimento de peças, equipamentos, materiais e mão de obra, com o maior desconto a ser aplicado na planilha de serviços e insumos ' +
+        'constantes da tabela SINAPI, nos setores administrativos e núcleos de Cuiabá e do interior do estado desta Instituição, mediante Registro ' +
+        `de Preços, para atender as necessidades da Defensoria Pública do Estado de Mato Grosso. – Núcleo de ${nucleo}.`;
+
+      const servicos = (obra.sistemas_servicos_textos || []).map((s) => s.trim()).filter(Boolean);
+      let servicosStr = '';
+      if (servicos.length === 1) servicosStr = servicos[0];
+      else if (servicos.length === 2) servicosStr = `${servicos[0]} e ${servicos[1]}`;
+      else if (servicos.length > 2) servicosStr = `${servicos.slice(0, -1).join(', ')} e ${servicos[servicos.length - 1]}`;
+
+      const descTxt =
+        `Os serviços foram realizados no Núcleo de ${nucleo} da Defensoria Pública do Estado de Mato Grosso, ` +
+        'edificação térrea composta de sistema de materiais mistos' +
+        (servicosStr ? `, com ${servicosStr}` : '') +
+        '.';
+
+      return [
+        P(
+          [
+            new TextRun({ text: 'Objeto do contrato: ', bold: true, size: 24 }),
+            new TextRun({ text: objetoTxt, size: 24 }),
+          ],
+          { indent: true, spacing: 240 },
+        ),
+        P(
+          [
+            new TextRun({ text: 'Descrição do imóvel: ', bold: true, size: 24 }),
+            new TextRun({ text: descTxt, size: 24 }),
+          ],
+          { indent: true, spacing: 240 },
+        ),
+      ];
+    })(),
 
     P([
       'Declaramos ainda que os compromissos assumidos foram cumpridos satisfatoriamente, nada constando ' +
