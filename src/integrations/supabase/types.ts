@@ -65,32 +65,50 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          nova_data_termino: string | null
+          numero_art: string | null
           obra_id: string
+          observacao: string | null
           prazo_dias: number | null
           sequencia: number
           status: string
+          tipo_aditivo: string | null
           updated_at: string
           user_id: string | null
+          valor_acrescimo: number | null
+          valor_supressao: number | null
         }
         Insert: {
           created_at?: string
           id?: string
+          nova_data_termino?: string | null
+          numero_art?: string | null
           obra_id: string
+          observacao?: string | null
           prazo_dias?: number | null
           sequencia: number
           status?: string
+          tipo_aditivo?: string | null
           updated_at?: string
           user_id?: string | null
+          valor_acrescimo?: number | null
+          valor_supressao?: number | null
         }
         Update: {
           created_at?: string
           id?: string
+          nova_data_termino?: string | null
+          numero_art?: string | null
           obra_id?: string
+          observacao?: string | null
           prazo_dias?: number | null
           sequencia?: number
           status?: string
+          tipo_aditivo?: string | null
           updated_at?: string
           user_id?: string | null
+          valor_acrescimo?: number | null
+          valor_supressao?: number | null
         }
         Relationships: []
       }
@@ -327,6 +345,36 @@ export type Database = {
           unidade?: string
           updated_at?: string
           versao?: string | null
+        }
+        Relationships: []
+      }
+      catalogo_sistemas_servicos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          texto_documento: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          texto_documento: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          texto_documento?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -572,6 +620,36 @@ export type Database = {
           },
         ]
       }
+      config_institucional: {
+        Row: {
+          cidade: string
+          cnpj: string | null
+          created_at: string
+          endereco: string | null
+          id: string
+          razao_social: string
+          updated_at: string
+        }
+        Insert: {
+          cidade?: string
+          cnpj?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          razao_social?: string
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string
+          cnpj?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          razao_social?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contratos_licitacao: {
         Row: {
           created_at: string
@@ -813,6 +891,112 @@ export type Database = {
         }
         Relationships: []
       }
+      documento_assinantes: {
+        Row: {
+          bloco: string
+          cargo: string | null
+          complementos: Json | null
+          cpf: string | null
+          created_at: string
+          documento_id: string
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          bloco: string
+          cargo?: string | null
+          complementos?: Json | null
+          cpf?: string | null
+          created_at?: string
+          documento_id: string
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          bloco?: string
+          cargo?: string | null
+          complementos?: Json | null
+          cpf?: string | null
+          created_at?: string
+          documento_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documento_assinantes_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_encerramento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos_encerramento: {
+        Row: {
+          arquivo_docx_path: string | null
+          arquivo_hash: string | null
+          arquivo_pdf_path: string | null
+          created_at: string
+          data_emissao: string
+          data_recebimento: string | null
+          gerado_por: string | null
+          gerado_por_nome: string | null
+          id: string
+          justificativa_excecao: string | null
+          obra_id: string
+          snapshot_dados: Json
+          status: string
+          tipo: string
+          versao: number
+        }
+        Insert: {
+          arquivo_docx_path?: string | null
+          arquivo_hash?: string | null
+          arquivo_pdf_path?: string | null
+          created_at?: string
+          data_emissao?: string
+          data_recebimento?: string | null
+          gerado_por?: string | null
+          gerado_por_nome?: string | null
+          id?: string
+          justificativa_excecao?: string | null
+          obra_id: string
+          snapshot_dados: Json
+          status?: string
+          tipo: string
+          versao?: number
+        }
+        Update: {
+          arquivo_docx_path?: string | null
+          arquivo_hash?: string | null
+          arquivo_pdf_path?: string | null
+          created_at?: string
+          data_emissao?: string
+          data_recebimento?: string | null
+          gerado_por?: string | null
+          gerado_por_nome?: string | null
+          id?: string
+          justificativa_excecao?: string | null
+          obra_id?: string
+          snapshot_dados?: Json
+          status?: string
+          tipo?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_encerramento_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           id: string
@@ -868,11 +1052,67 @@ export type Database = {
           },
         ]
       }
+      dpg_gestao: {
+        Row: {
+          assinatura_url: string | null
+          ativo: boolean
+          cargo: string
+          condicao: string
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          texto_cargo_documento: string
+          updated_at: string
+          vigencia_fim: string | null
+          vigencia_inicio: string
+        }
+        Insert: {
+          assinatura_url?: string | null
+          ativo?: boolean
+          cargo?: string
+          condicao?: string
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          texto_cargo_documento: string
+          updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio: string
+        }
+        Update: {
+          assinatura_url?: string | null
+          ativo?: boolean
+          cargo?: string
+          condicao?: string
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          texto_cargo_documento?: string
+          updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Relationships: []
+      }
       empresas: {
         Row: {
+          bairro: string | null
           cep: string | null
           cidade: string | null
           cnpj: string
+          complemento: string | null
+          conselho_numero: string | null
+          conselho_tipo: string | null
+          conselho_uf: string | null
           created_at: string
           created_by: string | null
           email: string | null
@@ -880,15 +1120,27 @@ export type Database = {
           id: string
           is_active: boolean
           nome_fantasia: string | null
+          numero: string | null
           razao_social: string
+          representante_legal_cargo: string | null
+          representante_legal_cpf: string | null
+          representante_legal_nome: string | null
+          responsavel_tecnico_cpf: string | null
+          responsavel_tecnico_nome: string | null
+          responsavel_tecnico_profissao: string | null
           telefone: string | null
           uf: string | null
           updated_at: string
         }
         Insert: {
+          bairro?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj: string
+          complemento?: string | null
+          conselho_numero?: string | null
+          conselho_tipo?: string | null
+          conselho_uf?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -896,15 +1148,27 @@ export type Database = {
           id?: string
           is_active?: boolean
           nome_fantasia?: string | null
+          numero?: string | null
           razao_social: string
+          representante_legal_cargo?: string | null
+          representante_legal_cpf?: string | null
+          representante_legal_nome?: string | null
+          responsavel_tecnico_cpf?: string | null
+          responsavel_tecnico_nome?: string | null
+          responsavel_tecnico_profissao?: string | null
           telefone?: string | null
           uf?: string | null
           updated_at?: string
         }
         Update: {
+          bairro?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj?: string
+          complemento?: string | null
+          conselho_numero?: string | null
+          conselho_tipo?: string | null
+          conselho_uf?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -912,7 +1176,14 @@ export type Database = {
           id?: string
           is_active?: boolean
           nome_fantasia?: string | null
+          numero?: string | null
           razao_social?: string
+          representante_legal_cargo?: string | null
+          representante_legal_cpf?: string | null
+          representante_legal_nome?: string | null
+          responsavel_tecnico_cpf?: string | null
+          responsavel_tecnico_nome?: string | null
+          responsavel_tecnico_profissao?: string | null
           telefone?: string | null
           uf?: string | null
           updated_at?: string
@@ -2136,16 +2407,25 @@ export type Database = {
       obras: {
         Row: {
           aditivo_prazo: number | null
+          area_interferencia_m2: number | null
+          condicao_imovel: string | null
+          condicao_imovel_custom: string | null
+          configuracao_edificacao: string | null
           coordinates_lat: number | null
           coordinates_lng: number | null
           created_at: string
           created_by: string | null
           data_inicio: string | null
           data_prevista_inauguracao: string | null
+          data_recebimento_definitivo: string | null
+          data_recebimento_provisorio: string | null
           data_termino_real: string | null
+          descricao_edificacao_custom: string | null
+          descricao_tecnica_imovel: string | null
           documentos: Json | null
           empresa_id: string | null
           empresa_responsavel: string | null
+          endereco_completo: string | null
           fiscal_id: string | null
           fotos: Json | null
           id: string
@@ -2154,9 +2434,12 @@ export type Database = {
           municipio: string
           n_contrato: string | null
           nome: string
+          numero_art_execucao: string | null
+          objeto_contrato: string | null
           obra_bloqueada: boolean | null
           percentual_desconto: number | null
           porcentagem_execucao: number | null
+          prazo_observacao_dias: number | null
           previsao_termino: string | null
           rdo_habilitado: boolean
           regiao: string | null
@@ -2164,6 +2447,7 @@ export type Database = {
           secretaria_responsavel: string | null
           sei_numero: string | null
           sem_previsao_inauguracao: boolean | null
+          sistemas_servicos_ids: string[] | null
           status: string
           status_inauguracao: string | null
           tem_placa_inauguracao: boolean | null
@@ -2176,16 +2460,25 @@ export type Database = {
         }
         Insert: {
           aditivo_prazo?: number | null
+          area_interferencia_m2?: number | null
+          condicao_imovel?: string | null
+          condicao_imovel_custom?: string | null
+          configuracao_edificacao?: string | null
           coordinates_lat?: number | null
           coordinates_lng?: number | null
           created_at?: string
           created_by?: string | null
           data_inicio?: string | null
           data_prevista_inauguracao?: string | null
+          data_recebimento_definitivo?: string | null
+          data_recebimento_provisorio?: string | null
           data_termino_real?: string | null
+          descricao_edificacao_custom?: string | null
+          descricao_tecnica_imovel?: string | null
           documentos?: Json | null
           empresa_id?: string | null
           empresa_responsavel?: string | null
+          endereco_completo?: string | null
           fiscal_id?: string | null
           fotos?: Json | null
           id?: string
@@ -2194,9 +2487,12 @@ export type Database = {
           municipio: string
           n_contrato?: string | null
           nome: string
+          numero_art_execucao?: string | null
+          objeto_contrato?: string | null
           obra_bloqueada?: boolean | null
           percentual_desconto?: number | null
           porcentagem_execucao?: number | null
+          prazo_observacao_dias?: number | null
           previsao_termino?: string | null
           rdo_habilitado?: boolean
           regiao?: string | null
@@ -2204,6 +2500,7 @@ export type Database = {
           secretaria_responsavel?: string | null
           sei_numero?: string | null
           sem_previsao_inauguracao?: boolean | null
+          sistemas_servicos_ids?: string[] | null
           status: string
           status_inauguracao?: string | null
           tem_placa_inauguracao?: boolean | null
@@ -2216,16 +2513,25 @@ export type Database = {
         }
         Update: {
           aditivo_prazo?: number | null
+          area_interferencia_m2?: number | null
+          condicao_imovel?: string | null
+          condicao_imovel_custom?: string | null
+          configuracao_edificacao?: string | null
           coordinates_lat?: number | null
           coordinates_lng?: number | null
           created_at?: string
           created_by?: string | null
           data_inicio?: string | null
           data_prevista_inauguracao?: string | null
+          data_recebimento_definitivo?: string | null
+          data_recebimento_provisorio?: string | null
           data_termino_real?: string | null
+          descricao_edificacao_custom?: string | null
+          descricao_tecnica_imovel?: string | null
           documentos?: Json | null
           empresa_id?: string | null
           empresa_responsavel?: string | null
+          endereco_completo?: string | null
           fiscal_id?: string | null
           fotos?: Json | null
           id?: string
@@ -2234,9 +2540,12 @@ export type Database = {
           municipio?: string
           n_contrato?: string | null
           nome?: string
+          numero_art_execucao?: string | null
+          objeto_contrato?: string | null
           obra_bloqueada?: boolean | null
           percentual_desconto?: number | null
           porcentagem_execucao?: number | null
+          prazo_observacao_dias?: number | null
           previsao_termino?: string | null
           rdo_habilitado?: boolean
           regiao?: string | null
@@ -2244,6 +2553,7 @@ export type Database = {
           secretaria_responsavel?: string | null
           sei_numero?: string | null
           sem_previsao_inauguracao?: boolean | null
+          sistemas_servicos_ids?: string[] | null
           status?: string
           status_inauguracao?: string | null
           tem_placa_inauguracao?: boolean | null
