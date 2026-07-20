@@ -510,7 +510,10 @@ function buildACT(data: EncerramentoData, anexoItems: AnexoItem[] = []) {
       children: [new TextRun({ text: 'Defensoria Pública do Estado de Mato Grosso', italics: true, size: 22 })],
     }),
 
+    ...assinaturaEmpresa(data),
+
     ...buildAnexoQuantitativos(anexoItems),
+
   ];
 }
 
