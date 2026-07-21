@@ -486,7 +486,10 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
           )}
 
           {currentStep === 2 && (
-            <div className="space-y-4">
+            <div className="space-y-5">
+              <h3 className="text-primary font-semibold text-base">
+                Configuração dos Serviços Internos
+              </h3>
               <div className="space-y-2">
                 <Label>Observações</Label>
                 <div className="flex gap-2">
