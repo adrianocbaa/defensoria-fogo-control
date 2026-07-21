@@ -655,23 +655,35 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
           )}
 
           <div className="flex justify-between gap-2 pt-2 border-t">
+          </div>
+
+          <div className="flex justify-between items-center gap-2 px-6 py-4 border-t bg-muted/30">
             <div>
-              {currentStep > 1 && (
-                <Button type="button" variant="outline" onClick={goBack}>
-                  Voltar
+              {currentStep === 1 ? (
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                  Cancelar
                 </Button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="text-sm font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                >
+                  Voltar
+                </button>
               )}
             </div>
             <div className="flex gap-2">
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Cancelar
-              </Button>
-              {currentStep < 3 ? (
+              {currentStep === 1 ? (
                 <Button type="button" onClick={goNext}>
-                  Próximo
+                  Próximo: Serviços e Materiais
+                </Button>
+              ) : currentStep === 2 ? (
+                <Button type="button" onClick={goNext}>
+                  Próximo: Revisar Chamado
                 </Button>
               ) : (
-                <Button type="submit">Criar Procedimento</Button>
+                <Button type="submit">Criar Chamado</Button>
               )}
             </div>
           </div>
