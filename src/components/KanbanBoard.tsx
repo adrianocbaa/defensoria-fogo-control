@@ -896,57 +896,32 @@ export function KanbanBoard() {
 
         <DragOverlay>
           {activeTicket ? (
-            <Card className="cursor-grabbing shadow-lg rotate-2">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-sm font-medium">
-                    {activeTicket.title}
-                  </CardTitle>
-                  <div className="flex items-center gap-1">
-                    <activeTicket.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant={priorityColors[activeTicket.priority] as any}
-                    className="text-xs"
-                  >
+            <Card className="cursor-grabbing shadow-xl rotate-1 rounded-xl border border-primary/40 bg-card w-[280px]">
+              <CardHeader className="pb-2 pt-3 px-4">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-semibold uppercase tracking-wide ${(priorityStyles[activeTicket.priority] ?? priorityStyles['Baixa']).badge}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${(priorityStyles[activeTicket.priority] ?? priorityStyles['Baixa']).dot}`} />
                     {activeTicket.priority}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
+                  </span>
+                  <Badge variant="outline" className="text-[10px] h-5 px-1.5 gap-1">
+                    <activeTicket.icon className="h-3 w-3" />
                     {activeTicket.type}
                   </Badge>
                 </div>
-
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <CardTitle className="text-sm font-semibold leading-snug line-clamp-2">
+                  {activeTicket.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 px-4 pb-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3" />
-                  <span>{activeTicket.location}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="text-xs">
-                        {activeTicket.assignee.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-muted-foreground">
-                      {activeTicket.assignee}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>{activeTicket.createdAt}</span>
-                  </div>
+                  <span className="truncate">{activeTicket.location}</span>
                 </div>
               </CardContent>
             </Card>
           ) : null}
         </DragOverlay>
+
 
         {/* Modais */}
         {selectedTicket && (
