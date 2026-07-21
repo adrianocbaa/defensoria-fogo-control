@@ -615,7 +615,8 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-5">
+              <h3 className="text-primary font-semibold text-base">Revisão Final</h3>
               <div className="space-y-2">
                 <Label>Serviços Executados (opcional agora)</Label>
                 <TicketServicesEditor
