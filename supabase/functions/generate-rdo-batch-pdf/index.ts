@@ -76,17 +76,23 @@ Deno.serve(async (req) => {
         }
 
         if (pdfUrl) {
-          // Download the PDF
-          console.log(`Downloading PDF for RDO ${rdo.numero_seq} from:`, pdfUrl);
-          const pdfResponse = await fetch(pdfUrl);
-          
-          if (!pdfResponse.ok) {
-            console.error(`Error downloading PDF for RDO ${rdo.numero_seq}:`, pdfResponse.status);
+          // Extract storage path from public URL (bucket is private, so fetch(url) 400s)
+          const marker = '/rdo-pdf/';
+          const idx = pdfUrl.indexOf(marker);
+          const storagePath = idx >= 0 ? pdfUrl.substring(idx + marker.length) : pdfUrl;
+          console.log(`Downloading PDF for RDO ${rdo.numero_seq} from storage:`, storagePath);
+
+          const { data: fileData, error: dlError } = await supabase.storage
+            .from('rdo-pdf')
+            .download(storagePath);
+
+          if (dlError || !fileData) {
+            console.error(`Error downloading PDF for RDO ${rdo.numero_seq}:`, dlError?.message);
             errors.push(`RDO #${rdo.numero_seq} (${rdo.data}): Erro ao baixar PDF`);
             continue;
           }
 
-          const pdfBlob = await pdfResponse.arrayBuffer();
+          const pdfBlob = await fileData.arrayBuffer();
           const fileName = `RDO-${String(rdo.numero_seq).padStart(3, '0')}-${rdo.data}.pdf`;
           zip.file(fileName, pdfBlob);
           console.log(`Added ${fileName} to ZIP`);
@@ -125,16 +131,18 @@ Deno.serve(async (req) => {
 
     if (uploadError) throw uploadError;
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
+    // Get signed URL (bucket is private)
+    const { data: urlData, error: signError } = await supabase.storage
       .from('rdo-pdf')
-      .getPublicUrl(zipFileName);
+      .createSignedUrl(zipFileName, 60 * 60);
 
-    console.log('ZIP uploaded successfully:', urlData.publicUrl);
+    if (signError || !urlData) throw signError ?? new Error('Falha ao assinar URL do ZIP');
+
+    console.log('ZIP uploaded successfully:', urlData.signedUrl);
 
     return new Response(
       JSON.stringify({
-        zipUrl: urlData.publicUrl,
+        zipUrl: urlData.signedUrl,
         count: fileCount,
         total: rdos.length,
         errors: errors.length > 0 ? errors : undefined,
