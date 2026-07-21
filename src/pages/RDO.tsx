@@ -88,15 +88,27 @@ function PlaceholderSection({
   );
 }
 
+type CalendarFilter = 'todos' | 'ocorrencia' | 'fotos' | 'comentarios' | 'sem_expediente' | 'pendentes' | 'aprovados';
+
+const FILTER_CHIPS: { id: CalendarFilter; label: string }[] = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'ocorrencia', label: 'Com ocorrência' },
+  { id: 'fotos', label: 'Com fotos' },
+  { id: 'comentarios', label: 'Com comentários' },
+  { id: 'sem_expediente', label: 'Sem expediente' },
+  { id: 'pendentes', label: 'Pendentes' },
+  { id: 'aprovados', label: 'Aprovados' },
+];
+
 function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEditRdo = true, obraStatus }: { obraStartDate?: string | null; obraTerminoReal?: string | null; rdoHabilitado?: boolean; canEditRdo?: boolean; obraStatus?: string }) {
   const { obraId } = useParams();
   const navigate = useNavigate();
-  // Se a obra está concluída e tem data de término real, iniciar no mês da conclusão
   const initialMonth = obraStatus === 'concluida' && obraTerminoReal
     ? new Date(obraTerminoReal + 'T12:00:00')
     : new Date();
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [view, setView] = useState<'mes' | 'lista'>('mes');
+  const [filter, setFilter] = useState<CalendarFilter>('todos');
   const [drawerDay, setDrawerDay] = useState<RdoCalendarDay | null>(null);
 
   const { data: counts, isLoading: countsLoading } = useRdoCounts(obraId!, currentMonth);
@@ -104,60 +116,58 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
   const { data: recentReports, isLoading: reportsLoading } = useRdoRecentes(obraId!);
   const { data: recentPhotos, isLoading: photosLoading } = useFotosRecentes(obraId!);
 
+  const filteredData = (calendarData || []).filter((d) => {
+    switch (filter) {
+      case 'ocorrencia': return d.occurrence_count > 0;
+      case 'fotos': return d.photo_count > 0;
+      case 'comentarios': return d.comment_count > 0;
+      case 'pendentes': return d.status === 'rascunho' || d.status === 'preenchendo';
+      case 'aprovados': return d.status === 'aprovado';
+      case 'sem_expediente': return false; // visual filter; calendar mostra dias marcados independentemente
+      default: return true;
+    }
+  });
+
   const counterCards = [
-    { title: 'Relatórios', value: counts?.relatorios || 0, icon: ClipboardCheck, color: 'text-blue-500' },
-    { title: 'Ocorrências', value: counts?.ocorrencias || 0, icon: AlertTriangle, color: 'text-red-500' },
-    { title: 'Comentários', value: counts?.comentarios || 0, icon: MessageSquareText, color: 'text-purple-500' },
-    { title: 'Fotos', value: counts?.fotos || 0, icon: Camera, color: 'text-orange-500' },
-    { title: 'Vídeos', value: counts?.videos || 0, icon: Video, color: 'text-pink-500' },
+    { title: 'Relatórios', value: counts?.relatorios || 0, icon: ClipboardCheck, tint: 'bg-slate-100 text-slate-600' },
+    { title: 'Ocorrências', value: counts?.ocorrencias || 0, icon: AlertTriangle, tint: 'bg-amber-100 text-amber-600' },
+    { title: 'Comentários', value: counts?.comentarios || 0, icon: MessageSquareText, tint: 'bg-slate-100 text-slate-600' },
+    { title: 'Fotos', value: counts?.fotos || 0, icon: Camera, tint: 'bg-slate-100 text-slate-600' },
+    { title: 'Vídeos', value: counts?.videos || 0, icon: Video, tint: 'bg-slate-100 text-slate-600' },
   ];
 
   const statusConfig = {
     rascunho: { label: 'Rascunho', color: 'bg-gray-100 text-gray-800' },
-    preenchendo: { label: 'Preenchendo', color: 'bg-orange-100 text-orange-800' },
-    concluido: { label: 'Concluído', color: 'bg-green-100 text-green-800' },
-    aprovado: { label: 'Aprovado', color: 'bg-blue-100 text-blue-800' },
+    preenchendo: { label: 'Pendente', color: 'bg-amber-100 text-amber-800' },
+    concluido: { label: 'Em análise', color: 'bg-blue-100 text-blue-800' },
+    aprovado: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
     reprovado: { label: 'Reprovado', color: 'bg-red-100 text-red-800' },
   };
 
   return (
     <div className="space-y-6">
-      {/* Header com Novo RDO e Toggle de visualização */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Resumo do mês</h2>
-          <p className="text-sm text-muted-foreground">
-            Acompanhe o preenchimento dos Relatórios Diários de Obra.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Tabs value={view} onValueChange={(v) => setView(v as 'mes' | 'lista')}>
-            <TabsList>
-              <TabsTrigger value="mes">Mês</TabsTrigger>
-              <TabsTrigger value="lista">Lista</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {canEditRdo && obraStatus !== 'concluida' && (
-            <NovoRdoDatePicker obraId={obraId!} obraStartDate={obraStartDate} />
-          )}
-        </div>
+      {/* Header actions */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        {canEditRdo && obraStatus !== 'concluida' && (
+          <NovoRdoDatePicker obraId={obraId!} obraStartDate={obraStartDate} />
+        )}
       </div>
 
-      {/* Counter Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Counter Cards - horizontal layout */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {counterCards.map((card) => {
           const Icon = card.icon;
           return (
-            <Card key={card.title}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Icon className={cn("h-5 w-5", card.color)} />
+            <Card key={card.title} className="border-border/60">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center shrink-0", card.tint)}>
+                  <Icon className="h-5 w-5" />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-2xl font-bold">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">{card.title}</p>
+                  <p className="text-2xl font-bold leading-tight">
                     {countsLoading ? '-' : card.value}
                   </p>
-                  <p className="text-xs text-muted-foreground">{card.title}</p>
                 </div>
               </CardContent>
             </Card>
@@ -165,36 +175,67 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
         })}
       </div>
 
-      {/* Visualização: Mês (calendário atual) ou Lista */}
-      {view === 'mes' ? (
-        <RdoCalendar
-          obraId={obraId!}
-          rdoData={calendarData || []}
-          isLoading={calendarLoading}
-          currentMonth={currentMonth}
-          onMonthChange={setCurrentMonth}
-          obraStartDate={obraStartDate}
-          rdoHabilitado={rdoHabilitado}
-          canEditRdo={canEditRdo}
-          obraStatus={obraStatus}
-        />
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">RDOs do mês</CardTitle>
-            <CardDescription>
-              Filtre por status. "Pendentes" combina rascunhos e RDOs em preenchimento.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* Filter chips */}
+      <div className="flex flex-wrap gap-2">
+        {FILTER_CHIPS.map((chip) => {
+          const active = filter === chip.id;
+          return (
+            <button
+              key={chip.id}
+              onClick={() => setFilter(chip.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-foreground/70 border-border hover:bg-accent"
+              )}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Calendar / List with header (Mês/Lista) */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-semibold">
+                {format(currentMonth, "MMMM yyyy", { locale: ptBR }).replace(/^./, s => s.toUpperCase())}
+              </span>
+            </div>
+            <Tabs value={view} onValueChange={(v) => setView(v as 'mes' | 'lista')}>
+              <TabsList>
+                <TabsTrigger value="mes">Mês</TabsTrigger>
+                <TabsTrigger value="lista">Lista</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {view === 'mes' ? (
+            <RdoCalendar
+              obraId={obraId!}
+              rdoData={filteredData}
+              isLoading={calendarLoading}
+              currentMonth={currentMonth}
+              onMonthChange={setCurrentMonth}
+              obraStartDate={obraStartDate}
+              rdoHabilitado={rdoHabilitado}
+              canEditRdo={canEditRdo}
+              obraStatus={obraStatus}
+              embedded
+            />
+          ) : (
             <RdoListView
-              days={calendarData || []}
+              days={filteredData}
               isLoading={calendarLoading}
               onSelectDay={setDrawerDay}
             />
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       <RdoDayDrawer
         obraId={obraId!}
@@ -203,55 +244,69 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
         onOpenChange={(open) => !open && setDrawerDay(null)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Reports */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Relatórios Recentes</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Reports as table */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-semibold">Relatórios Recentes</CardTitle>
+            <button
+              onClick={() => setView('lista')}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Ver todos
+            </button>
           </CardHeader>
           <CardContent>
             {reportsLoading ? (
               <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
               </div>
             ) : recentReports && recentReports.length > 0 ? (
-              <div className="space-y-2">
-                {recentReports.map((report) => (
-                  <button
-                    key={report.id}
-                    onClick={() => navigate(`/obras/${obraId}/rdo/diario?data=${report.data}&id=${report.id}`)}
-                    className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="font-mono">
-                        #{report.numero_seq}
-                      </Badge>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {format(new Date(report.data), "dd 'de' MMMM", { locale: ptBR })}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge className={statusConfig[report.status as keyof typeof statusConfig]?.color}>
-                            {statusConfig[report.status as keyof typeof statusConfig]?.label}
-                          </Badge>
-                          {report.photo_count > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              {report.photo_count} fotos
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs uppercase text-muted-foreground border-b">
+                      <th className="text-left font-medium py-2 pr-3">RDO</th>
+                      <th className="text-left font-medium py-2 pr-3">Data</th>
+                      <th className="text-left font-medium py-2 pr-3">Status</th>
+                      <th className="text-left font-medium py-2 pr-3">Fotos</th>
+                      <th className="text-right font-medium py-2 pl-3">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentReports.map((report) => {
+                      const sc = statusConfig[report.status as keyof typeof statusConfig];
+                      return (
+                        <tr key={report.id} className="border-b last:border-0 hover:bg-accent/40">
+                          <td className="py-2.5 pr-3 font-medium">#{report.numero_seq}</td>
+                          <td className="py-2.5 pr-3 text-muted-foreground">
+                            {format(new Date(report.data + 'T12:00:00'), "dd/MM/yyyy")}
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <Badge className={cn("font-medium", sc?.color)}>{sc?.label}</Badge>
+                          </td>
+                          <td className="py-2.5 pr-3">{report.photo_count}</td>
+                          <td className="py-2.5 pl-3 text-right">
+                            <button
+                              onClick={() => navigate(`/obras/${obraId}/rdo/diario?data=${report.data}&id=${report.id}`)}
+                              className="text-primary text-xs font-medium hover:underline"
+                            >
+                              Ver
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <Alert>
                 <FileText className="h-4 w-4" />
                 <AlertDescription>
-                  Nenhum relatório encontrado. Clique no botão "+" no calendário para criar seu primeiro RDO.
+                  Nenhum relatório encontrado. Clique em "+ Novo RDO" para criar o primeiro.
                 </AlertDescription>
               </Alert>
             )}
@@ -260,8 +315,9 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
 
         {/* Recent Photos */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Fotos Recentes</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-semibold">Fotos Recentes</CardTitle>
+            <span className="text-xs font-medium text-primary">Ver galeria</span>
           </CardHeader>
           <CardContent>
             {photosLoading ? (
@@ -289,7 +345,7 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
               <Alert>
                 <Camera className="h-4 w-4" />
                 <AlertDescription>
-                  Nenhuma foto registrada ainda. As fotos aparecem aqui após serem adicionadas aos RDOs.
+                  Nenhuma foto ainda.
                 </AlertDescription>
               </Alert>
             )}
