@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        zipUrl: urlData.publicUrl,
+        zipUrl: urlData.signedUrl,
         count: fileCount,
         total: rdos.length,
         errors: errors.length > 0 ? errors : undefined,
