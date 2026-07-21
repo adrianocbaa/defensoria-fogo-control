@@ -3,6 +3,7 @@ import { TravelCalendar } from '@/components/TravelCalendar';
 import { MaintenanceSettings } from '@/components/MaintenanceSettings';
 import { MaintenanceReports } from '@/components/MaintenanceReports';
 import { MaintenanceOverview } from '@/components/maintenance/MaintenanceOverview';
+import { MaintenanceHistory } from '@/components/maintenance/MaintenanceHistory';
 import { PlaceholderModule } from '@/components/maintenance/PlaceholderModule';
 
 interface MaintenanceDashboardProps {
