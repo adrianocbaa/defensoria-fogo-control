@@ -455,8 +455,7 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
     </TooltipProvider>
   );
 }
-  );
-}
+
 
 export function KanbanBoard() {
   const { tickets: dbTickets, loading, createTicket, updateTicket, deleteTicket, refetch } = useMaintenanceTickets();
