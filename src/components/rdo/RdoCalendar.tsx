@@ -31,11 +31,11 @@ import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 const STATUS_CONFIG = {
-  rascunho: { label: 'Rascunho', color: 'bg-gray-100 text-gray-800 border-gray-200' },
-  preenchendo: { label: 'Preenchendo', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  concluido: { label: 'Concluído', color: 'bg-green-100 text-green-800 border-green-200' },
-  aprovado: { label: 'Aprovado', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  reprovado: { label: 'Reprovado', color: 'bg-red-100 text-red-800 border-red-200' },
+  rascunho:    { label: 'Rascunho',    color: 'bg-gray-100 text-gray-800 border-gray-200',       dot: 'bg-gray-400',    bar: 'bg-gray-300' },
+  preenchendo: { label: 'Preenchendo', color: 'bg-orange-100 text-orange-800 border-orange-200', dot: 'bg-orange-500',  bar: 'bg-orange-400' },
+  concluido:   { label: 'Concluído',   color: 'bg-green-100 text-green-800 border-green-200',    dot: 'bg-green-600',   bar: 'bg-green-500' },
+  aprovado:    { label: 'Aprovado',    color: 'bg-blue-100 text-blue-800 border-blue-200',       dot: 'bg-blue-600',    bar: 'bg-blue-500' },
+  reprovado:   { label: 'Reprovado',   color: 'bg-red-100 text-red-800 border-red-200',          dot: 'bg-red-600',     bar: 'bg-red-500' },
 };
 
 const MAX_DIAS_SEM_RDO = 7;
