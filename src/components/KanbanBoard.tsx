@@ -872,7 +872,7 @@ export function KanbanBoard() {
             ))}
           </Tabs>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 overflow-x-auto">
             {visibleStatuses.map((status) => (
               <DroppableColumn
                 key={status}
