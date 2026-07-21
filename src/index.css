@@ -308,8 +308,8 @@ All colors MUST be HSL.
   body.medicao-layout-wide #root {
     max-width: none !important;
     width: 100% !important;
-    padding-left: var(--page-gutter) !important;
-    padding-right: var(--page-gutter) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 }
 
