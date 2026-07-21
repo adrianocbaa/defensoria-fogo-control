@@ -32,12 +32,7 @@ export function MaintenanceDashboard({
   }
 
   if (activeSection === 'history') {
-    return (
-      <PlaceholderModule
-        title="Histórico de Atendimentos"
-        description="A visualização dedicada de histórico está sendo montada sobre o registro atual de movimentações e impedimentos. Enquanto isso, consulte o histórico dentro de cada chamado, na aba Chamados."
-      />
-    );
+    return <MaintenanceHistory />;
   }
 
   if (activeSection === 'preventive') {
