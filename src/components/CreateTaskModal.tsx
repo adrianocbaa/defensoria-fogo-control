@@ -654,8 +654,9 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
             </div>
           )}
 
-          <div className="flex justify-between gap-2 pt-2 border-t">
           </div>
+
+
 
           <div className="flex justify-between items-center gap-2 px-6 py-4 border-t bg-muted/30">
             <div>
