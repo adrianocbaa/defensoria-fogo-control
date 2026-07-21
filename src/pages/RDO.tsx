@@ -197,45 +197,42 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
       </div>
 
       {/* Calendar / List with header (Mês/Lista) */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold">
-                {format(currentMonth, "MMMM yyyy", { locale: ptBR }).replace(/^./, s => s.toUpperCase())}
-              </span>
-            </div>
-            <Tabs value={view} onValueChange={(v) => setView(v as 'mes' | 'lista')}>
-              <TabsList>
-                <TabsTrigger value="mes">Mês</TabsTrigger>
-                <TabsTrigger value="lista">Lista</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {view === 'mes' ? (
-            <RdoCalendar
-              obraId={obraId!}
-              rdoData={filteredData}
-              isLoading={calendarLoading}
-              currentMonth={currentMonth}
-              onMonthChange={setCurrentMonth}
-              obraStartDate={obraStartDate}
-              rdoHabilitado={rdoHabilitado}
-              canEditRdo={canEditRdo}
-              obraStatus={obraStatus}
-              embedded
-            />
-          ) : (
+      {/* Toggle Mês/Lista */}
+      <div className="flex items-center justify-end">
+        <Tabs value={view} onValueChange={(v) => setView(v as 'mes' | 'lista')}>
+          <TabsList>
+            <TabsTrigger value="mes">Mês</TabsTrigger>
+            <TabsTrigger value="lista">Lista</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {view === 'mes' ? (
+        <RdoCalendar
+          obraId={obraId!}
+          rdoData={filteredData}
+          isLoading={calendarLoading}
+          currentMonth={currentMonth}
+          onMonthChange={setCurrentMonth}
+          obraStartDate={obraStartDate}
+          rdoHabilitado={rdoHabilitado}
+          canEditRdo={canEditRdo}
+          obraStatus={obraStatus}
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">RDOs do mês</CardTitle>
+          </CardHeader>
+          <CardContent>
             <RdoListView
               days={filteredData}
               isLoading={calendarLoading}
               onSelectDay={setDrawerDay}
             />
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <RdoDayDrawer
         obraId={obraId!}
