@@ -182,17 +182,8 @@ export default function RDODiario() {
     }
   };
 
-  // Loading
-  if (isLoading || permissionLoading || obraLoading) {
-    return (
-      <ObrasLayout header={() => <div className="h-16 border-b bg-card" />}>
-        <div className="space-y-4">
-          <Skeleton className="h-12" />
-          <Skeleton className="h-64" />
-        </div>
-      </ObrasLayout>
-    );
-  }
+  const loadingShell = isLoading || permissionLoading || obraLoading;
+
 
   // Estados derivados de status (preservam lógica atual)
   const isApproved = formData.status === 'aprovado';
