@@ -93,28 +93,38 @@ function DroppableColumn({ id, title, tickets, onViewTicket, onEditTicket, onMar
     id: id,
   });
 
+  const st = statusStyles[title] ?? statusStyles['Pendente'];
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-foreground">{title}</h3>
-        <Badge variant="outline" className="text-xs">
-          {tickets.length}
-        </Badge>
+    <div className="flex flex-col min-w-[280px]">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <span className={`h-2.5 w-2.5 rounded-full ${st.dot}`} aria-hidden />
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">{title}</h3>
+          <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full bg-muted text-muted-foreground text-[11px] font-medium">
+            {tickets.length}
+          </span>
+        </div>
       </div>
 
       <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
-        <div 
+        <div
           ref={setNodeRef}
-          className={`space-y-3 min-h-[200px] p-2 rounded-lg border-2 border-dashed transition-colors ${
-            isOver 
-              ? 'border-primary bg-primary/5' 
-              : 'border-transparent hover:border-muted-foreground/30'
+          className={`flex-1 space-y-3 min-h-[220px] p-2 rounded-xl border transition-colors ${
+            isOver
+              ? `border-dashed border-primary/60 ${st.soft}`
+              : 'border-transparent'
           }`}
         >
+          {tickets.length === 0 && !isOver && (
+            <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground/70">
+              <Inbox className="h-6 w-6 mb-1.5 opacity-60" />
+              <span className="text-xs">Sem chamados</span>
+            </div>
+          )}
           {tickets.map((ticket) => (
-            <DraggableTicket 
-              key={ticket.id} 
-              ticket={ticket} 
+            <DraggableTicket
+              key={ticket.id}
+              ticket={ticket}
               onViewTicket={onViewTicket}
               onEditTicket={onEditTicket}
               onMarkAsExecuted={onMarkAsExecuted}
