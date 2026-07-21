@@ -4,13 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { RDOSidebar } from '@/components/RDOSidebar';
 import { RdoCalendar } from '@/components/rdo/RdoCalendar';
+import { NovoRdoDatePicker } from '@/components/rdo/NovoRdoDatePicker';
+import { RdoDayDrawer } from '@/components/rdo/RdoDayDrawer';
+import { RdoListView } from '@/components/rdo/RdoListView';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
+import type { RdoCalendarDay } from '@/hooks/useRdoData';
+import {
   Breadcrumb, 
   BreadcrumbItem, 
   BreadcrumbLink, 
@@ -91,6 +96,8 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
     ? new Date(obraTerminoReal + 'T12:00:00')
     : new Date();
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
+  const [view, setView] = useState<'mes' | 'lista'>('mes');
+  const [drawerDay, setDrawerDay] = useState<RdoCalendarDay | null>(null);
 
   const { data: counts, isLoading: countsLoading } = useRdoCounts(obraId!, currentMonth);
   const { data: calendarData, isLoading: calendarLoading } = useRdoCalendar(obraId!, currentMonth);
