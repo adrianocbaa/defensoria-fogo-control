@@ -131,12 +131,14 @@ Deno.serve(async (req) => {
 
     if (uploadError) throw uploadError;
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
+    // Get signed URL (bucket is private)
+    const { data: urlData, error: signError } = await supabase.storage
       .from('rdo-pdf')
-      .getPublicUrl(zipFileName);
+      .createSignedUrl(zipFileName, 60 * 60);
 
-    console.log('ZIP uploaded successfully:', urlData.publicUrl);
+    if (signError || !urlData) throw signError ?? new Error('Falha ao assinar URL do ZIP');
+
+    console.log('ZIP uploaded successfully:', urlData.signedUrl);
 
     return new Response(
       JSON.stringify({
