@@ -196,54 +196,87 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
     return (completed / svcs.length) * 100;
   };
 
+  const svcs = ticket.services ?? [];
+  const totalSvcs = svcs.length;
+  const doneSvcs = svcs.filter(s => s.completed).length;
+  const progress = totalSvcs > 0 ? Math.round((doneSvcs / totalSvcs) * 100) : 0;
+
+  const { managers } = useMaintenanceManagers();
+  const responsavelIds = (ticket.managerIds && ticket.managerIds.length > 0)
+    ? ticket.managerIds
+    : (ticket.managerId ? [ticket.managerId] : []);
+  const responsaveis = responsavelIds
+    .map((id) => managers.find((m) => m.id === id))
+    .filter(Boolean) as { id: string; nome: string }[];
+  const fallbackName = responsaveis.length === 0 && ticket.assignee ? [{ id: '_a', nome: ticket.assignee }] : [];
+  const displayResp = responsaveis.length > 0 ? responsaveis : fallbackName;
+  const shownResp = displayResp.slice(0, 3);
+  const extraResp = displayResp.length - shownResp.length;
+
+  const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || '?';
+
+  const hasTravel = !!ticket.travel_id || svcs.some((s) => !!s.travel_id || s.envolve_viagem);
+  const refPhotosCount =
+    (ticket.referencePhotos?.length ?? 0) +
+    svcs.reduce((acc, s) => acc + (s.reference_photos?.length ?? 0), 0);
+  const execPhotosCount = svcs.reduce((acc, s) => acc + (s.execution_photos?.length ?? 0), 0);
+
+  const dateLabel = ticket.requestedAt
+    ? new Date(ticket.requestedAt).toLocaleDateString('pt-BR')
+    : ticket.createdAt;
+  const dateTooltip = ticket.requestedAt ? 'Solicitado em' : 'Criado em';
+
+  const prio = priorityStyles[ticket.priority] ?? priorityStyles['Baixa'];
+  const st = statusStyles[currentStatus] ?? statusStyles['Pendente'];
+  const isImpedido = !!activeImpediment;
+
   return (
-    <Card 
-      ref={setNodeRef}
-      style={style}
-      className={`cursor-grab hover:shadow-md transition-shadow ${isDragging ? 'shadow-lg' : ''}`}
-      onClick={() => onViewTicket(ticket)}
-      {...attributes} 
-      {...listeners}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-sm font-medium">
-            {ticket.title}
-          </CardTitle>
-          <div className="flex items-center gap-1">
-            {activeImpediment && (
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span
-                      className="inline-flex"
-                      onClick={(e) => e.stopPropagation()}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <AlertOctagon className="h-4 w-4 text-destructive flex-shrink-0" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-xs font-semibold mb-0.5">Impedimento</p>
-                    <p className="text-xs whitespace-pre-wrap">{activeImpediment.motivo}</p>
-                    <p className="text-[10px] mt-1 opacity-70">
-                      {new Date(activeImpediment.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                      {activeImpediment.created_by_name ? ` · ${activeImpediment.created_by_name}` : ''}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            <ticket.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+    <TooltipProvider delayDuration={200}>
+      <Card
+        ref={setNodeRef}
+        style={style}
+        className={`group relative overflow-hidden rounded-xl border bg-card hover:shadow-md transition-all ${
+          canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+        } ${isDragging ? 'shadow-lg ring-2 ring-primary/40' : ''} ${
+          isImpedido ? 'border-red-200 dark:border-red-900/60' : 'border-border'
+        }`}
+        onClick={() => onViewTicket(ticket)}
+        {...attributes}
+        {...listeners}
+      >
+        {/* Barra lateral de status/prioridade */}
+        <span
+          aria-hidden
+          className={`absolute left-0 top-0 h-full w-1 ${isImpedido ? 'bg-red-500' : st.dot}`}
+        />
+
+        <CardHeader className="pb-2 pt-3 pl-4 pr-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-semibold uppercase tracking-wide ${prio.badge}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${prio.dot}`} aria-hidden />
+                  {ticket.priority}
+                </span>
+                <Badge variant="outline" className="text-[10px] font-medium h-5 px-1.5 gap-1 border-border/70">
+                  <ticket.icon className="h-3 w-3" />
+                  {ticket.type}
+                </Badge>
+              </div>
+              <CardTitle className="text-sm font-semibold leading-snug line-clamp-2 text-foreground">
+                {ticket.title}
+              </CardTitle>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 w-6 p-0 hover:bg-muted"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 -mr-1 -mt-1 opacity-70 hover:opacity-100"
                   onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
                 >
-                  <MoreVertical className="h-3 w-3" />
+                  <MoreVertical className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -279,7 +312,6 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   </>
                 )}
                 {onDeleteTicket && <DropdownMenuSeparator />}
-                {/* Finalização acontece dentro do modal de visualização (com anexo do e-mail, quando aplicável). */}
                 {onDeleteTicket && (
                   <DropdownMenuItem
                     onClick={(e) => {
@@ -297,57 +329,132 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-0 space-y-3">
-        <div className="flex items-center gap-2">
-          <Badge 
-            variant={priorityColors[ticket.priority] as any}
-            className="text-xs"
-          >
-            {ticket.priority}
-          </Badge>
-          <Badge variant="outline" className="text-xs">
-            {ticket.type}
-          </Badge>
-        </div>
+        </CardHeader>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <MapPin className="h-3 w-3" />
-          <span>{ticket.location}</span>
-        </div>
+        <CardContent className="pt-0 pl-4 pr-3 pb-3 space-y-2.5">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{ticket.location}</span>
+          </div>
 
-        {/* Barra de progresso dos serviços */}
-        {ticket.services && ticket.services.length > 0 && (
-          <div className="space-y-1">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Progresso</span>
-              <span className="text-xs text-muted-foreground">{Math.round(getServicesProgress())}%</span>
+          {isImpedido && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className="flex items-start gap-1.5 rounded-md border border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/30 px-2 py-1.5"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <AlertOctagon className="h-3.5 w-3.5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">Impedido</p>
+                    <p className="text-[11px] text-red-800/90 dark:text-red-200/90 line-clamp-2 leading-snug">{activeImpediment!.motivo}</p>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-xs font-semibold mb-0.5">Impedimento</p>
+                <p className="text-xs whitespace-pre-wrap">{activeImpediment!.motivo}</p>
+                <p className="text-[10px] mt-1 opacity-70">
+                  {new Date(activeImpediment!.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                  {activeImpediment!.created_by_name ? ` · ${activeImpediment!.created_by_name}` : ''}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {totalSvcs > 0 && (
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <ListChecks className="h-3 w-3" />
+                  <span>{doneSvcs}/{totalSvcs} serviços</span>
+                </div>
+                <span className="text-[11px] font-medium text-foreground/80">{progress}%</span>
+              </div>
+              <Progress value={progress} className="w-full h-1.5" />
             </div>
-            <Progress value={getServicesProgress()} className="w-full h-1.5" />
-          </div>
-        )}
+          )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-xs">
-                {ticket.assignee.split(' ').map(n => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-muted-foreground">
-              {ticket.assignee}
-            </span>
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="flex items-center min-w-0">
+              <div className="flex -space-x-1.5">
+                {shownResp.map((r) => (
+                  <Tooltip key={r.id}>
+                    <TooltipTrigger asChild>
+                      <Avatar className="h-6 w-6 ring-2 ring-card">
+                        <AvatarFallback className="text-[10px] bg-muted font-medium">
+                          {initials(r.nome)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent side="top"><span className="text-xs">{r.nome}</span></TooltipContent>
+                  </Tooltip>
+                ))}
+                {extraResp > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="h-6 w-6 rounded-full bg-muted ring-2 ring-card flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+                        +{extraResp}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <div className="text-xs space-y-0.5">
+                        {displayResp.map((r) => <div key={r.id}>{r.nome}</div>)}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              {hasTravel && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center"><Plane className="h-3.5 w-3.5" /></span>
+                  </TooltipTrigger>
+                  <TooltipContent><span className="text-xs">Viagem vinculada</span></TooltipContent>
+                </Tooltip>
+              )}
+              {refPhotosCount > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center gap-0.5">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      <span className="text-[10px]">{refPhotosCount}</span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent><span className="text-xs">{refPhotosCount} foto(s) de referência</span></TooltipContent>
+                </Tooltip>
+              )}
+              {execPhotosCount > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center gap-0.5">
+                      <Camera className="h-3.5 w-3.5" />
+                      <span className="text-[10px]">{execPhotosCount}</span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent><span className="text-xs">{execPhotosCount} foto(s) de execução</span></TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 text-[11px]">
+                    <Clock className="h-3 w-3" />
+                    {dateLabel}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent><span className="text-xs">{dateTooltip}</span></TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            <span>{ticket.createdAt}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
+  );
+}
   );
 }
 
