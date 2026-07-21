@@ -4,13 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { SimpleHeader } from '@/components/SimpleHeader';
 import { RDOSidebar } from '@/components/RDOSidebar';
 import { RdoCalendar } from '@/components/rdo/RdoCalendar';
+import { NovoRdoDatePicker } from '@/components/rdo/NovoRdoDatePicker';
+import { RdoDayDrawer } from '@/components/rdo/RdoDayDrawer';
+import { RdoListView } from '@/components/rdo/RdoListView';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
+import type { RdoCalendarDay } from '@/hooks/useRdoData';
+import {
   Breadcrumb, 
   BreadcrumbItem, 
   BreadcrumbLink, 
@@ -91,6 +96,8 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
     ? new Date(obraTerminoReal + 'T12:00:00')
     : new Date();
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
+  const [view, setView] = useState<'mes' | 'lista'>('mes');
+  const [drawerDay, setDrawerDay] = useState<RdoCalendarDay | null>(null);
 
   const { data: counts, isLoading: countsLoading } = useRdoCounts(obraId!, currentMonth);
   const { data: calendarData, isLoading: calendarLoading } = useRdoCalendar(obraId!, currentMonth);
@@ -115,6 +122,27 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
 
   return (
     <div className="space-y-6">
+      {/* Header com Novo RDO e Toggle de visualização */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Resumo do mês</h2>
+          <p className="text-sm text-muted-foreground">
+            Acompanhe o preenchimento dos Relatórios Diários de Obra.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Tabs value={view} onValueChange={(v) => setView(v as 'mes' | 'lista')}>
+            <TabsList>
+              <TabsTrigger value="mes">Mês</TabsTrigger>
+              <TabsTrigger value="lista">Lista</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {canEditRdo && obraStatus !== 'concluida' && (
+            <NovoRdoDatePicker obraId={obraId!} obraStartDate={obraStartDate} />
+          )}
+        </div>
+      </div>
+
       {/* Counter Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {counterCards.map((card) => {
@@ -137,17 +165,42 @@ function RDOResumo({ obraStartDate, obraTerminoReal, rdoHabilitado = true, canEd
         })}
       </div>
 
-      {/* Calendar */}
-      <RdoCalendar
+      {/* Visualização: Mês (calendário atual) ou Lista */}
+      {view === 'mes' ? (
+        <RdoCalendar
+          obraId={obraId!}
+          rdoData={calendarData || []}
+          isLoading={calendarLoading}
+          currentMonth={currentMonth}
+          onMonthChange={setCurrentMonth}
+          obraStartDate={obraStartDate}
+          rdoHabilitado={rdoHabilitado}
+          canEditRdo={canEditRdo}
+          obraStatus={obraStatus}
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">RDOs do mês</CardTitle>
+            <CardDescription>
+              Filtre por status. "Pendentes" combina rascunhos e RDOs em preenchimento.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RdoListView
+              days={calendarData || []}
+              isLoading={calendarLoading}
+              onSelectDay={setDrawerDay}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      <RdoDayDrawer
         obraId={obraId!}
-        rdoData={calendarData || []}
-        isLoading={calendarLoading}
-        currentMonth={currentMonth}
-        onMonthChange={setCurrentMonth}
-        obraStartDate={obraStartDate}
-        rdoHabilitado={rdoHabilitado}
-        canEditRdo={canEditRdo}
-        obraStatus={obraStatus}
+        day={drawerDay}
+        open={!!drawerDay}
+        onOpenChange={(open) => !open && setDrawerDay(null)}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
