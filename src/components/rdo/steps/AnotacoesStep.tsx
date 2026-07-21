@@ -1,10 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Copy, Sun, Cloud, CloudRain, Check, X } from "lucide-react";
+import { Copy, Sun, Cloud, CloudRain } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { RdoFormData } from "@/hooks/useRdoForm";
 
 interface AnotacoesStepProps {
@@ -14,217 +14,217 @@ interface AnotacoesStepProps {
   disabled?: boolean;
 }
 
-export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled }: AnotacoesStepProps) {
+const CLIMA_OPTS = [
+  { value: "claro", label: "Claro", icon: Sun, emoji: "☀️" },
+  { value: "nublado", label: "Nublado", icon: Cloud, emoji: "☁️" },
+  { value: "chuvoso", label: "Chuvoso", icon: CloudRain, emoji: "🌧️" },
+] as const;
+
+const COND_OPTS = [
+  { value: "praticavel", label: "Praticável" },
+  { value: "impraticavel", label: "Impraticável" },
+] as const;
+
+function ClimaSegmented({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
   return (
-    <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Anotações do Dia</CardTitle>
+    <div className="flex flex-wrap gap-2">
+      {CLIMA_OPTS.map((opt) => {
+        const Icon = opt.icon;
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-all",
+              "hover:border-primary/50",
+              active
+                ? "border-primary bg-primary/5 text-foreground font-medium"
+                : "border-border bg-background text-muted-foreground",
+              disabled && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CondSegmented({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {COND_OPTS.map((opt) => {
+        const active = value === opt.value;
+        const isPraticavel = opt.value === "praticavel";
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "px-4 py-1.5 rounded-md border text-sm transition-all",
+              active
+                ? isPraticavel
+                  ? "border-green-600 bg-green-50 text-green-700 font-medium dark:bg-green-950/30 dark:text-green-400"
+                  : "border-red-600 bg-red-50 text-red-700 font-medium dark:bg-red-950/30 dark:text-red-400"
+                : "border-border bg-background text-muted-foreground hover:border-primary/50",
+              disabled && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function climaEmoji(v: string) {
+  return CLIMA_OPTS.find((o) => o.value === v)?.emoji ?? "";
+}
+
+function condLabel(v: string) {
+  return COND_OPTS.find((o) => o.value === v)?.label ?? "—";
+}
+
+export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled }: AnotacoesStepProps) {
+  const periodos = [
+    { key: "manha", label: "Manhã", climaField: "clima_manha", condField: "cond_manha" },
+    { key: "tarde", label: "Tarde", climaField: "clima_tarde", condField: "cond_tarde" },
+    { key: "noite", label: "Noite", climaField: "clima_noite", condField: "cond_noite" },
+  ] as const;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Anotações do Dia</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Registre as condições climáticas e observações gerais que impactaram o canteiro de obras.
+          </p>
+        </div>
         {onCopyPrevious && !disabled && (
           <Button variant="outline" size="sm" onClick={onCopyPrevious}>
             <Copy className="h-4 w-4 mr-2" />
             Copiar do dia anterior
           </Button>
         )}
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Data */}
+      </div>
+
+      {/* Data + Pluviometria */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Data do Relatório</Label>
+          <Label className="text-sm text-muted-foreground">Data do Diário</Label>
           <Input type="date" value={formData.data} readOnly className="bg-muted" />
         </div>
-
-        {/* Condições Climáticas */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold">Condições Climáticas</h3>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Coluna Clima */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm text-muted-foreground">Clima</h4>
-              
-              {/* Manhã */}
-              <div className="space-y-3">
-                <Label className="text-sm">Manhã:</Label>
-                <RadioGroup value={formData.clima_manha} onValueChange={(v) => updateField('clima_manha', v)} disabled={disabled}>
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="claro" id="clima-manha-claro" disabled={disabled} />
-                      <Label htmlFor="clima-manha-claro" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Sun className="h-4 w-4 text-yellow-500" />
-                        Claro
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="nublado" id="clima-manha-nublado" disabled={disabled} />
-                      <Label htmlFor="clima-manha-nublado" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Cloud className="h-4 w-4 text-gray-500" />
-                        Nublado
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="chuvoso" id="clima-manha-chuvoso" disabled={disabled} />
-                      <Label htmlFor="clima-manha-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
-                        <CloudRain className="h-4 w-4 text-blue-500" />
-                        Chuvoso
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Tarde */}
-              <div className="space-y-3">
-                <Label className="text-sm">Tarde:</Label>
-                <RadioGroup value={formData.clima_tarde} onValueChange={(v) => updateField('clima_tarde', v)} disabled={disabled}>
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="claro" id="clima-tarde-claro" disabled={disabled} />
-                      <Label htmlFor="clima-tarde-claro" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Sun className="h-4 w-4 text-yellow-500" />
-                        Claro
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="nublado" id="clima-tarde-nublado" disabled={disabled} />
-                      <Label htmlFor="clima-tarde-nublado" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Cloud className="h-4 w-4 text-gray-500" />
-                        Nublado
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="chuvoso" id="clima-tarde-chuvoso" disabled={disabled} />
-                      <Label htmlFor="clima-tarde-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
-                        <CloudRain className="h-4 w-4 text-blue-500" />
-                        Chuvoso
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Noite */}
-              <div className="space-y-3">
-                <Label className="text-sm">Noite:</Label>
-                <RadioGroup value={formData.clima_noite} onValueChange={(v) => updateField('clima_noite', v)} disabled={disabled}>
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="claro" id="clima-noite-claro" disabled={disabled} />
-                      <Label htmlFor="clima-noite-claro" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Sun className="h-4 w-4 text-yellow-500" />
-                        Claro
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="nublado" id="clima-noite-nublado" disabled={disabled} />
-                      <Label htmlFor="clima-noite-nublado" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Cloud className="h-4 w-4 text-gray-500" />
-                        Nublado
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="chuvoso" id="clima-noite-chuvoso" disabled={disabled} />
-                      <Label htmlFor="clima-noite-chuvoso" className="font-normal cursor-pointer flex items-center gap-1">
-                        <CloudRain className="h-4 w-4 text-blue-500" />
-                        Chuvoso
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-
-            {/* Coluna Condições */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm text-muted-foreground">Condições</h4>
-              
-              {/* Manhã */}
-              <div className="space-y-3">
-                <Label className="text-sm">Manhã:</Label>
-                <RadioGroup value={formData.cond_manha} onValueChange={(v) => updateField('cond_manha', v)} disabled={disabled}>
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="praticavel" id="cond-manha-praticavel" disabled={disabled} />
-                      <Label htmlFor="cond-manha-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Praticável
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="impraticavel" id="cond-manha-impraticavel" disabled={disabled} />
-                      <Label htmlFor="cond-manha-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
-                        <X className="h-4 w-4 text-red-500" />
-                        Impraticável
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Tarde */}
-              <div className="space-y-3">
-                <Label className="text-sm">Tarde:</Label>
-                <RadioGroup value={formData.cond_tarde} onValueChange={(v) => updateField('cond_tarde', v)} disabled={disabled}>
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="praticavel" id="cond-tarde-praticavel" disabled={disabled} />
-                      <Label htmlFor="cond-tarde-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Praticável
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="impraticavel" id="cond-tarde-impraticavel" disabled={disabled} />
-                      <Label htmlFor="cond-tarde-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
-                        <X className="h-4 w-4 text-red-500" />
-                        Impraticável
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Noite */}
-              <div className="space-y-3">
-                <Label className="text-sm">Noite:</Label>
-                <RadioGroup value={formData.cond_noite} onValueChange={(v) => updateField('cond_noite', v)} disabled={disabled}>
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="praticavel" id="cond-noite-praticavel" disabled={disabled} />
-                      <Label htmlFor="cond-noite-praticavel" className="font-normal cursor-pointer flex items-center gap-1">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Praticável
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="impraticavel" id="cond-noite-impraticavel" disabled={disabled} />
-                      <Label htmlFor="cond-noite-impraticavel" className="font-normal cursor-pointer flex items-center gap-1">
-                        <X className="h-4 w-4 text-red-500" />
-                        Impraticável
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-          </div>
-
-          {/* Pluviometria */}
-          <div className="space-y-2">
-            <Label>Pluviometria (mm)</Label>
+        <div className="space-y-2">
+          <Label className="text-sm text-muted-foreground">Pluviometria Registrada (mm)</Label>
+          <div className="relative">
             <Input
               type="number"
               step="0.01"
-              placeholder="0.00"
-              value={formData.pluviometria_mm || ''}
-              onChange={(e) => updateField('pluviometria_mm', parseFloat(e.target.value) || undefined)}
+              placeholder="0"
+              value={formData.pluviometria_mm ?? ''}
+              onChange={(e) =>
+                updateField('pluviometria_mm', e.target.value === '' ? undefined : parseFloat(e.target.value))
+              }
               disabled={disabled}
+              className="pr-12"
             />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              mm
+            </span>
           </div>
         </div>
+      </div>
 
-        {/* Observações Gerais */}
-        <div className="space-y-2">
-          <Label>Observações Gerais</Label>
+      {/* Condições Climáticas */}
+      <Card className="rounded-2xl shadow-sm">
+        <CardContent className="p-6 space-y-5">
+          <div>
+            <h3 className="text-base font-semibold">Condições Climáticas</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Defina as condições e a viabilidade dos trabalhos para cada período do dia.
+            </p>
+          </div>
+
+          <div className="border rounded-xl overflow-hidden">
+            {/* Header row */}
+            <div className="hidden md:grid grid-cols-[110px_1fr_1fr] gap-4 px-4 py-3 bg-muted/40 border-b text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div>Período</div>
+              <div>Clima predominante</div>
+              <div>Condição de Trabalho</div>
+            </div>
+
+            {periodos.map((p, idx) => (
+              <div
+                key={p.key}
+                className={cn(
+                  "grid grid-cols-1 md:grid-cols-[110px_1fr_1fr] gap-3 md:gap-4 px-4 py-4",
+                  idx < periodos.length - 1 && "border-b"
+                )}
+              >
+                <div className="font-medium text-sm flex items-center">{p.label}</div>
+                <ClimaSegmented
+                  value={(formData as any)[p.climaField] ?? ''}
+                  onChange={(v) => updateField(p.climaField as keyof RdoFormData, v)}
+                  disabled={disabled}
+                />
+                <CondSegmented
+                  value={(formData as any)[p.condField] ?? ''}
+                  onChange={(v) => updateField(p.condField as keyof RdoFormData, v)}
+                  disabled={disabled}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Resumo visual */}
+          <div className="rounded-lg bg-muted/40 px-4 py-3 text-sm">
+            <span className="font-medium">Resumo Visual: </span>
+            <span className="text-muted-foreground">
+              Manhã: {climaEmoji(formData.clima_manha || '')} {condLabel(formData.cond_manha || '')}
+              {' · '}
+              Tarde: {climaEmoji(formData.clima_tarde || '')} {condLabel(formData.cond_tarde || '')}
+              {' · '}
+              Noite: {climaEmoji(formData.clima_noite || '')} {condLabel(formData.cond_noite || '')}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Observações Gerais */}
+      <Card className="rounded-2xl shadow-sm">
+        <CardContent className="p-6 space-y-3">
+          <div>
+            <h3 className="text-base font-semibold">Observações Gerais</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Registre eventos significativos, condições operacionais ou notas para a fiscalização estadual.
+            </p>
+          </div>
           <Textarea
             placeholder="Descreva as atividades gerais do dia, eventos importantes, etc..."
             rows={6}
@@ -232,8 +232,8 @@ export function AnotacoesStep({ formData, updateField, onCopyPrevious, disabled 
             onChange={(e) => updateField('observacoes', e.target.value)}
             disabled={disabled}
           />
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

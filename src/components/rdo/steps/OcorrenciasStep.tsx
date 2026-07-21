@@ -1,17 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface Occurrence {
   id?: string;
@@ -28,9 +28,18 @@ interface OcorrenciasStepProps {
   disabled?: boolean;
 }
 
+const GRAVIDADE_LEVELS = [
+  { level: 1, label: "1-Baixa", cls: "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" },
+  { level: 2, label: "2-Leve", cls: "border-green-500 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400" },
+  { level: 3, label: "3-Média", cls: "border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400" },
+  { level: 4, label: "4-Alta", cls: "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400" },
+  { level: 5, label: "5-Crítica", cls: "border-red-600 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400" },
+];
+
 export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepProps) {
   const queryClient = useQueryClient();
   const [localValues, setLocalValues] = useState<Record<string, Partial<Occurrence>>>({});
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const debouncedValues = useDebounce(localValues, 500);
 
   const { data: occurrences = [], isLoading } = useQuery({
@@ -42,7 +51,7 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
         .select('*')
         .eq('report_id', reportId)
         .order('created_at', { ascending: true });
-      
+
       if (error) throw error;
       return data as Occurrence[];
     },
@@ -55,7 +64,6 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
         toast.error('Salve o RDO antes de adicionar ocorrências');
         return;
       }
-
       const { error } = await supabase.from('rdo_occurrences').insert({
         obra_id: obraId,
         report_id: reportId,
@@ -63,7 +71,6 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
         gravidade: 3,
         impacto_cronograma: false,
       });
-
       if (error) throw error;
     },
     onSuccess: () => {
@@ -77,7 +84,6 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
         .from('rdo_occurrences')
         .update({ [field]: value })
         .eq('id', id);
-      
       if (error) throw error;
     },
     onMutate: async (variables: { id: string; field: keyof Occurrence; value: any }) => {
@@ -103,11 +109,8 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
         const next = { ...prev };
         const obj = { ...(next[id] || {}) } as Partial<Occurrence>;
         delete (obj as any)[field];
-        if (Object.keys(obj).length === 0) {
-          delete next[id];
-        } else {
-          next[id] = obj;
-        }
+        if (Object.keys(obj).length === 0) delete next[id];
+        else next[id] = obj;
         return next;
       });
     },
@@ -122,15 +125,12 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
         updateMutation.mutate({ id, field: field as keyof Occurrence, value });
       });
     });
+     
   }, [debouncedValues]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('rdo_occurrences')
-        .delete()
-        .eq('id', id);
-      
+      const { error } = await supabase.from('rdo_occurrences').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -139,157 +139,194 @@ export function OcorrenciasStep({ reportId, obraId, disabled }: OcorrenciasStepP
     },
   });
 
-  const getGravidadeBadge = (gravidade: number) => {
-    if (gravidade >= 4) return <Badge variant="destructive">Alta</Badge>;
-    if (gravidade === 3) return <Badge className="bg-orange-500">Média</Badge>;
-    return <Badge variant="secondary">Baixa</Badge>;
-  };
-
   if (isLoading) {
     return (
-      <Card className="rounded-2xl shadow-sm">
-        <CardHeader>
-          <CardTitle>Ocorrências</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-32" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-32" />
+      </div>
     );
   }
 
   return (
-    <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Ocorrências</CardTitle>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Registro de Ocorrências do Dia</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Descreva qualquer anomalia, quebra de contrato, atrasos operacionais ou paralisações justificadas.
+          </p>
+        </div>
         {!disabled && (
-          <Button onClick={() => addMutation.mutate()} size="sm">
+          <Button
+            onClick={() => addMutation.mutate()}
+            className="bg-primary hover:bg-primary/90 shrink-0"
+          >
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar
+            Adicionar Ocorrência
           </Button>
         )}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {occurrences.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+      </div>
+
+      {occurrences.length === 0 ? (
+        <Card className="rounded-2xl shadow-sm">
+          <CardContent className="py-12 text-center text-muted-foreground">
             Nenhuma ocorrência registrada.
-          </div>
-        ) : (
-          occurrences.map((occurrence) => (
-            <div
-              key={occurrence.id}
-              className={`p-4 border rounded-lg space-y-3 ${
-                occurrence.gravidade >= 4 ? 'border-destructive/50 bg-destructive/5' : ''
-              }`}
-            >
-                <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2 flex-1">
-                  {occurrence.gravidade >= 4 && (
-                    <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
-                  )}
-                  <Input
-                    placeholder="Título da ocorrência"
-                    value={localValues[occurrence.id!]?.titulo ?? occurrence.titulo}
-                    onChange={(e) =>
-                      setLocalValues(prev => ({
-                        ...prev,
-                        [occurrence.id!]: { ...prev[occurrence.id!], titulo: e.target.value }
-                      }))
-                    }
-                    className="flex-1"
-                    disabled={disabled}
-                  />
-                </div>
-                {!disabled && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteMutation.mutate(occurrence.id!)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="space-y-1">
-                  <Label className="text-xs">Gravidade (1-5)</Label>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((level) => (
-                      <button
-                        key={level}
-                        onClick={() =>
-                          !disabled && updateMutation.mutate({
-                            id: occurrence.id!,
-                            field: 'gravidade',
-                            value: level,
-                          })
-                        }
-                        disabled={disabled}
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${
-                          level <= occurrence.gravidade
-                            ? level >= 4
-                              ? 'bg-destructive border-destructive'
-                              : level === 3
-                              ? 'bg-orange-500 border-orange-500'
-                              : 'bg-yellow-500 border-yellow-500'
-                            : 'border-muted-foreground/30'
-                        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {level}
-                      </button>
-                    ))}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {occurrences.map((occurrence) => {
+            const isEditingTitle = editingTitleId === occurrence.id;
+            const currentTitle = localValues[occurrence.id!]?.titulo ?? occurrence.titulo;
+            return (
+              <Card key={occurrence.id} className="rounded-2xl shadow-sm">
+                <CardContent className="p-6 space-y-5">
+                  {/* Title row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      {isEditingTitle ? (
+                        <Input
+                          autoFocus
+                          placeholder="Título da ocorrência"
+                          value={currentTitle}
+                          onChange={(e) =>
+                            setLocalValues((prev) => ({
+                              ...prev,
+                              [occurrence.id!]: { ...prev[occurrence.id!], titulo: e.target.value },
+                            }))
+                          }
+                          onBlur={() => setEditingTitleId(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setEditingTitleId(null);
+                          }}
+                          disabled={disabled}
+                          className="text-lg font-semibold h-auto py-1"
+                        />
+                      ) : (
+                        <h3 className="text-lg font-semibold truncate">
+                          {currentTitle || <span className="text-muted-foreground font-normal italic">Sem título</span>}
+                        </h3>
+                      )}
+                    </div>
+                    {!disabled && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => setEditingTitleId(isEditingTitle ? null : occurrence.id!)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => deleteMutation.mutate(occurrence.id!)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                </div>
-                {getGravidadeBadge(occurrence.gravidade)}
-              </div>
 
-              <Textarea
-                placeholder="Descrição da ocorrência..."
-                rows={2}
-                value={(localValues[occurrence.id!]?.descricao ?? occurrence.descricao) || ''}
-                onChange={(e) =>
-                  setLocalValues(prev => ({
-                    ...prev,
-                    [occurrence.id!]: { ...prev[occurrence.id!], descricao: e.target.value }
-                  }))
-                }
-                disabled={disabled}
-              />
+                  {/* Gravidade */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Nível de Gravidade</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {GRAVIDADE_LEVELS.map((g) => {
+                        const active = occurrence.gravidade === g.level;
+                        return (
+                          <button
+                            key={g.level}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() =>
+                              updateMutation.mutate({
+                                id: occurrence.id!,
+                                field: 'gravidade',
+                                value: g.level,
+                              })
+                            }
+                            className={cn(
+                              "px-3 py-1.5 rounded-md border text-sm transition-all",
+                              active
+                                ? g.cls + " font-medium"
+                                : "border-border bg-background text-muted-foreground hover:border-primary/50",
+                              disabled && "opacity-50 cursor-not-allowed"
+                            )}
+                          >
+                            {g.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={occurrence.impacto_cronograma}
-                  onCheckedChange={(checked) =>
-                    updateMutation.mutate({
-                      id: occurrence.id!,
-                      field: 'impacto_cronograma',
-                      value: checked,
-                    })
-                  }
-                  disabled={disabled}
-                />
-                <Label>Impacto no cronograma</Label>
-              </div>
+                  {/* Relato */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Relato Consolidado</Label>
+                    <Textarea
+                      placeholder="Descreva a ocorrência..."
+                      rows={3}
+                      value={(localValues[occurrence.id!]?.descricao ?? occurrence.descricao) || ''}
+                      onChange={(e) =>
+                        setLocalValues((prev) => ({
+                          ...prev,
+                          [occurrence.id!]: { ...prev[occurrence.id!], descricao: e.target.value },
+                        }))
+                      }
+                      disabled={disabled}
+                      className="bg-muted/30 resize-none"
+                    />
+                  </div>
 
-              {occurrence.impacto_cronograma && (
-                <Textarea
-                  placeholder="Ação imediata necessária..."
-                  rows={2}
-                  value={(localValues[occurrence.id!]?.acao_imediata ?? occurrence.acao_imediata) || ''}
-                  onChange={(e) =>
-                    setLocalValues(prev => ({
-                      ...prev,
-                      [occurrence.id!]: { ...prev[occurrence.id!], acao_imediata: e.target.value }
-                    }))
-                  }
-                  disabled={disabled}
-                />
-              )}
-            </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
+                  {/* Impacto no cronograma */}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Gera impacto no cronograma?</Label>
+                    <Switch
+                      checked={occurrence.impacto_cronograma}
+                      onCheckedChange={(checked) =>
+                        updateMutation.mutate({
+                          id: occurrence.id!,
+                          field: 'impacto_cronograma',
+                          value: checked,
+                        })
+                      }
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  {occurrence.impacto_cronograma && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 dark:border-amber-800 p-4 space-y-3">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                          Justificativa do Impacto
+                        </Label>
+                        <Textarea
+                          placeholder="Descreva a ação imediata necessária e o impacto no cronograma..."
+                          rows={3}
+                          value={(localValues[occurrence.id!]?.acao_imediata ?? occurrence.acao_imediata) || ''}
+                          onChange={(e) =>
+                            setLocalValues((prev) => ({
+                              ...prev,
+                              [occurrence.id!]: { ...prev[occurrence.id!], acao_imediata: e.target.value },
+                            }))
+                          }
+                          disabled={disabled}
+                          className="bg-background resize-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
