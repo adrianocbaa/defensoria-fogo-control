@@ -1,61 +1,25 @@
-import { AlertCircle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MaintenanceTimeline } from '@/components/MaintenanceTimeline';
-import { MaintenanceMap } from '@/components/MaintenanceMap';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { TravelCalendar } from '@/components/TravelCalendar';
-import { AlertsShowcase } from '@/components/AlertsShowcase';
-import { InventoryDashboard } from '@/components/inventory/InventoryDashboard';
-import { MaterialsList } from '@/components/inventory/MaterialsList';
-import { StockMovement } from '@/components/inventory/StockMovement';
-import { StockReport } from '@/components/inventory/StockReport';
-import { MobileNotifications } from '@/components/inventory/MobileNotifications';
 import { MaintenanceSettings } from '@/components/MaintenanceSettings';
 import { MaintenanceReports } from '@/components/MaintenanceReports';
+import { MaintenanceOverview } from '@/components/maintenance/MaintenanceOverview';
+import { PlaceholderModule } from '@/components/maintenance/PlaceholderModule';
 
 interface MaintenanceDashboardProps {
   activeSection?: string;
+  onSectionChange?: (section: string) => void;
 }
 
-export function MaintenanceDashboard({ activeSection = 'overview' }: MaintenanceDashboardProps) {
+export function MaintenanceDashboard({
+  activeSection = 'overview',
+  onSectionChange,
+}: MaintenanceDashboardProps) {
   if (activeSection === 'tickets') {
     return <KanbanBoard />;
   }
 
-  if (activeSection === 'service-orders') {
-    return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Ordens de Serviço</h1>
-        <p className="text-muted-foreground">Gerenciamento de ordens de serviço em desenvolvimento...</p>
-      </div>
-    );
-  }
-
-  if (activeSection === 'contracts') {
-    return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Contratos e Fornecedores</h1>
-        <p className="text-muted-foreground">Gestão de contratos e fornecedores em desenvolvimento...</p>
-      </div>
-    );
-  }
-
-  if (activeSection === 'preventive') {
-    return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Manutenções Preventivas</h1>
-        <p className="text-muted-foreground">Sistema de manutenções preventivas em desenvolvimento...</p>
-      </div>
-    );
-  }
-
-  if (activeSection === 'history') {
-    return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Histórico de Atendimentos</h1>
-        <p className="text-muted-foreground">Histórico completo de atendimentos em desenvolvimento...</p>
-      </div>
-    );
+  if (activeSection === 'travel') {
+    return <TravelCalendar />;
   }
 
   if (activeSection === 'reports') {
@@ -66,216 +30,51 @@ export function MaintenanceDashboard({ activeSection = 'overview' }: Maintenance
     return <MaintenanceSettings />;
   }
 
-  if (activeSection === 'test') {
+  if (activeSection === 'history') {
     return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Teste</h1>
-        <p className="text-muted-foreground">Área de testes em desenvolvimento...</p>
-      </div>
+      <PlaceholderModule
+        title="Histórico de Atendimentos"
+        description="A visualização dedicada de histórico está sendo montada sobre o registro atual de movimentações e impedimentos. Enquanto isso, consulte o histórico dentro de cada chamado, na aba Chamados."
+      />
     );
   }
 
-  if (activeSection === 'travel') {
+  if (activeSection === 'preventive') {
     return (
-      <div className="p-6">
-        <TravelCalendar />
-      </div>
+      <PlaceholderModule
+        title="Manutenções Preventivas"
+        description="Módulo em desenvolvimento. Em breve será possível cadastrar periodicidades, equipamentos e agendas de manutenção preventiva."
+      />
     );
   }
 
-  // Inventory sections
+  if (activeSection === 'service-orders') {
+    return (
+      <PlaceholderModule
+        title="Ordens de Serviço"
+        description="Módulo em desenvolvimento."
+      />
+    );
+  }
+
+  if (activeSection === 'contracts') {
+    return (
+      <PlaceholderModule
+        title="Contratos e Fornecedores"
+        description="Módulo em desenvolvimento."
+      />
+    );
+  }
+
   if (activeSection === 'inventory') {
     return (
-      <div className="p-6">
-        <InventoryDashboard />
-      </div>
+      <PlaceholderModule
+        title="Inventário e Estoque"
+        description="Módulo em desenvolvimento. Será integrado ao Almoxarifado em etapa futura."
+      />
     );
   }
 
-  if (activeSection === 'materials-list') {
-    return (
-      <div className="p-6">
-        <MaterialsList />
-      </div>
-    );
-  }
-
-  if (activeSection === 'stock-movement') {
-    return (
-      <div className="p-6">
-        <StockMovement />
-      </div>
-    );
-  }
-
-  if (activeSection === 'stock-report') {
-    return (
-      <div className="p-6">
-        <StockReport />
-      </div>
-    );
-  }
-
-  if (activeSection === 'notifications') {
-    return (
-      <div className="p-6">
-        <MobileNotifications />
-      </div>
-    );
-  }
-  const stats = [
-    {
-      title: 'Chamados Abertos',
-      value: '12',
-      description: 'Aguardando atendimento',
-      icon: AlertCircle,
-      color: 'text-red-500',
-      bgColor: 'bg-red-50'
-    },
-    {
-      title: 'Chamados Resolvidos',
-      value: '24',
-      description: 'Concluídos esta semana',
-      icon: CheckCircle,
-      color: 'text-green-500',
-      bgColor: 'bg-green-50'
-    },
-    {
-      title: 'Em Atraso',
-      value: '3',
-      description: 'Necessitam atenção',
-      icon: Clock,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-50'
-    },
-    {
-      title: 'Taxa de Resolução',
-      value: '85%',
-      description: 'Últimos 30 dias',
-      icon: TrendingUp,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-50'
-    }
-  ];
-
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Painel de Manutenção</h1>
-        <p className="text-muted-foreground">
-          Visão geral dos chamados e atividades de manutenção
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-md ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                {stat.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Timeline Component */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Planejamento de Viagens</CardTitle>
-            <CardDescription>
-              Cronograma de visitas técnicas e manutenções
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MaintenanceTimeline />
-          </CardContent>
-        </Card>
-
-        {/* Map Component */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Mapa de Chamados</CardTitle>
-            <CardDescription>
-              Visualização geográfica dos chamados por localização
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MaintenanceMap />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Atividades Recentes</CardTitle>
-          <CardDescription>
-            Últimas atualizações dos chamados de manutenção
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              {
-                id: '#4356',
-                type: 'Elétrica',
-                location: 'Sala 201 - 2º Andar',
-                status: 'Em Progresso',
-                time: '10 min atrás',
-                priority: 'Alta'
-              },
-              {
-                id: '#4357',
-                type: 'Hidráulica',
-                location: 'Banheiro Masculino - 1º Andar',
-                status: 'Novo',
-                time: '25 min atrás',
-                priority: 'Normal'
-              },
-              {
-                id: '#4358',
-                type: 'Ar Condicionado',
-                location: 'Auditório Principal',
-                status: 'Resolvido',
-                time: '1h atrás',
-                priority: 'Baixa'
-              }
-            ].map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <div>
-                    <p className="font-medium text-sm">
-                      {activity.id} - {activity.type}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.location}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-medium">{activity.status}</p>
-                  <p className="text-xs text-muted-foreground">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  // overview
+  return <MaintenanceOverview onNavigate={onSectionChange} />;
 }
