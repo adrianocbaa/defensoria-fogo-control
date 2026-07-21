@@ -31,11 +31,11 @@ import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 const STATUS_CONFIG = {
-  rascunho: { label: 'Rascunho', color: 'bg-gray-100 text-gray-800 border-gray-200' },
-  preenchendo: { label: 'Preenchendo', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  concluido: { label: 'Concluído', color: 'bg-green-100 text-green-800 border-green-200' },
-  aprovado: { label: 'Aprovado', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  reprovado: { label: 'Reprovado', color: 'bg-red-100 text-red-800 border-red-200' },
+  rascunho:    { label: 'Rascunho',    color: 'bg-gray-100 text-gray-800 border-gray-200',       dot: 'bg-gray-400',    bar: 'bg-gray-300' },
+  preenchendo: { label: 'Preenchendo', color: 'bg-orange-100 text-orange-800 border-orange-200', dot: 'bg-orange-500',  bar: 'bg-orange-400' },
+  concluido:   { label: 'Concluído',   color: 'bg-green-100 text-green-800 border-green-200',    dot: 'bg-green-600',   bar: 'bg-green-500' },
+  aprovado:    { label: 'Aprovado',    color: 'bg-blue-100 text-blue-800 border-blue-200',       dot: 'bg-blue-600',    bar: 'bg-blue-500' },
+  reprovado:   { label: 'Reprovado',   color: 'bg-red-100 text-red-800 border-red-200',          dot: 'bg-red-600',     bar: 'bg-red-500' },
 };
 
 const MAX_DIAS_SEM_RDO = 7;
@@ -377,83 +377,91 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                   <div
                     key={day.toString()}
                     className={cn(
-                      "relative aspect-square border rounded-lg p-2 transition-colors",
-                      isToday && "ring-2 ring-primary",
+                      "group relative aspect-square border rounded-lg p-2 transition-all overflow-hidden",
+                      isToday && "ring-2 ring-primary ring-offset-1",
                       isDayMarkedOff && "bg-slate-100 dark:bg-slate-800/50 border-slate-300",
-                      (isApproved || isSignedByBoth) && !isDayMarkedOff && "bg-green-100 dark:bg-green-950/30 border-green-300",
-                      !isApproved && !isSignedByBoth && !isDayMarkedOff && isMissingRdo && "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200",
-                      !isApproved && !isSignedByBoth && !isDayMarkedOff && isBlockedForContratada && "bg-red-50/50 dark:bg-red-950/20 border-red-200",
-                      !isApproved && !isSignedByBoth && !isDayMarkedOff && !isBlockedForContratada && "hover:bg-accent/50"
+                      (isApproved || isSignedByBoth) && !isDayMarkedOff && "bg-green-50 dark:bg-green-950/30 border-green-300",
+                      !isApproved && !isSignedByBoth && !isDayMarkedOff && isMissingRdo && "bg-amber-50/60 dark:bg-amber-950/20 border-amber-200",
+                      !isApproved && !isSignedByBoth && !isDayMarkedOff && isBlockedForContratada && "bg-red-50/60 dark:bg-red-950/20 border-red-200",
+                      !isApproved && !isSignedByBoth && !isDayMarkedOff && !isBlockedForContratada && "hover:bg-accent/50 hover:shadow-sm"
                     )}
                   >
+                    {/* Faixa vertical de status */}
+                    {rdo && statusConfig && (
+                      <span className={cn("absolute left-0 top-0 bottom-0 w-1", statusConfig.bar)} aria-hidden />
+                    )}
+
                     {/* Número do dia + indicador de alerta */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">{format(day, 'd')}</span>
-                      {isMissingRdo && !rdo && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex">
-                                <AlertTriangle className="h-3 w-3 text-amber-500" />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">RDO não preenchido</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
+                    <div className="flex items-start justify-between">
+                      <span className={cn(
+                        "text-sm font-semibold leading-none",
+                        isToday && "text-primary",
+                        !rdo && !isDayMarkedOff && "text-muted-foreground"
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {isMissingRdo && !rdo && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex">
+                                  <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">RDO não preenchido</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {/* Lixeira aparece só no hover */}
+                        {rdo && canEditRdo && obraStatus !== 'concluida' && (rdo.status !== 'aprovado' || isAdmin) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-red-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteDialog({ open: true, reportId: rdo.report_id, date: rdo.data });
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 text-red-600" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Conteúdo do RDO */}
                     {rdo ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <button
-                            onClick={() => handleCreateRdo(day)}
-                            className="flex-1 text-left"
-                          >
-                            <Badge
-                              variant="outline"
-                              className={cn("text-[10px] px-1 py-0 h-auto", statusConfig?.color)}
-                            >
-                              #{rdo.numero_seq}
-                            </Badge>
-                          </button>
-                          {/* Botão excluir: RDOs aprovados só podem ser excluídos por admin, e somente quem pode editar pode excluir. Obra concluída bloqueia exclusão */}
-                          {canEditRdo && obraStatus !== 'concluida' && (rdo.status !== 'aprovado' || isAdmin) && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 hover:bg-red-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteDialog({ open: true, reportId: rdo.report_id, date: rdo.data });
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3 text-red-600" />
-                            </Button>
-                          )}
-                        </div>
-                        
+                      <div className="mt-1 space-y-1">
+                        <button
+                          onClick={() => handleCreateRdo(day)}
+                          className="flex items-center gap-1.5 text-left w-full group/btn"
+                        >
+                          <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", statusConfig?.dot)} />
+                          <span className="text-[11px] font-medium text-foreground/80 group-hover/btn:text-foreground truncate">
+                            #{rdo.numero_seq}
+                          </span>
+                        </button>
+
                         {/* Indicadores */}
                         <div className="flex gap-0.5 flex-wrap items-center">
                           {rdo.photo_count > 0 && (
-                            <span className="text-[8px] bg-green-100 text-green-700 px-1 rounded">
+                            <span className="text-[9px] bg-white/70 dark:bg-white/10 border border-border/60 text-foreground/70 px-1 rounded">
                               {rdo.photo_count} fotos
                             </span>
                           )}
                           {rdo.occurrence_count > 0 && (
-                            <span className="text-[8px] bg-red-100 text-red-700 px-1 rounded">
+                            <span className="text-[9px] bg-red-50 border border-red-200 text-red-700 px-1 rounded">
                               {rdo.occurrence_count} ocor
                             </span>
                           )}
-                          {/* Indicador de quantitativos inseridos pela contratada */}
                           {rdo.quantitativo_count > 0 && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center gap-0.5 text-[8px] bg-purple-100 text-purple-700 px-1 rounded">
+                                  <span className="inline-flex items-center gap-0.5 text-[9px] bg-purple-50 border border-purple-200 text-purple-700 px-1 rounded">
                                     <BarChart2 className="h-2 w-2" />
                                     {rdo.quantitativo_count}
                                   </span>
@@ -464,7 +472,6 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          {/* Indicador de RDO reprovado anteriormente */}
                           {rdo.was_rejected && (
                             <TooltipProvider>
                               <Tooltip>
@@ -479,7 +486,6 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          {/* Indicador de pendência de assinatura - cores diferentes para Fiscal e Contratada */}
                           {rdo.assinatura_contratada_validado_em && !rdo.assinatura_fiscal_validado_em && (
                             <TooltipProvider>
                               <Tooltip>
