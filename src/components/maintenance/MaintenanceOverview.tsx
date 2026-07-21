@@ -69,7 +69,7 @@ export function MaintenanceOverview({ onNavigate }: MaintenanceOverviewProps) {
     const cargaList = Array.from(carga.entries())
       .map(([id, count]) => ({
         id,
-        name: managers.find((m) => m.id === id)?.name ?? 'Servidor',
+        name: managers.find((m) => m.id === id)?.nome ?? 'Servidor',
         count,
       }))
       .sort((a, b) => b.count - a.count)
