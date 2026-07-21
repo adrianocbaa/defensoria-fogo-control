@@ -267,58 +267,66 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
           Nova Tarefa
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Novo Procedimento de Manutenção — Etapa {currentStep} de 3</DialogTitle>
-          <div className="flex gap-2 pt-2">
-            {[1, 2, 3].map((s) => (
-              <div
-                key={s}
-                className={cn(
-                  'h-1.5 flex-1 rounded-full transition-colors',
-                  currentStep >= s ? 'bg-primary' : 'bg-muted'
+      <DialogContent className="sm:max-w-[960px] max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
+          <DialogTitle className="text-primary text-xl font-bold">
+            Criar Novo Chamado de Manutenção
+          </DialogTitle>
+          <div className="flex items-center gap-3 pt-4">
+            {[
+              { n: 1, label: 'Identificação' },
+              { n: 2, label: 'Serviços e Materiais' },
+              { n: 3, label: 'Revisão Final' },
+            ].map((s, i, arr) => (
+              <div key={s.n} className="flex items-center gap-3 flex-1 last:flex-none">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      'h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors',
+                      currentStep >= s.n
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    {s.n}
+                  </div>
+                  <span
+                    className={cn(
+                      'text-sm whitespace-nowrap',
+                      currentStep === s.n
+                        ? 'font-semibold text-foreground'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className="h-px flex-1 bg-border" />
                 )}
-              />
+              </div>
             ))}
           </div>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <div className="px-6 py-5 space-y-5">
           {currentStep === 1 && (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-6">
+              <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Título do procedimento</Label>
+                <Label htmlFor="title">Título do Chamado *</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Ex.: Manutenção geral no Núcleo Central"
+                  placeholder="Ex.: Infiltração no teto — Bloco B"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="priority">Prioridade</Label>
-                  <Select
-                    value={formData.priority}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, priority: value as 'Alta' | 'Média' | 'Baixa' }))
-                    }
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Alta">Alta</SelectItem>
-                      <SelectItem value="Média">Média</SelectItem>
-                      <SelectItem value="Baixa">Baixa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="type">Tipo</Label>
+                  <Label htmlFor="type">Tipo de Solicitação *</Label>
                   <Select
                     value={formData.type}
                     onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
@@ -336,59 +344,144 @@ export function CreateTaskModal({ onCreateTask }: CreateTaskModalProps) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Prioridade *</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['Alta', 'Média', 'Baixa'] as const).map((p) => {
+                      const active = formData.priority === p;
+                      const activeCls =
+                        p === 'Alta'
+                          ? 'bg-red-100 text-red-700 border-red-300'
+                          : p === 'Média'
+                          ? 'bg-amber-100 text-amber-700 border-amber-300'
+                          : 'bg-emerald-100 text-emerald-700 border-emerald-300';
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, priority: p }))}
+                          className={cn(
+                            'h-9 rounded-md border text-sm font-medium transition-colors',
+                            active
+                              ? activeCls
+                              : 'bg-background text-foreground hover:bg-muted'
+                          )}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
-              {/* Localização padrão removida: agora derivada do Núcleo Requerente */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="assignee">Solicitante *</Label>
+                  <Input
+                    id="assignee"
+                    list="assignee-suggestions"
+                    value={formData.assignee}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, assignee: e.target.value }))}
+                    placeholder="Digite o nome do solicitante..."
+                    required
+                  />
+                  <datalist id="assignee-suggestions">
+                    {maintenanceUsers.map((u) => (
+                      <option key={u.id} value={u.display_name || u.user_id} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="requestedAt">Data da Solicitação *</Label>
+                  <Input
+                    id="requestedAt"
+                    type="date"
+                    value={requestedAt}
+                    onChange={(e) => setRequestedAt(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assignee">Solicitante</Label>
-                <Input
-                  id="assignee"
-                  list="assignee-suggestions"
-                  value={formData.assignee}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, assignee: e.target.value }))}
-                  placeholder="Digite o nome do solicitante..."
-                  required
+                <Label htmlFor="nucleo">Núcleo Administrativo *</Label>
+                <NucleoCombobox
+                  options={nuclei}
+                  value={nucleoId}
+                  onChange={setNucleoId}
+                  placeholder="Selecione um núcleo..."
                 />
-                <datalist id="assignee-suggestions">
-                  {maintenanceUsers.map((u) => (
-                    <option key={u.id} value={u.display_name || u.user_id} />
-                  ))}
-                </datalist>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="requestedAt">Data de Solicitação *</Label>
-                <Input
-                  id="requestedAt"
-                  type="date"
-                  value={requestedAt}
-                  onChange={(e) => setRequestedAt(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Servidores da manutenção (padrão)</Label>
+                <Label>Equipe de Responsáveis</Label>
                 <ManagersMultiSelect
                   value={managerIds}
                   onChange={setManagerIds}
                   placeholder="Selecione um ou mais servidores (opcional)..."
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Padrão do procedimento. Cada serviço pode personalizar sua própria lista.
+                  Padrão do chamado. Cada serviço pode personalizar sua própria equipe.
                 </p>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="nucleo">Núcleo Requerente</Label>
-                <NucleoCombobox
-                  options={nuclei}
-                  value={nucleoId}
-                  onChange={setNucleoId}
-                  placeholder="Selecione um núcleo (opcional)..."
-                />
               </div>
+
+              {/* Resumo lateral */}
+              <aside className="rounded-lg border bg-muted/30 p-4 h-fit space-y-4 md:sticky md:top-0">
+                <h4 className="text-primary font-semibold text-sm">Resumo do Chamado</h4>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Título</div>
+                    <div className="font-medium text-foreground break-words">
+                      {formData.title || <span className="text-muted-foreground italic">—</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Tipo e Prioridade</div>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {formData.type ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-foreground text-xs font-medium">
+                          {formData.type}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">—</span>
+                      )}
+                      {formData.priority && (
+                        <span
+                          className={cn(
+                            'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium',
+                            formData.priority === 'Alta' && 'bg-red-100 text-red-700',
+                            formData.priority === 'Média' && 'bg-amber-100 text-amber-700',
+                            formData.priority === 'Baixa' && 'bg-emerald-100 text-emerald-700'
+                          )}
+                        >
+                          {formData.priority}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Núcleo e Local</div>
+                    <div className="font-medium text-foreground">
+                      {derivedLocation || <span className="text-muted-foreground italic font-normal">—</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Solicitante</div>
+                    <div className="font-medium text-foreground">
+                      {formData.assignee || <span className="text-muted-foreground italic font-normal">—</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Data</div>
+                    <div className="font-medium text-foreground">
+                      {requestedAt ? requestedAt.split('-').reverse().join('/') : <span className="text-muted-foreground italic font-normal">—</span>}
+                    </div>
+                  </div>
+                </div>
+              </aside>
             </div>
           )}
 
