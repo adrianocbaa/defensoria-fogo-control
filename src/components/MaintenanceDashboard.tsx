@@ -3,6 +3,7 @@ import { TravelCalendar } from '@/components/TravelCalendar';
 import { MaintenanceSettings } from '@/components/MaintenanceSettings';
 import { MaintenanceReports } from '@/components/MaintenanceReports';
 import { MaintenanceOverview } from '@/components/maintenance/MaintenanceOverview';
+import { MaintenanceHistory } from '@/components/maintenance/MaintenanceHistory';
 import { PlaceholderModule } from '@/components/maintenance/PlaceholderModule';
 
 interface MaintenanceDashboardProps {
@@ -31,12 +32,7 @@ export function MaintenanceDashboard({
   }
 
   if (activeSection === 'history') {
-    return (
-      <PlaceholderModule
-        title="Histórico de Atendimentos"
-        description="A visualização dedicada de histórico está sendo montada sobre o registro atual de movimentações e impedimentos. Enquanto isso, consulte o histórico dentro de cada chamado, na aba Chamados."
-      />
-    );
+    return <MaintenanceHistory />;
   }
 
   if (activeSection === 'preventive') {
