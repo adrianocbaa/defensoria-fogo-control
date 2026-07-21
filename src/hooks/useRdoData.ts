@@ -43,6 +43,9 @@ export interface FotoRecente {
   file_url: string;
   thumb_url: string | null;
   created_at: string;
+  report_id?: string | null;
+  numero_seq?: number | null;
+  data?: string | null;
 }
 
 export function useRdoCounts(obraId: string, currentMonth: Date) {
@@ -257,14 +260,22 @@ export function useFotosRecentes(obraId: string, limit: number = 12) {
     queryFn: async (): Promise<FotoRecente[]> => {
       const { data, error } = await supabase
         .from('rdo_media')
-        .select('id, file_url, thumb_url, created_at')
+        .select('id, file_url, thumb_url, created_at, report_id, rdo_reports(numero_seq, data)')
         .eq('obra_id', obraId)
         .eq('tipo', 'foto')
         .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        file_url: row.file_url,
+        thumb_url: row.thumb_url,
+        created_at: row.created_at,
+        report_id: row.report_id,
+        numero_seq: row.rdo_reports?.numero_seq ?? null,
+        data: row.rdo_reports?.data ?? null,
+      }));
     },
     enabled: !!obraId,
   });
