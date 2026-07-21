@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check, Trash2, AlertOctagon, Users } from 'lucide-react';
+import { Clock, MapPin, Wrench, Zap, Droplets, Plus, Edit, Eye, MoreVertical, PaintRoller, Check, Trash2, AlertOctagon, Users, Plane, Camera, ImageIcon, ListChecks, Inbox } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ImpedimentReasonDialog } from './ImpedimentReasonDialog';
 import { useTicketImpediments, addImpediment, resolveActiveImpediments, type TicketImpediment } from '@/hooks/useTicketImpediments';
