@@ -58,10 +58,17 @@ const initialTickets: Record<string, Ticket[]> = {
   'Concluído': []
 };
 
-const priorityColors = {
-  'Alta': 'destructive',
-  'Média': 'warning',
-  'Baixa': 'secondary'
+const priorityStyles: Record<string, { badge: string; dot: string; label: string }> = {
+  'Alta':  { badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900', dot: 'bg-red-500', label: 'Prioridade alta' },
+  'Média': { badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900', dot: 'bg-amber-500', label: 'Prioridade média' },
+  'Baixa': { badge: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700', dot: 'bg-slate-400', label: 'Prioridade baixa' },
+};
+
+const statusStyles: Record<string, { dot: string; ring: string; soft: string }> = {
+  'Pendente':     { dot: 'bg-slate-400',    ring: 'ring-slate-300',    soft: 'bg-slate-50/60 dark:bg-slate-900/30' },
+  'Em andamento': { dot: 'bg-blue-500',     ring: 'ring-blue-300',     soft: 'bg-blue-50/50 dark:bg-blue-950/20' },
+  'Impedido':     { dot: 'bg-red-500',      ring: 'ring-red-300',      soft: 'bg-red-50/50 dark:bg-red-950/20' },
+  'Concluído':    { dot: 'bg-emerald-500',  ring: 'ring-emerald-300',  soft: 'bg-emerald-50/50 dark:bg-emerald-950/20' },
 };
 
 const ALL_STATUSES = ['Pendente', 'Em andamento', 'Impedido', 'Concluído'] as const;
