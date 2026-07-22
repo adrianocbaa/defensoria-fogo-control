@@ -1636,6 +1636,7 @@ export type Database = {
           requested_at: string
           services: Json | null
           status: string
+          ticket_number: number
           title: string
           travel_id: string | null
           type: string
@@ -1665,6 +1666,7 @@ export type Database = {
           requested_at?: string
           services?: Json | null
           status: string
+          ticket_number?: number
           title: string
           travel_id?: string | null
           type: string
@@ -1694,6 +1696,7 @@ export type Database = {
           requested_at?: string
           services?: Json | null
           status?: string
+          ticket_number?: number
           title?: string
           travel_id?: string | null
           type?: string
