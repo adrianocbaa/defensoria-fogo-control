@@ -221,10 +221,15 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
     svcs.reduce((acc, s) => acc + (s.reference_photos?.length ?? 0), 0);
   const execPhotosCount = svcs.reduce((acc, s) => acc + (s.execution_photos?.length ?? 0), 0);
 
-  const dateLabel = ticket.requestedAt
-    ? new Date(ticket.requestedAt).toLocaleDateString('pt-BR')
-    : ticket.createdAt;
-  const dateTooltip = ticket.requestedAt ? 'Solicitado em' : 'Criado em';
+  const isConcluido = currentStatus === 'Concluído' && !!ticket.completedAt;
+  const dateLabel = isConcluido
+    ? ticket.completedAt!.toLocaleDateString('pt-BR')
+    : ticket.requestedAt
+      ? new Date(ticket.requestedAt).toLocaleDateString('pt-BR')
+      : ticket.createdAt;
+  const dateTooltip = isConcluido
+    ? 'Concluído em'
+    : ticket.requestedAt ? 'Solicitado em' : 'Criado em';
 
   const prio = priorityStyles[ticket.priority] ?? priorityStyles['Baixa'];
   const st = statusStyles[currentStatus] ?? statusStyles['Pendente'];
