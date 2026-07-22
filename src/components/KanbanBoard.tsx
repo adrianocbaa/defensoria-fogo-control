@@ -530,6 +530,7 @@ export function KanbanBoard() {
     Object.entries(dbTickets).forEach(([status, statusTickets]) => {
       convertedTickets[status] = (statusTickets as MaintenanceTicket[]).map(ticket => ({
         ...ticket,
+        ticketNumber: (ticket as any).ticket_number ?? undefined,
         createdAt: new Date(ticket.created_at).toLocaleDateString('pt-BR'),
         requestType: ticket.request_type,
         processNumber: ticket.process_number,
