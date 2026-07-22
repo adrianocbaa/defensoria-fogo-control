@@ -253,7 +253,12 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
         <CardHeader className="pb-2 pt-3 pl-4 pr-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 mb-1">
+              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                {ticket.ticketNumber != null && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-muted text-[10px] font-semibold text-muted-foreground tabular-nums">
+                    #{String(ticket.ticketNumber).padStart(4, '0')}
+                  </span>
+                )}
                 <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-semibold uppercase tracking-wide ${prio.badge}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${prio.dot}`} aria-hidden />
                   {ticket.priority}
