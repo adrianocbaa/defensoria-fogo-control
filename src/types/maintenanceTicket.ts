@@ -8,6 +8,7 @@ import type { TaskPhoto } from '@/components/maintenance/TaskPhotoUploader';
  */
 export interface UITicket {
   id: string;
+  ticketNumber?: number;
   title: string;
   priority: 'Alta' | 'Média' | 'Baixa';
   type: string;
