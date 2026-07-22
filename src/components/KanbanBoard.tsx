@@ -221,10 +221,15 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
     svcs.reduce((acc, s) => acc + (s.reference_photos?.length ?? 0), 0);
   const execPhotosCount = svcs.reduce((acc, s) => acc + (s.execution_photos?.length ?? 0), 0);
 
-  const dateLabel = ticket.requestedAt
-    ? new Date(ticket.requestedAt).toLocaleDateString('pt-BR')
-    : ticket.createdAt;
-  const dateTooltip = ticket.requestedAt ? 'Solicitado em' : 'Criado em';
+  const isConcluido = currentStatus === 'Concluído' && !!ticket.completedAt;
+  const dateLabel = isConcluido
+    ? ticket.completedAt!.toLocaleDateString('pt-BR')
+    : ticket.requestedAt
+      ? new Date(ticket.requestedAt).toLocaleDateString('pt-BR')
+      : ticket.createdAt;
+  const dateTooltip = isConcluido
+    ? 'Concluído em'
+    : ticket.requestedAt ? 'Solicitado em' : 'Criado em';
 
   const prio = priorityStyles[ticket.priority] ?? priorityStyles['Baixa'];
   const st = statusStyles[currentStatus] ?? statusStyles['Pendente'];
@@ -253,7 +258,12 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
         <CardHeader className="pb-2 pt-3 pl-4 pr-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 mb-1">
+              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                {ticket.ticketNumber != null && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-muted text-[10px] font-semibold text-muted-foreground tabular-nums">
+                    #{String(ticket.ticketNumber).padStart(4, '0')}
+                  </span>
+                )}
                 <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-semibold uppercase tracking-wide ${prio.badge}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${prio.dot}`} aria-hidden />
                   {ticket.priority}
@@ -530,6 +540,7 @@ export function KanbanBoard() {
     Object.entries(dbTickets).forEach(([status, statusTickets]) => {
       convertedTickets[status] = (statusTickets as MaintenanceTicket[]).map(ticket => ({
         ...ticket,
+        ticketNumber: (ticket as any).ticket_number ?? undefined,
         createdAt: new Date(ticket.created_at).toLocaleDateString('pt-BR'),
         requestType: ticket.request_type,
         processNumber: ticket.process_number,

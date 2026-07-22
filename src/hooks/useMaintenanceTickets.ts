@@ -5,6 +5,7 @@ import type { TicketService } from './useTicketServices';
 
 export interface MaintenanceTicket {
   id: string;
+  ticket_number?: number;
   title: string;
   priority: 'Alta' | 'Média' | 'Baixa';
   type: string;
