@@ -104,7 +104,13 @@ export function useChecklistDinamico(obraId: string) {
       .order('created_at', { ascending: true });
 
     if (error) console.error(error);
-    const list = (data ?? []) as ChecklistPdf[];
+    const rows = (data ?? []) as ChecklistPdf[];
+    const list: ChecklistPdf[] = await Promise.all(
+      rows.map(async (p) => ({
+        ...p,
+        pdf_url: (await signChecklistUrl('checklist-pdfs', p.pdf_url)) ?? p.pdf_url,
+      })),
+    );
     setPdfs(list);
     setLoading(false);
 
