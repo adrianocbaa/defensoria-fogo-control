@@ -77,18 +77,20 @@ export function useChecklistDinamico(obraId: string) {
       return null;
     };
 
-    const mapped: ChecklistAmbiente[] = (data || []).map((a: any) => ({
+    const mapped: ChecklistAmbiente[] = await Promise.all((data || []).map(async (a: any) => ({
       ...a,
       shape_type: a.shape_type || 'rect',
       shape_data: a.shape_data || null,
-      servicos: ((a.checklist_servicos || []) as any[])
-        .map((s: any): ChecklistServico => ({
+      servicos: await Promise.all(((a.checklist_servicos || []) as any[])
+        .sort((x, y) => x.ordem - y.ordem)
+        .map(async (s: any): Promise<ChecklistServico> => ({
           ...s,
           foto_reprovacao_pin: toPoint(s.foto_reprovacao_pin),
           location_pin: toPoint(s.location_pin),
-        }))
-        .sort((x, y) => x.ordem - y.ordem),
-    }));
+          foto_reprovacao_url: await signChecklistUrl('checklist-fotos', s.foto_reprovacao_url),
+          foto_correcao_url: await signChecklistUrl('checklist-fotos', s.foto_correcao_url),
+        }))),
+    })));
     setAmbientes(mapped);
   }, []);
 
