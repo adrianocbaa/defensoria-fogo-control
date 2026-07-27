@@ -4014,7 +4014,17 @@ export function Medicao() {
   // INCLUINDO a medição atual em edição (não salva ainda)
   const calcularQuantidadeAcumulada = (itemId: number) => {
     if (!medicaoAtual) return 0;
-    
+
+    // Para itens extracontratuais, derivar a Qtd Acumulada do Valor Acumulado
+    // dividido pelo preço unitário. Isso evita que supressões feitas apenas em
+    // valor (para corrigir pagamentos indevidos em medições bloqueadas) zerem
+    // artificialmente a quantidade física executada exibida.
+    const itemRef = items.find(i => i.id === itemId);
+    if (itemRef && itemRef.origem === 'extracontratual' && Number(itemRef.valorUnitario) > 0) {
+      const valorAcum = calcularValorAcumuladoItem(itemId);
+      return valorAcum / Number(itemRef.valorUnitario);
+    }
+
     let qntAcumulada = 0;
     
     // Somar medições anteriores (bloqueadas)
