@@ -4015,33 +4015,31 @@ export function Medicao() {
   const calcularQuantidadeAcumulada = (itemId: number) => {
     if (!medicaoAtual) return 0;
 
-    // Para itens extracontratuais, derivar a Qtd Acumulada do Valor Acumulado
-    // dividido pelo preço unitário. Isso evita que supressões feitas apenas em
-    // valor (para corrigir pagamentos indevidos em medições bloqueadas) zerem
-    // artificialmente a quantidade física executada exibida.
     const itemRef = items.find(i => i.id === itemId);
-    if (itemRef && itemRef.origem === 'extracontratual' && Number(itemRef.valorUnitario) > 0) {
-      const valorAcum = calcularValorAcumuladoItem(itemId);
-      return valorAcum / Number(itemRef.valorUnitario);
-    }
+    const ehExtra = itemRef?.origem === 'extracontratual';
 
     let qntAcumulada = 0;
-    
+
     // Somar medições anteriores (bloqueadas)
     const medicoesAnteriores = medicoes.filter(m => m.bloqueada && m.id < medicaoAtual);
     medicoesAnteriores.forEach(medicao => {
       const dadosHierarquicos = dadosHierarquicosMemoizados[medicao.id];
       if (dadosHierarquicos && dadosHierarquicos[itemId]) {
-        qntAcumulada += dadosHierarquicos[itemId].qnt || 0;
+        const q = dadosHierarquicos[itemId].qnt || 0;
+        // Em itens extracontratuais, ignorar qtds negativas: supressões
+        // servem para corrigir valor pago indevidamente em medições
+        // bloqueadas, sem alterar a quantidade fisicamente executada.
+        qntAcumulada += ehExtra ? Math.max(0, q) : q;
       }
     });
-    
+
     // Somar também a medição atual (em edição - não salva ainda)
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
     if (medicaoAtualObj && medicaoAtualObj.dados[itemId]) {
-      qntAcumulada += medicaoAtualObj.dados[itemId].qnt || 0;
+      const q = medicaoAtualObj.dados[itemId].qnt || 0;
+      qntAcumulada += ehExtra ? Math.max(0, q) : q;
     }
-    
+
     return qntAcumulada;
   };
 
