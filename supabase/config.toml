@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.elevenlabs-transcribe]
 verify_jwt = false
+
+[functions.inbound-maintenance-email]
+verify_jwt = false
