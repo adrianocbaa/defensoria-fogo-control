@@ -80,10 +80,37 @@ serve(async (req) => {
   }
 
   let payload: any;
+  const contentType = req.headers.get("content-type") || "";
   try {
-    payload = await req.json();
-  } catch {
-    return json(400, { error: "invalid_json" });
+    if (contentType.includes("message/rfc822") || contentType.includes("text/plain")) {
+      // Modo bruto: e-mail MIME cru (enviado pelo Cloudflare Email Worker)
+      const rawText = await req.text();
+      const parsed: any = await PostalMime.parse(rawText);
+      payload = {
+        from: parsed.from ? { address: parsed.from.address, name: parsed.from.name } : null,
+        to: (parsed.to || []).map((t: any) => ({ address: t.address })),
+        subject: parsed.subject || "",
+        text: parsed.text || "",
+        html: parsed.html || "",
+        headers: { "message-id": parsed.messageId || "" },
+        attachments: (parsed.attachments || []).map((att: any) => {
+          const bytes = new Uint8Array(att.content);
+          let bin = "";
+          for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+          return {
+            filename: att.filename || "arquivo",
+            content_type: att.mimeType || "application/octet-stream",
+            size: bytes.length,
+            content: btoa(bin),
+          };
+        }),
+      };
+    } else {
+      payload = await req.json();
+    }
+  } catch (e) {
+    console.error("inbound: falha no parse", e);
+    return json(400, { error: "invalid_payload" });
   }
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
