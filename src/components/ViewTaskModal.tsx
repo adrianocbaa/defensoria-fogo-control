@@ -83,7 +83,9 @@ function sanitizeFileName(name: string) {
 export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTaskModalProps) {
   const { managers } = useMaintenanceManagers(false);
   const { nuclei } = useNucleiList();
-  const { isGM, canEdit } = useUserRole();
+  const { isGM: rawIsGM, canEdit: rawCanEdit, isMaintenanceResponsible } = useUserRole();
+  const isGM = isMaintenanceResponsible ? false : rawIsGM;
+  const canEdit = isMaintenanceResponsible ? true : rawCanEdit;
 
   const [services, setServices] = useState<TicketService[]>([]);
   const [materials, setMaterials] = useState<{ name: string; completed: boolean }[]>([]);
