@@ -39,7 +39,8 @@ interface EditTaskModalProps {
 }
 
 export function EditTaskModal({ ticket, open, onOpenChange, onUpdateTask }: EditTaskModalProps) {
-  const { isGM } = useUserRole();
+  const { isGM: rawIsGM, isMaintenanceResponsible } = useUserRole();
+  const isGM = isMaintenanceResponsible ? false : rawIsGM;
   const { types: taskTypes } = useMaintenanceTypes();
   
   const { nuclei } = useNucleiList();

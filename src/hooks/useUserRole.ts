@@ -7,28 +7,37 @@ export type UserRole = 'admin' | 'editor' | 'viewer' | 'gm' | 'manutencao' | 'co
 export function useUserRole() {
   const { user } = useAuth();
   const [role, setRole] = useState<UserRole>('viewer');
+  const [isMaintenanceResponsible, setIsMaintenanceResponsible] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async () => {
     if (!user) {
       setRole('viewer');
+      setIsMaintenanceResponsible(false);
       setLoading(false);
       return;
     }
 
     try {
-      const { data, error } = await supabase
-        .rpc('get_user_role', { user_uuid: user.id });
+      const [{ data: roleData, error: roleErr }, { data: profileData }] = await Promise.all([
+        supabase.rpc('get_user_role', { user_uuid: user.id }),
+        (supabase.from('profiles') as any)
+          .select('is_maintenance_responsible')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+      ]);
 
-      if (error) {
-        console.error('Error fetching user role:', error);
+      if (roleErr) {
+        console.error('Error fetching user role:', roleErr);
         setRole('viewer');
       } else {
-        setRole((data as UserRole) || 'viewer');
+        setRole((roleData as UserRole) || 'viewer');
       }
+      setIsMaintenanceResponsible(!!(profileData as any)?.is_maintenance_responsible);
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
       setRole('viewer');
+      setIsMaintenanceResponsible(false);
     } finally {
       setLoading(false);
     }
@@ -39,6 +48,7 @@ export function useUserRole() {
       fetchUserRole();
     } else {
       setRole('viewer');
+      setIsMaintenanceResponsible(false);
       setLoading(false);
     }
   }, [user?.id]);
@@ -63,6 +73,7 @@ export function useUserRole() {
     canEdit,
     isGM,
     isContratada,
+    isMaintenanceResponsible,
     canEditRDO,
     canViewMedicoes,
     canViewObras,
