@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
-import { AlertCircle, CheckCircle2, Clock, TrendingUp, Loader2, MapPin, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, CheckCircle2, TrendingUp, Loader2, MapPin, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMaintenanceTickets, type MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
 import { useAvailableTravels } from '@/hooks/useAvailableTravels';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 const STATUS_ORDER: MaintenanceTicket['status'][] = ['Pendente', 'Em andamento', 'Impedido', 'Concluído'];
@@ -28,29 +29,50 @@ export function MaintenanceOverview({ onNavigate }: MaintenanceOverviewProps) {
   const { tickets, loading } = useMaintenanceTickets();
   const { travels } = useAvailableTravels();
   const { managers } = useMaintenanceManagers();
+  const [finalizadosMes, setFinalizadosMes] = useState(0);
+
+  // Início do mês corrente para o levantamento mensal
+  const monthStart = useMemo(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const { count } = await supabase
+        .from('maintenance_tickets')
+        .select('id', { count: 'exact', head: true })
+        .not('finalized_at', 'is', null)
+        .gte('finalized_at', monthStart.toISOString());
+      setFinalizadosMes(count ?? 0);
+    })();
+  }, [monthStart]);
 
   const stats = useMemo(() => {
     const all = STATUS_ORDER.flatMap((s) => tickets[s] ?? []);
-    const now = new Date();
     const abertos = tickets['Pendente']?.length ?? 0;
     const emAndamento = tickets['Em andamento']?.length ?? 0;
     const impedidos = tickets['Impedido']?.length ?? 0;
     const concluidos = tickets['Concluído']?.length ?? 0;
 
-    // Atrasado: não finalizado, sem update há mais de 7 dias
-    const atrasados = all.filter(
-      (t) => t.status !== 'Concluído' && daysBetween(now, new Date(t.updated_at)) > 7,
-    ).length;
+    // Taxa de resolução mensal:
+    // resolvidos no mês = concluídos no mês (completed_at) + finalizados no mês
+    // ativos = abertos + em andamento + impedidos (carga atual)
+    // taxa = resolvidos / (ativos + resolvidos)
+    const concluidosMes = (tickets['Concluído'] ?? []).filter((t) => {
+      const d = t.completed_at ? new Date(t.completed_at) : new Date(t.updated_at);
+      return d >= monthStart;
+    }).length;
+    const resolvidos = concluidosMes + finalizadosMes;
+    const ativos = abertos + emAndamento + impedidos;
+    const denom = ativos + resolvidos;
+    const taxa = denom > 0 ? Math.round((resolvidos / denom) * 100) : 0;
 
-    const total = all.length || 1;
-    const taxa = Math.round((concluidos / total) * 100);
-
-    // Requer atenção: impedidos + atrasados + prioridade Alta ainda abertos
+    // Requer atenção: impedidos + prioridade Alta ainda abertos
     const attention = all
       .filter(
         (t) =>
           t.status === 'Impedido' ||
-          (t.status !== 'Concluído' && daysBetween(now, new Date(t.updated_at)) > 7) ||
           (t.priority === 'Alta' && t.status !== 'Concluído'),
       )
       .slice(0, 6);
@@ -86,14 +108,14 @@ export function MaintenanceOverview({ onNavigate }: MaintenanceOverviewProps) {
       emAndamento,
       impedidos,
       concluidos,
-      atrasados,
+      resolvidos,
       taxa,
       attention,
       comprovacoes,
       cargaList,
       fluxo,
     };
-  }, [tickets, managers]);
+  }, [tickets, managers, finalizadosMes, monthStart]);
 
   const proximasViagens = useMemo(() => {
     const today = new Date();
@@ -108,8 +130,8 @@ export function MaintenanceOverview({ onNavigate }: MaintenanceOverviewProps) {
     { label: 'Chamados Abertos', value: stats.abertos, icon: AlertCircle, tone: 'text-slate-600', bar: 'bg-slate-400' },
     { label: 'Em Andamento', value: stats.emAndamento, icon: Loader2, tone: 'text-blue-600', bar: 'bg-blue-500' },
     { label: 'Impedidos', value: stats.impedidos, icon: AlertCircle, tone: 'text-orange-600', bar: 'bg-orange-500' },
-    { label: 'Em Atraso', value: stats.atrasados, icon: Clock, tone: 'text-red-600', bar: 'bg-red-500' },
     { label: 'Concluídos', value: stats.concluidos, icon: CheckCircle2, tone: 'text-emerald-600', bar: 'bg-emerald-500' },
+    { label: 'Resolvidos no Mês', value: stats.resolvidos, icon: CheckCircle2, tone: 'text-emerald-700', bar: 'bg-emerald-600' },
     { label: 'Taxa de Resolução', value: `${stats.taxa}%`, icon: TrendingUp, tone: 'text-primary', bar: 'bg-primary' },
   ];
 
