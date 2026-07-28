@@ -471,7 +471,10 @@ export function KanbanBoard() {
   const { tickets: dbTickets, loading, createTicket, updateTicket, deleteTicket, refetch } = useMaintenanceTickets();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { isGM, canEdit } = useUserRole();
+  const { isGM: rawIsGM, canEdit: rawCanEdit, isMaintenanceResponsible } = useUserRole();
+  // Responsáveis pela Manutenção têm acesso equivalente ao Admin dentro do módulo
+  const isGM = isMaintenanceResponsible ? false : rawIsGM;
+  const canEdit = isMaintenanceResponsible ? true : rawCanEdit;
   const isMobile = useIsMobile();
   const { managers } = useMaintenanceManagers();
 
