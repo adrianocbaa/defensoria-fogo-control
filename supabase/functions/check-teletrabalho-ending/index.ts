@@ -74,7 +74,7 @@ serve(async (req: Request) => {
 
       try {
         const emailResponse = await resend.emails.send({
-          from: "Sistema de Gestão <noreply@dif.app.br>",
+          from: "SiDIF - DPE-MT <sidif@sidif.com.br>",
           to: ["luizfrota@dp.mt.gov.br", "adrianomelo@dp.mt.gov.br"],
           subject: "Encerramento do período de teletrabalho",
           html: `
