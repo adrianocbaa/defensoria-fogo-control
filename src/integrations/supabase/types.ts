@@ -1623,6 +1623,7 @@ export type Database = {
           finalized_at: string | null
           finalized_by: string | null
           id: string
+          inbound_message_id: string | null
           location: string
           manager_id: string | null
           manager_ids: string[]
@@ -1631,10 +1632,14 @@ export type Database = {
           observations: string[] | null
           priority: string
           process_number: string | null
+          raw_email: Json | null
           reference_photos: Json
+          reference_videos: Json
           request_type: string | null
           requested_at: string
+          requester_email: string | null
           services: Json | null
+          source: string
           status: string
           ticket_number: number
           title: string
@@ -1653,6 +1658,7 @@ export type Database = {
           finalized_at?: string | null
           finalized_by?: string | null
           id?: string
+          inbound_message_id?: string | null
           location: string
           manager_id?: string | null
           manager_ids?: string[]
@@ -1661,10 +1667,14 @@ export type Database = {
           observations?: string[] | null
           priority: string
           process_number?: string | null
+          raw_email?: Json | null
           reference_photos?: Json
+          reference_videos?: Json
           request_type?: string | null
           requested_at?: string
+          requester_email?: string | null
           services?: Json | null
+          source?: string
           status: string
           ticket_number?: number
           title: string
@@ -1683,6 +1693,7 @@ export type Database = {
           finalized_at?: string | null
           finalized_by?: string | null
           id?: string
+          inbound_message_id?: string | null
           location?: string
           manager_id?: string | null
           manager_ids?: string[]
@@ -1691,10 +1702,14 @@ export type Database = {
           observations?: string[] | null
           priority?: string
           process_number?: string | null
+          raw_email?: Json | null
           reference_photos?: Json
+          reference_videos?: Json
           request_type?: string | null
           requested_at?: string
+          requester_email?: string | null
           services?: Json | null
+          source?: string
           status?: string
           ticket_number?: number
           title?: string
