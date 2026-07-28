@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
-import { AlertCircle, CheckCircle2, Clock, TrendingUp, Loader2, MapPin, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, CheckCircle2, TrendingUp, Loader2, MapPin, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMaintenanceTickets, type MaintenanceTicket } from '@/hooks/useMaintenanceTickets';
 import { useAvailableTravels } from '@/hooks/useAvailableTravels';
 import { useMaintenanceManagers } from '@/hooks/useMaintenanceManagers';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 const STATUS_ORDER: MaintenanceTicket['status'][] = ['Pendente', 'Em andamento', 'Impedido', 'Concluído'];
