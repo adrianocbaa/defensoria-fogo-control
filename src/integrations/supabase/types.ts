@@ -4405,6 +4405,10 @@ export type Database = {
         Args: { obra_uuid: string; user_uuid?: string }
         Returns: boolean
       }
+      is_maintenance_responsible: {
+        Args: { _user_id?: string }
+        Returns: boolean
+      }
       log_login_attempt: {
         Args: {
           p_identifier: string
