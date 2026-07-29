@@ -83,7 +83,7 @@ serve(async (req) => {
         if (!ticket) throw new Error("ticket_not_found");
 
         if (job.kind === "confirmation" && ticket.requester_email) {
-          const link = `${APP_URL}/confirmacao/${ticket.confirmation_token}`;
+          const link = `${APP_URL}/manutencao/confirmar/${ticket.confirmation_token}`;
           const html = baseHtml(`
             <h2 style="color:#0f172a">Serviço de manutenção executado</h2>
             <p>Prezado(a) solicitante,</p>
@@ -125,7 +125,7 @@ serve(async (req) => {
 
     for (const t of needsReminder || []) {
       try {
-        const link = `${APP_URL}/confirmacao/${t.confirmation_token}`;
+        const link = `${APP_URL}/manutencao/confirmar/${t.confirmation_token}`;
         const html = baseHtml(`
           <h2 style="color:#b45309">Lembrete: confirmação pendente</h2>
           <p>Prezado(a) solicitante,</p>

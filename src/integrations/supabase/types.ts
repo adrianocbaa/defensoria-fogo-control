@@ -4501,7 +4501,10 @@ export type Database = {
       cleanup_expired_reset_codes: { Args: never; Returns: undefined }
       cleanup_old_login_attempts: { Args: never; Returns: undefined }
       cleanup_old_read_notifications: { Args: never; Returns: undefined }
-      confirm_maintenance_service: { Args: { p_token: string }; Returns: Json }
+      confirm_maintenance_service: {
+        Args: { p_accept?: boolean; p_note?: string; p_token: string }
+        Returns: Json
+      }
       get_maintenance_ticket_by_token: {
         Args: { p_token: string }
         Returns: Json

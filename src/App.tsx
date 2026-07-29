@@ -25,6 +25,7 @@ import PublicMedicao from "./pages/PublicMedicao";
 import PublicObraDetalhes from "./pages/PublicObraDetalhes";
 import PublicRDO from "./pages/PublicRDO";
 import PublicRDODiario from "./pages/PublicRDODiario";
+import PublicMaintenanceConfirmation from "./pages/PublicMaintenanceConfirmation";
 import AdminPanel from "./pages/AdminPanel";
 import AdminEncerramento from "./pages/AdminEncerramento";
 import MapPinSelector from "./pages/MapPinSelector";
@@ -97,6 +98,7 @@ const AppRoutes = () => {
       <Route path="/public/preventivos/:id" element={<PublicPreventivosDetails />} />
       <Route path="/public/nucleos" element={<PublicNucleos />} />
       <Route path="/rdo/verify/:hash" element={<RdoVerify />} />
+      <Route path="/manutencao/confirmar/:token" element={<PublicMaintenanceConfirmation />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/apresentacao" element={<Apresentacao />} />
       <Route path="/fluxograma-obras" element={<ProtectedRoute><FluxogramaObras /></ProtectedRoute>} />
