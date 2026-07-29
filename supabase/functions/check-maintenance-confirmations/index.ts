@@ -17,11 +17,38 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_URL = "https://sidif.com.br";
 
 function baseHtml(inner: string) {
-  return `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#1f2937;max-width:640px;margin:0 auto;padding:24px">
-    ${inner}
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
-    <p style="font-size:12px;color:#6b7280">Sistema SiDIF — Defensoria Pública do Estado de Mato Grosso</p>
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;color:#1f2937">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px">
+      <tr><td align="center">
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+          <tr><td style="background:#0f2c5c;padding:20px 28px">
+            <div style="font-size:12px;letter-spacing:2px;color:#93c5fd;font-weight:600;text-transform:uppercase">Sistema SiDIF</div>
+            <div style="font-size:18px;color:#ffffff;font-weight:600;margin-top:4px">Defensoria Pública do Estado de Mato Grosso</div>
+            <div style="font-size:13px;color:#cbd5e1;margin-top:2px">Coordenadoria Administrativa · Núcleo de Manutenção</div>
+          </td></tr>
+          <tr><td style="padding:28px">${inner}</td></tr>
+          <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 28px;font-size:11px;color:#6b7280;line-height:1.5">
+            Esta é uma mensagem automática do Sistema SiDIF. Em caso de dúvidas, responda este e-mail — sua resposta será vinculada automaticamente ao chamado.
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
   </body></html>`;
+}
+
+function renderServicesBlock(services: Array<any>) {
+  if (!services || !services.length) return "";
+  const items = services.map((s, i) => {
+    const photos = Array.isArray(s.execution_photos) ? s.execution_photos.length : 0;
+    const desc = s.description ? `<div style="font-size:13px;color:#4b5563;margin-top:4px;line-height:1.5">${String(s.description).replace(/</g,"&lt;")}</div>` : "";
+    const photoLine = photos ? `<div style="font-size:12px;color:#0f2c5c;margin-top:6px">${photos} foto(s) de execução anexada(s)</div>` : "";
+    return `<tr><td style="padding:12px 14px;border-bottom:1px solid #e5e7eb">
+      <div style="font-size:14px;color:#0f2c5c;font-weight:600">${i+1}. ${String(s.title || "Serviço").replace(/</g,"&lt;")}</div>
+      ${desc}${photoLine}
+    </td></tr>`;
+  }).join("");
+  return `<div style="margin:20px 0 8px;font-size:12px;letter-spacing:1px;color:#0f2c5c;font-weight:700;text-transform:uppercase">Serviços executados</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;background:#fafafa">${items}</table>`;
 }
 
 async function invokeSender(payload: any) {
