@@ -1393,6 +1393,112 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_ticket_email_outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          payload: Json | null
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          ticket_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          payload?: Json | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          ticket_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          payload?: Json | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_email_outbox_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_ticket_emails: {
+        Row: {
+          attachments: Json | null
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          direction: string
+          from_addr: string | null
+          id: string
+          in_reply_to: string | null
+          message_id: string | null
+          meta: Json | null
+          received_at: string
+          subject: string | null
+          ticket_id: string
+          to_addrs: string[] | null
+        }
+        Insert: {
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          direction: string
+          from_addr?: string | null
+          id?: string
+          in_reply_to?: string | null
+          message_id?: string | null
+          meta?: Json | null
+          received_at?: string
+          subject?: string | null
+          ticket_id: string
+          to_addrs?: string[] | null
+        }
+        Update: {
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          direction?: string
+          from_addr?: string | null
+          id?: string
+          in_reply_to?: string | null
+          message_id?: string | null
+          meta?: Json | null
+          received_at?: string
+          subject?: string | null
+          ticket_id?: string
+          to_addrs?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_emails_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_ticket_impediments: {
         Row: {
           created_at: string
@@ -1614,16 +1720,23 @@ export type Database = {
       }
       maintenance_tickets: {
         Row: {
+          archive_pdf_url: string | null
           assignee: string
           completed_at: string | null
           confirmation_file_name: string | null
           confirmation_file_url: string | null
+          confirmation_reminder_sent_at: string | null
+          confirmation_sent_at: string | null
+          confirmation_token: string | null
+          confirmed_at: string | null
+          confirmed_source: string | null
           created_at: string
           finalization_note: string | null
           finalized_at: string | null
           finalized_by: string | null
           id: string
           inbound_message_id: string | null
+          is_draft: boolean
           location: string
           manager_id: string | null
           manager_ids: string[]
@@ -1649,16 +1762,23 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          archive_pdf_url?: string | null
           assignee: string
           completed_at?: string | null
           confirmation_file_name?: string | null
           confirmation_file_url?: string | null
+          confirmation_reminder_sent_at?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          confirmed_source?: string | null
           created_at?: string
           finalization_note?: string | null
           finalized_at?: string | null
           finalized_by?: string | null
           id?: string
           inbound_message_id?: string | null
+          is_draft?: boolean
           location: string
           manager_id?: string | null
           manager_ids?: string[]
@@ -1684,16 +1804,23 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          archive_pdf_url?: string | null
           assignee?: string
           completed_at?: string | null
           confirmation_file_name?: string | null
           confirmation_file_url?: string | null
+          confirmation_reminder_sent_at?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          confirmed_source?: string | null
           created_at?: string
           finalization_note?: string | null
           finalized_at?: string | null
           finalized_by?: string | null
           id?: string
           inbound_message_id?: string | null
+          is_draft?: boolean
           location?: string
           manager_id?: string | null
           manager_ids?: string[]
