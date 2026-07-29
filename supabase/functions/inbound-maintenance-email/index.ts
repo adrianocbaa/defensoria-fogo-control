@@ -56,6 +56,26 @@ function extractEmail(text: string): string | null {
   return m ? m[0] : null;
 }
 
+// Em e-mails encaminhados (Fwd/Enc), tenta extrair o remetente original
+// do bloco "---------- Forwarded message ---------" / "De:" no corpo.
+function extractOriginalSender(body: string): string | null {
+  if (!body) return null;
+  const patterns = [
+    /^\s*From\s*:\s*(.+)$/im,
+    /^\s*De\s*:\s*(.+)$/im,
+    /^\s*Remetente\s*:\s*(.+)$/im,
+  ];
+  for (const re of patterns) {
+    const m = body.match(re);
+    if (m) {
+      const email = extractEmail(m[1]);
+      if (email) return email.toLowerCase();
+    }
+  }
+  return null;
+}
+
+
 function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
