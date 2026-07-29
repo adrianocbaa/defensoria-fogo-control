@@ -25,6 +25,7 @@ import PublicMedicao from "./pages/PublicMedicao";
 import PublicObraDetalhes from "./pages/PublicObraDetalhes";
 import PublicRDO from "./pages/PublicRDO";
 import PublicRDODiario from "./pages/PublicRDODiario";
+import PublicMaintenanceConfirmation from "./pages/PublicMaintenanceConfirmation";
 import AdminPanel from "./pages/AdminPanel";
 import AdminEncerramento from "./pages/AdminEncerramento";
 import MapPinSelector from "./pages/MapPinSelector";
