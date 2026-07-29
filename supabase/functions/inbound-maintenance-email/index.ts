@@ -56,6 +56,26 @@ function extractEmail(text: string): string | null {
   return m ? m[0] : null;
 }
 
+// Em e-mails encaminhados (Fwd/Enc), tenta extrair o remetente original
+// do bloco "---------- Forwarded message ---------" / "De:" no corpo.
+function extractOriginalSender(body: string): string | null {
+  if (!body) return null;
+  const patterns = [
+    /^\s*From\s*:\s*(.+)$/im,
+    /^\s*De\s*:\s*(.+)$/im,
+    /^\s*Remetente\s*:\s*(.+)$/im,
+  ];
+  for (const re of patterns) {
+    const m = body.match(re);
+    if (m) {
+      const email = extractEmail(m[1]);
+      if (email) return email.toLowerCase();
+    }
+  }
+  return null;
+}
+
+
 function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
@@ -146,6 +166,15 @@ serve(async (req) => {
       "";
     const messageId: string | undefined =
       payload.headers?.["message-id"] || payload.headers?.["Message-Id"] || payload.message_id;
+
+    // Se for encaminhamento (Fwd:/Enc:/Res:Fwd), tenta usar o remetente original do corpo
+    const isForwarded = /^\s*(fwd|fw|enc|encaminhad[ao])\s*:/i.test(subject);
+    let requesterEmail = fromAddr || "";
+    if (isForwarded) {
+      const original = extractOriginalSender(textBody);
+      if (original) requesterEmail = original;
+    }
+
 
     // Deduplicação por Message-Id (na tabela de thread)
     if (messageId) {
@@ -258,7 +287,7 @@ serve(async (req) => {
         assignee: solicitante,
         status: "Pendente",
         request_type: "email",
-        requester_email: fromAddr || null,
+        requester_email: requesterEmail || null,
         nucleo_id,
         source: "email",
         is_draft: true,
@@ -292,9 +321,7 @@ serve(async (req) => {
       message_id: messageId ?? null,
       in_reply_to: inReplyTo ?? null,
     });
-      console.error("inbound: erro ao criar ticket", insErr);
-      return json(500, { error: "insert_failed", details: insErr?.message });
-    }
+
 
     // Processa anexos
     const attachments: Attachment[] = Array.isArray(payload.attachments) ? payload.attachments : [];
