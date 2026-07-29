@@ -321,9 +321,7 @@ serve(async (req) => {
       message_id: messageId ?? null,
       in_reply_to: inReplyTo ?? null,
     });
-      console.error("inbound: erro ao criar ticket", insErr);
-      return json(500, { error: "insert_failed", details: insErr?.message });
-    }
+
 
     // Processa anexos
     const attachments: Attachment[] = Array.isArray(payload.attachments) ? payload.attachments : [];
