@@ -28,7 +28,7 @@ function baseHtml(inner: string) {
           </td></tr>
           <tr><td style="padding:28px">${inner}</td></tr>
           <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 28px;font-size:11px;color:#6b7280;line-height:1.5">
-            Esta é uma mensagem automática do Sistema SiDIF. Em caso de dúvidas, responda este e-mail — sua resposta será vinculada automaticamente ao chamado.
+            Esta é uma mensagem automática do SiDIF. Em caso de dúvidas, responda este e-mail — sua resposta será vinculada automaticamente ao chamado.
           </td></tr>
         </table>
       </td></tr>
