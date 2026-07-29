@@ -73,7 +73,7 @@ export function TicketEmailThread({ ticketId }: { ticketId: string }) {
               <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 {isIn ? <MailOpen className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
                 {isIn ? 'Recebido' : 'Enviado'}
-                {r.kind && <span className="ml-1 rounded bg-muted px-1.5 py-0.5">{r.kind}</span>}
+                
               </div>
               <span className="text-[11px] text-muted-foreground">{formatDT(r.created_at)}</span>
             </div>
