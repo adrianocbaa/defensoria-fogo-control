@@ -214,7 +214,7 @@ serve(async (req) => {
       .from("maintenance_tickets")
       .insert({
         title: subject,
-        priority: "Média",
+        priority,
         type: "Corretiva",
         location: local,
         assignee: solicitante,
