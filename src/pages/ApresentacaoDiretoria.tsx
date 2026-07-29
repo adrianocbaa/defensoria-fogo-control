@@ -115,10 +115,6 @@ function S1Capa() {
       </div>
 
       <div className="relative">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 mb-6">
-          <Sparkles className="h-3.5 w-3.5 text-emerald-200" />
-          <span className="text-xs font-medium tracking-wide">Apresentação à Diretoria Geral</span>
-        </div>
         <h1 className="text-6xl md:text-7xl font-bold leading-[1.02] tracking-tight mb-4">
           SiDIF
         </h1>
