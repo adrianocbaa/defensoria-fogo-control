@@ -272,6 +272,11 @@ function DraggableTicket({ ticket, onViewTicket, onEditTicket, onMarkAsExecuted,
                   <ticket.icon className="h-3 w-3" />
                   {ticket.type}
                 </Badge>
+                {(ticket as any).isDraft && (
+                  <Badge className="text-[10px] h-5 px-1.5 bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200">
+                    Rascunho — revisar
+                  </Badge>
+                )}
               </div>
               <CardTitle className="text-sm font-semibold leading-snug line-clamp-2 text-foreground">
                 {ticket.title}
