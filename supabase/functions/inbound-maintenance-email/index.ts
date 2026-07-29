@@ -165,7 +165,7 @@ serve(async (req) => {
     const local = extractField(textBody, "Local") || extractField(textBody, "Localização") || "A definir";
     const nucleoNome = extractField(textBody, "Núcleo") || extractField(textBody, "Nucleo");
 
-    // Tentar vincular núcleo por nome
+    // Tentar vincular núcleo por nome mencionado no corpo
     let nucleo_id: string | null = null;
     if (nucleoNome) {
       const { data: n } = await supabase
@@ -176,6 +176,38 @@ serve(async (req) => {
         .maybeSingle();
       nucleo_id = n?.id ?? null;
     }
+
+    // Fallback: mapear núcleo pelo e-mail do remetente (exato ou por domínio)
+    if (!nucleo_id && fromAddr) {
+      const addr = fromAddr.toLowerCase().trim();
+      const domain = addr.split("@")[1] || "";
+      const { data: nuclei } = await supabase
+        .from("nuclei")
+        .select("id, email, contact_email")
+        .limit(10000);
+      if (nuclei && nuclei.length) {
+        // 1) match exato pelo e-mail
+        const exact = nuclei.find((n: any) =>
+          [n.email, n.contact_email]
+            .filter(Boolean)
+            .map((v: string) => v.toLowerCase().trim())
+            .includes(addr),
+        );
+        if (exact) nucleo_id = exact.id;
+        // 2) match por domínio (ignora domínios genéricos)
+        if (!nucleo_id && domain && !["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "yahoo.com.br", "icloud.com", "live.com"].includes(domain)) {
+          const byDomain = nuclei.find((n: any) => {
+            const emails = [n.email, n.contact_email].filter(Boolean).map((v: string) => v.toLowerCase().trim());
+            return emails.some((e: string) => e.endsWith(`@${domain}`));
+          });
+          if (byDomain) nucleo_id = byDomain.id;
+        }
+      }
+    }
+
+    // Prioridade automática a partir de palavras-chave no assunto/corpo
+    const priority = detectPriority(subject, textBody);
+
 
     // Cria ticket (rascunho na coluna Pendente)
     const { data: ticket, error: insErr } = await supabase
