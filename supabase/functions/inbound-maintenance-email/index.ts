@@ -341,7 +341,11 @@ serve(async (req) => {
           text: textBody.slice(0, 20000),
           received_at: new Date().toISOString(),
         },
-        observations: textBody ? [textBody.slice(0, 2000)] : [],
+        observations: (() => {
+          const clean = extractCleanBody(textBody);
+          return clean ? [clean.slice(0, 2000)] : [];
+        })(),
+
       })
       .select("id, ticket_number")
       .single();
