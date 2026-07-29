@@ -261,6 +261,7 @@ serve(async (req) => {
         requester_email: fromAddr || null,
         nucleo_id,
         source: "email",
+        is_draft: true,
         inbound_message_id: messageId ?? null,
         raw_email: {
           from: payload.from ?? null,
@@ -275,6 +276,22 @@ serve(async (req) => {
       .single();
 
     if (insErr || !ticket) {
+      console.error("inbound: erro ao criar ticket", insErr);
+      return json(500, { error: "insert_failed", details: insErr?.message });
+    }
+
+    // Grava o primeiro e-mail na thread
+    await supabase.from("maintenance_ticket_emails").insert({
+      ticket_id: ticket.id,
+      direction: "inbound",
+      from_addr: fromAddr || null,
+      to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
+      subject,
+      body_text: textBody.slice(0, 20000),
+      body_html: payload.html || null,
+      message_id: messageId ?? null,
+      in_reply_to: inReplyTo ?? null,
+    });
       console.error("inbound: erro ao criar ticket", insErr);
       return json(500, { error: "insert_failed", details: insErr?.message });
     }
