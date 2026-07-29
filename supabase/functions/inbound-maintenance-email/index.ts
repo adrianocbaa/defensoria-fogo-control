@@ -56,6 +56,27 @@ function extractEmail(text: string): string | null {
   return m ? m[0] : null;
 }
 
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function detectPriority(subject: string, body: string): "Alta" | "Média" | "Baixa" {
+  const txt = stripAccents(`${subject}\n${body}`).toLowerCase();
+  const high = [
+    "urgente", "urgencia", "emergencia", "emergencial", "critico", "critica",
+    "imediato", "imediata", "prioridade alta", "alta prioridade", "asap",
+    "parou de funcionar", "sem energia", "sem agua", "vazamento", "incendio",
+    "curto circuito", "risco", "grave",
+  ];
+  const low = [
+    "quando puder", "sem pressa", "baixa prioridade", "prioridade baixa",
+    "nao urgente", "pode aguardar", "assim que possivel", "quando possivel",
+  ];
+  if (high.some((k) => txt.includes(k))) return "Alta";
+  if (low.some((k) => txt.includes(k))) return "Baixa";
+  return "Média";
+}
+
 function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
 }
@@ -144,7 +165,7 @@ serve(async (req) => {
     const local = extractField(textBody, "Local") || extractField(textBody, "Localização") || "A definir";
     const nucleoNome = extractField(textBody, "Núcleo") || extractField(textBody, "Nucleo");
 
-    // Tentar vincular núcleo por nome
+    // Tentar vincular núcleo por nome mencionado no corpo
     let nucleo_id: string | null = null;
     if (nucleoNome) {
       const { data: n } = await supabase
@@ -156,12 +177,44 @@ serve(async (req) => {
       nucleo_id = n?.id ?? null;
     }
 
+    // Fallback: mapear núcleo pelo e-mail do remetente (exato ou por domínio)
+    if (!nucleo_id && fromAddr) {
+      const addr = fromAddr.toLowerCase().trim();
+      const domain = addr.split("@")[1] || "";
+      const { data: nuclei } = await supabase
+        .from("nuclei")
+        .select("id, email, contact_email")
+        .limit(10000);
+      if (nuclei && nuclei.length) {
+        // 1) match exato pelo e-mail
+        const exact = nuclei.find((n: any) =>
+          [n.email, n.contact_email]
+            .filter(Boolean)
+            .map((v: string) => v.toLowerCase().trim())
+            .includes(addr),
+        );
+        if (exact) nucleo_id = exact.id;
+        // 2) match por domínio (ignora domínios genéricos)
+        if (!nucleo_id && domain && !["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "yahoo.com.br", "icloud.com", "live.com"].includes(domain)) {
+          const byDomain = nuclei.find((n: any) => {
+            const emails = [n.email, n.contact_email].filter(Boolean).map((v: string) => v.toLowerCase().trim());
+            return emails.some((e: string) => e.endsWith(`@${domain}`));
+          });
+          if (byDomain) nucleo_id = byDomain.id;
+        }
+      }
+    }
+
+    // Prioridade automática a partir de palavras-chave no assunto/corpo
+    const priority = detectPriority(subject, textBody);
+
+
     // Cria ticket (rascunho na coluna Pendente)
     const { data: ticket, error: insErr } = await supabase
       .from("maintenance_tickets")
       .insert({
         title: subject,
-        priority: "Média",
+        priority,
         type: "Corretiva",
         location: local,
         assignee: solicitante,
