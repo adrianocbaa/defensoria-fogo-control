@@ -67,6 +67,7 @@ import OrcamentoDetalhe from "./pages/OrcamentoDetalhe";
 import OrcamentoCurvaABC from "./pages/OrcamentoCurvaABC";
 import GerenciarObras from "./pages/GerenciarObras";
 import Apresentacao from "./pages/Apresentacao";
+import ApresentacaoDiretoria from "./pages/ApresentacaoDiretoria";
 import FluxogramaObras from "./pages/FluxogramaObras";
 import { ChecklistDinamico } from "./pages/ChecklistDinamico";
 import Dimensionamento from "./pages/Dimensionamento";
@@ -101,6 +102,7 @@ const AppRoutes = () => {
       <Route path="/manutencao/confirmar/:token" element={<PublicMaintenanceConfirmation />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/apresentacao" element={<Apresentacao />} />
+      <Route path="/apresentacao/diretoria" element={<ApresentacaoDiretoria />} />
       <Route path="/fluxograma-obras" element={<ProtectedRoute><FluxogramaObras /></ProtectedRoute>} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/medicao/:id" element={<ProtectedRoute><Medicao /></ProtectedRoute>} />
