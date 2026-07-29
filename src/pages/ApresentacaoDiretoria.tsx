@@ -250,7 +250,7 @@ function S5RDO() {
       title="RDO — o canteiro alimenta o sistema, todos os dias."
       subtitle="O Relatório Diário de Obra é a base de tudo: fotos, avanço físico, mão de obra e ocorrências."
     >
-      <div className="grid grid-cols-3 gap-5 h-full">
+      <div className="grid grid-cols-3 gap-5">
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
           <Camera className="h-6 w-6 text-emerald-700 mb-3" />
           <div className="text-3xl font-bold text-slate-900">329</div>
