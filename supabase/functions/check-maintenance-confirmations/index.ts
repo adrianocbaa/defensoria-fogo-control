@@ -111,14 +111,22 @@ serve(async (req) => {
 
         if (job.kind === "confirmation" && ticket.requester_email) {
           const link = `${APP_URL}/manutencao/confirmar/${ticket.confirmation_token}`;
+          const { data: services } = await supabase
+            .from("maintenance_ticket_services")
+            .select("title, description, execution_photos, order_index")
+            .eq("ticket_id", ticket.id)
+            .order("order_index");
+          const btn = `<a href="${link}" style="background:#0f2c5c;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
           const html = baseHtml(`
-            <h2 style="color:#0f172a">Serviço de manutenção executado</h2>
-            <p>Prezado(a) solicitante,</p>
-            <p>Informamos que o chamado <strong>#${String(ticket.ticket_number).padStart(4,"0")}</strong> — <em>${ticket.title}</em> — foi executado pela equipe de manutenção.</p>
-            ${ticket.finalization_note ? `<p><strong>Observações:</strong> ${ticket.finalization_note}</p>` : ""}
-            <p>Solicitamos gentileza confirmar a conclusão do serviço através do link abaixo:</p>
-            <p style="margin:24px 0"><a href="${link}" style="background:#2563eb;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600">Confirmar execução do serviço</a></p>
-            <p style="font-size:13px;color:#6b7280">Caso não haja manifestação em até 7 (sete) dias corridos, a solicitação será considerada tacitamente atendida.</p>
+            <div style="font-size:12px;letter-spacing:1px;color:#0f2c5c;font-weight:700;text-transform:uppercase">Comunicado de execução</div>
+            <h2 style="margin:6px 0 16px;font-size:20px;color:#0f172a;font-weight:600">Chamado #${String(ticket.ticket_number).padStart(4,"0")} — Serviço executado</h2>
+            <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Prezado(a) solicitante,</p>
+            <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Informamos que a solicitação <strong>#${String(ticket.ticket_number).padStart(4,"0")} — ${ticket.title}</strong>${ticket.location ? ` (<em>${ticket.location}</em>)` : ""} foi atendida pela equipe do Núcleo de Manutenção.</p>
+            ${ticket.finalization_note ? `<div style="margin:16px 0;padding:12px 14px;border-left:3px solid #0f2c5c;background:#f1f5f9;font-size:13px;line-height:1.5"><strong style="color:#0f2c5c">Observações da equipe:</strong><br/>${String(ticket.finalization_note).replace(/</g,"&lt;")}</div>` : ""}
+            ${renderServicesBlock(services || [])}
+            <p style="font-size:14px;line-height:1.6;margin:20px 0 8px">Para conferir os detalhes e fotos da execução, e formalizar o aceite ou reabertura do chamado, utilize o botão abaixo:</p>
+            <p style="margin:20px 0 8px">${btn}</p>
+            <p style="font-size:12px;color:#6b7280;line-height:1.6;margin-top:16px">Caso não haja manifestação em até <strong>7 (sete) dias corridos</strong>, a solicitação será considerada tacitamente atendida e o chamado arquivado.</p>
           `);
           await invokeSender({ ticket_id: ticket.id, subject: `Serviço executado — ${ticket.title}`, html, kind: "confirmation" });
           await supabase.from("maintenance_tickets").update({ confirmation_sent_at: now.toISOString() }).eq("id", ticket.id);
