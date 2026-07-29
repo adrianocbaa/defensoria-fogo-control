@@ -56,6 +56,7 @@ type TicketDetail = {
   confirmation_file_url: string | null;
   confirmation_file_name: string | null;
   finalization_note: string | null;
+  is_draft: boolean | null;
   services: ServiceRow[];
 };
 
