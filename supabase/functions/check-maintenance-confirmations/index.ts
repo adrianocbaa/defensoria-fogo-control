@@ -111,20 +111,15 @@ serve(async (req) => {
 
         if (job.kind === "confirmation" && ticket.requester_email) {
           const link = `${APP_URL}/manutencao/confirmar/${ticket.confirmation_token}`;
-          const { data: services } = await supabase
-            .from("maintenance_ticket_services")
-            .select("title, description, execution_photos, order_index")
-            .eq("ticket_id", ticket.id)
-            .order("order_index");
-          const btn = `<a href="${link}" style="background:#0f2c5c;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
+          const btn = `<a href="${link}" style="background:#1a5f3f;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
+          const num = String(ticket.ticket_number).padStart(4,"0");
           const html = baseHtml(`
-            <div style="font-size:12px;letter-spacing:1px;color:#0f2c5c;font-weight:700;text-transform:uppercase">Comunicado de execução</div>
-            <h2 style="margin:6px 0 16px;font-size:20px;color:#0f172a;font-weight:600">Chamado #${String(ticket.ticket_number).padStart(4,"0")} — Serviço executado</h2>
+            <div style="font-size:12px;letter-spacing:1px;color:#1a5f3f;font-weight:700;text-transform:uppercase">Comunicado de execução</div>
+            <h2 style="margin:6px 0 16px;font-size:20px;color:#0f172a;font-weight:600">Chamado #${num} — Serviço executado</h2>
             <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Prezado(a) solicitante,</p>
-            <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Informamos que a solicitação <strong>#${String(ticket.ticket_number).padStart(4,"0")} — ${ticket.title}</strong>${ticket.location ? ` (<em>${ticket.location}</em>)` : ""} foi atendida pela equipe do Núcleo de Manutenção.</p>
-            ${ticket.finalization_note ? `<div style="margin:16px 0;padding:12px 14px;border-left:3px solid #0f2c5c;background:#f1f5f9;font-size:13px;line-height:1.5"><strong style="color:#0f2c5c">Observações da equipe:</strong><br/>${String(ticket.finalization_note).replace(/</g,"&lt;")}</div>` : ""}
-            ${renderServicesBlock(services || [])}
-            <p style="font-size:14px;line-height:1.6;margin:20px 0 8px">Para conferir os detalhes e fotos da execução, e formalizar o aceite ou reabertura do chamado, utilize o botão abaixo:</p>
+            <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Informamos que a solicitação <strong>#${num} — ${ticket.title}</strong>${ticket.location ? ` (<em>${ticket.location}</em>)` : ""} foi atendida pela equipe da Manutenção.</p>
+            ${ticket.finalization_note ? `<div style="margin:16px 0;padding:12px 14px;border-left:3px solid #1a5f3f;background:#f0fdf4;font-size:13px;line-height:1.5"><strong style="color:#1a5f3f">Observações da equipe:</strong><br/>${String(ticket.finalization_note).replace(/</g,"&lt;")}</div>` : ""}
+            <p style="font-size:14px;line-height:1.6;margin:20px 0 8px">Para conferir os serviços executados, fotos da execução e formalizar o aceite ou reabertura do chamado, utilize o botão abaixo:</p>
             <p style="margin:20px 0 8px">${btn}</p>
             <p style="font-size:12px;color:#6b7280;line-height:1.6;margin-top:16px">Caso não haja manifestação em até <strong>7 (sete) dias corridos</strong>, a solicitação será considerada tacitamente atendida e o chamado arquivado.</p>
           `);
