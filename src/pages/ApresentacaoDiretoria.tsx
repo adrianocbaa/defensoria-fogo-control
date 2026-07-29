@@ -294,7 +294,7 @@ function S6Medicao() {
       title="Medição — sem retrabalho, sem dupla digitação."
       subtitle="O que foi executado no RDO é importado direto para a medição. O sistema calcula, congela e gera o relatório."
     >
-      <div className="grid grid-cols-4 gap-4 h-full">
+      <div className="grid grid-cols-4 gap-4 items-start">
         {[
           { step: '1', title: 'RDO diário', desc: 'Contratada informa quantitativos executados no canteiro.' },
           { step: '2', title: 'Importa no SiDIF', desc: 'Um clique traz tudo para a medição — sem redigitar.' },
