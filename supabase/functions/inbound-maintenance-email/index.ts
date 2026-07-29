@@ -371,8 +371,10 @@ serve(async (req) => {
 
     // Processa anexos
     const attachments: Attachment[] = Array.isArray(payload.attachments) ? payload.attachments : [];
-    const photos: Array<{ url: string; name: string }> = [];
-    const videos: Array<{ url: string; name: string }> = [];
+    const photos: Array<any> = [];
+    const videos: Array<any> = [];
+    const nowIso = new Date().toISOString();
+    const PHOTO_BUCKET = "service-photos";
 
     for (const att of attachments) {
       try {
@@ -393,9 +395,12 @@ serve(async (req) => {
 
         if (!bytes) continue;
 
+        const isImage = contentType.startsWith("image/");
+        const isVideo = contentType.startsWith("video/");
+        const bucket = isImage || isVideo ? PHOTO_BUCKET : BUCKET;
         const path = `maintenance-inbound/${ticket.id}/${Date.now()}-${filename}`;
         const { error: upErr } = await supabase.storage
-          .from(BUCKET)
+          .from(bucket)
           .upload(path, bytes, { contentType, upsert: false });
 
         if (upErr) {
@@ -403,10 +408,20 @@ serve(async (req) => {
           continue;
         }
 
-        const entry = { url: path, name: filename };
-        if (contentType.startsWith("video/")) videos.push(entry);
-        else if (contentType.startsWith("image/")) photos.push(entry);
-        else photos.push(entry); // outros anexos vão junto para não perder
+        const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
+        const publicUrl = pub?.publicUrl || path;
+
+        const entry = {
+          id: crypto.randomUUID(),
+          url: publicUrl,
+          path,
+          description: filename,
+          uploaded_at: nowIso,
+          uploaded_by: null,
+          uploaded_by_name: "E-mail (solicitante)",
+        };
+        if (isVideo) videos.push(entry);
+        else photos.push(entry); // imagens e outros anexos entram como referência
       } catch (e) {
         console.error("inbound: erro processando anexo", e);
       }
