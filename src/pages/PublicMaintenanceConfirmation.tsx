@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Mail, RotateCcw } from 'lucide-react';
 
 type TicketInfo = {
   id: string;
@@ -25,9 +25,14 @@ export default function PublicMaintenanceConfirmation() {
   const [done, setDone] = useState<'accept' | 'reject' | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      setError('Link inválido ou incompleto.');
+      return;
+    }
     (async () => {
       setLoading(true);
+      setError(null);
       const { data, error } = await supabase.rpc('get_maintenance_ticket_by_token', {
         p_token: token,
       });
@@ -37,7 +42,13 @@ export default function PublicMaintenanceConfirmation() {
         setError('Link inválido ou expirado.');
       } else {
         const row: any = Array.isArray(data) ? data[0] : data;
-        setTicket(row as TicketInfo);
+        if (row?.error === 'not_found') {
+          setError('Este link não existe, expirou ou o chamado já foi reaberto.');
+        } else if (!row?.id) {
+          setError('Não foi possível localizar os dados deste chamado.');
+        } else {
+          setTicket(row as TicketInfo);
+        }
       }
       setLoading(false);
     })();
@@ -46,6 +57,7 @@ export default function PublicMaintenanceConfirmation() {
   const submit = async (accept: boolean) => {
     if (!token) return;
     setSubmitting(true);
+    setError(null);
     const { error } = await supabase.rpc('confirm_maintenance_service', {
       p_token: token,
       p_accept: accept,
@@ -70,10 +82,13 @@ export default function PublicMaintenanceConfirmation() {
   if (error || !ticket) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
-        <div className="max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
+        <div className="w-full max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
           <XCircle className="mx-auto mb-3 h-10 w-10 text-destructive" />
           <h1 className="text-lg font-semibold text-foreground">Não foi possível abrir a confirmação</h1>
           <p className="mt-2 text-sm text-muted-foreground">{error ?? 'Link inválido.'}</p>
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+            Se você recebeu este link por e-mail, responda a mensagem original informando o número do chamado para que a equipe de manutenção possa verificar.
+          </p>
         </div>
       </div>
     );
@@ -82,15 +97,19 @@ export default function PublicMaintenanceConfirmation() {
   if (ticket.confirmed_at || done) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
-        <div className="max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
-          <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-emerald-500" />
+        <div className="w-full max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
+          {done === 'reject' ? (
+            <RotateCcw className="mx-auto mb-3 h-10 w-10 text-warning" />
+          ) : (
+            <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-primary" />
+          )}
           <h1 className="text-lg font-semibold text-foreground">
             {done === 'reject' ? 'Chamado reaberto' : 'Serviço confirmado'}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {done === 'reject'
-              ? 'A equipe de manutenção foi notificada da reabertura.'
-              : 'Obrigado! O atendimento do chamado foi arquivado.'}
+              ? 'A equipe de manutenção foi notificada e o chamado voltou para acompanhamento.'
+              : 'Obrigado! O atendimento foi registrado e seguirá para arquivamento.'}
           </p>
         </div>
       </div>
@@ -98,8 +117,8 @@ export default function PublicMaintenanceConfirmation() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 py-10 px-4">
-      <div className="mx-auto max-w-xl rounded-lg border bg-card shadow-sm">
+    <main className="min-h-screen bg-muted/30 px-4 py-10">
+      <section className="mx-auto max-w-xl rounded-lg border bg-card shadow-sm">
         <div className="border-b bg-primary/5 p-6">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
             <Mail className="h-3.5 w-3.5" /> SiDIF · Manutenção
@@ -117,6 +136,12 @@ export default function PublicMaintenanceConfirmation() {
             A equipe de manutenção informou que o serviço foi concluído. Confirme se o atendimento
             atendeu à sua solicitação:
           </p>
+
+          <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+            <p>
+              Ao confirmar, o chamado será arquivado. Se o serviço não resolveu a solicitação, o chamado será reaberto para nova análise da equipe responsável.
+            </p>
+          </div>
 
           <div>
             <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -137,16 +162,16 @@ export default function PublicMaintenanceConfirmation() {
               disabled={submitting}
               className="border-destructive/40 text-destructive hover:bg-destructive/10"
             >
-              {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <XCircle className="mr-1 h-4 w-4" />}
-              Reabrir chamado
+              {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-1 h-4 w-4" />}
+              Não foi resolvido
             </Button>
             <Button onClick={() => submit(true)} disabled={submitting}>
               {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
-              Confirmar conclusão
+              Confirmar que foi resolvido
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
