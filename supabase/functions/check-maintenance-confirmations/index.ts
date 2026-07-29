@@ -21,14 +21,14 @@ function baseHtml(inner: string) {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px">
       <tr><td align="center">
         <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
-          <tr><td style="background:#0f2c5c;padding:20px 28px">
-            <div style="font-size:12px;letter-spacing:2px;color:#93c5fd;font-weight:600;text-transform:uppercase">Sistema SiDIF</div>
+          <tr><td style="background:#1a5f3f;padding:20px 28px">
+            <div style="font-size:12px;letter-spacing:2px;color:#86efac;font-weight:600;text-transform:uppercase">SiDIF</div>
             <div style="font-size:18px;color:#ffffff;font-weight:600;margin-top:4px">Defensoria Pública do Estado de Mato Grosso</div>
-            <div style="font-size:13px;color:#cbd5e1;margin-top:2px">Coordenadoria Administrativa · Núcleo de Manutenção</div>
+            <div style="font-size:13px;color:#d1fae5;margin-top:2px">Diretoria de Infraestrutura Física - Manutenção</div>
           </td></tr>
           <tr><td style="padding:28px">${inner}</td></tr>
           <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 28px;font-size:11px;color:#6b7280;line-height:1.5">
-            Esta é uma mensagem automática do Sistema SiDIF. Em caso de dúvidas, responda este e-mail — sua resposta será vinculada automaticamente ao chamado.
+            Esta é uma mensagem automática do SiDIF. Em caso de dúvidas, responda este e-mail — sua resposta será vinculada automaticamente ao chamado.
           </td></tr>
         </table>
       </td></tr>
@@ -111,20 +111,15 @@ serve(async (req) => {
 
         if (job.kind === "confirmation" && ticket.requester_email) {
           const link = `${APP_URL}/manutencao/confirmar/${ticket.confirmation_token}`;
-          const { data: services } = await supabase
-            .from("maintenance_ticket_services")
-            .select("title, description, execution_photos, order_index")
-            .eq("ticket_id", ticket.id)
-            .order("order_index");
-          const btn = `<a href="${link}" style="background:#0f2c5c;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
+          const btn = `<a href="${link}" style="background:#1a5f3f;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
+          const num = String(ticket.ticket_number).padStart(4,"0");
           const html = baseHtml(`
-            <div style="font-size:12px;letter-spacing:1px;color:#0f2c5c;font-weight:700;text-transform:uppercase">Comunicado de execução</div>
-            <h2 style="margin:6px 0 16px;font-size:20px;color:#0f172a;font-weight:600">Chamado #${String(ticket.ticket_number).padStart(4,"0")} — Serviço executado</h2>
+            <div style="font-size:12px;letter-spacing:1px;color:#1a5f3f;font-weight:700;text-transform:uppercase">Comunicado de execução</div>
+            <h2 style="margin:6px 0 16px;font-size:20px;color:#0f172a;font-weight:600">Chamado #${num} — Serviço executado</h2>
             <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Prezado(a) solicitante,</p>
-            <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Informamos que a solicitação <strong>#${String(ticket.ticket_number).padStart(4,"0")} — ${ticket.title}</strong>${ticket.location ? ` (<em>${ticket.location}</em>)` : ""} foi atendida pela equipe do Núcleo de Manutenção.</p>
-            ${ticket.finalization_note ? `<div style="margin:16px 0;padding:12px 14px;border-left:3px solid #0f2c5c;background:#f1f5f9;font-size:13px;line-height:1.5"><strong style="color:#0f2c5c">Observações da equipe:</strong><br/>${String(ticket.finalization_note).replace(/</g,"&lt;")}</div>` : ""}
-            ${renderServicesBlock(services || [])}
-            <p style="font-size:14px;line-height:1.6;margin:20px 0 8px">Para conferir os detalhes e fotos da execução, e formalizar o aceite ou reabertura do chamado, utilize o botão abaixo:</p>
+            <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Informamos que a solicitação <strong>#${num} — ${ticket.title}</strong>${ticket.location ? ` (<em>${ticket.location}</em>)` : ""} foi atendida pela equipe da Manutenção.</p>
+            ${ticket.finalization_note ? `<div style="margin:16px 0;padding:12px 14px;border-left:3px solid #1a5f3f;background:#f0fdf4;font-size:13px;line-height:1.5"><strong style="color:#1a5f3f">Observações da equipe:</strong><br/>${String(ticket.finalization_note).replace(/</g,"&lt;")}</div>` : ""}
+            <p style="font-size:14px;line-height:1.6;margin:20px 0 8px">Para conferir os serviços executados, fotos da execução e formalizar o aceite ou reabertura do chamado, utilize o botão abaixo:</p>
             <p style="margin:20px 0 8px">${btn}</p>
             <p style="font-size:12px;color:#6b7280;line-height:1.6;margin-top:16px">Caso não haja manifestação em até <strong>7 (sete) dias corridos</strong>, a solicitação será considerada tacitamente atendida e o chamado arquivado.</p>
           `);
@@ -161,12 +156,12 @@ serve(async (req) => {
     for (const t of needsReminder || []) {
       try {
         const link = `${APP_URL}/manutencao/confirmar/${t.confirmation_token}`;
-        const btn = `<a href="${link}" style="background:#0f2c5c;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
+        const btn = `<a href="${link}" style="background:#1a5f3f;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
         const html = baseHtml(`
           <div style="font-size:12px;letter-spacing:1px;color:#b45309;font-weight:700;text-transform:uppercase">Lembrete de confirmação</div>
           <h2 style="margin:6px 0 16px;font-size:20px;color:#0f172a;font-weight:600">Chamado #${String(t.ticket_number).padStart(4,"0")} — aguardando aceite</h2>
           <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Prezado(a) solicitante,</p>
-          <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Consta em nosso sistema que a solicitação <strong>#${String(t.ticket_number).padStart(4,"0")} — ${t.title}</strong> foi executada pela equipe do Núcleo de Manutenção, porém ainda não recebemos sua manifestação de aceite.</p>
+          <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Consta em nosso sistema que a solicitação <strong>#${String(t.ticket_number).padStart(4,"0")} — ${t.title}</strong> foi executada pela equipe da Manutenção, porém ainda não recebemos sua manifestação de aceite.</p>
           <p style="margin:24px 0">${btn}</p>
           <p style="font-size:12px;color:#6b7280;line-height:1.6"><strong>Aviso:</strong> não havendo manifestação em até <strong>4 (quatro) dias corridos</strong>, a solicitação será considerada tacitamente atendida e o chamado arquivado.</p>
         `);
