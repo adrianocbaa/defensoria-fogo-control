@@ -388,6 +388,16 @@ export function TicketDetailsSheet({
               </section>
             )}
 
+            {/* Conversa por e-mail */}
+            <Separator className="my-4" />
+            <section>
+              <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+                <Mail className="h-4 w-4" />
+                Conversa por e-mail
+              </h3>
+              <TicketEmailThread ticketId={ticket.id} />
+            </section>
+
             {/* Ações destrutivas */}
             <Separator className="my-4" />
             <div className="flex justify-end">
