@@ -98,6 +98,7 @@ const AppRoutes = () => {
       <Route path="/public/preventivos/:id" element={<PublicPreventivosDetails />} />
       <Route path="/public/nucleos" element={<PublicNucleos />} />
       <Route path="/rdo/verify/:hash" element={<RdoVerify />} />
+      <Route path="/manutencao/confirmar/:token" element={<PublicMaintenanceConfirmation />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/apresentacao" element={<Apresentacao />} />
       <Route path="/fluxograma-obras" element={<ProtectedRoute><FluxogramaObras /></ProtectedRoute>} />
