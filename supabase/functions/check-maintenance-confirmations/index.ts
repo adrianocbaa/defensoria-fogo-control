@@ -161,13 +161,14 @@ serve(async (req) => {
     for (const t of needsReminder || []) {
       try {
         const link = `${APP_URL}/manutencao/confirmar/${t.confirmation_token}`;
+        const btn = `<a href="${link}" style="background:#0f2c5c;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
         const html = baseHtml(`
-          <h2 style="color:#b45309">Lembrete: confirmação pendente</h2>
-          <p>Prezado(a) solicitante,</p>
-          <p>Consta em nosso sistema que o chamado <strong>#${String(t.ticket_number).padStart(4,"0")}</strong> — <em>${t.title}</em> — foi executado pela equipe de manutenção, porém ainda não recebemos sua confirmação.</p>
-          <p>Solicitamos gentileza confirmar a execução através do link abaixo:</p>
-          <p style="margin:24px 0"><a href="${link}" style="background:#2563eb;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600">Confirmar execução do serviço</a></p>
-          <p style="font-size:13px;color:#6b7280"><strong>Aviso:</strong> caso não haja manifestação em até 4 (quatro) dias corridos a partir desta comunicação, a solicitação será considerada tacitamente atendida e arquivada.</p>
+          <div style="font-size:12px;letter-spacing:1px;color:#b45309;font-weight:700;text-transform:uppercase">Lembrete de confirmação</div>
+          <h2 style="margin:6px 0 16px;font-size:20px;color:#0f172a;font-weight:600">Chamado #${String(t.ticket_number).padStart(4,"0")} — aguardando aceite</h2>
+          <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Prezado(a) solicitante,</p>
+          <p style="font-size:14px;line-height:1.6;margin:0 0 12px">Consta em nosso sistema que a solicitação <strong>#${String(t.ticket_number).padStart(4,"0")} — ${t.title}</strong> foi executada pela equipe do Núcleo de Manutenção, porém ainda não recebemos sua manifestação de aceite.</p>
+          <p style="margin:24px 0">${btn}</p>
+          <p style="font-size:12px;color:#6b7280;line-height:1.6"><strong>Aviso:</strong> não havendo manifestação em até <strong>4 (quatro) dias corridos</strong>, a solicitação será considerada tacitamente atendida e o chamado arquivado.</p>
         `);
         await invokeSender({ ticket_id: t.id, subject: `Lembrete: confirmação pendente — ${t.title}`, html, kind: "reminder" });
         await supabase.from("maintenance_tickets").update({ confirmation_reminder_sent_at: now.toISOString() }).eq("id", t.id);
