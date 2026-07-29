@@ -378,7 +378,7 @@ function S8ManutencaoCapa() {
       subtitle="O fluxo que era 100% manual agora é ponta-a-ponta automatizado."
       dark
     >
-      <div className="grid grid-cols-5 gap-4 h-full items-stretch">
+      <div className="grid grid-cols-5 gap-4 items-start">
         {[
           { icon: Mail, label: 'Solicitante envia e-mail', hint: 'manutencao@dp.mt.gov.br' },
           { icon: Zap, label: 'Sistema cria a tarefa', hint: 'com prioridade e núcleo detectados' },
