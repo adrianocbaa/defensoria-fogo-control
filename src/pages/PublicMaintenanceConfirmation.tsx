@@ -3,7 +3,14 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, XCircle, Loader2, Mail, RotateCcw } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Mail, RotateCcw, ImageIcon, Wrench } from 'lucide-react';
+
+type ServicePhoto = { id?: string; url: string; path?: string; description?: string };
+type TicketService = {
+  title: string;
+  description: string | null;
+  execution_photos: ServicePhoto[] | null;
+};
 
 type TicketInfo = {
   id: string;
@@ -12,7 +19,10 @@ type TicketInfo = {
   status: string;
   completed_at: string | null;
   confirmed_at: string | null;
+  finalization_note: string | null;
   location: string | null;
+  reference_photos: ServicePhoto[] | null;
+  services: TicketService[] | null;
 };
 
 export default function PublicMaintenanceConfirmation() {
