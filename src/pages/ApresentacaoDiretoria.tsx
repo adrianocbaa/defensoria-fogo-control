@@ -146,26 +146,26 @@ function S2Contexto() {
   return (
     <SlideShell
       eyebrow="Contexto"
-      title="Antes do SiDIF, cada informação vivia em um lugar diferente."
-      subtitle="Planilhas locais, e-mails soltos e pastas de fotos. Sem rastro, sem padrão, sem visibilidade."
+      title="Antes do SiDIF, as informações eram armazenadas em pastas localizadas na rede."
+      subtitle="Planilhas em servidor, e-mails e pastas de fotos sem rastro, sem padrão, com difícil visibilidade."
     >
       <div className="grid grid-cols-2 gap-6 h-full">
         <div className="rounded-2xl border-2 border-dashed border-red-200 bg-red-50/40 p-6">
           <div className="text-xs font-semibold tracking-[0.2em] uppercase text-red-700 mb-4">Antes</div>
           <ul className="space-y-3 text-sm text-slate-700">
-            <li className="flex gap-2"><span className="text-red-500">•</span> Medições em planilhas Excel dispersas</li>
-            <li className="flex gap-2"><span className="text-red-500">•</span> RDO em papel, sem fotos rastreáveis</li>
-            <li className="flex gap-2"><span className="text-red-500">•</span> Chamados de manutenção por e-mail avulso</li>
+            <li className="flex gap-2"><span className="text-red-500">•</span> Medições em planilhas Excel&nbsp;</li>
+            <li className="flex gap-2"><span className="text-red-500">•</span> Sem RDO's</li>
+            <li className="flex gap-2"><span className="text-red-500">•</span> Chamados de manutenção por e-mail e controle por planilhas</li>
             <li className="flex gap-2"><span className="text-red-500">•</span> Encerramento (TRP/TRD/ACT) refeito do zero a cada obra</li>
-            <li className="flex gap-2"><span className="text-red-500">•</span> Sem histórico, sem auditoria, sem indicadores</li>
+            <li className="flex gap-2"><span className="text-red-500">•</span> Sem histórico, difícil auditoria, sem indicadores</li>
           </ul>
         </div>
         <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6">
           <div className="text-xs font-semibold tracking-[0.2em] uppercase text-emerald-700 mb-4">Com o SiDIF</div>
           <ul className="space-y-3 text-sm text-slate-700">
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Uma única fonte de verdade — Obras, Medição, RDO e Manutenção</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Uma única fonte — Obras, Medição, RDO e Manutenção</li>
             <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Coleta de dados no canteiro, com fotos georreferenciadas</li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> E-mail vira tarefa automaticamente</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Na Manutenção, o e-mail vira tarefa automaticamente</li>
             <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Documentos institucionais gerados em 1 clique</li>
             <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Trilha de auditoria completa por perfil e ação</li>
           </ul>
