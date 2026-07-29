@@ -5,13 +5,12 @@ import { cn } from '@/lib/utils';
 
 type EmailRow = {
   id: string;
-  direction: 'inbound' | 'outbound';
+  direction: string;
   from_addr: string | null;
   to_addrs: string[] | null;
   subject: string | null;
   body_text: string | null;
   created_at: string;
-  kind?: string | null;
 };
 
 function formatDT(v: string) {
