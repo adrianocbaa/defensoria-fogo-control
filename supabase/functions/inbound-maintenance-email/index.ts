@@ -56,6 +56,27 @@ function extractEmail(text: string): string | null {
   return m ? m[0] : null;
 }
 
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function detectPriority(subject: string, body: string): "Alta" | "Média" | "Baixa" {
+  const txt = stripAccents(`${subject}\n${body}`).toLowerCase();
+  const high = [
+    "urgente", "urgencia", "emergencia", "emergencial", "critico", "critica",
+    "imediato", "imediata", "prioridade alta", "alta prioridade", "asap",
+    "parou de funcionar", "sem energia", "sem agua", "vazamento", "incendio",
+    "curto circuito", "risco", "grave",
+  ];
+  const low = [
+    "quando puder", "sem pressa", "baixa prioridade", "prioridade baixa",
+    "nao urgente", "pode aguardar", "assim que possivel", "quando possivel",
+  ];
+  if (high.some((k) => txt.includes(k))) return "Alta";
+  if (low.some((k) => txt.includes(k))) return "Baixa";
+  return "Média";
+}
+
 function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
 }
