@@ -557,6 +557,7 @@ export function KanbanBoard() {
         confirmationFileName: (ticket as any).confirmation_file_name ?? null,
         finalizationNote: (ticket as any).finalization_note ?? null,
         referencePhotos: Array.isArray((ticket as any).reference_photos) ? (ticket as any).reference_photos : [],
+        isDraft: (ticket as any).is_draft ?? false,
         icon: getIconForType(ticket.type)
       }));
     });
