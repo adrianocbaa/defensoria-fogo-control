@@ -1,95 +1,114 @@
+# Melhoria do fluxo de manutenção por e-mail
 
-# ETAPA 1 — Auditoria do Módulo Manutenção
-
-Nenhum arquivo foi alterado. Este é o levantamento solicitado antes de aplicar o novo layout do Figma. Aguarde aprovação para seguir para a Etapa 2 (implementação visual controlada).
-
-## 1. Estrutura atual
-
-- **Rota:** `/maintenance` → `src/pages/Maintenance.tsx`
-- **Shell atual:** `SimpleHeader` (header verde antigo) + `<aside>` própria de 256px + `<main>` com `MaintenanceDashboard`. Mobile usa `Sheet` com o mesmo sidebar.
-- **Roteamento interno:** feito por `activeSection` (state) e `if` em `MaintenanceDashboard.tsx`. Não há sub-rotas reais.
-- **Sidebar:** `MaintenanceSidebar.tsx` — lista estática de 11 itens (`overview`, `tickets`, `travel`, `service-orders`, `contracts`, `inventory`, `preventive`, `history`, `reports`, `settings`, `test`).
-- **Dashboard (Visão Geral):** KPIs 100% mockados (12/24/3/85%), + `MaintenanceTimeline`, `MaintenanceMap` e "Atividades Recentes" (também mock).
-- **Kanban:** `KanbanBoard.tsx` — colunas Pendente / Em andamento / Impedido / Concluído com drag-and-drop nativo HTML5, filtro por servidor, Realtime.
-- **Lista de chamados:** não existe hoje (só Kanban).
-- **Detalhes:** `TicketDetailsSheet.tsx` (Sheet lateral). Modais: `CreateTaskModal`, `EditTaskModal`, `ViewTaskModal`.
-- **Serviços internos:** `TicketServicesEditor.tsx` + `useTicketServices` — IDs temporários e persistência sequencial (já corrigido em ciclos anteriores).
-- **Fotos:** `TaskPhotoUploader.tsx` — dois fluxos (`reference_photos`, `execution_photos`), fila com progresso, marca d'água, normalização HEIC→JPEG.
-- **Viagens:** `TravelCalendar.tsx` + `CreateTravelModal`/`EditTravelModal`/`ViewTravelModal`. Limite via `useTravelDaysUsage` e `TravelLimitConfirmDialog`.
-- **Impedimentos:** `ImpedimentReasonDialog` + `TicketImpedimentsHistory` + `useTicketImpediments`.
-- **Histórico:** `TicketStatusHistory` (dentro do drawer) alimentado por `maintenance_ticket_status_history`.
-- **Ordens de Serviço / Contratos / Preventivas / Histórico (menu) / Test:** hoje exibem placeholder "em desenvolvimento" no próprio `MaintenanceDashboard`.
-- **Relatórios:** `MaintenanceReports.tsx` (real, com finalizados).
-- **Configurações:** `MaintenanceSettings.tsx` (real).
-- **Inventário:** rotas `inventory`, `materials-list`, `stock-movement`, `stock-report`, `notifications` já renderizam componentes reais em `src/components/inventory/*`. **Não** são placeholder.
-
-## 2. Componentes / hooks principais
-
-| Item | Papel |
-|---|---|
-| `Maintenance.tsx` | Shell antigo (SimpleHeader + aside custom). |
-| `MaintenanceSidebar` | Navegação estática por `activeSection`. |
-| `MaintenanceDashboard` | Roteador interno + Visão Geral mockada. |
-| `KanbanBoard` | 4 colunas, DnD HTML5, Realtime, filtro por servidor, regras por perfil. |
-| `TicketDetailsSheet` | Sheet com todas as seções empilhadas (sem tabs). |
-| `CreateTaskModal` / `EditTaskModal` | Fluxo multi-step atual de chamado. |
-| `TicketServicesEditor` | Serviços internos com IDs temp + viagens vinculadas. |
-| `TaskPhotoUploader` | Upload com fila, HEIC→JPEG, watermark, retry. |
-| `TravelCalendar` | Calendário mensal de viagens. |
-| `ImpedimentReasonDialog` / `TicketImpedimentsHistory` | Fluxo de impedimento. |
-| `TicketStatusHistory` | Timeline de movimentações. |
-| `useMaintenanceTickets` | Fetch + Realtime (debounce 250ms) + CRUD + `finalizeTicket`. |
-| `useTicketServices` | CRUD de serviços internos. |
-| `useMaintenanceManagers` / `useMaintenanceUsers` / `useMaintenanceTypes` | Suporte de listas. |
-| `useTravelDaysUsage` | Controle de diárias por servidor/mês. |
-
-## 3. Regras a preservar (obrigatório)
-
-- RLS de `maintenance_tickets` (criador + `manager_ids`) e do bucket `documents`.
-- Realtime dos canais `maintenance_tickets` e `maintenance_ticket_services` com debounce de 250ms.
-- Regras de movimentação Kanban: GM pode mover em todas as colunas, admin/fiscal concluem.
-- Fluxo `finalizeTicket` (arquivamento fora do Kanban).
-- Upload: buckets, marca d'água, HEIC→JPEG, fila, retry — **sem alteração**.
-- IDs temporários e persistência sequencial em serviços/viagens.
-- `useTravelDaysUsage` e limites de diárias — sem alteração de fórmula.
-
-## 4. Comparação Figma × Sistema atual
-
-| Referência Figma | Estado atual | Como preservar |
-|---|---|---|
-| `visao-geral-manutencao-desktop.png` (central operacional com "Requer atenção", "Minha fila", carga da equipe, próximas viagens, mapa, atividade) | KPIs mockados + Timeline + Map + activity mockada | Reconstruir Visão Geral consumindo `useMaintenanceTickets`. Blocos sem fonte real ficam com estado "Dados ainda não disponíveis". |
-| `kanban-desktop.png` / `kanban-filtros-ativos.png` | `KanbanBoard` HTML5 DnD, filtro por servidor | Recapear visual dos cards/colunas, adicionar chips de filtros ativos. DnD mantido (dnd-kit **não** autorizado). |
-| `kanban-mobile.png` | Sheet + Kanban horizontal | Adicionar seletor de coluna + menu "Mover para" reutilizando handler `handleStatusChange`. |
-| `lista-chamados.png` | Não existe | Novo componente `TicketListView` alimentado pela mesma store de tickets (client-side). Toggle Kanban/Lista como estado interno. |
-| `drawer-*.png` (Visão Geral, Serviços, Fotos) | `TicketDetailsSheet` empilhado | Recompor em tabs (Visão Geral / Serviços / Fotos / Impedimentos / Histórico) sem trocar hooks. |
-| `novo-chamado-etapa1/2.png` | Fluxo multi-step atual em `CreateTaskModal`/`EditTaskModal` | Preservar todas as etapas atuais (mesmo se Figma sugere só 2). Restilizar. |
-| `viagens-calendario.png` / `viagens-lista-drawer.png` / `nova-viagem-modal.png` | `TravelCalendar` + modais | Adicionar toggle Mês/Lista; drawer lateral por dia; restilizar modais. Semana **não** implementar sem aprovação. |
-| `preventivas.png` | Placeholder "em desenvolvimento" | **Bloqueio de auditoria:** hoje não há tabela nem hook de preventivas. Requer decisão (ver §6). |
-| `historico.png` | `useAuditLogs`? / não há tela dedicada de manutenção | Nova tela consumindo `maintenance_ticket_status_history` + impedimentos. |
-| `relatorios.png` | `MaintenanceReports.tsx` real | Restilizar preservando queries e signed URLs. |
-| `configuracoes.png` | `MaintenanceSettings.tsx` real | Restilizar em seções, sem novos campos. |
-| `responsive-showcase.png` | Parcial (Sheet mobile ok, Kanban mobile ruim) | Aplicar breakpoints padrão + drawers full-screen no mobile. |
-| Ordens / Contratos / Fornecedores / Estoque | Placeholders + **Inventário funcional real** | Ver §6 (conflito com Inventário). |
-
-## 5. Melhorias apenas visuais (autorizadas)
-
-- Sidebar verde compartilhada (`ObrasLayout` ou equivalente já usado em Obras/RDO) substituindo `SimpleHeader`+aside custom.
-- Novo card de ticket, chips de filtro, tabs no drawer, lightbox de fotos, estados skeleton/vazio/erro, indicador de Realtime, menu "Mover para" no mobile, toggle Kanban/Lista, toggle Mês/Lista em viagens.
-
-## 6. Itens que exigem sua decisão antes de eu começar
-
-1. **Layout compartilhado — qual usar?** O SiDIF hoje tem `ObrasLayout` (usado em Obras e RDO) com sidebar verde. Devo reutilizá-lo como shell da Manutenção, adicionando um `MaintenanceSidebar` novo dentro dele? (recomendo sim)
-2. **Inventário (`inventory`, `materials-list`, `stock-movement`, `stock-report`, `notifications`):** hoje são **funcionais**, não placeholder. O prompt manda desabilitar "Estoque/Inventário" no menu. Confirma que devo **apenas ocultar do novo menu** (com badge "Em desenvolvimento" nos itens equivalentes) e **preservar rotas/componentes existentes** intocados?
-3. **Preventivas:** hoje é só placeholder. O Figma mostra tela completa. Devo (a) manter placeholder com badge "Em desenvolvimento" (mais seguro, sem inventar tabela), ou (b) implementar uma tela vazia com estrutura visual esperando futura tabela?
-4. **Histórico de Atendimentos:** posso criar a página consumindo `maintenance_ticket_status_history` + `maintenance_ticket_impediments` (já existentes), sem novas tabelas?
-5. **Visão Geral — blocos sem fonte real** ("Carga da equipe", "Comprovações pendentes", "Requer atenção"). Devo derivar por regras client-side sobre `useMaintenanceTickets` (ex.: atrasado = `!finalized && created_at > X dias sem update`), ou marcar como "Dados ainda não disponíveis" até você definir as regras?
-6. **Rota vs. estado interno:** manter tudo em `/maintenance` com `activeSection`, ou promover para sub-rotas (`/maintenance/kanban`, `/maintenance/viagens`, etc.)? Sub-rotas dão breadcrumbs reais e deep-link, mas exigem tocar em `App.tsx`.
-
-## 7. Fora de escopo (confirmado)
-
-- Não mexer em: RLS, buckets, edge functions, upload, HEIC, marca d'água, fórmulas de diárias, DnD (não trocar por dnd-kit), Realtime, fluxo de finalização.
-- Ordens de Serviço, Contratos, Fornecedores, Estoque/Materiais/Movimentações: **não implementar** — apenas item desabilitado no menu.
+Implementação em 4 blocos, na ordem **b → a → c → d** (o thread é fundação para os outros três).
 
 ---
 
-**Aguardo suas respostas para os 6 pontos do §6 antes de iniciar a implementação.**
+## Bloco 1 — Threading `[MNT #NNNN]` (item b)
+
+**Schema**
+
+- Nova tabela `maintenance_ticket_emails`: `ticket_id`, `direction` (`inbound`/`outbound`), `from_addr`, `to_addrs[]`, `subject`, `body_text`, `body_html`, `message_id`, `in_reply_to`, `attachments jsonb`, `received_at`.
+- Em `maintenance_tickets`: já existe `ticket_number` (auto). Vamos usá-lo como chave do thread.
+- Índice único em `message_id` para deduplicação.
+
+**Edge function `inbound-maintenance-email` (extensão)**
+
+- Antes de criar nova tarefa: extrair `#NNNN` do subject/in-reply-to.
+- Se casar com `ticket_number` existente → grava só em `maintenance_ticket_emails` (não cria nova tarefa) e reabre se estiver em "Concluído".
+- Se não casar → cria tarefa **e** grava o primeiro e-mail na tabela de thread.
+
+**Envios (nova função `send-maintenance-email`)**
+
+- Wrapper sobre Resend com from `chamados@sidif.com.br`.
+- Sempre prefixa subject com `[MNT #NNNN]`.
+- Grava a saída em `maintenance_ticket_emails` (direction=outbound).
+
+**UI**
+
+- Dentro do `TicketDetailsSheet`, nova aba/seção "Conversa": lista o primeiro inbound + as respostas do solicitante + os e-mails automáticos enviados pelo sistema.
+
+---
+
+## Bloco 2 — Rascunhos com revisão obrigatória (item a)
+
+**Schema**
+
+- Coluna `is_draft boolean default false` em `maintenance_tickets`.
+- Tarefas criadas por e-mail entram com `is_draft = true`.
+
+**UI**
+
+- Card no Kanban: badge amarelo "Rascunho — revisar" quando `is_draft`.
+- Clique no card de rascunho → abre modal `ReviewDraftModal` (obrigatório): confirmar/ajustar título, prioridade, núcleo, servidor responsável. Botão "Publicar" seta `is_draft = false`. Sem botão de fechar sem publicar (só cancela e mantém rascunho).
+- Rascunhos ficam visíveis só para admins/responsáveis de manutenção (RLS já cobre).
+
+---
+
+## Bloco 3 — Confirmação do solicitante (item c)
+
+**Schema**
+
+- Colunas em `maintenance_tickets`: `confirmation_token uuid`, `confirmation_sent_at`, `confirmation_reminder_sent_at`, `confirmed_at`, `confirmed_source` (`solicitante`/`auto`).
+
+**Fluxo**
+
+- Ao mover para "Concluído": trigger dispara envio automático de e-mail via `send-maintenance-email` com link único `https://sidif.lovable.app/confirmacao/{token}`.
+- Página pública nova `/confirmacao/:token` (sem login): mostra resumo do chamado + fotos de execução + botão "Confirmar serviço executado".
+- Ao confirmar: tarefa vira `finalized_at = now()`, `confirmed_source = 'solicitante'`, gera PDF (Bloco 4) e anexa.
+
+**Cron (7 dias)**
+
+- Nova edge function `check-maintenance-confirmations` agendada via `pg_cron` (diária).
+- Se `confirmation_sent_at` > 3 dias e sem `confirmation_reminder_sent_at` → envia lembrete corporativo ("Prezado(a), consta em nossos sistemas... solicitamos gentileza confirmar... caso não haja manifestação em até 4 dias, a solicitação será considerada tacitamente atendida...").
+- Se `confirmation_sent_at` > 7 dias → auto-finaliza com `confirmed_source = 'auto'`, gera PDF e arquiva.
+
+---
+
+## Bloco 4 — PDF de arquivamento (item d)
+
+**Edge function `generate-maintenance-ticket-pdf**`
+
+- Renderiza: cabeçalho (nº chamado, núcleo, datas, prioridade), thread completo (inbound + outbound + respostas), fotos de referência **e** fotos de execução embutidas, histórico de status, nota de finalização.
+- Salva no bucket `documents` em `maintenance-archive/{ticket_id}/chamado-{ticket_number}.pdf`.
+- Grava `archive_pdf_url` na tabela.
+- Chamada quando: solicitante confirma OU cron auto-finaliza OU responsável clica manualmente "Gerar PDF" em tarefas já finalizadas.
+
+**Bloco 4b — Opcional (fica para depois se você quiser)**
+
+- Mover e-mail original para pasta IMAP "MANUTENÇÕES REALIZADAS/2026" — depende de credenciais IMAP externas; não incluído nesta rodada.
+
+---
+
+## Detalhes técnicos
+
+**Migrations em ordem**
+
+1. `maintenance_ticket_emails` + índices + RLS + GRANTs.
+2. Colunas novas em `maintenance_tickets` (`is_draft`, `confirmation_*`, `archive_pdf_url`).
+3. Trigger `on_ticket_concluido_send_confirmation` que insere um job leve numa fila (tabela `maintenance_ticket_email_outbox`) processada pelo cron (evita chamar HTTP dentro de trigger).
+4. Cron `pg_cron` diário chamando `check-maintenance-confirmations`.
+
+**Edge functions novas**
+
+- `send-maintenance-email` (wrapper Resend + grava thread)
+- `inbound-maintenance-email` (estender: thread + rascunho)
+- `check-maintenance-confirmations` (cron: lembrete + auto-finalização)
+- `generate-maintenance-ticket-pdf`
+
+**Secrets já existentes:** `RESEND_API_KEY` ✅.
+
+**UI nova**
+
+- `ReviewDraftModal.tsx`
+- Aba "Conversa" dentro do `TicketDetailsSheet`
+- Página pública `/confirmacao/:token` (`PublicMaintenanceConfirmation.tsx`)
+- Badge "Rascunho" no card do Kanban
+
+---
+
+## Escopo desta rodada
+
+Vou implementar tudo (Blocos 1–4), pois cada um depende do anterior. O Bloco 4b (mover e-mail via IMAP) fica para depois porque exige credenciais que não temos.
+
+&nbsp;
