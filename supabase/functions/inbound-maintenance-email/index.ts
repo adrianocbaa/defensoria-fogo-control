@@ -75,6 +75,48 @@ function extractOriginalSender(body: string): string | null {
   return null;
 }
 
+// Extrai apenas o conteúdo real da mensagem, removendo cabeçalhos de
+// encaminhamento (Forwarded message, De:, Para:, Data:, Assunto:) e
+// citações. Se houver múltiplos níveis de forward, pega o mais interno.
+function extractCleanBody(body: string): string {
+  if (!body) return "";
+  let text = body.replace(/\r\n/g, "\n");
+
+  // Pega o bloco mais interno de forwards sucessivos
+  const fwdRe = /-{2,}\s*Forwarded message\s*-{2,}|-{2,}\s*Mensagem encaminhada\s*-{2,}/gi;
+  let lastIdx = -1;
+  let m: RegExpExecArray | null;
+  while ((m = fwdRe.exec(text)) !== null) lastIdx = m.index + m[0].length;
+  if (lastIdx >= 0) text = text.slice(lastIdx);
+
+  // Remove linhas de cabeçalho no topo (De:/From:, Para:/To:, Data:/Date:, Assunto:/Subject:, Cc:, Bcc:)
+  const headerRe = /^\s*(De|From|Para|To|Data|Date|Assunto|Subject|Cc|Cco|Bcc|Remetente|Enviado em|Sent)\s*:.*$/i;
+  const lines = text.split("\n");
+  let i = 0;
+  // pula linhas em branco iniciais
+  while (i < lines.length && !lines[i].trim()) i++;
+  // pula cabeçalhos consecutivos (permitindo continuações indentadas)
+  while (i < lines.length) {
+    if (headerRe.test(lines[i])) {
+      i++;
+      while (i < lines.length && /^\s+\S/.test(lines[i]) && !headerRe.test(lines[i])) i++;
+    } else break;
+  }
+  let cleaned = lines.slice(i).join("\n");
+
+  // Remove citações ">" no início das linhas
+  cleaned = cleaned
+    .split("\n")
+    .map((l) => l.replace(/^\s*>+\s?/, ""))
+    .join("\n");
+
+  // Colapsa múltiplas linhas em branco e trims
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+  return cleaned;
+}
+
+
+
 
 function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -299,7 +341,11 @@ serve(async (req) => {
           text: textBody.slice(0, 20000),
           received_at: new Date().toISOString(),
         },
-        observations: textBody ? [textBody.slice(0, 2000)] : [],
+        observations: (() => {
+          const clean = extractCleanBody(textBody);
+          return clean ? [clean.slice(0, 2000)] : [];
+        })(),
+
       })
       .select("id, ticket_number")
       .single();
