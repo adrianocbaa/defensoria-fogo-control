@@ -166,7 +166,7 @@ serve(async (req) => {
         location: local,
         assignee: solicitante,
         status: "Pendente",
-        request_type: "E-mail",
+        request_type: "email",
         requester_email: fromAddr || null,
         nucleo_id,
         source: "email",
