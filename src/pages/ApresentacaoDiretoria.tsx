@@ -654,11 +654,12 @@ const SLIDES: { id: number; render: () => JSX.Element }[] = [
   { id: 5, render: S5RDO },
   { id: 6, render: S6Medicao },
   { id: 7, render: S7Encerramento },
-  { id: 8, render: S8ManutencaoCapa },
-  { id: 9, render: S9Kanban },
-  { id: 10, render: S10Seguranca },
-  { id: 11, render: S11Ganhos },
-  { id: 12, render: S12Encerramento },
+  { id: 8, render: S8FluxoAntesDepois },
+  { id: 9, render: S8ManutencaoCapa },
+  { id: 10, render: S9Kanban },
+  { id: 11, render: S10Seguranca },
+  { id: 12, render: S11Ganhos },
+  { id: 13, render: S12Encerramento },
 ];
 
 export default function ApresentacaoDiretoria() {
