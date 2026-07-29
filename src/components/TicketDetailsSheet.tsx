@@ -165,7 +165,7 @@ export function TicketDetailsSheet({
       const { data, error } = await supabase
         .from('maintenance_tickets')
         .select(
-          'id,title,status,priority,type,location,assignee,request_type,process_number,observations,created_at,requested_at,completed_at,finalized_at,confirmation_file_url,confirmation_file_name,finalization_note,is_draft,maintenance_ticket_services(id,title,description,order_index,completed,status,location,scheduled_date,updated_at,created_at)',
+          'id,title,status,priority,type,location,assignee,request_type,process_number,observations,created_at,requested_at,completed_at,finalized_at,confirmation_file_url,confirmation_file_name,finalization_note,is_draft,archive_pdf_url,confirmed_at,confirmed_source,maintenance_ticket_services(id,title,description,order_index,completed,status,location,scheduled_date,updated_at,created_at)',
         )
         .eq('id', ticketId)
         .maybeSingle();
