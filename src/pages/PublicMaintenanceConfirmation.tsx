@@ -1,0 +1,152 @@
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
+
+type TicketInfo = {
+  id: string;
+  ticket_number: number | null;
+  title: string;
+  status: string;
+  completed_at: string | null;
+  confirmed_at: string | null;
+  location: string | null;
+};
+
+export default function PublicMaintenanceConfirmation() {
+  const { token } = useParams<{ token: string }>();
+  const [loading, setLoading] = useState(true);
+  const [ticket, setTicket] = useState<TicketInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [note, setNote] = useState('');
+  const [done, setDone] = useState<'accept' | 'reject' | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase.rpc('get_maintenance_ticket_by_token', {
+        p_token: token,
+      });
+      if (error) {
+        setError(error.message);
+      } else if (!data || (Array.isArray(data) && data.length === 0)) {
+        setError('Link inválido ou expirado.');
+      } else {
+        const row: any = Array.isArray(data) ? data[0] : data;
+        setTicket(row as TicketInfo);
+      }
+      setLoading(false);
+    })();
+  }, [token]);
+
+  const submit = async (accept: boolean) => {
+    if (!token) return;
+    setSubmitting(true);
+    const { error } = await supabase.rpc('confirm_maintenance_service', {
+      p_token: token,
+      p_accept: accept,
+      p_note: note || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setDone(accept ? 'accept' : 'reject');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !ticket) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
+        <div className="max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
+          <XCircle className="mx-auto mb-3 h-10 w-10 text-destructive" />
+          <h1 className="text-lg font-semibold text-foreground">Não foi possível abrir a confirmação</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{error ?? 'Link inválido.'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (ticket.confirmed_at || done) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
+        <div className="max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
+          <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-emerald-500" />
+          <h1 className="text-lg font-semibold text-foreground">
+            {done === 'reject' ? 'Chamado reaberto' : 'Serviço confirmado'}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {done === 'reject'
+              ? 'A equipe de manutenção foi notificada da reabertura.'
+              : 'Obrigado! O atendimento do chamado foi arquivado.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-muted/30 py-10 px-4">
+      <div className="mx-auto max-w-xl rounded-lg border bg-card shadow-sm">
+        <div className="border-b bg-primary/5 p-6">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
+            <Mail className="h-3.5 w-3.5" /> SiDIF · Manutenção
+          </div>
+          <h1 className="mt-2 text-lg font-semibold text-foreground">
+            Chamado #{String(ticket.ticket_number ?? '').padStart(4, '0')} — {ticket.title}
+          </h1>
+          {ticket.location && (
+            <p className="mt-1 text-sm text-muted-foreground">Local: {ticket.location}</p>
+          )}
+        </div>
+
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-foreground">
+            A equipe de manutenção informou que o serviço foi concluído. Confirme se o atendimento
+            atendeu à sua solicitação:
+          </p>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Observação (opcional)
+            </label>
+            <Textarea
+              rows={4}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ex.: serviço executado conforme solicitado."
+            />
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => submit(false)}
+              disabled={submitting}
+              className="border-destructive/40 text-destructive hover:bg-destructive/10"
+            >
+              {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <XCircle className="mr-1 h-4 w-4" />}
+              Reabrir chamado
+            </Button>
+            <Button onClick={() => submit(true)} disabled={submitting}>
+              {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
+              Confirmar conclusão
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
