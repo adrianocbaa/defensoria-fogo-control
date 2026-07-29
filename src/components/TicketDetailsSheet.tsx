@@ -57,6 +57,9 @@ type TicketDetail = {
   confirmation_file_name: string | null;
   finalization_note: string | null;
   is_draft: boolean | null;
+  archive_pdf_url: string | null;
+  confirmed_at: string | null;
+  confirmed_source: string | null;
   services: ServiceRow[];
 };
 
@@ -162,7 +165,7 @@ export function TicketDetailsSheet({
       const { data, error } = await supabase
         .from('maintenance_tickets')
         .select(
-          'id,title,status,priority,type,location,assignee,request_type,process_number,observations,created_at,requested_at,completed_at,finalized_at,confirmation_file_url,confirmation_file_name,finalization_note,is_draft,maintenance_ticket_services(id,title,description,order_index,completed,status,location,scheduled_date,updated_at,created_at)',
+          'id,title,status,priority,type,location,assignee,request_type,process_number,observations,created_at,requested_at,completed_at,finalized_at,confirmation_file_url,confirmation_file_name,finalization_note,is_draft,archive_pdf_url,confirmed_at,confirmed_source,maintenance_ticket_services(id,title,description,order_index,completed,status,location,scheduled_date,updated_at,created_at)',
         )
         .eq('id', ticketId)
         .maybeSingle();
@@ -333,7 +336,51 @@ export function TicketDetailsSheet({
                       </div>
                       {ticket.finalization_note}
                     </div>
-                  )}
+            )}
+
+            {/* PDF de arquivamento */}
+            {ticket.archive_pdf_url && (
+              <>
+                <Separator className="my-4" />
+                <div>
+                  <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+                    <Paperclip className="h-4 w-4" />
+                    Arquivamento (PDF)
+                  </h3>
+                  <div className="flex items-center justify-between gap-2 rounded border bg-muted/30 px-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-foreground">
+                        Histórico completo do chamado
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {ticket.confirmed_source === 'auto'
+                          ? 'Considerado tacitamente atendido'
+                          : ticket.confirmed_at
+                            ? `Confirmado pelo solicitante em ${formatDateTime(ticket.confirmed_at)}`
+                            : 'Gerado automaticamente'}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        const { data, error } = await supabase.storage
+                          .from('documents')
+                          .createSignedUrl(ticket.archive_pdf_url!, 3600);
+                        if (error || !data?.signedUrl) {
+                          toast({ title: 'Erro ao abrir PDF', description: error?.message ?? 'Tente novamente.', variant: 'destructive' });
+                          return;
+                        }
+                        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      Abrir PDF
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
                 </div>
               </>
             )}
