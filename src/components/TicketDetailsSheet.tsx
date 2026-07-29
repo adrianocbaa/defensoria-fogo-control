@@ -248,6 +248,38 @@ export function TicketDetailsSheet({
               </SheetDescription>
             </SheetHeader>
 
+            {ticket.is_draft && (
+              <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-200">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="flex-1">
+                  <div className="font-medium">Rascunho criado por e-mail</div>
+                  <div className="text-xs opacity-80">
+                    Revise os dados (título, tipo, prioridade, local, núcleo) antes de trabalhar. Ao marcar como revisado, o badge é removido.
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-400 text-amber-900 hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-800/40"
+                  onClick={async () => {
+                    const { error } = await supabase
+                      .from('maintenance_tickets')
+                      .update({ is_draft: false })
+                      .eq('id', ticket.id);
+                    if (error) {
+                      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+                    } else {
+                      setTicket({ ...ticket, is_draft: false });
+                      toast({ title: 'Revisado', description: 'Tarefa marcada como revisada.' });
+                    }
+                  }}
+                >
+                  Marcar como revisado
+                </Button>
+              </div>
+            )}
+
+
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <InfoField icon={<User className="h-3.5 w-3.5" />} label="Responsável" value={ticket.assignee} />
               <InfoField icon={<MapPin className="h-3.5 w-3.5" />} label="Local" value={ticket.location} />
