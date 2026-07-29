@@ -126,12 +126,16 @@ export default function PublicMaintenanceConfirmation() {
     );
   }
 
+  const services = (ticket.services || []).filter(Boolean);
+  const referencePhotos = ticket.reference_photos || [];
+  const allExecutionPhotos = services.flatMap((s) => s.execution_photos || []);
+
   return (
     <main className="min-h-screen bg-muted/30 px-4 py-10">
-      <section className="mx-auto max-w-xl rounded-lg border bg-card shadow-sm">
+      <section className="mx-auto max-w-2xl rounded-lg border bg-card shadow-sm">
         <div className="border-b bg-primary/5 p-6">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
-            <Mail className="h-3.5 w-3.5" /> SiDIF · Manutenção
+            <Mail className="h-3.5 w-3.5" /> SiDIF · Núcleo de Manutenção
           </div>
           <h1 className="mt-2 text-lg font-semibold text-foreground">
             Chamado #{String(ticket.ticket_number ?? '').padStart(4, '0')} — {ticket.title}
@@ -141,16 +145,68 @@ export default function PublicMaintenanceConfirmation() {
           )}
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-5">
           <p className="text-sm text-foreground">
-            A equipe de manutenção informou que o serviço foi concluído. Confirme se o atendimento
-            atendeu à sua solicitação:
+            A equipe do Núcleo de Manutenção informou que o serviço foi concluído. Confira abaixo os detalhes da execução e formalize o aceite ou a reabertura do chamado.
           </p>
 
+          {ticket.finalization_note && (
+            <div className="rounded-md border-l-4 border-primary bg-primary/5 p-3 text-sm">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Observações da equipe</div>
+              <p className="whitespace-pre-wrap text-foreground/90">{ticket.finalization_note}</p>
+            </div>
+          )}
+
+          {services.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Wrench className="h-3.5 w-3.5" /> Serviços executados
+              </div>
+              <ol className="space-y-3">
+                {services.map((s, i) => (
+                  <li key={i} className="rounded-md border bg-background p-3">
+                    <div className="text-sm font-semibold text-foreground">{i + 1}. {s.title}</div>
+                    {s.description && (
+                      <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">{s.description}</p>
+                    )}
+                    {Array.isArray(s.execution_photos) && s.execution_photos.length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {s.execution_photos.map((p, j) => (
+                          <a key={p.id ?? j} href={p.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded border bg-muted">
+                            <img src={p.url} alt={p.description || `Execução ${j + 1}`} className="h-20 w-full object-cover" loading="lazy" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {referencePhotos.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <ImageIcon className="h-3.5 w-3.5" /> Fotos de referência do chamado
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {referencePhotos.map((p, i) => (
+                  <a key={p.id ?? i} href={p.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded border bg-muted">
+                    <img src={p.url} alt={p.description || `Referência ${i + 1}`} className="h-20 w-full object-cover" loading="lazy" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {services.length === 0 && allExecutionPhotos.length === 0 && (
+            <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+              A equipe não registrou serviços detalhados neste chamado; a descrição do atendimento consta nas observações acima.
+            </div>
+          )}
+
           <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-            <p>
-              Ao confirmar, o chamado será arquivado. Se o serviço não resolveu a solicitação, o chamado será reaberto para nova análise da equipe responsável.
-            </p>
+            Ao confirmar, o chamado será arquivado. Se o serviço não resolveu a solicitação, o chamado será reaberto para nova análise da equipe responsável.
           </div>
 
           <div>
