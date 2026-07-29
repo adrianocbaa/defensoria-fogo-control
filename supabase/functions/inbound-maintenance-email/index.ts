@@ -147,16 +147,54 @@ serve(async (req) => {
     const messageId: string | undefined =
       payload.headers?.["message-id"] || payload.headers?.["Message-Id"] || payload.message_id;
 
-    // Deduplicação por Message-Id
+    // Deduplicação por Message-Id (na tabela de thread)
     if (messageId) {
       const { data: dup } = await supabase
-        .from("maintenance_tickets")
-        .select("id")
-        .eq("inbound_message_id", messageId)
+        .from("maintenance_ticket_emails")
+        .select("id, ticket_id")
+        .eq("message_id", messageId)
         .maybeSingle();
       if (dup) {
         console.log("inbound: mensagem duplicada", messageId);
-        return json(200, { ok: true, duplicated: true, ticket_id: dup.id });
+        return json(200, { ok: true, duplicated: true, ticket_id: dup.ticket_id });
+      }
+    }
+
+    // Detecta thread: [SiDIF #NNNN] no subject ou In-Reply-To
+    const inReplyTo: string | undefined =
+      payload.headers?.["in-reply-to"] || payload.headers?.["In-Reply-To"];
+    const threadMatch = subject.match(/\[SiDIF\s*#\s*(\d+)\]/i);
+    if (threadMatch) {
+      const ticketNumber = parseInt(threadMatch[1], 10);
+      const { data: existing } = await supabase
+        .from("maintenance_tickets")
+        .select("id, ticket_number, status, confirmed_at")
+        .eq("ticket_number", ticketNumber)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase.from("maintenance_ticket_emails").insert({
+          ticket_id: existing.id,
+          direction: "inbound",
+          from_addr: fromAddr || null,
+          to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
+          subject,
+          body_text: textBody.slice(0, 20000),
+          body_html: payload.html || null,
+          message_id: messageId ?? null,
+          in_reply_to: inReplyTo ?? null,
+        });
+
+        // reabre se estava concluído e ainda não foi confirmado
+        if (existing.status === "Concluído" && !existing.confirmed_at) {
+          await supabase
+            .from("maintenance_tickets")
+            .update({ status: "Em andamento" })
+            .eq("id", existing.id);
+        }
+
+        console.log(`inbound: resposta anexada ao chamado #${existing.ticket_number}`);
+        return json(200, { ok: true, threaded: true, ticket_id: existing.id });
       }
     }
 
@@ -223,6 +261,7 @@ serve(async (req) => {
         requester_email: fromAddr || null,
         nucleo_id,
         source: "email",
+        is_draft: true,
         inbound_message_id: messageId ?? null,
         raw_email: {
           from: payload.from ?? null,
@@ -237,6 +276,22 @@ serve(async (req) => {
       .single();
 
     if (insErr || !ticket) {
+      console.error("inbound: erro ao criar ticket", insErr);
+      return json(500, { error: "insert_failed", details: insErr?.message });
+    }
+
+    // Grava o primeiro e-mail na thread
+    await supabase.from("maintenance_ticket_emails").insert({
+      ticket_id: ticket.id,
+      direction: "inbound",
+      from_addr: fromAddr || null,
+      to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
+      subject,
+      body_text: textBody.slice(0, 20000),
+      body_html: payload.html || null,
+      message_id: messageId ?? null,
+      in_reply_to: inReplyTo ?? null,
+    });
       console.error("inbound: erro ao criar ticket", insErr);
       return json(500, { error: "insert_failed", details: insErr?.message });
     }

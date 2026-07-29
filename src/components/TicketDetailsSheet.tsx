@@ -21,8 +21,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Circle, Clock, MapPin, User, Paperclip, Download, Trash2, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, MapPin, User, Paperclip, Download, Trash2, Loader2, Mail, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { TicketEmailThread } from '@/components/TicketEmailThread';
 
 type ServiceRow = {
   id: string;
@@ -55,6 +56,7 @@ type TicketDetail = {
   confirmation_file_url: string | null;
   confirmation_file_name: string | null;
   finalization_note: string | null;
+  is_draft: boolean | null;
   services: ServiceRow[];
 };
 
@@ -160,7 +162,7 @@ export function TicketDetailsSheet({
       const { data, error } = await supabase
         .from('maintenance_tickets')
         .select(
-          'id,title,status,priority,type,location,assignee,request_type,process_number,observations,created_at,requested_at,completed_at,finalized_at,confirmation_file_url,confirmation_file_name,finalization_note,maintenance_ticket_services(id,title,description,order_index,completed,status,location,scheduled_date,updated_at,created_at)',
+          'id,title,status,priority,type,location,assignee,request_type,process_number,observations,created_at,requested_at,completed_at,finalized_at,confirmation_file_url,confirmation_file_name,finalization_note,is_draft,maintenance_ticket_services(id,title,description,order_index,completed,status,location,scheduled_date,updated_at,created_at)',
         )
         .eq('id', ticketId)
         .maybeSingle();
@@ -245,6 +247,38 @@ export function TicketDetailsSheet({
                 {ticket.process_number ? ` · Processo #${ticket.process_number}` : ''}
               </SheetDescription>
             </SheetHeader>
+
+            {ticket.is_draft && (
+              <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-200">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="flex-1">
+                  <div className="font-medium">Rascunho criado por e-mail</div>
+                  <div className="text-xs opacity-80">
+                    Revise os dados (título, tipo, prioridade, local, núcleo) antes de trabalhar. Ao marcar como revisado, o badge é removido.
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-400 text-amber-900 hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-800/40"
+                  onClick={async () => {
+                    const { error } = await supabase
+                      .from('maintenance_tickets')
+                      .update({ is_draft: false })
+                      .eq('id', ticket.id);
+                    if (error) {
+                      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+                    } else {
+                      setTicket({ ...ticket, is_draft: false });
+                      toast({ title: 'Revisado', description: 'Tarefa marcada como revisada.' });
+                    }
+                  }}
+                >
+                  Marcar como revisado
+                </Button>
+              </div>
+            )}
+
 
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <InfoField icon={<User className="h-3.5 w-3.5" />} label="Responsável" value={ticket.assignee} />
@@ -353,6 +387,16 @@ export function TicketDetailsSheet({
                 </ul>
               </section>
             )}
+
+            {/* Conversa por e-mail */}
+            <Separator className="my-4" />
+            <section>
+              <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+                <Mail className="h-4 w-4" />
+                Conversa por e-mail
+              </h3>
+              <TicketEmailThread ticketId={ticket.id} />
+            </section>
 
             {/* Ações destrutivas */}
             <Separator className="my-4" />
