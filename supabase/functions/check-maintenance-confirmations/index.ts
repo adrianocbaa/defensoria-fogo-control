@@ -14,7 +14,7 @@ const cors = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const APP_URL = "https://sidif.lovable.app";
+const APP_URL = "https://sidif.com.br";
 
 function baseHtml(inner: string) {
   return `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#1f2937;max-width:640px;margin:0 auto;padding:24px">
