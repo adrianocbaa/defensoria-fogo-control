@@ -21,10 +21,10 @@ function baseHtml(inner: string) {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px">
       <tr><td align="center">
         <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
-          <tr><td style="background:#0f2c5c;padding:20px 28px">
-            <div style="font-size:12px;letter-spacing:2px;color:#93c5fd;font-weight:600;text-transform:uppercase">Sistema SiDIF</div>
+          <tr><td style="background:#1a5f3f;padding:20px 28px">
+            <div style="font-size:12px;letter-spacing:2px;color:#86efac;font-weight:600;text-transform:uppercase">SiDIF</div>
             <div style="font-size:18px;color:#ffffff;font-weight:600;margin-top:4px">Defensoria Pública do Estado de Mato Grosso</div>
-            <div style="font-size:13px;color:#cbd5e1;margin-top:2px">Coordenadoria Administrativa · Núcleo de Manutenção</div>
+            <div style="font-size:13px;color:#d1fae5;margin-top:2px">Diretoria de Infraestrutura Física - Manutenção</div>
           </td></tr>
           <tr><td style="padding:28px">${inner}</td></tr>
           <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 28px;font-size:11px;color:#6b7280;line-height:1.5">
