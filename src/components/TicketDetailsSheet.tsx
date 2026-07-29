@@ -21,8 +21,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Circle, Clock, MapPin, User, Paperclip, Download, Trash2, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, MapPin, User, Paperclip, Download, Trash2, Loader2, Mail, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { TicketEmailThread } from '@/components/TicketEmailThread';
 
 type ServiceRow = {
   id: string;
