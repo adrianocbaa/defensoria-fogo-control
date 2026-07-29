@@ -287,7 +287,7 @@ serve(async (req) => {
         assignee: solicitante,
         status: "Pendente",
         request_type: "email",
-        requester_email: fromAddr || null,
+        requester_email: requesterEmail || null,
         nucleo_id,
         source: "email",
         is_draft: true,
