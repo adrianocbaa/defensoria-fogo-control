@@ -34,7 +34,7 @@ export function TicketEmailThread({ ticketId }: { ticketId: string }) {
       setLoading(true);
       const { data, error } = await supabase
         .from('maintenance_ticket_emails')
-        .select('id,direction,from_addr,to_addrs,subject,body_text,created_at,kind')
+        .select('id,direction,from_addr,to_addrs,subject,body_text,created_at')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
       if (cancelled) return;
