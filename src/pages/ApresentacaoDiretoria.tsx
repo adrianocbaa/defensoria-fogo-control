@@ -369,7 +369,91 @@ function S7Encerramento() {
   );
 }
 
-// 8 — Manutenção — capa do módulo
+// 8 — Fluxograma antes x depois (Manutenção)
+function S8FluxoAntesDepois() {
+  const antes = [
+    'Lançar demanda na planilha',
+    'Repassar ao gerente',
+    'Gerente atende a demanda',
+    'Responsável é informado',
+    'Enviar e-mail ao solicitante',
+    'Arquivar e-mail',
+    'Atualizar planilha como concluído',
+  ];
+  const depois = [
+    'Encaminha para o sistema',
+    'Gerente atende a demanda',
+    'Enviar e-mail ao solicitante',
+  ];
+
+  const Column = ({
+    label, tone, steps, note,
+  }: { label: string; tone: 'rose' | 'emerald'; steps: string[]; note: string }) => {
+    const isNew = tone === 'emerald';
+    return (
+      <div className={`rounded-2xl border p-5 ${isNew ? 'border-emerald-300 bg-emerald-50/60' : 'border-rose-200 bg-rose-50/50'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <span className={`text-xs font-bold uppercase tracking-wider ${isNew ? 'text-emerald-800' : 'text-rose-700'}`}>
+            {label}
+          </span>
+          <span className={`text-xs font-bold rounded-full px-2.5 py-0.5 ${isNew ? 'bg-emerald-700 text-white' : 'bg-rose-600 text-white'}`}>
+            {steps.length} ações
+          </span>
+        </div>
+
+        <div className="rounded-lg bg-white/80 border px-3 py-2 text-xs font-medium text-slate-700 mb-2">
+          Início: solicitação por e-mail
+        </div>
+
+        <ol className="space-y-1.5">
+          {steps.map((s, i) => (
+            <li key={i} className="flex items-center gap-2">
+              <span className={`h-5 w-5 shrink-0 rounded-full text-[10px] font-bold flex items-center justify-center ${isNew ? 'bg-emerald-700 text-white' : 'bg-rose-500 text-white'}`}>
+                {i + 1}
+              </span>
+              <span className="flex-1 rounded-lg bg-white border px-3 py-1.5 text-sm text-slate-700">{s}</span>
+            </li>
+          ))}
+        </ol>
+
+        <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-800">
+          Foi executado? · SIM → Fim · NÃO → retorna ao gerente
+        </div>
+
+        <p className={`mt-3 text-xs ${isNew ? 'text-emerald-800' : 'text-rose-700'}`}>{note}</p>
+      </div>
+    );
+  };
+
+  return (
+    <SlideShell
+      eyebrow="Antes x Depois"
+      title="O mesmo chamado, com menos da metade das etapas."
+      subtitle="O fluxo manual tinha 7 ações e dependia de planilha. No SiDIF, são 3 — e as demais acontecem sozinhas."
+    >
+      <div className="grid grid-cols-2 gap-6 items-start">
+        <Column
+          label="Antes — processo manual"
+          tone="rose"
+          steps={antes}
+          note="Registro em planilha, encaminhamentos manuais e arquivamento por e-mail."
+        />
+        <Column
+          label="Depois — SiDIF"
+          tone="emerald"
+          steps={depois}
+          note="Criação da tarefa, prioridade, núcleo, cobrança de confirmação e arquivamento em PDF são automáticos."
+        />
+      </div>
+      <div className="mt-5 rounded-xl bg-slate-50 border p-4 text-center text-sm text-slate-700">
+        <strong className="text-emerald-800">−57% de etapas manuais</strong> · sem planilha paralela · trilha de auditoria completa
+      </div>
+    </SlideShell>
+  );
+}
+
+// 9 — Manutenção — capa do módulo
+
 function S8ManutencaoCapa() {
   return (
     <SlideShell
@@ -570,11 +654,12 @@ const SLIDES: { id: number; render: () => JSX.Element }[] = [
   { id: 5, render: S5RDO },
   { id: 6, render: S6Medicao },
   { id: 7, render: S7Encerramento },
-  { id: 8, render: S8ManutencaoCapa },
-  { id: 9, render: S9Kanban },
-  { id: 10, render: S10Seguranca },
-  { id: 11, render: S11Ganhos },
-  { id: 12, render: S12Encerramento },
+  { id: 8, render: S8FluxoAntesDepois },
+  { id: 9, render: S8ManutencaoCapa },
+  { id: 10, render: S9Kanban },
+  { id: 11, render: S10Seguranca },
+  { id: 12, render: S11Ganhos },
+  { id: 13, render: S12Encerramento },
 ];
 
 export default function ApresentacaoDiretoria() {
