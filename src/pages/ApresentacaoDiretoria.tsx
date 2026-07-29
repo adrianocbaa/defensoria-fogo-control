@@ -388,7 +388,7 @@ function S8FluxoAntesDepois() {
 
   const Arrow = ({ tone }: { tone: 'rose' | 'emerald' }) => (
     <div className="flex justify-center">
-      <div className={`w-px h-3 ${tone === 'emerald' ? 'bg-emerald-400' : 'bg-rose-300'}`} />
+      <div className={`w-px h-2 ${tone === 'emerald' ? 'bg-emerald-400' : 'bg-rose-300'}`} />
     </div>
   );
 
@@ -397,8 +397,8 @@ function S8FluxoAntesDepois() {
   }: { label: string; tone: 'rose' | 'emerald'; steps: string[]; note: string }) => {
     const isNew = tone === 'emerald';
     return (
-      <div className={`rounded-2xl border p-5 ${isNew ? 'border-emerald-300 bg-emerald-50/60' : 'border-rose-200 bg-rose-50/50'}`}>
-        <div className="flex items-center justify-between mb-4">
+      <div className={`rounded-2xl border p-4 ${isNew ? 'border-emerald-300 bg-emerald-50/60' : 'border-rose-200 bg-rose-50/50'}`}>
+        <div className="flex items-center justify-between mb-3">
           <span className={`text-xs font-bold uppercase tracking-wider ${isNew ? 'text-emerald-800' : 'text-rose-700'}`}>
             {label}
           </span>
@@ -409,7 +409,7 @@ function S8FluxoAntesDepois() {
 
         {/* Início (terminal) */}
         <div className="flex justify-center">
-          <div className={`rounded-full px-4 py-1.5 text-xs font-semibold border ${isNew ? 'border-emerald-400 bg-white text-emerald-900' : 'border-rose-300 bg-white text-rose-900'}`}>
+          <div className={`rounded-full px-3 py-1 text-[11px] font-semibold border ${isNew ? 'border-emerald-400 bg-white text-emerald-900' : 'border-rose-300 bg-white text-rose-900'}`}>
             Início · solicitação por e-mail
           </div>
         </div>
@@ -421,7 +421,7 @@ function S8FluxoAntesDepois() {
               <span className={`h-5 w-5 shrink-0 rounded-full text-[10px] font-bold flex items-center justify-center ${isNew ? 'bg-emerald-700 text-white' : 'bg-rose-500 text-white'}`}>
                 {i + 1}
               </span>
-              <span className={`flex-1 rounded-md bg-white border px-3 py-1.5 text-sm text-slate-700 ${isNew ? 'border-emerald-200' : 'border-rose-200'}`}>{s}</span>
+              <span className={`flex-1 rounded-md bg-white border px-3 py-1 text-[13px] text-slate-700 ${isNew ? 'border-emerald-200' : 'border-rose-200'}`}>{s}</span>
             </div>
           </div>
         ))}
@@ -431,21 +431,21 @@ function S8FluxoAntesDepois() {
         {/* Decisão (losango) */}
         <div className="flex justify-center">
           <div className="relative flex items-center justify-center">
-            <div className="h-12 w-12 rotate-45 border border-sky-300 bg-sky-50 rounded-sm" />
+            <div className="h-10 w-10 rotate-45 border border-sky-300 bg-sky-50 rounded-sm" />
             <span className="absolute text-[10px] font-bold text-sky-800">OK?</span>
           </div>
         </div>
 
-        <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
-          <div className="rounded-md border border-emerald-200 bg-white px-2 py-1.5 text-center text-emerald-800 font-medium">
+        <div className="mt-1.5 grid grid-cols-2 gap-2 text-[11px]">
+          <div className="rounded-md border border-emerald-200 bg-white px-2 py-1 text-center text-emerald-800 font-medium">
             SIM → Fim
           </div>
-          <div className="rounded-md border border-amber-200 bg-white px-2 py-1.5 text-center text-amber-800 font-medium">
+          <div className="rounded-md border border-amber-200 bg-white px-2 py-1 text-center text-amber-800 font-medium">
             NÃO → volta ao gerente
           </div>
         </div>
 
-        <p className={`mt-3 text-xs ${isNew ? 'text-emerald-800' : 'text-rose-700'}`}>{note}</p>
+        <p className={`mt-2 text-[11px] leading-snug ${isNew ? 'text-emerald-800' : 'text-rose-700'}`}>{note}</p>
       </div>
     );
   };
@@ -456,7 +456,7 @@ function S8FluxoAntesDepois() {
       title="O mesmo chamado, com menos da metade das etapas."
       subtitle="O fluxo manual tinha 7 ações e dependia de planilha. No SiDIF, são 3 — e as demais acontecem sozinhas."
     >
-      <div className="grid grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-2 gap-5 items-start">
         <Flow
           label="Antes — processo manual"
           tone="rose"
@@ -470,7 +470,7 @@ function S8FluxoAntesDepois() {
           note="Criação da tarefa, prioridade, núcleo, cobrança de confirmação e arquivamento em PDF são automáticos."
         />
       </div>
-      <div className="mt-5 rounded-xl bg-slate-50 border p-4 text-center text-sm text-slate-700">
+      <div className="mt-4 rounded-xl bg-slate-50 border p-3 text-center text-sm text-slate-700">
         <strong className="text-emerald-800">−57% de etapas manuais</strong> · sem planilha paralela · trilha de auditoria completa
       </div>
     </SlideShell>
