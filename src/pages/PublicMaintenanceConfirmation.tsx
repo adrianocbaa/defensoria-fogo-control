@@ -216,8 +216,9 @@ export default function PublicMaintenanceConfirmation() {
                 {ticket.request_type === 'email'
                   ? 'E-mail'
                   : ticket.request_type === 'processo'
-                    ? `Processo SEI${ticket.process_number ? ` nº ${ticket.process_number}` : ''}`
+                    ? (ticket.process_number ? `SEI n° ${ticket.process_number}` : 'SEI')
                     : 'Direto'}
+
               </dd>
             </div>
             <div>
