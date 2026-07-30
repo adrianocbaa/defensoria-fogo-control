@@ -192,28 +192,41 @@ serve(async (req) => {
         text: parsed.text || "",
         html: parsed.html || "",
         headers: { "message-id": parsed.messageId || "" },
-        attachments: (parsed.attachments || [])
-          .map((att: any) => {
-            const bytes = new Uint8Array(att.content);
-            // Anexos muito grandes (vídeos, por ex.) estouram a memória da função:
-            // registramos o nome, mas não convertemos/armazenamos o conteúdo.
-            if (bytes.length > MAX_ATTACHMENT_BYTES) {
-              console.warn("inbound: anexo ignorado por tamanho", att.filename, bytes.length);
-              return null;
-            }
-            let bin = "";
-            const CHUNK = 0x8000;
-            for (let i = 0; i < bytes.length; i += CHUNK) {
-              bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-            }
-            return {
-              filename: att.filename || "arquivo",
-              content_type: att.mimeType || "application/octet-stream",
-              size: bytes.length,
-              content: btoa(bin),
-            };
-          })
-          .filter(Boolean),
+        attachments: (() => {
+          let used = 0;
+          return (parsed.attachments || [])
+            .map((att: any) => {
+              const filename = att.filename || "arquivo";
+              // Só imagens: PDFs, vídeos e demais anexos são descartados.
+              if (!isImageAttachment(att.mimeType, filename)) {
+                console.warn("inbound: anexo descartado (não é imagem)", filename, att.mimeType);
+                return null;
+              }
+              const bytes = new Uint8Array(att.content);
+              if (bytes.length > MAX_ATTACHMENT_BYTES) {
+                console.warn("inbound: imagem ignorada por tamanho", filename, bytes.length);
+                return null;
+              }
+              if (used + bytes.length > MAX_TOTAL_ATTACHMENT_BYTES) {
+                console.warn("inbound: imagem ignorada por exceder o limite total", filename);
+                return null;
+              }
+              used += bytes.length;
+              let bin = "";
+              const CHUNK = 0x8000;
+              for (let i = 0; i < bytes.length; i += CHUNK) {
+                bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+              }
+              return {
+                filename,
+                content_type: att.mimeType?.startsWith("image/") ? att.mimeType : "image/jpeg",
+                size: bytes.length,
+                content: btoa(bin),
+              };
+            })
+            .filter(Boolean);
+        })(),
+
 
       };
     } else {
