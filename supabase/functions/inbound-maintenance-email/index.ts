@@ -60,19 +60,17 @@ function extractEmail(text: string): string | null {
 // do bloco "---------- Forwarded message ---------" / "De:" no corpo.
 function extractOriginalSender(body: string): string | null {
   if (!body) return null;
-  const patterns = [
-    /^\s*From\s*:\s*(.+)$/im,
-    /^\s*De\s*:\s*(.+)$/im,
-    /^\s*Remetente\s*:\s*(.+)$/im,
-  ];
-  for (const re of patterns) {
-    const m = body.match(re);
-    if (m) {
-      const email = extractEmail(m[1]);
-      if (email) return email.toLowerCase();
-    }
+  const text = body.replace(/\r\n/g, "\n");
+  // Percorre TODAS as linhas "De:/From:/Remetente:" e usa a ÚLTIMA,
+  // que corresponde ao encaminhamento mais interno = solicitante original.
+  const re = /^\s*(?:From|De|Remetente)\s*:\s*(.+)$/gim;
+  let last: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const email = extractEmail(m[1]);
+    if (email) last = email.toLowerCase();
   }
-  return null;
+  return last;
 }
 
 // Extrai apenas o conteúdo real da mensagem, removendo cabeçalhos de
