@@ -248,13 +248,11 @@ serve(async (req) => {
     const messageId: string | undefined =
       payload.headers?.["message-id"] || payload.headers?.["Message-Id"] || payload.message_id;
 
-    // Se for encaminhamento (Fwd:/Enc:/Res:Fwd), tenta usar o remetente original do corpo
-    const isForwarded = /^\s*(fwd|fw|enc|encaminhad[ao])\s*:/i.test(subject);
+    // Sempre tenta usar o remetente original (primeiro e-mail do histórico),
+    // mesmo quando o assunto não traz "Fwd:" (encaminhamento automático).
     let requesterEmail = fromAddr || "";
-    if (isForwarded) {
-      const original = extractOriginalSender(textBody);
-      if (original) requesterEmail = original;
-    }
+    const original = extractOriginalSender(textBody);
+    if (original) requesterEmail = original;
 
 
     // Deduplicação por Message-Id (na tabela de thread)
