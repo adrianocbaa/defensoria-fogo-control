@@ -56,22 +56,46 @@ function extractEmail(text: string): string | null {
   return m ? m[0] : null;
 }
 
+// Endereços internos que nunca devem ser considerados "solicitante"
+// (caixa de manutenção e a própria caixa do SiDIF fazem apenas o repasse).
+const INTERNAL_ADDRESSES = [
+  "manutencao@dp.mt.gov.br",
+  "chamados@sidif.com.br",
+];
+
+function isInternalAddress(email?: string | null): boolean {
+  if (!email) return false;
+  return INTERNAL_ADDRESSES.includes(email.toLowerCase().trim());
+}
+
 // Em e-mails encaminhados (Fwd/Enc), tenta extrair o remetente original
 // do bloco "---------- Forwarded message ---------" / "De:" no corpo.
 function extractOriginalSender(body: string): string | null {
   if (!body) return null;
-  const text = body.replace(/\r\n/g, "\n");
-  // Percorre TODAS as linhas "De:/From:/Remetente:" e usa a ÚLTIMA,
-  // que corresponde ao encaminhamento mais interno = solicitante original.
-  const re = /^\s*(?:From|De|Remetente)\s*:\s*(.+)$/gim;
-  let last: string | null = null;
+  // Remove tags HTML (mantendo quebras) para achar "De:" também em corpo HTML.
+  const text = body
+    .replace(/\r\n/g, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|tr|table)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ");
+
+  const re = /^\s*>*\s*(?:From|De|Remetente)\s*:\s*(.+)$/gim;
+  const candidates: string[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const email = extractEmail(m[1]);
-    if (email) last = email.toLowerCase();
+    if (email) candidates.push(email.toLowerCase());
   }
-  return last;
+  // Preferência: último remetente externo (encaminhamento mais interno).
+  const external = candidates.filter((e) => !isInternalAddress(e));
+  if (external.length > 0) return external[external.length - 1];
+  return candidates.length > 0 ? candidates[candidates.length - 1] : null;
 }
+
 
 // Extrai apenas o conteúdo real da mensagem, removendo cabeçalhos de
 // encaminhamento (Forwarded message, De:, Para:, Data:, Assunto:) e
