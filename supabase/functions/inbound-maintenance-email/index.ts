@@ -275,8 +275,19 @@ serve(async (req) => {
     // Sempre tenta usar o remetente original (primeiro e-mail do histórico),
     // mesmo quando o assunto não traz "Fwd:" (encaminhamento automático).
     let requesterEmail = fromAddr || "";
-    const original = extractOriginalSender(textBody);
-    if (original) requesterEmail = original;
+    const original =
+      extractOriginalSender(textBody) ||
+      extractOriginalSender((payload.html || "").toString());
+    if (original) {
+      requesterEmail = original;
+    } else if (isInternalAddress(requesterEmail)) {
+      // Encaminhamento sem cabeçalho legível: tenta qualquer e-mail externo no corpo.
+      const anyExternal = (textBody.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g) || [])
+        .map((e) => e.toLowerCase())
+        .find((e) => !isInternalAddress(e));
+      if (anyExternal) requesterEmail = anyExternal;
+    }
+
 
 
     // Deduplicação por Message-Id (na tabela de thread)
