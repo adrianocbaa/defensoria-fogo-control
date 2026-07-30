@@ -60,19 +60,17 @@ function extractEmail(text: string): string | null {
 // do bloco "---------- Forwarded message ---------" / "De:" no corpo.
 function extractOriginalSender(body: string): string | null {
   if (!body) return null;
-  const patterns = [
-    /^\s*From\s*:\s*(.+)$/im,
-    /^\s*De\s*:\s*(.+)$/im,
-    /^\s*Remetente\s*:\s*(.+)$/im,
-  ];
-  for (const re of patterns) {
-    const m = body.match(re);
-    if (m) {
-      const email = extractEmail(m[1]);
-      if (email) return email.toLowerCase();
-    }
+  const text = body.replace(/\r\n/g, "\n");
+  // Percorre TODAS as linhas "De:/From:/Remetente:" e usa a ÚLTIMA,
+  // que corresponde ao encaminhamento mais interno = solicitante original.
+  const re = /^\s*(?:From|De|Remetente)\s*:\s*(.+)$/gim;
+  let last: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const email = extractEmail(m[1]);
+    if (email) last = email.toLowerCase();
   }
-  return null;
+  return last;
 }
 
 // Extrai apenas o conteúdo real da mensagem, removendo cabeçalhos de
@@ -250,13 +248,11 @@ serve(async (req) => {
     const messageId: string | undefined =
       payload.headers?.["message-id"] || payload.headers?.["Message-Id"] || payload.message_id;
 
-    // Se for encaminhamento (Fwd:/Enc:/Res:Fwd), tenta usar o remetente original do corpo
-    const isForwarded = /^\s*(fwd|fw|enc|encaminhad[ao])\s*:/i.test(subject);
+    // Sempre tenta usar o remetente original (primeiro e-mail do histórico),
+    // mesmo quando o assunto não traz "Fwd:" (encaminhamento automático).
     let requesterEmail = fromAddr || "";
-    if (isForwarded) {
-      const original = extractOriginalSender(textBody);
-      if (original) requesterEmail = original;
-    }
+    const original = extractOriginalSender(textBody);
+    if (original) requesterEmail = original;
 
 
     // Deduplicação por Message-Id (na tabela de thread)
@@ -311,7 +307,7 @@ serve(async (req) => {
     }
 
     // Solicitante e localização (extraídos do corpo)
-    const solicitante = extractField(textBody, "Solicitante") || fromAddr || "Não informado";
+    const solicitante = extractField(textBody, "Solicitante") || requesterEmail || fromAddr || "Não informado";
     const local = extractField(textBody, "Local") || extractField(textBody, "Localização") || "A definir";
     const nucleoNome = extractField(textBody, "Núcleo") || extractField(textBody, "Nucleo");
 
@@ -327,9 +323,10 @@ serve(async (req) => {
       nucleo_id = n?.id ?? null;
     }
 
-    // Fallback: mapear núcleo pelo e-mail do remetente (exato ou por domínio)
-    if (!nucleo_id && fromAddr) {
-      const addr = fromAddr.toLowerCase().trim();
+    // Fallback: mapear núcleo pelo e-mail do solicitante original (exato ou por domínio)
+    const matchAddr = (requesterEmail || fromAddr || "").toLowerCase().trim();
+    if (!nucleo_id && matchAddr) {
+      const addr = matchAddr;
       const domain = addr.split("@")[1] || "";
       const { data: nuclei } = await supabase
         .from("nuclei")
