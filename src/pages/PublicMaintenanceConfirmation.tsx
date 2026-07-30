@@ -150,8 +150,8 @@ export default function PublicMaintenanceConfirmation() {
 
   if (error || !ticket) {
     return (
-      <div className="flex min-h-screen justify-center bg-muted/40">
-        <div className="flex w-full max-w-md flex-col bg-background shadow-lg">
+      <div className="flex min-h-screen justify-center bg-muted/40 sm:py-8">
+        <div className="flex w-full max-w-md flex-col bg-background shadow-lg sm:max-w-2xl sm:rounded-2xl sm:overflow-hidden">
           <InstitutionalHeader />
           <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
             <XCircle className="mb-3 h-10 w-10 text-destructive" />
@@ -168,8 +168,8 @@ export default function PublicMaintenanceConfirmation() {
 
   if (ticket.confirmed_at || done) {
     return (
-      <div className="flex min-h-screen justify-center bg-muted/40">
-        <div className="flex w-full max-w-md flex-col bg-background shadow-lg">
+      <div className="flex min-h-screen justify-center bg-muted/40 sm:py-8">
+        <div className="flex w-full max-w-md flex-col bg-background shadow-lg sm:max-w-2xl sm:rounded-2xl sm:overflow-hidden">
           <InstitutionalHeader ticket={ticket} />
           <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
             {done === 'reject' ? (
@@ -196,11 +196,11 @@ export default function PublicMaintenanceConfirmation() {
   const executionPhotos = services.flatMap((s) => s.execution_photos || []);
 
   return (
-    <div className="flex min-h-screen justify-center bg-muted/40">
-      <main className="relative flex w-full max-w-md flex-col bg-background shadow-lg">
+    <div className="flex min-h-screen items-start justify-center bg-muted/40 sm:py-8">
+      <main className="relative flex w-full max-w-md flex-col bg-background shadow-lg sm:max-w-2xl sm:rounded-2xl sm:overflow-hidden">
         <InstitutionalHeader ticket={ticket} />
 
-        <div className="flex-1 space-y-6 p-5">
+        <div className="space-y-6 p-5 sm:p-8">
           <p className="text-sm text-muted-foreground">
             A equipe do Núcleo de Manutenção informou que o serviço foi concluído. Confira as evidências e formalize o aceite ou a reabertura do chamado.
           </p>
