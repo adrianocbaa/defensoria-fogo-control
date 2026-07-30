@@ -104,8 +104,16 @@ export function useObras(): UseObrasReturn {
         secretariaResponsavel: (obra.fiscal_id && profilesMap[obra.fiscal_id]) || obra.secretaria_responsavel || 'Não informado',
         responsavelProjeto: (obra.responsavel_projeto_id && profilesMap[obra.responsavel_projeto_id]) || undefined,
         fotos: Array.isArray(obra.fotos) ? obra.fotos as any[] : [],
-        documentos: Array.isArray(obra.documentos) ? obra.documentos.filter((doc): doc is { nome: string; tipo: string } => 
-          typeof doc === 'object' && doc !== null && 'nome' in doc && 'tipo' in doc) : [],
+        documentos: Array.isArray(obra.documentos)
+          ? (obra.documentos as any[])
+              .filter((doc) => typeof doc === 'object' && doc !== null)
+              .map((doc: any) => ({
+                ...doc,
+                nome: doc.nome ?? doc.name ?? 'Documento',
+                tipo: doc.tipo ?? doc.type ?? 'Documento',
+                url: doc.url ?? doc.link ?? '',
+              }))
+          : [],
         // Incluir campos específicos do banco
         n_contrato: obra.n_contrato,
         valor_aditivado: Number(obra.valor_aditivado || 0),
