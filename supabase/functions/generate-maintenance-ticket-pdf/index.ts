@@ -377,29 +377,35 @@ serve(async (req) => {
       }
     }
 
-    // Fotos de execução — mantendo proporção original
-    const execPhotos: string[] = [];
-    for (const s of services) {
-      const arr = Array.isArray(s.execution_photos) ? s.execution_photos : [];
-      for (const p of arr) {
-        const u = typeof p === "string" ? p : (p?.url || p?.path);
-        if (u) execPhotos.push(u);
-      }
-    }
+    // Registro fotográfico — ANTES (referência) e DEPOIS (execução)
+    const collect = (key: string): string[] => {
+      const out: string[] = [];
+      const push = (arr: any) => {
+        if (!Array.isArray(arr)) return;
+        for (const p of arr) {
+          const u = typeof p === "string" ? p : (p?.url || p?.path);
+          if (u) out.push(u);
+        }
+      };
+      if (key === "reference_photos") push((ticket as any).reference_photos);
+      for (const s of services) push(s?.[key]);
+      return out;
+    };
+    const refPhotos = collect("reference_photos");
+    const execPhotos = collect("execution_photos");
 
-    if (execPhotos.length) {
+    const photoGrid = async (urls: string[], label: string) => {
+      if (!urls.length) return;
       const boxW = (contentW - 16) / 2;
       const boxH = boxW * 0.75;
       if (y + 46 + boxH > bottomLimit) newPage();
-      section("Registro fotográfico");
+      section(`Registro fotográfico — ${label}`);
       let col = 0;
       let rowTop = y;
-      for (const url of execPhotos) {
+      for (const url of urls) {
         const img = await fetchImage(supabase, url);
         if (!img) continue;
-        if (col === 0) {
-          if (rowTop + boxH > bottomLimit) { newPage(); rowTop = y; }
-        }
+        if (col === 0 && rowTop + boxH > bottomLimit) { newPage(); rowTop = y; }
         const x = margin + col * (boxW + 16);
         try {
           const props = doc.getImageProperties(img.data);
@@ -414,6 +420,7 @@ serve(async (req) => {
           doc.setDrawColor(...GRAY_LINE);
           doc.setLineWidth(0.6);
           doc.roundedRect(x, rowTop, boxW, boxH, 4, 4);
+          badge(label, x + 6, rowTop + 14);
         } catch (e) {
           console.warn("addImage fail", e);
         }
@@ -421,21 +428,31 @@ serve(async (req) => {
         if (col === 2) { col = 0; rowTop += boxH + 16; y = rowTop; }
       }
       y = col === 0 ? rowTop : rowTop + boxH + 16;
-    }
+    };
+
+    await photoGrid(refPhotos, "Antes");
+    await photoGrid(execPhotos, "Depois");
 
     drawFooter();
 
     const pdfBytes = doc.output("arraybuffer");
-    const path = `maintenance-archive/${ticket.id}/chamado-${numero}.pdf`;
+    // nome versionado evita servir versão em cache após regeração
+    const path = `maintenance-archive/${ticket.id}/chamado-${numero}-${Date.now()}.pdf`;
     const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, new Uint8Array(pdfBytes), {
       contentType: "application/pdf",
+      cacheControl: "0",
       upsert: true,
     });
     if (upErr) return j(500, { error: "upload_failed", details: upErr.message });
 
+    const previous = (ticket as any).archive_pdf_url as string | null;
     await supabase.from("maintenance_tickets").update({ archive_pdf_url: path }).eq("id", ticket.id);
+    if (previous && previous !== path) {
+      try { await supabase.storage.from(BUCKET).remove([previous]); } catch (_) { /* ignore */ }
+    }
 
     return j(200, { ok: true, path });
+
   } catch (e) {
     console.error("pdf error", e);
     return j(500, { error: "internal", details: e instanceof Error ? e.message : String(e) });
