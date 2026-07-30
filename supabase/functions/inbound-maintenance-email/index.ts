@@ -143,6 +143,10 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
 }
 
+// Limite por anexo (bytes). Acima disso o anexo é ignorado para não estourar a memória.
+const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+
+
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64.replace(/\s+/g, ""));
   const out = new Uint8Array(bin.length);
