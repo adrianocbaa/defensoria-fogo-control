@@ -143,6 +143,10 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
 }
 
+// Limite por anexo (bytes). Acima disso o anexo é ignorado para não estourar a memória.
+const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+
+
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64.replace(/\s+/g, ""));
   const out = new Uint8Array(bin.length);
@@ -176,17 +180,29 @@ serve(async (req) => {
         text: parsed.text || "",
         html: parsed.html || "",
         headers: { "message-id": parsed.messageId || "" },
-        attachments: (parsed.attachments || []).map((att: any) => {
-          const bytes = new Uint8Array(att.content);
-          let bin = "";
-          for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-          return {
-            filename: att.filename || "arquivo",
-            content_type: att.mimeType || "application/octet-stream",
-            size: bytes.length,
-            content: btoa(bin),
-          };
-        }),
+        attachments: (parsed.attachments || [])
+          .map((att: any) => {
+            const bytes = new Uint8Array(att.content);
+            // Anexos muito grandes (vídeos, por ex.) estouram a memória da função:
+            // registramos o nome, mas não convertemos/armazenamos o conteúdo.
+            if (bytes.length > MAX_ATTACHMENT_BYTES) {
+              console.warn("inbound: anexo ignorado por tamanho", att.filename, bytes.length);
+              return null;
+            }
+            let bin = "";
+            const CHUNK = 0x8000;
+            for (let i = 0; i < bytes.length; i += CHUNK) {
+              bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+            }
+            return {
+              filename: att.filename || "arquivo",
+              content_type: att.mimeType || "application/octet-stream",
+              size: bytes.length,
+              content: btoa(bin),
+            };
+          })
+          .filter(Boolean),
+
       };
     } else {
       payload = await req.json();
