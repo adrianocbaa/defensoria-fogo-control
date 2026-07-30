@@ -417,10 +417,20 @@ serve(async (req) => {
     const nowIso = new Date().toISOString();
     const PHOTO_BUCKET = "service-photos";
 
+    let usedBytes = 0;
+
     for (const att of attachments) {
       try {
-        const filename = sanitizeFilename(att.filename || `anexo-${Date.now()}`);
+        const rawName = att.filename || `anexo-${Date.now()}`;
+        const filename = sanitizeFilename(rawName);
         const contentType = att.content_type || "application/octet-stream";
+
+        // Só imagens são anexadas à tarefa (PDFs, vídeos e outros são ignorados)
+        if (!isImageAttachment(contentType, rawName)) {
+          console.warn("inbound: anexo descartado (não é imagem)", rawName, contentType);
+          continue;
+        }
+
         let bytes: Uint8Array | null = null;
 
         if (att.content_url) {
@@ -436,23 +446,31 @@ serve(async (req) => {
 
         if (!bytes) continue;
 
-        const isImage = contentType.startsWith("image/");
-        const isVideo = contentType.startsWith("video/");
-        const bucket = isImage || isVideo ? PHOTO_BUCKET : BUCKET;
+        if (bytes.length > MAX_ATTACHMENT_BYTES) {
+          console.warn("inbound: imagem ignorada por tamanho", filename, bytes.length);
+          continue;
+        }
+        if (usedBytes + bytes.length > MAX_TOTAL_ATTACHMENT_BYTES) {
+          console.warn("inbound: imagem ignorada por exceder o limite total", filename);
+          continue;
+        }
+        usedBytes += bytes.length;
+
+        const uploadType = contentType.startsWith("image/") ? contentType : "image/jpeg";
         const path = `maintenance-inbound/${ticket.id}/${Date.now()}-${filename}`;
         const { error: upErr } = await supabase.storage
-          .from(bucket)
-          .upload(path, bytes, { contentType, upsert: false });
+          .from(PHOTO_BUCKET)
+          .upload(path, bytes, { contentType: uploadType, upsert: false });
 
         if (upErr) {
           console.warn("inbound: erro upload", upErr.message);
           continue;
         }
 
-        const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
+        const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
         const publicUrl = pub?.publicUrl || path;
 
-        const entry = {
+        photos.push({
           id: crypto.randomUUID(),
           url: publicUrl,
           path,
@@ -460,9 +478,7 @@ serve(async (req) => {
           uploaded_at: nowIso,
           uploaded_by: null,
           uploaded_by_name: "E-mail (solicitante)",
-        };
-        if (isVideo) videos.push(entry);
-        else photos.push(entry); // imagens e outros anexos entram como referência
+        });
       } catch (e) {
         console.error("inbound: erro processando anexo", e);
       }
