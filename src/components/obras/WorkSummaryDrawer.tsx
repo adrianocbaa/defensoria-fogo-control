@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { X, ChevronRight, MapPin, Menu as MenuIcon, Image as ImageIcon, FileText, Loader2, Eye, Download } from 'lucide-react';
+import { X, ChevronRight, MapPin, Menu as MenuIcon, Image as ImageIcon, FileText, Loader2, Eye } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
