@@ -17,6 +17,9 @@ import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/components/LoadingStates';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
+import { openObraDocument } from '@/lib/obraDocumentUrl';
+import { toast } from 'sonner';
+
 
 interface ObraDetailsProps {
   obra: Obra | null;
@@ -434,7 +437,10 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                           variant="ghost"
                           size="sm"
                           disabled={!url}
-                          onClick={() => url && window.open(url, '_blank', 'noopener,noreferrer')}
+                          onClick={async () => {
+                            const ok = url && (await openObraDocument(url, nome, false));
+                            if (!ok) toast.error('Não foi possível abrir o documento');
+                          }}
                           title="Visualizar"
                         >
                           <Eye className="h-4 w-4" />
@@ -443,18 +449,16 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                           variant="ghost"
                           size="sm"
                           disabled={!url}
-                          asChild={!!url}
+                          onClick={async () => {
+                            const ok = url && (await openObraDocument(url, nome, true));
+                            if (!ok) toast.error('Não foi possível baixar o documento');
+                          }}
                           title="Baixar"
                         >
-                          {url ? (
-                            <a href={url} download={nome} target="_blank" rel="noopener noreferrer">
-                              <Download className="h-4 w-4" />
-                            </a>
-                          ) : (
-                            <Download className="h-4 w-4" />
-                          )}
+                          <Download className="h-4 w-4" />
                         </Button>
                       </div>
+
                     </div>
                   );
                 })}

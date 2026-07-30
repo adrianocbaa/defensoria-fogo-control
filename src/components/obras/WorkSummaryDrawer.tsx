@@ -13,6 +13,9 @@ import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
+import { openObraDocument } from '@/lib/obraDocumentUrl';
+import { toast } from 'sonner';
+
 
 interface WorkSummaryDrawerProps {
   obra: Obra | null;
@@ -363,21 +366,28 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
                             variant="ghost"
                             size="sm"
                             disabled={!url}
-                            onClick={() => url && window.open(url, '_blank', 'noopener,noreferrer')}
+                            onClick={async () => {
+                              const ok = url && (await openObraDocument(url, nome, false));
+                              if (!ok) toast.error('Não foi possível abrir o documento');
+                            }}
                             title="Visualizar"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" disabled={!url} asChild={!!url} title="Baixar">
-                            {url ? (
-                              <a href={url} download={nome} target="_blank" rel="noopener noreferrer">
-                                <Download className="h-4 w-4" />
-                              </a>
-                            ) : (
-                              <Download className="h-4 w-4" />
-                            )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={!url}
+                            onClick={async () => {
+                              const ok = url && (await openObraDocument(url, nome, true));
+                              if (!ok) toast.error('Não foi possível baixar o documento');
+                            }}
+                            title="Baixar"
+                          >
+                            <Download className="h-4 w-4" />
                           </Button>
                         </div>
+
                       </li>
                     );
                   })}
