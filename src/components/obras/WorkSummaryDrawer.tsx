@@ -374,18 +374,6 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={!url}
-                            onClick={async () => {
-                              const ok = url && (await openObraDocument(url, nome, true));
-                              if (!ok) toast.error('Não foi possível baixar o documento');
-                            }}
-                            title="Baixar"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
                         </div>
 
                       </li>
