@@ -155,6 +155,7 @@ export function TicketDetailsSheet({
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
 
   useEffect(() => {
     if (!open || !ticketId) return;
@@ -338,14 +339,14 @@ export function TicketDetailsSheet({
                     </div>
             )}
 
-            {/* PDF de arquivamento */}
-            {ticket.archive_pdf_url && (
+            {/* PDF de arquivamento / SEI */}
+            {(ticket.archive_pdf_url || ticket.completed_at || ticket.finalized_at) && (
               <>
                 <Separator className="my-4" />
                 <div>
                   <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
                     <Paperclip className="h-4 w-4" />
-                    Arquivamento (PDF)
+                    Relatório de arquivamento (PDF)
                   </h3>
                   <div className="flex items-center justify-between gap-2 rounded border bg-muted/30 px-3 py-2">
                     <div className="min-w-0 flex-1">
@@ -353,34 +354,81 @@ export function TicketDetailsSheet({
                         Histórico completo do chamado
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        {ticket.confirmed_source === 'auto'
-                          ? 'Considerado tacitamente atendido'
-                          : ticket.confirmed_at
-                            ? `Confirmado pelo solicitante em ${formatDateTime(ticket.confirmed_at)}`
-                            : 'Gerado automaticamente'}
+                        {ticket.archive_pdf_url
+                          ? ticket.confirmed_source === 'auto'
+                            ? 'Considerado tacitamente atendido'
+                            : ticket.confirmed_at
+                              ? `Confirmado pelo solicitante em ${formatDateTime(ticket.confirmed_at)}`
+                              : 'Documento disponível para anexar ao SEI'
+                          : 'Gere o documento para anexar ao processo SEI'}
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
-                        const { data, error } = await supabase.storage
-                          .from('documents')
-                          .createSignedUrl(ticket.archive_pdf_url!, 3600);
-                        if (error || !data?.signedUrl) {
-                          toast({ title: 'Erro ao abrir PDF', description: error?.message ?? 'Tente novamente.', variant: 'destructive' });
-                          return;
-                        }
-                        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
-                      }}
-                    >
-                      <Download className="mr-1 h-3.5 w-3.5" />
-                      Abrir PDF
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={ticket.archive_pdf_url ? 'ghost' : 'outline'}
+                        size="sm"
+                        disabled={gerandoPdf}
+                        onClick={async () => {
+                          setGerandoPdf(true);
+                          try {
+                            const { data, error } = await supabase.functions.invoke(
+                              'generate-maintenance-ticket-pdf',
+                              { body: { ticket_id: ticket.id } },
+                            );
+                            if (error) throw error;
+                            const path = (data as any)?.path as string | undefined;
+                            if (!path) throw new Error('PDF não gerado');
+                            setTicket((t) => (t ? { ...t, archive_pdf_url: path } : t));
+                            const { data: signed } = await supabase.storage
+                              .from('documents')
+                              .createSignedUrl(path, 3600);
+                            if (signed?.signedUrl) {
+                              window.open(signed.signedUrl, '_blank', 'noopener,noreferrer');
+                            }
+                            toast({ title: 'PDF gerado com sucesso' });
+                          } catch (e: any) {
+                            toast({
+                              title: 'Erro ao gerar PDF',
+                              description: e?.message ?? 'Tente novamente.',
+                              variant: 'destructive',
+                            });
+                          } finally {
+                            setGerandoPdf(false);
+                          }
+                        }}
+                      >
+                        {gerandoPdf ? (
+                          <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Paperclip className="mr-1 h-3.5 w-3.5" />
+                        )}
+                        {ticket.archive_pdf_url ? 'Regerar' : 'Gerar PDF'}
+                      </Button>
+                      {ticket.archive_pdf_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const { data, error } = await supabase.storage
+                              .from('documents')
+                              .createSignedUrl(ticket.archive_pdf_url!, 3600);
+                            if (error || !data?.signedUrl) {
+                              toast({ title: 'Erro ao abrir PDF', description: error?.message ?? 'Tente novamente.', variant: 'destructive' });
+                              return;
+                            }
+                            window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+                          }}
+                        >
+                          <Download className="mr-1 h-3.5 w-3.5" />
+                          Abrir PDF
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </>
             )}
+
                 </div>
               </>
             )}
