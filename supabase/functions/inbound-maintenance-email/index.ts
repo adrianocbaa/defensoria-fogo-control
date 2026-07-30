@@ -484,23 +484,19 @@ serve(async (req) => {
       }
     }
 
-    if (photos.length || videos.length) {
+    if (photos.length) {
       await supabase
         .from("maintenance_tickets")
-        .update({
-          reference_photos: photos,
-          reference_videos: videos,
-        })
+        .update({ reference_photos: photos })
         .eq("id", ticket.id);
     }
 
-    console.log(`inbound: ticket #${ticket.ticket_number} criado (${photos.length} fotos, ${videos.length} vídeos)`);
+    console.log(`inbound: ticket #${ticket.ticket_number} criado (${photos.length} fotos)`);
     return json(200, {
       ok: true,
       ticket_id: ticket.id,
       ticket_number: ticket.ticket_number,
       photos: photos.length,
-      videos: videos.length,
     });
   } catch (e) {
     console.error("inbound: erro inesperado", e);
