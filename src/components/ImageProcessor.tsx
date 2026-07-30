@@ -41,18 +41,26 @@ export class ImageProcessor {
       // Draw the original image
       ctx.drawImage(image, 0, 0);
       
-      // Draw green translucent bar at bottom
-      const barHeight = Math.max(50, image.height * 0.08);
+      // Draw green translucent bar at bottom (faixa mais fina)
+      const barHeight = Math.max(36, image.height * 0.055);
       ctx.fillStyle = 'rgba(0, 123, 60, 0.8)';
       ctx.fillRect(0, image.height - barHeight, image.width, barHeight);
-      
-      // Draw logo in bottom right corner
-      const logoWidth = Math.min(120, image.width * 0.3);
-      const logoHeight = (logoWidth / logo.width) * logo.height;
-      const logoX = image.width - logoWidth - 20;
-      const logoY = image.height - logoHeight - 10;
-      
+
+      // Draw logo in bottom right corner (maior e centralizado na faixa)
+      const padding = barHeight * 0.14;
+      const maxLogoHeight = barHeight - padding * 2;
+      const byWidth = Math.min(image.width * 0.22, 260);
+      let logoWidth = byWidth;
+      let logoHeight = (logoWidth / logo.width) * logo.height;
+      if (logoHeight > maxLogoHeight) {
+        logoHeight = maxLogoHeight;
+        logoWidth = (logoHeight / logo.height) * logo.width;
+      }
+      const logoX = image.width - logoWidth - barHeight * 0.4;
+      const logoY = image.height - barHeight + (barHeight - logoHeight) / 2;
+
       ctx.drawImage(logo, logoX, logoY, logoWidth, logoHeight);
+
       
       // Convert canvas to blob
       return new Promise((resolve) => {
