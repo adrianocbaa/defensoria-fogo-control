@@ -196,7 +196,7 @@ export default function PublicMaintenanceConfirmation() {
   const executionPhotos = services.flatMap((s) => s.execution_photos || []);
 
   return (
-    <div className="flex min-h-screen justify-center bg-muted/40 sm:py-8">
+    <div className="flex min-h-screen items-start justify-center bg-muted/40 sm:py-8">
       <main className="relative flex w-full max-w-md flex-col bg-background shadow-lg sm:max-w-2xl sm:rounded-2xl sm:overflow-hidden">
         <InstitutionalHeader ticket={ticket} />
 
