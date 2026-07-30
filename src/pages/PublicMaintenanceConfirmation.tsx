@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, XCircle, Loader2, Mail, RotateCcw, ImageIcon, Wrench } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ClipboardList, RotateCcw, ImageOff } from 'lucide-react';
 
 type ServicePhoto = { id?: string; url: string; path?: string; description?: string };
 type TicketService = {
@@ -24,6 +24,59 @@ type TicketInfo = {
   reference_photos: ServicePhoto[] | null;
   services: TicketService[] | null;
 };
+
+function PhotoTile({
+  photo,
+  alt,
+  className,
+}: {
+  photo: ServicePhoto;
+  alt: string;
+  className?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className={`flex h-full w-full flex-col items-center justify-center gap-1 bg-muted text-muted-foreground ${className ?? ''}`}>
+        <ImageOff className="h-5 w-5" />
+        <span className="text-[10px]">Imagem indisponível</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={photo.url}
+      alt={photo.description || alt}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className={`h-full w-full object-cover ${className ?? ''}`}
+    />
+  );
+}
+
+function InstitutionalHeader({ ticket }: { ticket?: TicketInfo | null }) {
+  return (
+    <header className="bg-primary p-6 text-primary-foreground">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide opacity-80">Chamado SiDIF</p>
+          <h1 className="text-2xl font-bold">
+            #{String(ticket?.ticket_number ?? '').padStart(4, '0') || '—'}
+          </h1>
+        </div>
+        <div className="rounded-lg bg-primary-foreground/20 p-2">
+          <ClipboardList className="h-5 w-5" />
+        </div>
+      </div>
+      <div className="mt-4 space-y-1">
+        <p className="text-sm font-medium">{ticket?.title ?? 'Confirmação de serviço'}</p>
+        {ticket?.location && <p className="text-xs opacity-70">{ticket.location}</p>}
+      </div>
+    </header>
+  );
+}
 
 export default function PublicMaintenanceConfirmation() {
   const { token } = useParams<{ token: string }>();
@@ -64,6 +117,12 @@ export default function PublicMaintenanceConfirmation() {
     })();
   }, [token]);
 
+  useEffect(() => {
+    document.title = ticket?.ticket_number
+      ? `Confirmação do chamado #${String(ticket.ticket_number).padStart(4, '0')} — SiDIF`
+      : 'Confirmação de serviço — SiDIF';
+  }, [ticket]);
+
   const submit = async (accept: boolean) => {
     if (!token) return;
     setSubmitting(true);
@@ -83,7 +142,7 @@ export default function PublicMaintenanceConfirmation() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30">
+      <div className="flex min-h-screen items-center justify-center bg-muted/40">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -91,14 +150,17 @@ export default function PublicMaintenanceConfirmation() {
 
   if (error || !ticket) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
-        <div className="w-full max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
-          <XCircle className="mx-auto mb-3 h-10 w-10 text-destructive" />
-          <h1 className="text-lg font-semibold text-foreground">Não foi possível abrir a confirmação</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{error ?? 'Link inválido.'}</p>
-          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            Se você recebeu este link por e-mail, responda a mensagem original informando o número do chamado para que a equipe de manutenção possa verificar.
-          </p>
+      <div className="flex min-h-screen justify-center bg-muted/40">
+        <div className="flex w-full max-w-md flex-col bg-background shadow-lg">
+          <InstitutionalHeader />
+          <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+            <XCircle className="mb-3 h-10 w-10 text-destructive" />
+            <h2 className="text-lg font-semibold text-foreground">Não foi possível abrir a confirmação</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{error ?? 'Link inválido.'}</p>
+            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+              Se você recebeu este link por e-mail, responda a mensagem original informando o número do chamado para que a equipe de manutenção possa verificar.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -106,21 +168,24 @@ export default function PublicMaintenanceConfirmation() {
 
   if (ticket.confirmed_at || done) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
-        <div className="w-full max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
-          {done === 'reject' ? (
-            <RotateCcw className="mx-auto mb-3 h-10 w-10 text-warning" />
-          ) : (
-            <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-primary" />
-          )}
-          <h1 className="text-lg font-semibold text-foreground">
-            {done === 'reject' ? 'Chamado reaberto' : 'Serviço confirmado'}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {done === 'reject'
-              ? 'A equipe de manutenção foi notificada e o chamado voltou para acompanhamento.'
-              : 'Obrigado! O atendimento foi registrado e seguirá para arquivamento.'}
-          </p>
+      <div className="flex min-h-screen justify-center bg-muted/40">
+        <div className="flex w-full max-w-md flex-col bg-background shadow-lg">
+          <InstitutionalHeader ticket={ticket} />
+          <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+            {done === 'reject' ? (
+              <RotateCcw className="mb-3 h-10 w-10 text-primary" />
+            ) : (
+              <CheckCircle2 className="mb-3 h-10 w-10 text-primary" />
+            )}
+            <h2 className="text-lg font-semibold text-foreground">
+              {done === 'reject' ? 'Chamado reaberto' : 'Serviço confirmado'}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {done === 'reject'
+                ? 'A equipe de manutenção foi notificada e o chamado voltou para acompanhamento.'
+                : 'Obrigado! O atendimento foi registrado e seguirá para arquivamento.'}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -128,116 +193,136 @@ export default function PublicMaintenanceConfirmation() {
 
   const services = (ticket.services || []).filter(Boolean);
   const referencePhotos = ticket.reference_photos || [];
-  const allExecutionPhotos = services.flatMap((s) => s.execution_photos || []);
+  const executionPhotos = services.flatMap((s) => s.execution_photos || []);
 
   return (
-    <main className="min-h-screen bg-muted/30 px-4 py-10">
-      <section className="mx-auto max-w-2xl rounded-lg border bg-card shadow-sm">
-        <div className="border-b bg-primary/5 p-6">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
-            <Mail className="h-3.5 w-3.5" /> SiDIF · Núcleo de Manutenção
-          </div>
-          <h1 className="mt-2 text-lg font-semibold text-foreground">
-            Chamado #{String(ticket.ticket_number ?? '').padStart(4, '0')} — {ticket.title}
-          </h1>
-          {ticket.location && (
-            <p className="mt-1 text-sm text-muted-foreground">Local: {ticket.location}</p>
-          )}
-        </div>
+    <div className="flex min-h-screen justify-center bg-muted/40">
+      <main className="relative flex w-full max-w-md flex-col bg-background shadow-lg">
+        <InstitutionalHeader ticket={ticket} />
 
-        <div className="p-6 space-y-5">
-          <p className="text-sm text-foreground">
-            A equipe do Núcleo de Manutenção informou que o serviço foi concluído. Confira abaixo os detalhes da execução e formalize o aceite ou a reabertura do chamado.
+        <div className="flex-1 space-y-6 p-5">
+          <p className="text-sm text-muted-foreground">
+            A equipe do Núcleo de Manutenção informou que o serviço foi concluído. Confira as evidências e formalize o aceite ou a reabertura do chamado.
           </p>
 
           {ticket.finalization_note && (
-            <div className="rounded-md border-l-4 border-primary bg-primary/5 p-3 text-sm">
-              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Observações da equipe</div>
-              <p className="whitespace-pre-wrap text-foreground/90">{ticket.finalization_note}</p>
+            <div className="rounded-r-lg border-l-4 border-primary bg-primary/5 p-4">
+              <h2 className="mb-1 text-xs font-bold uppercase text-primary">Observações da equipe</h2>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                {ticket.finalization_note}
+              </p>
             </div>
           )}
 
+          {(executionPhotos.length > 0 || referencePhotos.length > 0) && (
+            <section className="space-y-4">
+              <h2 className="text-sm font-bold uppercase text-foreground">Evidências do serviço</h2>
+
+              {executionPhotos.length > 0 && (
+                <div className="space-y-3">
+                  {executionPhotos.map((p, i) => (
+                    <div key={p.id ?? `exec-${i}`} className="relative">
+                      <span className="absolute left-2 top-2 z-10 rounded bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground">
+                        DEPOIS
+                      </span>
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block aspect-video overflow-hidden rounded-xl border bg-muted"
+                      >
+                        <PhotoTile photo={p} alt={`Execução ${i + 1}`} />
+                      </a>
+                      {p.description && (
+                        <p className="mt-1 text-xs text-muted-foreground">{p.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {referencePhotos.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  {referencePhotos.map((p, i) => (
+                    <div key={p.id ?? `ref-${i}`} className="relative opacity-70 transition-opacity hover:opacity-100">
+                      <span className="absolute left-2 top-2 z-10 rounded bg-foreground px-2 py-1 text-[10px] font-bold text-background">
+                        ANTES
+                      </span>
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block aspect-video overflow-hidden rounded-xl border bg-muted"
+                      >
+                        <PhotoTile photo={p} alt={`Referência ${i + 1}`} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
           {services.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <Wrench className="h-3.5 w-3.5" /> Serviços executados
-              </div>
-              <ol className="space-y-3">
+            <section className="space-y-2">
+              <h2 className="text-sm font-bold uppercase text-foreground">Serviços executados</h2>
+              <ol className="space-y-2">
                 {services.map((s, i) => (
-                  <li key={i} className="rounded-md border bg-background p-3">
+                  <li key={i} className="rounded-lg border bg-muted/30 p-3">
                     <div className="text-sm font-semibold text-foreground">{i + 1}. {s.title}</div>
                     {s.description && (
-                      <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">{s.description}</p>
-                    )}
-                    {Array.isArray(s.execution_photos) && s.execution_photos.length > 0 && (
-                      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                        {s.execution_photos.map((p, j) => (
-                          <a key={p.id ?? j} href={p.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded border bg-muted">
-                            <img src={p.url} alt={p.description || `Execução ${j + 1}`} className="h-20 w-full object-cover" loading="lazy" />
-                          </a>
-                        ))}
-                      </div>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{s.description}</p>
                     )}
                   </li>
                 ))}
               </ol>
-            </div>
+            </section>
           )}
 
-          {referencePhotos.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <ImageIcon className="h-3.5 w-3.5" /> Fotos de referência do chamado
-              </div>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {referencePhotos.map((p, i) => (
-                  <a key={p.id ?? i} href={p.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded border bg-muted">
-                    <img src={p.url} alt={p.description || `Referência ${i + 1}`} className="h-20 w-full object-cover" loading="lazy" />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {services.length === 0 && allExecutionPhotos.length === 0 && (
-            <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+          {services.length === 0 && executionPhotos.length === 0 && (
+            <div className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
               A equipe não registrou serviços detalhados neste chamado; a descrição do atendimento consta nas observações acima.
             </div>
           )}
 
-          <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-            Ao confirmar, o chamado será arquivado. Se o serviço não resolveu a solicitação, o chamado será reaberto para nova análise da equipe responsável.
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Observação (opcional)
+          <section className="space-y-3">
+            <label htmlFor="comments" className="block text-sm font-semibold text-foreground">
+              Observações do solicitante
             </label>
             <Textarea
-              rows={4}
+              id="comments"
+              rows={3}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Ex.: serviço executado conforme solicitado."
+              placeholder="Opcional: descreva qualquer detalhe..."
+              className="rounded-xl"
             />
-          </div>
-
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="outline"
-              onClick={() => submit(false)}
-              disabled={submitting}
-              className="border-destructive/40 text-destructive hover:bg-destructive/10"
-            >
-              {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-1 h-4 w-4" />}
-              Não foi resolvido
-            </Button>
-            <Button onClick={() => submit(true)} disabled={submitting}>
-              {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
-              Confirmar que foi resolvido
-            </Button>
-          </div>
+            <p className="text-[10px] text-muted-foreground">
+              Ao confirmar, você valida a execução do serviço e o chamado será arquivado. Se não resolveu, ele volta para nova análise da equipe.
+            </p>
+          </section>
         </div>
-      </section>
-    </main>
+
+        <div className="sticky bottom-0 flex gap-3 border-t bg-background/95 p-4 backdrop-blur-md">
+          <Button
+            variant="outline"
+            onClick={() => submit(false)}
+            disabled={submitting}
+            className="h-14 flex-1 rounded-2xl border-2 text-sm font-bold"
+          >
+            {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-1 h-4 w-4" />}
+            Não resolvido
+          </Button>
+          <Button
+            onClick={() => submit(true)}
+            disabled={submitting}
+            className="h-14 flex-[2] rounded-2xl text-sm font-bold shadow-lg"
+          >
+            {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
+            Confirmar resolvido
+          </Button>
+        </div>
+      </main>
+    </div>
   );
 }
