@@ -83,6 +83,24 @@ serve(async (req) => {
       .eq("ticket_id", ticket_id)
       .order("received_at", { ascending: true });
 
+    // Servidores da manutenção designados ao chamado
+    const executorIds = new Set<string>();
+    for (const id of (ticket.manager_ids || [])) if (id) executorIds.add(id);
+    if (ticket.manager_id) executorIds.add(ticket.manager_id);
+    for (const s of (ticket.maintenance_ticket_services || [])) {
+      for (const id of (s.manager_ids || [])) if (id) executorIds.add(id);
+      if (s.manager_id) executorIds.add(s.manager_id);
+    }
+    let executores = "-";
+    if (executorIds.size) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, display_name")
+        .in("user_id", Array.from(executorIds));
+      const nomes = (profs || []).map((p: any) => p.display_name).filter(Boolean);
+      if (nomes.length) executores = nomes.join(", ");
+    }
+
     const { data: history } = await supabase
       .from("maintenance_ticket_status_history")
       .select("*")
@@ -220,8 +238,9 @@ serve(async (req) => {
       rows.forEach((pair, ri) => {
         const ry = top + ri * rowH;
         if (ri > 0) doc.line(margin, ry, pageW - margin, ry);
+        const cellW = pair.length === 1 ? contentW : half;
         pair.forEach(([k, v, isBadge], ci) => {
-          const x = margin + ci * half + 14;
+          const x = margin + ci * cellW + 14;
           doc.setFont("helvetica", "normal");
           doc.setFontSize(8.5);
           doc.setTextColor(...GRAY_LABEL);
@@ -233,13 +252,15 @@ serve(async (req) => {
             doc.setFont("helvetica", "bold");
             doc.setFontSize(9.5);
             doc.setTextColor(50, 50, 50);
-            const lines = doc.splitTextToSize(v || "-", half - 104);
+            const lines = doc.splitTextToSize(v || "-", cellW - 104);
             doc.text(lines[0] ?? "-", vx, ry + rowH / 2 + 3.5);
           }
         });
         // divisória vertical central
-        doc.setDrawColor(...GRAY_LINE);
-        doc.line(margin + half, ry + 7, margin + half, ry + rowH - 7);
+        if (pair.length > 1) {
+          doc.setDrawColor(...GRAY_LINE);
+          doc.line(margin + half, ry + 7, margin + half, ry + rowH - 7);
+        }
       });
       doc.setTextColor(...GRAY_TEXT);
       y = top + h + 4;
@@ -259,6 +280,7 @@ serve(async (req) => {
       [["Prioridade", ticket.priority || "-", true], ["Tipo", ticket.type || "-"]],
       [["Criado em", fmt(ticket.created_at)], ["Concluído em", fmt(ticket.completed_at)]],
       [["Status", ticket.status || "-", true], ["Origem", origem]],
+      [["Executado por", executores]],
     ]);
     if (ticket.requester_email || ticket.confirmed_at) {
       infoCard([
