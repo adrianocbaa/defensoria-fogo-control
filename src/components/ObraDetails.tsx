@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, MapPin, Calendar, Building2, Users, FileText, Image, Download, Loader2, DollarSign, TrendingUp } from 'lucide-react';
+import { X, MapPin, Calendar, Building2, Users, FileText, Image, Download, Eye, Loader2, DollarSign, TrendingUp } from 'lucide-react';
 import { PhotoGalleryCollapsible } from '@/components/PhotoGalleryCollapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -414,28 +414,50 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
           <AccordionContent className="px-4 pb-4">
             {documentos.length > 0 ? (
               <div className="space-y-2">
-                {documentos.map((doc, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 group"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <FileText className="h-4 w-4 text-red-500 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{doc.nome}</p>
-                        <p className="text-xs text-muted-foreground">{doc.tipo}</p>
+                {documentos.map((doc: any, index) => {
+                  const nome = doc?.nome || doc?.name || `Documento ${index + 1}`;
+                  const url = doc?.url || doc?.link || '';
+                  return (
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <FileText className="h-4 w-4 text-red-500 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{nome}</p>
+                          <p className="text-xs text-muted-foreground">{doc?.tipo || doc?.type || 'Documento'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={!url}
+                          onClick={() => url && window.open(url, '_blank', 'noopener,noreferrer')}
+                          title="Visualizar"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={!url}
+                          asChild={!!url}
+                          title="Baixar"
+                        >
+                          {url ? (
+                            <a href={url} download={nome} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-4 w-4" />
+                            </a>
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
                     </div>
-                     <Button 
-                       variant="ghost" 
-                       size="sm" 
-                       className="flex-shrink-0 group-hover:bg-primary/10 transition-colors"
-                       onClick={() => window.open('#', '_blank')}
-                     >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhum documento anexado</p>
