@@ -18,9 +18,11 @@ const BUCKET = "documents";
 
 // Identidade visual institucional (verde DPMT)
 const GREEN: [number, number, number] = [26, 95, 63];
-const GREEN_LIGHT: [number, number, number] = [237, 245, 241];
+const GREEN_SOFT: [number, number, number] = [232, 243, 237];
 const GRAY_TEXT: [number, number, number] = [70, 70, 70];
-const GRAY_LINE: [number, number, number] = [205, 213, 209];
+const GRAY_LABEL: [number, number, number] = [120, 130, 125];
+const GRAY_LINE: [number, number, number] = [222, 229, 225];
+const BOX_BG: [number, number, number] = [248, 251, 249];
 
 function j(s: number, b: unknown) {
   return new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
@@ -107,7 +109,7 @@ serve(async (req) => {
       doc.text("DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO", margin, 30);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.5);
-      doc.text("Diretoria de Infraestrutura Física — Núcleo de Manutenção", margin, 46);
+      doc.text("Diretoria de Infraestrutura Física — Coord. Manutenção Predial", margin, 46);
       doc.setFontSize(8.5);
       doc.text("Relatório de atendimento de chamado — SiDIF", margin, 60);
       doc.setFont("helvetica", "bold");
@@ -125,7 +127,7 @@ serve(async (req) => {
       doc.setFontSize(7.5);
       doc.setTextColor(130, 130, 130);
       doc.text(
-        `Documento gerado automaticamente pelo SiDIF em ${new Date().toLocaleString("pt-BR")}`,
+        `Gerado automaticamente pelo SiDIF em ${new Date().toLocaleString("pt-BR")}`,
         margin,
         footerY + 2,
       );
@@ -157,90 +159,177 @@ serve(async (req) => {
 
     const gap = (v = 6) => { y += v; };
 
+    // Título de seção: barra verde + rótulo + régua fina (estilo do layout de referência)
     const section = (title: string) => {
-      ensure(46);
-      gap(10);
-      doc.setFillColor(...GREEN_LIGHT);
-      doc.rect(margin, y, contentW, 20, "F");
+      ensure(40);
+      gap(14);
       doc.setFillColor(...GREEN);
-      doc.rect(margin, y, 3.5, 20, "F");
+      doc.rect(margin, y, 3.5, 12, "F");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(...GREEN);
-      doc.text(title.toUpperCase(), margin + 10, y + 13.5);
+      doc.text(title.toUpperCase(), margin + 10, y + 10);
+      doc.setDrawColor(...GRAY_LINE);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y + 19, pageW - margin, y + 19);
       doc.setTextColor(...GRAY_TEXT);
       y += 30;
     };
 
-    // Linha rótulo/valor em duas colunas
-    const kvRow = (pairs: [string, string][]) => {
-      const colW = contentW / pairs.length;
-      let maxH = 0;
-      pairs.forEach(([k, v], i) => {
-        const x = margin + i * colW;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(7.5);
-        doc.setTextColor(130, 130, 130);
-        doc.text(k.toUpperCase(), x, y + 8);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
-        doc.setTextColor(...GRAY_TEXT);
-        const lines = doc.splitTextToSize(v || "-", colW - 12);
-        lines.forEach((l: string, li: number) => doc.text(l, x, y + 22 + li * 12));
-        maxH = Math.max(maxH, 22 + lines.length * 12);
+    // Bloco de texto dentro de caixa clara
+    const boxText = (t: string) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      const lines = doc.splitTextToSize(t, contentW - 28);
+      const h = lines.length * 13 + 20;
+      ensure(h);
+      doc.setFillColor(...BOX_BG);
+      doc.setDrawColor(...GRAY_LINE);
+      doc.setLineWidth(0.6);
+      doc.rect(margin, y, contentW, h, "FD");
+      doc.setTextColor(...GRAY_TEXT);
+      lines.forEach((l: string, i: number) => doc.text(l, margin + 14, y + 20 + i * 13));
+      y += h + 4;
+    };
+
+    // Selo/badge arredondado
+    const badge = (label: string, x: number, cy: number) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      const w = doc.getTextWidth(label.toUpperCase()) + 14;
+      doc.setFillColor(...GREEN_SOFT);
+      doc.roundedRect(x, cy - 8, w, 14, 7, 7, "F");
+      doc.setTextColor(...GREEN);
+      doc.text(label.toUpperCase(), x + 7, cy + 1.5);
+      doc.setTextColor(...GRAY_TEXT);
+      doc.setFont("helvetica", "normal");
+      return w;
+    };
+
+    // Cartão de identificação: grade 2 colunas com linhas divisórias
+    const infoCard = (rows: [string, string, boolean?][][]) => {
+      const rowH = 30;
+      const h = rows.length * rowH;
+      ensure(h + 8);
+      const top = y;
+      doc.setFillColor(...BOX_BG);
+      doc.setDrawColor(...GRAY_LINE);
+      doc.setLineWidth(0.6);
+      doc.rect(margin, top, contentW, h, "FD");
+      const half = contentW / 2;
+      rows.forEach((pair, ri) => {
+        const ry = top + ri * rowH;
+        if (ri > 0) doc.line(margin, ry, pageW - margin, ry);
+        pair.forEach(([k, v, isBadge], ci) => {
+          const x = margin + ci * half + 14;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(...GRAY_LABEL);
+          doc.text(k, x, ry + rowH / 2 + 3);
+          const vx = x + 88;
+          if (isBadge) {
+            badge(v, vx, ry + rowH / 2 + 1);
+          } else {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9.5);
+            doc.setTextColor(50, 50, 50);
+            const lines = doc.splitTextToSize(v || "-", half - 104);
+            doc.text(lines[0] ?? "-", vx, ry + rowH / 2 + 3.5);
+          }
+        });
+        // divisória vertical central
+        doc.setDrawColor(...GRAY_LINE);
+        doc.line(margin + half, ry + 7, margin + half, ry + rowH - 7);
       });
-      y += maxH + 6;
+      doc.setTextColor(...GRAY_TEXT);
+      y = top + h + 4;
     };
 
     drawHeader();
-    y = headerH + 26;
+    y = headerH + 30;
 
-    // Título do chamado
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(30, 30, 30);
-    const titleLines = doc.splitTextToSize(ticket.title || "Chamado de manutenção", contentW);
-    titleLines.forEach((l: string) => { doc.text(l, margin, y + 12); y += 18; });
-    doc.setTextColor(...GRAY_TEXT);
-    gap(4);
+    // Cartão de identificação
+    const origem = ticket.request_type === "email"
+      ? "E-mail"
+      : ticket.request_type === "processo"
+        ? `Processo SEI ${ticket.process_number || ""}`.trim()
+        : "Direto";
+    infoCard([
+      [["Local", ticket.location || "-"], ["Solicitante", ticket.assignee || "-"]],
+      [["Prioridade", ticket.priority || "-", true], ["Tipo", ticket.type || "-"]],
+      [["Criado em", fmt(ticket.created_at)], ["Concluído em", fmt(ticket.completed_at)]],
+      [["Status", ticket.status || "-", true], ["Origem", origem]],
+    ]);
+    if (ticket.requester_email || ticket.confirmed_at) {
+      infoCard([
+        [
+          ["E-mail", ticket.requester_email || "-"],
+          [
+            "Confirmação",
+            ticket.confirmed_at
+              ? `${fmt(ticket.confirmed_at)}${ticket.confirmed_source === "auto" ? " (tácita)" : ""}`
+              : "-",
+          ],
+        ],
+      ]);
+    }
 
-    section("Identificação do chamado");
-    kvRow([["Local", ticket.location || "-"], ["Tipo", ticket.type || "-"]]);
-    kvRow([
-      ["Solicitante", `${ticket.assignee || "-"}${ticket.requester_email ? ` (${ticket.requester_email})` : ""}`],
-      ["Prioridade", ticket.priority || "-"],
-    ]);
-    kvRow([
-      ["Origem da solicitação", ticket.request_type === "email" ? "E-mail" : ticket.request_type === "processo" ? `Processo SEI ${ticket.process_number || ""}`.trim() : "Direto"],
-      ["Status atual", ticket.status || "-"],
-    ]);
-    kvRow([["Aberto em", fmt(ticket.created_at)], ["Concluído em", fmt(ticket.completed_at)]]);
-    kvRow([
-      ["Finalizado em", fmt(ticket.finalized_at)],
-      [
-        "Confirmação do solicitante",
-        ticket.confirmed_at
-          ? `${fmt(ticket.confirmed_at)} — ${ticket.confirmed_source === "auto" ? "tacitamente atendido" : "confirmado pelo solicitante"}`
-          : "-",
-      ],
-    ]);
+    section("Descrição do chamado");
+    boxText(
+      `${(ticket.title || "Chamado de manutenção").toUpperCase()}${ticket.description ? ` — ${ticket.description}` : ""}`,
+    );
 
-    // Serviços
+    // Serviços — tabela
     const services = (ticket.maintenance_ticket_services || []).sort(
       (a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0),
     );
     if (services.length) {
       section("Serviços executados");
-      services.forEach((s: any, i: number) => {
-        text(`${i + 1}. ${s.title}${s.status ? `  [${s.status}]` : ""}`, 9.5, true);
-        if (s.description) text(s.description, 9, false, 14);
-        gap(6);
+      const colService = contentW * 0.52;
+      const colStatus = contentW * 0.2;
+      const headH = 24;
+      ensure(headH + 26);
+      doc.setFillColor(...GREEN_SOFT);
+      doc.rect(margin, y, contentW, headH, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...GREEN);
+      doc.text("SERVIÇO", margin + 12, y + 15);
+      doc.text("STATUS", margin + 12 + colService, y + 15);
+      doc.text("OBSERVAÇÃO", margin + 12 + colService + colStatus, y + 15);
+      doc.setTextColor(...GRAY_TEXT);
+      y += headH;
+
+      services.forEach((s: any) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        const nameLines = doc.splitTextToSize(String(s.title || "-"), colService - 20);
+        const obsLines = doc.splitTextToSize(
+          String(s.description || "—"),
+          contentW - colService - colStatus - 24,
+        );
+        const rowH = Math.max(26, Math.max(nameLines.length, obsLines.length) * 12 + 14);
+        ensure(rowH);
+        doc.setDrawColor(...GRAY_LINE);
+        doc.setLineWidth(0.6);
+        doc.rect(margin, y, contentW, rowH);
+        doc.setTextColor(50, 50, 50);
+        nameLines.forEach((l: string, i: number) => doc.text(l, margin + 12, y + 17 + i * 12));
+        if (s.status) badge(String(s.status), margin + 12 + colService, y + 17);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(...GRAY_TEXT);
+        obsLines.forEach((l: string, i: number) =>
+          doc.text(l, margin + 12 + colService + colStatus, y + 17 + i * 12),
+        );
+        y += rowH;
       });
+      y += 4;
     }
 
     if (ticket.finalization_note) {
       section("Observações da finalização");
-      text(String(ticket.finalization_note), 9.5);
+      boxText(String(ticket.finalization_note));
     }
 
     if (history?.length) {
@@ -280,7 +369,7 @@ serve(async (req) => {
       const boxW = (contentW - 16) / 2;
       const boxH = boxW * 0.75;
       if (y + 46 + boxH > bottomLimit) newPage();
-      section("Registro fotográfico da execução");
+      section("Registro fotográfico");
       let col = 0;
       let rowTop = y;
       for (const url of execPhotos) {
@@ -291,19 +380,18 @@ serve(async (req) => {
         }
         const x = margin + col * (boxW + 16);
         try {
-          // preserva a proporção: ajusta dentro da caixa e centraliza
           const props = doc.getImageProperties(img.data);
           const ratio = Math.min(boxW / props.width, boxH / props.height);
           const w = props.width * ratio;
           const h = props.height * ratio;
           const ox = x + (boxW - w) / 2;
           const oy = rowTop + (boxH - h) / 2;
-          doc.setFillColor(246, 248, 247);
-          doc.rect(x, rowTop, boxW, boxH, "F");
+          doc.setFillColor(...BOX_BG);
+          doc.roundedRect(x, rowTop, boxW, boxH, 4, 4, "F");
           doc.addImage(img.data, img.format, ox, oy, w, h);
           doc.setDrawColor(...GRAY_LINE);
           doc.setLineWidth(0.6);
-          doc.rect(x, rowTop, boxW, boxH);
+          doc.roundedRect(x, rowTop, boxW, boxH, 4, 4);
         } catch (e) {
           console.warn("addImage fail", e);
         }
