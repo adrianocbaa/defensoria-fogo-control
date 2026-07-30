@@ -238,8 +238,9 @@ serve(async (req) => {
       rows.forEach((pair, ri) => {
         const ry = top + ri * rowH;
         if (ri > 0) doc.line(margin, ry, pageW - margin, ry);
+        const cellW = pair.length === 1 ? contentW : half;
         pair.forEach(([k, v, isBadge], ci) => {
-          const x = margin + ci * half + 14;
+          const x = margin + ci * cellW + 14;
           doc.setFont("helvetica", "normal");
           doc.setFontSize(8.5);
           doc.setTextColor(...GRAY_LABEL);
@@ -251,13 +252,15 @@ serve(async (req) => {
             doc.setFont("helvetica", "bold");
             doc.setFontSize(9.5);
             doc.setTextColor(50, 50, 50);
-            const lines = doc.splitTextToSize(v || "-", half - 104);
+            const lines = doc.splitTextToSize(v || "-", cellW - 104);
             doc.text(lines[0] ?? "-", vx, ry + rowH / 2 + 3.5);
           }
         });
         // divisória vertical central
-        doc.setDrawColor(...GRAY_LINE);
-        doc.line(margin + half, ry + 7, margin + half, ry + rowH - 7);
+        if (pair.length > 1) {
+          doc.setDrawColor(...GRAY_LINE);
+          doc.line(margin + half, ry + 7, margin + half, ry + rowH - 7);
+        }
       });
       doc.setTextColor(...GRAY_TEXT);
       y = top + h + 4;
