@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { X, ChevronRight, MapPin, Menu as MenuIcon, Image as ImageIcon, FileText, Loader2, Eye, Download } from 'lucide-react';
+import { X, ChevronRight, MapPin, Menu as MenuIcon, Image as ImageIcon, FileText, Loader2, Eye } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -373,18 +373,6 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
                             title="Visualizar"
                           >
                             <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={!url}
-                            onClick={async () => {
-                              const ok = url && (await openObraDocument(url, nome, true));
-                              if (!ok) toast.error('Não foi possível baixar o documento');
-                            }}
-                            title="Baixar"
-                          >
-                            <Download className="h-4 w-4" />
                           </Button>
                         </div>
 

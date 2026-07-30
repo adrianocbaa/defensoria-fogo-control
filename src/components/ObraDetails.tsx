@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, MapPin, Calendar, Building2, Users, FileText, Image, Download, Eye, Loader2, DollarSign, TrendingUp } from 'lucide-react';
+import { X, MapPin, Calendar, Building2, Users, FileText, Image, Eye, Loader2, DollarSign, TrendingUp } from 'lucide-react';
 import { PhotoGalleryCollapsible } from '@/components/PhotoGalleryCollapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -444,18 +444,6 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                           title="Visualizar"
                         >
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={!url}
-                          onClick={async () => {
-                            const ok = url && (await openObraDocument(url, nome, true));
-                            if (!ok) toast.error('Não foi possível baixar o documento');
-                          }}
-                          title="Baixar"
-                        >
-                          <Download className="h-4 w-4" />
                         </Button>
                       </div>
 
