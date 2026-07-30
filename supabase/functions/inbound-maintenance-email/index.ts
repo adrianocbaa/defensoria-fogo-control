@@ -143,8 +143,20 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
 }
 
-// Limite por anexo (bytes). Acima disso o anexo é ignorado para não estourar a memória.
-const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+// Limite por imagem (bytes) e orçamento total de imagens por e-mail.
+// Anexos que não sejam imagem são sempre descartados; imagens acima do limite
+// (ou que estourem o orçamento) são ignoradas — a tarefa é criada mesmo assim.
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const MAX_TOTAL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+
+const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|bmp|heic|heif|tiff?)$/i;
+
+function isImageAttachment(mime?: string, filename?: string): boolean {
+  const m = (mime || "").toLowerCase();
+  if (m.startsWith("image/")) return true;
+  if (m && m !== "application/octet-stream") return false;
+  return IMAGE_EXT_RE.test(filename || "");
+}
 
 
 function base64ToBytes(b64: string): Uint8Array {
