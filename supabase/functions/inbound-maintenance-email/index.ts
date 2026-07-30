@@ -307,7 +307,7 @@ serve(async (req) => {
     }
 
     // Solicitante e localização (extraídos do corpo)
-    const solicitante = extractField(textBody, "Solicitante") || fromAddr || "Não informado";
+    const solicitante = extractField(textBody, "Solicitante") || requesterEmail || fromAddr || "Não informado";
     const local = extractField(textBody, "Local") || extractField(textBody, "Localização") || "A definir";
     const nucleoNome = extractField(textBody, "Núcleo") || extractField(textBody, "Nucleo");
 
@@ -323,9 +323,10 @@ serve(async (req) => {
       nucleo_id = n?.id ?? null;
     }
 
-    // Fallback: mapear núcleo pelo e-mail do remetente (exato ou por domínio)
-    if (!nucleo_id && fromAddr) {
-      const addr = fromAddr.toLowerCase().trim();
+    // Fallback: mapear núcleo pelo e-mail do solicitante original (exato ou por domínio)
+    const matchAddr = (requesterEmail || fromAddr || "").toLowerCase().trim();
+    if (!nucleo_id && matchAddr) {
+      const addr = matchAddr;
       const domain = addr.split("@")[1] || "";
       const { data: nuclei } = await supabase
         .from("nuclei")
