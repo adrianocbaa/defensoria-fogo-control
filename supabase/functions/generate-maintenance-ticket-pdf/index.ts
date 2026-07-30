@@ -247,7 +247,7 @@ serve(async (req) => {
       section("Histórico de movimentação");
       for (const h of history) {
         text(
-          `${fmt(h.created_at)} — ${h.from_status || "—"} → ${h.to_status}${h.changed_by_name ? ` (${h.changed_by_name})` : ""}`,
+          `${fmt(h.created_at)} — ${h.from_status || "-"} > ${h.to_status}${h.changed_by_name ? ` (${h.changed_by_name})` : ""}`,
           9,
         );
       }
@@ -277,9 +277,10 @@ serve(async (req) => {
     }
 
     if (execPhotos.length) {
-      section("Registro fotográfico da execução");
       const boxW = (contentW - 16) / 2;
       const boxH = boxW * 0.75;
+      if (y + 46 + boxH > bottomLimit) newPage();
+      section("Registro fotográfico da execução");
       let col = 0;
       let rowTop = y;
       for (const url of execPhotos) {
