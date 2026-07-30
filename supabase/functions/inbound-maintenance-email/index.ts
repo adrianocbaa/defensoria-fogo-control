@@ -143,8 +143,20 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
 }
 
-// Limite por anexo (bytes). Acima disso o anexo é ignorado para não estourar a memória.
-const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+// Limite por imagem (bytes) e orçamento total de imagens por e-mail.
+// Anexos que não sejam imagem são sempre descartados; imagens acima do limite
+// (ou que estourem o orçamento) são ignoradas — a tarefa é criada mesmo assim.
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const MAX_TOTAL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+
+const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|bmp|heic|heif|tiff?)$/i;
+
+function isImageAttachment(mime?: string, filename?: string): boolean {
+  const m = (mime || "").toLowerCase();
+  if (m.startsWith("image/")) return true;
+  if (m && m !== "application/octet-stream") return false;
+  return IMAGE_EXT_RE.test(filename || "");
+}
 
 
 function base64ToBytes(b64: string): Uint8Array {
@@ -180,28 +192,41 @@ serve(async (req) => {
         text: parsed.text || "",
         html: parsed.html || "",
         headers: { "message-id": parsed.messageId || "" },
-        attachments: (parsed.attachments || [])
-          .map((att: any) => {
-            const bytes = new Uint8Array(att.content);
-            // Anexos muito grandes (vídeos, por ex.) estouram a memória da função:
-            // registramos o nome, mas não convertemos/armazenamos o conteúdo.
-            if (bytes.length > MAX_ATTACHMENT_BYTES) {
-              console.warn("inbound: anexo ignorado por tamanho", att.filename, bytes.length);
-              return null;
-            }
-            let bin = "";
-            const CHUNK = 0x8000;
-            for (let i = 0; i < bytes.length; i += CHUNK) {
-              bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-            }
-            return {
-              filename: att.filename || "arquivo",
-              content_type: att.mimeType || "application/octet-stream",
-              size: bytes.length,
-              content: btoa(bin),
-            };
-          })
-          .filter(Boolean),
+        attachments: (() => {
+          let used = 0;
+          return (parsed.attachments || [])
+            .map((att: any) => {
+              const filename = att.filename || "arquivo";
+              // Só imagens: PDFs, vídeos e demais anexos são descartados.
+              if (!isImageAttachment(att.mimeType, filename)) {
+                console.warn("inbound: anexo descartado (não é imagem)", filename, att.mimeType);
+                return null;
+              }
+              const bytes = new Uint8Array(att.content);
+              if (bytes.length > MAX_ATTACHMENT_BYTES) {
+                console.warn("inbound: imagem ignorada por tamanho", filename, bytes.length);
+                return null;
+              }
+              if (used + bytes.length > MAX_TOTAL_ATTACHMENT_BYTES) {
+                console.warn("inbound: imagem ignorada por exceder o limite total", filename);
+                return null;
+              }
+              used += bytes.length;
+              let bin = "";
+              const CHUNK = 0x8000;
+              for (let i = 0; i < bytes.length; i += CHUNK) {
+                bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+              }
+              return {
+                filename,
+                content_type: att.mimeType?.startsWith("image/") ? att.mimeType : "image/jpeg",
+                size: bytes.length,
+                content: btoa(bin),
+              };
+            })
+            .filter(Boolean);
+        })(),
+
 
       };
     } else {
@@ -388,14 +413,24 @@ serve(async (req) => {
     // Processa anexos
     const attachments: Attachment[] = Array.isArray(payload.attachments) ? payload.attachments : [];
     const photos: Array<any> = [];
-    const videos: Array<any> = [];
+
     const nowIso = new Date().toISOString();
     const PHOTO_BUCKET = "service-photos";
 
+    let usedBytes = 0;
+
     for (const att of attachments) {
       try {
-        const filename = sanitizeFilename(att.filename || `anexo-${Date.now()}`);
+        const rawName = att.filename || `anexo-${Date.now()}`;
+        const filename = sanitizeFilename(rawName);
         const contentType = att.content_type || "application/octet-stream";
+
+        // Só imagens são anexadas à tarefa (PDFs, vídeos e outros são ignorados)
+        if (!isImageAttachment(contentType, rawName)) {
+          console.warn("inbound: anexo descartado (não é imagem)", rawName, contentType);
+          continue;
+        }
+
         let bytes: Uint8Array | null = null;
 
         if (att.content_url) {
@@ -411,23 +446,31 @@ serve(async (req) => {
 
         if (!bytes) continue;
 
-        const isImage = contentType.startsWith("image/");
-        const isVideo = contentType.startsWith("video/");
-        const bucket = isImage || isVideo ? PHOTO_BUCKET : BUCKET;
+        if (bytes.length > MAX_ATTACHMENT_BYTES) {
+          console.warn("inbound: imagem ignorada por tamanho", filename, bytes.length);
+          continue;
+        }
+        if (usedBytes + bytes.length > MAX_TOTAL_ATTACHMENT_BYTES) {
+          console.warn("inbound: imagem ignorada por exceder o limite total", filename);
+          continue;
+        }
+        usedBytes += bytes.length;
+
+        const uploadType = contentType.startsWith("image/") ? contentType : "image/jpeg";
         const path = `maintenance-inbound/${ticket.id}/${Date.now()}-${filename}`;
         const { error: upErr } = await supabase.storage
-          .from(bucket)
-          .upload(path, bytes, { contentType, upsert: false });
+          .from(PHOTO_BUCKET)
+          .upload(path, bytes, { contentType: uploadType, upsert: false });
 
         if (upErr) {
           console.warn("inbound: erro upload", upErr.message);
           continue;
         }
 
-        const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
+        const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
         const publicUrl = pub?.publicUrl || path;
 
-        const entry = {
+        photos.push({
           id: crypto.randomUUID(),
           url: publicUrl,
           path,
@@ -435,31 +478,25 @@ serve(async (req) => {
           uploaded_at: nowIso,
           uploaded_by: null,
           uploaded_by_name: "E-mail (solicitante)",
-        };
-        if (isVideo) videos.push(entry);
-        else photos.push(entry); // imagens e outros anexos entram como referência
+        });
       } catch (e) {
         console.error("inbound: erro processando anexo", e);
       }
     }
 
-    if (photos.length || videos.length) {
+    if (photos.length) {
       await supabase
         .from("maintenance_tickets")
-        .update({
-          reference_photos: photos,
-          reference_videos: videos,
-        })
+        .update({ reference_photos: photos })
         .eq("id", ticket.id);
     }
 
-    console.log(`inbound: ticket #${ticket.ticket_number} criado (${photos.length} fotos, ${videos.length} vídeos)`);
+    console.log(`inbound: ticket #${ticket.ticket_number} criado (${photos.length} fotos)`);
     return json(200, {
       ok: true,
       ticket_id: ticket.id,
       ticket_number: ticket.ticket_number,
       photos: photos.length,
-      videos: videos.length,
     });
   } catch (e) {
     console.error("inbound: erro inesperado", e);
