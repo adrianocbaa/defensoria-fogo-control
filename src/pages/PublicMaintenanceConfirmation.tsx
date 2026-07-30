@@ -23,7 +23,11 @@ type TicketInfo = {
   location: string | null;
   reference_photos: ServicePhoto[] | null;
   services: TicketService[] | null;
+  request_type: 'email' | 'processo' | 'direto' | null;
+  process_number: string | null;
+  executors: string[] | null;
 };
+
 
 function PhotoTile({
   photo,
