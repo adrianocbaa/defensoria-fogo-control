@@ -209,6 +209,26 @@ export default function PublicMaintenanceConfirmation() {
             A equipe do Núcleo de Manutenção informou que o serviço foi concluído. Confira as evidências e formalize o aceite ou a reabertura do chamado.
           </p>
 
+          <dl className="grid grid-cols-1 gap-3 rounded-xl border bg-muted/30 p-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Origem</dt>
+              <dd className="text-sm font-medium text-foreground">
+                {ticket.request_type === 'email'
+                  ? 'E-mail'
+                  : ticket.request_type === 'processo'
+                    ? `Processo SEI${ticket.process_number ? ` nº ${ticket.process_number}` : ''}`
+                    : 'Direto'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Executado por</dt>
+              <dd className="text-sm font-medium text-foreground">
+                {ticket.executors?.length ? ticket.executors.join(', ') : 'Equipe do Núcleo de Manutenção'}
+              </dd>
+            </div>
+          </dl>
+
+
           {ticket.finalization_note && (
             <div className="rounded-r-lg border-l-4 border-primary bg-primary/5 p-4">
               <h2 className="mb-1 text-xs font-bold uppercase text-primary">Observações da equipe</h2>
