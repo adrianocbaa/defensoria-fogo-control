@@ -319,7 +319,7 @@ export default function PublicMaintenanceConfirmation() {
             className="h-14 flex-[2] rounded-2xl text-sm font-bold shadow-lg"
           >
             {submitting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
-            Confirmar resolvido
+            Chamado resolvido
           </Button>
         </div>
       </main>
