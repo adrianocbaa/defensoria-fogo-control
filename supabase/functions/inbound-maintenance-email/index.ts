@@ -413,7 +413,7 @@ serve(async (req) => {
     // Processa anexos
     const attachments: Attachment[] = Array.isArray(payload.attachments) ? payload.attachments : [];
     const photos: Array<any> = [];
-    const videos: Array<any> = [];
+
     const nowIso = new Date().toISOString();
     const PHOTO_BUCKET = "service-photos";
 
