@@ -13,6 +13,9 @@ import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
+import { openObraDocument } from '@/lib/obraDocumentUrl';
+import { toast } from 'sonner';
+
 
 interface WorkSummaryDrawerProps {
   obra: Obra | null;
