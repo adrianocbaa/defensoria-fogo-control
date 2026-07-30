@@ -17,6 +17,9 @@ import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/components/LoadingStates';
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
+import { openObraDocument } from '@/lib/obraDocumentUrl';
+import { toast } from 'sonner';
+
 
 interface ObraDetailsProps {
   obra: Obra | null;
