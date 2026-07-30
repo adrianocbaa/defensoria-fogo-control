@@ -346,18 +346,41 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
             <AccordionContent className="px-4 pb-3">
               {documentos.length > 0 ? (
                 <ul className="space-y-2">
-                  {documentos.map((d, i) => (
-                    <li key={i} className="flex items-center justify-between rounded-md border border-home-border px-3 py-2 text-sm">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="h-4 w-4 text-red-500" />
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{d.nome}</p>
-                          <p className="text-xs text-home-muted">{d.tipo}</p>
+                  {documentos.map((d: any, i) => {
+                    const nome = d?.nome || d?.name || `Documento ${i + 1}`;
+                    const url = d?.url || d?.link || '';
+                    return (
+                      <li key={i} className="flex items-center justify-between rounded-md border border-home-border px-3 py-2 text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-red-500" />
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{nome}</p>
+                            <p className="text-xs text-home-muted">{d?.tipo || d?.type || 'Documento'}</p>
+                          </div>
                         </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-home-muted" />
-                    </li>
-                  ))}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={!url}
+                            onClick={() => url && window.open(url, '_blank', 'noopener,noreferrer')}
+                            title="Visualizar"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" disabled={!url} asChild={!!url} title="Baixar">
+                            {url ? (
+                              <a href={url} download={nome} target="_blank" rel="noopener noreferrer">
+                                <Download className="h-4 w-4" />
+                              </a>
+                            ) : (
+                              <Download className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="py-3 text-center text-sm text-home-muted">Nenhum documento anexado</p>
