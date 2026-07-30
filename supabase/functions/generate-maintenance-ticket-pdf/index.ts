@@ -273,8 +273,9 @@ serve(async (req) => {
     const origem = ticket.request_type === "email"
       ? "E-mail"
       : ticket.request_type === "processo"
-        ? `Processo SEI ${ticket.process_number || ""}`.trim()
+        ? (ticket.process_number ? `SEI n° ${ticket.process_number}` : "SEI")
         : "Direto";
+
     infoCard([
       [["Local", ticket.location || "-"], ["Solicitante", ticket.assignee || "-"]],
       [["Prioridade", ticket.priority || "-", true], ["Tipo", ticket.type || "-"]],
