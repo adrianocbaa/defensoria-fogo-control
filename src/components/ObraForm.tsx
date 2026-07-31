@@ -399,6 +399,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         valor_aditivado: data.valor_aditivado || 0,
         valor_executado: data.valor_executado || 0,
         data_inicio: data.status === 'planejamento' ? null : (data.data_inicio || null),
+        data_inicio_prevista: data.data_inicio_prevista || null,
         tempo_obra: data.tempo_obra || null,
         aditivo_prazo: data.aditivo_prazo || null,
         previsao_termino: data.previsao_termino || null,
