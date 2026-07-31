@@ -62,6 +62,7 @@ const obraSchema = z.object({
   valor_aditivado: z.number().min(0).optional(),
   valor_executado: z.number().min(0).optional(),
   data_inicio: z.string().optional(),
+  data_inicio_prevista: z.string().optional(),
   tempo_obra: z.number().min(0, 'Tempo de obra deve ser positivo').optional(),
   aditivo_prazo: z.number().min(0).optional(),
   previsao_termino: z.string().optional(),
