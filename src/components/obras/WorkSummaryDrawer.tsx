@@ -225,9 +225,10 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
               <InfoRow label="Empresa" value={obra.empresaResponsavel || 'Não informado'} />
               <InfoRow label="Fiscal" value={obra.secretariaResponsavel || 'Não informado'} />
               <InfoRow label="Gestor" value={obra.responsavelProjeto || '—'} />
+              <InfoRow label="Endereço" value={obra.endereco_completo || 'Não informado'} />
               {obra.coordenadas && obra.coordenadas[0] != null && obra.coordenadas[1] != null && (
                 <InfoRow
-                  label="Endereço"
+                  label="Coordenadas"
                   value={
                     <span className="text-xs">
                       {obra.coordenadas[0].toFixed(6)}, {obra.coordenadas[1].toFixed(6)}
