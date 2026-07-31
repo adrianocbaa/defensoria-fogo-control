@@ -2597,6 +2597,50 @@ export type Database = {
           },
         ]
       }
+      obra_inicio_alteracoes: {
+        Row: {
+          changed_by: string | null
+          changed_by_name: string | null
+          created_at: string
+          data_anterior: string | null
+          data_nova: string
+          documento_url: string | null
+          id: string
+          motivo: string
+          obra_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          data_anterior?: string | null
+          data_nova: string
+          documento_url?: string | null
+          id?: string
+          motivo: string
+          obra_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          data_anterior?: string | null
+          data_nova?: string
+          documento_url?: string | null
+          id?: string
+          motivo?: string
+          obra_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_inicio_alteracoes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obras: {
         Row: {
           aditivo_prazo: number | null
@@ -2609,6 +2653,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           data_inicio: string | null
+          data_inicio_prevista: string | null
           data_prevista_inauguracao: string | null
           data_recebimento_definitivo: string | null
           data_recebimento_provisorio: string | null
@@ -2664,6 +2709,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_inicio?: string | null
+          data_inicio_prevista?: string | null
           data_prevista_inauguracao?: string | null
           data_recebimento_definitivo?: string | null
           data_recebimento_provisorio?: string | null
@@ -2719,6 +2765,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_inicio?: string | null
+          data_inicio_prevista?: string | null
           data_prevista_inauguracao?: string | null
           data_recebimento_definitivo?: string | null
           data_recebimento_provisorio?: string | null
