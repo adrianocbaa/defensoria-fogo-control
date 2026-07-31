@@ -228,6 +228,15 @@ function RDOResumo({
 
   const isLoading = calendarLoading && countsLoading;
 
+  // Primeiro acesso: configurar o modo de atividades antes de criar qualquer RDO
+  if (configLoading) {
+    return <RdoLoadingState />;
+  }
+  if (!config) {
+    return <RdoSetupPanel obraId={obraId!} isFiscal={isFiscal} />;
+  }
+
+
   return (
     <div className="space-y-6">
       <RdoSummaryCards counts={counts} isLoading={countsLoading} />
