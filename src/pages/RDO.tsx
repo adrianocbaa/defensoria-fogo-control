@@ -37,6 +37,7 @@ import { RdoAtividadesPanel } from '@/components/rdo/RdoAtividadesPanel';
 import { RdoSetupPanel } from '@/components/rdo/RdoSetupPanel';
 import { RdoModeCard } from '@/components/rdo/RdoModeCard';
 import { useRdoConfig } from '@/hooks/useRdoConfig';
+import { useRdoRestrictions } from '@/hooks/useRdoRestrictions';
 
 
 interface Obra {
