@@ -18,6 +18,8 @@ import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/component
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import { openObraDocument } from '@/lib/obraDocumentUrl';
+import { useCanEditObra } from '@/hooks/useCanEditObra';
+import { AlterarInicioObraModal } from '@/components/obras/AlterarInicioObraModal';
 import { toast } from 'sonner';
 
 
