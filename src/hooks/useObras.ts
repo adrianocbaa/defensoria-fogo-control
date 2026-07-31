@@ -122,6 +122,7 @@ export function useObras(): UseObrasReturn {
         aditivo_prazo: obra.aditivo_prazo || undefined,
         sei_numero: (obra as any).sei_numero || undefined,
         endereco_completo: (obra as any).endereco_completo || undefined,
+        data_inicio_prevista: (obra as any).data_inicio_prevista || undefined,
       } as Obra));
       
       setObras(obrasFormatadas);
