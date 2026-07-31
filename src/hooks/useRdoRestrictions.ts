@@ -28,11 +28,11 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
 
       if (obraError || !obra?.data_inicio) {
         return {
-          canCreateRdo: true,
+          canCreateRdo: false,
           daysWithoutRdo: 0,
           lastRdoDate: null,
           obraStartDate: null,
-          message: null,
+          message: 'Data de início da obra não definida. Informe a data de início no cadastro da obra para liberar o RDO.',
           rdoHabilitado: obra?.rdo_habilitado ?? true,
           obraConcluida: obra?.status === 'concluida',
         };
