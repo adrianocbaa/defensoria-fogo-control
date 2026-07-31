@@ -442,7 +442,14 @@ export function RDO() {
         <Route index element={<Navigate to="resumo" replace />} />
         <Route
           path="resumo"
-          element={<RDOResumo obra={obra} hasEditPermission={hasEditPermission} />}
+          element={
+            <RDOResumo
+              obra={obra}
+              hasEditPermission={hasEditPermission}
+              isFiscal={roleCanEdit && !isContratada}
+            />
+          }
+
         />
         <Route
           path="imprimir"
