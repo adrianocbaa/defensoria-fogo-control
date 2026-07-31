@@ -487,6 +487,14 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
 
       </Accordion>
 
+      <AlterarInicioObraModal
+        open={inicioModalOpen}
+        onOpenChange={setInicioModalOpen}
+        obraId={obra.id}
+        dataInicioAtual={obra.dataInicio || null}
+        dataInicioPrevista={obra.data_inicio_prevista || null}
+        prazoTotalDias={(obra.tempo_obra ?? 0) + (obra.aditivo_prazo ?? 0)}
+      />
     </div>
   );
 }
