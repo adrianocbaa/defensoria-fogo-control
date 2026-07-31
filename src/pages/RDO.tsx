@@ -35,6 +35,7 @@ import { useDiasSemExpediente } from '@/hooks/useDiasSemExpediente';
 import { RdoImprimirPanel } from '@/components/rdo/RdoImprimirPanel';
 import { RdoAtividadesPanel } from '@/components/rdo/RdoAtividadesPanel';
 import { RdoSetupPanel } from '@/components/rdo/RdoSetupPanel';
+import { RdoModeCard } from '@/components/rdo/RdoModeCard';
 import { useRdoConfig } from '@/hooks/useRdoConfig';
 
 
@@ -239,6 +240,12 @@ function RDOResumo({
 
   return (
     <div className="space-y-6">
+      <RdoModeCard
+        obraId={obraId!}
+        mode={config.modo_atividades}
+        canChange={isFiscal && hasEditPermission}
+      />
+
       <RdoSummaryCards counts={counts} isLoading={countsLoading} />
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
