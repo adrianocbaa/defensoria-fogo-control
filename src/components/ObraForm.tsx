@@ -935,21 +935,35 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                   <CardTitle>Prazos</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField control={form.control} name="data_inicio_prevista" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data prevista de início (NAD)</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormDescription>Data formalizada por e-mail junto com a NAD. Não muda com antecipações.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
                   <FormField control={form.control} name="data_inicio" render={({ field }) => {
                     const isPlanejamento = form.watch('status') === 'planejamento';
                     return (
                       <FormItem>
-                        <FormLabel>Data de Início</FormLabel>
+                        <FormLabel>Data de Início (efetiva)</FormLabel>
                         <FormControl>
                           <Input type="date" disabled={isPlanejamento} {...field} />
                         </FormControl>
-                        {isPlanejamento && (
-                          <FormDescription>Disponível após mudar o status para "Em Andamento"</FormDescription>
-                        )}
+                        <FormDescription>
+                          {isPlanejamento
+                            ? 'Disponível após mudar o status para "Em Andamento"'
+                            : 'Só deve ser alterada após formalização da contratada. O RDO só pode ser preenchido a partir desta data.'}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     );
                   }} />
+
 
                   <FormField control={form.control} name="tempo_obra" render={({ field }) => (
                     <FormItem>
