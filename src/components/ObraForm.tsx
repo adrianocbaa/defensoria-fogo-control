@@ -295,6 +295,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       valor_aditivado: (initialData as any)?.valor_aditivado || 0,
       valor_executado: initialData?.valor_executado || 0,
       data_inicio: initialData?.data_inicio || '',
+      data_inicio_prevista: (initialData as any)?.data_inicio_prevista || '',
       tempo_obra: (initialData as any)?.tempo_obra || undefined,
       aditivo_prazo: (initialData as any)?.aditivo_prazo || undefined,
       previsao_termino: initialData?.previsao_termino || '',
