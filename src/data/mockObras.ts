@@ -23,6 +23,7 @@ export interface Obra {
   data_termino_real?: string;
   tempo_obra?: number;
   aditivo_prazo?: number;
+  endereco_completo?: string;
 }
 
 // Obras de exemplo demonstrativas - apenas para visitantes não autenticados
