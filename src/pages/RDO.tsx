@@ -34,6 +34,9 @@ import { RdoLoadingState, RdoErrorState, RdoEmptyMonth } from '@/components/rdo/
 import { useDiasSemExpediente } from '@/hooks/useDiasSemExpediente';
 import { RdoImprimirPanel } from '@/components/rdo/RdoImprimirPanel';
 import { RdoAtividadesPanel } from '@/components/rdo/RdoAtividadesPanel';
+import { RdoSetupPanel } from '@/components/rdo/RdoSetupPanel';
+import { useRdoConfig } from '@/hooks/useRdoConfig';
+
 
 interface Obra {
   id: string;
