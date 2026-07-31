@@ -34,6 +34,9 @@ import { RdoLoadingState, RdoErrorState, RdoEmptyMonth } from '@/components/rdo/
 import { useDiasSemExpediente } from '@/hooks/useDiasSemExpediente';
 import { RdoImprimirPanel } from '@/components/rdo/RdoImprimirPanel';
 import { RdoAtividadesPanel } from '@/components/rdo/RdoAtividadesPanel';
+import { RdoSetupPanel } from '@/components/rdo/RdoSetupPanel';
+import { useRdoConfig } from '@/hooks/useRdoConfig';
+
 
 interface Obra {
   id: string;
@@ -154,12 +157,16 @@ function todayIso() {
 function RDOResumo({
   obra,
   hasEditPermission,
+  isFiscal,
 }: {
   obra: Obra;
   hasEditPermission: boolean;
+  isFiscal: boolean;
 }) {
   const { obraId } = useParams();
   const navigate = useNavigate();
+  const { config, isLoading: configLoading } = useRdoConfig(obraId!);
+
 
   const initialMonth =
     obra.status === 'concluida' && obra.data_termino_real
@@ -220,6 +227,15 @@ function RDOResumo({
   }
 
   const isLoading = calendarLoading && countsLoading;
+
+  // Primeiro acesso: configurar o modo de atividades antes de criar qualquer RDO
+  if (configLoading) {
+    return <RdoLoadingState />;
+  }
+  if (!config) {
+    return <RdoSetupPanel obraId={obraId!} isFiscal={isFiscal} />;
+  }
+
 
   return (
     <div className="space-y-6">
@@ -426,7 +442,14 @@ export function RDO() {
         <Route index element={<Navigate to="resumo" replace />} />
         <Route
           path="resumo"
-          element={<RDOResumo obra={obra} hasEditPermission={hasEditPermission} />}
+          element={
+            <RDOResumo
+              obra={obra}
+              hasEditPermission={hasEditPermission}
+              isFiscal={roleCanEdit && !isContratada}
+            />
+          }
+
         />
         <Route
           path="imprimir"
