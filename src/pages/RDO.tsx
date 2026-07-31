@@ -157,12 +157,16 @@ function todayIso() {
 function RDOResumo({
   obra,
   hasEditPermission,
+  isFiscal,
 }: {
   obra: Obra;
   hasEditPermission: boolean;
+  isFiscal: boolean;
 }) {
   const { obraId } = useParams();
   const navigate = useNavigate();
+  const { config, isLoading: configLoading } = useRdoConfig(obraId!);
+
 
   const initialMonth =
     obra.status === 'concluida' && obra.data_termino_real
