@@ -271,13 +271,33 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
           <AccordionContent className="px-4 pb-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Data de início:</span>
-                <p className="text-sm">{obra.dataInicio ? formatDate(obra.dataInicio) : 'Não informado'}</p>
+                <span className="text-sm font-medium text-muted-foreground">Início previsto (NAD):</span>
+                <p className="text-sm">{obra.data_inicio_prevista ? formatDate(obra.data_inicio_prevista) : 'Não informado'}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">Data de início (efetiva):</span>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm">{obra.dataInicio ? formatDate(obra.dataInicio) : 'Não informado'}</p>
+                  {canEditObra && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setInicioModalOpen(true)}
+                    >
+                      Alterar
+                    </Button>
+                  )}
+                </div>
+                {obra.data_inicio_prevista && obra.dataInicio && obra.data_inicio_prevista !== obra.dataInicio && (
+                  <p className="text-xs text-muted-foreground">Antecipada/adiada em relação à NAD</p>
+                )}
               </div>
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Data prevista de término:</span>
                 <p className="text-sm">{obra.previsaoTermino ? formatDate(obra.previsaoTermino) : 'Não informado'}</p>
               </div>
+
               {/* Término da Obra - exibida apenas quando obra está concluída */}
               {obra.status === 'concluida' && obra.data_termino_real && (
                 <div>
