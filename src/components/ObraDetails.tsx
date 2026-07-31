@@ -239,6 +239,10 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
                 <span className="text-sm font-medium text-muted-foreground">Gestor do Contrato:</span>
                 <p className="text-sm">{obra.responsavelProjeto || '-'}</p>
               </div>
+              <div className="md:col-span-2">
+                <span className="text-sm font-medium text-muted-foreground">Endereço:</span>
+                <p className="text-sm">{obra.endereco_completo || 'Não informado'}</p>
+              </div>
               {obra.coordenadas && obra.coordenadas[0] != null && obra.coordenadas[1] != null && (
                 <div className="md:col-span-2">
                   <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
