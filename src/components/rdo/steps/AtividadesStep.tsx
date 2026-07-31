@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,12 +58,13 @@ export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExis
   // Buscar configuração da obra
   const { config, isLoading: isLoadingConfig, createConfig, updateConfig, isCreating } = useRdoConfig(obraId);
 
-  // Criar RDO automaticamente quando entrar nesta aba se não existir
+  // Criar RDO automaticamente ao entrar nesta aba se não existir (apenas uma vez)
+  const ensureCalledRef = useRef(false);
   useEffect(() => {
     let isMounted = true;
-    
-    // Criar RDO imediatamente ao entrar na aba de atividades, mesmo sem preencher outros passos
-    if (!currentReportId && ensureRdoExists) {
+
+    if (!currentReportId && ensureRdoExists && !ensureCalledRef.current) {
+      ensureCalledRef.current = true;
       ensureRdoExists()
         .then((newId) => {
           if (isMounted && newId) {
@@ -71,14 +72,16 @@ export function AtividadesStep({ reportId, obraId, data, disabled, ensureRdoExis
           }
         })
         .catch((error) => {
+          ensureCalledRef.current = false;
           console.error('Erro ao criar RDO automaticamente:', error);
         });
     }
-    
+
     return () => {
       isMounted = false;
     };
   }, [currentReportId, ensureRdoExists]);
+
 
   // Sincronizar reportId quando vier do parent
   useEffect(() => {
