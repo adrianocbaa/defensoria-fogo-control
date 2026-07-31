@@ -37,6 +37,7 @@ import { RdoAtividadesPanel } from '@/components/rdo/RdoAtividadesPanel';
 import { RdoSetupPanel } from '@/components/rdo/RdoSetupPanel';
 import { RdoModeCard } from '@/components/rdo/RdoModeCard';
 import { useRdoConfig } from '@/hooks/useRdoConfig';
+import { useRdoRestrictions } from '@/hooks/useRdoRestrictions';
 
 
 interface Obra {
@@ -366,7 +367,13 @@ export function RDO() {
     };
   }, [obraId]);
 
+  const { data: restrictions } = useRdoRestrictions(obraId!, isContratada);
+
   const onNewRdo = () => {
+    if (restrictions && !restrictions.canCreateRdo) {
+      toast.error(restrictions.message ?? 'Não é possível criar RDO nesta obra no momento.');
+      return;
+    }
     const targetDate = firstMissing?.firstMissingDate ?? todayIso();
     navigate(`/obras/${obraId}/rdo/diario?data=${targetDate}`);
   };

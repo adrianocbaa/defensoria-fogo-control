@@ -28,11 +28,11 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
 
       if (obraError || !obra?.data_inicio) {
         return {
-          canCreateRdo: true,
+          canCreateRdo: false,
           daysWithoutRdo: 0,
           lastRdoDate: null,
           obraStartDate: null,
-          message: null,
+          message: 'Data de início da obra não definida. Informe a data de início no cadastro da obra para liberar o RDO.',
           rdoHabilitado: obra?.rdo_habilitado ?? true,
           obraConcluida: obra?.status === 'concluida',
         };
@@ -74,18 +74,19 @@ export function useRdoRestrictions(obraId: string, isContratada: boolean) {
       const today = startOfDay(new Date());
       const obraStartDate = parseISO(obra.data_inicio);
       
-      // Se a obra não iniciou ainda, pode criar RDO
+      // Se a obra ainda não iniciou, não é possível registrar RDO
       if (obraStartDate > today) {
         return {
-          canCreateRdo: true,
+          canCreateRdo: false,
           daysWithoutRdo: 0,
           lastRdoDate: null,
           obraStartDate: obra.data_inicio,
-          message: null,
+          message: `A obra inicia em ${format(obraStartDate, 'dd/MM/yyyy')}. O RDO só pode ser preenchido a partir dessa data. Antecipações devem ser formalizadas e atualizadas no cadastro da obra.`,
           rdoHabilitado: true,
           obraConcluida: false,
         };
       }
+
 
       // Criar set de datas com RDO para busca rápida
       const rdoDates = new Set<string>();

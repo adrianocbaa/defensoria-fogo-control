@@ -18,6 +18,8 @@ import { DetailsLoadingSkeleton, PhotoGalleryLoadingSkeleton } from '@/component
 import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import { openObraDocument } from '@/lib/obraDocumentUrl';
+import { useCanEditObra } from '@/hooks/useCanEditObra';
+import { AlterarInicioObraModal } from '@/components/obras/AlterarInicioObraModal';
 import { toast } from 'sonner';
 
 
@@ -73,6 +75,8 @@ const formatDate = (dateString: string) => {
 
 function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: () => void; loading?: boolean }) {
   const [photosLoading, setPhotosLoading] = useState(true);
+  const [inicioModalOpen, setInicioModalOpen] = useState(false);
+  const { canEditObra } = useCanEditObra(obra.id);
   const navigate = useNavigate();
   
   // Buscar dados financeiros das medições
@@ -271,13 +275,33 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
           <AccordionContent className="px-4 pb-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Data de início:</span>
-                <p className="text-sm">{obra.dataInicio ? formatDate(obra.dataInicio) : 'Não informado'}</p>
+                <span className="text-sm font-medium text-muted-foreground">Início previsto (NAD):</span>
+                <p className="text-sm">{obra.data_inicio_prevista ? formatDate(obra.data_inicio_prevista) : 'Não informado'}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">Data de início (efetiva):</span>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm">{obra.dataInicio ? formatDate(obra.dataInicio) : 'Não informado'}</p>
+                  {canEditObra && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setInicioModalOpen(true)}
+                    >
+                      Alterar
+                    </Button>
+                  )}
+                </div>
+                {obra.data_inicio_prevista && obra.dataInicio && obra.data_inicio_prevista !== obra.dataInicio && (
+                  <p className="text-xs text-muted-foreground">Antecipada/adiada em relação à NAD</p>
+                )}
               </div>
               <div>
                 <span className="text-sm font-medium text-muted-foreground">Data prevista de término:</span>
                 <p className="text-sm">{obra.previsaoTermino ? formatDate(obra.previsaoTermino) : 'Não informado'}</p>
               </div>
+
               {/* Término da Obra - exibida apenas quando obra está concluída */}
               {obra.status === 'concluida' && obra.data_termino_real && (
                 <div>
@@ -463,6 +487,14 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
 
       </Accordion>
 
+      <AlterarInicioObraModal
+        open={inicioModalOpen}
+        onOpenChange={setInicioModalOpen}
+        obraId={obra.id}
+        dataInicioAtual={obra.dataInicio || null}
+        dataInicioPrevista={obra.data_inicio_prevista || null}
+        prazoTotalDias={(obra.tempo_obra ?? 0) + (obra.aditivo_prazo ?? 0)}
+      />
     </div>
   );
 }

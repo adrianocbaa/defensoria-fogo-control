@@ -62,6 +62,7 @@ const obraSchema = z.object({
   valor_aditivado: z.number().min(0).optional(),
   valor_executado: z.number().min(0).optional(),
   data_inicio: z.string().optional(),
+  data_inicio_prevista: z.string().optional(),
   tempo_obra: z.number().min(0, 'Tempo de obra deve ser positivo').optional(),
   aditivo_prazo: z.number().min(0).optional(),
   previsao_termino: z.string().optional(),
@@ -132,7 +133,7 @@ interface StepDef {
 const STEPS: StepDef[] = [
   { key: 1, label: 'Identificação', short: 'Identificação', fields: ['nome', 'municipio', 'sei_numero', 'status', 'tipo'] },
   { key: 2, label: 'Contrato e Valores', short: 'Contrato', fields: ['n_contrato', 'valor_total', 'valor_aditivado', 'valor_executado', 'empresa_id', 'regiao'] },
-  { key: 3, label: 'Prazos', short: 'Prazos', fields: ['data_inicio', 'tempo_obra', 'aditivo_prazo', 'previsao_termino'] },
+  { key: 3, label: 'Prazos', short: 'Prazos', fields: ['data_inicio_prevista', 'data_inicio', 'tempo_obra', 'aditivo_prazo', 'previsao_termino'] },
   { key: 4, label: 'Responsáveis', short: 'Responsáveis', fields: ['fiscal_id', 'fiscal_substituto_id', 'responsavel_projeto_id'] },
   { key: 5, label: 'Configurações', short: 'Configurações', fields: ['rdo_habilitado'] },
   { key: 6, label: 'Fotos e Documentos', short: 'Anexos', fields: [] },
@@ -294,6 +295,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       valor_aditivado: (initialData as any)?.valor_aditivado || 0,
       valor_executado: initialData?.valor_executado || 0,
       data_inicio: initialData?.data_inicio || '',
+      data_inicio_prevista: (initialData as any)?.data_inicio_prevista || '',
       tempo_obra: (initialData as any)?.tempo_obra || undefined,
       aditivo_prazo: (initialData as any)?.aditivo_prazo || undefined,
       previsao_termino: initialData?.previsao_termino || '',
@@ -397,6 +399,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
         valor_aditivado: data.valor_aditivado || 0,
         valor_executado: data.valor_executado || 0,
         data_inicio: data.status === 'planejamento' ? null : (data.data_inicio || null),
+        data_inicio_prevista: data.data_inicio_prevista || null,
         tempo_obra: data.tempo_obra || null,
         aditivo_prazo: data.aditivo_prazo || null,
         previsao_termino: data.previsao_termino || null,
@@ -935,21 +938,35 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                   <CardTitle>Prazos</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField control={form.control} name="data_inicio_prevista" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data prevista de início (NAD)</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormDescription>Data formalizada por e-mail junto com a NAD. Não muda com antecipações.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
                   <FormField control={form.control} name="data_inicio" render={({ field }) => {
                     const isPlanejamento = form.watch('status') === 'planejamento';
                     return (
                       <FormItem>
-                        <FormLabel>Data de Início</FormLabel>
+                        <FormLabel>Data de Início (efetiva)</FormLabel>
                         <FormControl>
                           <Input type="date" disabled={isPlanejamento} {...field} />
                         </FormControl>
-                        {isPlanejamento && (
-                          <FormDescription>Disponível após mudar o status para "Em Andamento"</FormDescription>
-                        )}
+                        <FormDescription>
+                          {isPlanejamento
+                            ? 'Disponível após mudar o status para "Em Andamento"'
+                            : 'Só deve ser alterada após formalização da contratada. O RDO só pode ser preenchido a partir desta data.'}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     );
                   }} />
+
 
                   <FormField control={form.control} name="tempo_obra" render={({ field }) => (
                     <FormItem>

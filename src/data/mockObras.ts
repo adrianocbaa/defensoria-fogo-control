@@ -24,6 +24,7 @@ export interface Obra {
   tempo_obra?: number;
   aditivo_prazo?: number;
   endereco_completo?: string;
+  data_inicio_prevista?: string;
 }
 
 // Obras de exemplo demonstrativas - apenas para visitantes não autenticados
