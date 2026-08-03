@@ -4355,8 +4355,14 @@ export function Medicao() {
                       </div>
                     ) : (
                       <div className="text-2xl font-bold mt-1">
-                        {formatCurrency(((obra?.percentual_desconto ?? 0) / 100) * resumoFinanceiro.valorContratoPosAditivo)}
+                        {(() => {
+                          const p = (obra?.percentual_desconto ?? 0) / 100;
+                          const liquido = resumoFinanceiro.valorContratoPosAditivo;
+                          const bruto = p < 1 ? liquido / (1 - p) : 0;
+                          return formatCurrency(bruto - liquido);
+                        })()}
                       </div>
+
                     )}
                   </CardContent>
                 </Card>
