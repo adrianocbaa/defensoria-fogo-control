@@ -262,8 +262,9 @@ serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   try {
-    const subject: string = (payload.subject || "Chamado sem assunto").toString().trim();
-    const textBody: string = (payload.text || payload.html || "").toString();
+    const subject: string = sanitizeText((payload.subject || "Chamado sem assunto").toString().trim());
+    const textBody: string = sanitizeText((payload.text || payload.html || "").toString());
+    const htmlBody: string | null = payload.html ? sanitizeText(String(payload.html)) : null;
     const fromAddr: string =
       payload.from?.address ||
       payload.from?.email ||
