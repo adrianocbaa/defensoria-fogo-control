@@ -161,6 +161,16 @@ function detectPriority(subject: string, body: string): "Alta" | "Média" | "Bai
   return "Média";
 }
 
+// Remove NULs e surrogates soltos que o Postgres rejeita ("unsupported Unicode escape sequence")
+function sanitizeText(s: string): string {
+  if (!s) return "";
+  return s
+    .replace(/\u0000/g, "")
+    .replace(/\\u0000/gi, "")
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
+    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "$1");
+}
+
 function sanitizeFilename(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
 }
@@ -324,7 +334,7 @@ serve(async (req) => {
           to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
           subject,
           body_text: textBody.slice(0, 20000),
-          body_html: payload.html || null,
+          body_html: htmlBody,
           message_id: messageId ?? null,
           in_reply_to: inReplyTo ?? null,
         });
@@ -437,7 +447,7 @@ serve(async (req) => {
       to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
       subject,
       body_text: textBody.slice(0, 20000),
-      body_html: payload.html || null,
+      body_html: htmlBody,
       message_id: messageId ?? null,
       in_reply_to: inReplyTo ?? null,
     });
