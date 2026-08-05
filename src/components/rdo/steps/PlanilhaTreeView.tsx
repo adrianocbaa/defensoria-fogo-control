@@ -192,11 +192,10 @@ export function PlanilhaTreeView({
           isMacro && "bg-muted/30",
           isBlockedByAdministracao && "opacity-60"
         )}
-        style={{ paddingLeft: `${level * 1.5}rem` }}
       >
         <div className="flex items-center gap-2 py-3 px-3">
           {/* Ícone de expansão */}
-          <div className="w-6 flex-shrink-0">
+          <div className="w-6 flex-shrink-0" style={{ marginLeft: `${level * 1.25}rem` }}>
             {hasChildren && (
               <Button
                 variant="ghost"
