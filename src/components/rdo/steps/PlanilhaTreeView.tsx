@@ -194,7 +194,7 @@ export function PlanilhaTreeView({
         )}
         style={{ paddingLeft: `${level * 1.5}rem` }}
       >
-        <div className="flex items-center gap-2 py-3 px-3 min-w-max">
+        <div className="flex items-center gap-2 py-3 px-3">
           {/* Ícone de expansão */}
           <div className="w-6 flex-shrink-0">
             {hasChildren && (
@@ -226,9 +226,9 @@ export function PlanilhaTreeView({
           </div>
 
           {/* Descrição */}
-          <div className="flex-1 min-w-[200px]">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium truncate">{node.descricao}</p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-sm font-medium truncate" title={node.descricao}>{node.descricao}</p>
               {isMacro && (
                 <Badge variant="secondary" className="text-xs">MACRO</Badge>
               )}
@@ -485,11 +485,11 @@ export function PlanilhaTreeView({
           <div className="overflow-x-auto">
             {/* Cabeçalho fixo */}
             <div className="border-b bg-muted/50 sticky top-0 z-10">
-              <div className="flex items-center gap-2 py-2 px-3 text-xs font-semibold text-muted-foreground min-w-max">
+              <div className="flex items-center gap-2 py-2 px-3 text-xs font-semibold text-muted-foreground">
                 <div className="w-6 flex-shrink-0"></div>
                 <div className="w-20 flex-shrink-0">Item</div>
                 <div className="w-24 flex-shrink-0">Código</div>
-                <div className="flex-1 min-w-[200px]">Descrição</div>
+                <div className="flex-1 min-w-0">Descrição</div>
                 <div className="w-16 flex-shrink-0 text-center">Und</div>
                 <div className="w-24 flex-shrink-0 text-right" title="Quantidade ajustada conforme aditivos">Quant. Atual</div>
                 <div className="w-32 flex-shrink-0 text-center">Executado (RDO)</div>
