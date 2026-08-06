@@ -36,15 +36,21 @@ export function unitarioLiquido(unitarioBruto: number, pctDesconto: number): num
   return bruto * (1 - pct / 100);
 }
 
-/** Total do item: truncar2(quantidade × unitário líquido). */
+/**
+ * Total do item, exatamente como a planilha orçamentária calcula:
+ * 1) total bruto  = TRUNCAR(quantidade × unitário bruto; 2)
+ * 2) total líquido = TRUNCAR(total bruto × (1 - desconto); 2)
+ */
 export function totalItem(
   quantidade: number,
   unitarioBruto: number,
   pctDesconto: number
 ): number {
   const qtd = Number(quantidade) || 0;
-  return truncar2(qtd * unitarioLiquido(unitarioBruto, pctDesconto));
+  const bruto = truncar2(qtd * (Number(unitarioBruto) || 0));
+  return totalComDesconto(bruto, pctDesconto);
 }
+
 
 /** Aplica desconto sobre um total bruto e trunca em 2 casas. */
 export function totalComDesconto(totalBruto: number, pctDesconto: number): number {

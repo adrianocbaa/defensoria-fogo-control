@@ -956,6 +956,16 @@ export function Medicao() {
     return Number(item.valorUnitario || 0);
   };
 
+  // Unitário BRUTO do item (base da planilha). Fallback: reverte o desconto do líquido.
+  const obterUnitarioBrutoItem = (item: Item) => {
+    const bruto = Number(item.valorUnitarioBruto || 0);
+    if (Math.abs(bruto) > 1e-12) return bruto;
+    const liquido = obterValorUnitarioPrecisoItem(item);
+    return pctDescontoObra > 0 ? liquido / (1 - pctDescontoObra / 100) : liquido;
+  };
+
+
+
 
   const obterValorUnitarioCalculoAditivo = (
     item: Item,
@@ -1204,16 +1214,17 @@ export function Medicao() {
                   novosDados[itemId].valorUnitario = obterValorUnitarioPrecisoItem(item);
                 }
               } else if (valorUnitarioAditivo > 0) {
-                // Usar valor unitário específico do aditivo (sem truncamento)
-                novosDados[itemId].total = valorNumerico * valorUnitarioAditivo;
+                // Total pela regra da planilha: TRUNCAR(qtd × bruto) × (1 - desconto)
+                novosDados[itemId].total = totalItem(valorNumerico, obterUnitarioBrutoItem(item), pctDescontoObra);
                 novosDados[itemId].valorUnitario = valorUnitarioAditivo; // Preservar
               } else {
                 // Para itens sem valor unitário específico salvo no aditivo,
                 // derivar o valor unitário preciso do total/quantidade do item-base.
                 const valorUnitarioPreciso = obterValorUnitarioPrecisoItem(item);
-                novosDados[itemId].total = valorNumerico * valorUnitarioPreciso;
+                novosDados[itemId].total = totalItem(valorNumerico, obterUnitarioBrutoItem(item), pctDescontoObra);
                 novosDados[itemId].valorUnitario = valorUnitarioPreciso;
               }
+
             }
           }
           
@@ -2560,7 +2571,8 @@ export function Medicao() {
               const valorUnitarioFinal = Math.abs(vuPrecisoBase) > 1e-12
                 ? vuPrecisoBase
                 : (quant !== 0 ? valorTotalComDesconto / quant : valorUnitBDI);
-              const totalFinal = truncar2(quant * valorUnitarioFinal);
+              const totalFinal = totalItem(quant, obterUnitarioBrutoItem(itemExistente), pctDescontoObra);
+
 
               
               itensContratuaisDoAditivo.push({
@@ -2857,7 +2869,7 @@ export function Medicao() {
               const valorUnitarioFinal = Math.abs(vuPrecisoBase) > 1e-12
                 ? vuPrecisoBase
                 : (quant !== 0 ? valorTotalComDesconto / quant : valorUnitBDI);
-              const totalFinal = truncar2(quant * valorUnitarioFinal);
+              const totalFinal = totalItem(quant, obterUnitarioBrutoItem(itemExistente), pctDescontoObra);
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
