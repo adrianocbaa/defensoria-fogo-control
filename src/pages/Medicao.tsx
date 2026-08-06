@@ -2637,6 +2637,8 @@ export function Medicao() {
         unidade: it.und,
         quantidade: it.quantidade,
         valor_unitario: it.valorUnitario,
+        valor_unitario_bruto: it.valorUnitarioBruto ?? 0,
+
         valor_total: it.valorTotal, // 0 para não afetar Valor Total Original
         total_contrato: it.totalContrato,
         nivel: it.nivel,
