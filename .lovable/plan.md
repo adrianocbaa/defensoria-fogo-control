@@ -1,114 +1,63 @@
-# Melhoria do fluxo de manutenção por e-mail
+# Precisão decimal: unitário bruto + desconto centralizado
 
-Implementação em 4 blocos, na ordem **b → a → c → d** (o thread é fundação para os outros três).
+## Problema
 
----
+Hoje o sistema guarda apenas o valor já com desconto e deriva o unitário líquido por
+`total_com_desconto ÷ quantidade`. Como o total importado já vem truncado em 2 casas,
+essa divisão é irreversível: cada linha produz um unitário ligeiramente diferente
+(ex.: 19,754884 no contrato vs 19,756797 no aditivo) e o mesmo item deixa de "bater"
+entre planilha contratual, aditivo e medição.
 
-## Bloco 1 — Threading `[MNT #NNNN]` (item b)
+A correção é inverter a ordem: guardar o **unitário bruto** da planilha e aplicar o
+desconto de forma centralizada, sempre na mesma função, no momento do cálculo.
 
-**Schema**
+## O que muda
 
-- Nova tabela `maintenance_ticket_emails`: `ticket_id`, `direction` (`inbound`/`outbound`), `from_addr`, `to_addrs[]`, `subject`, `body_text`, `body_html`, `message_id`, `in_reply_to`, `attachments jsonb`, `received_at`.
-- Em `maintenance_tickets`: já existe `ticket_number` (auto). Vamos usá-lo como chave do thread.
-- Índice único em `message_id` para deduplicação.
+### 1. Banco de dados
+- `orcamento_items`: adicionar `valor_unitario_bruto` (numeric) — unitário original da planilha, sem desconto.
+- `obras`: garantir que o percentual de desconto do contrato fique persistido em um único campo canônico (reaproveitar o existente; criar apenas se não houver).
+- `aditivo_items`: adicionar `valor_unitario_bruto` para o mesmo tratamento nos aditivos.
+- Backfill: preencher `valor_unitario_bruto` dos registros existentes a partir de
+  `valor_total_sem_desconto ÷ quantidade` quando disponível; quando não houver, manter o
+  unitário atual (item legado marcado, sem reprocessamento).
 
-**Edge function `inbound-maintenance-email` (extensão)**
+### 2. Utilitário único de arredondamento
+Novo `src/lib/precisao.ts`:
+- `truncar2(valor)` — truncamento em centavos usando aritmética inteira (evita erro de ponto flutuante).
+- `aplicarDesconto(unitarioBruto, pctDesconto)` — unitário líquido não truncado.
+- `totalItem(qtd, unitarioBruto, pctDesconto)` — `truncar2(qtd × unitário líquido)`.
+Todo cálculo de contrato, aditivo e medição passa a chamar exclusivamente essas funções.
 
-- Antes de criar nova tarefa: extrair `#NNNN` do subject/in-reply-to.
-- Se casar com `ticket_number` existente → grava só em `maintenance_ticket_emails` (não cria nova tarefa) e reabre se estiver em "Concluído".
-- Se não casar → cria tarefa **e** grava o primeiro e-mail na tabela de thread.
+### 3. Importação de planilha (`ImportarPlanilha.tsx`)
+- Ler o unitário bruto direto da coluna de valor unitário (com BDI) da planilha, em vez de
+  derivar por divisão.
+- Persistir `valor_unitario_bruto` + `valor_total_sem_desconto` e calcular total via `totalItem`.
+- Remover a exceção hardcoded `OBRA_SEM_TRUNCAR_DESCONTO`, que existe hoje só para contornar o problema.
 
-**Envios (nova função `send-maintenance-email`)**
+### 4. Aditivos (`useAditivoItems.ts` / modal de aditivo)
+- Usar o `valor_unitario_bruto` do item contratual como base do aditivo (em vez de recalcular
+  a partir do total líquido), aplicando o mesmo desconto pela função central.
+- Itens extracontratuais recebem unitário bruto informado na criação.
 
-- Wrapper sobre Resend com from `chamados@sidif.com.br`.
-- Sempre prefixa subject com `[MNT #NNNN]`.
-- Grava a saída em `maintenance_ticket_emails` (direction=outbound).
+### 5. Medição
+- Recalcular percentuais e totais sobre o unitário bruto + desconto centralizado.
+- Medições já **bloqueadas** ficam intocadas: os valores congelados (`*_congelado`) continuam
+  sendo a fonte de verdade, então nenhum fechamento histórico muda.
 
-**UI**
+## Ordem de execução
 
-- Dentro do `TicketDetailsSheet`, nova aba/seção "Conversa": lista o primeiro inbound + as respostas do solicitante + os e-mails automáticos enviados pelo sistema.
+1. Migração de schema + backfill.
+2. `src/lib/precisao.ts` e testes dos casos citados (contrato x aditivo do mesmo item).
+3. Importador da planilha.
+4. Aditivos.
+5. Medição e relatórios/exportações.
+6. Validação na obra de Alta Floresta e em Nobres, comparando contra a planilha original.
 
----
+## Notas técnicas
 
-## Bloco 2 — Rascunhos com revisão obrigatória (item a)
-
-**Schema**
-
-- Coluna `is_draft boolean default false` em `maintenance_tickets`.
-- Tarefas criadas por e-mail entram com `is_draft = true`.
-
-**UI**
-
-- Card no Kanban: badge amarelo "Rascunho — revisar" quando `is_draft`.
-- Clique no card de rascunho → abre modal `ReviewDraftModal` (obrigatório): confirmar/ajustar título, prioridade, núcleo, servidor responsável. Botão "Publicar" seta `is_draft = false`. Sem botão de fechar sem publicar (só cancela e mantém rascunho).
-- Rascunhos ficam visíveis só para admins/responsáveis de manutenção (RLS já cobre).
-
----
-
-## Bloco 3 — Confirmação do solicitante (item c)
-
-**Schema**
-
-- Colunas em `maintenance_tickets`: `confirmation_token uuid`, `confirmation_sent_at`, `confirmation_reminder_sent_at`, `confirmed_at`, `confirmed_source` (`solicitante`/`auto`).
-
-**Fluxo**
-
-- Ao mover para "Concluído": trigger dispara envio automático de e-mail via `send-maintenance-email` com link único `https://sidif.lovable.app/confirmacao/{token}`.
-- Página pública nova `/confirmacao/:token` (sem login): mostra resumo do chamado + fotos de execução + botão "Confirmar serviço executado".
-- Ao confirmar: tarefa vira `finalized_at = now()`, `confirmed_source = 'solicitante'`, gera PDF (Bloco 4) e anexa.
-
-**Cron (7 dias)**
-
-- Nova edge function `check-maintenance-confirmations` agendada via `pg_cron` (diária).
-- Se `confirmation_sent_at` > 3 dias e sem `confirmation_reminder_sent_at` → envia lembrete corporativo ("Prezado(a), consta em nossos sistemas... solicitamos gentileza confirmar... caso não haja manifestação em até 4 dias, a solicitação será considerada tacitamente atendida...").
-- Se `confirmation_sent_at` > 7 dias → auto-finaliza com `confirmed_source = 'auto'`, gera PDF e arquiva.
-
----
-
-## Bloco 4 — PDF de arquivamento (item d)
-
-**Edge function `generate-maintenance-ticket-pdf**`
-
-- Renderiza: cabeçalho (nº chamado, núcleo, datas, prioridade), thread completo (inbound + outbound + respostas), fotos de referência **e** fotos de execução embutidas, histórico de status, nota de finalização.
-- Salva no bucket `documents` em `maintenance-archive/{ticket_id}/chamado-{ticket_number}.pdf`.
-- Grava `archive_pdf_url` na tabela.
-- Chamada quando: solicitante confirma OU cron auto-finaliza OU responsável clica manualmente "Gerar PDF" em tarefas já finalizadas.
-
-**Bloco 4b — Opcional (fica para depois se você quiser)**
-
-- Mover e-mail original para pasta IMAP "MANUTENÇÕES REALIZADAS/2026" — depende de credenciais IMAP externas; não incluído nesta rodada.
-
----
-
-## Detalhes técnicos
-
-**Migrations em ordem**
-
-1. `maintenance_ticket_emails` + índices + RLS + GRANTs.
-2. Colunas novas em `maintenance_tickets` (`is_draft`, `confirmation_*`, `archive_pdf_url`).
-3. Trigger `on_ticket_concluido_send_confirmation` que insere um job leve numa fila (tabela `maintenance_ticket_email_outbox`) processada pelo cron (evita chamar HTTP dentro de trigger).
-4. Cron `pg_cron` diário chamando `check-maintenance-confirmations`.
-
-**Edge functions novas**
-
-- `send-maintenance-email` (wrapper Resend + grava thread)
-- `inbound-maintenance-email` (estender: thread + rascunho)
-- `check-maintenance-confirmations` (cron: lembrete + auto-finalização)
-- `generate-maintenance-ticket-pdf`
-
-**Secrets já existentes:** `RESEND_API_KEY` ✅.
-
-**UI nova**
-
-- `ReviewDraftModal.tsx`
-- Aba "Conversa" dentro do `TicketDetailsSheet`
-- Página pública `/confirmacao/:token` (`PublicMaintenanceConfirmation.tsx`)
-- Badge "Rascunho" no card do Kanban
-
----
-
-## Escopo desta rodada
-
-Vou implementar tudo (Blocos 1–4), pois cada um depende do anterior. O Bloco 4b (mover e-mail via IMAP) fica para depois porque exige credenciais que não temos.
-
-&nbsp;
+- Sem nova dependência: o truncamento usa inteiros em centavos, o que já resolve o que o
+  `decimal.js` resolveria nesse escopo.
+- O valor apresentado ao usuário continua com 2 casas; a diferença é que a base do cálculo
+  deixa de ser um número já truncado.
+- Obras com medições fechadas mantêm o histórico congelado; a nova regra vale para os cálculos
+  a partir da próxima medição.
