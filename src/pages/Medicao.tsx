@@ -2571,7 +2571,8 @@ export function Medicao() {
               const valorUnitarioFinal = Math.abs(vuPrecisoBase) > 1e-12
                 ? vuPrecisoBase
                 : (quant !== 0 ? valorTotalComDesconto / quant : valorUnitBDI);
-              const totalFinal = truncar2(quant * valorUnitarioFinal);
+              const totalFinal = totalItem(quant, obterUnitarioBrutoItem(itemExistente), pctDescontoObra);
+
 
               
               itensContratuaisDoAditivo.push({
