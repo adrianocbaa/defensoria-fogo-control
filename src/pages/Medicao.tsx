@@ -2941,6 +2941,7 @@ export function Medicao() {
             pct: 0,
             total: itemContratual.total,
             valor_unitario: itemContratual.valorUnitario,
+            valor_unitario_bruto: Number(itemOriginal.valorUnitarioBruto || 0),
           });
         }
       });
@@ -2956,9 +2957,11 @@ export function Medicao() {
             pct: 0,
             total: item.totalContrato,
             valor_unitario: valorUnitarioAditivo,
+            valor_unitario_bruto: Number(item.valorUnitarioBruto || 0),
           });
         }
       });
+
       
       if (aditivoItemsToInsert.length > 0) {
         const { error: insertAditivoItemsErr } = await supabase
