@@ -932,7 +932,18 @@ export function Medicao() {
     return quantidade * valorUnitario;
   };
 
+  // Percentual de desconto do contrato (0 quando não houver)
+  const pctDescontoObra = Number(obra?.percentual_desconto ?? 0) || 0;
+
+  // Base ÚNICA de precisão: unitário bruto guardado + desconto aplicado aqui.
+  // Contrato, aditivo e medição usam exatamente este mesmo valor.
   const obterValorUnitarioPrecisoItem = (item: Item) => {
+    const bruto = Number(item.valorUnitarioBruto || 0);
+    if (Math.abs(bruto) > 1e-12) {
+      return unitarioLiquido(bruto, pctDescontoObra);
+    }
+
+    // Fallback legado (itens importados antes do unitário bruto existir)
     const quantidade = Number(item.quantidade || 0);
     const totalBase = Math.abs(Number(item.totalContrato || 0)) > 0
       ? Number(item.totalContrato || 0)
@@ -944,6 +955,7 @@ export function Medicao() {
 
     return Number(item.valorUnitario || 0);
   };
+
 
   const obterValorUnitarioCalculoAditivo = (
     item: Item,
