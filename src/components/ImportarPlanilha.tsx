@@ -186,13 +186,29 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
         // Arredonda ao ler para alinhar com o valor exibido no Excel (evita erros de cache de fórmula)
         const totalOriginal = truncar2(Math.round(parseNumeric(row[totalCol]) * 100) / 100)
 
-        // Unitário BRUTO: preferir a coluna de valor unitário da planilha; se ela
-        // vier truncada/ausente, derivar do total bruto ÷ quantidade.
+        // Unitário BRUTO: a planilha (SINAPI/DPMT) sempre traz o unitário com 2 casas.
+        // Ordem de preferência:
+        //  1) coluna de valor unitário, se ela reproduz o total bruto da planilha;
+        //  2) unitário derivado (total ÷ qtd) arredondado em 2 casas, se reproduz o total;
+        //  3) coluna de valor unitário, se existir;
+        //  4) derivado sem arredondar (último recurso).
         const unitarioPlanilha = parseNumeric(row[valorUnitCol])
         const unitarioDerivado = derivarUnitarioBruto(totalOriginal, quantidade)
-        const valorUnitarioBruto = Math.abs(unitarioDerivado) > 1e-12
-          ? unitarioDerivado
-          : unitarioPlanilha
+        const unitarioDerivado2 = Math.round(unitarioDerivado * 100) / 100
+        const reproduzTotal = (u: number) =>
+          Math.abs(u) > 1e-12 && truncar2(quantidade * u) === totalOriginal
+
+        let valorUnitarioBruto: number
+        if (reproduzTotal(unitarioPlanilha)) {
+          valorUnitarioBruto = unitarioPlanilha
+        } else if (reproduzTotal(unitarioDerivado2)) {
+          valorUnitarioBruto = unitarioDerivado2
+        } else if (Math.abs(unitarioPlanilha) > 1e-12) {
+          valorUnitarioBruto = unitarioPlanilha
+        } else {
+          valorUnitarioBruto = unitarioDerivado
+        }
+
 
         // Desconto aplicado de forma centralizada: unitário líquido sem truncar,
         // truncando apenas o total do item (mesma regra do Excel).
