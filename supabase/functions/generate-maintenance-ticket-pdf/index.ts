@@ -34,30 +34,65 @@ function fmt(d?: string | null) {
   try { return new Date(d).toLocaleString("pt-BR"); } catch { return d; }
 }
 
-const MAX_IMG_BYTES = 900_000; // ignora imagens muito pesadas (estouram CPU)
+const MAX_IMG_BYTES = 1_200_000;
 const MAX_PHOTOS_PER_GRID = 4;
+
+function storageObjectPath(urlOrPath: string): string | null {
+  if (!urlOrPath.startsWith("http")) return urlOrPath.replace(/^\/+/, "");
+  try {
+    const url = new URL(urlOrPath);
+    const marker = "/storage/v1/object/public/service-photos/";
+    const index = url.pathname.indexOf(marker);
+    return index >= 0 ? decodeURIComponent(url.pathname.slice(index + marker.length)) : null;
+  } catch {
+    return null;
+  }
+}
 
 async function fetchImage(supabase: any, urlOrPath: string): Promise<{ data: string; format: string } | null> {
   try {
     let bytes: Uint8Array | null = null;
-    if (urlOrPath.startsWith("http")) {
-      const r = await fetch(urlOrPath);
+    let contentType = "image/jpeg";
+    const servicePhotoPath = storageObjectPath(urlOrPath);
+
+    // Fotos de celular são reduzidas pelo transformador do Storage antes de
+    // chegarem à função. Assim entram no PDF sem exceder o limite de CPU.
+    if (servicePhotoPath) {
+      const encodedPath = servicePhotoPath.split("/").map(encodeURIComponent).join("/");
+      const transformedUrl = `${SUPABASE_URL}/storage/v1/render/image/public/service-photos/${encodedPath}?width=1000&quality=65&resize=contain`;
+      const transformed = await fetch(transformedUrl, { headers: { Accept: "image/jpeg" } });
+      if (transformed.ok) {
+        bytes = new Uint8Array(await transformed.arrayBuffer());
+        contentType = transformed.headers.get("content-type") || contentType;
+      }
+    }
+
+    if (!bytes && urlOrPath.startsWith("http")) {
+      const r = await fetch(urlOrPath, { headers: { Accept: "image/jpeg" } });
       if (!r.ok) return null;
       bytes = new Uint8Array(await r.arrayBuffer());
-    } else {
+      contentType = r.headers.get("content-type") || contentType;
+    } else if (!bytes) {
       for (const bkt of ["service-photos", "documents", "avatars"]) {
         const { data } = await supabase.storage.from(bkt).download(urlOrPath);
         if (data) {
           bytes = new Uint8Array(await data.arrayBuffer());
+          contentType = data.type || contentType;
           break;
         }
       }
     }
     if (!bytes) return null;
-    if (bytes.length > MAX_IMG_BYTES) return null;
-    const format = urlOrPath.toLowerCase().includes(".png") ? "PNG" : "JPEG";
+    if (bytes.length > MAX_IMG_BYTES) {
+      console.warn(`[pdf] photo_skipped_too_large ${bytes.length}b`);
+      return null;
+    }
+    const format = contentType.includes("png") ? "PNG" : contentType.includes("webp") ? "WEBP" : "JPEG";
     return { data: `data:image/${format.toLowerCase()};base64,${encodeBase64(bytes)}`, format };
-  } catch { return null; }
+  } catch (error) {
+    console.warn("[pdf] photo_fetch_failed", error);
+    return null;
+  }
 }
 
 
@@ -389,7 +424,7 @@ serve(async (req) => {
       const push = (arr: any) => {
         if (!Array.isArray(arr)) return;
         for (const p of arr) {
-          const u = typeof p === "string" ? p : (p?.url || p?.path);
+          const u = typeof p === "string" ? p : (p?.path || p?.url);
           if (u) out.push(u);
         }
       };
