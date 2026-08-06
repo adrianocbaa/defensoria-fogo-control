@@ -1214,16 +1214,17 @@ export function Medicao() {
                   novosDados[itemId].valorUnitario = obterValorUnitarioPrecisoItem(item);
                 }
               } else if (valorUnitarioAditivo > 0) {
-                // Usar valor unitário específico do aditivo (sem truncamento)
-                novosDados[itemId].total = valorNumerico * valorUnitarioAditivo;
+                // Total pela regra da planilha: TRUNCAR(qtd × bruto) × (1 - desconto)
+                novosDados[itemId].total = totalItem(valorNumerico, obterUnitarioBrutoItem(item), pctDescontoObra);
                 novosDados[itemId].valorUnitario = valorUnitarioAditivo; // Preservar
               } else {
                 // Para itens sem valor unitário específico salvo no aditivo,
                 // derivar o valor unitário preciso do total/quantidade do item-base.
                 const valorUnitarioPreciso = obterValorUnitarioPrecisoItem(item);
-                novosDados[itemId].total = valorNumerico * valorUnitarioPreciso;
+                novosDados[itemId].total = totalItem(valorNumerico, obterUnitarioBrutoItem(item), pctDescontoObra);
                 novosDados[itemId].valorUnitario = valorUnitarioPreciso;
               }
+
             }
           }
           
