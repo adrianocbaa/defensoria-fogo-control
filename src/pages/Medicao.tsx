@@ -3570,6 +3570,8 @@ export function Medicao() {
         und: item.und,
         quantidade: item.quantidade,
         valorUnitario: item.valorUnitario,
+        valorUnitarioBruto: (item as any).valorUnitarioBruto ?? derivarUnitarioBruto(item.valorTotalSemDesconto || 0, item.quantidade),
+
         valorTotal: item.valorTotal,
         valorTotalSemDesconto: item.valorTotalSemDesconto || 0,
         aditivo: { qnt: 0, percentual: 0, total: 0 },
