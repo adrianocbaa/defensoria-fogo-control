@@ -956,6 +956,16 @@ export function Medicao() {
     return Number(item.valorUnitario || 0);
   };
 
+  // Unitário BRUTO do item (base da planilha). Fallback: reverte o desconto do líquido.
+  const obterUnitarioBrutoItem = (item: Item) => {
+    const bruto = Number(item.valorUnitarioBruto || 0);
+    if (Math.abs(bruto) > 1e-12) return bruto;
+    const liquido = obterValorUnitarioPrecisoItem(item);
+    return pctDescontoObra > 0 ? liquido / (1 - pctDescontoObra / 100) : liquido;
+  };
+
+
+
 
   const obterValorUnitarioCalculoAditivo = (
     item: Item,
