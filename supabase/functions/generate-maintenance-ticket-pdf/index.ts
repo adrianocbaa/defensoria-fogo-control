@@ -34,8 +34,8 @@ function fmt(d?: string | null) {
   try { return new Date(d).toLocaleString("pt-BR"); } catch { return d; }
 }
 
-const MAX_IMG_BYTES = 2_500_000; // ignora imagens muito pesadas (estouram CPU)
-const MAX_PHOTOS_PER_GRID = 6;
+const MAX_IMG_BYTES = 900_000; // ignora imagens muito pesadas (estouram CPU)
+const MAX_PHOTOS_PER_GRID = 4;
 
 async function fetchImage(supabase: any, urlOrPath: string): Promise<{ data: string; format: string } | null> {
   try {
