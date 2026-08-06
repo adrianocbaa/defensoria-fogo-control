@@ -2420,17 +2420,11 @@ export function Medicao() {
       }
       
       // Usar percentual de desconto da obra (cadastrado na importação inicial)
-      const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
-      // Exceção: obra de São Félix do Araguaia — a planilha original aplicou o
-      // desconto SEM arredondar por item (mantém precisão completa) e somente o
-      // total geral é exibido com 2 casas. Para casar exatamente com o contrato,
-      // não arredondamos por item nessa obra (deixamos a precisão completa no DB).
-      const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
-      const aplicarDesconto = (totalSemDesconto: number) => {
-        const bruto = totalSemDesconto - (totalSemDesconto * descontoObra);
-        if (obra?.id === OBRA_SEM_TRUNCAR_DESCONTO) return bruto; // precisão completa
-        return Math.trunc(bruto * 100) / 100;
-      };
+      const descontoObra = pctDescontoObra / 100;
+      // Desconto aplicado pela regra central (trunca só o total do item)
+      const aplicarDesconto = (totalSemDesconto: number) =>
+        truncar2(totalSemDesconto * (1 - descontoObra));
+
       
       let idx;
       if (hasHeader) {
