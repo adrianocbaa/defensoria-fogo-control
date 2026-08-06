@@ -67,6 +67,8 @@ interface Item {
   und: string;
   quantidade: number;
   valorUnitario: number;
+  valorUnitarioBruto?: number; // Unitário original da planilha (sem desconto)
+
   valorTotal: number;
   valorTotalSemDesconto: number; // Valor original da planilha (coluna I - Total sem Desconto)
   aditivo: { qnt: number; percentual: number; total: number };
