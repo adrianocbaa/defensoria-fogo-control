@@ -249,6 +249,8 @@ export function Medicao() {
             und: item.unidade,
             quantidade: item.quantidade,
             valorUnitario: item.valor_unitario,
+            valorUnitarioBruto: Number((item as any).valor_unitario_bruto ?? 0) || undefined,
+
             valorTotal: item.valor_total,
             valorTotalSemDesconto: (item as any).valor_total_sem_desconto || 0,
             aditivo: { qnt: 0, percentual: 0, total: 0 },
