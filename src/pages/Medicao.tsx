@@ -1279,11 +1279,13 @@ export function Medicao() {
           item_code: it.item.trim(), 
           qtd: d.qnt || 0, 
           pct: d.percentual || 0, 
-          total: d.total || 0,
-          valor_unitario: d.valorUnitario || 0 // Valor unitário específico do aditivo
+          total: truncar2(d.total || 0),
+          valor_unitario: d.valorUnitario || 0, // Unitário líquido do aditivo
+          valor_unitario_bruto: Number(it.valorUnitarioBruto || 0), // Base bruta compartilhada com o contrato
         });
         return arr;
-      }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number }[]);
+      }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number; valor_unitario_bruto?: number }[]);
+
 
       await upsertAditivoItems(ad.sessionId, payload);
       await blockAditivoSession(ad.sessionId);
