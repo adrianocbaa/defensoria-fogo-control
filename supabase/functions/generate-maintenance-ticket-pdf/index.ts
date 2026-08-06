@@ -5,7 +5,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsPDF } from "npm:jspdf@2.5.2";
-import { encodeBase64 } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+import { encode as encodeBase64 } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
