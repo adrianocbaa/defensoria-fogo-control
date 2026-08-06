@@ -33,6 +33,9 @@ function fmt(d?: string | null) {
   try { return new Date(d).toLocaleString("pt-BR"); } catch { return d; }
 }
 
+const MAX_IMG_BYTES = 2_500_000; // ignora imagens muito pesadas (estouram CPU)
+const MAX_PHOTOS_PER_GRID = 6;
+
 async function fetchImage(supabase: any, urlOrPath: string): Promise<{ data: string; format: string } | null> {
   try {
     let bytes: Uint8Array | null = null;
@@ -50,15 +53,12 @@ async function fetchImage(supabase: any, urlOrPath: string): Promise<{ data: str
       }
     }
     if (!bytes) return null;
+    if (bytes.length > MAX_IMG_BYTES) return null;
     const format = urlOrPath.toLowerCase().includes(".png") ? "PNG" : "JPEG";
-    let bin = "";
-    const chunk = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunk) {
-      bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-    }
-    return { data: `data:image/${format.toLowerCase()};base64,${btoa(bin)}`, format };
+    return { data: `data:image/${format.toLowerCase()};base64,${encodeBase64(bytes)}`, format };
   } catch { return null; }
 }
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
