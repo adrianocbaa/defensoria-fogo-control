@@ -2869,9 +2869,10 @@ export function Medicao() {
         if (vistosNoArquivo.has(code)) return;
         vistosNoArquivo.add(code);
 
-        const valorUnitarioParaAditivo = quant !== 0
-          ? valorTotalComDesconto / quant
+        const unitarioBrutoItem = quant !== 0
+          ? derivarUnitarioBruto(totalSemDesconto, quant)
           : valorUnitBDI;
+        const valorUnitarioParaAditivo = unitarioLiquido(unitarioBrutoItem, pctDescontoObra);
 
         const ordemVal = baseOrdem + i + 1;
         const novo: Item = {
@@ -2883,6 +2884,8 @@ export function Medicao() {
           und,
           quantidade: quant,
           valorUnitario: valorUnitarioParaAditivo,
+          valorUnitarioBruto: unitarioBrutoItem,
+
           valorTotal: 0,
           valorTotalSemDesconto: totalSemDesconto,
           aditivo: { qnt: 0, percentual: 0, total: 0 },
