@@ -26,6 +26,7 @@ export type Database = {
           updated_at: string
           user_id: string | null
           valor_unitario: number | null
+          valor_unitario_bruto: number | null
         }
         Insert: {
           aditivo_id: string
@@ -38,6 +39,7 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           valor_unitario?: number | null
+          valor_unitario_bruto?: number | null
         }
         Update: {
           aditivo_id?: string
@@ -50,6 +52,7 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           valor_unitario?: number | null
+          valor_unitario_bruto?: number | null
         }
         Relationships: [
           {
@@ -2841,6 +2844,7 @@ export type Database = {
           valor_total: number
           valor_total_sem_desconto: number | null
           valor_unitario: number
+          valor_unitario_bruto: number | null
         }
         Insert: {
           aditivo_num?: number | null
@@ -2862,6 +2866,7 @@ export type Database = {
           valor_total?: number
           valor_total_sem_desconto?: number | null
           valor_unitario?: number
+          valor_unitario_bruto?: number | null
         }
         Update: {
           aditivo_num?: number | null
@@ -2883,6 +2888,7 @@ export type Database = {
           valor_total?: number
           valor_total_sem_desconto?: number | null
           valor_unitario?: number
+          valor_unitario_bruto?: number | null
         }
         Relationships: []
       }

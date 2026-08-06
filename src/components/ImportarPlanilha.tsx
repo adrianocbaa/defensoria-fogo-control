@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
 import { readExcelFile } from '@/lib/excelUtils'
+import { totalItem, unitarioLiquido, derivarUnitarioBruto, truncar2 } from '@/lib/precisao'
 
 interface Item {
   id: number;
@@ -15,6 +16,7 @@ interface Item {
   und: string;
   quantidade: number;
   valorUnitario: number;
+  valorUnitarioBruto: number; // Unitário original da planilha, sem desconto
   valorTotal: number;
   valorTotalSemDesconto: number; // Valor original da planilha (coluna I - Total sem Desconto)
   aditivo: { qnt: number; percentual: number; total: number };
@@ -31,9 +33,8 @@ interface ImportarPlanilhaProps {
   obraId?: string;
 }
 
-const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
-
 const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProps) => {
+
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
@@ -183,25 +184,21 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
         
         const quantidade = parseNumeric(row[quantidadeCol])
         // Arredonda ao ler para alinhar com o valor exibido no Excel (evita erros de cache de fórmula)
-        const totalOriginal = Math.round(parseNumeric(row[totalCol]) * 100) / 100
-        
-        // Aplicar desconto se informado
-        // O desconto é aplicado sobre os valores originais da planilha (Total sem Desconto)
-        const descontoFator = descontoValue > 0 ? (1 - descontoValue / 100) : 1
-        const semArredondamentoPorItem = obraId === OBRA_SEM_TRUNCAR_DESCONTO;
+        const totalOriginal = truncar2(Math.round(parseNumeric(row[totalCol]) * 100) / 100)
 
-        const valorTotalComDesconto = descontoValue > 0
-          ? (semArredondamentoPorItem
-              ? totalOriginal * descontoFator
-              : Math.trunc(totalOriginal * descontoFator * 100) / 100)
-          : totalOriginal
+        // Unitário BRUTO: preferir a coluna de valor unitário da planilha; se ela
+        // vier truncada/ausente, derivar do total bruto ÷ quantidade.
+        const unitarioPlanilha = parseNumeric(row[valorUnitCol])
+        const unitarioDerivado = derivarUnitarioBruto(totalOriginal, quantidade)
+        const valorUnitarioBruto = Math.abs(unitarioDerivado) > 1e-12
+          ? unitarioDerivado
+          : unitarioPlanilha
 
-        // Usar total÷quantidade como fonte do valor unitário para preservar
-        // todas as casas decimais implícitas na planilha importada.
-        const valorUnitarioComDesconto = quantidade !== 0
-          ? valorTotalComDesconto / quantidade
-          : 0
-        
+        // Desconto aplicado de forma centralizada: unitário líquido sem truncar,
+        // truncando apenas o total do item (mesma regra do Excel).
+        const valorTotalComDesconto = totalItem(quantidade, valorUnitarioBruto, descontoValue)
+        const valorUnitarioComDesconto = unitarioLiquido(valorUnitarioBruto, descontoValue)
+
         const item: Item = {
           id: Date.now() + i, // ID único
           item: row[itemCol] ? row[itemCol].toString().trim() : '',
@@ -210,8 +207,9 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
           descricao: row[descricaoCol] ? row[descricaoCol].toString().trim() : '',
           und: row[undCol] ? row[undCol].toString().trim() : '',
           quantidade: quantidade,
-          valorUnitario: valorUnitarioComDesconto, // Valor com desconto aplicado
-          valorTotal: valorTotalComDesconto, // Valor com desconto aplicado
+          valorUnitario: valorUnitarioComDesconto, // Unitário líquido (sem truncar)
+          valorUnitarioBruto: valorUnitarioBruto, // Base única para contrato e aditivos
+          valorTotal: valorTotalComDesconto, // Total truncado em 2 casas
           valorTotalSemDesconto: totalOriginal, // Valor original da planilha para referência
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: valorTotalComDesconto, // Valor com desconto para o contrato
@@ -220,6 +218,7 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
           ehAdministracaoLocal: false,
           ordem: dadosProcessados.length + 1 // Sequencial baseado nos itens processados
         }
+
         
         // Só adicionar se tiver pelo menos o número do item
         if (item.item) {

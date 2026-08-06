@@ -38,6 +38,8 @@ import { ObraAuditLogs } from '@/components/ObraAuditLogs';
 import { ExportMedicaoDialog } from '@/components/ExportMedicaoDialog';
 import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
+import { truncar2, unitarioLiquido, totalItem, derivarUnitarioBruto } from '@/lib/precisao';
+
 import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
 import { generatePdfFromElementAutoPage } from '@/lib/pdfExport';
 import { EncerramentoPanel } from '@/components/encerramento/EncerramentoPanel';
@@ -67,6 +69,8 @@ interface Item {
   und: string;
   quantidade: number;
   valorUnitario: number;
+  valorUnitarioBruto?: number; // Unitário original da planilha (sem desconto)
+
   valorTotal: number;
   valorTotalSemDesconto: number; // Valor original da planilha (coluna I - Total sem Desconto)
   aditivo: { qnt: number; percentual: number; total: number };
@@ -245,6 +249,8 @@ export function Medicao() {
             und: item.unidade,
             quantidade: item.quantidade,
             valorUnitario: item.valor_unitario,
+            valorUnitarioBruto: Number((item as any).valor_unitario_bruto ?? 0) || undefined,
+
             valorTotal: item.valor_total,
             valorTotalSemDesconto: (item as any).valor_total_sem_desconto || 0,
             aditivo: { qnt: 0, percentual: 0, total: 0 },
@@ -926,7 +932,18 @@ export function Medicao() {
     return quantidade * valorUnitario;
   };
 
+  // Percentual de desconto do contrato (0 quando não houver)
+  const pctDescontoObra = Number(obra?.percentual_desconto ?? 0) || 0;
+
+  // Base ÚNICA de precisão: unitário bruto guardado + desconto aplicado aqui.
+  // Contrato, aditivo e medição usam exatamente este mesmo valor.
   const obterValorUnitarioPrecisoItem = (item: Item) => {
+    const bruto = Number(item.valorUnitarioBruto || 0);
+    if (Math.abs(bruto) > 1e-12) {
+      return unitarioLiquido(bruto, pctDescontoObra);
+    }
+
+    // Fallback legado (itens importados antes do unitário bruto existir)
     const quantidade = Number(item.quantidade || 0);
     const totalBase = Math.abs(Number(item.totalContrato || 0)) > 0
       ? Number(item.totalContrato || 0)
@@ -938,6 +955,7 @@ export function Medicao() {
 
     return Number(item.valorUnitario || 0);
   };
+
 
   const obterValorUnitarioCalculoAditivo = (
     item: Item,
@@ -1227,11 +1245,13 @@ export function Medicao() {
           item_code: it.item.trim(), 
           qtd: d.qnt || 0, 
           pct: d.percentual || 0, 
-          total: d.total || 0,
-          valor_unitario: d.valorUnitario || 0 // Valor unitário específico do aditivo
+          total: truncar2(d.total || 0),
+          valor_unitario: d.valorUnitario || 0, // Unitário líquido do aditivo
+          valor_unitario_bruto: Number(it.valorUnitarioBruto || 0), // Base bruta compartilhada com o contrato
         });
         return arr;
-      }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number }[]);
+      }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number; valor_unitario_bruto?: number }[]);
+
 
       await upsertAditivoItems(ad.sessionId, payload);
       toast.success(`${ad.nome} salvo com sucesso!`);
@@ -1259,11 +1279,13 @@ export function Medicao() {
           item_code: it.item.trim(), 
           qtd: d.qnt || 0, 
           pct: d.percentual || 0, 
-          total: d.total || 0,
-          valor_unitario: d.valorUnitario || 0 // Valor unitário específico do aditivo
+          total: truncar2(d.total || 0),
+          valor_unitario: d.valorUnitario || 0, // Unitário líquido do aditivo
+          valor_unitario_bruto: Number(it.valorUnitarioBruto || 0), // Base bruta compartilhada com o contrato
         });
         return arr;
-      }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number }[]);
+      }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number; valor_unitario_bruto?: number }[]);
+
 
       await upsertAditivoItems(ad.sessionId, payload);
       await blockAditivoSession(ad.sessionId);
@@ -2402,17 +2424,11 @@ export function Medicao() {
       }
       
       // Usar percentual de desconto da obra (cadastrado na importação inicial)
-      const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
-      // Exceção: obra de São Félix do Araguaia — a planilha original aplicou o
-      // desconto SEM arredondar por item (mantém precisão completa) e somente o
-      // total geral é exibido com 2 casas. Para casar exatamente com o contrato,
-      // não arredondamos por item nessa obra (deixamos a precisão completa no DB).
-      const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
-      const aplicarDesconto = (totalSemDesconto: number) => {
-        const bruto = totalSemDesconto - (totalSemDesconto * descontoObra);
-        if (obra?.id === OBRA_SEM_TRUNCAR_DESCONTO) return bruto; // precisão completa
-        return Math.trunc(bruto * 100) / 100;
-      };
+      const descontoObra = pctDescontoObra / 100;
+      // Desconto aplicado pela regra central (trunca só o total do item)
+      const aplicarDesconto = (totalSemDesconto: number) =>
+        truncar2(totalSemDesconto * (1 - descontoObra));
+
       
       let idx;
       if (hasHeader) {
@@ -2544,7 +2560,8 @@ export function Medicao() {
               const valorUnitarioFinal = Math.abs(vuPrecisoBase) > 1e-12
                 ? vuPrecisoBase
                 : (quant !== 0 ? valorTotalComDesconto / quant : valorUnitBDI);
-              const totalFinal = Math.round(quant * valorUnitarioFinal * 100) / 100;
+              const totalFinal = truncar2(quant * valorUnitarioFinal);
+
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
@@ -2572,11 +2589,12 @@ export function Medicao() {
         // Usar ordem sequencial baseada na posição no arquivo, mantendo numeração original
         const ordemVal = baseOrdem + i + 1;
         
-        // Salvar valor unitário com BDI para usar no cálculo do aditivo
-        const valorUnitarioParaAditivo = quant !== 0
-          ? valorTotalComDesconto / quant
+        // Unitário BRUTO do item extracontratual (base única de precisão)
+        const unitarioBrutoItem = quant !== 0
+          ? derivarUnitarioBruto(totalSemDesconto, quant)
           : valorUnitBDI;
-        
+        const valorUnitarioParaAditivo = unitarioLiquido(unitarioBrutoItem, pctDescontoObra);
+
         const novo: Item = {
           id: stableIdForRow(code, codigoBanco, ordemVal),
           item: code, // Manter código original da planilha
@@ -2586,7 +2604,9 @@ export function Medicao() {
           und,
           quantidade: (nivel === 1 ? 0 : quant),
           valorUnitario: (nivel === 1 ? 0 : valorUnitarioParaAditivo),
+          valorUnitarioBruto: (nivel === 1 ? 0 : unitarioBrutoItem),
           valorTotal: valorTotalComDesconto,
+
           valorTotalSemDesconto: totalSemDesconto, // Valor original para cálculos de aditivo
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: 0,
@@ -2621,6 +2641,8 @@ export function Medicao() {
         unidade: it.und,
         quantidade: it.quantidade,
         valor_unitario: it.valorUnitario,
+        valor_unitario_bruto: it.valorUnitarioBruto ?? 0,
+
         valor_total: it.valorTotal, // 0 para não afetar Valor Total Original
         total_contrato: it.totalContrato,
         nivel: it.nivel,
@@ -2753,13 +2775,10 @@ export function Medicao() {
                    segundoItem.includes('descricao') || segundoItem.includes('descrição');
       }
       
-      const descontoObra = (obra?.percentual_desconto ?? 0) / 100;
-      const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
-      const aplicarDesconto = (totalSemDesconto: number) => {
-        const bruto = totalSemDesconto - (totalSemDesconto * descontoObra);
-        if (obra?.id === OBRA_SEM_TRUNCAR_DESCONTO) return bruto;
-        return Math.trunc(bruto * 100) / 100;
-      };
+      const descontoObra = pctDescontoObra / 100;
+      const aplicarDesconto = (totalSemDesconto: number) =>
+        truncar2(totalSemDesconto * (1 - descontoObra));
+
       
       let idx;
       if (hasHeader) {
@@ -2838,7 +2857,7 @@ export function Medicao() {
               const valorUnitarioFinal = Math.abs(vuPrecisoBase) > 1e-12
                 ? vuPrecisoBase
                 : (quant !== 0 ? valorTotalComDesconto / quant : valorUnitBDI);
-              const totalFinal = Math.round(quant * valorUnitarioFinal * 100) / 100;
+              const totalFinal = truncar2(quant * valorUnitarioFinal);
               
               itensContratuaisDoAditivo.push({
                 id: itemExistente.id,
@@ -2854,9 +2873,10 @@ export function Medicao() {
         if (vistosNoArquivo.has(code)) return;
         vistosNoArquivo.add(code);
 
-        const valorUnitarioParaAditivo = quant !== 0
-          ? valorTotalComDesconto / quant
+        const unitarioBrutoItem = quant !== 0
+          ? derivarUnitarioBruto(totalSemDesconto, quant)
           : valorUnitBDI;
+        const valorUnitarioParaAditivo = unitarioLiquido(unitarioBrutoItem, pctDescontoObra);
 
         const ordemVal = baseOrdem + i + 1;
         const novo: Item = {
@@ -2868,6 +2888,8 @@ export function Medicao() {
           und,
           quantidade: quant,
           valorUnitario: valorUnitarioParaAditivo,
+          valorUnitarioBruto: unitarioBrutoItem,
+
           valorTotal: 0,
           valorTotalSemDesconto: totalSemDesconto,
           aditivo: { qnt: 0, percentual: 0, total: 0 },
@@ -2894,6 +2916,8 @@ export function Medicao() {
           unidade: it.und,
           quantidade: it.quantidade,
           valor_unitario: it.valorUnitario,
+          valor_unitario_bruto: it.valorUnitarioBruto ?? 0,
+
           valor_total: it.valorTotal,
           total_contrato: it.totalContrato,
           nivel: it.nivel,
@@ -2921,6 +2945,7 @@ export function Medicao() {
             pct: 0,
             total: itemContratual.total,
             valor_unitario: itemContratual.valorUnitario,
+            valor_unitario_bruto: Number(itemOriginal.valorUnitarioBruto || 0),
           });
         }
       });
@@ -2936,9 +2961,11 @@ export function Medicao() {
             pct: 0,
             total: item.totalContrato,
             valor_unitario: valorUnitarioAditivo,
+            valor_unitario_bruto: Number(item.valorUnitarioBruto || 0),
           });
         }
       });
+
       
       if (aditivoItemsToInsert.length > 0) {
         const { error: insertAditivoItemsErr } = await supabase
@@ -3547,6 +3574,8 @@ export function Medicao() {
         und: item.und,
         quantidade: item.quantidade,
         valorUnitario: item.valorUnitario,
+        valorUnitarioBruto: (item as any).valorUnitarioBruto ?? derivarUnitarioBruto(item.valorTotalSemDesconto || 0, item.quantidade),
+
         valorTotal: item.valorTotal,
         valorTotalSemDesconto: item.valorTotalSemDesconto || 0,
         aditivo: { qnt: 0, percentual: 0, total: 0 },
@@ -3570,6 +3599,8 @@ export function Medicao() {
         unidade: item.und,
         quantidade: item.quantidade,
         valor_unitario: item.valorUnitario,
+        valor_unitario_bruto: item.valorUnitarioBruto ?? 0,
+
         valor_total: item.valorTotal,
         valor_total_sem_desconto: item.valorTotalSemDesconto,
         total_contrato: item.totalContrato,
