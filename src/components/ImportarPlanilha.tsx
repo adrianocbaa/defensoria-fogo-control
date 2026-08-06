@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
 import { readExcelFile } from '@/lib/excelUtils'
+import { totalItem, unitarioLiquido, derivarUnitarioBruto, truncar2 } from '@/lib/precisao'
 
 interface Item {
   id: number;
@@ -15,6 +16,7 @@ interface Item {
   und: string;
   quantidade: number;
   valorUnitario: number;
+  valorUnitarioBruto: number; // Unitário original da planilha, sem desconto
   valorTotal: number;
   valorTotalSemDesconto: number; // Valor original da planilha (coluna I - Total sem Desconto)
   aditivo: { qnt: number; percentual: number; total: number };
@@ -31,9 +33,8 @@ interface ImportarPlanilhaProps {
   obraId?: string;
 }
 
-const OBRA_SEM_TRUNCAR_DESCONTO = '9c544a84-2130-4074-9b23-1f58e9b84bcf';
-
 const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProps) => {
+
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
