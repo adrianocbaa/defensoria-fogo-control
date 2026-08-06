@@ -404,7 +404,7 @@ serve(async (req) => {
       section(`Registro fotográfico — ${label}`);
       let col = 0;
       let rowTop = y;
-      for (const url of urls) {
+      for (const url of urls.slice(0, MAX_PHOTOS_PER_GRID)) {
         const img = await fetchImage(supabase, url);
         if (!img) continue;
         if (col === 0 && rowTop + boxH > bottomLimit) { newPage(); rowTop = y; }
@@ -418,7 +418,7 @@ serve(async (req) => {
           const oy = rowTop + (boxH - h) / 2;
           doc.setFillColor(...BOX_BG);
           doc.roundedRect(x, rowTop, boxW, boxH, 4, 4, "F");
-          doc.addImage(img.data, img.format, ox, oy, w, h);
+          doc.addImage(img.data, img.format, ox, oy, w, h, undefined, "NONE");
           doc.setDrawColor(...GRAY_LINE);
           doc.setLineWidth(0.6);
           doc.roundedRect(x, rowTop, boxW, boxH, 4, 4);
