@@ -34,8 +34,8 @@ function fmt(d?: string | null) {
   try { return new Date(d).toLocaleString("pt-BR"); } catch { return d; }
 }
 
-const MAX_IMG_BYTES = 2_500_000; // ignora imagens muito pesadas (estouram CPU)
-const MAX_PHOTOS_PER_GRID = 6;
+const MAX_IMG_BYTES = 900_000; // ignora imagens muito pesadas (estouram CPU)
+const MAX_PHOTOS_PER_GRID = 4;
 
 async function fetchImage(supabase: any, urlOrPath: string): Promise<{ data: string; format: string } | null> {
   try {
@@ -108,7 +108,11 @@ serve(async (req) => {
       .eq("ticket_id", ticket_id)
       .order("created_at", { ascending: true });
 
+    const t0 = Date.now();
+    const stage = (m: string) => console.log(`[pdf] ${m} +${Date.now() - t0}ms`);
+    stage("data_loaded");
     const doc = new jsPDF({ unit: "pt", format: "a4" });
+    stage("jspdf_init");
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     const margin = 48;
@@ -432,12 +436,16 @@ serve(async (req) => {
       y = col === 0 ? rowTop : rowTop + boxH + 16;
     };
 
+    stage("body_done");
     await photoGrid(refPhotos, "Antes");
+    stage("photos_ref");
     await photoGrid(execPhotos, "Depois");
+    stage("photos_exec");
 
     drawFooter();
 
     const pdfBytes = doc.output("arraybuffer");
+    stage(`output ${(pdfBytes as ArrayBuffer).byteLength}b`);
     // nome versionado evita servir versão em cache após regeração
     const path = `maintenance-archive/${ticket.id}/chamado-${numero}-${Date.now()}.pdf`;
     const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, new Uint8Array(pdfBytes), {
@@ -445,6 +453,7 @@ serve(async (req) => {
       cacheControl: "0",
       upsert: true,
     });
+    stage("uploaded");
     if (upErr) return j(500, { error: "upload_failed", details: upErr.message });
 
     const previous = (ticket as any).archive_pdf_url as string | null;
