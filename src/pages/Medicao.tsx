@@ -2585,11 +2585,12 @@ export function Medicao() {
         // Usar ordem sequencial baseada na posição no arquivo, mantendo numeração original
         const ordemVal = baseOrdem + i + 1;
         
-        // Salvar valor unitário com BDI para usar no cálculo do aditivo
-        const valorUnitarioParaAditivo = quant !== 0
-          ? valorTotalComDesconto / quant
+        // Unitário BRUTO do item extracontratual (base única de precisão)
+        const unitarioBrutoItem = quant !== 0
+          ? derivarUnitarioBruto(totalSemDesconto, quant)
           : valorUnitBDI;
-        
+        const valorUnitarioParaAditivo = unitarioLiquido(unitarioBrutoItem, pctDescontoObra);
+
         const novo: Item = {
           id: stableIdForRow(code, codigoBanco, ordemVal),
           item: code, // Manter código original da planilha
@@ -2599,7 +2600,9 @@ export function Medicao() {
           und,
           quantidade: (nivel === 1 ? 0 : quant),
           valorUnitario: (nivel === 1 ? 0 : valorUnitarioParaAditivo),
+          valorUnitarioBruto: (nivel === 1 ? 0 : unitarioBrutoItem),
           valorTotal: valorTotalComDesconto,
+
           valorTotalSemDesconto: totalSemDesconto, // Valor original para cálculos de aditivo
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: 0,
