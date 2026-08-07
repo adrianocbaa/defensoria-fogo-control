@@ -351,6 +351,100 @@ export type Database = {
         }
         Relationships: []
       }
+      biblioteca_servicos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          escopo: string
+          id: string
+          keywords: string[]
+          macro: string
+          obra_id: string | null
+          ordem: number
+          servico: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          escopo?: string
+          id?: string
+          keywords?: string[]
+          macro: string
+          obra_id?: string | null
+          ordem?: number
+          servico: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          escopo?: string
+          id?: string
+          keywords?: string[]
+          macro?: string
+          obra_id?: string | null
+          ordem?: number
+          servico?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biblioteca_servicos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biblioteca_verificacoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          default_aplicavel: boolean
+          descricao: string
+          id: string
+          ordem: number
+          servico_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          default_aplicavel?: boolean
+          descricao: string
+          id?: string
+          ordem?: number
+          servico_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          default_aplicavel?: boolean
+          descricao?: string
+          id?: string
+          ordem?: number
+          servico_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biblioteca_verificacoes_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "biblioteca_servicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogo_sistemas_servicos: {
         Row: {
           ativo: boolean
@@ -3964,6 +4058,625 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "rdo_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_ambiente_servicos: {
+        Row: {
+          ambiente_id: string
+          ativo: boolean
+          biblioteca_servico_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          macro_snapshot: string
+          obra_id: string
+          ordem: number
+          servico_snapshot: string
+          updated_at: string
+          vistoria_id: string
+        }
+        Insert: {
+          ambiente_id: string
+          ativo?: boolean
+          biblioteca_servico_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          macro_snapshot: string
+          obra_id: string
+          ordem?: number
+          servico_snapshot: string
+          updated_at?: string
+          vistoria_id: string
+        }
+        Update: {
+          ambiente_id?: string
+          ativo?: boolean
+          biblioteca_servico_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          macro_snapshot?: string
+          obra_id?: string
+          ordem?: number
+          servico_snapshot?: string
+          updated_at?: string
+          vistoria_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_ambiente_servicos_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_ambiente_servicos_biblioteca_servico_id_fkey"
+            columns: ["biblioteca_servico_id"]
+            isOneToOne: false
+            referencedRelation: "biblioteca_servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_ambiente_servicos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_ambiente_servicos_vistoria_id_fkey"
+            columns: ["vistoria_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_ambientes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          obra_id: string
+          observacoes: string | null
+          ordem: number
+          pavimento: string | null
+          tipo_modelo: string | null
+          updated_at: string
+          vistoria_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          obra_id: string
+          observacoes?: string | null
+          ordem?: number
+          pavimento?: string | null
+          tipo_modelo?: string | null
+          updated_at?: string
+          vistoria_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          obra_id?: string
+          observacoes?: string | null
+          ordem?: number
+          pavimento?: string | null
+          tipo_modelo?: string | null
+          updated_at?: string
+          vistoria_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_ambientes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_ambientes_vistoria_id_fkey"
+            columns: ["vistoria_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_fotos: {
+        Row: {
+          ambiente_id: string | null
+          autor: string | null
+          created_at: string
+          historico_id: string | null
+          id: string
+          legenda: string | null
+          obra_id: string
+          pendencia_id: string | null
+          storage_path: string
+          tipo: string
+          vistoria_id: string | null
+        }
+        Insert: {
+          ambiente_id?: string | null
+          autor?: string | null
+          created_at?: string
+          historico_id?: string | null
+          id?: string
+          legenda?: string | null
+          obra_id: string
+          pendencia_id?: string | null
+          storage_path: string
+          tipo?: string
+          vistoria_id?: string | null
+        }
+        Update: {
+          ambiente_id?: string | null
+          autor?: string | null
+          created_at?: string
+          historico_id?: string | null
+          id?: string
+          legenda?: string | null
+          obra_id?: string
+          pendencia_id?: string | null
+          storage_path?: string
+          tipo?: string
+          vistoria_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_fotos_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_fotos_historico_id_fkey"
+            columns: ["historico_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_pendencia_historico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_fotos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_fotos_pendencia_id_fkey"
+            columns: ["pendencia_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_pendencias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_fotos_vistoria_id_fkey"
+            columns: ["vistoria_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_pendencia_historico: {
+        Row: {
+          autor: string | null
+          created_at: string
+          evento: string
+          id: string
+          obra_id: string
+          observacao: string | null
+          pendencia_id: string
+          situacao_anterior: string | null
+          situacao_nova: string | null
+          vistoria_id: string | null
+        }
+        Insert: {
+          autor?: string | null
+          created_at?: string
+          evento: string
+          id?: string
+          obra_id: string
+          observacao?: string | null
+          pendencia_id: string
+          situacao_anterior?: string | null
+          situacao_nova?: string | null
+          vistoria_id?: string | null
+        }
+        Update: {
+          autor?: string | null
+          created_at?: string
+          evento?: string
+          id?: string
+          obra_id?: string
+          observacao?: string | null
+          pendencia_id?: string
+          situacao_anterior?: string | null
+          situacao_nova?: string | null
+          vistoria_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_pendencia_historico_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_pendencia_historico_pendencia_id_fkey"
+            columns: ["pendencia_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_pendencias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_pendencia_historico_vistoria_id_fkey"
+            columns: ["vistoria_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_pendencias: {
+        Row: {
+          ambiente_id: string | null
+          cancelada_em: string | null
+          cancelada_por: string | null
+          classificacao: string
+          created_at: string
+          criada_por: string | null
+          descricao: string | null
+          id: string
+          motivo_cancelamento: string | null
+          obra_id: string
+          prazo_correcao: string | null
+          sanada_em: string | null
+          sanada_por: string | null
+          situacao: string
+          titulo: string
+          updated_at: string
+          verificacao_id: string | null
+          vistoria_origem_id: string | null
+        }
+        Insert: {
+          ambiente_id?: string | null
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          classificacao?: string
+          created_at?: string
+          criada_por?: string | null
+          descricao?: string | null
+          id?: string
+          motivo_cancelamento?: string | null
+          obra_id: string
+          prazo_correcao?: string | null
+          sanada_em?: string | null
+          sanada_por?: string | null
+          situacao?: string
+          titulo: string
+          updated_at?: string
+          verificacao_id?: string | null
+          vistoria_origem_id?: string | null
+        }
+        Update: {
+          ambiente_id?: string | null
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          classificacao?: string
+          created_at?: string
+          criada_por?: string | null
+          descricao?: string | null
+          id?: string
+          motivo_cancelamento?: string | null
+          obra_id?: string
+          prazo_correcao?: string | null
+          sanada_em?: string | null
+          sanada_por?: string | null
+          situacao?: string
+          titulo?: string
+          updated_at?: string
+          verificacao_id?: string | null
+          vistoria_origem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_pendencias_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_pendencias_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_pendencias_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_verificacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_pendencias_vistoria_origem_id_fkey"
+            columns: ["vistoria_origem_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_template_servicos: {
+        Row: {
+          biblioteca_servico_id: string
+          created_at: string
+          id: string
+          ordem: number
+          template_id: string
+        }
+        Insert: {
+          biblioteca_servico_id: string
+          created_at?: string
+          id?: string
+          ordem?: number
+          template_id: string
+        }
+        Update: {
+          biblioteca_servico_id?: string
+          created_at?: string
+          id?: string
+          ordem?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_template_servicos_biblioteca_servico_id_fkey"
+            columns: ["biblioteca_servico_id"]
+            isOneToOne: false
+            referencedRelation: "biblioteca_servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_template_servicos_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_templates: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          escopo: string
+          id: string
+          nome: string
+          obra_id: string | null
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          escopo?: string
+          id?: string
+          nome: string
+          obra_id?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          escopo?: string
+          id?: string
+          nome?: string
+          obra_id?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_templates_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_verificacoes: {
+        Row: {
+          ambiente_id: string
+          ambiente_servico_id: string
+          ativo: boolean
+          biblioteca_verificacao_id: string | null
+          created_at: string
+          descricao_snapshot: string
+          id: string
+          obra_id: string
+          observacao: string | null
+          ordem: number
+          respondido_em: string | null
+          respondido_por: string | null
+          status: string
+          updated_at: string
+          vistoria_id: string
+        }
+        Insert: {
+          ambiente_id: string
+          ambiente_servico_id: string
+          ativo?: boolean
+          biblioteca_verificacao_id?: string | null
+          created_at?: string
+          descricao_snapshot: string
+          id?: string
+          obra_id: string
+          observacao?: string | null
+          ordem?: number
+          respondido_em?: string | null
+          respondido_por?: string | null
+          status?: string
+          updated_at?: string
+          vistoria_id: string
+        }
+        Update: {
+          ambiente_id?: string
+          ambiente_servico_id?: string
+          ativo?: boolean
+          biblioteca_verificacao_id?: string | null
+          created_at?: string
+          descricao_snapshot?: string
+          id?: string
+          obra_id?: string
+          observacao?: string | null
+          ordem?: number
+          respondido_em?: string | null
+          respondido_por?: string | null
+          status?: string
+          updated_at?: string
+          vistoria_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_verificacoes_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_verificacoes_ambiente_servico_id_fkey"
+            columns: ["ambiente_servico_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_ambiente_servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_verificacoes_biblioteca_verificacao_id_fkey"
+            columns: ["biblioteca_verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "biblioteca_verificacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_verificacoes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_verificacoes_vistoria_id_fkey"
+            columns: ["vistoria_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimento_vistorias: {
+        Row: {
+          cancelada_em: string | null
+          cancelada_por: string | null
+          concluida_por: string | null
+          concluido_em: string | null
+          created_at: string
+          created_by: string | null
+          data: string
+          fiscal_id: string | null
+          id: string
+          iniciado_em: string
+          motivo_cancelamento: string | null
+          obra_id: string
+          observacoes: string | null
+          sequencia: number
+          status: string
+          tipo: string
+          updated_at: string
+          vistoria_origem_id: string | null
+        }
+        Insert: {
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          concluida_por?: string | null
+          concluido_em?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          fiscal_id?: string | null
+          id?: string
+          iniciado_em?: string
+          motivo_cancelamento?: string | null
+          obra_id: string
+          observacoes?: string | null
+          sequencia?: number
+          status?: string
+          tipo: string
+          updated_at?: string
+          vistoria_origem_id?: string | null
+        }
+        Update: {
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          concluida_por?: string | null
+          concluido_em?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          fiscal_id?: string | null
+          id?: string
+          iniciado_em?: string
+          motivo_cancelamento?: string | null
+          obra_id?: string
+          observacoes?: string | null
+          sequencia?: number
+          status?: string
+          tipo?: string
+          updated_at?: string
+          vistoria_origem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_vistorias_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimento_vistorias_vistoria_origem_id_fkey"
+            columns: ["vistoria_origem_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_vistorias"
             referencedColumns: ["id"]
           },
         ]
