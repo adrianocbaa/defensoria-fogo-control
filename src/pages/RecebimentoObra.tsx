@@ -46,6 +46,8 @@ import { DuplicarAmbienteDialog } from '@/components/recebimento/DuplicarAmbient
 import { AdicionarServicoSheet } from '@/components/recebimento/AdicionarServicoSheet';
 import { NaoConformidadeSheet } from '@/components/recebimento/NaoConformidadeSheet';
 import { ChecklistPanel } from '@/components/recebimento/ChecklistPanel';
+import { AutosaveIndicator } from '@/components/recebimento/AutosaveIndicator';
+
 import { PendenciasPanel, PendenciaDetailSheet } from '@/components/recebimento/PendenciasPanel';
 import {
   ABERTAS,
