@@ -477,7 +477,23 @@ const AppRoutes = () => {
         path="/obras/:obraId/checklist"
         element={
           <ProtectedRoute>
+            <ChecklistHub />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/obras/:obraId/checklist/dinamico"
+        element={
+          <ProtectedRoute>
             <ChecklistDinamico />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/obras/:obraId/checklist/recebimento"
+        element={
+          <ProtectedRoute>
+            <RecebimentoObra />
           </ProtectedRoute>
         }
       />
