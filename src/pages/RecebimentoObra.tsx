@@ -102,10 +102,10 @@ export function RecebimentoObra() {
     if (!user) return;
     supabase
       .from('profiles')
-      .select('full_name')
+      .select('display_name, email')
       .eq('id', user.id)
       .maybeSingle()
-      .then(({ data }) => setFiscalNome((data?.full_name as string) ?? ''));
+      .then(({ data }) => setFiscalNome(data?.display_name ?? data?.email ?? ''));
   }, [user]);
 
   useEffect(() => {
