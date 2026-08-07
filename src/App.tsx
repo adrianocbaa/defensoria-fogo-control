@@ -70,6 +70,8 @@ import Apresentacao from "./pages/Apresentacao";
 import ApresentacaoDiretoria from "./pages/ApresentacaoDiretoria";
 import FluxogramaObras from "./pages/FluxogramaObras";
 import { ChecklistDinamico } from "./pages/ChecklistDinamico";
+import { ChecklistHub } from "./pages/ChecklistHub";
+import { RecebimentoObra } from "./pages/RecebimentoObra";
 import Dimensionamento from "./pages/Dimensionamento";
 import DimensionamentoCalhas from "./pages/DimensionamentoCalhas";
 
@@ -477,7 +479,23 @@ const AppRoutes = () => {
         path="/obras/:obraId/checklist"
         element={
           <ProtectedRoute>
+            <ChecklistHub />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/obras/:obraId/checklist/dinamico"
+        element={
+          <ProtectedRoute>
             <ChecklistDinamico />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/obras/:obraId/checklist/recebimento"
+        element={
+          <ProtectedRoute>
+            <RecebimentoObra />
           </ProtectedRoute>
         }
       />
