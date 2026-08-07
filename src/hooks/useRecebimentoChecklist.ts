@@ -390,40 +390,89 @@ export function useRecebimentoChecklist(obraId: string, vistoriaId: string | nul
     await fetchChecklist();
   };
 
-  /** Autosave de uma verificação. Retorna true em sucesso. */
+  /** Envia os rascunhos pendentes ao servidor. Seguro para chamadas concorrentes. */
+  const flush = useCallback(async (): Promise<boolean> => {
+    if (!vistoriaId || flushingRef.current) return true;
+    const drafts = loadDrafts(vistoriaId);
+    if (!drafts.length) {
+      setPendentes(0);
+      return true;
+    }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setPendentes(drafts.length);
+      return false;
+    }
+
+    flushingRef.current = true;
+    setSalvando(true);
+
+    // agrupa por status para reduzir o número de requisições
+    const porStatus = new Map<VerificacaoStatus, DraftEntry[]>();
+    for (const d of drafts) {
+      const list = porStatus.get(d.status) ?? [];
+      list.push(d);
+      porStatus.set(d.status, list);
+    }
+
+    let ok = true;
+    const enviados: DraftEntry[] = [];
+    for (const [status, itens] of porStatus) {
+      const { error } = await supabase
+        .from('recebimento_verificacoes')
+        .update({
+          status,
+          respondido_por: user?.id ?? null,
+          respondido_em: new Date().toISOString(),
+        })
+        .in(
+          'id',
+          itens.map((i) => i.verificacaoId),
+        );
+      if (error) {
+        ok = false;
+        break;
+      }
+      enviados.push(...itens);
+    }
+
+    const restantes = enviados.length ? ackDrafts(vistoriaId, enviados) : loadDrafts(vistoriaId);
+    setPendentes(restantes.length);
+    if (enviados.length) setUltimoSalvamento(new Date());
+    flushingRef.current = false;
+    setSalvando(false);
+    return ok && restantes.length === 0;
+  }, [vistoriaId, user?.id]);
+
+  /** Aplica alterações localmente + fila e tenta sincronizar imediatamente. */
+  const registrar = useCallback(
+    async (
+      updates: { verificacaoId: string; status: VerificacaoStatus }[],
+    ): Promise<boolean> => {
+      if (!vistoriaId || !updates.length) return true;
+      const map = new Map(updates.map((u) => [u.verificacaoId, u.status]));
+      setAmbientes((prev) =>
+        prev.map((a) => ({
+          ...a,
+          servicos: a.servicos.map((s) => ({
+            ...s,
+            verificacoes: s.verificacoes.map((v) =>
+              map.has(v.id) ? { ...v, status: map.get(v.id)! } : v,
+            ),
+          })),
+        })),
+      );
+      const fila = enqueueDrafts(vistoriaId, updates);
+      setPendentes(fila.length);
+      return flush();
+    },
+    [vistoriaId, flush],
+  );
+
+  /** Autosave de uma verificação. Retorna true quando já persistida. */
   const setStatus = async (
     verificacaoId: string,
     status: VerificacaoStatus,
-  ): Promise<boolean> => {
-    // otimista
-    setAmbientes((prev) =>
-      prev.map((a) => ({
-        ...a,
-        servicos: a.servicos.map((s) => ({
-          ...s,
-          verificacoes: s.verificacoes.map((v) =>
-            v.id === verificacaoId ? { ...v, status } : v,
-          ),
-        })),
-      })),
-    );
-
-    const { error } = await supabase
-      .from('recebimento_verificacoes')
-      .update({
-        status,
-        respondido_por: user?.id ?? null,
-        respondido_em: new Date().toISOString(),
-      })
-      .eq('id', verificacaoId);
-
-    if (error) {
-      toast.error('Não foi possível salvar — tentar novamente');
-      await fetchChecklist();
-      return false;
-    }
-    return true;
-  };
+  ): Promise<boolean> => registrar([{ verificacaoId, status }]);
 
   /** Ação em massa. Por padrão só altera itens ainda não vistoriados. */
   const marcarGrupo = async (
@@ -438,33 +487,61 @@ export function useRecebimentoChecklist(obraId: string, vistoriaId: string | nul
       toast.info('Nenhuma verificação para atualizar');
       return;
     }
-    const ids = alvos.map((v) => v.id);
-    setAmbientes((prev) =>
-      prev.map((a) => ({
-        ...a,
-        servicos: a.servicos.map((s) => ({
-          ...s,
-          verificacoes: s.verificacoes.map((v) =>
-            ids.includes(v.id) ? { ...v, status } : v,
-          ),
-        })),
-      })),
-    );
-    const { error } = await supabase
-      .from('recebimento_verificacoes')
-      .update({
-        status,
-        respondido_por: user?.id ?? null,
-        respondido_em: new Date().toISOString(),
-      })
-      .in('id', ids);
-    if (error) {
-      toast.error('Não foi possível salvar — tentar novamente');
-      await fetchChecklist();
-      return;
-    }
-    toast.success(`${ids.length} verificação(ões) atualizadas`);
+    const ok = await registrar(alvos.map((v) => ({ verificacaoId: v.id, status })));
+    if (ok) toast.success(`${alvos.length} verificação(ões) atualizadas`);
   };
+
+  /** Descarta rascunhos locais e recarrega do servidor. */
+  const descartarRascunhos = useCallback(async () => {
+    if (!vistoriaId) return;
+    clearDrafts(vistoriaId);
+    setPendentes(0);
+    await fetchChecklist();
+  }, [vistoriaId, fetchChecklist]);
+
+  // reconexão / retentativas periódicas
+  useEffect(() => {
+    if (!vistoriaId) return;
+    const onOnline = () => {
+      setOnline(true);
+      flush();
+    };
+    const onOffline = () => setOnline(false);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') flush();
+    };
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    document.addEventListener('visibilitychange', onVisible);
+    const timer = window.setInterval(() => {
+      if (loadDrafts(vistoriaId).length) flush();
+    }, 15000);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.clearInterval(timer);
+    };
+  }, [vistoriaId, flush]);
+
+  // aviso ao sair da tela com respostas não sincronizadas
+  useEffect(() => {
+    if (!pendentes) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [pendentes]);
+
+  const syncEstado: SyncEstado = !online
+    ? 'offline'
+    : salvando
+      ? 'salvando'
+      : pendentes > 0
+        ? 'pendente'
+        : 'sincronizado';
 
   return {
     ambientes,
@@ -480,5 +557,12 @@ export function useRecebimentoChecklist(obraId: string, vistoriaId: string | nul
     setStatus,
     marcarGrupo,
     refetch: fetchChecklist,
+    // autosave
+    syncEstado,
+    pendentes,
+    ultimoSalvamento,
+    sincronizarAgora: flush,
+    descartarRascunhos,
   };
 }
+
