@@ -1,8 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { VerificacaoStatus } from '@/lib/recebimento/constants';
+import {
+  ackDrafts,
+  clearDrafts,
+  enqueueDrafts,
+  loadDrafts,
+  type DraftEntry,
+} from '@/lib/recebimento/autosaveQueue';
+
+export type SyncEstado = 'sincronizado' | 'salvando' | 'pendente' | 'offline';
+
 
 export interface Verificacao {
   id: string;
