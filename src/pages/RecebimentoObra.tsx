@@ -171,14 +171,14 @@ export function RecebimentoObra() {
   const abertasLista = pend.pendencias.filter((p) => ABERTAS.includes(p.situacao));
 
   const handleStatus = async (v: Verificacao, status: VerificacaoStatus) => {
-    const ok = await checklist.setStatus(v.id, status);
-    if (!ok) return;
+    await checklist.setStatus(v.id, status);
     if (status === 'nao_conforme') {
       const servico =
         ambiente?.servicos.find((s) => s.id === v.ambiente_servico_id)?.servico_snapshot ?? '';
       setNcAlvo({ v, servico });
     }
   };
+
 
   const handleFotoGeral = async () => {
     const input = document.createElement('input');
