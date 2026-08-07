@@ -46,6 +46,8 @@ import { DuplicarAmbienteDialog } from '@/components/recebimento/DuplicarAmbient
 import { AdicionarServicoSheet } from '@/components/recebimento/AdicionarServicoSheet';
 import { NaoConformidadeSheet } from '@/components/recebimento/NaoConformidadeSheet';
 import { ChecklistPanel } from '@/components/recebimento/ChecklistPanel';
+import { AutosaveIndicator } from '@/components/recebimento/AutosaveIndicator';
+
 import { PendenciasPanel, PendenciaDetailSheet } from '@/components/recebimento/PendenciasPanel';
 import {
   ABERTAS,
@@ -171,14 +173,14 @@ export function RecebimentoObra() {
   const abertasLista = pend.pendencias.filter((p) => ABERTAS.includes(p.situacao));
 
   const handleStatus = async (v: Verificacao, status: VerificacaoStatus) => {
-    const ok = await checklist.setStatus(v.id, status);
-    if (!ok) return;
+    await checklist.setStatus(v.id, status);
     if (status === 'nao_conforme') {
       const servico =
         ambiente?.servicos.find((s) => s.id === v.ambiente_servico_id)?.servico_snapshot ?? '';
       setNcAlvo({ v, servico });
     }
   };
+
 
   const handleFotoGeral = async () => {
     const input = document.createElement('input');
@@ -246,7 +248,16 @@ export function RecebimentoObra() {
       )}
     >
       <div className="mx-auto w-full max-w-6xl space-y-4">
+        {vistoria && (
+          <AutosaveIndicator
+            estado={checklist.syncEstado}
+            pendentes={checklist.pendentes}
+            ultimoSalvamento={checklist.ultimoSalvamento}
+            onSincronizar={() => checklist.sincronizarAgora()}
+          />
+        )}
         <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase text-muted-foreground">Vistoria</p>
             <Select value={vistoriaId ?? ''} onValueChange={setVistoriaId}>
