@@ -246,7 +246,16 @@ export function RecebimentoObra() {
       )}
     >
       <div className="mx-auto w-full max-w-6xl space-y-4">
+        {vistoria && (
+          <AutosaveIndicator
+            estado={checklist.syncEstado}
+            pendentes={checklist.pendentes}
+            ultimoSalvamento={checklist.ultimoSalvamento}
+            onSincronizar={() => checklist.sincronizarAgora()}
+          />
+        )}
         <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase text-muted-foreground">Vistoria</p>
             <Select value={vistoriaId ?? ''} onValueChange={setVistoriaId}>
