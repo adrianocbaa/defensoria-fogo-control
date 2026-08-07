@@ -70,6 +70,8 @@ import Apresentacao from "./pages/Apresentacao";
 import ApresentacaoDiretoria from "./pages/ApresentacaoDiretoria";
 import FluxogramaObras from "./pages/FluxogramaObras";
 import { ChecklistDinamico } from "./pages/ChecklistDinamico";
+import { ChecklistHub } from "./pages/ChecklistHub";
+import { RecebimentoObra } from "./pages/RecebimentoObra";
 import Dimensionamento from "./pages/Dimensionamento";
 import DimensionamentoCalhas from "./pages/DimensionamentoCalhas";
 
