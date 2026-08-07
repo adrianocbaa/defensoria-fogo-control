@@ -132,11 +132,17 @@ export function useRecebimentoChecklist(obraId: string, vistoriaId: string | nul
       servsByAmb.set(s.ambiente_id, list);
     }
 
-    setAmbientes(
-      ((ambs ?? []) as any[]).map((a) => ({ ...a, servicos: servsByAmb.get(a.id) ?? [] })),
-    );
+    const base = ((ambs ?? []) as any[]).map((a) => ({
+      ...a,
+      servicos: servsByAmb.get(a.id) ?? [],
+    })) as Ambiente[];
+
+    const drafts = loadDrafts(vistoriaId);
+    setPendentes(drafts.length);
+    setAmbientes(aplicarDrafts(base, drafts));
     setLoading(false);
-  }, [vistoriaId]);
+  }, [vistoriaId, aplicarDrafts]);
+
 
   useEffect(() => {
     fetchChecklist();
