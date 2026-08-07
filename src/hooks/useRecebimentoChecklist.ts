@@ -62,6 +62,32 @@ export function useRecebimentoChecklist(obraId: string, vistoriaId: string | nul
   const [ambientes, setAmbientes] = useState<Ambiente[]>([]);
   const [templates, setTemplates] = useState<TemplateResumo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pendentes, setPendentes] = useState(0);
+  const [salvando, setSalvando] = useState(false);
+  const [ultimoSalvamento, setUltimoSalvamento] = useState<Date | null>(null);
+  const [online, setOnline] = useState(
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  );
+  const flushingRef = useRef(false);
+
+  /** Aplica rascunhos locais sobre os dados vindos do servidor (recuperação). */
+  const aplicarDrafts = useCallback(
+    (lista: Ambiente[], drafts: DraftEntry[]): Ambiente[] => {
+      if (!drafts.length) return lista;
+      const map = new Map(drafts.map((d) => [d.verificacaoId, d.status]));
+      return lista.map((a) => ({
+        ...a,
+        servicos: a.servicos.map((s) => ({
+          ...s,
+          verificacoes: s.verificacoes.map((v) =>
+            map.has(v.id) ? { ...v, status: map.get(v.id)! } : v,
+          ),
+        })),
+      }));
+    },
+    [],
+  );
+
 
   const fetchChecklist = useCallback(async () => {
     if (!vistoriaId) {
