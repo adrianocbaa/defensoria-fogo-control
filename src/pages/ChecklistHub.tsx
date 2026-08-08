@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ObrasLayout, ObrasSidebarMenuButton } from '@/components/obras/ObrasLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Map, ListChecks, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Map, ListChecks, ChevronRight, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const MODOS = [
@@ -18,6 +18,12 @@ const MODOS = [
     titulo: 'Recebimento de Obra (lista de serviços)',
     desc: 'Vistoria mobile-first por ambiente e serviço, com biblioteca padronizada, pendências, reinspeção e relatório.',
     icon: ListChecks,
+  },
+  {
+    key: 'entrega',
+    titulo: 'Entrega Institucional',
+    desc: 'Prontidão da edificação para uso — limpeza, pintura, climatização, persianas e mobiliário. Disponível após o Recebimento Definitivo.',
+    icon: Building2,
   },
 ];
 
