@@ -139,30 +139,50 @@ export function useRecebimentoVistorias(obraId: string) {
 
   const excluirVistoria = async (vistoriaId: string) => {
     try {
-      const { data: pends } = await (supabase as any)
+      const db = supabase as any;
+
+      // pendências geradas nesta vistoria (coluna correta: vistoria_origem_id)
+      const { data: pends } = await db
         .from('recebimento_pendencias')
         .select('id')
-        .eq('vistoria_id', vistoriaId)
+        .eq('vistoria_origem_id', vistoriaId)
         .limit(10000);
       const pendIds = ((pends ?? []) as { id: string }[]).map((p) => p.id);
 
-      const db = supabase as any;
+      // fotos: apaga também os arquivos do bucket
+      const { data: fts } = await db
+        .from('recebimento_fotos')
+        .select('storage_path')
+        .or(
+          pendIds.length
+            ? `vistoria_id.eq.${vistoriaId},pendencia_id.in.(${pendIds.join(',')})`
+            : `vistoria_id.eq.${vistoriaId}`,
+        )
+        .limit(10000);
+      await removerRecebimentoFotos(
+        ((fts ?? []) as { storage_path: string }[]).map((f) => f.storage_path),
+      );
 
       if (pendIds.length) {
+        await db.from('recebimento_fotos').delete().in('pendencia_id', pendIds);
         await db.from('recebimento_pendencia_historico').delete().in('pendencia_id', pendIds);
       }
 
+      await db.from('recebimento_pendencia_historico').delete().eq('vistoria_id', vistoriaId);
       await db.from('recebimento_fotos').delete().eq('vistoria_id', vistoriaId);
-      await db.from('recebimento_pendencias').delete().eq('vistoria_id', vistoriaId);
+      await db.from('recebimento_pendencias').delete().eq('vistoria_origem_id', vistoriaId);
       await db.from('recebimento_verificacoes').delete().eq('vistoria_id', vistoriaId);
       await db.from('recebimento_ambiente_servicos').delete().eq('vistoria_id', vistoriaId);
       await db.from('recebimento_ambientes').delete().eq('vistoria_id', vistoriaId);
+
+      // vistorias derivadas (reinspeções) que apontam para esta
+      await db.from('recebimento_vistorias').update({ vistoria_origem_id: null }).eq('vistoria_origem_id', vistoriaId);
 
       const { error } = await db.from('recebimento_vistorias').delete().eq('id', vistoriaId);
       if (error) throw error;
 
       await fetchVistorias();
-      toast.success('Vistoria excluída');
+      toast.success('Vistoria e todos os seus dados foram excluídos');
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido';
