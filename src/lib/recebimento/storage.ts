@@ -64,11 +64,23 @@ export async function signRecebimentoFoto(path: string | null | undefined): Prom
 }
 
 export async function signRecebimentoFotos(paths: string[]): Promise<Record<string, string>> {
-  if (paths.length === 0) return {};
-  const { data } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 60 * 60);
+  const unicos = Array.from(new Set(paths.filter(Boolean)));
+  if (unicos.length === 0) return {};
   const map: Record<string, string> = {};
-  (data ?? []).forEach((d: any) => {
-    if (d.path && d.signedUrl) map[d.path] = d.signedUrl;
-  });
+  for (let i = 0; i < unicos.length; i += 100) {
+    const lote = unicos.slice(i, i + 100);
+    const { data } = await supabase.storage.from(BUCKET).createSignedUrls(lote, 60 * 60);
+    (data ?? []).forEach((d: { path?: string | null; signedUrl?: string | null }) => {
+      if (d.path && d.signedUrl) map[d.path] = d.signedUrl;
+    });
+  }
   return map;
+}
+
+/** Remove arquivos do bucket em lotes (usado na exclusão de vistorias). */
+export async function removerRecebimentoFotos(paths: string[]) {
+  const unicos = Array.from(new Set(paths.filter(Boolean)));
+  for (let i = 0; i < unicos.length; i += 100) {
+    await supabase.storage.from(BUCKET).remove(unicos.slice(i, i + 100));
+  }
 }
