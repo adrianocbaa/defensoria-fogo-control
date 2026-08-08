@@ -142,11 +142,23 @@ export function useRecebimentoVistorias(obraId: string) {
     try {
       const db = supabase as any;
 
-      // pendências geradas nesta vistoria (coluna correta: vistoria_origem_id)
+      // ambientes desta vistoria (para pegar pendências ligadas por ambiente)
+      const { data: ambs } = await db
+        .from('recebimento_ambientes')
+        .select('id')
+        .eq('vistoria_id', vistoriaId)
+        .limit(10000);
+      const ambIds = ((ambs ?? []) as { id: string }[]).map((a) => a.id);
+
+      // pendências geradas nesta vistoria (por origem ou por ambiente)
       const { data: pends } = await db
         .from('recebimento_pendencias')
         .select('id')
-        .eq('vistoria_origem_id', vistoriaId)
+        .or(
+          ambIds.length
+            ? `vistoria_origem_id.eq.${vistoriaId},ambiente_id.in.(${ambIds.join(',')})`
+            : `vistoria_origem_id.eq.${vistoriaId}`,
+        )
         .limit(10000);
       const pendIds = ((pends ?? []) as { id: string }[]).map((p) => p.id);
 
@@ -171,6 +183,9 @@ export function useRecebimentoVistorias(obraId: string) {
 
       await db.from('recebimento_pendencia_historico').delete().eq('vistoria_id', vistoriaId);
       await db.from('recebimento_fotos').delete().eq('vistoria_id', vistoriaId);
+      if (pendIds.length) {
+        await db.from('recebimento_pendencias').delete().in('id', pendIds);
+      }
       await db.from('recebimento_pendencias').delete().eq('vistoria_origem_id', vistoriaId);
       await db.from('recebimento_verificacoes').delete().eq('vistoria_id', vistoriaId);
       await db.from('recebimento_ambiente_servicos').delete().eq('vistoria_id', vistoriaId);
