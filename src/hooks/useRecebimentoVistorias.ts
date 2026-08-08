@@ -146,17 +146,19 @@ export function useRecebimentoVistorias(obraId: string) {
         .limit(10000);
       const pendIds = ((pends ?? []) as { id: string }[]).map((p) => p.id);
 
+      const db = supabase as any;
+
       if (pendIds.length) {
-        await supabase.from('recebimento_pendencia_historico').delete().in('pendencia_id', pendIds);
+        await db.from('recebimento_pendencia_historico').delete().in('pendencia_id', pendIds);
       }
 
-      await supabase.from('recebimento_fotos').delete().eq('vistoria_id', vistoriaId);
-      await supabase.from('recebimento_pendencias').delete().eq('vistoria_id', vistoriaId);
-      await supabase.from('recebimento_verificacoes').delete().eq('vistoria_id', vistoriaId);
-      await supabase.from('recebimento_ambiente_servicos').delete().eq('vistoria_id', vistoriaId);
-      await supabase.from('recebimento_ambientes').delete().eq('vistoria_id', vistoriaId);
+      await db.from('recebimento_fotos').delete().eq('vistoria_id', vistoriaId);
+      await db.from('recebimento_pendencias').delete().eq('vistoria_id', vistoriaId);
+      await db.from('recebimento_verificacoes').delete().eq('vistoria_id', vistoriaId);
+      await db.from('recebimento_ambiente_servicos').delete().eq('vistoria_id', vistoriaId);
+      await db.from('recebimento_ambientes').delete().eq('vistoria_id', vistoriaId);
 
-      const { error } = await supabase.from('recebimento_vistorias').delete().eq('id', vistoriaId);
+      const { error } = await db.from('recebimento_vistorias').delete().eq('id', vistoriaId);
       if (error) throw error;
 
       await fetchVistorias();
