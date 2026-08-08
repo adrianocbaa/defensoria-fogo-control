@@ -139,12 +139,12 @@ export function useRecebimentoVistorias(obraId: string) {
 
   const excluirVistoria = async (vistoriaId: string) => {
     try {
-      const { data: pends } = await supabase
+      const { data: pends } = await (supabase as any)
         .from('recebimento_pendencias')
         .select('id')
         .eq('vistoria_id', vistoriaId)
         .limit(10000);
-      const pendIds = (pends ?? []).map((p) => p.id);
+      const pendIds = ((pends ?? []) as { id: string }[]).map((p) => p.id);
 
       if (pendIds.length) {
         await supabase.from('recebimento_pendencia_historico').delete().in('pendencia_id', pendIds);
