@@ -139,7 +139,7 @@ export function useRecebimentoPendencias(obraId: string) {
           ambienteId: args.ambienteId,
           pendenciaId: args.pendenciaId,
         });
-        await supabase.from('recebimento_fotos').insert({
+        const { error } = await supabase.from('recebimento_fotos').insert({
           obra_id: obraId,
           vistoria_id: args.vistoriaId,
           ambiente_id: args.ambienteId ?? null,
@@ -150,6 +150,7 @@ export function useRecebimentoPendencias(obraId: string) {
           legenda: args.legenda ?? null,
           autor: user?.id ?? null,
         });
+        if (error) throw error;
       } catch (e: any) {
         toast.error('Falha ao enviar foto: ' + (e?.message ?? 'erro desconhecido'));
       }
