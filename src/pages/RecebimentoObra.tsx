@@ -4,8 +4,6 @@ import { ObrasLayout, ObrasSidebarMenuButton } from '@/components/obras/ObrasLay
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -29,7 +27,6 @@ import {
   FileDown,
   Loader2,
   ClipboardCheck,
-  AlertTriangle,
   CheckCircle2,
   RefreshCw,
 } from 'lucide-react';
@@ -38,27 +35,31 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useRecebimentoVistorias } from '@/hooks/useRecebimentoVistorias';
-import { useRecebimentoChecklist, type Verificacao } from '@/hooks/useRecebimentoChecklist';
+import {
+  useRecebimentoChecklist,
+  type AmbienteServico,
+  type Verificacao,
+} from '@/hooks/useRecebimentoChecklist';
 import { useRecebimentoPendencias, type Pendencia } from '@/hooks/useRecebimentoPendencias';
 import { NovaVistoriaDialog } from '@/components/recebimento/NovaVistoriaDialog';
 import { AmbienteFormDialog } from '@/components/recebimento/AmbienteFormDialog';
 import { DuplicarAmbienteDialog } from '@/components/recebimento/DuplicarAmbienteDialog';
 import { AdicionarServicoSheet } from '@/components/recebimento/AdicionarServicoSheet';
 import { NaoConformidadeSheet } from '@/components/recebimento/NaoConformidadeSheet';
-import { ChecklistPanel } from '@/components/recebimento/ChecklistPanel';
 import { AutosaveIndicator } from '@/components/recebimento/AutosaveIndicator';
-
-import { PendenciasPanel, PendenciaDetailSheet } from '@/components/recebimento/PendenciasPanel';
-import {
-  ABERTAS,
-  SITUACAO_CLASS,
-  SITUACAO_LABEL,
-  vistoriaTitulo,
-  type VerificacaoStatus,
-} from '@/lib/recebimento/constants';
+import { RecebimentoNav, type RecebimentoSecao } from '@/components/recebimento/RecebimentoNav';
+import { RecebimentoOverview } from '@/components/recebimento/RecebimentoOverview';
+import { ChecklistView } from '@/components/recebimento/ChecklistView';
+import { PendenciasView } from '@/components/recebimento/PendenciasView';
+import { ReinspecaoView } from '@/components/recebimento/ReinspecaoView';
+import { FotosGaleria } from '@/components/recebimento/FotosGaleria';
+import { HistoricoTimeline } from '@/components/recebimento/HistoricoTimeline';
+import { StatusSheet, type StatusAlvo } from '@/components/recebimento/StatusSheet';
+import { FinalizarVistoriaSheet } from '@/components/recebimento/FinalizarVistoriaSheet';
+import { RecebimentoMobileFooter } from '@/components/recebimento/RecebimentoMobileFooter';
+import { ABERTAS, vistoriaTitulo, type VerificacaoStatus } from '@/lib/recebimento/constants';
 import { gerarRelatorioRecebimentoPdf } from '@/lib/recebimento/relatorioPdf';
 import { uploadRecebimentoFoto } from '@/lib/recebimento/storage';
-import { cn } from '@/lib/utils';
 
 export function RecebimentoObra() {
   const { obraId = '' } = useParams();
@@ -70,7 +71,7 @@ export function RecebimentoObra() {
   const [fiscalNome, setFiscalNome] = useState('');
   const [vistoriaId, setVistoriaId] = useState<string | null>(null);
   const [ambienteAtivoId, setAmbienteAtivoId] = useState<string | null>(null);
-  const [tab, setTab] = useState('vistoria');
+  const [secao, setSecao] = useState<RecebimentoSecao>('visao');
   const [gerando, setGerando] = useState(false);
 
   const [novaVistoriaOpen, setNovaVistoriaOpen] = useState(false);
@@ -78,8 +79,9 @@ export function RecebimentoObra() {
   const [duplicarOpen, setDuplicarOpen] = useState(false);
   const [servicoOpen, setServicoOpen] = useState(false);
   const [concluirOpen, setConcluirOpen] = useState(false);
+  const [finalizarOpen, setFinalizarOpen] = useState(false);
+  const [statusAlvo, setStatusAlvo] = useState<StatusAlvo | null>(null);
   const [ncAlvo, setNcAlvo] = useState<{ v: Verificacao; servico: string } | null>(null);
-  const [reinspAlvo, setReinspAlvo] = useState<Pendencia | null>(null);
 
   const { vistorias, criarVistoria, concluirVistoria, reabrirVistoria } =
     useRecebimentoVistorias(obraId);
@@ -89,6 +91,7 @@ export function RecebimentoObra() {
   const vistoria = vistorias.find((v) => v.id === vistoriaId) ?? null;
   const somenteLeitura = !vistoria || vistoria.status !== 'em_andamento';
   const podeEditar = isAdmin || role === 'editor' || role === 'gm' || role === 'admin';
+  const bloqueado = somenteLeitura || !podeEditar;
 
   useEffect(() => {
     if (!obraId) return;
@@ -157,22 +160,26 @@ export function RecebimentoObra() {
   const stats = useMemo(() => {
     const todas = checklist.ambientes.flatMap((a) => a.servicos.flatMap((s) => s.verificacoes));
     const feitas = todas.filter((v) => v.status !== 'nao_vistoriado').length;
-    const abertas = pend.pendencias.filter((p) => ABERTAS.includes(p.situacao)).length;
-    const sanadas = pend.pendencias.filter((p) => p.situacao === 'sanada').length;
     return {
       total: todas.length,
       feitas,
-      pct: todas.length ? (feitas / todas.length) * 100 : 0,
       conformes: todas.filter((v) => v.status === 'conforme').length,
-      naoConformes: todas.filter((v) => v.status === 'nao_conforme').length,
-      abertas,
-      sanadas,
+      naoExecutados: todas.filter((v) => v.status === 'nao_executado').length,
+      abertas: pend.pendencias.filter((p) => ABERTAS.includes(p.situacao)).length,
     };
   }, [checklist.ambientes, pend.pendencias]);
 
-  const abertasLista = pend.pendencias.filter((p) => ABERTAS.includes(p.situacao));
+  const abrirVerificacao = (v: Verificacao, servico: AmbienteServico) => {
+    setStatusAlvo({
+      verificacao: v,
+      servicoNome: servico.servico_snapshot,
+      macroNome: servico.macro_snapshot,
+      ambienteNome: ambiente?.nome ?? '',
+    });
+  };
 
-  const handleStatus = async (v: Verificacao, status: VerificacaoStatus) => {
+  const aplicarStatus = async (v: Verificacao, status: VerificacaoStatus) => {
+    setStatusAlvo(null);
     await checklist.setStatus(v.id, status);
     if (status === 'nao_conforme') {
       const servico =
@@ -180,7 +187,6 @@ export function RecebimentoObra() {
       setNcAlvo({ v, servico });
     }
   };
-
 
   const handleFotoGeral = async () => {
     const input = document.createElement('input');
@@ -196,6 +202,14 @@ export function RecebimentoObra() {
     };
     input.click();
   };
+
+  const irParaAmbiente = (delta: number) => {
+    const idx = checklist.ambientes.findIndex((a) => a.id === ambienteAtivoId);
+    const prox = checklist.ambientes[idx + delta];
+    if (prox) setAmbienteAtivoId(prox.id);
+  };
+
+  const idxAmbiente = checklist.ambientes.findIndex((a) => a.id === ambienteAtivoId);
 
   const exportarPdf = async () => {
     if (!vistoria) return;
@@ -222,6 +236,8 @@ export function RecebimentoObra() {
     }
   };
 
+  const abrirPendencia = (_p: Pendencia) => setSecao('pendencias');
+
   return (
     <ObrasLayout
       header={({ openMenu }) => (
@@ -236,8 +252,12 @@ export function RecebimentoObra() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-base font-semibold md:text-lg">Recebimento de Obra</h1>
-            <p className="truncate text-xs text-muted-foreground">{(obra?.nome as string) ?? ''}</p>
+            <p className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
+              Obras · {(obra?.nome as string) ?? ''}
+            </p>
+            <h1 className="truncate text-base font-semibold md:text-lg">
+              {vistoria ? vistoriaTitulo(vistoria) : 'Recebimento de Obra'}
+            </h1>
           </div>
           {vistoria && (
             <Badge variant={vistoria.status === 'em_andamento' ? 'default' : 'secondary'}>
@@ -247,7 +267,7 @@ export function RecebimentoObra() {
         </header>
       )}
     >
-      <div className="mx-auto w-full max-w-6xl space-y-4">
+      <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-24 lg:pb-4">
         {vistoria && (
           <AutosaveIndicator
             estado={checklist.syncEstado}
@@ -256,12 +276,14 @@ export function RecebimentoObra() {
             onSincronizar={() => checklist.sincronizarAgora()}
           />
         )}
-        <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
 
+        <Card className="flex flex-col gap-3 p-4 lg:flex-row lg:items-end">
           <div className="min-w-0 flex-1">
-            <p className="text-xs uppercase text-muted-foreground">Vistoria</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Vistoria
+            </p>
             <Select value={vistoriaId ?? ''} onValueChange={setVistoriaId}>
-              <SelectTrigger className="mt-1 h-11">
+              <SelectTrigger className="mt-1 h-11 lg:max-w-md">
                 <SelectValue placeholder="Selecione a vistoria" />
               </SelectTrigger>
               <SelectContent>
@@ -273,13 +295,13 @@ export function RecebimentoObra() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button className="h-11" onClick={() => setNovaVistoriaOpen(true)} disabled={!podeEditar}>
               <Plus className="mr-2 h-4 w-4" /> Nova vistoria
             </Button>
             {vistoria && vistoria.status === 'em_andamento' && (
-              <Button variant="outline" className="h-11" onClick={() => setConcluirOpen(true)}>
-                <CheckCircle2 className="mr-2 h-4 w-4" /> Concluir
+              <Button variant="outline" className="h-11" onClick={() => setFinalizarOpen(true)}>
+                <CheckCircle2 className="mr-2 h-4 w-4" /> Finalizar
               </Button>
             )}
             {vistoria && vistoria.status === 'concluida' && podeEditar && (
@@ -301,156 +323,173 @@ export function RecebimentoObra() {
             </Button>
           </Card>
         ) : (
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="vistoria">Vistoria</TabsTrigger>
-              <TabsTrigger value="pendencias">
-                Pendências
-                {stats.abertas > 0 && (
-                  <span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] text-destructive-foreground">
-                    {stats.abertas}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="reinspecao">Reinspeção</TabsTrigger>
-              <TabsTrigger value="resumo">Resumo</TabsTrigger>
-            </TabsList>
+          <div className="flex gap-6">
+            <RecebimentoNav
+              value={secao}
+              onChange={setSecao}
+              badges={{ pendencias: stats.abertas }}
+              orientation="vertical"
+              className="sticky top-24 hidden self-start xl:flex"
+            />
 
-            <TabsContent value="vistoria" className="mt-4">
-              <ChecklistPanel
-                ambientes={checklist.ambientes}
-                ambienteAtivoId={ambienteAtivoId}
-                onSelecionarAmbiente={setAmbienteAtivoId}
-                pendenciasPorAmbiente={pendenciasPorAmbiente}
-                somenteLeitura={somenteLeitura || !podeEditar}
-                onSetStatus={handleStatus}
-                onMarcarGrupo={(verifs, status, sobrescrever) =>
-                  checklist.marcarGrupo(verifs, status, sobrescrever)
-                }
-                onAdicionarServico={() => setServicoOpen(true)}
-                onNovoAmbiente={() => setAmbienteOpen(true)}
-                onDuplicarAmbiente={() => setDuplicarOpen(true)}
-                onRemoverAmbiente={(id) => checklist.inativarAmbiente(id)}
-                onRemoverServico={(id) => checklist.inativarServico(id)}
-                onFotoGeral={handleFotoGeral}
+            <div className="min-w-0 flex-1 space-y-4">
+              <RecebimentoNav
+                value={secao}
+                onChange={setSecao}
+                badges={{ pendencias: stats.abertas }}
+                className="xl:hidden"
               />
-            </TabsContent>
 
-            <TabsContent value="pendencias" className="mt-4">
-              <PendenciasPanel
-                pendencias={pend.pendencias}
-                fotos={pend.fotos}
-                historico={pend.historico}
-                nomeAmbiente={nomeAmbiente}
-                somenteLeitura={somenteLeitura || !podeEditar}
-                onRegistrarCorrecao={(p, observacao, fotos) =>
-                  pend.registrarCorrecao({
-                    pendencia: p,
-                    vistoriaId: vistoria.id,
-                    observacao,
-                    fotos,
-                  })
-                }
-                onAvaliar={(p, aceita, observacao, fotos) =>
-                  pend.avaliarReinspecao({
-                    pendencia: p,
-                    vistoriaId: vistoria.id,
-                    aceita,
-                    observacao,
-                    fotos,
-                  })
-                }
-                onCancelar={(p, motivo) => pend.cancelarPendencia(p, motivo)}
-              />
-            </TabsContent>
-
-            <TabsContent value="reinspecao" className="mt-4 space-y-3">
-              {vistoria.tipo === 'provisorio' && (
-                <Card className="p-4 text-sm text-muted-foreground">
-                  A reinspeção avalia as pendências abertas. Crie uma vistoria do tipo
-                  &quot;Reinspeção&quot; para registrar formalmente a avaliação — as pendências abaixo
-                  permanecem as mesmas em todas as etapas.
-                </Card>
+              {secao === 'visao' && (
+                <RecebimentoOverview
+                  ambientes={checklist.ambientes}
+                  pendencias={pend.pendencias}
+                  pendenciasPorAmbiente={pendenciasPorAmbiente}
+                  onContinuar={() => setSecao('checklist')}
+                  onAbrirAmbiente={(id) => {
+                    setAmbienteAtivoId(id);
+                    setSecao('checklist');
+                  }}
+                  onVerPendencias={() => setSecao('pendencias')}
+                />
               )}
-              {abertasLista.length === 0 ? (
-                <Card className="p-8 text-center text-sm text-muted-foreground">
-                  Nenhuma pendência em aberto. Obra apta ao Recebimento Definitivo.
-                </Card>
-              ) : (
-                abertasLista.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setReinspAlvo(p)}
-                    className="flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left hover:bg-muted/40"
+
+              {secao === 'checklist' && (
+                <ChecklistView
+                  ambientes={checklist.ambientes}
+                  ambienteAtivoId={ambienteAtivoId}
+                  onSelecionarAmbiente={setAmbienteAtivoId}
+                  pendenciasPorAmbiente={pendenciasPorAmbiente}
+                  pendencias={pend.pendencias}
+                  fotos={pend.fotos}
+                  somenteLeitura={bloqueado}
+                  onAbrirVerificacao={abrirVerificacao}
+                  onMarcarPendentes={(s) => checklist.marcarGrupo(s.verificacoes, 'conforme')}
+                  onNovoAmbiente={() => setAmbienteOpen(true)}
+                  onDuplicarAmbiente={() => setDuplicarOpen(true)}
+                  onRemoverAmbiente={(id) => checklist.inativarAmbiente(id)}
+                  onAdicionarServico={() => setServicoOpen(true)}
+                  onRemoverServico={(id) => checklist.inativarServico(id)}
+                  onFoto={handleFotoGeral}
+                  onAbrirPendencia={abrirPendencia}
+                />
+              )}
+
+              {secao === 'pendencias' && (
+                <PendenciasView
+                  pendencias={pend.pendencias}
+                  fotos={pend.fotos}
+                  historico={pend.historico}
+                  nomeAmbiente={nomeAmbiente}
+                  somenteLeitura={bloqueado}
+                  onRegistrarCorrecao={(p, observacao, fotos) =>
+                    pend.registrarCorrecao({ pendencia: p, vistoriaId: vistoria.id, observacao, fotos })
+                  }
+                  onAvaliar={(p, aceita, observacao, fotos) =>
+                    pend.avaliarReinspecao({
+                      pendencia: p,
+                      vistoriaId: vistoria.id,
+                      aceita,
+                      observacao,
+                      fotos,
+                    })
+                  }
+                  onCancelar={(p, motivo) => pend.cancelarPendencia(p, motivo)}
+                />
+              )}
+
+              {secao === 'fotos' && (
+                <FotosGaleria fotos={pend.fotos} nomeAmbiente={nomeAmbiente} />
+              )}
+
+              {secao === 'historico' && (
+                <HistoricoTimeline
+                  historico={pend.historico}
+                  pendencias={pend.pendencias}
+                  nomeAmbiente={nomeAmbiente}
+                />
+              )}
+
+              {secao === 'reinspecao' && (
+                <ReinspecaoView
+                  vistoriaTitulo={vistoriaTitulo(vistoria)}
+                  ehReinspecao={vistoria.tipo === 'reinspecao'}
+                  pendencias={pend.pendencias}
+                  fotos={pend.fotos}
+                  historico={pend.historico}
+                  nomeAmbiente={nomeAmbiente}
+                  somenteLeitura={bloqueado}
+                  onRegistrarCorrecao={(p, observacao, fotos) =>
+                    pend.registrarCorrecao({
+                      pendencia: p,
+                      vistoriaId: vistoria.id,
+                      observacao,
+                      fotos,
+                    })
+                  }
+                  onAvaliar={(p, aceita, observacao, fotos) =>
+                    pend.avaliarReinspecao({
+                      pendencia: p,
+                      vistoriaId: vistoria.id,
+                      aceita,
+                      observacao,
+                      fotos,
+                    })
+                  }
+                  onCancelar={(p, motivo) => pend.cancelarPendencia(p, motivo)}
+                />
+              )}
+
+              {secao === 'relatorio' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    {[
+                      { label: 'Itens vistoriados', value: `${stats.feitas}/${stats.total}` },
+                      { label: 'Conformes', value: stats.conformes },
+                      { label: 'Não executados', value: stats.naoExecutados },
+                      { label: 'Pendências abertas', value: stats.abertas },
+                    ].map((k) => (
+                      <Card key={k.label} className="p-4">
+                        <p className="text-xs text-muted-foreground">{k.label}</p>
+                        <p className="mt-1 text-2xl font-semibold">{k.value}</p>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <Button
+                    className="h-12 w-full lg:w-auto lg:px-8"
+                    onClick={exportarPdf}
+                    disabled={gerando}
                   >
-                    <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{p.titulo}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {nomeAmbiente(p.ambiente_id)}
-                      </p>
-                    </div>
-                    <span
-                      className={cn(
-                        'shrink-0 rounded border px-2 py-0.5 text-[10px]',
-                        SITUACAO_CLASS[p.situacao],
-                      )}
-                    >
-                      {SITUACAO_LABEL[p.situacao]}
-                    </span>
-                  </button>
-                ))
-              )}
-            </TabsContent>
-
-            <TabsContent value="resumo" className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                {[
-                  { label: 'Itens vistoriados', value: `${stats.feitas}/${stats.total}` },
-                  { label: 'Conformes', value: stats.conformes },
-                  { label: 'Pendências abertas', value: stats.abertas },
-                  { label: 'Pendências sanadas', value: stats.sanadas },
-                ].map((k) => (
-                  <Card key={k.label} className="p-4">
-                    <p className="text-xs text-muted-foreground">{k.label}</p>
-                    <p className="mt-1 text-2xl font-semibold">{k.value}</p>
-                  </Card>
-                ))}
-              </div>
-
-              <Card className="p-4">
-                <p className="text-sm font-medium">Progresso da vistoria</p>
-                <Progress value={stats.pct} className="mt-2 h-2" />
-                <p className="mt-1 text-xs text-muted-foreground">{Math.round(stats.pct)}% concluído</p>
-              </Card>
-
-              <Card className="p-4">
-                <p className="text-sm font-medium">Pendências por ambiente</p>
-                <div className="mt-3 space-y-2">
-                  {checklist.ambientes.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate">{a.nome}</span>
-                      <Badge variant={pendenciasPorAmbiente[a.id] ? 'destructive' : 'secondary'}>
-                        {pendenciasPorAmbiente[a.id] ?? 0}
-                      </Badge>
-                    </div>
-                  ))}
+                    {gerando ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileDown className="mr-2 h-4 w-4" />
+                    )}
+                    Gerar relatório PDF
+                  </Button>
                 </div>
-              </Card>
-
-              <Button className="h-12 w-full" onClick={exportarPdf} disabled={gerando}>
-                {gerando ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <FileDown className="mr-2 h-4 w-4" />
-                )}
-                Gerar relatório PDF
-              </Button>
-            </TabsContent>
-          </Tabs>
+              )}
+            </div>
+          </div>
         )}
       </div>
+
+      {vistoria && secao === 'checklist' && (
+        <RecebimentoMobileFooter
+          onAnterior={() => irParaAmbiente(-1)}
+          onProximo={() => irParaAmbiente(1)}
+          onFoto={handleFotoGeral}
+          anteriorDisabled={idxAmbiente <= 0}
+          proximoDisabled={idxAmbiente < 0 || idxAmbiente >= checklist.ambientes.length - 1}
+        />
+      )}
+
+      <StatusSheet
+        alvo={statusAlvo}
+        onOpenChange={(o) => !o && setStatusAlvo(null)}
+        onSelecionar={aplicarStatus}
+      />
 
       <NovaVistoriaDialog
         open={novaVistoriaOpen}
@@ -466,7 +505,7 @@ export function RecebimentoObra() {
           const nova = await criarVistoria(args);
           if (nova) {
             setVistoriaId(nova.id);
-            setTab('vistoria');
+            setSecao('visao');
           }
         }}
       />
@@ -528,27 +567,21 @@ export function RecebimentoObra() {
         }}
       />
 
-      <PendenciaDetailSheet
-        pendencia={reinspAlvo}
-        onOpenChange={(o) => !o && setReinspAlvo(null)}
-        fotos={pend.fotos}
-        historico={pend.historico}
-        nomeAmbiente={nomeAmbiente}
-        somenteLeitura={somenteLeitura || !podeEditar}
-        modoReinspecao
-        onRegistrarCorrecao={(p, observacao, fotos) =>
-          pend.registrarCorrecao({ pendencia: p, vistoriaId: vistoria!.id, observacao, fotos })
-        }
-        onAvaliar={(p, aceita, observacao, fotos) =>
-          pend.avaliarReinspecao({
-            pendencia: p,
-            vistoriaId: vistoria!.id,
-            aceita,
-            observacao,
-            fotos,
-          })
-        }
-        onCancelar={(p, motivo) => pend.cancelarPendencia(p, motivo)}
+      <FinalizarVistoriaSheet
+        open={finalizarOpen}
+        onOpenChange={setFinalizarOpen}
+        vistoriados={stats.feitas}
+        naoVistoriados={stats.total - stats.feitas}
+        pendenciasAbertas={stats.abertas}
+        naoExecutados={stats.naoExecutados}
+        onVerPendentes={() => {
+          setFinalizarOpen(false);
+          setSecao('checklist');
+        }}
+        onFinalizar={() => {
+          setFinalizarOpen(false);
+          setConcluirOpen(true);
+        }}
       />
 
       <AlertDialog open={concluirOpen} onOpenChange={setConcluirOpen}>
