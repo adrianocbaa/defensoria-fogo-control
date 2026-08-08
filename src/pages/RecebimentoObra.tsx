@@ -29,6 +29,7 @@ import {
   ClipboardCheck,
   CheckCircle2,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -80,10 +81,12 @@ export function RecebimentoObra() {
   const [servicoOpen, setServicoOpen] = useState(false);
   const [concluirOpen, setConcluirOpen] = useState(false);
   const [finalizarOpen, setFinalizarOpen] = useState(false);
+  const [excluirOpen, setExcluirOpen] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [statusAlvo, setStatusAlvo] = useState<StatusAlvo | null>(null);
   const [ncAlvo, setNcAlvo] = useState<{ v: Verificacao; servico: string } | null>(null);
 
-  const { vistorias, criarVistoria, concluirVistoria, reabrirVistoria } =
+  const { vistorias, criarVistoria, concluirVistoria, reabrirVistoria, excluirVistoria } =
     useRecebimentoVistorias(obraId);
   const checklist = useRecebimentoChecklist(obraId, vistoriaId);
   const pend = useRecebimentoPendencias(obraId);
