@@ -142,11 +142,23 @@ export function useRecebimentoVistorias(obraId: string) {
     try {
       const db = supabase as any;
 
-      // pendências geradas nesta vistoria (coluna correta: vistoria_origem_id)
+      // ambientes desta vistoria (para pegar pendências ligadas por ambiente)
+      const { data: ambs } = await db
+        .from('recebimento_ambientes')
+        .select('id')
+        .eq('vistoria_id', vistoriaId)
+        .limit(10000);
+      const ambIds = ((ambs ?? []) as { id: string }[]).map((a) => a.id);
+
+      // pendências geradas nesta vistoria (por origem ou por ambiente)
       const { data: pends } = await db
         .from('recebimento_pendencias')
         .select('id')
-        .eq('vistoria_origem_id', vistoriaId)
+        .or(
+          ambIds.length
+            ? `vistoria_origem_id.eq.${vistoriaId},ambiente_id.in.(${ambIds.join(',')})`
+            : `vistoria_origem_id.eq.${vistoriaId}`,
+        )
         .limit(10000);
       const pendIds = ((pends ?? []) as { id: string }[]).map((p) => p.id);
 
