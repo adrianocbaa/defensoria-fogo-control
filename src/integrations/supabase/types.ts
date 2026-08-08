@@ -1287,6 +1287,782 @@ export type Database = {
         }
         Relationships: []
       }
+      entrega_ambiente_grupos: {
+        Row: {
+          ambiente_id: string
+          ativo: boolean
+          biblioteca_grupo_id: string | null
+          created_at: string
+          created_by: string | null
+          entrega_id: string
+          grupo_snapshot: string
+          id: string
+          obra_id: string
+          ordem: number
+          responsabilidade_padrao: string
+          updated_at: string
+        }
+        Insert: {
+          ambiente_id: string
+          ativo?: boolean
+          biblioteca_grupo_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          entrega_id: string
+          grupo_snapshot: string
+          id?: string
+          obra_id: string
+          ordem?: number
+          responsabilidade_padrao?: string
+          updated_at?: string
+        }
+        Update: {
+          ambiente_id?: string
+          ativo?: boolean
+          biblioteca_grupo_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          entrega_id?: string
+          grupo_snapshot?: string
+          id?: string
+          obra_id?: string
+          ordem?: number
+          responsabilidade_padrao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_ambiente_grupos_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_ambiente_grupos_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_ambientes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          entrega_id: string
+          id: string
+          nome: string
+          obra_id: string
+          observacoes: string | null
+          ordem: number
+          pavimento: string | null
+          recebimento_ambiente_id: string | null
+          tipo_modelo: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          entrega_id: string
+          id?: string
+          nome: string
+          obra_id: string
+          observacoes?: string | null
+          ordem?: number
+          pavimento?: string | null
+          recebimento_ambiente_id?: string | null
+          tipo_modelo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          entrega_id?: string
+          id?: string
+          nome?: string
+          obra_id?: string
+          observacoes?: string | null
+          ordem?: number
+          pavimento?: string | null
+          recebimento_ambiente_id?: string | null
+          tipo_modelo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_ambientes_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_biblioteca_grupos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          responsabilidade_padrao: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          responsabilidade_padrao?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          responsabilidade_padrao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      entrega_biblioteca_verificacoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string
+          grupo_id: string
+          id: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao: string
+          grupo_id: string
+          id?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string
+          grupo_id?: string
+          id?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_biblioteca_verificacoes_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_biblioteca_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_fotos: {
+        Row: {
+          ambiente_id: string | null
+          autor: string | null
+          created_at: string
+          entrega_id: string
+          historico_id: string | null
+          id: string
+          legenda: string | null
+          obra_id: string
+          pendencia_id: string | null
+          reinspecao_id: string | null
+          storage_path: string
+          tipo: string
+        }
+        Insert: {
+          ambiente_id?: string | null
+          autor?: string | null
+          created_at?: string
+          entrega_id: string
+          historico_id?: string | null
+          id?: string
+          legenda?: string | null
+          obra_id: string
+          pendencia_id?: string | null
+          reinspecao_id?: string | null
+          storage_path: string
+          tipo?: string
+        }
+        Update: {
+          ambiente_id?: string | null
+          autor?: string | null
+          created_at?: string
+          entrega_id?: string
+          historico_id?: string | null
+          id?: string
+          legenda?: string | null
+          obra_id?: string
+          pendencia_id?: string | null
+          reinspecao_id?: string | null
+          storage_path?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_fotos_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_fotos_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_vistorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_fotos_pendencia_id_fkey"
+            columns: ["pendencia_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_pendencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_participantes: {
+        Row: {
+          created_at: string
+          entrega_id: string
+          funcao_snapshot: string | null
+          id: string
+          nome_snapshot: string
+          obra_id: string
+          papel: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entrega_id: string
+          funcao_snapshot?: string | null
+          id?: string
+          nome_snapshot: string
+          obra_id: string
+          papel?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entrega_id?: string
+          funcao_snapshot?: string | null
+          id?: string
+          nome_snapshot?: string
+          obra_id?: string
+          papel?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_participantes_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_pendencia_historico: {
+        Row: {
+          autor: string | null
+          autor_nome: string | null
+          created_at: string
+          entrega_id: string
+          evento: string
+          id: string
+          obra_id: string
+          observacao: string | null
+          pendencia_id: string
+          reinspecao_id: string | null
+          situacao_anterior: string | null
+          situacao_nova: string | null
+        }
+        Insert: {
+          autor?: string | null
+          autor_nome?: string | null
+          created_at?: string
+          entrega_id: string
+          evento: string
+          id?: string
+          obra_id: string
+          observacao?: string | null
+          pendencia_id: string
+          reinspecao_id?: string | null
+          situacao_anterior?: string | null
+          situacao_nova?: string | null
+        }
+        Update: {
+          autor?: string | null
+          autor_nome?: string | null
+          created_at?: string
+          entrega_id?: string
+          evento?: string
+          id?: string
+          obra_id?: string
+          observacao?: string | null
+          pendencia_id?: string
+          reinspecao_id?: string | null
+          situacao_anterior?: string | null
+          situacao_nova?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_pendencia_historico_pendencia_id_fkey"
+            columns: ["pendencia_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_pendencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_pendencias: {
+        Row: {
+          ambiente_grupo_id: string | null
+          ambiente_id: string | null
+          cancelada_em: string | null
+          cancelada_por: string | null
+          created_at: string
+          criada_por: string | null
+          descricao: string | null
+          entrega_id: string
+          id: string
+          impacto: string
+          motivo_cancelamento: string | null
+          obra_id: string
+          prazo_correcao: string | null
+          responsabilidade: string
+          responsavel_terceiro: string | null
+          sanada_em: string | null
+          sanada_por: string | null
+          situacao: string
+          titulo: string
+          updated_at: string
+          verificacao_id: string | null
+        }
+        Insert: {
+          ambiente_grupo_id?: string | null
+          ambiente_id?: string | null
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          created_at?: string
+          criada_por?: string | null
+          descricao?: string | null
+          entrega_id: string
+          id?: string
+          impacto?: string
+          motivo_cancelamento?: string | null
+          obra_id: string
+          prazo_correcao?: string | null
+          responsabilidade?: string
+          responsavel_terceiro?: string | null
+          sanada_em?: string | null
+          sanada_por?: string | null
+          situacao?: string
+          titulo: string
+          updated_at?: string
+          verificacao_id?: string | null
+        }
+        Update: {
+          ambiente_grupo_id?: string | null
+          ambiente_id?: string | null
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          created_at?: string
+          criada_por?: string | null
+          descricao?: string | null
+          entrega_id?: string
+          id?: string
+          impacto?: string
+          motivo_cancelamento?: string | null
+          obra_id?: string
+          prazo_correcao?: string | null
+          responsabilidade?: string
+          responsavel_terceiro?: string | null
+          sanada_em?: string | null
+          sanada_por?: string | null
+          situacao?: string
+          titulo?: string
+          updated_at?: string
+          verificacao_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_pendencias_ambiente_grupo_id_fkey"
+            columns: ["ambiente_grupo_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_ambiente_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_pendencias_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_pendencias_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_vistorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_pendencias_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_verificacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_reinspecao_itens: {
+        Row: {
+          avaliado_em: string | null
+          avaliado_por: string | null
+          created_at: string
+          id: string
+          obra_id: string
+          observacao: string | null
+          pendencia_id: string
+          reinspecao_id: string
+          resultado: string | null
+        }
+        Insert: {
+          avaliado_em?: string | null
+          avaliado_por?: string | null
+          created_at?: string
+          id?: string
+          obra_id: string
+          observacao?: string | null
+          pendencia_id: string
+          reinspecao_id: string
+          resultado?: string | null
+        }
+        Update: {
+          avaliado_em?: string | null
+          avaliado_por?: string | null
+          created_at?: string
+          id?: string
+          obra_id?: string
+          observacao?: string | null
+          pendencia_id?: string
+          reinspecao_id?: string
+          resultado?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_reinspecao_itens_pendencia_id_fkey"
+            columns: ["pendencia_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_pendencias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_reinspecao_itens_reinspecao_id_fkey"
+            columns: ["reinspecao_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_reinspecoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_reinspecoes: {
+        Row: {
+          concluida_em: string | null
+          created_at: string
+          data: string
+          entrega_id: string
+          id: string
+          obra_id: string
+          observacoes: string | null
+          responsavel_id: string | null
+          responsavel_nome: string | null
+          sequencia: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          concluida_em?: string | null
+          created_at?: string
+          data?: string
+          entrega_id: string
+          id?: string
+          obra_id: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          responsavel_nome?: string | null
+          sequencia?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          concluida_em?: string | null
+          created_at?: string
+          data?: string
+          entrega_id?: string
+          id?: string
+          obra_id?: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          responsavel_nome?: string | null
+          sequencia?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_reinspecoes_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_template_grupos: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          ordem: number
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          ordem?: number
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          ordem?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_template_grupos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_biblioteca_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_template_grupos_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_templates: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          tipo_modelo: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          tipo_modelo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          tipo_modelo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      entrega_verificacoes: {
+        Row: {
+          ambiente_grupo_id: string
+          ambiente_id: string
+          ativo: boolean
+          biblioteca_verificacao_id: string | null
+          created_at: string
+          descricao_snapshot: string
+          entrega_id: string
+          id: string
+          obra_id: string
+          observacao: string | null
+          ordem: number
+          respondido_em: string | null
+          respondido_por: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ambiente_grupo_id: string
+          ambiente_id: string
+          ativo?: boolean
+          biblioteca_verificacao_id?: string | null
+          created_at?: string
+          descricao_snapshot: string
+          entrega_id: string
+          id?: string
+          obra_id: string
+          observacao?: string | null
+          ordem?: number
+          respondido_em?: string | null
+          respondido_por?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ambiente_grupo_id?: string
+          ambiente_id?: string
+          ativo?: boolean
+          biblioteca_verificacao_id?: string | null
+          created_at?: string
+          descricao_snapshot?: string
+          entrega_id?: string
+          id?: string
+          obra_id?: string
+          observacao?: string | null
+          ordem?: number
+          respondido_em?: string | null
+          respondido_por?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_verificacoes_ambiente_grupo_id_fkey"
+            columns: ["ambiente_grupo_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_ambiente_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_verificacoes_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_verificacoes_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entrega_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entrega_vistorias: {
+        Row: {
+          cancelada_em: string | null
+          cancelada_por: string | null
+          ciencia_em: string | null
+          ciencia_observacoes: string | null
+          ciencia_por: string | null
+          created_at: string
+          data: string
+          id: string
+          iniciado_em: string
+          iniciado_por: string | null
+          motivo_cancelamento: string | null
+          obra_id: string
+          observacoes: string | null
+          recebimento_definitivo_data: string | null
+          recebimento_definitivo_id: string | null
+          resultado_congelado: string | null
+          resultado_resumo: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          ciencia_em?: string | null
+          ciencia_observacoes?: string | null
+          ciencia_por?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          iniciado_em?: string
+          iniciado_por?: string | null
+          motivo_cancelamento?: string | null
+          obra_id: string
+          observacoes?: string | null
+          recebimento_definitivo_data?: string | null
+          recebimento_definitivo_id?: string | null
+          resultado_congelado?: string | null
+          resultado_resumo?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          ciencia_em?: string | null
+          ciencia_observacoes?: string | null
+          ciencia_por?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          iniciado_em?: string
+          iniciado_por?: string | null
+          motivo_cancelamento?: string | null
+          obra_id?: string
+          observacoes?: string | null
+          recebimento_definitivo_data?: string | null
+          recebimento_definitivo_id?: string | null
+          resultado_congelado?: string | null
+          resultado_resumo?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_vistorias_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_vistorias_recebimento_definitivo_id_fkey"
+            columns: ["recebimento_definitivo_id"]
+            isOneToOne: false
+            referencedRelation: "recebimento_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fire_extinguishers: {
         Row: {
           capacity: string | null
