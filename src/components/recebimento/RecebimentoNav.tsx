@@ -1,10 +1,19 @@
-import { Camera, ClipboardList, FileText, History, LayoutGrid, ShieldAlert } from 'lucide-react';
+import {
+  Camera,
+  ClipboardList,
+  FileText,
+  History,
+  LayoutGrid,
+  RefreshCw,
+  ShieldAlert,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type RecebimentoSecao =
   | 'visao'
   | 'checklist'
   | 'pendencias'
+  | 'reinspecao'
   | 'fotos'
   | 'historico'
   | 'relatorio';
@@ -13,6 +22,7 @@ const ITENS: { key: RecebimentoSecao; label: string; icon: typeof LayoutGrid }[]
   { key: 'visao', label: 'Visão Geral', icon: LayoutGrid },
   { key: 'checklist', label: 'Checklist', icon: ClipboardList },
   { key: 'pendencias', label: 'Pendências', icon: ShieldAlert },
+  { key: 'reinspecao', label: 'Reinspeção', icon: RefreshCw },
   { key: 'fotos', label: 'Fotos', icon: Camera },
   { key: 'historico', label: 'Histórico', icon: History },
   { key: 'relatorio', label: 'Relatório', icon: FileText },

@@ -410,37 +410,57 @@ export function RecebimentoObra() {
                 />
               )}
 
+              {secao === 'reinspecao' && (
+                <ReinspecaoView
+                  vistoriaTitulo={vistoriaTitulo(vistoria)}
+                  ehReinspecao={vistoria.tipo === 'reinspecao'}
+                  pendencias={pend.pendencias}
+                  fotos={pend.fotos}
+                  historico={pend.historico}
+                  nomeAmbiente={nomeAmbiente}
+                  somenteLeitura={bloqueado}
+                  onRegistrarCorrecao={(p, observacao, fotos) =>
+                    pend.registrarCorrecao({
+                      pendencia: p,
+                      vistoriaId: vistoria.id,
+                      observacao,
+                      fotos,
+                    })
+                  }
+                  onAvaliar={(p, aceita, observacao, fotos) =>
+                    pend.avaliarReinspecao({
+                      pendencia: p,
+                      vistoriaId: vistoria.id,
+                      aceita,
+                      observacao,
+                      fotos,
+                    })
+                  }
+                  onCancelar={(p, motivo) => pend.cancelarPendencia(p, motivo)}
+                />
+              )}
+
               {secao === 'relatorio' && (
                 <div className="space-y-4">
-                  <ReinspecaoView
-                    vistoriaTitulo={vistoriaTitulo(vistoria)}
-                    ehReinspecao={vistoria.tipo === 'reinspecao'}
-                    pendencias={pend.pendencias}
-                    fotos={pend.fotos}
-                    historico={pend.historico}
-                    nomeAmbiente={nomeAmbiente}
-                    somenteLeitura={bloqueado}
-                    onRegistrarCorrecao={(p, observacao, fotos) =>
-                      pend.registrarCorrecao({
-                        pendencia: p,
-                        vistoriaId: vistoria.id,
-                        observacao,
-                        fotos,
-                      })
-                    }
-                    onAvaliar={(p, aceita, observacao, fotos) =>
-                      pend.avaliarReinspecao({
-                        pendencia: p,
-                        vistoriaId: vistoria.id,
-                        aceita,
-                        observacao,
-                        fotos,
-                      })
-                    }
-                    onCancelar={(p, motivo) => pend.cancelarPendencia(p, motivo)}
-                  />
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    {[
+                      { label: 'Itens vistoriados', value: `${stats.feitas}/${stats.total}` },
+                      { label: 'Conformes', value: stats.conformes },
+                      { label: 'Não executados', value: stats.naoExecutados },
+                      { label: 'Pendências abertas', value: stats.abertas },
+                    ].map((k) => (
+                      <Card key={k.label} className="p-4">
+                        <p className="text-xs text-muted-foreground">{k.label}</p>
+                        <p className="mt-1 text-2xl font-semibold">{k.value}</p>
+                      </Card>
+                    ))}
+                  </div>
 
-                  <Button className="h-12 w-full lg:w-auto lg:px-8" onClick={exportarPdf} disabled={gerando}>
+                  <Button
+                    className="h-12 w-full lg:w-auto lg:px-8"
+                    onClick={exportarPdf}
+                    disabled={gerando}
+                  >
                     {gerando ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
