@@ -45,7 +45,8 @@ export async function uploadRecebimentoFoto({
 }: UploadFotoArgs): Promise<string> {
   const blob = await compressImage(file);
   const scope = pendenciaId ? `pendencia_${pendenciaId}` : 'geral';
-  const path = `recebimento/${obraId}/${vistoriaId}/${ambienteId ?? 'sem-ambiente'}/${scope}/${Date.now()}_${Math.random()
+  // A policy do bucket exige que a 1ª pasta seja o UUID da obra
+  const path = `${obraId}/recebimento/${vistoriaId}/${ambienteId ?? 'sem-ambiente'}/${scope}/${Date.now()}_${Math.random()
     .toString(36)
     .slice(2, 8)}.jpg`;
 
