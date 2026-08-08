@@ -183,6 +183,9 @@ export function useRecebimentoVistorias(obraId: string) {
 
       await db.from('recebimento_pendencia_historico').delete().eq('vistoria_id', vistoriaId);
       await db.from('recebimento_fotos').delete().eq('vistoria_id', vistoriaId);
+      if (pendIds.length) {
+        await db.from('recebimento_pendencias').delete().in('id', pendIds);
+      }
       await db.from('recebimento_pendencias').delete().eq('vistoria_origem_id', vistoriaId);
       await db.from('recebimento_verificacoes').delete().eq('vistoria_id', vistoriaId);
       await db.from('recebimento_ambiente_servicos').delete().eq('vistoria_id', vistoriaId);
