@@ -137,6 +137,38 @@ export function useRecebimentoVistorias(obraId: string) {
     toast.success('Vistoria cancelada');
   };
 
+  const excluirVistoria = async (vistoriaId: string) => {
+    try {
+      const { data: pends } = await supabase
+        .from('recebimento_pendencias')
+        .select('id')
+        .eq('vistoria_id', vistoriaId)
+        .limit(10000);
+      const pendIds = (pends ?? []).map((p) => p.id);
+
+      if (pendIds.length) {
+        await supabase.from('recebimento_pendencia_historico').delete().in('pendencia_id', pendIds);
+      }
+
+      await supabase.from('recebimento_fotos').delete().eq('vistoria_id', vistoriaId);
+      await supabase.from('recebimento_pendencias').delete().eq('vistoria_id', vistoriaId);
+      await supabase.from('recebimento_verificacoes').delete().eq('vistoria_id', vistoriaId);
+      await supabase.from('recebimento_ambiente_servicos').delete().eq('vistoria_id', vistoriaId);
+      await supabase.from('recebimento_ambientes').delete().eq('vistoria_id', vistoriaId);
+
+      const { error } = await supabase.from('recebimento_vistorias').delete().eq('id', vistoriaId);
+      if (error) throw error;
+
+      await fetchVistorias();
+      toast.success('Vistoria excluída');
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast.error('Erro ao excluir vistoria: ' + msg);
+      return false;
+    }
+  };
+
   return {
     vistorias,
     loading,
@@ -144,6 +176,7 @@ export function useRecebimentoVistorias(obraId: string) {
     concluirVistoria,
     reabrirVistoria,
     cancelarVistoria,
+    excluirVistoria,
     refetch: fetchVistorias,
   };
 }
