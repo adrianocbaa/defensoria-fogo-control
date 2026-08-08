@@ -29,6 +29,7 @@ import {
   ClipboardCheck,
   CheckCircle2,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -80,10 +81,12 @@ export function RecebimentoObra() {
   const [servicoOpen, setServicoOpen] = useState(false);
   const [concluirOpen, setConcluirOpen] = useState(false);
   const [finalizarOpen, setFinalizarOpen] = useState(false);
+  const [excluirOpen, setExcluirOpen] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [statusAlvo, setStatusAlvo] = useState<StatusAlvo | null>(null);
   const [ncAlvo, setNcAlvo] = useState<{ v: Verificacao; servico: string } | null>(null);
 
-  const { vistorias, criarVistoria, concluirVistoria, reabrirVistoria } =
+  const { vistorias, criarVistoria, concluirVistoria, reabrirVistoria, excluirVistoria } =
     useRecebimentoVistorias(obraId);
   const checklist = useRecebimentoChecklist(obraId, vistoriaId);
   const pend = useRecebimentoPendencias(obraId);
@@ -309,8 +312,55 @@ export function RecebimentoObra() {
                 <RefreshCw className="mr-2 h-4 w-4" /> Reabrir
               </Button>
             )}
+            {vistoria && isAdmin && (
+              <Button
+                variant="outline"
+                className="h-11 text-destructive hover:text-destructive"
+                onClick={() => setExcluirOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              </Button>
+            )}
           </div>
         </Card>
+
+        <AlertDialog open={excluirOpen} onOpenChange={setExcluirOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir vistoria</AlertDialogTitle>
+              <AlertDialogDescription>
+                {vistoria ? (
+                  <>
+                    Você está prestes a excluir <strong>{vistoriaTitulo(vistoria)}</strong>. Todos os
+                    ambientes, serviços, verificações, pendências e fotos desta vistoria serão
+                    removidos permanentemente. Esta ação não pode ser desfeita.
+                  </>
+                ) : null}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={excluindo}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (!vistoria) return;
+                  setExcluindo(true);
+                  const ok = await excluirVistoria(vistoria.id);
+                  setExcluindo(false);
+                  if (ok) {
+                    setExcluirOpen(false);
+                    setVistoriaId(null);
+                    setSecao('visao');
+                  }
+                }}
+              >
+                {excluindo ? 'Excluindo...' : 'Excluir vistoria'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {!vistoria ? (
           <Card className="flex flex-col items-center gap-3 p-10 text-center">
