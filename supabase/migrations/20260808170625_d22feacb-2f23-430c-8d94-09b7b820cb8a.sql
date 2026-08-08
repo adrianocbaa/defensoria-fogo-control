@@ -1,0 +1,1 @@
+CREATE POLICY "rph_delete" ON public.recebimento_pendencia_historico FOR DELETE TO authenticated USING (public.can_edit_obra(obra_id, auth.uid()));
