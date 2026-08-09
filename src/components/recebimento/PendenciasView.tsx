@@ -42,7 +42,17 @@ export function PendenciasView({
   const [busca, setBusca] = useState('');
   const [selecionadaId, setSelecionadaId] = useState<string | null>(null);
   const [sheetAberta, setSheetAberta] = useState(false);
-  const isMobile = useIsMobile();
+  const [telaEstreita, setTelaEstreita] = useState(
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 1023px)').matches : false,
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 1023px)');
+    const onChange = () => setTelaEstreita(mql.matches);
+    mql.addEventListener('change', onChange);
+    onChange();
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
