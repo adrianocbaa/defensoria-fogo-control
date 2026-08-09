@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
