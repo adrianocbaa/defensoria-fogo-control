@@ -71,7 +71,7 @@ export function PendenciasView({
 
   const abrir = (p: Pendencia) => {
     setSelecionadaId(p.id);
-    setSheetAberta(true);
+    setSheetAberta(telaEstreita);
   };
 
   const detalheProps = (p: Pendencia) => ({
@@ -155,7 +155,7 @@ export function PendenciasView({
 
       {/* Detalhe em bottom sheet (mobile/tablet estreito) */}
       <Sheet
-        open={sheetAberta && !!selecionada}
+        open={telaEstreita && sheetAberta && !!selecionada}
         onOpenChange={(o) => {
           setSheetAberta(o);
         }}
