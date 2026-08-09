@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -42,6 +42,17 @@ export function PendenciasView({
   const [busca, setBusca] = useState('');
   const [selecionadaId, setSelecionadaId] = useState<string | null>(null);
   const [sheetAberta, setSheetAberta] = useState(false);
+  const [telaEstreita, setTelaEstreita] = useState(
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 1023px)').matches : false,
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 1023px)');
+    const onChange = () => setTelaEstreita(mql.matches);
+    mql.addEventListener('change', onChange);
+    onChange();
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -60,7 +71,7 @@ export function PendenciasView({
 
   const abrir = (p: Pendencia) => {
     setSelecionadaId(p.id);
-    setSheetAberta(true);
+    setSheetAberta(telaEstreita);
   };
 
   const detalheProps = (p: Pendencia) => ({
@@ -144,7 +155,7 @@ export function PendenciasView({
 
       {/* Detalhe em bottom sheet (mobile/tablet estreito) */}
       <Sheet
-        open={sheetAberta && !!selecionada}
+        open={telaEstreita && sheetAberta && !!selecionada}
         onOpenChange={(o) => {
           setSheetAberta(o);
         }}
