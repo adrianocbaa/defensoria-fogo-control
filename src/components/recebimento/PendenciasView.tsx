@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -42,6 +43,7 @@ export function PendenciasView({
   const [busca, setBusca] = useState('');
   const [selecionadaId, setSelecionadaId] = useState<string | null>(null);
   const [sheetAberta, setSheetAberta] = useState(false);
+  const isMobile = useIsMobile();
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
