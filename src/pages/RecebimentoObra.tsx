@@ -134,15 +134,61 @@ export function RecebimentoObra() {
   const nomeAmbiente = (id: string | null) =>
     checklist.ambientes.find((a) => a.id === id)?.nome ?? 'Ambiente';
 
+  /** Ids da cadeia da vistoria atual (origem + reinspeções derivadas). */
+  const cadeiaIds = useMemo(() => {
+    if (!vistoriaId) return new Set<string>();
+    const byId = new Map(vistorias.map((v) => [v.id, v]));
+    let raiz = vistoriaId;
+    const visitados = new Set<string>();
+    while (true) {
+      const atual = byId.get(raiz);
+      const pai = atual?.vistoria_origem_id ?? null;
+      if (!pai || visitados.has(pai) || !byId.has(pai)) break;
+      visitados.add(pai);
+      raiz = pai;
+    }
+    const ids = new Set<string>([raiz]);
+    let mudou = true;
+    while (mudou) {
+      mudou = false;
+      for (const v of vistorias) {
+        if (v.vistoria_origem_id && ids.has(v.vistoria_origem_id) && !ids.has(v.id)) {
+          ids.add(v.id);
+          mudou = true;
+        }
+      }
+    }
+    return ids;
+  }, [vistorias, vistoriaId]);
+
+  /** Só pendências geradas na cadeia da vistoria atual. */
+  const pendencias = useMemo(
+    () =>
+      pend.pendencias.filter(
+        (p) => p.vistoria_origem_id && cadeiaIds.has(p.vistoria_origem_id),
+      ),
+    [pend.pendencias, cadeiaIds],
+  );
+
+  const fotos = useMemo(
+    () =>
+      pend.fotos.filter(
+        (f) =>
+          (f.vistoria_id && cadeiaIds.has(f.vistoria_id)) ||
+          (f.pendencia_id && pendencias.some((p) => p.id === f.pendencia_id)),
+      ),
+    [pend.fotos, cadeiaIds, pendencias],
+  );
+
   const pendenciasPorAmbiente = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const p of pend.pendencias) {
+    for (const p of pendencias) {
       if (!p.ambiente_id) continue;
       if (!ABERTAS.includes(p.situacao)) continue;
       map[p.ambiente_id] = (map[p.ambiente_id] ?? 0) + 1;
     }
     return map;
-  }, [pend.pendencias]);
+  }, [pendencias]);
 
   const maisUsados = useMemo(() => {
     const cnt = new Map<string, { macro: string; servico: string; n: number }>();
@@ -168,9 +214,9 @@ export function RecebimentoObra() {
       feitas,
       conformes: todas.filter((v) => v.status === 'conforme').length,
       naoExecutados: todas.filter((v) => v.status === 'nao_executado').length,
-      abertas: pend.pendencias.filter((p) => ABERTAS.includes(p.situacao)).length,
+      abertas: pendencias.filter((p) => ABERTAS.includes(p.situacao)).length,
     };
-  }, [checklist.ambientes, pend.pendencias]);
+  }, [checklist.ambientes, pendencias]);
 
   const abrirVerificacao = (v: Verificacao, servico: AmbienteServico) => {
     setStatusAlvo({
@@ -228,8 +274,8 @@ export function RecebimentoObra() {
         },
         fiscalNome,
         ambientes: checklist.ambientes,
-        pendencias: pend.pendencias.filter((p) => p.situacao !== 'cancelada'),
-        fotos: pend.fotos,
+        pendencias: pendencias.filter((p) => p.situacao !== 'cancelada'),
+        fotos,
       });
     } catch (e) {
       console.error(e);
@@ -348,6 +394,7 @@ export function RecebimentoObra() {
                   if (!vistoria) return;
                   setExcluindo(true);
                   const ok = await excluirVistoria(vistoria.id);
+                  await pend.refetch();
                   setExcluindo(false);
                   if (ok) {
                     setExcluirOpen(false);
@@ -393,7 +440,7 @@ export function RecebimentoObra() {
               {secao === 'visao' && (
                 <RecebimentoOverview
                   ambientes={checklist.ambientes}
-                  pendencias={pend.pendencias}
+                  pendencias={pendencias}
                   pendenciasPorAmbiente={pendenciasPorAmbiente}
                   onContinuar={() => setSecao('checklist')}
                   onAbrirAmbiente={(id) => {
@@ -410,8 +457,8 @@ export function RecebimentoObra() {
                   ambienteAtivoId={ambienteAtivoId}
                   onSelecionarAmbiente={setAmbienteAtivoId}
                   pendenciasPorAmbiente={pendenciasPorAmbiente}
-                  pendencias={pend.pendencias}
-                  fotos={pend.fotos}
+                  pendencias={pendencias}
+                  fotos={fotos}
                   somenteLeitura={bloqueado}
                   onAbrirVerificacao={abrirVerificacao}
                   onMarcarPendentes={(s) => checklist.marcarGrupo(s.verificacoes, 'conforme')}
@@ -427,8 +474,8 @@ export function RecebimentoObra() {
 
               {secao === 'pendencias' && (
                 <PendenciasView
-                  pendencias={pend.pendencias}
-                  fotos={pend.fotos}
+                  pendencias={pendencias}
+                  fotos={fotos}
                   historico={pend.historico}
                   nomeAmbiente={nomeAmbiente}
                   somenteLeitura={bloqueado}
@@ -449,13 +496,13 @@ export function RecebimentoObra() {
               )}
 
               {secao === 'fotos' && (
-                <FotosGaleria fotos={pend.fotos} nomeAmbiente={nomeAmbiente} />
+                <FotosGaleria fotos={fotos} nomeAmbiente={nomeAmbiente} />
               )}
 
               {secao === 'historico' && (
                 <HistoricoTimeline
                   historico={pend.historico}
-                  pendencias={pend.pendencias}
+                  pendencias={pendencias}
                   nomeAmbiente={nomeAmbiente}
                 />
               )}
@@ -464,8 +511,8 @@ export function RecebimentoObra() {
                 <ReinspecaoView
                   vistoriaTitulo={vistoriaTitulo(vistoria)}
                   ehReinspecao={vistoria.tipo === 'reinspecao'}
-                  pendencias={pend.pendencias}
-                  fotos={pend.fotos}
+                  pendencias={pendencias}
+                  fotos={fotos}
                   historico={pend.historico}
                   nomeAmbiente={nomeAmbiente}
                   somenteLeitura={bloqueado}
