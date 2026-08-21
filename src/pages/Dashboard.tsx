@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { SimpleHeader } from '@/components/SimpleHeader';
-import { PageHeader } from '@/components/PageHeader';
+import { ObrasLayout } from '@/components/obras/ObrasLayout';
+import { WorksPageHeader } from '@/components/obras/WorksPageHeader';
 import { ErrorState } from '@/components/LoadingStates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+
 import {
   Select,
   SelectContent,
