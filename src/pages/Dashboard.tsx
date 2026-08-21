@@ -46,6 +46,8 @@ export default function Dashboard() {
   const { obras, loading, error, refetch } = useObras();
   const [ano, setAno] = useState<string>('all');
   const [municipio, setMunicipio] = useState<string>('all');
+  const [busca, setBusca] = useState('');
+
 
   const anos = useMemo(() => {
     const set = new Set<number>();
