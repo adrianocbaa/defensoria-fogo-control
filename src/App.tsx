@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStorageVersioning } from "@/hooks/useStorageVersioning";
 import MainDashboard from "./pages/MainDashboard";
 import Dashboard from "./pages/Dashboard";
+import PlanoExpansao from "./pages/PlanoExpansao";
+import AdminPlanoExpansao from "./pages/AdminPlanoExpansao";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import NucleusDetails from "./pages/NucleusDetails";
