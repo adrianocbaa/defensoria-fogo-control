@@ -11,6 +11,7 @@ import {
 import { Camera, ChevronDown, Copy, MoreVertical, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Ambiente, AmbienteServico, Verificacao } from '@/hooks/useRecebimentoChecklist';
+import type { VerificacaoStatus } from '@/lib/recebimento/constants';
 import { progressoAmbiente } from '@/lib/recebimento/stats';
 import { ServicoAccordion } from './ServicoAccordion';
 
@@ -18,7 +19,7 @@ interface Props {
   ambiente: Ambiente;
   somenteLeitura?: boolean;
   fotosPorVerificacao?: Record<string, number>;
-  onAbrirVerificacao: (v: Verificacao, servico: AmbienteServico) => void;
+  onSelecionarStatus: (v: Verificacao, status: VerificacaoStatus) => void;
   onMarcarPendentes: (servico: AmbienteServico) => void;
   onRemoverServico?: (id: string) => void;
   onAdicionarServico?: () => void;
@@ -33,7 +34,7 @@ export function ChecklistAmbiente({
   ambiente,
   somenteLeitura,
   fotosPorVerificacao,
-  onAbrirVerificacao,
+  onSelecionarStatus,
   onMarcarPendentes,
   onRemoverServico,
   onAdicionarServico,
@@ -152,7 +153,7 @@ export function ChecklistAmbiente({
             onToggle={() => setAbertos((prev) => ({ ...prev, [s.id]: !prev[s.id] }))}
             somenteLeitura={somenteLeitura}
             fotosPorVerificacao={fotosPorVerificacao}
-            onAbrirVerificacao={onAbrirVerificacao}
+            onSelecionarStatus={onSelecionarStatus}
             onMarcarPendentes={onMarcarPendentes}
             onRemover={somenteLeitura ? undefined : onRemoverServico}
           />

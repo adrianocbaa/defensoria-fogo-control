@@ -1,30 +1,34 @@
 import { Camera } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Verificacao } from '@/hooks/useRecebimentoChecklist';
-import { STATUS_LABEL } from '@/lib/recebimento/constants';
-import { STATUS_CHIP, STATUS_FG, STATUS_ICON } from '@/lib/recebimento/ui';
+import { STATUS_LABEL, type VerificacaoStatus } from '@/lib/recebimento/constants';
+import { STATUS_CLASS, STATUS_ICON } from '@/lib/recebimento/ui';
 
 interface Props {
   verificacao: Verificacao;
   numero: string;
   fotos?: number;
   somenteLeitura?: boolean;
-  onAbrir: (v: Verificacao) => void;
+  onSelecionar: (v: Verificacao, status: VerificacaoStatus) => void;
 }
 
-export function VerificacaoItem({ verificacao, numero, fotos = 0, somenteLeitura, onAbrir }: Props) {
-  const Icon = STATUS_ICON[verificacao.status];
+const OPCOES: Exclude<VerificacaoStatus, 'nao_vistoriado'>[] = [
+  'conforme',
+  'nao_conforme',
+  'nao_executado',
+  'nao_aplica',
+];
+
+export function VerificacaoItem({
+  verificacao,
+  numero,
+  fotos = 0,
+  somenteLeitura,
+  onSelecionar,
+}: Props) {
   return (
-    <button
-      type="button"
-      disabled={somenteLeitura}
-      onClick={() => onAbrir(verificacao)}
-      className={cn(
-        'flex w-full min-h-[52px] items-center gap-3 border-b border-border/60 px-3 py-2.5 text-left last:border-0',
-        somenteLeitura ? 'cursor-default' : 'hover:bg-muted/50',
-      )}
-    >
-      <Icon className={cn('h-5 w-5 shrink-0', STATUS_FG[verificacao.status])} />
+    <div className="flex min-h-[58px] w-full items-center gap-3 border-b border-border/60 px-3 py-2.5 last:border-0">
       <span className="min-w-0 flex-1 text-sm">
         <span className="text-muted-foreground">{numero} </span>
         {verificacao.descricao_snapshot}
@@ -35,14 +39,31 @@ export function VerificacaoItem({ verificacao, numero, fotos = 0, somenteLeitura
           {fotos}
         </span>
       )}
-      <span
-        className={cn(
-          'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold',
-          STATUS_CHIP[verificacao.status],
-        )}
-      >
-        {STATUS_LABEL[verificacao.status]}
-      </span>
-    </button>
+      <div className="flex shrink-0 items-center gap-1" role="group" aria-label="Resultado da verificação">
+        {OPCOES.map((status) => {
+          const Icon = STATUS_ICON[status];
+          const selecionado = verificacao.status === status;
+          return (
+            <Button
+              key={status}
+              type="button"
+              variant="outline"
+              size="icon"
+              disabled={somenteLeitura}
+              aria-label={STATUS_LABEL[status]}
+              aria-pressed={selecionado}
+              title={STATUS_LABEL[status]}
+              onClick={() => onSelecionar(verificacao, selecionado ? 'nao_vistoriado' : status)}
+              className={cn(
+                'h-9 w-9 rounded-full border-border text-muted-foreground',
+                selecionado && STATUS_CLASS[status],
+              )}
+            >
+              <Icon className="h-4 w-4" />
+            </Button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

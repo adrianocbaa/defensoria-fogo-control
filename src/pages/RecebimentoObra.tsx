@@ -55,7 +55,6 @@ import { PendenciasView } from '@/components/recebimento/PendenciasView';
 import { ReinspecaoView } from '@/components/recebimento/ReinspecaoView';
 import { FotosGaleria } from '@/components/recebimento/FotosGaleria';
 import { HistoricoTimeline } from '@/components/recebimento/HistoricoTimeline';
-import { StatusSheet, type StatusAlvo } from '@/components/recebimento/StatusSheet';
 import { FinalizarVistoriaSheet } from '@/components/recebimento/FinalizarVistoriaSheet';
 import { RecebimentoMobileFooter } from '@/components/recebimento/RecebimentoMobileFooter';
 import { ABERTAS, vistoriaTitulo, type VerificacaoStatus } from '@/lib/recebimento/constants';
@@ -83,7 +82,6 @@ export function RecebimentoObra() {
   const [finalizarOpen, setFinalizarOpen] = useState(false);
   const [excluirOpen, setExcluirOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
-  const [statusAlvo, setStatusAlvo] = useState<StatusAlvo | null>(null);
   const [ncAlvo, setNcAlvo] = useState<{ v: Verificacao; servico: string } | null>(null);
 
   const { vistorias, criarVistoria, concluirVistoria, reabrirVistoria, excluirVistoria } =
@@ -218,17 +216,7 @@ export function RecebimentoObra() {
     };
   }, [checklist.ambientes, pendencias]);
 
-  const abrirVerificacao = (v: Verificacao, servico: AmbienteServico) => {
-    setStatusAlvo({
-      verificacao: v,
-      servicoNome: servico.servico_snapshot,
-      macroNome: servico.macro_snapshot,
-      ambienteNome: ambiente?.nome ?? '',
-    });
-  };
-
   const aplicarStatus = async (v: Verificacao, status: VerificacaoStatus) => {
-    setStatusAlvo(null);
     await checklist.setStatus(v.id, status);
     if (status === 'nao_conforme') {
       const servico =
@@ -460,7 +448,7 @@ export function RecebimentoObra() {
                   pendencias={pendencias}
                   fotos={fotos}
                   somenteLeitura={bloqueado}
-                  onAbrirVerificacao={abrirVerificacao}
+                  onSelecionarStatus={aplicarStatus}
                   onMarcarPendentes={(s) => checklist.marcarGrupo(s.verificacoes, 'conforme')}
                   onNovoAmbiente={() => setAmbienteOpen(true)}
                   onDuplicarAmbiente={() => setDuplicarOpen(true)}
@@ -581,12 +569,6 @@ export function RecebimentoObra() {
           proximoDisabled={idxAmbiente < 0 || idxAmbiente >= checklist.ambientes.length - 1}
         />
       )}
-
-      <StatusSheet
-        alvo={statusAlvo}
-        onOpenChange={(o) => !o && setStatusAlvo(null)}
-        onSelecionar={aplicarStatus}
-      />
 
       <NovaVistoriaDialog
         open={novaVistoriaOpen}
