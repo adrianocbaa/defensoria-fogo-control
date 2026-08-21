@@ -153,9 +153,6 @@ function S2Contexto() {
           </ul>
         </div>
       </div>
-      <div className="mt-5 rounded-xl bg-slate-50 border p-3 text-center text-sm text-slate-700">
-        Sistema <strong className="text-emerald-800">em produção</strong>, desenvolvido internamente pela DIF — sem custo de licença por usuário.
-      </div>
     </SlideShell>
   );
 }
