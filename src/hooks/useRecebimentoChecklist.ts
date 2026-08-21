@@ -376,11 +376,28 @@ export function useRecebimentoChecklist(obraId: string, vistoriaId: string | nul
     toast.success(`${novosNomes.length} ambiente(s) criado(s)`);
   };
 
+  const atualizarAmbiente = async (
+    ambienteId: string,
+    args: { nome: string; pavimento: string | null },
+  ) => {
+    const { error } = await supabase
+      .from('recebimento_ambientes')
+      .update({ nome: args.nome, pavimento: args.pavimento })
+      .eq('id', ambienteId);
+    if (error) {
+      toast.error('Erro ao editar ambiente');
+      return;
+    }
+    await fetchChecklist();
+    toast.success('Ambiente atualizado');
+  };
+
   const inativarAmbiente = async (ambienteId: string) => {
     await supabase.from('recebimento_ambientes').update({ ativo: false }).eq('id', ambienteId);
     await fetchChecklist();
     toast.success('Ambiente removido da vistoria');
   };
+
 
   const inativarServico = async (servicoId: string) => {
     await supabase
@@ -552,6 +569,7 @@ export function useRecebimentoChecklist(obraId: string, vistoriaId: string | nul
     adicionarServicos,
     adicionarServicoPersonalizado,
     duplicarAmbiente,
+    atualizarAmbiente,
     inativarAmbiente,
     inativarServico,
     setStatus,
