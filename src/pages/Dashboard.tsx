@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { SimpleHeader } from '@/components/SimpleHeader';
-import { PageHeader } from '@/components/PageHeader';
+import { ObrasLayout } from '@/components/obras/ObrasLayout';
+import { WorksPageHeader } from '@/components/obras/WorksPageHeader';
 import { ErrorState } from '@/components/LoadingStates';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+
 import {
   Select,
   SelectContent,
@@ -45,6 +46,8 @@ export default function Dashboard() {
   const { obras, loading, error, refetch } = useObras();
   const [ano, setAno] = useState<string>('all');
   const [municipio, setMunicipio] = useState<string>('all');
+  const [busca, setBusca] = useState('');
+
 
   const anos = useMemo(() => {
     const set = new Set<number>();
@@ -77,55 +80,59 @@ export default function Dashboard() {
 
   const emRisco = resumo.emAtencao + resumo.criticas;
 
+  const renderHeader = ({ openMenu }: { openMenu: () => void }) => (
+    <WorksPageHeader
+      onOpenMenu={openMenu}
+      globalSearch={busca}
+      onGlobalSearchChange={setBusca}
+      breadcrumb="Dashboard / Visão Executiva"
+      title="Painel de Gestão e Controle de Obras"
+      subtitle="Visão executiva da carteira de obras, execução financeira e plano de expansão"
+    />
+  );
+
   if (error && !loading) {
     return (
-      <SimpleHeader>
-        <div className="min-h-screen bg-background">
-          <ErrorState message={error} onRetry={refetch} />
-        </div>
-      </SimpleHeader>
+      <ObrasLayout header={renderHeader}>
+        <ErrorState message={error} onRetry={refetch} />
+      </ObrasLayout>
     );
   }
 
   return (
-    <SimpleHeader>
-      <div className="min-h-screen bg-background pb-12">
-        <PageHeader
-          title="Painel de Gestão e Controle de Obras"
-          subtitle="Visão executiva da carteira de obras, execução financeira e plano de expansão"
-          actions={
-            <div className="flex flex-wrap gap-2">
-              <Select value={ano} onValueChange={setAno}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Exercício" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os exercícios</SelectItem>
-                  {anos.map((a) => (
-                    <SelectItem key={a} value={String(a)}>
-                      {a}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={municipio} onValueChange={setMunicipio}>
-                <SelectTrigger className="w-52">
-                  <SelectValue placeholder="Município" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os municípios</SelectItem>
-                  {municipios.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          }
-        />
+    <ObrasLayout header={renderHeader}>
+      <div className="pb-12">
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Select value={ano} onValueChange={setAno}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Exercício" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os exercícios</SelectItem>
+              {anos.map((a) => (
+                <SelectItem key={a} value={String(a)}>
+                  {a}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={municipio} onValueChange={setMunicipio}>
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder="Município" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os municípios</SelectItem>
+              {municipios.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <div className="container mx-auto space-y-6 px-4">
+        <div className="space-y-6">
+
           {loading ? (
             <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
               {Array.from({ length: 12 }).map((_, i) => (
@@ -215,6 +222,6 @@ export default function Dashboard() {
           <PlanoExpansaoResumo />
         </div>
       </div>
-    </SimpleHeader>
+    </ObrasLayout>
   );
 }
