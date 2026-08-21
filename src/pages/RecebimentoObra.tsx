@@ -77,6 +77,7 @@ export function RecebimentoObra() {
 
   const [novaVistoriaOpen, setNovaVistoriaOpen] = useState(false);
   const [ambienteOpen, setAmbienteOpen] = useState(false);
+  const [editarAmbienteOpen, setEditarAmbienteOpen] = useState(false);
   const [duplicarOpen, setDuplicarOpen] = useState(false);
   const [servicoOpen, setServicoOpen] = useState(false);
   const [concluirOpen, setConcluirOpen] = useState(false);
