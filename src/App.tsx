@@ -109,7 +109,9 @@ const AppRoutes = () => {
       <Route path="/fluxograma-obras" element={<ProtectedRoute><FluxogramaObras /></ProtectedRoute>} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/medicao/:id" element={<ProtectedRoute><Medicao /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/plano-expansao" element={<ProtectedRoute><PlanoExpansao /></ProtectedRoute>} />
+      <Route path="/admin/plano-expansao" element={<ProtectedRoute><AdminPlanoExpansao /></ProtectedRoute>} />
       
       {/* Main Dashboard */}
       <Route 
