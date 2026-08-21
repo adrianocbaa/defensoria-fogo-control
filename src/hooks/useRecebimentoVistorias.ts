@@ -197,6 +197,43 @@ export function useRecebimentoVistorias(obraId: string) {
       const { error } = await db.from('recebimento_vistorias').delete().eq('id', vistoriaId);
       if (error) throw error;
 
+      // varredura final: remove qualquer registro órfão da obra (sem vistoria válida)
+      const { data: restantes } = await db
+        .from('recebimento_vistorias')
+        .select('id')
+        .eq('obra_id', obraId)
+        .limit(10000);
+      const validas = ((restantes ?? []) as { id: string }[]).map((v) => v.id);
+
+      const { data: orfas } = await db
+        .from('recebimento_pendencias')
+        .select('id')
+        .eq('obra_id', obraId)
+        .limit(10000);
+      const { data: todasPend } = await db
+        .from('recebimento_pendencias')
+        .select('id, vistoria_origem_id')
+        .eq('obra_id', obraId)
+        .limit(10000);
+      const orfaIds = ((todasPend ?? []) as { id: string; vistoria_origem_id: string | null }[])
+        .filter((p) => !p.vistoria_origem_id || !validas.includes(p.vistoria_origem_id))
+        .map((p) => p.id);
+      void orfas;
+
+      if (orfaIds.length) {
+        const { data: fotosOrfas } = await db
+          .from('recebimento_fotos')
+          .select('storage_path')
+          .in('pendencia_id', orfaIds)
+          .limit(10000);
+        await removerRecebimentoFotos(
+          ((fotosOrfas ?? []) as { storage_path: string }[]).map((f) => f.storage_path),
+        );
+        await db.from('recebimento_fotos').delete().in('pendencia_id', orfaIds);
+        await db.from('recebimento_pendencia_historico').delete().in('pendencia_id', orfaIds);
+        await db.from('recebimento_pendencias').delete().in('id', orfaIds);
+      }
+
       await fetchVistorias();
       toast.success('Vistoria e todos os seus dados foram excluídos');
       return true;
