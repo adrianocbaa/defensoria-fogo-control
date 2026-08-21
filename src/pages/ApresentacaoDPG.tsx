@@ -372,13 +372,13 @@ function S8Encerramento() {
         <span className="text-[11px] font-semibold tracking-[0.3em] uppercase text-emerald-100/90 mb-4">Próximos passos</span>
         <h1 className="text-6xl font-bold leading-[1.02] tracking-tight mb-6">Obrigado.</h1>
         <p className="text-2xl font-light text-emerald-50/90 mb-10 leading-snug">
-          O SiDIF já está em produção. Agora é escalar a adoção e amadurecer os módulos junto com quem usa.
+          O SiDIF já está em fase de teste. Agora é amadurecer os módulos junto com quem o utiliza.
         </p>
         <div className="grid grid-cols-3 gap-4">
           {[
-            ['Curto prazo', 'Adoção plena nos 12 núcleos e nas obras em andamento'],
-            ['Médio prazo', 'Preventivos, Almoxarifado e Plano de Expansão'],
-            ['Longo prazo', 'Integração institucional (SEI, Portal Transparência)'],
+            ['Curto prazo', 'Implantação de check-list de obra e Dashboard das obras e do processo do Plano de Expansão.'],
+            ['Médio prazo', 'Preventivos, Almoxarifado\u00a0e Ar Condicionado'],
+            ['Longo prazo', 'Integração institucional (SEI - Utilização de API) e Inserção das informações no Portal Transparência.'],
           ].map(([t, d]) => (
             <div key={t} className="rounded-xl bg-white/10 backdrop-blur border border-white/20 p-4">
               <div className="text-xs uppercase tracking-widest text-emerald-200 mb-1">{t}</div>
