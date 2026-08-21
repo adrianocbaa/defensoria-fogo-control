@@ -3,14 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Home, Maximize2, Building2, Wrench, ClipboardCheck,
-  FileSpreadsheet, Shield, Mail, Users, CheckCircle2, TrendingUp,
-  FileText, Lock, Zap, BarChart3, Sparkles, Camera, MapPin,
+  FileSpreadsheet, Shield, Mail, MapPin, Users, CheckCircle2, TrendingUp,
+  Camera, FileText, Lock, Bell, Zap, BarChart3, ArrowRight, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 
 /* =========================================================================
-   Blocos de construção
+   Paleta institucional (verde DPMT + acentos)
+   ========================================================================= */
+const brand = {
+  primary: '#065f46',   // emerald-800
+  primarySoft: '#d1fae5',
+  accent: '#0369a1',    // blue-700
+  ink: '#0f172a',
+  muted: '#475569',
+};
+
+/* =========================================================================
+   Building blocks
    ========================================================================= */
 function SlideShell({
   eyebrow, title, subtitle, children, dark = false,
@@ -25,16 +36,19 @@ function SlideShell({
     <div className={`relative h-full w-full flex flex-col p-10 rounded-2xl overflow-hidden ${dark ? 'text-white' : 'text-slate-800'}`}
       style={{
         background: dark
-          ? 'linear-gradient(135deg,#022c22 0%,#065f46 60%,#0e7490 100%)'
+          ? 'linear-gradient(135deg,#064e3b 0%,#065f46 55%,#0f766e 100%)'
           : 'linear-gradient(180deg,#ffffff 0%,#f8fafc 100%)',
       }}>
+      {/* faixa verde superior */}
       {!dark && <div className="absolute top-0 left-0 right-0 h-1.5" style={{ background: 'linear-gradient(90deg,#065f46,#0ea5e9)' }} />}
-      {eyebrow && (
-        <span className={`text-[11px] font-semibold tracking-[0.2em] uppercase mb-2 ${dark ? 'text-emerald-200' : 'text-emerald-700'}`}>
-          {eyebrow}
-        </span>
-      )}
-      <h1 className="text-3xl md:text-[2.6rem] font-bold tracking-tight leading-[1.1] mb-2">{title}</h1>
+      <div className="flex items-baseline justify-between mb-2">
+        {eyebrow && (
+          <span className={`text-[11px] font-semibold tracking-[0.2em] uppercase ${dark ? 'text-emerald-200' : 'text-emerald-700'}`}>
+            {eyebrow}
+          </span>
+        )}
+      </div>
+      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-1">{title}</h1>
       {subtitle && (
         <p className={`text-base md:text-lg mb-6 ${dark ? 'text-emerald-50/90' : 'text-slate-600'}`}>{subtitle}</p>
       )}
@@ -55,7 +69,7 @@ function StatCard({ value, label, hint, icon: Icon, tone = 'emerald' }: {
   return (
     <div className={`rounded-2xl border bg-gradient-to-br p-5 ${tones[tone]}`}>
       {Icon && <Icon className="h-5 w-5 mb-3 opacity-70" />}
-      <div className="text-[2.6rem] font-bold leading-none">{value}</div>
+      <div className="text-4xl font-bold leading-none">{value}</div>
       <div className="mt-2 text-sm font-medium text-slate-700">{label}</div>
       {hint && <div className="mt-1 text-xs text-slate-500">{hint}</div>}
     </div>
@@ -80,10 +94,10 @@ function BenefitRow({ icon: Icon, title, desc, tone = 'emerald' }: {
 }
 
 /* =========================================================================
-   Slides — 8 no total, diretos e objetivos
+   Slides
    ========================================================================= */
 
-// 1 — Capa com a mensagem-chave
+// 1 — Capa
 function S1Capa() {
   return (
     <div className="relative h-full w-full rounded-2xl overflow-hidden text-white flex flex-col justify-between p-12"
@@ -96,162 +110,387 @@ function S1Capa() {
           Defensoria Pública · MT · DIF
         </span>
         <span className="text-[11px] font-semibold tracking-[0.3em] uppercase text-emerald-100/90">
-          Apresentação à Defensoria Pública-Geral
+          Julho / 2026
         </span>
       </div>
 
       <div className="relative">
-        <h1 className="text-7xl font-bold leading-[1.02] tracking-tight mb-4">SiDIF</h1>
-        <p className="text-2xl md:text-3xl font-light text-emerald-50/95 max-w-4xl leading-snug">
-          Toda a infraestrutura física da Defensoria — <span className="font-semibold text-white">obras, medições, fiscalização e manutenção</span> — em um único sistema, com dado rastreável e documento oficial gerado automaticamente.
+        <h1 className="text-6xl md:text-7xl font-bold leading-[1.02] tracking-tight mb-4">
+          SiDIF
+        </h1>
+        <p className="text-2xl md:text-3xl font-light text-emerald-50/90 max-w-3xl leading-snug">
+          Sistema de gestão da Diretoria de Infraestrutura Física — módulos <span className="font-semibold text-white">Obras</span> e <span className="font-semibold text-white">Manutenção</span>.
         </p>
         <div className="mt-8 w-24 h-1 rounded-full bg-gradient-to-r from-emerald-300 to-sky-300" />
       </div>
 
-      <div className="relative grid grid-cols-4 gap-4">
-        {[
-          ['21', 'obras gerenciadas'],
-          ['R$ 5,49 mi', 'em contratos'],
-          ['252', 'RDOs registrados'],
-          ['100%', 'auditável'],
-        ].map(([v, l]) => (
-          <div key={l} className="rounded-xl bg-white/10 backdrop-blur border border-white/20 px-4 py-3">
-            <div className="text-2xl font-bold">{v}</div>
-            <div className="text-xs text-emerald-100/80">{l}</div>
-          </div>
-        ))}
+      <div className="relative flex items-end justify-between">
+        <div>
+          <p className="text-sm font-semibold text-white">Diretoria de Infraestrutura Física</p>
+          <p className="text-xs text-emerald-100/70">Defensoria Pública do Estado de Mato Grosso</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-emerald-100/70">sidif.com.br</p>
+        </div>
       </div>
     </div>
   );
 }
 
-// 2 — Antes x Depois (mensagem de impacto)
-function S2AntesDepois() {
+// 2 — Contexto / o problema que resolvemos
+function S2Contexto() {
   return (
     <SlideShell
-      eyebrow="O problema e a virada"
-      title="Saímos de planilhas e pastas de rede para um processo único."
-      subtitle="Mesma equipe, mesmo orçamento — processo padronizado e controlado."
+      eyebrow="Contexto"
+      title="Antes do SiDIF, as informações eram armazenadas em pastas localizadas na rede."
+      subtitle="Planilhas em servidor, e-mails e pastas de fotos sem rastro, sem padrão, com difícil visibilidade."
     >
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-6 h-full">
         <div className="rounded-2xl border-2 border-dashed border-red-200 bg-red-50/40 p-6">
           <div className="text-xs font-semibold tracking-[0.2em] uppercase text-red-700 mb-4">Antes</div>
-          <ul className="space-y-3 text-[15px] text-slate-700">
-            <li className="flex gap-2"><span className="text-red-500">•</span> Medições em planilhas Excel, sem conferência automática</li>
-            <li className="flex gap-2"><span className="text-red-500">•</span> Sem RDO — obra sem registro diário do que foi executado</li>
-            <li className="flex gap-2"><span className="text-red-500">•</span> Chamados de manutenção controlados por e-mail e planilha</li>
-            <li className="flex gap-2"><span className="text-red-500">•</span> Documentos de encerramento refeitos do zero a cada obra</li>
-            <li className="flex gap-2"><span className="text-red-500">•</span> Sem histórico, sem auditoria, sem indicadores</li>
+          <ul className="space-y-3 text-sm text-slate-700">
+            <li className="flex gap-2"><span className="text-red-500">•</span> Medições em planilhas Excel&nbsp;</li>
+            <li className="flex gap-2"><span className="text-red-500">•</span> Sem RDO's</li>
+            <li className="flex gap-2"><span className="text-red-500">•</span> Chamados de manutenção por e-mail e controle por planilhas</li>
+            <li className="flex gap-2"><span className="text-red-500">•</span> Encerramento (TRP/TRD/ACT) refeito do zero a cada obra</li>
+            <li className="flex gap-2"><span className="text-red-500">•</span> Sem histórico, difícil auditoria, sem indicadores</li>
           </ul>
         </div>
-        <div className="rounded-2xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-white p-6">
+        <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6">
           <div className="text-xs font-semibold tracking-[0.2em] uppercase text-emerald-700 mb-4">Com o SiDIF</div>
-          <ul className="space-y-3 text-[15px] text-slate-700">
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-1" /> Uma única fonte da verdade para toda a DIF</li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-1" /> Registro diário com foto datada e verificável</li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-1" /> E-mail vira chamado automaticamente, com prazo e responsável</li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-1" /> TRP, TRD, ACT e ARTs gerados em um clique</li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-1" /> Trilha de auditoria de cada ação, por usuário</li>
+          <ul className="space-y-3 text-sm text-slate-700">
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Uma única fonte — Obras, Medição, RDO e Manutenção</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Coleta de dados no canteiro, com fotos georreferenciadas</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Na Manutenção, o e-mail vira tarefa automaticamente</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Documentos institucionais gerados em 1 clique</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" /> Trilha de auditoria completa por perfil e ação</li>
           </ul>
         </div>
-      </div>
-      <div className="mt-5 rounded-xl bg-slate-900 text-white p-4 text-center">
-        <span className="text-[15px]">
-          <strong className="text-emerald-300">−57% de etapas manuais</strong> no fluxo de manutenção · <strong className="text-emerald-300">zero</strong> dupla digitação entre RDO e medição
-        </span>
       </div>
     </SlideShell>
   );
 }
 
-// 3 — Números
+// 3 — KPIs do sistema hoje (dados reais)
 function S3Numeros() {
   return (
     <SlideShell
       eyebrow="Panorama"
-      title="O SiDIF hoje, em produção."
-      subtitle="Números reais registrados no sistema — não é protótipo."
+      title="O SiDIF em números — hoje."
+      subtitle="Dados reais em produção — obras, medições, RDOs e chamados registrados no sistema."
     >
-      <div className="grid grid-cols-4 gap-4 mb-4">
-        <StatCard value="21" label="Obras gerenciadas" hint="em 18 municípios" icon={Building2} tone="emerald" />
-        <StatCard value="R$ 5,49 mi" label="Contratos sob controle" hint="R$ 3,99 mi executados (73%)" icon={TrendingUp} tone="emerald" />
+      <div className="grid grid-cols-4 gap-4 mb-5">
+        <StatCard value="21" label="Obras cadastradas" hint="em 18 municípios" icon={Building2} tone="emerald" />
+        <StatCard value="R$ 5,49 mi" label="Contratos gerenciados" hint="R$ 3,99 mi executados (73%)" icon={TrendingUp} tone="emerald" />
         <StatCard value="252" label="RDOs preenchidos" hint="329 fotos e vídeos rastreáveis" icon={ClipboardCheck} tone="blue" />
-        <StatCard value="42" label="Documentos oficiais" hint="TRP · TRD · ACT · ARTs" icon={FileText} tone="blue" />
+        <StatCard value="42" label="Docs de encerramento" hint="TRP · TRD · ACT · ARTs" icon={FileText} tone="blue" />
       </div>
       <div className="grid grid-cols-4 gap-4">
         <StatCard value="45" label="Chamados de manutenção" hint="32 concluídos · 13 em curso" icon={Wrench} tone="amber" />
-        <StatCard value="62%" label="Chamados abertos por e-mail" hint="sem digitação manual" icon={Mail} tone="amber" />
-        <StatCard value="18" label="Aditivos formalizados" hint="com trilha auditável" icon={FileSpreadsheet} tone="slate" />
+        <StatCard value="62%" label="Chamados via e-mail" hint="28 abertos automaticamente" icon={Mail} tone="amber" />
+        <StatCard value="18" label="Aditivos formalizados" hint="registro auditável" icon={FileSpreadsheet} tone="slate" />
         <StatCard value="36" label="Usuários ativos" hint="12 núcleos · perfis segregados" icon={Users} tone="slate" />
       </div>
     </SlideShell>
   );
 }
 
-// 4 — O ciclo completo da obra
-function S4CicloObra() {
-  const etapas = [
-    { icon: MapPin, t: 'Planejamento', d: 'Obra cadastrada, fiscal e substituto nomeados, orçamento importado.' },
-    { icon: Camera, t: 'RDO diário', d: 'Contratada registra execução e fotos; avanço físico é recalculado sozinho.' },
-    { icon: FileSpreadsheet, t: 'Medição', d: 'Importa o RDO, calcula, congela e emite o relatório oficial.' },
-    { icon: ClipboardCheck, t: 'Recebimento', d: 'Checklist por ambiente, pendências com foto antes/depois e reinspeção.' },
-    { icon: FileText, t: 'Encerramento', d: 'TRP, TRD, ACT e ARTs no padrão institucional, em um clique.' },
-  ];
+// 4 — Módulo Obras
+function S4Obras() {
   return (
     <SlideShell
-      eyebrow="Módulo Obras"
-      title="Um único fluxo, do contrato à entrega da unidade."
-      subtitle="Cada etapa alimenta a seguinte — nada é redigitado, nada se perde."
+      eyebrow="Módulo 01"
+      title="Obras — do planejamento à entrega, em um só lugar."
+      subtitle="Mapa geográfico, filtros por status, contratos, fiscais e substitutos vinculados a cada obra."
     >
-      <div className="grid grid-cols-5 gap-3">
-        {etapas.map((e, i) => (
-          <div key={e.t} className="relative rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full bg-emerald-700 text-white text-sm font-bold flex items-center justify-center shadow-md">
-              {i + 1}
+      <div className="grid grid-cols-5 gap-6 h-full">
+        <div className="col-span-2 space-y-5">
+          <BenefitRow icon={MapPin} title="Mapa institucional" desc="Todas as 21 obras plotadas por município, com pinos que refletem status em tempo real." />
+          <BenefitRow icon={Users} title="Fiscais e substitutos" desc="Cadastro nominal, com regras de acesso e trilha de responsabilidade por obra." />
+          <BenefitRow icon={FileSpreadsheet} title="Orçamento e aditivos" desc="Importação por planilha, hierarquia de itens, aditivos formalizados sem retrabalho." />
+          <BenefitRow icon={Shield} title="Acesso segregado" desc="Cada fiscal vê apenas as obras sob sua responsabilidade — sem exposição indevida." />
+        </div>
+        <div className="col-span-3 rounded-2xl border bg-white p-6 shadow-sm">
+          <div className="text-xs font-semibold tracking-[0.2em] uppercase text-slate-500 mb-4">Distribuição das obras</div>
+          {[
+            { label: 'Em andamento', value: 6, pct: 29, color: 'bg-emerald-500' },
+            { label: 'Concluídas', value: 12, pct: 57, color: 'bg-sky-500' },
+            { label: 'Planejadas', value: 3, pct: 14, color: 'bg-amber-500' },
+          ].map((s) => (
+            <div key={s.label} className="mb-4">
+              <div className="flex justify-between text-sm mb-1.5">
+                <span className="font-medium text-slate-700">{s.label}</span>
+                <span className="font-semibold text-slate-900">{s.value} <span className="text-slate-400 font-normal">· {s.pct}%</span></span>
+              </div>
+              <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                <div className={`h-full ${s.color} rounded-full`} style={{ width: `${s.pct}%` }} />
+              </div>
             </div>
-            <e.icon className="h-6 w-6 text-emerald-700 mb-3 mt-2" />
-            <h3 className="font-semibold text-slate-900 mb-1.5">{e.t}</h3>
-            <p className="text-[13px] text-slate-600 leading-relaxed">{e.d}</p>
+          ))}
+          <div className="mt-6 pt-4 border-t border-dashed">
+            <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Alcance geográfico</div>
+            <div className="text-3xl font-bold text-emerald-700">18 municípios</div>
+            <div className="text-xs text-slate-500">de Rondonópolis a Sinop, atendidos pela DIF</div>
           </div>
-        ))}
-      </div>
-      <div className="mt-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
-          <div className="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Avanço físico</div>
-          <div className="text-2xl font-bold text-emerald-900 mt-1">Automático</div>
-          <div className="text-xs text-emerald-800/80 mt-1">calculado no banco, sem planilha paralela</div>
-        </div>
-        <div className="rounded-xl bg-sky-50 border border-sky-200 p-4">
-          <div className="text-xs uppercase tracking-wider text-sky-800 font-semibold">Cálculo financeiro</div>
-          <div className="text-2xl font-bold text-sky-900 mt-1">Blindado</div>
-          <div className="text-xs text-sky-800/80 mt-1">arredondamento único e medições congeladas</div>
-        </div>
-        <div className="rounded-xl bg-slate-50 border p-4">
-          <div className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Evidência</div>
-          <div className="text-2xl font-bold text-slate-900 mt-1">Foto verificável</div>
-          <div className="text-xs text-slate-500 mt-1">marca d'água, data e QR code de conferência</div>
         </div>
       </div>
     </SlideShell>
   );
 }
 
-// 5 — Manutenção automatizada
-function S5Manutencao() {
+// 5 — RDO
+function S5RDO() {
   return (
     <SlideShell
-      eyebrow="Módulo Manutenção"
-      title="O e-mail entra, o sistema resolve o resto."
-      subtitle="Um processo que tinha 7 ações manuais hoje exige 3."
+      eyebrow="Coleta de dados"
+      title="RDO — o canteiro alimenta o sistema, todos os dias."
+      subtitle="O Relatório Diário de Obra é a base de tudo: fotos, avanço físico, mão de obra e ocorrências."
+    >
+      <div className="grid grid-cols-3 gap-5">
+        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+          <Camera className="h-6 w-6 text-emerald-700 mb-3" />
+          <div className="text-3xl font-bold text-slate-900">329</div>
+          <div className="text-sm text-slate-600 mt-1">fotos e vídeos anexados</div>
+          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+            Cada mídia fica vinculada à data e ao serviço executado, com marca d'água e verificação por QR code.
+          </p>
+        </div>
+        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+          <ClipboardCheck className="h-6 w-6 text-emerald-700 mb-3" />
+          <div className="text-3xl font-bold text-slate-900">252</div>
+          <div className="text-sm text-slate-600 mt-1">RDOs registrados</div>
+          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+            Fluxo de aprovação por fiscal, com histórico de reprovações e assinatura digital de contratada e fiscal.
+          </p>
+        </div>
+        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+          <BarChart3 className="h-6 w-6 text-emerald-700 mb-3" />
+          <div className="text-3xl font-bold text-slate-900">Automático</div>
+          <div className="text-sm text-slate-600 mt-1">cálculo do avanço físico</div>
+          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+            Percentual da obra recalculado no banco a cada RDO aprovado — sem planilha paralela.
+          </p>
+        </div>
+      </div>
+      <div className="mt-5 rounded-xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3">
+        <Zap className="h-5 w-5 text-emerald-700 shrink-0" />
+        <p className="text-sm text-emerald-900">
+          <strong>Padronização:</strong> mesmo formato de coleta em toda a DIF — não importa se a obra é em Cuiabá ou em Barra do Garças.
+        </p>
+      </div>
+    </SlideShell>
+  );
+}
+
+// 6 — Medição
+function S6Medicao() {
+  return (
+    <SlideShell
+      eyebrow="Do RDO ao pagamento"
+      title="Medição — sem retrabalho, sem dupla digitação."
+      subtitle="O que foi executado no RDO é importado direto para a medição. O sistema calcula, congela e gera o relatório."
+    >
+      <div className="grid grid-cols-4 gap-4 items-start">
+        {[
+          { step: '1', title: 'RDO diário', desc: 'Contratada informa quantitativos executados no canteiro.' },
+          { step: '2', title: 'Importa no SiDIF', desc: 'Um clique traz tudo para a medição — sem redigitar.' },
+          { step: '3', title: 'Ajustes e aprovação', desc: 'Fiscal revisa, ajusta se necessário e bloqueia a medição.' },
+          { step: '4', title: 'Relatório oficial', desc: 'PDF/Word gerado com resumo financeiro, fotos e assinaturas.' },
+        ].map((s, i) => (
+          <div key={i} className="relative rounded-2xl border bg-white p-5 shadow-sm">
+            <div className="absolute -top-3 -left-3 h-9 w-9 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shadow-md">
+              {s.step}
+            </div>
+            <h3 className="font-semibold text-slate-900 mt-3 mb-2">{s.title}</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">{s.desc}</p>
+            {i < 3 && (
+              <ArrowRight className="hidden md:block absolute -right-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 grid grid-cols-3 gap-4">
+        <div className="rounded-xl bg-slate-50 border p-4">
+          <div className="text-xs uppercase tracking-wider text-slate-500">Aditivos formalizados</div>
+          <div className="text-2xl font-bold text-slate-900 mt-1">18 sessões bloqueadas</div>
+          <div className="text-xs text-slate-500 mt-1">com trilha de auditoria completa</div>
+        </div>
+        <div className="rounded-xl bg-slate-50 border p-4">
+          <div className="text-xs uppercase tracking-wider text-slate-500">Valor executado</div>
+          <div className="text-2xl font-bold text-slate-900 mt-1">R$ 3,99 mi</div>
+          <div className="text-xs text-slate-500 mt-1">73% dos contratos vigentes</div>
+        </div>
+        <div className="rounded-xl bg-slate-50 border p-4">
+          <div className="text-xs uppercase tracking-wider text-slate-500">Cálculos protegidos</div>
+          <div className="text-2xl font-bold text-slate-900 mt-1">100% no banco</div>
+          <div className="text-xs text-slate-500 mt-1">arredondamento consistente e blindado</div>
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
+
+// 7 — Encerramento
+function S7Encerramento() {
+  return (
+    <SlideShell
+      eyebrow="Encerramento de obra"
+      title="TRP, TRD, ACT e ARTs — gerados em 1 clique."
+      subtitle="Os documentos institucionais do encerramento saem prontos, no padrão da Defensoria."
+    >
+      <div className="grid grid-cols-2 gap-8 h-full">
+        <div>
+          <div className="grid grid-cols-2 gap-3">
+            {['TRP · Termo de Recebimento Provisório', 'TRD · Termo de Recebimento Definitivo', 'ACT · Ata de Conclusão Técnica', 'Registro múltiplo de ARTs por serviço'].map((d) => (
+              <div key={d} className="rounded-xl border bg-white p-4 shadow-sm">
+                <FileText className="h-5 w-5 text-emerald-700 mb-2" />
+                <p className="text-sm font-medium text-slate-800 leading-tight">{d}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-800 text-white p-6">
+            <div className="text-xs uppercase tracking-[0.2em] opacity-80 mb-2">Já produzidos no sistema</div>
+            <div className="text-5xl font-bold">42</div>
+            <div className="text-sm opacity-90 mt-1">documentos oficiais gerados sem retrabalho</div>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <BenefitRow icon={CheckCircle2} title="Padrão institucional" desc="Cabeçalho, assinaturas do fiscal e da DIF, brasão — tudo na identidade oficial." />
+          <BenefitRow icon={Shield} title="Assinatura digital" desc="Fluxo de assinantes cadastrado por documento, com validade auditável." />
+          <BenefitRow icon={Sparkles} title="Sem planilha externa" desc="Sistemas, serviços entregues e ARTs saem direto do que foi registrado durante a obra." />
+          <BenefitRow icon={FileSpreadsheet} title="Reaproveitamento" desc="Modelos institucionais mantidos pela DIF — mudou o padrão, muda para todos." />
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
+
+// 8 — Fluxograma antes x depois (Manutenção)
+function S8FluxoAntesDepois() {
+  const antes = [
+    'Lançar demanda na planilha',
+    'Repassar ao gerente',
+    'Gerente atende a demanda',
+    'Responsável é informado',
+    'Enviar e-mail ao solicitante',
+    'Arquivar e-mail',
+    'Atualizar planilha como concluído',
+  ];
+  const depois = [
+    'Encaminha para o sistema',
+    'Gerente atende a demanda',
+    'Enviar e-mail ao solicitante',
+  ];
+
+  const Arrow = ({ tone }: { tone: 'rose' | 'emerald' }) => (
+    <div className="flex justify-center">
+      <div className={`w-px h-2 ${tone === 'emerald' ? 'bg-emerald-400' : 'bg-rose-300'}`} />
+    </div>
+  );
+
+  const Flow = ({
+    label, tone, steps, note,
+  }: { label: string; tone: 'rose' | 'emerald'; steps: string[]; note: string }) => {
+    const isNew = tone === 'emerald';
+    return (
+      <div className={`rounded-2xl border p-4 ${isNew ? 'border-emerald-300 bg-emerald-50/60' : 'border-rose-200 bg-rose-50/50'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <span className={`text-xs font-bold uppercase tracking-wider ${isNew ? 'text-emerald-800' : 'text-rose-700'}`}>
+            {label}
+          </span>
+          <span className={`text-xs font-bold rounded-full px-2.5 py-0.5 ${isNew ? 'bg-emerald-700 text-white' : 'bg-rose-600 text-white'}`}>
+            {steps.length} ações
+          </span>
+        </div>
+
+        {/* Início (terminal) */}
+        <div className="flex justify-center">
+          <div className={`rounded-full px-3 py-1 text-[11px] font-semibold border ${isNew ? 'border-emerald-400 bg-white text-emerald-900' : 'border-rose-300 bg-white text-rose-900'}`}>
+            Início · solicitação por e-mail
+          </div>
+        </div>
+
+        {steps.map((s, i) => (
+          <div key={i}>
+            <Arrow tone={tone} />
+            <div className="flex items-center gap-2">
+              <span className={`h-5 w-5 shrink-0 rounded-full text-[10px] font-bold flex items-center justify-center ${isNew ? 'bg-emerald-700 text-white' : 'bg-rose-500 text-white'}`}>
+                {i + 1}
+              </span>
+              <span className={`flex-1 rounded-md bg-white border px-3 py-1 text-[13px] text-slate-700 ${isNew ? 'border-emerald-200' : 'border-rose-200'}`}>{s}</span>
+            </div>
+          </div>
+        ))}
+
+        <Arrow tone={tone} />
+
+        {/* Decisão (losango) */}
+        <div className="flex justify-center">
+          <div className="relative flex items-center justify-center">
+            <div className="h-10 w-10 rotate-45 border border-sky-300 bg-sky-50 rounded-sm" />
+            <span className="absolute text-[10px] font-bold text-sky-800">OK?</span>
+          </div>
+        </div>
+
+        <div className="mt-1.5 grid grid-cols-2 gap-2 text-[11px]">
+          <div className="rounded-md border border-emerald-200 bg-white px-2 py-1 text-center text-emerald-800 font-medium">
+            SIM → Fim
+          </div>
+          <div className="rounded-md border border-amber-200 bg-white px-2 py-1 text-center text-amber-800 font-medium">
+            NÃO → volta ao gerente
+          </div>
+        </div>
+
+        <p className={`mt-2 text-[11px] leading-snug ${isNew ? 'text-emerald-800' : 'text-rose-700'}`}>{note}</p>
+      </div>
+    );
+  };
+
+  return (
+    <SlideShell
+      eyebrow="Antes x Depois"
+      title="O mesmo chamado, com menos da metade das etapas."
+      subtitle="O fluxo manual tinha 7 ações e dependia de planilha. No SiDIF, são 3 — e as demais acontecem sozinhas."
+    >
+      <div className="grid grid-cols-2 gap-5 items-start">
+        <Flow
+          label="Antes — processo manual"
+          tone="rose"
+          steps={antes}
+          note="Registro em planilha, encaminhamentos manuais e arquivamento por e-mail."
+        />
+        <Flow
+          label="Depois — SiDIF"
+          tone="emerald"
+          steps={depois}
+          note="Criação da tarefa, prioridade, núcleo, cobrança de confirmação e arquivamento em PDF são automáticos."
+        />
+      </div>
+      <div className="mt-4 rounded-xl bg-slate-50 border p-3 text-center text-sm text-slate-700">
+        <strong className="text-emerald-800">−57% de etapas manuais</strong> · sem planilha paralela · trilha de auditoria completa
+      </div>
+    </SlideShell>
+  );
+}
+
+
+// 9 — Manutenção — capa do módulo
+
+function S8ManutencaoCapa() {
+  return (
+    <SlideShell
+      eyebrow="Módulo 02"
+      title="Manutenção — do e-mail ao arquivamento, sem intervenção manual."
+      subtitle="O fluxo que era 100% manual agora é ponta-a-ponta automatizado."
       dark
     >
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-5 gap-4 items-start">
         {[
-          { icon: Mail, label: 'Solicitante envia e-mail', hint: 'sem login, sem formulário' },
-          { icon: Zap, label: 'Sistema cria o chamado', hint: 'prioridade e núcleo detectados' },
-          { icon: Wrench, label: 'Equipe executa', hint: 'fotos de referência e execução' },
-          { icon: CheckCircle2, label: 'Solicitante confirma', hint: 'por link público, com cobrança automática' },
-          { icon: FileText, label: 'Arquivado em PDF', hint: 'histórico, fotos e conversas' },
+          { icon: Mail, label: 'Solicitante envia e-mail', hint: 'manutencao@dp.mt.gov.br' },
+          { icon: Zap, label: 'Sistema cria a tarefa', hint: 'com prioridade e núcleo detectados' },
+          { icon: Wrench, label: 'Equipe executa', hint: 'com fotos de referência e execução' },
+          { icon: Bell, label: 'Solicitante confirma', hint: 'por link público, sem login' },
+          { icon: FileText, label: 'Arquivado em PDF', hint: 'histórico + fotos + conversas' },
         ].map((s, i) => (
           <div key={i} className="rounded-2xl bg-white/10 backdrop-blur border border-white/20 p-5 flex flex-col">
             <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
@@ -263,36 +502,80 @@ function S5Manutencao() {
           </div>
         ))}
       </div>
-      <div className="mt-6 grid grid-cols-3 gap-4">
-        {[
-          ['62%', 'dos chamados entram sozinhos pelo e-mail'],
-          ['71%', 'taxa de resolução — 32 de 45 chamados'],
-          ['87', 'movimentações auditadas: quem, quando, de/para'],
-        ].map(([v, d]) => (
-          <div key={d} className="rounded-xl bg-white/10 border border-white/20 p-4">
-            <div className="text-3xl font-bold">{v}</div>
-            <div className="text-xs text-emerald-100/85 mt-1">{d}</div>
-          </div>
-        ))}
+      <div className="mt-6 rounded-xl bg-white/10 border border-white/20 p-4 text-center">
+        <span className="text-sm">
+          <strong className="text-white">28 de 45 chamados (62%)</strong> já entram automaticamente pelo e-mail — <span className="opacity-80">sem digitação manual.</span>
+        </span>
       </div>
     </SlideShell>
   );
 }
 
-// 6 — Governança e segurança
-function S6Governanca() {
+// 9 — Kanban + tempo real
+function S9Kanban() {
+  const columns = [
+    { title: 'Pendente', count: 5, color: 'border-slate-300', dot: 'bg-slate-400' },
+    { title: 'Em andamento', count: 6, color: 'border-amber-300', dot: 'bg-amber-500' },
+    { title: 'Impedido', count: 2, color: 'border-rose-300', dot: 'bg-rose-500' },
+    { title: 'Concluído', count: 32, color: 'border-emerald-300', dot: 'bg-emerald-500' },
+  ];
   return (
     <SlideShell
-      eyebrow="Governança"
-      title="Controle, sigilo e prestação de contas por padrão."
-      subtitle="Segurança aplicada no banco de dados — não depende da tela nem do usuário."
+      eyebrow="Gestão visual"
+      title="Kanban em tempo real, com histórico de cada movimento."
+      subtitle="Toda a equipe vê o mesmo quadro, atualizado no instante em que a tarefa muda de coluna."
     >
-      <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-4 gap-3 mb-6">
+        {columns.map((c) => (
+          <div key={c.title} className={`rounded-xl border-t-4 ${c.color} bg-white p-3 shadow-sm`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className={`h-2 w-2 rounded-full ${c.dot}`} />
+                <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">{c.title}</span>
+              </div>
+              <span className="text-xs font-bold text-slate-500">{c.count}</span>
+            </div>
+            {Array.from({ length: Math.min(c.count, 3) }).map((_, i) => (
+              <div key={i} className="rounded-md bg-slate-50 border border-slate-100 h-10 mb-2" />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
+          <div className="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Movimentações auditadas</div>
+          <div className="text-3xl font-bold text-emerald-900 mt-1">87</div>
+          <div className="text-xs text-emerald-800/80 mt-1">quem moveu · quando · de/para</div>
+        </div>
+        <div className="rounded-xl bg-sky-50 border border-sky-200 p-4">
+          <div className="text-xs uppercase tracking-wider text-sky-800 font-semibold">Taxa de resolução</div>
+          <div className="text-3xl font-bold text-sky-900 mt-1">71%</div>
+          <div className="text-xs text-sky-800/80 mt-1">32 concluídos sobre 45 chamados</div>
+        </div>
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+          <div className="text-xs uppercase tracking-wider text-amber-800 font-semibold">Lembrete automático</div>
+          <div className="text-3xl font-bold text-amber-900 mt-1">3 + 7 dias</div>
+          <div className="text-xs text-amber-800/80 mt-1">confirmação automática se sem resposta</div>
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
+
+// 10 — Segurança
+function S10Seguranca() {
+  return (
+    <SlideShell
+      eyebrow="Segurança e conformidade"
+      title="Cada usuário vê exatamente o que precisa — e nada mais."
+      subtitle="Row-Level Security no banco, perfis segregados, trilha de auditoria por ação."
+    >
+      <div className="grid grid-cols-2 gap-8 h-full">
         <div className="space-y-4">
-          <BenefitRow icon={Lock} title="Acesso segregado por perfil" desc="Regras aplicadas no próprio banco: cada perfil enxerga estritamente o seu escopo." />
-          <BenefitRow icon={Shield} title="Responsabilidade nominal" desc="Fiscal vê apenas as suas obras; substitutos formalizados em férias ou impedimento." />
-          <BenefitRow icon={ClipboardCheck} title="Auditoria de cada ação" desc="Autor, data e valores antes/depois em toda alteração relevante." />
-          <BenefitRow icon={BarChart3} title="Bloqueios automáticos" desc="Impede execução acima do contratado e medição sobre item já bloqueado." />
+          <BenefitRow icon={Lock} title="RLS por perfil" desc="Regras aplicadas no banco: admin, GM, fiscal, contratada, manutenção — cada um enxerga o seu escopo." />
+          <BenefitRow icon={Shield} title="Fiscal vê só as suas obras" desc="Acesso concedido nominalmente. Substitutos formalizados para férias ou impedimento." />
+          <BenefitRow icon={ClipboardCheck} title="Auditoria completa" desc="Toda alteração relevante é registrada com autor, data e valores antes/depois." />
+          <BenefitRow icon={Bell} title="Bloqueios inteligentes" desc="Sistema impede execução acima do contratado, medição sobre item bloqueado e outras inconsistências." />
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 flex flex-col justify-center">
           <div className="text-xs font-semibold tracking-[0.3em] uppercase text-emerald-300 mb-4">Perfis de acesso</div>
@@ -311,43 +594,40 @@ function S6Governanca() {
               </div>
             ))}
           </div>
-          <p className="mt-5 text-xs text-emerald-100/70 leading-relaxed">
-            Dados públicos de obras e núcleos podem ser expostos em portal de transparência sem abrir o cadastro interno.
-          </p>
         </div>
       </div>
     </SlideShell>
   );
 }
 
-// 7 — Valor para a DPG
-function S7Valor() {
+// 11 — Ganhos
+function S11Ganhos() {
   return (
     <SlideShell
-      eyebrow="Por que isso importa para a Defensoria"
-      title="Decisão baseada em dado, e não em relato."
-      subtitle="O que a administração superior passa a ter, todos os dias."
+      eyebrow="Resultados"
+      title="O que a Defensoria ganha ao adotar o SiDIF."
+      subtitle="Padronização, agilidade, transparência e segurança — em um único fluxo."
     >
       <div className="grid grid-cols-2 gap-x-10 gap-y-5">
-        <BenefitRow icon={BarChart3} title="Painel executivo em tempo real"
-          desc="Carteira inteira: valor contratado, executado, saldo, avanço físico e obras em risco." />
-        <BenefitRow icon={Sparkles} title="Plano de expansão acompanhado" tone="blue"
-          desc="Metas de comarcas e econúcleos com estágio, próximo passo e responsável — sem cobrar relatório." />
-        <BenefitRow icon={Shield} title="Segurança jurídica" tone="amber"
-          desc="Prova documental de tudo que foi executado, pago e recebido, pronta para controle interno e TCE." />
-        <BenefitRow icon={Zap} title="Ganho de produtividade" tone="blue"
-          desc="A mesma equipe atende mais obras e mais chamados sem aumentar o esforço administrativo." />
-        <BenefitRow icon={Users} title="Padrão único na instituição"
-          desc="Do interior à capital, todo fiscal e toda contratada seguem o mesmo processo." />
-        <BenefitRow icon={CheckCircle2} title="Custo institucional reduzido" tone="amber"
-          desc="Sistema desenvolvido internamente pela DIF, sem contratação de software de mercado." />
+        <BenefitRow icon={Sparkles} title="Padronização real"
+          desc="Todas as obras seguem o mesmo processo — do orçamento à entrega, do chamado à confirmação." />
+        <BenefitRow icon={Zap} title="Agilidade mensurável" tone="blue"
+          desc="Chamados abertos em segundos por e-mail. Medições em minutos, sem dupla digitação." />
+        <BenefitRow icon={BarChart3} title="Transparência de dados" tone="blue"
+          desc="Diretoria enxerga o portfólio inteiro: mapa, orçamento executado, obras concluídas, chamados em curso." />
+        <BenefitRow icon={Shield} title="Segurança institucional" tone="amber"
+          desc="RLS no banco, auditoria por ação, backups gerenciados — dados sensíveis protegidos." />
+        <BenefitRow icon={CheckCircle2} title="Facilidade de uso"
+          desc="Interface pensada para o fiscal e para a contratada — sem treinamento longo, sem manual pesado." />
+        <BenefitRow icon={FileText} title="Documentação institucional"
+          desc="Relatórios, memoriais e documentos de encerramento gerados no padrão da Defensoria." />
       </div>
     </SlideShell>
   );
 }
 
-// 8 — Fechamento
-function S8Fechamento() {
+// 12 — Encerramento
+function S12Encerramento() {
   return (
     <div className="relative h-full w-full rounded-2xl overflow-hidden text-white flex flex-col p-12"
       style={{ background: 'linear-gradient(135deg,#022c22 0%,#065f46 60%,#0e7490 100%)' }}>
@@ -356,17 +636,15 @@ function S8Fechamento() {
 
       <div className="relative flex-1 flex flex-col justify-center max-w-4xl">
         <span className="text-[11px] font-semibold tracking-[0.3em] uppercase text-emerald-100/90 mb-4">Próximos passos</span>
-        <h1 className="text-6xl md:text-7xl font-bold leading-[1.02] tracking-tight mb-6">
-          Já está em produção.
-        </h1>
-        <p className="text-2xl font-light text-emerald-50/95 mb-10 leading-snug">
-          O que pedimos é a adoção institucional plena — para que toda obra e todo chamado da Defensoria nasçam dentro do SiDIF.
+        <h1 className="text-6xl md:text-7xl font-bold leading-[1.02] tracking-tight mb-6">Obrigado.</h1>
+        <p className="text-2xl font-light text-emerald-50/90 mb-10 leading-snug">
+          O SiDIF já está em produção. Agora é escalar a adoção e amadurecer os módulos junto com quem usa.
         </p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 mb-10">
           {[
-            ['Curto prazo', 'Adoção plena nos 12 núcleos e nas obras em andamento'],
-            ['Médio prazo', 'Preventivos, Almoxarifado e Fluxo de Contratos'],
-            ['Longo prazo', 'Integração com SEI e Portal da Transparência'],
+            ['Curto prazo', 'Adoção plena nos 12 núcleos e nas 6 obras em andamento'],
+            ['Médio prazo', 'Módulos de Preventivos, Almoxarifado e Fluxo de Contratos'],
+            ['Longo prazo', 'Integração institucional (SEI, Portal Transparência)'],
           ].map(([t, d]) => (
             <div key={t} className="rounded-xl bg-white/10 backdrop-blur border border-white/20 p-4">
               <div className="text-xs uppercase tracking-widest text-emerald-200 mb-1">{t}</div>
@@ -392,13 +670,18 @@ function S8Fechamento() {
    ========================================================================= */
 const SLIDES: { id: number; render: () => JSX.Element }[] = [
   { id: 1, render: S1Capa },
-  { id: 2, render: S2AntesDepois },
+  { id: 2, render: S2Contexto },
   { id: 3, render: S3Numeros },
-  { id: 4, render: S4CicloObra },
-  { id: 5, render: S5Manutencao },
-  { id: 6, render: S6Governanca },
-  { id: 7, render: S7Valor },
-  { id: 8, render: S8Fechamento },
+  { id: 4, render: S4Obras },
+  { id: 5, render: S5RDO },
+  { id: 6, render: S6Medicao },
+  { id: 7, render: S7Encerramento },
+  { id: 8, render: S8FluxoAntesDepois },
+  { id: 9, render: S8ManutencaoCapa },
+  { id: 10, render: S9Kanban },
+  { id: 11, render: S10Seguranca },
+  { id: 12, render: S11Ganhos },
+  { id: 13, render: S12Encerramento },
 ];
 
 export default function ApresentacaoDiretoria() {
@@ -407,20 +690,13 @@ export default function ApresentacaoDiretoria() {
   const total = SLIDES.length;
 
   useEffect(() => {
-    document.title = `${current + 1}/${total} — SiDIF · Apresentação DPG`;
+    document.title = `${current + 1}/${total} — SiDIF · Apresentação Diretoria`;
   }, [current, total]);
-
-  const requestFullscreen = () => {
-    const el = document.documentElement;
-    if (!document.fullscreenElement) el.requestFullscreen?.();
-    else document.exitFullscreen?.();
-  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         setCurrent((c) => Math.min(total - 1, c + 1));
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
@@ -432,6 +708,12 @@ export default function ApresentacaoDiretoria() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [total]);
+
+  const requestFullscreen = () => {
+    const el = document.documentElement;
+    if (!document.fullscreenElement) el.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
