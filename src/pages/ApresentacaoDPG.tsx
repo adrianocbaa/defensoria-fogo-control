@@ -360,40 +360,24 @@ function S7SegurancaGanhos() {
   );
 }
 
-// 8 — Próximos passos / encerramento
+// 8 — Agradecimento
 function S8Encerramento() {
   return (
-    <div className="relative h-full w-full rounded-2xl overflow-hidden text-white flex flex-col p-12"
+    <div className="relative h-full w-full rounded-2xl overflow-hidden text-white flex flex-col items-center justify-center p-12"
       style={{ background: 'linear-gradient(135deg,#022c22 0%,#065f46 60%,#0e7490 100%)' }}>
       <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-emerald-400/20 blur-3xl" />
       <div className="absolute -bottom-40 -left-24 w-[420px] h-[420px] rounded-full bg-sky-400/20 blur-3xl" />
 
-      <div className="relative flex-1 flex flex-col justify-center max-w-4xl">
-        <span className="text-[11px] font-semibold tracking-[0.3em] uppercase text-emerald-100/90 mb-4">Próximos passos</span>
-        <h1 className="text-6xl font-bold leading-[1.02] tracking-tight mb-6">Aprimoramento</h1>
-        <p className="text-2xl font-light text-emerald-50/90 mb-10 leading-snug">
-          Com o SiDIF em fase de testes, inicia-se agora um processo contínuo de validação e aperfeiçoamento dos módulos, alinhado às necessidades de seus usuários.
-        </p>
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            ['Curto prazo', 'Implantação de check-list de obra e Dashboard das obras e do processo do Plano de Expansão.'],
-            ['Médio prazo', 'Preventivos, Almoxarifado\u00a0e Ar Condicionado'],
-            ['Longo prazo', 'Integração institucional (SEI - Utilização de API) e Inserção das informações no Portal Transparência.'],
-          ].map(([t, d]) => (
-            <div key={t} className="rounded-xl bg-white/10 backdrop-blur border border-white/20 p-4">
-              <div className="text-xs uppercase tracking-widest text-emerald-200 mb-1">{t}</div>
-              <div className="text-sm text-white leading-snug">{d}</div>
-            </div>
-          ))}
-        </div>
+      <div className="relative text-center">
+        <h1 className="text-8xl font-bold tracking-tight">Obrigado.</h1>
       </div>
 
-      <div className="relative flex items-end justify-between">
+      <div className="absolute bottom-12 left-12 right-12 flex items-end justify-between text-xs text-emerald-100/70">
         <div>
-          <p className="text-sm font-semibold">Diretoria de Infraestrutura Física</p>
-          <p className="text-xs text-emerald-100/70">Defensoria Pública do Estado de Mato Grosso</p>
+          <p className="text-sm font-semibold text-white">Diretoria de Infraestrutura Física</p>
+          <p>Defensoria Pública do Estado de Mato Grosso</p>
         </div>
-        <div className="text-right text-xs text-emerald-100/70">sidif.com.br</div>
+        <div>sidif.com.br</div>
       </div>
     </div>
   );
