@@ -2,8 +2,8 @@ import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Verificacao } from '@/hooks/useRecebimentoChecklist';
-import { STATUS_LABEL, type VerificacaoStatus } from '@/lib/recebimento/constants';
-import { STATUS_CLASS, STATUS_ICON } from '@/lib/recebimento/ui';
+import { STATUS_CLASS, STATUS_LABEL, type VerificacaoStatus } from '@/lib/recebimento/constants';
+import { STATUS_ICON } from '@/lib/recebimento/ui';
 
 interface Props {
   verificacao: Verificacao;
