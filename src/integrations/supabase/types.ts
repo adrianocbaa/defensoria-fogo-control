@@ -3960,6 +3960,182 @@ export type Database = {
         }
         Relationships: []
       }
+      plano_expansao_historico: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string | null
+          id: string
+          meta_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          id?: string
+          meta_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          id?: string
+          meta_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_expansao_historico_meta_id_fkey"
+            columns: ["meta_id"]
+            isOneToOne: false
+            referencedRelation: "plano_expansao_metas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plano_expansao_metas: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          data_inclusao: string | null
+          data_retirada: string | null
+          documento_ref: string | null
+          estagio_econucleo: number | null
+          etapa_atual: string | null
+          etapa_index: number
+          id: string
+          jornada: string
+          justificativa: string | null
+          motivo_atencao: string | null
+          municipio: string
+          nivel_atencao: string
+          nucleo_nome: string | null
+          obra_id: string | null
+          observacoes: string | null
+          ordem: number
+          previsao_conclusao: string | null
+          progresso: number
+          revisao_id: string | null
+          sei_numero: string | null
+          situacao: string
+          status_plano: string
+          tipo_intervencao: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          data_inclusao?: string | null
+          data_retirada?: string | null
+          documento_ref?: string | null
+          estagio_econucleo?: number | null
+          etapa_atual?: string | null
+          etapa_index?: number
+          id?: string
+          jornada?: string
+          justificativa?: string | null
+          motivo_atencao?: string | null
+          municipio: string
+          nivel_atencao?: string
+          nucleo_nome?: string | null
+          obra_id?: string | null
+          observacoes?: string | null
+          ordem?: number
+          previsao_conclusao?: string | null
+          progresso?: number
+          revisao_id?: string | null
+          sei_numero?: string | null
+          situacao?: string
+          status_plano?: string
+          tipo_intervencao?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          data_inclusao?: string | null
+          data_retirada?: string | null
+          documento_ref?: string | null
+          estagio_econucleo?: number | null
+          etapa_atual?: string | null
+          etapa_index?: number
+          id?: string
+          jornada?: string
+          justificativa?: string | null
+          motivo_atencao?: string | null
+          municipio?: string
+          nivel_atencao?: string
+          nucleo_nome?: string | null
+          obra_id?: string | null
+          observacoes?: string | null
+          ordem?: number
+          previsao_conclusao?: string | null
+          progresso?: number
+          revisao_id?: string | null
+          sei_numero?: string | null
+          situacao?: string
+          status_plano?: string
+          tipo_intervencao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_expansao_metas_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_expansao_metas_revisao_id_fkey"
+            columns: ["revisao_id"]
+            isOneToOne: false
+            referencedRelation: "plano_expansao_revisoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plano_expansao_revisoes: {
+        Row: {
+          ano_vigencia: string
+          created_at: string
+          id: string
+          nome: string
+          observacao: string | null
+          updated_at: string
+          vigente: boolean
+        }
+        Insert: {
+          ano_vigencia: string
+          created_at?: string
+          id?: string
+          nome: string
+          observacao?: string | null
+          updated_at?: string
+          vigente?: boolean
+        }
+        Update: {
+          ano_vigencia?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          observacao?: string | null
+          updated_at?: string
+          vigente?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
