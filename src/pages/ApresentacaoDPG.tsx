@@ -191,7 +191,7 @@ function S4CicloObra() {
     >
       <div className="grid grid-cols-4 gap-4 mb-5">
         {[
-          { step: '1', title: 'RDO diário', desc: 'Contratada registra quantitativos, mão de obra, ocorrências e fotos com marca d\'água e QR code.' },
+          { step: '1', title: 'RDO diário', desc: 'Contratada registra quantitativos, mão de obra, ocorrências e fotos com marca d\'água.' },
           { step: '2', title: 'Importa na medição', desc: 'Um clique traz o executado para a medição. Avanço físico recalculado no banco.' },
           { step: '3', title: 'Revisão do fiscal', desc: 'Ajusta, valida aditivos e bloqueia a medição — tudo com trilha de auditoria.' },
           { step: '4', title: 'Relatório oficial', desc: 'PDF/Word com resumo financeiro, anexo fotográfico e assinaturas.' },
