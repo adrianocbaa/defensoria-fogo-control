@@ -205,11 +205,6 @@ export function useRecebimentoVistorias(obraId: string) {
         .limit(10000);
       const validas = ((restantes ?? []) as { id: string }[]).map((v) => v.id);
 
-      const { data: orfas } = await db
-        .from('recebimento_pendencias')
-        .select('id')
-        .eq('obra_id', obraId)
-        .limit(10000);
       const { data: todasPend } = await db
         .from('recebimento_pendencias')
         .select('id, vistoria_origem_id')
@@ -218,7 +213,6 @@ export function useRecebimentoVistorias(obraId: string) {
       const orfaIds = ((todasPend ?? []) as { id: string; vistoria_origem_id: string | null }[])
         .filter((p) => !p.vistoria_origem_id || !validas.includes(p.vistoria_origem_id))
         .map((p) => p.id);
-      void orfas;
 
       if (orfaIds.length) {
         const { data: fotosOrfas } = await db
