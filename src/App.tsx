@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStorageVersioning } from "@/hooks/useStorageVersioning";
 import MainDashboard from "./pages/MainDashboard";
 import Dashboard from "./pages/Dashboard";
+import PlanoExpansao from "./pages/PlanoExpansao";
+import AdminPlanoExpansao from "./pages/AdminPlanoExpansao";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import NucleusDetails from "./pages/NucleusDetails";
@@ -109,7 +111,9 @@ const AppRoutes = () => {
       <Route path="/fluxograma-obras" element={<ProtectedRoute><FluxogramaObras /></ProtectedRoute>} />
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
       <Route path="/medicao/:id" element={<ProtectedRoute><Medicao /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/plano-expansao" element={<ProtectedRoute><PlanoExpansao /></ProtectedRoute>} />
+      <Route path="/admin/plano-expansao" element={<ProtectedRoute><AdminPlanoExpansao /></ProtectedRoute>} />
       
       {/* Main Dashboard */}
       <Route 
