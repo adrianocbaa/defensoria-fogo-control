@@ -370,9 +370,9 @@ function S8Encerramento() {
 
       <div className="relative flex-1 flex flex-col justify-center max-w-4xl">
         <span className="text-[11px] font-semibold tracking-[0.3em] uppercase text-emerald-100/90 mb-4">Próximos passos</span>
-        <h1 className="text-6xl font-bold leading-[1.02] tracking-tight mb-6">Obrigado.</h1>
+        <h1 className="text-6xl font-bold leading-[1.02] tracking-tight mb-6">Aprimoramento</h1>
         <p className="text-2xl font-light text-emerald-50/90 mb-10 leading-snug">
-          O SiDIF já está em fase de teste. Agora é amadurecer os módulos junto com quem o utiliza.
+          Com o SiDIF em fase de testes, inicia-se agora um processo contínuo de validação e aperfeiçoamento dos módulos, alinhado às necessidades de seus usuários.
         </p>
         <div className="grid grid-cols-3 gap-4">
           {[
