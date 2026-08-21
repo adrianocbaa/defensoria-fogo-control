@@ -70,6 +70,7 @@ import OrcamentoCurvaABC from "./pages/OrcamentoCurvaABC";
 import GerenciarObras from "./pages/GerenciarObras";
 import Apresentacao from "./pages/Apresentacao";
 import ApresentacaoDiretoria from "./pages/ApresentacaoDiretoria";
+import ApresentacaoDPG from "./pages/ApresentacaoDPG";
 import FluxogramaObras from "./pages/FluxogramaObras";
 import { ChecklistDinamico } from "./pages/ChecklistDinamico";
 import { ChecklistHub } from "./pages/ChecklistHub";
