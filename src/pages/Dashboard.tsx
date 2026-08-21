@@ -222,6 +222,6 @@ export default function Dashboard() {
           <PlanoExpansaoResumo />
         </div>
       </div>
-    </SimpleHeader>
+    </ObrasLayout>
   );
 }
