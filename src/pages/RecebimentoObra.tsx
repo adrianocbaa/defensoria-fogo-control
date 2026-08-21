@@ -44,6 +44,7 @@ import {
 import { useRecebimentoPendencias, type Pendencia } from '@/hooks/useRecebimentoPendencias';
 import { NovaVistoriaDialog } from '@/components/recebimento/NovaVistoriaDialog';
 import { AmbienteFormDialog } from '@/components/recebimento/AmbienteFormDialog';
+import { EditarAmbienteDialog } from '@/components/recebimento/EditarAmbienteDialog';
 import { DuplicarAmbienteDialog } from '@/components/recebimento/DuplicarAmbienteDialog';
 import { AdicionarServicoSheet } from '@/components/recebimento/AdicionarServicoSheet';
 import { NaoConformidadeSheet } from '@/components/recebimento/NaoConformidadeSheet';
@@ -451,6 +452,7 @@ export function RecebimentoObra() {
                   onSelecionarStatus={aplicarStatus}
                   onMarcarPendentes={(s) => checklist.marcarGrupo(s.verificacoes, 'conforme')}
                   onNovoAmbiente={() => setAmbienteOpen(true)}
+                  onEditarAmbiente={() => setEditarAmbienteOpen(true)}
                   onDuplicarAmbiente={() => setDuplicarOpen(true)}
                   onRemoverAmbiente={(id) => checklist.inativarAmbiente(id)}
                   onAdicionarServico={() => setServicoOpen(true)}
@@ -597,6 +599,14 @@ export function RecebimentoObra() {
           const id = await checklist.criarAmbiente(args);
           if (id) setAmbienteAtivoId(id as string);
         }}
+      />
+
+      <EditarAmbienteDialog
+        open={editarAmbienteOpen}
+        onOpenChange={setEditarAmbienteOpen}
+        nome={ambiente?.nome ?? ''}
+        pavimento={ambiente?.pavimento ?? null}
+        onConfirm={(args) => ambiente && checklist.atualizarAmbiente(ambiente.id, args)}
       />
 
       <DuplicarAmbienteDialog

@@ -22,6 +22,7 @@ interface Props {
   onSelecionarStatus: (v: Verificacao, status: VerificacaoStatus) => void;
   onMarcarPendentes: (servico: AmbienteServico) => void;
   onNovoAmbiente: () => void;
+  onEditarAmbiente: () => void;
   onDuplicarAmbiente: () => void;
   onRemoverAmbiente: (id: string) => void;
   onAdicionarServico: () => void;
@@ -41,6 +42,7 @@ export function ChecklistView({
   onSelecionarStatus,
   onMarcarPendentes,
   onNovoAmbiente,
+  onEditarAmbiente,
   onDuplicarAmbiente,
   onRemoverAmbiente,
   onAdicionarServico,
@@ -122,6 +124,7 @@ export function ChecklistView({
               onMarcarPendentes={onMarcarPendentes}
               onAdicionarServico={somenteLeitura ? undefined : onAdicionarServico}
               onRemoverServico={somenteLeitura ? undefined : onRemoverServico}
+              onEditarAmbiente={somenteLeitura ? undefined : onEditarAmbiente}
               onDuplicarAmbiente={somenteLeitura ? undefined : onDuplicarAmbiente}
               onRemoverAmbiente={somenteLeitura ? undefined : onRemoverAmbiente}
               onFoto={onFoto}
@@ -144,6 +147,7 @@ export function ChecklistView({
               onMarcarPendentes={onMarcarPendentes}
               onAdicionarServico={somenteLeitura ? undefined : onAdicionarServico}
               onRemoverServico={somenteLeitura ? undefined : onRemoverServico}
+              onEditarAmbiente={somenteLeitura ? undefined : onEditarAmbiente}
               onDuplicarAmbiente={somenteLeitura ? undefined : onDuplicarAmbiente}
               onRemoverAmbiente={somenteLeitura ? undefined : onRemoverAmbiente}
               onFoto={onFoto}

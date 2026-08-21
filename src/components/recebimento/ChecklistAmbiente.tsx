@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Camera, ChevronDown, Copy, MoreVertical, Plus, Trash2 } from 'lucide-react';
+import { Camera, ChevronDown, Copy, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Ambiente, AmbienteServico, Verificacao } from '@/hooks/useRecebimentoChecklist';
 import type { VerificacaoStatus } from '@/lib/recebimento/constants';
@@ -23,6 +23,7 @@ interface Props {
   onMarcarPendentes: (servico: AmbienteServico) => void;
   onRemoverServico?: (id: string) => void;
   onAdicionarServico?: () => void;
+  onEditarAmbiente?: () => void;
   onDuplicarAmbiente?: () => void;
   onRemoverAmbiente?: (id: string) => void;
   onFoto?: () => void;
@@ -38,6 +39,7 @@ export function ChecklistAmbiente({
   onMarcarPendentes,
   onRemoverServico,
   onAdicionarServico,
+  onEditarAmbiente,
   onDuplicarAmbiente,
   onRemoverAmbiente,
   onFoto,
@@ -88,7 +90,7 @@ export function ChecklistAmbiente({
             </Button>
           )}
 
-          {!somenteLeitura && (onAdicionarServico || onDuplicarAmbiente || onRemoverAmbiente) && (
+          {!somenteLeitura && (onAdicionarServico || onEditarAmbiente || onDuplicarAmbiente || onRemoverAmbiente) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="shrink-0" aria-label="Ações do ambiente">
@@ -99,6 +101,11 @@ export function ChecklistAmbiente({
                 {onAdicionarServico && (
                   <DropdownMenuItem onClick={onAdicionarServico}>
                     <Plus className="mr-2 h-4 w-4" /> Adicionar serviço
+                  </DropdownMenuItem>
+                )}
+                {onEditarAmbiente && (
+                  <DropdownMenuItem onClick={onEditarAmbiente}>
+                    <Pencil className="mr-2 h-4 w-4" /> Editar ambiente
                   </DropdownMenuItem>
                 )}
                 {onDuplicarAmbiente && (

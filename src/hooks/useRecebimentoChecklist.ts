@@ -569,6 +569,7 @@ export function useRecebimentoChecklist(obraId: string, vistoriaId: string | nul
     adicionarServicos,
     adicionarServicoPersonalizado,
     duplicarAmbiente,
+    atualizarAmbiente,
     inativarAmbiente,
     inativarServico,
     setStatus,
