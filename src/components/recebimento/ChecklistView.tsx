@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { List, Plus } from 'lucide-react';
 import type { Ambiente, AmbienteServico, Verificacao } from '@/hooks/useRecebimentoChecklist';
+import type { VerificacaoStatus } from '@/lib/recebimento/constants';
 import type { Foto, Pendencia } from '@/hooks/useRecebimentoPendencias';
 import { ABERTAS } from '@/lib/recebimento/constants';
 import { AmbienteList } from './AmbienteList';
@@ -18,7 +19,7 @@ interface Props {
   pendencias: Pendencia[];
   fotos: Foto[];
   somenteLeitura: boolean;
-  onAbrirVerificacao: (v: Verificacao, servico: AmbienteServico) => void;
+  onSelecionarStatus: (v: Verificacao, status: VerificacaoStatus) => void;
   onMarcarPendentes: (servico: AmbienteServico) => void;
   onNovoAmbiente: () => void;
   onDuplicarAmbiente: () => void;
@@ -37,7 +38,7 @@ export function ChecklistView({
   pendencias,
   fotos,
   somenteLeitura,
-  onAbrirVerificacao,
+  onSelecionarStatus,
   onMarcarPendentes,
   onNovoAmbiente,
   onDuplicarAmbiente,
@@ -117,7 +118,7 @@ export function ChecklistView({
             <ChecklistAmbiente
               ambiente={ambiente}
               somenteLeitura={somenteLeitura}
-              onAbrirVerificacao={onAbrirVerificacao}
+              onSelecionarStatus={onSelecionarStatus}
               onMarcarPendentes={onMarcarPendentes}
               onAdicionarServico={somenteLeitura ? undefined : onAdicionarServico}
               onRemoverServico={somenteLeitura ? undefined : onRemoverServico}
@@ -139,7 +140,7 @@ export function ChecklistView({
             <ChecklistAmbiente
               ambiente={ambiente}
               somenteLeitura={somenteLeitura}
-              onAbrirVerificacao={onAbrirVerificacao}
+              onSelecionarStatus={onSelecionarStatus}
               onMarcarPendentes={onMarcarPendentes}
               onAdicionarServico={somenteLeitura ? undefined : onAdicionarServico}
               onRemoverServico={somenteLeitura ? undefined : onRemoverServico}

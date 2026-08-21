@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2, ChevronDown, Circle, Trash2 } from 'lucide
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AmbienteServico, Verificacao } from '@/hooks/useRecebimentoChecklist';
+import type { VerificacaoStatus } from '@/lib/recebimento/constants';
 import { progressoServico } from '@/lib/recebimento/stats';
 import { VerificacaoItem } from './VerificacaoItem';
 
@@ -12,7 +13,7 @@ interface Props {
   onToggle: () => void;
   somenteLeitura?: boolean;
   fotosPorVerificacao?: Record<string, number>;
-  onAbrirVerificacao: (v: Verificacao, servico: AmbienteServico) => void;
+  onSelecionarStatus: (v: Verificacao, status: VerificacaoStatus) => void;
   onMarcarPendentes: (servico: AmbienteServico) => void;
   onRemover?: (servicoId: string) => void;
 }
@@ -24,7 +25,7 @@ export function ServicoAccordion({
   onToggle,
   somenteLeitura,
   fotosPorVerificacao = {},
-  onAbrirVerificacao,
+  onSelecionarStatus,
   onMarcarPendentes,
   onRemover,
 }: Props) {
@@ -122,7 +123,7 @@ export function ServicoAccordion({
               numero={`${indice}.${i + 1}`}
               fotos={fotosPorVerificacao[v.id] ?? 0}
               somenteLeitura={somenteLeitura}
-              onAbrir={(vv) => onAbrirVerificacao(vv, servico)}
+              onSelecionar={onSelecionarStatus}
             />
           ))}
 
