@@ -154,13 +154,18 @@ export async function gerarRelatorioRecebimentoPdf({
         doc.setDrawColor(...GRAY_LINE);
         doc.setLineWidth(0.6);
         try {
-          if (a) doc.addImage(a, 'JPEG', MARGIN, y + 13, w, h, undefined, 'FAST');
-          if (d) doc.addImage(d, 'JPEG', MARGIN + w + 16, y + 13, w, h, undefined, 'FAST');
+          if (a) {
+            const r = drawImageContain(doc, a, MARGIN, y + 13, w, h);
+            doc.rect(r.x, r.y, r.w, r.h);
+          }
+          if (d) {
+            const r = drawImageContain(doc, d, MARGIN + w + 16, y + 13, w, h);
+            doc.rect(r.x, r.y, r.w, r.h);
+          }
         } catch {
           /* imagem inválida — ignora */
         }
-        if (a) doc.rect(MARGIN, y + 13, w, h);
-        if (d) doc.rect(MARGIN + w + 16, y + 13, w, h);
+
         sidif.y = y + h + 26;
       } else {
         sidif.gap(6);
