@@ -14,6 +14,7 @@ interface Args {
   vistoria: Vistoria;
   obra: { nome: string; contrato?: string | null; endereco?: string | null; empresa?: string | null };
   fiscalNome: string;
+  fiscalFuncao?: string;
   ambientes: Ambiente[];
   pendencias: Pendencia[];
   fotos: Foto[];
@@ -46,6 +47,7 @@ export async function gerarRelatorioRecebimentoPdf({
   vistoria,
   obra,
   fiscalNome,
+  fiscalFuncao,
   ambientes,
   pendencias,
   fotos,
@@ -79,7 +81,7 @@ export async function gerarRelatorioRecebimentoPdf({
       ['Empresa', obra.empresa || '—'],
       ['Endereço', obra.endereco || '—'],
       ['Data da vistoria', fmtData(vistoria.data)],
-      ['Fiscal responsável', fiscalNome || '—'],
+      [fiscalFuncao || 'Fiscal responsável', fiscalNome || '—'],
     ],
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 38 } },
     margin: { left: MARGIN, right: MARGIN },
@@ -201,9 +203,9 @@ export async function gerarRelatorioRecebimentoPdf({
   doc.line(pageW / 2 - 40, y, pageW / 2 + 40, y);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.text(fiscalNome || 'Fiscal do Contrato', pageW / 2, y + 5, { align: 'center' });
+  doc.text(fiscalNome || fiscalFuncao || 'Fiscal do Contrato', pageW / 2, y + 5, { align: 'center' });
   doc.setFont('helvetica', 'normal');
-  doc.text('Fiscal do Contrato', pageW / 2, y + 10, { align: 'center' });
+  doc.text(fiscalFuncao || 'Fiscal do Contrato', pageW / 2, y + 10, { align: 'center' });
   doc.text('Defensoria Pública do Estado de Mato Grosso', pageW / 2, y + 15, { align: 'center' });
 
   const total = doc.getNumberOfPages();
