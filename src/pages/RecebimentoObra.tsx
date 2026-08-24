@@ -292,6 +292,7 @@ export function RecebimentoObra() {
           empresa: (obra?.empresa_responsavel as string) ?? (obra?.empresa as string) ?? null,
         },
         fiscalNome,
+        fiscalFuncao,
         ambientes: checklist.ambientes,
         pendencias: pendencias.filter((p) => p.situacao !== 'cancelada'),
         fotos,
