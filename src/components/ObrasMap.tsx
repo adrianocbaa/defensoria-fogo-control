@@ -128,11 +128,15 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
       <MapContainer
         center={matogrossoCenter}
         zoom={initialZoom}
+        minZoom={6}
+        maxBounds={matogrossoBounds}
+        maxBoundsViscosity={1}
         className="h-full w-full rounded-lg transition-all duration-300"
         ref={mapRef}
         zoomControl={false}
         scrollWheelZoom={true}
       >
+
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
