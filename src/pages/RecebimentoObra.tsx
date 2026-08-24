@@ -108,14 +108,42 @@ export function RecebimentoObra() {
   }, [obraId]);
 
   useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('profiles')
-      .select('display_name, email')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data }) => setFiscalNome(data?.display_name ?? data?.email ?? ''));
-  }, [user]);
+    if (!user || !obraId) return;
+    let cancelado = false;
+
+    (async () => {
+      const { data: perfil } = await supabase
+        .from('profiles')
+        .select('display_name, email, position')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const { data: sub } = await supabase
+        .from('obra_fiscal_substitutos')
+        .select('id')
+        .eq('obra_id', obraId)
+        .eq('substitute_user_id', user.id)
+        .maybeSingle();
+
+      if (cancelado) return;
+
+      setFiscalNome(
+        (perfil?.display_name as string) || (perfil?.email as string) || user.email || '',
+      );
+
+      let funcao: string;
+      if ((obra?.fiscal_id as string | null) === user.id) funcao = 'Fiscal do Contrato';
+      else if (sub) funcao = 'Fiscal Substituto';
+      else if (role === 'gm') funcao = 'Gerente do Contrato';
+      else funcao = (perfil?.position as string) || 'Fiscal do Contrato';
+
+      setFiscalFuncao(funcao);
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [user, obraId, obra?.fiscal_id, role]);
 
   useEffect(() => {
     if (!vistoriaId && vistorias.length) {
