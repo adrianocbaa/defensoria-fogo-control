@@ -16,6 +16,37 @@ export const BOX_BG: [number, number, number] = [248, 251, 249];
 
 export const MARGIN = 48;
 
+/**
+ * Desenha a imagem centralizada dentro da caixa preservando a proporção original
+ * (modo "contain"), evitando o achatamento de fotos verticais de celular.
+ * Retorna o retângulo efetivamente ocupado pela imagem.
+ */
+export function drawImageContain(
+  doc: jsPDF,
+  dataUrl: string,
+  boxX: number,
+  boxY: number,
+  boxW: number,
+  boxH: number,
+) {
+  let w = boxW;
+  let h = boxH;
+  try {
+    const props = doc.getImageProperties(dataUrl);
+    if (props?.width && props?.height) {
+      const ratio = Math.min(boxW / props.width, boxH / props.height);
+      w = props.width * ratio;
+      h = props.height * ratio;
+    }
+  } catch {
+    /* usa a caixa cheia se não conseguir ler as dimensões */
+  }
+  const x = boxX + (boxW - w) / 2;
+  const y = boxY + (boxH - h) / 2;
+  doc.addImage(dataUrl, 'JPEG', x, y, w, h, undefined, 'FAST');
+  return { x, y, w, h };
+}
+
 interface Options {
   /** Título do documento exibido na faixa verde. */
   titulo: string;
