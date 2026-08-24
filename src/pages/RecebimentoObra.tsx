@@ -94,6 +94,19 @@ export function RecebimentoObra() {
 
   const vistoria = vistorias.find((v) => v.id === vistoriaId) ?? null;
   const somenteLeitura = !vistoria || vistoria.status !== 'em_andamento';
+  const dadosObra = {
+    nome: (obra?.nome as string) ?? 'Obra',
+    contrato:
+      (obra?.n_contrato as string) ??
+      (obra?.numero_contrato as string) ??
+      (obra?.contrato as string) ??
+      null,
+    endereco: (obra?.endereco_completo as string) ?? (obra?.endereco as string) ?? null,
+    empresa:
+      ((obra?.empresas as { razao_social?: string } | null)?.razao_social as string) ??
+      (obra?.empresa_responsavel as string) ??
+      null,
+  };
   const podeEditar = isAdmin || role === 'editor' || role === 'gm' || role === 'admin';
   const bloqueado = somenteLeitura || !podeEditar;
 
@@ -101,7 +114,7 @@ export function RecebimentoObra() {
     if (!obraId) return;
     supabase
       .from('obras')
-      .select('*')
+      .select('*, empresas(razao_social)')
       .eq('id', obraId)
       .maybeSingle()
       .then(({ data }) => setObra((data as Record<string, unknown>) ?? null));
@@ -285,12 +298,7 @@ export function RecebimentoObra() {
     try {
       await gerarRelatorioRecebimentoPdf({
         vistoria,
-        obra: {
-          nome: (obra?.nome as string) ?? 'Obra',
-          contrato: (obra?.numero_contrato as string) ?? (obra?.contrato as string) ?? null,
-          endereco: (obra?.endereco_completo as string) ?? null,
-          empresa: (obra?.empresa_responsavel as string) ?? (obra?.empresa as string) ?? null,
-        },
+        obra: dadosObra,
         fiscalNome,
         fiscalFuncao,
         ambientes: checklist.ambientes,

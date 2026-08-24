@@ -82,7 +82,7 @@ export function EntregaInstitucional() {
     if (!obraId) return;
     supabase
       .from('obras')
-      .select('*')
+      .select('*, empresas(razao_social)')
       .eq('id', obraId)
       .maybeSingle()
       .then(({ data }) => setObra((data as Record<string, unknown>) ?? null));
@@ -151,9 +151,16 @@ export function EntregaInstitucional() {
 
   const dadosObra = {
     nome: (obra?.nome as string) ?? 'Obra',
-    contrato: (obra?.numero_contrato as string) ?? (obra?.contrato as string) ?? null,
-    endereco: (obra?.endereco_completo as string) ?? null,
-    empresa: (obra?.empresa_responsavel as string) ?? (obra?.empresa as string) ?? null,
+    contrato:
+      (obra?.n_contrato as string) ??
+      (obra?.numero_contrato as string) ??
+      (obra?.contrato as string) ??
+      null,
+    endereco: (obra?.endereco_completo as string) ?? (obra?.endereco as string) ?? null,
+    empresa:
+      ((obra?.empresas as { razao_social?: string } | null)?.razao_social as string) ??
+      (obra?.empresa_responsavel as string) ??
+      null,
   };
 
   const exportar = async (tipo: 'termo' | 'fotografico') => {
