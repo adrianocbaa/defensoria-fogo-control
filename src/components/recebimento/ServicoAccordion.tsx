@@ -85,6 +85,23 @@ export function ServicoAccordion({
           <ResumoIcon className="h-3.5 w-3.5" />
           {resumo}
         </span>
+
+        {!somenteLeitura && onRemover && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemover(servico.id);
+            }}
+            aria-label="Remover serviço"
+            title="Remover serviço"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+
         <ChevronDown
           className={cn(
             'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
