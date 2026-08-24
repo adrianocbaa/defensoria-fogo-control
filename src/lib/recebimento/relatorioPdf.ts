@@ -1,11 +1,10 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import {
   CLASSIFICACAO_LABEL,
   SITUACAO_LABEL,
   STATUS_LABEL,
   vistoriaTitulo,
 } from '@/lib/recebimento/constants';
+import { criarDocumentoSidif, GREEN, GRAY_LINE, MARGIN } from '@/lib/pdf/sidifPdf';
 import type { Ambiente } from '@/hooks/useRecebimentoChecklist';
 import type { Foto, Pendencia } from '@/hooks/useRecebimentoPendencias';
 import type { Vistoria } from '@/hooks/useRecebimentoVistorias';
@@ -19,8 +18,6 @@ interface Args {
   pendencias: Pendencia[];
   fotos: Foto[];
 }
-
-const MARGIN = 14;
 
 function fmtData(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split('-');
@@ -52,51 +49,34 @@ export async function gerarRelatorioRecebimentoPdf({
   pendencias,
   fotos,
 }: Args) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const pageW = doc.internal.pageSize.getWidth();
-  let y = MARGIN;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text('DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO', pageW / 2, y, { align: 'center' });
-  y += 5;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Diretoria de Infraestrutura e Fiscalização — SiDIF', pageW / 2, y, { align: 'center' });
-  y += 8;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text(`RELATÓRIO DE ${vistoriaTitulo(vistoria).toUpperCase()}`, pageW / 2, y, {
-    align: 'center',
+  const titulo = `Relatório de ${vistoriaTitulo(vistoria)}`;
+  const sidif = criarDocumentoSidif({
+    titulo,
+    subtitulo: 'Diretoria de Infraestrutura e Fiscalização — Recebimento de Obra',
+    numero: `Nº ${String(vistoria.sequencia).padStart(2, '0')}`,
   });
-  y += 8;
+  const { doc } = sidif;
 
-  autoTable(doc, {
-    startY: y,
-    theme: 'grid',
-    styles: { fontSize: 9, cellPadding: 2 },
-    body: [
-      ['Obra', obra.nome],
-      ['Contrato', obra.contrato || '—'],
-      ['Empresa', obra.empresa || '—'],
-      ['Endereço', obra.endereco || '—'],
+  // Identificação
+  sidif.section('Identificação');
+  sidif.infoCard([
+    [['Obra', obra.nome]],
+    [['Contrato', obra.contrato || '-'], ['Empresa', obra.empresa || '-']],
+    [['Endereço', obra.endereco || '-']],
+    [
       ['Data da vistoria', fmtData(vistoria.data)],
-      [fiscalFuncao || 'Fiscal responsável', fiscalNome || '—'],
+      [fiscalFuncao || 'Fiscal responsável', fiscalNome || '-'],
     ],
-    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 38 } },
-    margin: { left: MARGIN, right: MARGIN },
-  });
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+  ]);
 
   // Resumo
   const todas = ambientes.flatMap((a) => a.servicos.flatMap((s) => s.verificacoes));
   const cont = (st: string) => todas.filter((v) => v.status === st).length;
   const abertas = pendencias.filter((p) => !['sanada', 'cancelada'].includes(p.situacao)).length;
 
-  autoTable(doc, {
-    startY: y,
-    theme: 'striped',
-    head: [['Resumo', 'Qtde']],
+  sidif.section('Resumo da vistoria');
+  sidif.table({
+    head: [['Indicador', 'Quantidade']],
     body: [
       ['Ambientes vistoriados', String(ambientes.length)],
       ['Itens verificados', String(todas.length)],
@@ -107,120 +87,88 @@ export async function gerarRelatorioRecebimentoPdf({
       ['Pendências em aberto', String(abertas)],
       ['Pendências sanadas', String(pendencias.filter((p) => p.situacao === 'sanada').length)],
     ],
-    styles: { fontSize: 9, cellPadding: 2 },
-    headStyles: { fillColor: [22, 101, 52] },
-    margin: { left: MARGIN, right: MARGIN },
+    columnStyles: { 1: { cellWidth: 90, halign: 'center' } },
   });
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
   // Checklist por ambiente
+  sidif.section('Checklist por ambiente');
   for (const amb of ambientes) {
     const body = amb.servicos.flatMap((s) =>
       s.verificacoes.map((v) => [s.servico_snapshot, v.descricao_snapshot, STATUS_LABEL[v.status]]),
     );
     if (!body.length) continue;
-    autoTable(doc, {
-      startY: y,
-      theme: 'grid',
-      head: [[{ content: amb.nome, colSpan: 3, styles: { halign: 'left' } }], ['Serviço', 'Verificação', 'Situação']],
+    sidif.ensure(60);
+    sidif.text(amb.nome + (amb.pavimento ? ` — ${amb.pavimento}` : ''), 9.5, true);
+    sidif.gap(2);
+    sidif.table({
+      head: [['Serviço', 'Verificação', 'Situação']],
       body,
-      styles: { fontSize: 8, cellPadding: 1.6 },
-      headStyles: { fillColor: [22, 101, 52] },
-      columnStyles: { 0: { cellWidth: 42 }, 2: { cellWidth: 30 } },
-      margin: { left: MARGIN, right: MARGIN },
+      styles: { fontSize: 8, cellPadding: 3.4 },
+      columnStyles: { 0: { cellWidth: 130 }, 2: { cellWidth: 92 } },
     });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
   }
 
   // Pendências
   if (pendencias.length) {
-    doc.addPage();
-    y = MARGIN;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('PENDÊNCIAS REGISTRADAS', MARGIN, y);
-    y += 6;
-
+    sidif.section('Pendências registradas');
     for (const p of pendencias) {
-      if (y > 235) {
-        doc.addPage();
-        y = MARGIN;
-      }
-      autoTable(doc, {
-        startY: y,
-        theme: 'grid',
+      sidif.ensure(120);
+      sidif.table({
         body: [
           ['Pendência', p.titulo],
-          ['Descrição', p.descricao || '—'],
+          ['Descrição', p.descricao || '-'],
           ['Classificação', CLASSIFICACAO_LABEL[p.classificacao]],
-          ['Prazo', p.prazo_correcao ? fmtData(p.prazo_correcao) : '—'],
+          ['Prazo', p.prazo_correcao ? fmtData(p.prazo_correcao) : '-'],
           ['Situação', SITUACAO_LABEL[p.situacao]],
         ],
-        styles: { fontSize: 8.5, cellPadding: 1.8 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 30 } },
-        margin: { left: MARGIN, right: MARGIN },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 96, fillColor: [242, 247, 244] } },
       });
-      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 3;
 
       const antes = fotos.find((f) => f.pendencia_id === p.id && f.tipo === 'ocorrencia');
       const depois = fotos.find((f) => f.pendencia_id === p.id && f.tipo === 'correcao');
       if (antes?.url || depois?.url) {
-        const w = (pageW - MARGIN * 2 - 6) / 2;
-        const h = 45;
-        if (y + h > 280) {
-          doc.addPage();
-          y = MARGIN;
-        }
-        doc.setFontSize(8);
+        const w = (sidif.contentW - 16) / 2;
+        const h = 130;
+        sidif.ensure(h + 24);
+        const y = sidif.y;
         doc.setFont('helvetica', 'bold');
-        doc.text('ANTES', MARGIN, y + 3);
-        doc.text('DEPOIS', MARGIN + w + 6, y + 3);
+        doc.setFontSize(8);
+        doc.setTextColor(...GREEN);
+        doc.text('ANTES', MARGIN, y + 8);
+        doc.text('DEPOIS', MARGIN + w + 16, y + 8);
+        doc.setTextColor(70, 70, 70);
         const [a, d] = await Promise.all([
           antes?.url ? fetchDataUrl(antes.url) : null,
           depois?.url ? fetchDataUrl(depois.url) : null,
         ]);
+        doc.setDrawColor(...GRAY_LINE);
+        doc.setLineWidth(0.6);
         try {
-          if (a) doc.addImage(a, 'JPEG', MARGIN, y + 5, w, h);
-          if (d) doc.addImage(d, 'JPEG', MARGIN + w + 6, y + 5, w, h);
+          if (a) doc.addImage(a, 'JPEG', MARGIN, y + 13, w, h, undefined, 'FAST');
+          if (d) doc.addImage(d, 'JPEG', MARGIN + w + 16, y + 13, w, h, undefined, 'FAST');
         } catch {
           /* imagem inválida — ignora */
         }
-        y += h + 12;
+        if (a) doc.rect(MARGIN, y + 13, w, h);
+        if (d) doc.rect(MARGIN + w + 16, y + 13, w, h);
+        sidif.y = y + h + 26;
       } else {
-        y += 4;
+        sidif.gap(6);
       }
     }
   }
 
   // Assinatura
-  if (y > 240) {
-    doc.addPage();
-    y = MARGIN;
-  }
-  y = Math.max(y + 16, 240);
-  doc.setDrawColor(120);
-  doc.setLineWidth(0.2);
-  doc.line(pageW / 2 - 40, y, pageW / 2 + 40, y);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text(fiscalNome || fiscalFuncao || 'Fiscal do Contrato', pageW / 2, y + 5, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.text(fiscalFuncao || 'Fiscal do Contrato', pageW / 2, y + 10, { align: 'center' });
-  doc.text('Defensoria Pública do Estado de Mato Grosso', pageW / 2, y + 15, { align: 'center' });
+  sidif.section('Responsável pela vistoria');
+  sidif.assinaturas([
+    {
+      nome: fiscalNome || fiscalFuncao || 'Fiscal do Contrato',
+      funcao: fiscalFuncao || 'Fiscal do Contrato',
+      orgao: 'Defensoria Pública do Estado de Mato Grosso',
+    },
+  ]);
 
-  const total = doc.getNumberOfPages();
-  for (let i = 1; i <= total; i++) {
-    doc.setPage(i);
-    doc.setFontSize(7.5);
-    doc.setTextColor(120);
-    doc.text(
-      `SiDIF — ${obra.nome} — ${vistoriaTitulo(vistoria)} — pág. ${i}/${total}`,
-      pageW / 2,
-      doc.internal.pageSize.getHeight() - 7,
-      { align: 'center' },
-    );
-    doc.setTextColor(0);
-  }
+  sidif.finalizar();
 
   doc.save(
     `recebimento-${vistoria.tipo}-${String(vistoria.sequencia).padStart(2, '0')}-${obra.nome
