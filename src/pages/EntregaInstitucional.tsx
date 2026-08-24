@@ -82,7 +82,7 @@ export function EntregaInstitucional() {
     if (!obraId) return;
     supabase
       .from('obras')
-      .select('*')
+      .select('*, empresas(razao_social)')
       .eq('id', obraId)
       .maybeSingle()
       .then(({ data }) => setObra((data as Record<string, unknown>) ?? null));
