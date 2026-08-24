@@ -122,7 +122,7 @@ export async function gerarRelatorioRecebimentoPdf({
       const depois = fotos.find((f) => f.pendencia_id === p.id && f.tipo === 'correcao');
       const temFoto = Boolean(antes?.url || depois?.url);
       // mantém quadro + fotos na mesma página
-      sidif.ensure(temFoto ? 300 : 130);
+      sidif.ensure(temFoto ? 340 : 130);
       sidif.table({
         body: [
           ['Ambiente', nomeAmbiente((p as { ambiente_id?: string | null }).ambiente_id)],
@@ -137,7 +137,7 @@ export async function gerarRelatorioRecebimentoPdf({
 
       if (temFoto) {
         const w = (sidif.contentW - 16) / 2;
-        const h = 130;
+        const h = 170; // ~60 mm
         const y = sidif.y;
 
         doc.setFont('helvetica', 'bold');
