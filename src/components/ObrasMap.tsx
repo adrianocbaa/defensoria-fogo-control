@@ -142,6 +142,39 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {/* Máscara que oculta visualmente os estados vizinhos, deixando apenas Mato Grosso visível */}
+        <Polygon
+          positions={[
+            // Anel externo cobrindo uma área bem maior que o mapa visível
+            [
+              [-20, -65],
+              [-20, -47],
+              [-5, -47],
+              [-5, -65],
+            ],
+            // Buraco no formato de Mato Grosso
+            mtBoundary,
+          ]}
+          pathOptions={{
+            fillColor: '#0f172a',
+            fillOpacity: 0.85,
+            stroke: false,
+            fillRule: 'evenodd',
+            interactive: false,
+          }}
+        />
+
+        {/* Contorno discreto do estado de Mato Grosso */}
+        <Polyline
+          positions={mtBoundary}
+          pathOptions={{
+            color: '#3b82f6',
+            weight: 2,
+            opacity: 0.8,
+            interactive: false,
+          }}
+        />
         
         {/* Zoom Control positioned for better UX */}
         <div className="leaflet-top leaflet-right">
