@@ -206,6 +206,7 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
     autoTable(doc, {
       startY: y,
       theme: 'grid',
+      rowPageBreak: 'avoid',
       styles: { fontSize: 8.5, cellPadding: 4, lineColor: GRAY_LINE, textColor: GRAY_TEXT },
       headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
       alternateRowStyles: { fillColor: BOX_BG },
