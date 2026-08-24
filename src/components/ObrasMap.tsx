@@ -146,12 +146,12 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
         {/* Máscara que oculta visualmente os estados vizinhos, deixando apenas Mato Grosso visível */}
         <Polygon
           positions={[
-            // Anel externo cobrindo uma área bem maior que o mapa visível
+            // Anel externo cobrindo o mundo inteiro para garantir a máscara em qualquer zoom
             [
-              [-20, -65],
-              [-20, -47],
-              [-5, -47],
-              [-5, -65],
+              [-90, -180],
+              [-90, 180],
+              [90, 180],
+              [90, -180],
             ],
             // Buraco no formato de Mato Grosso
             mtBoundary,
