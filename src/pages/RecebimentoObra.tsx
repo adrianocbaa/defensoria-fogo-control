@@ -70,6 +70,7 @@ export function RecebimentoObra() {
 
   const [obra, setObra] = useState<Record<string, unknown> | null>(null);
   const [fiscalNome, setFiscalNome] = useState('');
+  const [fiscalFuncao, setFiscalFuncao] = useState('Fiscal do Contrato');
   const [vistoriaId, setVistoriaId] = useState<string | null>(null);
   const [ambienteAtivoId, setAmbienteAtivoId] = useState<string | null>(null);
   const [secao, setSecao] = useState<RecebimentoSecao>('visao');
