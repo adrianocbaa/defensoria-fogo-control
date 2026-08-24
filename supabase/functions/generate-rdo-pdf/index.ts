@@ -777,61 +777,8 @@ Deno.serve(async (req) => {
       doc.setTextColor(...GRAY_TEXT);
     }
 
-    // Get jsPDF output and enhance with pdf-lib to add logo
-    const jsPdfBytes = doc.output('arraybuffer');
-    
-    // Use pdf-lib to add the logo image (jsPDF doesn't work with images in Deno)
-    let finalPdfBytes: Uint8Array;
-    
-    try {
-      const pdfDoc = await PDFDocument.load(jsPdfBytes);
-      
-      if (logoBytes) {
-        try {
-          // Embed the logo image
-          const logoImage = await pdfDoc.embedJpg(logoBytes);
-          
-          // Get the first page
-          const pages = pdfDoc.getPages();
-          if (pages.length > 0) {
-            const firstPage = pages[0];
-            const pageHeight = firstPage.getHeight();
-            
-            // Get original image dimensions and calculate aspect ratio
-            const originalWidth = logoImage.width;
-            const originalHeight = logoImage.height;
-            const aspectRatio = originalWidth / originalHeight;
-            
-            console.log('Logo original dimensions:', originalWidth, 'x', originalHeight, 'aspect ratio:', aspectRatio);
-            
-            // Draw logo at top-left preserving aspect ratio
-            // Position: x=14, y from top = ~8 (in mm, pdf-lib uses points)
-            // 1mm ≈ 2.83 points
-            // Target height: 22mm, width calculated from aspect ratio
-            const logoHeight = 22 * 2.83;
-            const logoWidth = logoHeight * aspectRatio;
-            const logoX = 14 * 2.83;
-            const logoY = pageHeight - (8 * 2.83) - logoHeight; // Convert from top to bottom origin
-            
-            firstPage.drawImage(logoImage, {
-              x: logoX,
-              y: logoY,
-              width: logoWidth,
-              height: logoHeight,
-            });
-            
-            console.log('Logo embedded successfully using pdf-lib - size:', logoWidth / 2.83, 'x', logoHeight / 2.83, 'mm');
-          }
-        } catch (embedError) {
-          console.error('Error embedding logo with pdf-lib:', embedError);
-        }
-      }
-      
-      finalPdfBytes = await pdfDoc.save();
-    } catch (pdfLibError) {
-      console.error('Error processing PDF with pdf-lib:', pdfLibError);
-      finalPdfBytes = new Uint8Array(jsPdfBytes);
-    }
+    // A identidade visual agora é desenhada pela faixa institucional do cabeçalho
+    const finalPdfBytes = new Uint8Array(doc.output('arraybuffer'));
     
     const fileName = `${obraId}/${reportId}/RDO-${rdoData.report.numero_seq}-${rdoData.report.data}.pdf`;
 
