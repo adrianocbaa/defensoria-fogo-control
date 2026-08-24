@@ -1,5 +1,6 @@
 import {
   criarDocumentoSidif,
+  drawImageContain,
   GRAY_LABEL,
   GRAY_TEXT,
   MARGIN,
