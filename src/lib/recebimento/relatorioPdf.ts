@@ -110,11 +110,23 @@ export async function gerarRelatorioRecebimentoPdf({
 
   // Pendências
   if (pendencias.length) {
+    const nomeAmbiente = (id: string | null | undefined) => {
+      if (!id) return '-';
+      const amb = ambientes.find((a) => a.id === id);
+      if (!amb) return '-';
+      return amb.nome + (amb.pavimento ? ` — ${amb.pavimento}` : '');
+    };
+
     sidif.section('Pendências registradas');
     for (const p of pendencias) {
-      sidif.ensure(120);
+      const antes = fotos.find((f) => f.pendencia_id === p.id && f.tipo === 'ocorrencia');
+      const depois = fotos.find((f) => f.pendencia_id === p.id && f.tipo === 'correcao');
+      const temFoto = Boolean(antes?.url || depois?.url);
+      // mantém quadro + fotos na mesma página
+      sidif.ensure(temFoto ? 300 : 130);
       sidif.table({
         body: [
+          ['Ambiente', nomeAmbiente((p as { ambiente_id?: string | null }).ambiente_id)],
           ['Pendência', p.titulo],
           ['Descrição', p.descricao || '-'],
           ['Classificação', CLASSIFICACAO_LABEL[p.classificacao]],
@@ -124,9 +136,8 @@ export async function gerarRelatorioRecebimentoPdf({
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 96, fillColor: [242, 247, 244] } },
       });
 
-      const antes = fotos.find((f) => f.pendencia_id === p.id && f.tipo === 'ocorrencia');
-      const depois = fotos.find((f) => f.pendencia_id === p.id && f.tipo === 'correcao');
-      if (antes?.url || depois?.url) {
+      if (temFoto) {
+
         const w = (sidif.contentW - 16) / 2;
         const h = 130;
         sidif.ensure(h + 24);
