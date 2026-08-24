@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
         0: { fontStyle: 'bold', cellWidth: 40, fillColor: BOX_BG },
         1: { cellWidth: pageWidth - MARGIN * 2 - 40 }
       },
-      margin: { left: MARGIN, right: MARGIN, top: HEADER_H + 8 },
+      margin: { left: MARGIN, right: MARGIN, top: HEADER_H + 8, bottom: 18 },
     });
 
     yPos = (doc as any).lastAutoTable.finalY + 8;
