@@ -231,10 +231,10 @@ export async function gerarRelatorioFotograficoEntregaPdf({
         if (!dataUrl) continue;
         const x = MARGIN + c * (larguraFoto + 16);
         try {
-          s.doc.addImage(dataUrl, 'JPEG', x, linhaY, larguraFoto, alturaFoto, undefined, 'FAST');
+          const r = drawImageContain(s.doc, dataUrl, x, linhaY, larguraFoto, alturaFoto);
           s.doc.setDrawColor(222, 229, 225);
           s.doc.setLineWidth(0.6);
-          s.doc.rect(x, linhaY, larguraFoto, alturaFoto);
+          s.doc.rect(r.x, r.y, r.w, r.h);
         } catch {
           /* imagem inválida — ignora */
         }
