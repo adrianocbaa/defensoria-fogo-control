@@ -75,8 +75,7 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
     doc.setFont('helvetica', 'normal');
   };
 
-  const drawFooter = () => {
-    const page = doc.getNumberOfPages();
+  const drawFooter = (page: number, total: number) => {
     doc.setDrawColor(...GRAY_LINE);
     doc.setLineWidth(0.6);
     doc.line(MARGIN, footerY - 8, pageW - MARGIN, footerY - 8);
@@ -88,12 +87,11 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
       MARGIN,
       footerY + 2,
     );
-    doc.text(`Página ${page}`, pageW - MARGIN, footerY + 2, { align: 'right' });
+    doc.text(`Página ${page} de ${total}`, pageW - MARGIN, footerY + 2, { align: 'right' });
     doc.setTextColor(...GRAY_TEXT);
   };
 
   const newPage = () => {
-    drawFooter();
     doc.addPage();
     drawHeader();
     y = headerH + 26;
@@ -255,7 +253,12 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
   };
 
   const finalizar = () => {
-    drawFooter();
+    const total = doc.getNumberOfPages();
+    for (let i = 1; i <= total; i++) {
+      doc.setPage(i);
+      drawFooter(i, total);
+    }
+    doc.setPage(total);
   };
 
   drawHeader();
