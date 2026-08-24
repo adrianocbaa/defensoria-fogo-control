@@ -88,7 +88,13 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
 
   // Coordenadas do centro de Mato Grosso
   const matogrossoCenter: [number, number] = [-12.64, -55.42];
-  const initialZoom = 7;
+  const initialZoom = 6;
+  // Limites aproximados do estado de Mato Grosso (com pequena folga)
+  const matogrossoBounds: [[number, number], [number, number]] = [
+    [-18.4, -62.2],
+    [-6.8, -49.6],
+  ];
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -122,11 +128,15 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
       <MapContainer
         center={matogrossoCenter}
         zoom={initialZoom}
+        minZoom={6}
+        maxBounds={matogrossoBounds}
+        maxBoundsViscosity={1}
         className="h-full w-full rounded-lg transition-all duration-300"
         ref={mapRef}
         zoomControl={false}
         scrollWheelZoom={true}
       >
+
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
