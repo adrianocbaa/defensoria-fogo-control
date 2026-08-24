@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { ImageGallery } from '@/components/ImageGallery';
 import type { Foto } from '@/hooks/useRecebimentoPendencias';
 import { formatarData } from '@/lib/recebimento/ui';
+
 
 interface Props {
   antes: Foto[];
