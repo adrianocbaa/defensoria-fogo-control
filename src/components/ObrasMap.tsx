@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polygon, Polyline } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -7,6 +7,7 @@ import { type ObraStatus, type Obra } from '@/data/mockObras';
 import { MapLoadingSkeleton } from '@/components/LoadingStates';
 import { createCustomIcon } from '@/components/MapPinOptions';
 import { useObrasValorPagoMap } from '@/hooks/useObrasValorPagoMap';
+import { mtBoundary } from '@/data/mtBoundary';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
