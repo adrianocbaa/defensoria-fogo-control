@@ -1,7 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.5';
 import { jsPDF } from 'https://esm.sh/jspdf@2.5.2';
 import 'https://esm.sh/jspdf-autotable@3.8.4';
-import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -386,12 +385,9 @@ Deno.serve(async (req) => {
         doc.text('Sem registros executados neste modo', 14, yPos);
         yPos += 8;
       } else {
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
         const modoLabel = modoAtividades === 'manual' ? 'Manual' : 
                          modoAtividades === 'planilha' ? 'Planilha' : 'Template';
-        doc.text(`Atividades Executadas (${modoLabel}) - ${filteredActivities.length}`, 14, yPos);
-        yPos += 5;
+        yPos = sectionTitle(`Atividades Executadas (${modoLabel}) - ${filteredActivities.length}`);
 
         // Build table body based on mode
         let tableBody: any[] = [];
@@ -559,10 +555,7 @@ Deno.serve(async (req) => {
         yPos = HEADER_H + 10;
       }
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Evidências Fotográficas (${rdoData.media.length})`, 14, yPos);
-      yPos += 8;
+      yPos = sectionTitle(`Evidências Fotográficas (${rdoData.media.length})`) + 3;
 
       const imgWidth = (pageWidth - 28 - 5) / 2; // 2 images per row with 5mm gap
       const imgHeight = 60; // Fixed height for consistency
@@ -578,7 +571,7 @@ Deno.serve(async (req) => {
           // Check if we need a new page before starting a new row
           if (isFirstInRow && yPos + imgHeight + 30 > pageHeight - 20) {
             doc.addPage();
-            yPos = 20;
+            yPos = HEADER_H + 10;
           }
 
           // Fetch image
