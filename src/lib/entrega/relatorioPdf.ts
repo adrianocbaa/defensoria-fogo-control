@@ -1,5 +1,10 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import {
+  criarDocumentoSidif,
+  GRAY_LABEL,
+  GRAY_TEXT,
+  MARGIN,
+  type SidifDoc,
+} from '@/lib/pdf/sidifPdf';
 import {
   IMPACTO_LABEL,
   PAPEL_LABEL,
@@ -21,8 +26,6 @@ import type {
 } from '@/hooks/useEntregaInstitucional';
 import type { EntregaFoto } from '@/hooks/useEntregaPendencias';
 
-const MARGIN = 14;
-
 interface Args {
   entrega: EntregaVistoria;
   obra: { nome: string; contrato?: string | null; endereco?: string | null; empresa?: string | null };
@@ -32,6 +35,8 @@ interface Args {
   pendencias: EntregaPendencia[];
   fotos: EntregaFoto[];
 }
+
+const SUBTITULO = 'Diretoria de Infraestrutura e Fiscalização — Entrega Institucional';
 
 async function paraDataUrl(url: string): Promise<string | null> {
   try {
@@ -49,54 +54,35 @@ async function paraDataUrl(url: string): Promise<string | null> {
   }
 }
 
-function cabecalho(doc: jsPDF, titulo: string, obra: Args['obra'], entrega: EntregaVistoria) {
-  const pageW = doc.internal.pageSize.getWidth();
-  let y = MARGIN;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text('DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO', pageW / 2, y, { align: 'center' });
-  y += 5;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Diretoria de Infraestrutura e Fiscalização — SiDIF', pageW / 2, y, { align: 'center' });
-  y += 8;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text(titulo, pageW / 2, y, { align: 'center' });
-  y += 8;
-
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  const linhas = [
-    `Obra: ${obra.nome}`,
-    obra.contrato ? `Contrato: ${obra.contrato}` : null,
-    obra.empresa ? `Contratada: ${obra.empresa}` : null,
-    obra.endereco ? `Endereço: ${obra.endereco}` : null,
-    `Data da entrega: ${formatarData(entrega.data)}`,
-    entrega.recebimento_definitivo_data
-      ? `Recebimento Definitivo concluído em: ${formatarData(entrega.recebimento_definitivo_data)}`
-      : null,
-  ].filter(Boolean) as string[];
-  for (const l of linhas) {
-    doc.text(l, MARGIN, y);
-    y += 4.5;
-  }
-  return y + 3;
+function identificacao(s: SidifDoc, obra: Args['obra'], entrega: EntregaVistoria) {
+  s.section('Identificação');
+  const linhas: [string, string, boolean?][][] = [
+    [['Obra', obra.nome]],
+    [
+      ['Contrato', obra.contrato || '—'],
+      ['Contratada', obra.empresa || '—'],
+    ],
+    [['Endereço', obra.endereco || '—']],
+    [
+      ['Data da entrega', formatarData(entrega.data)],
+      [
+        'Rec. definitivo',
+        entrega.recebimento_definitivo_data
+          ? formatarData(entrega.recebimento_definitivo_data)
+          : '—',
+      ],
+    ],
+  ];
+  s.infoCard(linhas);
 }
 
-function rodape(doc: jsPDF) {
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const total = doc.getNumberOfPages();
-  for (let i = 1; i <= total; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(120);
-    doc.text(`Página ${i} de ${total}`, pageW - MARGIN, pageH - 8, { align: 'right' });
-    doc.text('Gerado pelo SiDIF', MARGIN, pageH - 8);
-    doc.setTextColor(0);
-  }
+function nomeArquivo(prefixo: string, obraNome: string) {
+  return `${prefixo}-${obraNome
+    .normalize('NFD')
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .toLowerCase()}.pdf`;
 }
 
 /** Termo de Entrega Institucional com resultado, ressalvas e ciência. */
@@ -108,27 +94,31 @@ export async function gerarTermoEntregaPdf({
   participantes,
   pendencias,
 }: Args) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const pageW = doc.internal.pageSize.getWidth();
-  let y = cabecalho(doc, 'TERMO DE ENTREGA INSTITUCIONAL', obra, entrega);
+  const s = criarDocumentoSidif({
+    titulo: 'Termo de Entrega Institucional',
+    subtitulo: SUBTITULO,
+  });
+
+  identificacao(s, obra, entrega);
 
   const resultado: Resultado = (entrega.resultado_congelado as Resultado) ?? resumo.resultado;
+  s.section('Resultado da entrega');
+  s.ensure(40);
+  s.doc.setFillColor(232, 243, 237);
+  s.doc.setDrawColor(26, 95, 63);
+  s.doc.setLineWidth(0.8);
+  s.doc.roundedRect(MARGIN, s.y, s.contentW, 30, 6, 6, 'FD');
+  s.doc.setFont('helvetica', 'bold');
+  s.doc.setFontSize(12);
+  s.doc.setTextColor(26, 95, 63);
+  s.doc.text(RESULTADO_LABEL[resultado], s.pageW / 2, s.y + 20, { align: 'center' });
+  s.doc.setTextColor(...GRAY_TEXT);
+  s.y += 38;
 
-  doc.setDrawColor(180);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.rect(MARGIN, y, pageW - MARGIN * 2, 12);
-  doc.text(RESULTADO_LABEL[resultado], pageW / 2, y + 8, { align: 'center' });
-  y += 18;
+  s.text(TEXTO_CIENCIA, 9);
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  const intro = doc.splitTextToSize(TEXTO_CIENCIA, pageW - MARGIN * 2);
-  doc.text(intro, MARGIN, y);
-  y += intro.length * 4.2 + 4;
-
-  autoTable(doc, {
-    startY: y,
+  s.section('Resumo da vistoria');
+  s.table({
     head: [['Indicador', 'Quantidade']],
     body: [
       ['Ambientes vistoriados', String(resumo.ambientes)],
@@ -139,25 +129,16 @@ export async function gerarTermoEntregaPdf({
       ['Pendências impeditivas', String(resumo.impeditivasAbertas)],
       ['Pendências sanadas', String(resumo.sanadas)],
     ],
-    styles: { fontSize: 8.5, cellPadding: 1.8 },
-    headStyles: { fillColor: [30, 64, 90] },
-    margin: { left: MARGIN, right: MARGIN },
+    columnStyles: { 1: { cellWidth: 90, halign: 'center' } },
   });
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 
   const nomeAmbiente = (id: string | null) =>
     ambientes.find((a) => a.id === id)?.nome ?? 'Sem ambiente';
 
-  const abertas = pendencias.filter(
-    (p) => p.situacao !== 'sanada' && p.situacao !== 'cancelada',
-  );
+  const abertas = pendencias.filter((p) => p.situacao !== 'sanada' && p.situacao !== 'cancelada');
   if (abertas.length) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('RESSALVAS REGISTRADAS', MARGIN, y);
-    y += 2;
-    autoTable(doc, {
-      startY: y + 2,
+    s.section('Ressalvas registradas');
+    s.table({
       head: [['Ambiente', 'Pendência', 'Responsabilidade', 'Impacto', 'Situação']],
       body: abertas.map((p) => [
         nomeAmbiente(p.ambiente_id),
@@ -167,53 +148,37 @@ export async function gerarTermoEntregaPdf({
         IMPACTO_LABEL[p.impacto],
         SITUACAO_LABEL[p.situacao],
       ]),
-      styles: { fontSize: 8, cellPadding: 1.6, overflow: 'linebreak' },
-      headStyles: { fillColor: [30, 64, 90] },
-      margin: { left: MARGIN, right: MARGIN },
+      styles: { fontSize: 8, cellPadding: 3.4, overflow: 'linebreak' },
+      columnStyles: {
+        0: { cellWidth: 90 },
+        2: { cellWidth: 96 },
+        3: { cellWidth: 62 },
+        4: { cellWidth: 62 },
+      },
     });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
   }
 
   if (entrega.ciencia_em) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(`Ciência registrada em ${formatarDataHora(entrega.ciencia_em)}`, MARGIN, y);
-    y += 5;
+    s.section('Ciência');
+    s.text(`Ciência registrada em ${formatarDataHora(entrega.ciencia_em)}`, 9, true);
     if (entrega.ciencia_observacoes) {
-      doc.setFont('helvetica', 'normal');
-      const obs = doc.splitTextToSize(entrega.ciencia_observacoes, pageW - MARGIN * 2);
-      doc.text(obs, MARGIN, y);
-      y += obs.length * 4.2 + 2;
+      s.gap(4);
+      s.boxText(entrega.ciencia_observacoes);
     }
   }
 
-  // assinaturas
-  y = Math.max(y + 12, doc.internal.pageSize.getHeight() - 70);
-  const larguraCol = (pageW - MARGIN * 2) / 2 - 6;
-  participantes.forEach((p, i) => {
-    const col = i % 2;
-    if (col === 0 && i > 0) y += 24;
-    if (y > doc.internal.pageSize.getHeight() - 30) {
-      doc.addPage();
-      y = MARGIN + 10;
-    }
-    const x = MARGIN + col * (larguraCol + 12);
-    doc.setDrawColor(120);
-    doc.line(x, y, x + larguraCol, y);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.text(p.nome_snapshot, x, y + 4);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(
-      `${PAPEL_LABEL[p.papel] ?? p.papel}${p.funcao_snapshot ? ` — ${p.funcao_snapshot}` : ''}`,
-      x,
-      y + 8,
-    );
-  });
+  s.section('Assinaturas');
+  s.assinaturas(
+    participantes.map((p) => ({
+      nome: p.nome_snapshot,
+      funcao: `${PAPEL_LABEL[p.papel] ?? p.papel}${
+        p.funcao_snapshot ? ` — ${p.funcao_snapshot}` : ''
+      }`,
+    })),
+  );
 
-  rodape(doc);
-  doc.save(`termo-entrega-institucional-${obra.nome.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  s.finalizar();
+  s.doc.save(nomeArquivo('termo-entrega-institucional', obra.nome));
 }
 
 /** Relatório fotográfico da entrega: fotos por ambiente e por pendência. */
@@ -226,66 +191,65 @@ export async function gerarRelatorioFotograficoEntregaPdf({
   resumo,
   participantes,
 }: Args) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  let y = cabecalho(doc, 'RELATÓRIO FOTOGRÁFICO — ENTREGA INSTITUCIONAL', obra, entrega);
+  const s = criarDocumentoSidif({
+    titulo: 'Relatório Fotográfico — Entrega Institucional',
+    subtitulo: SUBTITULO,
+  });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text(
+  identificacao(s, obra, entrega);
+
+  s.section('Registros fotográficos');
+  s.text(
     `${resumo.ambientes} ambiente(s) · ${fotos.length} registro(s) fotográfico(s) · ${participantes.length} participante(s)`,
-    MARGIN,
-    y,
+    9,
   );
-  y += 8;
+  s.gap(6);
 
-  const larguraFoto = (pageW - MARGIN * 2 - 6) / 2;
-  const alturaFoto = 52;
+  const larguraFoto = (s.contentW - 16) / 2;
+  const alturaFoto = 150;
 
   const desenharBloco = async (titulo: string, legenda: string, lista: EntregaFoto[]) => {
     if (!lista.length) return;
-    if (y > pageH - 40) {
-      doc.addPage();
-      y = MARGIN;
-    }
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(titulo, MARGIN, y);
-    y += 4;
+    s.ensure(60);
+    s.text(titulo, 9.5, true);
     if (legenda) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(110);
-      doc.text(legenda, MARGIN, y);
-      doc.setTextColor(0);
-      y += 4;
+      s.doc.setTextColor(...GRAY_LABEL);
+      s.text(legenda, 8);
+      s.doc.setTextColor(...GRAY_TEXT);
     }
+    s.gap(4);
 
     for (let i = 0; i < lista.length; i += 2) {
-      if (y + alturaFoto > pageH - 18) {
-        doc.addPage();
-        y = MARGIN;
-      }
+      s.ensure(alturaFoto + 26);
+      const linhaY = s.y;
+      let maiorLegenda = 0;
       for (let c = 0; c < 2; c++) {
         const foto = lista[i + c];
         if (!foto?.url) continue;
         const dataUrl = await paraDataUrl(foto.url);
         if (!dataUrl) continue;
-        const x = MARGIN + c * (larguraFoto + 6);
+        const x = MARGIN + c * (larguraFoto + 16);
         try {
-          doc.addImage(dataUrl, 'JPEG', x, y, larguraFoto, alturaFoto, undefined, 'FAST');
+          s.doc.addImage(dataUrl, 'JPEG', x, linhaY, larguraFoto, alturaFoto, undefined, 'FAST');
+          s.doc.setDrawColor(222, 229, 225);
+          s.doc.setLineWidth(0.6);
+          s.doc.rect(x, linhaY, larguraFoto, alturaFoto);
         } catch {
           /* imagem inválida — ignora */
         }
         if (foto.legenda) {
-          doc.setFontSize(7.5);
-          doc.text(doc.splitTextToSize(foto.legenda, larguraFoto), x, y + alturaFoto + 3.5);
+          s.doc.setFont('helvetica', 'normal');
+          s.doc.setFontSize(7.5);
+          s.doc.setTextColor(...GRAY_LABEL);
+          const linhas = s.doc.splitTextToSize(foto.legenda, larguraFoto);
+          s.doc.text(linhas, x, linhaY + alturaFoto + 11);
+          s.doc.setTextColor(...GRAY_TEXT);
+          maiorLegenda = Math.max(maiorLegenda, linhas.length * 9);
         }
       }
-      y += alturaFoto + 9;
+      s.y = linhaY + alturaFoto + 14 + maiorLegenda;
     }
-    y += 2;
+    s.gap(6);
   };
 
   for (const amb of ambientes) {
@@ -307,13 +271,11 @@ export async function gerarRelatorioFotograficoEntregaPdf({
   await desenharBloco('Registros gerais', '', semAmbiente);
 
   if (fotos.length === 0) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Nenhuma fotografia registrada nesta entrega.', MARGIN, y);
+    s.text('Nenhuma fotografia registrada nesta entrega.', 9);
   }
 
-  rodape(doc);
-  doc.save(`relatorio-fotografico-entrega-${obra.nome.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  s.finalizar();
+  s.doc.save(nomeArquivo('relatorio-fotografico-entrega', obra.nome));
 }
 
 /** Rótulo auxiliar reaproveitado nos anexos do termo. */
