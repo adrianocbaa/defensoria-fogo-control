@@ -14,6 +14,7 @@ interface Args {
   vistoria: Vistoria;
   obra: { nome: string; contrato?: string | null; endereco?: string | null; empresa?: string | null };
   fiscalNome: string;
+  fiscalFuncao?: string;
   ambientes: Ambiente[];
   pendencias: Pendencia[];
   fotos: Foto[];
