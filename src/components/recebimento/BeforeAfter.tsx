@@ -49,7 +49,16 @@ function Bloco({
   descricao?: string | null;
   vazio: string;
 }) {
+  const [albumAberto, setAlbumAberto] = useState(false);
+  const [indiceAlbum, setIndiceAlbum] = useState(0);
   const data = fotos[0]?.created_at;
+  const urls = fotos.map((f) => f.url).filter(Boolean) as string[];
+
+  const abrir = (idx: number) => {
+    setIndiceAlbum(idx);
+    setAlbumAberto(true);
+  };
+
   return (
     <Card className="overflow-hidden p-0">
       <div
@@ -69,9 +78,14 @@ function Bloco({
         </div>
       ) : (
         <div className={cn('grid gap-1 p-1', fotos.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
-          {fotos.map((f) =>
+          {fotos.map((f, idx) =>
             f.url ? (
-              <a key={f.id} href={f.url} target="_blank" rel="noreferrer">
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => abrir(idx)}
+                className="block w-full text-left"
+              >
                 <img
                   src={f.url}
                   alt={f.legenda ?? titulo}
@@ -81,12 +95,20 @@ function Bloco({
                     fotos.length > 1 ? 'aspect-square' : 'aspect-[4/3]',
                   )}
                 />
-              </a>
+              </button>
             ) : null,
           )}
         </div>
       )}
       {descricao && <p className="px-3 pb-3 pt-1 text-xs text-muted-foreground">{descricao}</p>}
+
+      <ImageGallery
+        images={urls}
+        isOpen={albumAberto}
+        onClose={() => setAlbumAberto(false)}
+        initialIndex={indiceAlbum}
+      />
     </Card>
   );
 }
+
