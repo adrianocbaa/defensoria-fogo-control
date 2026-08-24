@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polygon, Polyline } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -7,6 +7,7 @@ import { type ObraStatus, type Obra } from '@/data/mockObras';
 import { MapLoadingSkeleton } from '@/components/LoadingStates';
 import { createCustomIcon } from '@/components/MapPinOptions';
 import { useObrasValorPagoMap } from '@/hooks/useObrasValorPagoMap';
+import { mtBoundary } from '@/data/mtBoundary';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -140,6 +141,39 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        {/* Máscara que oculta visualmente os estados vizinhos, deixando apenas Mato Grosso visível */}
+        <Polygon
+          positions={[
+            // Anel externo cobrindo o mundo inteiro para garantir a máscara em qualquer zoom
+            [
+              [-90, -180],
+              [-90, 180],
+              [90, 180],
+              [90, -180],
+            ],
+            // Buraco no formato de Mato Grosso
+            mtBoundary,
+          ]}
+          pathOptions={{
+            fillColor: '#0f172a',
+            fillOpacity: 0.85,
+            stroke: false,
+            fillRule: 'evenodd',
+            interactive: false,
+          }}
+        />
+
+        {/* Contorno discreto do estado de Mato Grosso */}
+        <Polyline
+          positions={mtBoundary}
+          pathOptions={{
+            color: '#3b82f6',
+            weight: 2,
+            opacity: 0.8,
+            interactive: false,
+          }}
         />
         
         {/* Zoom Control positioned for better UX */}
