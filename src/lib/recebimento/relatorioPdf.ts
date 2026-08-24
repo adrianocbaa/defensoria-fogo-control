@@ -137,11 +137,10 @@ export async function gerarRelatorioRecebimentoPdf({
       });
 
       if (temFoto) {
-
         const w = (sidif.contentW - 16) / 2;
         const h = 130;
-        sidif.ensure(h + 24);
         const y = sidif.y;
+
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
         doc.setTextColor(...GREEN);
