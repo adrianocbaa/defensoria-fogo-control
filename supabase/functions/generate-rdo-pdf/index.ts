@@ -117,61 +117,59 @@ Deno.serve(async (req) => {
     const pageHeight = doc.internal.pageSize.height;
     let yPos = 35;
 
-    // Fetch logo image for later use with pdf-lib (jsPDF doesn't work with images in Deno)
-    const logoUrl = `${supabaseUrl}/storage/v1/object/public/rdo-pdf/logo-dif-dpmt.jpg`;
-    console.log('Attempting to load logo from:', logoUrl);
-    
-    let logoBytes: Uint8Array | null = null;
-    
-    try {
-      const logoResponse = await fetch(logoUrl);
-      console.log('Logo fetch response status:', logoResponse.status, logoResponse.statusText);
-      
-      if (logoResponse.ok) {
-        const logoArrayBuffer = await logoResponse.arrayBuffer();
-        console.log('Logo ArrayBuffer size:', logoArrayBuffer.byteLength);
-        
-        if (logoArrayBuffer.byteLength > 0) {
-          logoBytes = new Uint8Array(logoArrayBuffer);
-          console.log('Logo bytes loaded for pdf-lib embedding');
-        }
+    // Identidade visual institucional (mesmo padrão do relatório de chamado)
+    const GREEN: [number, number, number] = [26, 95, 63];
+    const GRAY_TEXT: [number, number, number] = [70, 70, 70];
+    const GRAY_LINE: [number, number, number] = [222, 229, 225];
+    const BOX_BG: [number, number, number] = [248, 251, 249];
+    const MARGIN = 14;
+    const HEADER_H = 26;
+
+    const drawHeader = () => {
+      doc.setFillColor(...GREEN);
+      doc.rect(0, 0, pageWidth, HEADER_H, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO', MARGIN, 10);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('Diretoria de Infraestrutura e Fiscalização — SiDIF', MARGIN, 15.5);
+      doc.setFontSize(7.5);
+      doc.text('Relatório Diário de Obra (RDO)', MARGIN, 20.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(`Nº ${rdoData.report.numero_seq}`, pageWidth - MARGIN, 14, { align: 'right' });
+      doc.setTextColor(...GRAY_TEXT);
+      doc.setFont('helvetica', 'normal');
+    };
+
+    // Título de seção: barra verde + rótulo + régua fina
+    const sectionTitle = (title: string) => {
+      if (yPos > pageHeight - 40) {
+        doc.addPage();
+        yPos = HEADER_H + 8;
       }
-    } catch (fetchError) {
-      console.error('Error fetching logo:', fetchError);
-    }
+      yPos += 4;
+      doc.setFillColor(...GREEN);
+      doc.rect(MARGIN, yPos - 4, 1.2, 4.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...GREEN);
+      doc.text(String(title).toUpperCase(), MARGIN + 3.5, yPos);
+      doc.setDrawColor(...GRAY_LINE);
+      doc.setLineWidth(0.2);
+      doc.line(MARGIN, yPos + 2, pageWidth - MARGIN, yPos + 2);
+      doc.setTextColor(...GRAY_TEXT);
+      doc.setFont('helvetica', 'normal');
+      return yPos + 7;
+    };
 
-    // Add placeholder text for logo position (will be replaced by pdf-lib)
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    // Leave space for logo - don't add text here
-    
-    // Info table on the right
-    (doc as any).autoTable({
-      startY: 10,
-      margin: { left: pageWidth - 70 },
-      head: [],
-      body: [
-        ['Relatório nº', rdoData.report.numero_seq],
-        ['Data do relatório', new Date(rdoData.report.data).toLocaleDateString('pt-BR')],
-        ['Dia da semana', new Date(rdoData.report.data).toLocaleDateString('pt-BR', { weekday: 'long' })],
-      ],
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 1 },
-      columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 35 },
-        1: { cellWidth: 35 }
-      },
-    });
+    yPos = HEADER_H + 10;
 
-    yPos = Math.max((doc as any).lastAutoTable.finalY, 35) + 10;
+    sectionTitle('Identificação');
+    yPos += 7;
 
-    // Title
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Relatório Diário de Obra (RDO)', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
-
-    // Obra Info Table
     (doc as any).autoTable({
       startY: yPos,
       head: [],
@@ -179,23 +177,23 @@ Deno.serve(async (req) => {
         ['Obra', rdoData.obra.nome],
         ['Local', rdoData.obra.municipio],
         ['Contratada', rdoData.obra.empresa?.razao_social || rdoData.obra.empresa?.nome_fantasia || rdoData.obra.empresa_responsavel || '-'],
+        ['Data do relatório', new Date(rdoData.report.data).toLocaleDateString('pt-BR')],
+        ['Dia da semana', new Date(rdoData.report.data).toLocaleDateString('pt-BR', { weekday: 'long' })],
       ],
       theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 2 },
+      styles: { fontSize: 9, cellPadding: 2, lineColor: GRAY_LINE, textColor: GRAY_TEXT },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 35, fillColor: [240, 240, 240] },
-        1: { cellWidth: pageWidth - 70 }
+        0: { fontStyle: 'bold', cellWidth: 40, fillColor: BOX_BG },
+        1: { cellWidth: pageWidth - MARGIN * 2 - 40 }
       },
+      margin: { left: MARGIN, right: MARGIN, top: HEADER_H + 8 },
     });
 
     yPos = (doc as any).lastAutoTable.finalY + 8;
 
     // Weather conditions table
     if (rdoData.report.clima_manha || rdoData.report.clima_tarde) {
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Condição climática', 14, yPos);
-      yPos += 5;
+      yPos = sectionTitle('Condição climática');
 
       const weatherData = [];
       if (rdoData.report.clima_manha) {
@@ -211,7 +209,7 @@ Deno.serve(async (req) => {
         body: weatherData,
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 2 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 30, fontStyle: 'bold' },
           1: { cellWidth: 60 },
@@ -226,13 +224,10 @@ Deno.serve(async (req) => {
     if (rdoData.labor.length > 0) {
       if (yPos > 240) {
         doc.addPage();
-        yPos = 20;
+        yPos = HEADER_H + 10;
       }
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Mão de obra (${rdoData.labor.length})`, 14, yPos);
-      yPos += 5;
+      yPos = sectionTitle(`Mão de obra (${rdoData.labor.length})`);
 
       // Create horizontal layout
       const laborHead = rdoData.labor.map(l => l.funcao);
@@ -244,7 +239,7 @@ Deno.serve(async (req) => {
         body: laborBody,
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 2, halign: 'center' },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
       });
 
       yPos = (doc as any).lastAutoTable.finalY + 8;
@@ -254,7 +249,7 @@ Deno.serve(async (req) => {
     if (rdoData.activities.length > 0) {
       if (yPos > 240) {
         doc.addPage();
-        yPos = 20;
+        yPos = HEADER_H + 10;
       }
       
       // Helper for natural sort
@@ -456,7 +451,7 @@ Deno.serve(async (req) => {
           body: tableBody,
           theme: 'grid',
           styles: { fontSize: 8, cellPadding: 2 },
-          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
           columnStyles: columnStyles,
           didParseCell: function(data: any) {
             if (data.section === 'body' && modoAtividades === 'planilha') {
@@ -477,13 +472,10 @@ Deno.serve(async (req) => {
     if (rdoData.occurrences.length > 0) {
       if (yPos > 240) {
         doc.addPage();
-        yPos = 20;
+        yPos = HEADER_H + 10;
       }
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Ocorrências (${rdoData.occurrences.length})`, 14, yPos);
-      yPos += 5;
+      yPos = sectionTitle(`Ocorrências (${rdoData.occurrences.length})`);
 
       (doc as any).autoTable({
         startY: yPos,
@@ -496,7 +488,7 @@ Deno.serve(async (req) => {
         ]),
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 40 },
           1: { cellWidth: 80 },
@@ -512,13 +504,10 @@ Deno.serve(async (req) => {
     if (rdoData.visits.length > 0) {
       if (yPos > 240) {
         doc.addPage();
-        yPos = 20;
+        yPos = HEADER_H + 10;
       }
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Visitas (${rdoData.visits.length})`, 14, yPos);
-      yPos += 5;
+      yPos = sectionTitle(`Visitas (${rdoData.visits.length})`);
 
       (doc as any).autoTable({
         startY: yPos,
@@ -531,7 +520,7 @@ Deno.serve(async (req) => {
         ]),
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
       });
 
       yPos = (doc as any).lastAutoTable.finalY + 8;
@@ -541,13 +530,10 @@ Deno.serve(async (req) => {
     if (rdoData.equipment.length > 0) {
       if (yPos > 240) {
         doc.addPage();
-        yPos = 20;
+        yPos = HEADER_H + 10;
       }
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Equipamentos (${rdoData.equipment.length})`, 14, yPos);
-      yPos += 5;
+      yPos = sectionTitle(`Equipamentos (${rdoData.equipment.length})`);
 
       (doc as any).autoTable({
         startY: yPos,
@@ -560,7 +546,7 @@ Deno.serve(async (req) => {
         ]),
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
       });
 
       yPos = (doc as any).lastAutoTable.finalY + 8;
@@ -570,7 +556,7 @@ Deno.serve(async (req) => {
     if (rdoData.media.length > 0) {
       if (yPos > 220) {
         doc.addPage();
-        yPos = 20;
+        yPos = HEADER_H + 10;
       }
 
       doc.setFontSize(11);
@@ -658,13 +644,10 @@ Deno.serve(async (req) => {
     if (rdoData.comments.length > 0) {
       if (yPos > 240) {
         doc.addPage();
-        yPos = 20;
+        yPos = HEADER_H + 10;
       }
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Comentários (${rdoData.comments.length})`, 14, yPos);
-      yPos += 5;
+      yPos = sectionTitle(`Comentários (${rdoData.comments.length})`);
 
       (doc as any).autoTable({
         startY: yPos,
@@ -675,7 +658,7 @@ Deno.serve(async (req) => {
         ]),
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
           0: { cellWidth: 40 },
           1: { cellWidth: 135 }
@@ -692,15 +675,12 @@ Deno.serve(async (req) => {
     if (hasFiscalSignature || hasContratadaSignature) {
       if (yPos > 180) {
         doc.addPage();
-        yPos = 20;
+        yPos = HEADER_H + 10;
       }
 
       // Fiscal signature
       if (hasFiscalSignature) {
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Fiscal (DPE-MT)', 14, yPos);
-        yPos += 5;
+        yPos = sectionTitle('Fiscal (DPE-MT)');
 
         const fiscalValidadoEm = rdoData.report.assinatura_fiscal_validado_em 
           ? new Date(rdoData.report.assinatura_fiscal_validado_em).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })
@@ -717,7 +697,7 @@ Deno.serve(async (req) => {
           ]],
           theme: 'grid',
           styles: { fontSize: 8, cellPadding: 2 },
-          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
           columnStyles: {
             0: { cellWidth: 50 },
             1: { cellWidth: 40 },
@@ -731,10 +711,7 @@ Deno.serve(async (req) => {
 
       // Contratada signature
       if (hasContratadaSignature) {
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Contratada', 14, yPos);
-        yPos += 5;
+        yPos = sectionTitle('Contratada');
 
         const contratadaValidadoEm = rdoData.report.assinatura_contratada_validado_em 
           ? new Date(rdoData.report.assinatura_contratada_validado_em).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })
@@ -751,7 +728,7 @@ Deno.serve(async (req) => {
           ]],
           theme: 'grid',
           styles: { fontSize: 8, cellPadding: 2 },
-          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
           columnStyles: {
             0: { cellWidth: 50 },
             1: { cellWidth: 40 },
@@ -787,14 +764,17 @@ Deno.serve(async (req) => {
     
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(8);
+      drawHeader();
+      const footerY = pageHeight - 10;
+      doc.setDrawColor(...GRAY_LINE);
+      doc.setLineWidth(0.2);
+      doc.line(MARGIN, footerY - 4, pageWidth - MARGIN, footerY - 4);
+      doc.setFontSize(7.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(
-        `Página ${i} de ${pageCount} - Gerado em ${cuiabaDateTime}`,
-        pageWidth / 2,
-        doc.internal.pageSize.height - 10,
-        { align: 'center' }
-      );
+      doc.setTextColor(130, 130, 130);
+      doc.text(`Gerado automaticamente pelo SiDIF em ${cuiabaDateTime}`, MARGIN, footerY);
+      doc.text(`Página ${i} de ${pageCount}`, pageWidth - MARGIN, footerY, { align: 'right' });
+      doc.setTextColor(...GRAY_TEXT);
     }
 
     // Get jsPDF output and enhance with pdf-lib to add logo
