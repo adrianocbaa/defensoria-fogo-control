@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Camera, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Camera, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Foto, Pendencia } from '@/hooks/useRecebimentoPendencias';
 import { SITUACAO_LABEL } from '@/lib/recebimento/constants';
@@ -25,6 +27,24 @@ export function ContextoFotosPanel({
   className,
 }: Props) {
   const recentes = [...fotos].slice(-6).reverse();
+  const album = recentes.filter((f) => Boolean(f.url));
+  const [indice, setIndice] = useState<number | null>(null);
+  const aberto = indice !== null;
+  const atual = indice !== null ? album[indice] : null;
+
+  const irPara = (delta: number) =>
+    setIndice((i) => (i === null ? i : (i + delta + album.length) % album.length));
+
+  useEffect(() => {
+    if (!aberto) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') irPara(1);
+      if (e.key === 'ArrowLeft') irPara(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto, album.length]);
 
   return (
     <aside className={cn('flex min-h-0 flex-col gap-3', className)}>
@@ -45,24 +65,87 @@ export function ContextoFotosPanel({
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-1.5">
-            {recentes.map((f) =>
-              f.url ? (
-                <a key={f.id} href={f.url} target="_blank" rel="noreferrer" className="group block">
-                  <img
-                    src={f.url}
-                    alt={f.legenda ?? 'Evidência da vistoria'}
-                    loading="lazy"
-                    className="aspect-square w-full rounded-md object-cover transition-opacity group-hover:opacity-90"
-                  />
-                  <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                    {formatarData(f.created_at)}
-                  </span>
-                </a>
-              ) : null,
-            )}
+            {album.map((f, i) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setIndice(i)}
+                className="group block text-left"
+              >
+                <img
+                  src={f.url ?? undefined}
+                  alt={f.legenda ?? 'Evidência da vistoria'}
+                  loading="lazy"
+                  className="aspect-square w-full rounded-md object-cover transition-opacity group-hover:opacity-90"
+                />
+                <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                  {formatarData(f.created_at)}
+                </span>
+              </button>
+            ))}
           </div>
         )}
       </Card>
+
+      <Dialog open={aberto} onOpenChange={(o) => !o && setIndice(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogTitle className="text-sm">
+            {ambienteNome}
+            {atual ? ` — ${formatarData(atual.created_at)}` : ''}
+          </DialogTitle>
+          <div className="relative flex items-center justify-center">
+            {atual?.url && (
+              <img
+                src={atual.url}
+                alt={atual.legenda ?? 'Evidência da vistoria'}
+                className="max-h-[70vh] w-auto max-w-full rounded-md object-contain"
+              />
+            )}
+            {album.length > 1 && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  aria-label="Foto anterior"
+                  onClick={() => irPara(-1)}
+                  className="absolute left-2 rounded-full opacity-90"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  aria-label="Próxima foto"
+                  onClick={() => irPara(1)}
+                  className="absolute right-2 rounded-full opacity-90"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </>
+            )}
+          </div>
+          {atual?.legenda && (
+            <p className="text-xs text-muted-foreground">{atual.legenda}</p>
+          )}
+          {album.length > 1 && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {album.map((f, i) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setIndice(i)}
+                  className={cn(
+                    'h-14 w-14 shrink-0 overflow-hidden rounded-md border-2',
+                    i === indice ? 'border-primary' : 'border-transparent opacity-70',
+                  )}
+                >
+                  <img src={f.url ?? undefined} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <h3 className="text-sm font-semibold">Pendências do ambiente</h3>
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">

@@ -207,7 +207,7 @@ export async function gerarRelatorioFotograficoEntregaPdf({
   s.gap(6);
 
   const larguraFoto = (s.contentW - 16) / 2;
-  const alturaFoto = 150;
+  const alturaFoto = 170; // ~60 mm
 
   const desenharBloco = async (titulo: string, legenda: string, lista: EntregaFoto[]) => {
     if (!lista.length) return;
