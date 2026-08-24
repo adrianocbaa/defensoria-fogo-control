@@ -4,7 +4,7 @@ import {
   STATUS_LABEL,
   vistoriaTitulo,
 } from '@/lib/recebimento/constants';
-import { criarDocumentoSidif, GREEN, GRAY_LINE, MARGIN } from '@/lib/pdf/sidifPdf';
+import { criarDocumentoSidif, drawImageContain, GREEN, GRAY_LINE, MARGIN } from '@/lib/pdf/sidifPdf';
 import type { Ambiente } from '@/hooks/useRecebimentoChecklist';
 import type { Foto, Pendencia } from '@/hooks/useRecebimentoPendencias';
 import type { Vistoria } from '@/hooks/useRecebimentoVistorias';
