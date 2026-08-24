@@ -285,12 +285,7 @@ export function RecebimentoObra() {
     try {
       await gerarRelatorioRecebimentoPdf({
         vistoria,
-        obra: {
-          nome: (obra?.nome as string) ?? 'Obra',
-          contrato: (obra?.numero_contrato as string) ?? (obra?.contrato as string) ?? null,
-          endereco: (obra?.endereco_completo as string) ?? null,
-          empresa: (obra?.empresa_responsavel as string) ?? (obra?.empresa as string) ?? null,
-        },
+        obra: dadosObra,
         fiscalNome,
         fiscalFuncao,
         ambientes: checklist.ambientes,
