@@ -53,7 +53,6 @@ export async function gerarRelatorioRecebimentoPdf({
   const sidif = criarDocumentoSidif({
     titulo,
     subtitulo: 'Diretoria de Infraestrutura e Fiscalização — Recebimento de Obra',
-    numero: `Nº ${String(vistoria.sequencia).padStart(2, '0')}`,
   });
   const { doc } = sidif;
 
