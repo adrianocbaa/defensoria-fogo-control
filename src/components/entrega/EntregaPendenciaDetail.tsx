@@ -116,12 +116,6 @@ export function EntregaPendenciaDetail({
         </div>
       </div>
 
-      {p.prazo_correcao && (
-        <p className="text-sm text-muted-foreground">
-          Prazo para correção: <strong>{formatarData(p.prazo_correcao)}</strong>
-        </p>
-      )}
-
       {ocorrencia.length > 0 && (
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">

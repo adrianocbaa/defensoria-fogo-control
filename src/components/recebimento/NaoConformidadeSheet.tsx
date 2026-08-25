@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Camera, Image as ImageIcon, Loader2, X } from 'lucide-react';
@@ -20,7 +19,6 @@ interface Props {
   onSalvar: (args: {
     descricao: string;
     classificacao: PendenciaClassificacao;
-    prazoCorrecao: string | null;
     observacao: string | null;
     fotos: File[];
   }) => Promise<void>;
@@ -38,7 +36,6 @@ export function NaoConformidadeSheet({
 }: Props) {
   const [descricao, setDescricao] = useState('');
   const [classificacao, setClassificacao] = useState<PendenciaClassificacao>('acabamento');
-  const [prazo, setPrazo] = useState('');
   const [observacao, setObservacao] = useState('');
   const [fotos, setFotos] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
@@ -49,7 +46,6 @@ export function NaoConformidadeSheet({
   const reset = () => {
     setDescricao('');
     setClassificacao('acabamento');
-    setPrazo('');
     setObservacao('');
     setFotos([]);
   };
@@ -65,7 +61,6 @@ export function NaoConformidadeSheet({
     await onSalvar({
       descricao: descricao.trim(),
       classificacao,
-      prazoCorrecao: prazo || null,
       observacao: observacao.trim() || null,
       fotos,
     });
@@ -189,17 +184,6 @@ export function NaoConformidadeSheet({
                 </button>
               ))}
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="nc-prazo">Prazo para correção</Label>
-            <Input
-              id="nc-prazo"
-              type="date"
-              className="mt-1 h-11"
-              value={prazo}
-              onChange={(e) => setPrazo(e.target.value)}
-            />
           </div>
 
           <div>

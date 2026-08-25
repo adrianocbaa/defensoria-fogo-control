@@ -46,11 +46,6 @@ export function PendenciaCard({ pendencia, ambienteNome, fotos, ativa, onClick }
               <Camera className="h-3 w-3" /> {qtdFotos}
             </span>
           )}
-          {pendencia.prazo_correcao && (
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <CalendarClock className="h-3 w-3" /> {formatarData(pendencia.prazo_correcao)}
-            </span>
-          )}
         </div>
       </div>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />

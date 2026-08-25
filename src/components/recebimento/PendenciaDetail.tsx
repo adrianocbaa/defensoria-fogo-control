@@ -103,7 +103,6 @@ export function PendenciaDetail({
 
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
           <Campo rotulo="Classificação" valor={CLASSIFICACAO_LABEL[pendencia.classificacao]} />
-          <Campo rotulo="Prazo" valor={formatarData(pendencia.prazo_correcao) || '—'} />
           <Campo rotulo="Registrada em" valor={formatarData(pendencia.created_at)} />
         </dl>
 
