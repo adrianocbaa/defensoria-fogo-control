@@ -38,7 +38,7 @@ import { ObraAuditLogs } from '@/components/ObraAuditLogs';
 import { ExportMedicaoDialog } from '@/components/ExportMedicaoDialog';
 import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
-import { truncar2, unitarioLiquido, totalItem, derivarUnitarioBruto } from '@/lib/precisao';
+import { truncar2, arredondar2, unitarioLiquido, totalItem, derivarUnitarioBruto } from '@/lib/precisao';
 
 import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
 import { generatePdfFromElementAutoPage } from '@/lib/pdfExport';
@@ -539,11 +539,32 @@ export function Medicao() {
   };
 
   // Função para calcular Valor Total Original (soma dos itens folha contratuais)
+  // Somamos SEMPRE apenas folhas e arredondamos só no total final, para evitar
+  // resíduos de ponto flutuante (ex.: 105705.204999 → 105.705,20).
   const calcularValorTotalOriginal = useMemo(() => {
-    return items
-      .filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual')
-      .reduce((total, item) => total + item.valorTotal, 0);
+    return arredondar2(
+      items
+        .filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual')
+        .reduce((total, item) => total + item.valorTotal, 0)
+    );
   }, [items]);
+
+  // Desconto contratual REAL = soma da diferença (bruto − líquido) item a item.
+  // Nunca reverter o percentual sobre o total, pois cada item já foi truncado.
+  const descontoContratoTotal = useMemo(() => {
+    const p = (obra?.percentual_desconto ?? 0) / 100;
+    const folhas = items.filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual');
+    let soma = 0;
+    folhas.forEach(item => {
+      const liquido = Number(item.valorTotal || 0);
+      const bruto = Number(item.valorTotalSemDesconto || 0) > 0
+        ? Number(item.valorTotalSemDesconto)
+        : (p < 1 ? liquido / (1 - p) : liquido);
+      soma += bruto - liquido;
+    });
+    return arredondar2(soma);
+  }, [items, obra?.percentual_desconto]);
+
 
   // Função para calcular Total do Contrato para a medição corrente (nível 1), usando aditivos publicados anteriores
   const calcularTotalContrato = useMemo(() => {
@@ -4398,13 +4419,9 @@ export function Medicao() {
                       </div>
                     ) : (
                       <div className="text-2xl font-bold mt-1">
-                        {(() => {
-                          const p = (obra?.percentual_desconto ?? 0) / 100;
-                          const liquido = resumoFinanceiro.valorContratoPosAditivo;
-                          const bruto = p < 1 ? liquido / (1 - p) : 0;
-                          return formatCurrency(bruto - liquido);
-                        })()}
+                        {formatCurrency(descontoContratoTotal)}
                       </div>
+
 
                     )}
                   </CardContent>
