@@ -554,15 +554,17 @@ export function Medicao() {
   const descontoContratoTotal = useMemo(() => {
     const p = (obra?.percentual_desconto ?? 0) / 100;
     const folhas = items.filter(item => ehItemFolha(item.item) && item.origem !== 'extracontratual');
-    let soma = 0;
+    let somaCentavos = 0;
     folhas.forEach(item => {
       const liquido = Number(item.valorTotal || 0);
       const bruto = Number(item.valorTotalSemDesconto || 0) > 0
         ? Number(item.valorTotalSemDesconto)
         : (p < 1 ? liquido / (1 - p) : liquido);
-      soma += bruto - liquido;
+      // Os valores persistidos já têm 2 casas. Converter cada parcela para
+      // centavos antes da soma evita perder R$ 0,01 por ponto flutuante.
+      somaCentavos += Math.round(bruto * 100) - Math.round(liquido * 100);
     });
-    return arredondar2(soma);
+    return somaCentavos / 100;
   }, [items, obra?.percentual_desconto]);
 
 
