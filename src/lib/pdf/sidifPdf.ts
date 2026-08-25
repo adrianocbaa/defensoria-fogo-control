@@ -193,40 +193,67 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
   };
 
   const infoCard = (rows: [string, string, boolean?][][]) => {
-    const rowH = 30;
-    const h = rows.length * rowH;
+    const half = contentW / 2;
+    const padX = 12;
+    const gap = 8;
+    const lineH = 11;
+
+    // pré-cálculo: largura do rótulo por célula e altura necessária por linha
+    const measured = rows.map((pair) => {
+      const cellW = pair.length === 1 ? contentW : half;
+      const cells = pair.map(([k, v, isBadge]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        const labelW = doc.getTextWidth(k);
+        const valueW = cellW - padX * 2 - labelW - gap;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        const lines = isBadge
+          ? [v]
+          : (doc.splitTextToSize(v || '-', Math.max(40, valueW)) as string[]).slice(0, 3);
+        return { k, v, isBadge, labelW, valueW, lines };
+      });
+      const maxLines = Math.max(...cells.map((c) => c.lines.length));
+      return { cellW, cells, rowH: Math.max(30, 14 + maxLines * lineH) };
+    });
+
+    const h = measured.reduce((s, r) => s + r.rowH, 0);
     ensure(h + 8);
     const top = y;
     doc.setFillColor(...BOX_BG);
     doc.setDrawColor(...GRAY_LINE);
     doc.setLineWidth(0.6);
     doc.rect(MARGIN, top, contentW, h, 'FD');
-    const half = contentW / 2;
-    rows.forEach((pair, ri) => {
-      const ry = top + ri * rowH;
-      if (ri > 0) doc.line(MARGIN, ry, pageW - MARGIN, ry);
-      const cellW = pair.length === 1 ? contentW : half;
-      pair.forEach(([k, v, isBadge], ci) => {
-        const x = MARGIN + ci * cellW + 14;
+
+    let ry = top;
+    measured.forEach((row, ri) => {
+      if (ri > 0) {
+        doc.setDrawColor(...GRAY_LINE);
+        doc.line(MARGIN, ry, pageW - MARGIN, ry);
+      }
+      const midY = ry + row.rowH / 2;
+      row.cells.forEach((c, ci) => {
+        const x = MARGIN + ci * row.cellW + padX;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8.5);
         doc.setTextColor(...GRAY_LABEL);
-        doc.text(k, x, ry + rowH / 2 + 3);
-        const vx = x + 88;
-        if (isBadge) {
-          badge(v, vx, ry + rowH / 2 + 1);
+        doc.text(c.k, x, midY + 3);
+        const vx = x + c.labelW + gap;
+        if (c.isBadge) {
+          badge(c.v, vx, midY + 1);
         } else {
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(9.5);
           doc.setTextColor(50, 50, 50);
-          const lines = doc.splitTextToSize(v || '-', cellW - 104);
-          doc.text(lines[0] ?? '-', vx, ry + rowH / 2 + 3.5);
+          const startY = midY + 3.5 - ((c.lines.length - 1) * lineH) / 2;
+          c.lines.forEach((ln, li) => doc.text(ln, vx, startY + li * lineH));
         }
       });
-      if (pair.length > 1) {
+      if (row.cells.length > 1) {
         doc.setDrawColor(...GRAY_LINE);
-        doc.line(MARGIN + half, ry + 7, MARGIN + half, ry + rowH - 7);
+        doc.line(MARGIN + half, ry + 7, MARGIN + half, ry + row.rowH - 7);
       }
+      ry += row.rowH;
     });
     doc.setTextColor(...GRAY_TEXT);
     y = top + h + 4;
