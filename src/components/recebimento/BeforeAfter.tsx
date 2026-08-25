@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ImageGallery } from '@/components/ImageGallery';
+import { FotoAlbumDialog } from './FotoAlbumDialog';
 import type { Foto } from '@/hooks/useRecebimentoPendencias';
 import { formatarData } from '@/lib/recebimento/ui';
 
@@ -49,15 +49,12 @@ function Bloco({
   descricao?: string | null;
   vazio: string;
 }) {
-  const [albumAberto, setAlbumAberto] = useState(false);
-  const [indiceAlbum, setIndiceAlbum] = useState(0);
+  const [indiceAlbum, setIndiceAlbum] = useState<number | null>(null);
   const data = fotos[0]?.created_at;
-  const urls = fotos.map((f) => f.url).filter(Boolean) as string[];
+  const comUrl = fotos.filter((f) => Boolean(f.url));
 
-  const abrir = (idx: number) => {
-    setIndiceAlbum(idx);
-    setAlbumAberto(true);
-  };
+  const abrir = (idx: number) => setIndiceAlbum(idx);
+
 
   return (
     <Card className="overflow-hidden p-0">
