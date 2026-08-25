@@ -17,7 +17,6 @@ import { Ban, Wrench } from 'lucide-react';
 import {
   EVENTO_LABEL,
   RESPONSABILIDADE_LABEL,
-  formatarData,
   formatarDataHora,
 } from '@/lib/entrega/constants';
 import { ImpactoBadge, SituacaoBadge } from './EntregaBadges';
@@ -115,12 +114,6 @@ export function EntregaPendenciaDetail({
           <p className="mt-1 text-sm font-semibold">{formatarDataHora(p.created_at)}</p>
         </div>
       </div>
-
-      {p.prazo_correcao && (
-        <p className="text-sm text-muted-foreground">
-          Prazo para correção: <strong>{formatarData(p.prazo_correcao)}</strong>
-        </p>
-      )}
 
       {ocorrencia.length > 0 && (
         <div>

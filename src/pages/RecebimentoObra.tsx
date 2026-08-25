@@ -678,7 +678,7 @@ export function RecebimentoObra() {
           if (ncAlvo) checklist.setStatus(ncAlvo.v.id, 'nao_vistoriado');
           setNcAlvo(null);
         }}
-        onSalvar={async ({ descricao, classificacao, prazoCorrecao, observacao, fotos }) => {
+        onSalvar={async ({ descricao, classificacao, observacao, fotos }) => {
           if (!ncAlvo || !vistoriaId || !ambiente) return;
           await pend.criarPendencia({
             verificacaoId: ncAlvo.v.id,
@@ -687,7 +687,6 @@ export function RecebimentoObra() {
             titulo: ncAlvo.v.descricao_snapshot,
             descricao,
             classificacao,
-            prazoCorrecao,
             observacao,
             fotos,
           });

@@ -1,8 +1,8 @@
-import { Camera, CalendarClock, ChevronRight } from 'lucide-react';
+import { Camera, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Foto, Pendencia } from '@/hooks/useRecebimentoPendencias';
 import { CLASSIFICACAO_LABEL, SITUACAO_LABEL } from '@/lib/recebimento/constants';
-import { SITUACAO_CHIP, SITUACAO_ICON, formatarData } from '@/lib/recebimento/ui';
+import { SITUACAO_CHIP, SITUACAO_ICON } from '@/lib/recebimento/ui';
 
 interface Props {
   pendencia: Pendencia;
@@ -44,11 +44,6 @@ export function PendenciaCard({ pendencia, ambienteNome, fotos, ativa, onClick }
           {qtdFotos > 0 && (
             <span className="flex items-center gap-1 text-muted-foreground">
               <Camera className="h-3 w-3" /> {qtdFotos}
-            </span>
-          )}
-          {pendencia.prazo_correcao && (
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <CalendarClock className="h-3 w-3" /> {formatarData(pendencia.prazo_correcao)}
             </span>
           )}
         </div>

@@ -45,7 +45,6 @@ interface Props {
     responsabilidade: Responsabilidade;
     responsavelTerceiro: string | null;
     impacto: Impacto;
-    prazoCorrecao: string | null;
     fotos: File[];
   }) => Promise<void>;
   onCancelar: () => void;
@@ -65,7 +64,6 @@ export function EntregaPendenciaSheet({ alvo, onOpenChange, onSalvar, onCancelar
   const [responsabilidade, setResponsabilidade] = useState<Responsabilidade>('contratada');
   const [terceiro, setTerceiro] = useState('');
   const [impacto, setImpacto] = useState<Impacto>('nao_impeditiva');
-  const [prazo, setPrazo] = useState('');
   const [fotos, setFotos] = useState<File[]>([]);
   const [salvando, setSalvando] = useState(false);
 
@@ -86,7 +84,6 @@ export function EntregaPendenciaSheet({ alvo, onOpenChange, onSalvar, onCancelar
     setResponsabilidade(alvo.responsabilidadePadrao);
     setTerceiro('');
     setImpacto('nao_impeditiva');
-    setPrazo('');
     setFotos([]);
   }
 
@@ -99,7 +96,6 @@ export function EntregaPendenciaSheet({ alvo, onOpenChange, onSalvar, onCancelar
       responsabilidade,
       responsavelTerceiro: responsabilidade === 'terceiro' ? terceiro.trim() || null : null,
       impacto,
-      prazoCorrecao: prazo || null,
       fotos,
     });
     setSalvando(false);
@@ -198,17 +194,6 @@ export function EntregaPendenciaSheet({ alvo, onOpenChange, onSalvar, onCancelar
                 <p className="text-xs text-muted-foreground">
                   Impeditiva bloqueia a entrega institucional até a correção.
                 </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="pend-prazo">Prazo para correção (opcional)</Label>
-                <Input
-                  id="pend-prazo"
-                  type="date"
-                  value={prazo}
-                  onChange={(e) => setPrazo(e.target.value)}
-                  className="h-11"
-                />
               </div>
 
               <div className="flex gap-2">

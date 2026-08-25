@@ -129,7 +129,6 @@ export async function gerarRelatorioRecebimentoPdf({
           ['Pendência', p.titulo],
           ['Descrição', p.descricao || '-'],
           ['Classificação', CLASSIFICACAO_LABEL[p.classificacao]],
-          ['Prazo', p.prazo_correcao ? fmtData(p.prazo_correcao) : '-'],
           ['Situação', SITUACAO_LABEL[p.situacao]],
         ],
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 96, fillColor: [242, 247, 244] } },

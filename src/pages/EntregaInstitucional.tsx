@@ -464,7 +464,6 @@ export function EntregaInstitucional() {
             responsabilidade: dados.responsabilidade,
             responsavelTerceiro: dados.responsavelTerceiro,
             impacto: dados.impacto,
-            prazoCorrecao: dados.prazoCorrecao,
             fotos: dados.fotos,
           });
           setPendenciaAlvo(null);
