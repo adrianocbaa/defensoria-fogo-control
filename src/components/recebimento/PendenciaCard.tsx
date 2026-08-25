@@ -1,8 +1,8 @@
-import { Camera, CalendarClock, ChevronRight } from 'lucide-react';
+import { Camera, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Foto, Pendencia } from '@/hooks/useRecebimentoPendencias';
 import { CLASSIFICACAO_LABEL, SITUACAO_LABEL } from '@/lib/recebimento/constants';
-import { SITUACAO_CHIP, SITUACAO_ICON, formatarData } from '@/lib/recebimento/ui';
+import { SITUACAO_CHIP, SITUACAO_ICON } from '@/lib/recebimento/ui';
 
 interface Props {
   pendencia: Pendencia;

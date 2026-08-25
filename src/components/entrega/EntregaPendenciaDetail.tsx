@@ -17,7 +17,6 @@ import { Ban, Wrench } from 'lucide-react';
 import {
   EVENTO_LABEL,
   RESPONSABILIDADE_LABEL,
-  formatarData,
   formatarDataHora,
 } from '@/lib/entrega/constants';
 import { ImpactoBadge, SituacaoBadge } from './EntregaBadges';
