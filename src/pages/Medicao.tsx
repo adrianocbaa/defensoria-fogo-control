@@ -4102,17 +4102,16 @@ export function Medicao() {
     return qntAcumulada;
   };
 
-  // Função para formatar moeda — TRUNCA em 2 casas (não arredonda) para preservar
-  // a precisão real. O cálculo interno continua usando todas as casas decimais.
+  // Formata valores monetários já calculados. Arredondar aqui evita que a
+  // representação binária de 37159,13 (37159,129999...) perca um centavo.
   const formatCurrency = (value: number) => {
-    const v = Number(value) || 0;
-    const truncado = Math.trunc(v * 100) / 100;
+    const valorMonetario = arredondar2(Number(value) || 0);
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(truncado);
+    }).format(valorMonetario);
   };
 
   if (loading) {
