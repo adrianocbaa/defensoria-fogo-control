@@ -29,22 +29,7 @@ export function ContextoFotosPanel({
   const recentes = [...fotos].slice(-6).reverse();
   const album = recentes.filter((f) => Boolean(f.url));
   const [indice, setIndice] = useState<number | null>(null);
-  const aberto = indice !== null;
-  const atual = indice !== null ? album[indice] : null;
 
-  const irPara = (delta: number) =>
-    setIndice((i) => (i === null ? i : (i + delta + album.length) % album.length));
-
-  useEffect(() => {
-    if (!aberto) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') irPara(1);
-      if (e.key === 'ArrowLeft') irPara(-1);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberto, album.length]);
 
   return (
     <aside className={cn('flex min-h-0 flex-col gap-3', className)}>
