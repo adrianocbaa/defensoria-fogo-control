@@ -38,7 +38,7 @@ import { ObraAuditLogs } from '@/components/ObraAuditLogs';
 import { ExportMedicaoDialog } from '@/components/ExportMedicaoDialog';
 import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
-import { truncar2, unitarioLiquido, totalItem, derivarUnitarioBruto } from '@/lib/precisao';
+import { truncar2, arredondar2, unitarioLiquido, totalItem, derivarUnitarioBruto } from '@/lib/precisao';
 
 import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
 import { generatePdfFromElementAutoPage } from '@/lib/pdfExport';
