@@ -283,6 +283,7 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
     let col = 0;
     ensure(70);
     let linhaY = y + 30;
+    const singleCenterOffset = pessoas.length === 1 ? (contentW - colW) / 2 : 0;
     pessoas.forEach((p, i) => {
       if (i > 0 && i % 2 === 0) {
         linhaY += 56;
@@ -292,7 +293,7 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
         }
         col = 0;
       }
-      const x = MARGIN + col * (colW + 24);
+      const x = MARGIN + col * (colW + 24) + singleCenterOffset;
       doc.setDrawColor(150);
       doc.setLineWidth(0.6);
       doc.line(x, linhaY, x + colW, linhaY);
