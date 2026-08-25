@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ImageGallery } from '@/components/ImageGallery';
+import { FotoAlbumDialog } from './FotoAlbumDialog';
 import type { Foto } from '@/hooks/useRecebimentoPendencias';
 import { formatarData } from '@/lib/recebimento/ui';
 
@@ -49,15 +49,12 @@ function Bloco({
   descricao?: string | null;
   vazio: string;
 }) {
-  const [albumAberto, setAlbumAberto] = useState(false);
-  const [indiceAlbum, setIndiceAlbum] = useState(0);
+  const [indiceAlbum, setIndiceAlbum] = useState<number | null>(null);
   const data = fotos[0]?.created_at;
-  const urls = fotos.map((f) => f.url).filter(Boolean) as string[];
+  const comUrl = fotos.filter((f) => Boolean(f.url));
 
-  const abrir = (idx: number) => {
-    setIndiceAlbum(idx);
-    setAlbumAberto(true);
-  };
+  const abrir = (idx: number) => setIndiceAlbum(idx);
+
 
   return (
     <Card className="overflow-hidden p-0">
@@ -77,36 +74,35 @@ function Bloco({
           {vazio}
         </div>
       ) : (
-        <div className={cn('grid gap-1 p-1', fotos.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
-          {fotos.map((f, idx) =>
-            f.url ? (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => abrir(idx)}
-                className="block w-full text-left"
-              >
-                <img
-                  src={f.url}
-                  alt={f.legenda ?? titulo}
-                  loading="lazy"
-                  className={cn(
-                    'w-full rounded-md object-cover',
-                    fotos.length > 1 ? 'aspect-square' : 'aspect-[4/3]',
-                  )}
-                />
-              </button>
-            ) : null,
-          )}
+        <div className={cn('grid gap-1 p-1', comUrl.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
+          {comUrl.map((f, idx) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => abrir(idx)}
+              className="block w-full text-left"
+            >
+              <img
+                src={f.url ?? undefined}
+                alt={f.legenda ?? titulo}
+                loading="lazy"
+                className={cn(
+                  'w-full rounded-md object-cover',
+                  comUrl.length > 1 ? 'aspect-square' : 'aspect-[4/3]',
+                )}
+              />
+            </button>
+          ))}
         </div>
       )}
       {descricao && <p className="px-3 pb-3 pt-1 text-xs text-muted-foreground">{descricao}</p>}
 
-      <ImageGallery
-        images={urls}
-        isOpen={albumAberto}
-        onClose={() => setAlbumAberto(false)}
-        initialIndex={indiceAlbum}
+      <FotoAlbumDialog
+        titulo={titulo}
+        fotos={comUrl}
+        indice={indiceAlbum}
+        onIndice={setIndiceAlbum}
+        sufixoTitulo={(f) => (f.created_at ? formatarData(f.created_at) : '')}
       />
     </Card>
   );
