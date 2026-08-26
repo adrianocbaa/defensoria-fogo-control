@@ -118,9 +118,9 @@ export function ExportMedicaoDialog({
 
             {medicoesBloqueadas.length === 0 ? (
               <div className="text-sm text-muted-foreground p-4 bg-muted rounded-lg text-center">
-                Nenhuma medição bloqueada disponível para exportação.
+                Nenhuma medição bloqueada disponível.
                 <br />
-                Bloqueie uma medição antes de exportar.
+                A exportação incluirá apenas a planilha orçamentária (contrato).
               </div>
             ) : (
               <ScrollArea className="h-[180px] border rounded-lg p-2">
