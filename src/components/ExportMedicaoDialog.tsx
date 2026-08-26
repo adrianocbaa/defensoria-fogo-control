@@ -74,7 +74,6 @@ export function ExportMedicaoDialog({
   };
 
   const handleExport = () => {
-    if (selectedMedicoes.length === 0) return;
     onExport(selectedMedicoes, tipoItens === 'macros');
     onOpenChange(false);
   };
