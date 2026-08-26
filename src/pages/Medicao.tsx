@@ -1876,13 +1876,17 @@ export function Medicao() {
       merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
 
       // Gerar e fazer download do arquivo
-      const nomeAba = medicoesParaExportar.length === 1 
-        ? `Medição ${medicoesParaExportar[0].id}`
-        : `Medições ${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
+      const nomeAba = medicoesParaExportar.length === 0
+        ? 'Planilha Orçamentária'
+        : medicoesParaExportar.length === 1 
+          ? `Medição ${medicoesParaExportar[0].id}`
+          : `Medições ${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
       const tipoItens = apenasItensAcima ? 'Macros' : 'Completa';
-      const medicoesLabel = medicoesParaExportar.length === 1 
-        ? `Med${medicoesParaExportar[0].id}` 
-        : `Med${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
+      const medicoesLabel = medicoesParaExportar.length === 0
+        ? 'Orcamento'
+        : medicoesParaExportar.length === 1 
+          ? `Med${medicoesParaExportar[0].id}` 
+          : `Med${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
       const fileName = `Medicao_${medicoesLabel}_${tipoItens}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.xlsx`;
 
       await writeExcelFile(exportData, fileName, {
