@@ -46,8 +46,18 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("ElevenLabs error:", response.status, errorText);
+      let detalhe = errorText;
+      try {
+        const parsed = JSON.parse(errorText);
+        detalhe = parsed?.detail?.message ?? parsed?.detail?.status ?? errorText;
+      } catch (_) { /* texto puro */ }
+      const isAuth = response.status === 401 || /api_key|authentication/i.test(errorText);
       return new Response(
-        JSON.stringify({ error: `Erro na transcrição: ${response.status}` }),
+        JSON.stringify({
+          error: isAuth
+            ? "Chave da ElevenLabs inválida. Atualize a ELEVENLABS_API_KEY (deve começar com 'sk_')."
+            : `Erro na transcrição (${response.status}): ${detalhe}`,
+        }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
