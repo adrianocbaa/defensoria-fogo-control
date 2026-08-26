@@ -1895,7 +1895,11 @@ export function Medicao() {
         merges,
       });
 
-      toast.success(`Planilha exportada com ${medicoesParaExportar.length} medição(ões)!`);
+      toast.success(
+        medicoesParaExportar.length === 0
+          ? 'Planilha orçamentária exportada!'
+          : `Planilha exportada com ${medicoesParaExportar.length} medição(ões)!`
+      );
     } catch (error) {
       console.error('Erro ao exportar planilha:', error);
       toast.error('Erro ao exportar planilha');
