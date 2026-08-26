@@ -4445,7 +4445,7 @@ export function Medicao() {
                         <Button 
                           variant="outline" 
                           className="flex items-center gap-2"
-                          disabled={!medicaoAtual}
+                          
                         >
                           <Download className="h-4 w-4" />
                           Exportar
