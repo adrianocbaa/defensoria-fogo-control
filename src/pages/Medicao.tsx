@@ -1665,10 +1665,7 @@ export function Medicao() {
   // Confirmação do modal de Novo Aditivo
   // Função para exportar planilha de medição em XLS com seleção de medições
   const handleExportarPlanilhaXLS = async (selectedMedicoes: number[], apenasItensAcima: boolean) => {
-    if (!obra || selectedMedicoes.length === 0) {
-      toast.error('Selecione ao menos uma medição para exportar');
-      return;
-    }
+    if (!obra) return;
 
     // Verificar se todas as medições selecionadas estão bloqueadas
     const medicoesParaExportar = medicoes.filter(m => selectedMedicoes.includes(m.id)).sort((a, b) => a.id - b.id);
@@ -1684,7 +1681,7 @@ export function Medicao() {
       : items;
 
     // Usar a maior medição selecionada como referência para acumulados
-    const maiorMedicaoId = Math.max(...selectedMedicoes);
+    const maiorMedicaoId = selectedMedicoes.length > 0 ? Math.max(...selectedMedicoes) : 0;
 
     try {
       // Preparar dados para exportação
