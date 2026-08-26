@@ -197,10 +197,7 @@ export function ExportMedicaoDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleExport}
-            disabled={selectedMedicoes.length === 0}
-          >
+          <Button onClick={handleExport}>
             Exportar XLS
           </Button>
         </DialogFooter>
