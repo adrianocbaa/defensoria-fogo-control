@@ -307,7 +307,6 @@ export function OcorrenciaItem({
                     {uploadingRepro ? 'Enviando...' : <><Plus className="h-3 w-3 mr-1" />Adicionar foto</>}
                   </FotoSourceButton>
                 )}
-                <input ref={reproRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileChosen(e, 'reprovacao')} />
               </div>
             ) : ocorrencia.foto_reprovacao_url ? (
               /* Contratada: view-only foto do problema */
@@ -373,7 +372,6 @@ export function OcorrenciaItem({
                       {uploadingCorrecao ? 'Enviando...' : <><Plus className="h-3 w-3 mr-1" />Foto após correção</>}
                     </FotoSourceButton>
                   )}
-                  <input ref={correcaoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileChosen(e, 'correcao')} />
                 </div>
               </>
             )}
