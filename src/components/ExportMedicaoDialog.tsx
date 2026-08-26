@@ -152,11 +152,11 @@ export function ExportMedicaoDialog({
               </ScrollArea>
             )}
 
-            {selectedMedicoes.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {selectedMedicoes.length} medição(ões) selecionada(s)
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              {selectedMedicoes.length > 0
+                ? `${selectedMedicoes.length} medição(ões) selecionada(s)`
+                : 'Sem medições selecionadas — exporta apenas a planilha orçamentária'}
+            </p>
           </div>
 
           {/* Tipo de Itens */}
