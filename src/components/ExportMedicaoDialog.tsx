@@ -74,7 +74,6 @@ export function ExportMedicaoDialog({
   };
 
   const handleExport = () => {
-    if (selectedMedicoes.length === 0) return;
     onExport(selectedMedicoes, tipoItens === 'macros');
     onOpenChange(false);
   };
@@ -119,9 +118,9 @@ export function ExportMedicaoDialog({
 
             {medicoesBloqueadas.length === 0 ? (
               <div className="text-sm text-muted-foreground p-4 bg-muted rounded-lg text-center">
-                Nenhuma medição bloqueada disponível para exportação.
+                Nenhuma medição bloqueada disponível.
                 <br />
-                Bloqueie uma medição antes de exportar.
+                A exportação incluirá apenas a planilha orçamentária (contrato).
               </div>
             ) : (
               <ScrollArea className="h-[180px] border rounded-lg p-2">
@@ -153,11 +152,11 @@ export function ExportMedicaoDialog({
               </ScrollArea>
             )}
 
-            {selectedMedicoes.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {selectedMedicoes.length} medição(ões) selecionada(s)
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              {selectedMedicoes.length > 0
+                ? `${selectedMedicoes.length} medição(ões) selecionada(s)`
+                : 'Sem medições selecionadas — exporta apenas a planilha orçamentária'}
+            </p>
           </div>
 
           {/* Tipo de Itens */}
@@ -198,10 +197,7 @@ export function ExportMedicaoDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleExport}
-            disabled={selectedMedicoes.length === 0}
-          >
+          <Button onClick={handleExport}>
             Exportar XLS
           </Button>
         </DialogFooter>

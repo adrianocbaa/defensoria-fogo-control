@@ -1665,10 +1665,7 @@ export function Medicao() {
   // Confirmação do modal de Novo Aditivo
   // Função para exportar planilha de medição em XLS com seleção de medições
   const handleExportarPlanilhaXLS = async (selectedMedicoes: number[], apenasItensAcima: boolean) => {
-    if (!obra || selectedMedicoes.length === 0) {
-      toast.error('Selecione ao menos uma medição para exportar');
-      return;
-    }
+    if (!obra) return;
 
     // Verificar se todas as medições selecionadas estão bloqueadas
     const medicoesParaExportar = medicoes.filter(m => selectedMedicoes.includes(m.id)).sort((a, b) => a.id - b.id);
@@ -1684,7 +1681,7 @@ export function Medicao() {
       : items;
 
     // Usar a maior medição selecionada como referência para acumulados
-    const maiorMedicaoId = Math.max(...selectedMedicoes);
+    const maiorMedicaoId = selectedMedicoes.length > 0 ? Math.max(...selectedMedicoes) : 0;
 
     try {
       // Preparar dados para exportação
@@ -1879,13 +1876,17 @@ export function Medicao() {
       merges.push({ s: { r: 0, c: currentCol }, e: { r: 0, c: currentCol + 2 } });
 
       // Gerar e fazer download do arquivo
-      const nomeAba = medicoesParaExportar.length === 1 
-        ? `Medição ${medicoesParaExportar[0].id}`
-        : `Medições ${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
+      const nomeAba = medicoesParaExportar.length === 0
+        ? 'Planilha Orçamentária'
+        : medicoesParaExportar.length === 1 
+          ? `Medição ${medicoesParaExportar[0].id}`
+          : `Medições ${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
       const tipoItens = apenasItensAcima ? 'Macros' : 'Completa';
-      const medicoesLabel = medicoesParaExportar.length === 1 
-        ? `Med${medicoesParaExportar[0].id}` 
-        : `Med${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
+      const medicoesLabel = medicoesParaExportar.length === 0
+        ? 'Orcamento'
+        : medicoesParaExportar.length === 1 
+          ? `Med${medicoesParaExportar[0].id}` 
+          : `Med${medicoesParaExportar[0].id}-${medicoesParaExportar[medicoesParaExportar.length - 1].id}`;
       const fileName = `Medicao_${medicoesLabel}_${tipoItens}_${obra.nome.replace(/[^a-z0-9]/gi, '_')}.xlsx`;
 
       await writeExcelFile(exportData, fileName, {
@@ -1894,7 +1895,11 @@ export function Medicao() {
         merges,
       });
 
-      toast.success(`Planilha exportada com ${medicoesParaExportar.length} medição(ões)!`);
+      toast.success(
+        medicoesParaExportar.length === 0
+          ? 'Planilha orçamentária exportada!'
+          : `Planilha exportada com ${medicoesParaExportar.length} medição(ões)!`
+      );
     } catch (error) {
       console.error('Erro ao exportar planilha:', error);
       toast.error('Erro ao exportar planilha');
@@ -4191,7 +4196,6 @@ export function Medicao() {
           </Button>
           <Button
             className="bg-green-600 hover:bg-green-700 text-white"
-            disabled={!medicaoAtual}
             onClick={() => setExportDialogAberto(true)}
           >
             <Download className="h-4 w-4 mr-2" />
@@ -4441,7 +4445,7 @@ export function Medicao() {
                         <Button 
                           variant="outline" 
                           className="flex items-center gap-2"
-                          disabled={!medicaoAtual}
+                          
                         >
                           <Download className="h-4 w-4" />
                           Exportar
