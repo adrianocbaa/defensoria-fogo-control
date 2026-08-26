@@ -12,6 +12,7 @@ import {
 import type { ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
 import { PhotoAnnotationDialog } from './PhotoAnnotationDialog';
 import { PhotoZoomDialog } from './PhotoZoomDialog';
+import { FotoSourceButton, abrirSeletorFoto, type FotoSource } from './FotoSourceButton';
 
 type Gravidade = 'critico' | 'medio' | 'estetico';
 
@@ -61,8 +62,6 @@ export function OcorrenciaItem({
     (ocorrencia as any).foto_correcao_pin ?? null
   );
 
-  const reproRef = useRef<HTMLInputElement>(null);
-  const correcaoRef = useRef<HTMLInputElement>(null);
 
   const gravidade: Gravidade = (ocorrencia.gravidade as Gravidade) ?? 'medio';
   const gConfig = GRAVIDADE_CONFIG[gravidade];
@@ -77,10 +76,9 @@ export function OcorrenciaItem({
   const iconColor = ocorrencia.status === 'aprovado' ? 'text-green-600' : ocorrencia.status === 'reprovado' ? 'text-destructive' : 'text-yellow-600';
 
   // open file picker → preview immediately
-  const pickFile = (tipo: 'reprovacao' | 'correcao') => {
+  const pickFile = (tipo: 'reprovacao' | 'correcao', source: FotoSource = 'galeria') => {
     setPendingTipo(tipo);
-    if (tipo === 'reprovacao') reproRef.current?.click();
-    else correcaoRef.current?.click();
+    abrirSeletorFoto(source, (e) => handleFileChosen(e, tipo));
   };
 
   const handleFileChosen = (e: React.ChangeEvent<HTMLInputElement>, tipo: 'reprovacao' | 'correcao') => {
@@ -296,18 +294,18 @@ export function OcorrenciaItem({
                       </div>
                     </div>
                     <div className="flex gap-1 mt-1">
-                      <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFile('reprovacao')}>
+                      <FotoSourceButton size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onPick={(src) => pickFile('reprovacao', src)}>
                         <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
-                      </Button>
+                      </FotoSourceButton>
                       <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => onUpdate(ocorrencia.id, { foto_reprovacao_url: null })}>
                         <Trash2 className="h-2.5 w-2.5" />
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" className="mt-1 h-7 text-[10px] w-full border-dashed" disabled={uploadingRepro} onClick={() => pickFile('reprovacao')}>
+                  <FotoSourceButton size="sm" variant="outline" className="mt-1 h-7 text-[10px] w-full border-dashed" disabled={uploadingRepro} onPick={(src) => pickFile('reprovacao', src)}>
                     {uploadingRepro ? 'Enviando...' : <><Plus className="h-3 w-3 mr-1" />Adicionar foto</>}
-                  </Button>
+                  </FotoSourceButton>
                 )}
                 <input ref={reproRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileChosen(e, 'reprovacao')} />
               </div>
@@ -360,9 +358,9 @@ export function OcorrenciaItem({
                         </div>
                       </div>
                       <div className="flex gap-1 mt-1">
-                        <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFile('correcao')}>
+                        <FotoSourceButton size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onPick={(src) => pickFile('correcao', src)}>
                           <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
-                        </Button>
+                        </FotoSourceButton>
                         {!isContratada && (
                           <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(ocorrencia.id, { foto_correcao_url: null }); setCorrecaoPoint(null); }}>
                             <Trash2 className="h-2.5 w-2.5" />
@@ -371,9 +369,9 @@ export function OcorrenciaItem({
                       </div>
                     </div>
                   ) : (
-                    <Button size="sm" variant="outline" className="mt-1 h-7 text-[10px] w-full border-dashed border-green-500 text-green-700 hover:bg-green-50" disabled={uploadingCorrecao} onClick={() => pickFile('correcao')}>
+                    <FotoSourceButton size="sm" variant="outline" className="mt-1 h-7 text-[10px] w-full border-dashed border-green-500 text-green-700 hover:bg-green-50" disabled={uploadingCorrecao} onPick={(src) => pickFile('correcao', src)}>
                       {uploadingCorrecao ? 'Enviando...' : <><Plus className="h-3 w-3 mr-1" />Foto após correção</>}
-                    </Button>
+                    </FotoSourceButton>
                   )}
                   <input ref={correcaoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileChosen(e, 'correcao')} />
                 </div>
