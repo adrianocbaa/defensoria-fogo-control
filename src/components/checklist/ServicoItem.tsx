@@ -32,6 +32,7 @@ import { useChecklistOcorrencias, type ChecklistOcorrencia } from '@/hooks/useCh
 import { OcorrenciaItem } from './OcorrenciaItem';
 import { PhotoAnnotationDialog } from './PhotoAnnotationDialog';
 import { PhotoZoomDialog } from './PhotoZoomDialog';
+import { FotoSourceButton, abrirSeletorFoto, type FotoSource } from './FotoSourceButton';
 
 interface ServicoItemProps {
   servico: ChecklistServico;
@@ -61,8 +62,6 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
   const [uploadingCorrecao, setUploadingCorrecao] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const reproInputRef = useRef<HTMLInputElement>(null);
-  const correcaoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -170,10 +169,9 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
     if (observacao !== (servico.observacao ?? '')) onUpdate(servico.id, { observacao });
   };
 
-  const pickFoto = (tipo: 'reprovacao' | 'correcao') => {
+  const pickFoto = (tipo: 'reprovacao' | 'correcao', source: FotoSource = 'galeria') => {
     setPendingTipo(tipo);
-    if (tipo === 'reprovacao') reproInputRef.current?.click();
-    else correcaoInputRef.current?.click();
+    abrirSeletorFoto(source, (e) => handleFileChosen(e, tipo));
   };
 
   const handleFileChosen = (e: React.ChangeEvent<HTMLInputElement>, tipo: 'reprovacao' | 'correcao') => {
@@ -386,20 +384,19 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                     </div>
                   </div>
                   <div className="flex gap-1 mt-1">
-                    <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('reprovacao')}>
+                    <FotoSourceButton size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onPick={(src) => pickFoto('reprovacao', src)}>
                       <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
-                    </Button>
+                    </FotoSourceButton>
                     <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_reprovacao_url: null }); setReproPoint(null); }}>
                       <Trash2 className="h-2.5 w-2.5" />
                     </Button>
                   </div>
                 </div>
               ) : (
-                <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed" disabled={uploadingRepro} onClick={() => pickFoto('reprovacao')}>
+                <FotoSourceButton size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed" disabled={uploadingRepro} onPick={(src) => pickFoto('reprovacao', src)}>
                   {uploadingRepro ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Adicionar foto do problema</>}
-                </Button>
+                </FotoSourceButton>
               )}
-              <input ref={reproInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChosen(e, 'reprovacao')} />
             </div>
           ) : servico.foto_reprovacao_url ? (
             /* Contratada: view-only foto do problema */
@@ -453,9 +450,9 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                       </div>
                     </div>
                     <div className="flex gap-1 mt-1">
-                      <Button size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onClick={() => pickFoto('correcao')}>
+                      <FotoSourceButton size="sm" variant="outline" className="flex-1 h-6 text-[10px]" onPick={(src) => pickFoto('correcao', src)}>
                         <Camera className="h-2.5 w-2.5 mr-1" />Trocar foto
-                      </Button>
+                      </FotoSourceButton>
                       {!isContratada && (
                         <Button size="icon" variant="destructive" className="h-6 w-6" onClick={() => { onUpdate(servico.id, { foto_correcao_url: null } as any); setCorrecaoPoint(null); }}>
                           <Trash2 className="h-2.5 w-2.5" />
@@ -464,11 +461,10 @@ export function ServicoItem({ servico, obraId, onUpdate, onDelete, onUploadFoto,
                     </div>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed border-green-500 text-green-700 hover:bg-green-50" disabled={uploadingCorrecao} onClick={() => pickFoto('correcao')}>
+                  <FotoSourceButton size="sm" variant="outline" className="mt-1 h-8 text-xs w-full border-dashed border-green-500 text-green-700 hover:bg-green-50" disabled={uploadingCorrecao} onPick={(src) => pickFoto('correcao', src)}>
                     {uploadingCorrecao ? 'Enviando...' : <><Plus className="h-3.5 w-3.5 mr-1" />Registrar foto da correção</>}
-                  </Button>
+                  </FotoSourceButton>
                 )}
-                <input ref={correcaoInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChosen(e, 'correcao')} />
               </div>
             </>
           )}
