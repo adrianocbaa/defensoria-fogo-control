@@ -4196,7 +4196,6 @@ export function Medicao() {
           </Button>
           <Button
             className="bg-green-600 hover:bg-green-700 text-white"
-            disabled={!medicaoAtual}
             onClick={() => setExportDialogAberto(true)}
           >
             <Download className="h-4 w-4 mr-2" />
