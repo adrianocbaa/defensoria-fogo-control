@@ -109,24 +109,32 @@ async function desenharCapa(s: SidifDoc, meta: ChecklistReportMeta) {
   let by = y + 120;
   const boxX = MARGIN + 40;
   const boxW = pageW - (MARGIN + 40) * 2;
-  const boxH = linhas.length * 20 + 24;
+  const valorX = boxX + 140;
+  const valorW = boxW - 156;
+  doc.setFontSize(9.5);
+  doc.setFont('helvetica', 'bold');
+  const medidas = linhas.map(([k, v]) => ({
+    k,
+    lines: doc.splitTextToSize(v || '—', valorW) as string[],
+  }));
+  const boxH = medidas.reduce((acc, m) => acc + Math.max(1, m.lines.length) * 13 + 7, 0) + 24;
   doc.setFillColor(248, 251, 249);
   doc.setDrawColor(...GRAY_LINE);
   doc.setLineWidth(0.6);
   doc.rect(boxX, by, boxW, boxH, 'FD');
-  by += 26;
-  linhas.forEach(([k, v]) => {
+  by += 24;
+  medidas.forEach((m) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(...GRAY_LABEL);
-    doc.text(k.toUpperCase(), boxX + 16, by);
+    doc.text(m.k.toUpperCase(), boxX + 16, by);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
     doc.setTextColor(50, 50, 50);
-    const texto = doc.splitTextToSize(v, boxW - 150)[0] as string;
-    doc.text(texto, boxX + 140, by);
-    by += 20;
+    m.lines.forEach((ln, i) => doc.text(ln, valorX, by + i * 13));
+    by += m.lines.length * 13 + 7;
   });
+
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
