@@ -1,83 +1,26 @@
-import jsPDF from 'jspdf';
+import {
+  criarDocumentoSidif,
+  GRAY_LABEL,
+  GRAY_LINE,
+  GRAY_TEXT,
+  GREEN,
+  MARGIN,
+  type SidifDoc,
+} from '@/lib/pdf/sidifPdf';
 import type { ChecklistAmbiente } from '@/hooks/useChecklistDinamico';
 import type { ChecklistOcorrencia } from '@/hooks/useChecklistOcorrencias';
-import type { ShapeData } from '@/components/checklist/PdfCanvas';
-
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-const COL = {
-  margin: 14,
-  pageW: 210,
-  pageH: 297,
-  contentW: 182, // 210 - 2×14
-};
-
-// Cor primária da Defensoria (verde)
-const PRIMARY: [number, number, number] = [21, 128, 61];   // green-700
-const PRIMARY_LIGHT: [number, number, number] = [240, 253, 244]; // green-50
-
-function statusLabel(s: string) {
-  if (s === 'aprovado') return 'APROVADO';
-  if (s === 'reprovado') return 'REPROVADO';
-  return 'PENDENTE';
-}
-
-function statusColor(s: string): { r: number; g: number; b: number } {
-  if (s === 'aprovado') return { r: 22, g: 163, b: 74 };
-  if (s === 'reprovado') return { r: 220, g: 38, b: 38 };
-  return { r: 202, g: 138, b: 4 };
-}
-
-function gravidadeLabel(g: string | null | undefined): string {
-  if (g === 'critico') return '🔴 Crítico';
-  if (g === 'estetico') return '🟢 Estético';
-  return '🟡 Médio';
-}
-
-function gravidadeColor(g: string | null | undefined): [number, number, number] {
-  if (g === 'critico') return [220, 38, 38];
-  if (g === 'estetico') return [59, 130, 246];
-  return [202, 138, 4];
-}
-
-async function loadImageAsBase64(url: string): Promise<string | null> {
-  try {
-    const resp = await fetch(url, { mode: 'cors' });
-    if (!resp.ok) return null;
-    const blob = await resp.blob();
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
-
-/** Render the PDF page as a base64 image via pdf.js */
-async function renderPdfPageToBase64(pdfUrl: string, pageNum: number, targetWidthPx = 1200): Promise<string | null> {
-  try {
-    const lib = (window as any).pdfjsLib;
-    if (!lib) return null;
-    const pdfDoc = await lib.getDocument({ url: pdfUrl, withCredentials: false }).promise;
-    const page = await pdfDoc.getPage(pageNum);
-    const vp0 = page.getViewport({ scale: 1 });
-    const scale = targetWidthPx / vp0.width;
-    const vp = page.getViewport({ scale });
-    const canvas = document.createElement('canvas');
-    canvas.width = vp.width;
-    canvas.height = vp.height;
-    const ctx = canvas.getContext('2d')!;
-    await page.render({ canvasContext: ctx, viewport: vp }).promise;
-    return canvas.toDataURL('image/jpeg', 0.92);
-  } catch {
-    return null;
-  }
-}
-
-// ─── main export ────────────────────────────────────────────────────────────
+import {
+  gravidadeCor,
+  gravidadeLabel,
+  montarPendencias,
+  resumir,
+  resumoGravidade,
+  statusCor,
+  statusLabel,
+  type PendenciaPdf,
+} from '@/lib/pdf/checklist/pendencias';
+import { carregarImagem, desenharFotos, layoutFotos } from '@/lib/pdf/checklist/fotos';
+import { desenharPlanta } from '@/lib/pdf/checklist/planta';
 
 export interface ChecklistReportMeta {
   obraId: string;
@@ -86,762 +29,431 @@ export interface ChecklistReportMeta {
   empresa: string;
   nContrato?: string | null;
   fiscal?: string;
-  dataRelatorio: string; // ISO or formatted string
+  dataRelatorio: string;
   pdfNomeArquivo: string;
-  pdfUrl?: string; // URL of the PDF to render as map
+  pdfUrl?: string;
   totalPaginasPdf?: number;
-  prazoCorrecao?: number | null; // Prazo geral para correção do relatório
+  prazoCorrecao?: number | null;
+  /** Campos ainda sem persistência — exibidos apenas quando houver fonte real. */
+  numeroRelatorio?: string | null;
+  revisao?: string | null;
+  tipoRelatorio?: string | null;
 }
+
+const SUBTITULO = 'Diretoria de Infraestrutura Física';
+
+// ── Capa ────────────────────────────────────────────────────────────────────
+
+async function desenharCapa(s: SidifDoc, meta: ChecklistReportMeta) {
+  const { doc, pageW, pageH } = s;
+
+  doc.setFillColor(...GREEN);
+  doc.rect(0, 0, pageW, 10, 'F');
+  doc.rect(0, pageH - 10, pageW, 10, 'F');
+
+  const logo = await carregarImagem('/images/logo-dpe-mt.png');
+  let y = 110;
+  if (logo) {
+    try {
+      const props = doc.getImageProperties(logo);
+      const w = 86;
+      const h = (props.height / props.width) * w;
+      doc.addImage(logo, 'PNG', (pageW - w) / 2, y, w, h, undefined, 'FAST');
+      y += h + 28;
+    } catch {
+      y += 10;
+    }
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...GREEN);
+  doc.text('DEFENSORIA PÚBLICA DO ESTADO DE MATO GROSSO', pageW / 2, y, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.setTextColor(...GRAY_TEXT);
+  doc.text(SUBTITULO, pageW / 2, y + 18, { align: 'center' });
+
+  y += 90;
+  doc.setDrawColor(...GREEN);
+  doc.setLineWidth(1.2);
+  doc.line(MARGIN + 80, y, pageW - MARGIN - 80, y);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(40, 40, 40);
+  doc.text('RELATÓRIO DE VISTORIA', pageW / 2, y + 38, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(...GRAY_LABEL);
+  doc.text('Sistema Integrado da Diretoria de Infraestrutura Física — SiDIF', pageW / 2, y + 58, {
+    align: 'center',
+  });
+
+  doc.setDrawColor(...GREEN);
+  doc.setLineWidth(1.2);
+  doc.line(MARGIN + 80, y + 76, pageW - MARGIN - 80, y + 76);
+
+  // Bloco de dados da capa
+  const linhas: [string, string][] = [
+    ['Obra', meta.nomeObra],
+    ['Município', meta.municipio || '—'],
+    ['Contratada', meta.empresa || '—'],
+    ...(meta.nContrato ? ([['Contrato', meta.nContrato]] as [string, string][]) : []),
+    ...(meta.numeroRelatorio ? ([['Relatório nº', meta.numeroRelatorio]] as [string, string][]) : []),
+    ...(meta.revisao ? ([['Revisão', meta.revisao]] as [string, string][]) : []),
+    ...(meta.tipoRelatorio ? ([['Tipo de relatório', meta.tipoRelatorio]] as [string, string][]) : []),
+    ['Data de emissão', meta.dataRelatorio],
+  ];
+
+  let by = y + 120;
+  const boxX = MARGIN + 40;
+  const boxW = pageW - (MARGIN + 40) * 2;
+  const valorX = boxX + 140;
+  const valorW = boxW - 156;
+  doc.setFontSize(9.5);
+  doc.setFont('helvetica', 'bold');
+  const medidas = linhas.map(([k, v]) => ({
+    k,
+    lines: doc.splitTextToSize(v || '—', valorW) as string[],
+  }));
+  const boxH = medidas.reduce((acc, m) => acc + Math.max(1, m.lines.length) * 13 + 7, 0) + 24;
+  doc.setFillColor(248, 251, 249);
+  doc.setDrawColor(...GRAY_LINE);
+  doc.setLineWidth(0.6);
+  doc.rect(boxX, by, boxW, boxH, 'FD');
+  by += 24;
+  medidas.forEach((m) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...GRAY_LABEL);
+    doc.text(m.k.toUpperCase(), boxX + 16, by);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(50, 50, 50);
+    m.lines.forEach((ln, i) => doc.text(ln, valorX, by + i * 13));
+    by += m.lines.length * 13 + 7;
+  });
+
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY_LABEL);
+  doc.text('Documento de uso interno', pageW / 2, pageH - 34, { align: 'center' });
+  doc.setTextColor(...GRAY_TEXT);
+}
+
+// ── Blocos auxiliares ───────────────────────────────────────────────────────
+
+function rotuloValor(s: SidifDoc, rotulo: string, valor: string, x: number, y: number, largura: number) {
+  s.doc.setFont('helvetica', 'normal');
+  s.doc.setFontSize(7.5);
+  s.doc.setTextColor(...GRAY_LABEL);
+  s.doc.text(rotulo.toUpperCase(), x, y);
+  s.doc.setFont('helvetica', 'bold');
+  s.doc.setFontSize(9);
+  s.doc.setTextColor(50, 50, 50);
+  s.doc.text(s.doc.splitTextToSize(valor, largura)[0] as string, x, y + 12);
+  s.doc.setTextColor(...GRAY_TEXT);
+}
+
+function cabecalhoAmbiente(s: SidifDoc, nome: string, resumo: string, continuacao = false) {
+  s.ensure(46);
+  s.doc.setFillColor(...GREEN);
+  s.doc.rect(MARGIN, s.y, 3.5, 26, 'F');
+  s.doc.setFont('helvetica', 'bold');
+  s.doc.setFontSize(11);
+  s.doc.setTextColor(40, 40, 40);
+  const titulo = continuacao ? `Ambiente: ${nome} — Continuação` : nome.toUpperCase();
+  s.doc.text(titulo, MARGIN + 12, s.y + 11);
+  s.doc.setFont('helvetica', 'normal');
+  s.doc.setFontSize(8.5);
+  s.doc.setTextColor(...GRAY_LABEL);
+  s.doc.text(resumo, MARGIN + 12, s.y + 23);
+  s.doc.setDrawColor(...GRAY_LINE);
+  s.doc.setLineWidth(0.6);
+  s.doc.line(MARGIN, s.y + 30, s.pageW - MARGIN, s.y + 30);
+  s.doc.setTextColor(...GRAY_TEXT);
+  s.y += 40;
+}
+
+function alturaTexto(s: SidifDoc, texto: string, largura: number, size = 9) {
+  s.doc.setFontSize(size);
+  return (s.doc.splitTextToSize(texto, largura) as string[]).length * (size * 1.35);
+}
+
+function blocoTexto(s: SidifDoc, rotulo: string, texto: string) {
+  s.doc.setFont('helvetica', 'bold');
+  s.doc.setFontSize(8);
+  s.doc.setTextColor(...GREEN);
+  s.doc.text(rotulo.toUpperCase(), MARGIN, s.y + 8);
+  s.doc.setTextColor(...GRAY_TEXT);
+  s.y += 14;
+  s.text(texto, 9);
+  s.gap(4);
+}
+
+function linhasMeta(s: SidifDoc, p: PendenciaPdf) {
+  const meta = [
+    `Ambiente: ${p.ambienteNome}`,
+    `Serviço: ${resumir(p.servico, 42)}`,
+    p.local ? `Local: ${p.local}` : null,
+    p.pin ? `Pin ${p.pin}` : null,
+  ]
+    .filter(Boolean)
+    .join('   ·   ');
+  s.doc.setFont('helvetica', 'normal');
+  s.doc.setFontSize(7.5);
+  return (s.doc.splitTextToSize(meta, s.contentW - 20) as string[]).slice(0, 2);
+}
+
+/** Altura total do cabeçalho da pendência (usada no cálculo de quebra). */
+function alturaCabecalhoPendencia(s: SidifDoc, p: PendenciaPdf) {
+  return 34 + (linhasMeta(s, p).length > 1 ? 9 : 0);
+}
+
+/** Cabeçalho da pendência (usado também nas continuações). */
+function cabecalhoPendencia(s: SidifDoc, p: PendenciaPdf, continuacao = false) {
+  const metaLinhas = linhasMeta(s, p);
+  const alturaBox = 34 + (metaLinhas.length > 1 ? 9 : 0);
+
+  s.doc.setFillColor(248, 251, 249);
+  s.doc.setDrawColor(...GRAY_LINE);
+  s.doc.setLineWidth(0.6);
+  s.doc.rect(MARGIN, s.y, s.contentW, alturaBox, 'FD');
+
+  s.doc.setFont('helvetica', 'bold');
+  s.doc.setFontSize(10);
+  s.doc.setTextColor(...GREEN);
+  s.doc.text(p.codigo, MARGIN + 10, s.y + 14);
+
+  s.doc.setTextColor(40, 40, 40);
+  const tituloMax = s.contentW - 240;
+  const titulo = continuacao ? `${p.titulo} — Continuação` : p.titulo;
+  s.doc.text(s.doc.splitTextToSize(titulo, tituloMax)[0] as string, MARGIN + 52, s.y + 14);
+
+  // indicadores discretos de gravidade e situação
+  const [gr, gg, gb] = gravidadeCor(p.gravidade);
+  const [sr, sg, sb] = statusCor(p.status);
+  const dirX = s.pageW - MARGIN - 10;
+  s.doc.setFont('helvetica', 'bold');
+  s.doc.setFontSize(8);
+  s.doc.setTextColor(sr, sg, sb);
+  const statusTxt = statusLabel(p.status);
+  s.doc.text(statusTxt, dirX, s.y + 14, { align: 'right' });
+  const wStatus = s.doc.getTextWidth(statusTxt);
+  s.doc.setTextColor(gr, gg, gb);
+  const gravTxt = gravidadeLabel(p.gravidade);
+  s.doc.text(gravTxt, dirX - wStatus - 14, s.y + 14, { align: 'right' });
+  s.doc.setFillColor(gr, gg, gb);
+  s.doc.circle(dirX - wStatus - 18 - s.doc.getTextWidth(gravTxt), s.y + 11, 2.6, 'F');
+
+  s.doc.setFont('helvetica', 'normal');
+  s.doc.setFontSize(7.5);
+  s.doc.setTextColor(...GRAY_LABEL);
+  metaLinhas.forEach((ln, i) => s.doc.text(ln, MARGIN + 10, s.y + 25 + i * 9));
+  s.doc.setTextColor(...GRAY_TEXT);
+  s.y += alturaBox + 8;
+}
+
+
+
+/** Bloco completo de uma pendência, com paginação inteligente. */
+async function desenharPendencia(s: SidifDoc, p: PendenciaPdf, ambienteResumo: string) {
+  const situacao = p.situacao || '—';
+  const correcao = p.correcaoSolicitada?.trim() || '—';
+
+  const alturaTextual =
+    alturaCabecalhoPendencia(s, p) + 8 + 14 + alturaTexto(s, situacao, s.contentW) + 4 + 14 +
+    alturaTexto(s, correcao, s.contentW) + 8;
+  const lay = layoutFotos(p.fotos.length, s.contentW);
+  const primeiraLinhaFotos = p.fotos.length ? lay.alturaLinha : 16;
+
+  // mantém título + descrições + primeira linha de fotos juntos
+  if (s.y + alturaTextual + primeiraLinhaFotos > s.bottomLimit) {
+    s.novaPagina();
+    cabecalhoAmbiente(s, p.ambienteNome, ambienteResumo, true);
+  }
+
+  cabecalhoPendencia(s, p);
+  blocoTexto(s, 'Situação identificada', situacao);
+  blocoTexto(s, 'Correção solicitada', correcao);
+
+  await desenharFotos(s, p.fotos, () => {
+    cabecalhoAmbiente(s, p.ambienteNome, ambienteResumo, true);
+    cabecalhoPendencia(s, p, true);
+  });
+
+  s.gap(10);
+}
+
+// ── Exportação principal ────────────────────────────────────────────────────
 
 export async function exportChecklistPdf(
   meta: ChecklistReportMeta,
   ambientes: ChecklistAmbiente[],
   ocorrenciasPorServico?: Record<string, ChecklistOcorrencia[]>,
 ) {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  let y = COL.margin;
-
-  const addPage = () => {
-    doc.addPage();
-    y = COL.margin;
-    drawPageHeader();
-  };
-
-  const checkY = (needed: number) => {
-    if (y + needed > COL.pageH - 16) addPage();
-  };
-
-  // ── Rodapé de página ────────────────────────────────────────────────────
-  function drawPageFooter() {
-    const pageNum = doc.getNumberOfPages();
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(140, 140, 140);
-    doc.text(
-      `Relatório Técnico de Checklist · ${meta.nomeObra}`,
-      COL.margin,
-      COL.pageH - 8,
-    );
-    doc.text(
-      `Página ${pageNum}`,
-      COL.pageW - COL.margin,
-      COL.pageH - 8,
-      { align: 'right' },
-    );
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(COL.margin, COL.pageH - 12, COL.pageW - COL.margin, COL.pageH - 12);
-  }
-
-  function drawPageHeader() {
-    doc.setFillColor(...PRIMARY);
-    doc.rect(COL.margin, y, COL.contentW, 1, 'F');
-    y += 3;
-  }
-
-  // ── Banner principal ─────────────────────────────────────────────────────
-  doc.setFillColor(...PRIMARY);
-  doc.rect(0, 0, COL.pageW, 38, 'F');
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('RELATÓRIO TÉCNICO DE CHECKLIST', COL.margin, 14);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text('Fiscalização de Obras · Inspeção de Serviços', COL.margin, 21);
-
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.4);
-  doc.line(COL.margin, 26, COL.pageW - COL.margin, 26);
-
-  doc.setFontSize(8);
-  doc.text(`Emitido em: ${meta.dataRelatorio}`, COL.pageW - COL.margin, 33, { align: 'right' });
-
-  y = 46;
-
-  // ── Bloco de identificação ──────────────────────────────────────────────
-  const fields: [string, string][] = [
-    ['Obra', meta.nomeObra],
-    ['Município', meta.municipio],
-    ['Empresa Contratada', meta.empresa],
-    ...(meta.nContrato ? [['Nº do Contrato', meta.nContrato] as [string, string]] : []),
-    ...(meta.fiscal ? [['Fiscal Responsável', meta.fiscal] as [string, string]] : []),
-    ['Arquivo de Projeto', meta.pdfNomeArquivo],
-    ...(meta.prazoCorrecao ? [['Prazo para Correção', `${meta.prazoCorrecao} dia${meta.prazoCorrecao !== 1 ? 's' : ''} (Responsável: Contratada)`] as [string, string]] : []),
-  ];
-
-  const fieldRowH = 11;
-  const numRows = Math.ceil(fields.length / 2);
-  const blockH = 14 + numRows * fieldRowH;
-
-  doc.setFillColor(245, 248, 245);
-  doc.setDrawColor(180, 220, 190);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(COL.margin, y, COL.contentW, blockH, 2, 2, 'FD');
-
-  doc.setTextColor(...PRIMARY);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text('IDENTIFICAÇÃO DA OBRA', COL.margin + 4, y + 7);
-
-  doc.setDrawColor(...PRIMARY);
-  doc.setLineWidth(0.5);
-  doc.line(COL.margin + 4, y + 9, COL.margin + 65, y + 9);
-
-  const col1x = COL.margin + 4;
-  const col2x = COL.margin + 4 + COL.contentW / 2;
-  const colW = COL.contentW / 2 - 8;
-
-  fields.forEach(([label, value], idx) => {
-    const col = idx % 2;
-    const row = Math.floor(idx / 2);
-    const fx = col === 0 ? col1x : col2x;
-    const baseY = y + 14 + row * fieldRowH;
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(120, 130, 120);
-    doc.text(label.toUpperCase(), fx, baseY);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(20, 20, 20);
-    const wrapped = doc.splitTextToSize(value, colW);
-    doc.text(wrapped[0], fx, baseY + 4.5);
+  const s = criarDocumentoSidif({
+    titulo: 'Relatório de Vistoria',
+    subtitulo: SUBTITULO,
+    primeiraPaginaCapa: true,
+    rodapeTexto: `SiDIF · ${meta.nomeObra} · Documento de uso interno`,
   });
 
-  y += blockH + 6;
+  await desenharCapa(s, meta);
+  s.novaPagina();
 
-  // ── Resumo geral ─────────────────────────────────────────────────────────
-  const allServicos = ambientes.flatMap(a => a.servicos);
-  const totalServ = allServicos.length;
-  const totalAprov = allServicos.filter(s => s.status === 'aprovado').length;
-  const totalReprov = allServicos.filter(s => s.status === 'reprovado').length;
-  const totalPend = allServicos.filter(s => s.status === 'pendente').length;
-  const pctAprov = totalServ ? Math.round((totalAprov / totalServ) * 100) : 0;
+  // 1. Identificação da vistoria
+  s.section('Identificação da vistoria');
+  s.infoCard([
+    [['Obra', meta.nomeObra]],
+    [
+      ['Município', meta.municipio || '—'],
+      ['Contrato', meta.nContrato || '—'],
+    ],
+    [
+      ['Contratada', meta.empresa || '—'],
+      ['Fiscal responsável', meta.fiscal || '—'],
+    ],
+    [
+      ['Data de emissão', meta.dataRelatorio],
+      ['Projeto de referência', meta.pdfNomeArquivo || '—'],
+    ],
+  ]);
 
-  checkY(38);
+  // 2. Resumo
+  const servicos = ambientes.flatMap((a) => a.servicos);
+  const pendencias = montarPendencias(ambientes, ocorrenciasPorServico);
+  const grav = resumoGravidade(pendencias);
+  const aprovados = servicos.filter((v) => v.status === 'aprovado').length;
+  const reprovados = servicos.filter((v) => v.status === 'reprovado').length;
+  const pendentes = servicos.filter((v) => v.status === 'pendente').length;
 
-  doc.setFillColor(...PRIMARY_LIGHT);
-  doc.setDrawColor(180, 220, 190);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(COL.margin, y, COL.contentW, 30, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(...PRIMARY);
-  doc.text('RESUMO GERAL', COL.margin + 4, y + 7);
-  doc.setDrawColor(...PRIMARY);
-  doc.setLineWidth(0.5);
-  doc.line(COL.margin + 4, y + 9, COL.margin + 45, y + 9);
-
-  const totalBoxW = COL.contentW - 8;
-  const boxGap = 3;
-  const boxW = (totalBoxW - boxGap * 4) / 5;
-
-  const boxes = [
-    { label: 'Ambientes',      val: ambientes.length, color: PRIMARY as [number,number,number] },
-    { label: 'Total Serviços', val: totalServ,         color: [80, 80, 80]    as [number,number,number] },
-    { label: 'Aprovados',      val: totalAprov,        color: [22, 163, 74]   as [number,number,number] },
-    { label: 'Reprovados',     val: totalReprov,       color: [220, 38, 38]   as [number,number,number] },
-    { label: 'Pendentes',      val: totalPend,         color: [202, 138, 4]   as [number,number,number] },
-  ];
-
-  boxes.forEach((b, i) => {
-    const bx = COL.margin + 4 + i * (boxW + boxGap);
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(...b.color);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(bx, y + 12, boxW, 14, 1.5, 1.5, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(...b.color);
-    doc.text(String(b.val), bx + boxW / 2, y + 21, { align: 'center' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(100, 100, 100);
-    doc.text(b.label, bx + boxW / 2, y + 25, { align: 'center' });
+  s.section('Resumo da vistoria');
+  s.table({
+    head: [['Indicador', 'Quantidade']],
+    body: [
+      ['Ambientes vistoriados', String(ambientes.length)],
+      ['Verificações realizadas', String(servicos.length)],
+      ['Verificações aprovadas', String(aprovados)],
+      ['Verificações reprovadas', String(reprovados)],
+      ['Verificações pendentes', String(pendentes)],
+      ['Pendências registradas', String(grav.total)],
+      ['Pendências de gravidade crítica', String(grav.criticas)],
+      ['Pendências de gravidade média', String(grav.medias)],
+      ['Pendências de gravidade baixa / estética', String(grav.baixas)],
+    ],
+    columnStyles: { 1: { cellWidth: 90, halign: 'center' } },
   });
 
-  y += 36;
+  // 3. Planta de localização
+  await desenharPlanta(s, ambientes, meta.pdfUrl, meta.totalPaginasPdf);
 
-  // ── Barra de progresso ───────────────────────────────────────────────────
-  checkY(12);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(30, 30, 30);
-  doc.text(`Conformidade: ${pctAprov}%`, COL.margin, y + 5);
-
-  const barX = COL.margin + 42;
-  const barW = COL.contentW - 44;
-  doc.setFillColor(220, 240, 225);
-  doc.roundedRect(barX, y + 1.5, barW, 5, 2, 2, 'F');
-
-  if (pctAprov > 0) {
-    doc.setFillColor(22, 163, 74);
-    doc.roundedRect(barX, y + 1.5, barW * (pctAprov / 100), 5, 2, 2, 'F');
+  // 4. Quadro geral de pendências
+  s.section('Quadro geral de pendências');
+  if (pendencias.length) {
+    s.table({
+      head: [['Nº', 'Ambiente', 'Serviço', 'Descrição resumida', 'Gravidade', 'Situação']],
+      body: pendencias.map((p) => [
+        p.codigo,
+        p.ambienteNome,
+        resumir(p.servico, 46),
+        resumir(p.situacao, 70),
+        gravidadeLabel(p.gravidade),
+        statusLabel(p.status),
+      ]),
+      styles: { fontSize: 7.8, cellPadding: 3.2, overflow: 'linebreak' },
+      columnStyles: {
+        0: { cellWidth: 38, fontStyle: 'bold' },
+        1: { cellWidth: 84 },
+        2: { cellWidth: 96 },
+        4: { cellWidth: 62 },
+        5: { cellWidth: 56 },
+      },
+    });
+  } else {
+    s.text('Nenhuma pendência registrada nesta vistoria.', 9);
   }
 
-  y += 14;
-
-  // ── MAPA DO PROJETO (uma página por PDF page com pins numerados) ──────────
-  if (meta.pdfUrl) {
-    const totalPages = meta.totalPaginasPdf || 1;
-
-    // Agrupar ambientes por página
-    const ambsByPage: Map<number, ChecklistAmbiente[]> = new Map();
-    ambientes.forEach(amb => {
-      const pg = amb.pagina;
-      if (!ambsByPage.has(pg)) ambsByPage.set(pg, []);
-      ambsByPage.get(pg)!.push(amb);
-    });
-
-    // Render only pages that have ambientes with pins
-    const pagesWithPins = Array.from(ambsByPage.keys()).filter(pg => {
-      const ambs = ambsByPage.get(pg) || [];
-      return ambs.some(a => a.servicos.some(s => s.location_pin));
-    });
-
-    for (const pageNum of pagesWithPins.sort((a, b) => a - b)) {
-      // Render PDF page
-      const pageImgData = await renderPdfPageToBase64(meta.pdfUrl, pageNum, 1600);
-
-      addPage(); // always start map on a new page
-
-      // Title
-      doc.setFillColor(...PRIMARY);
-      doc.rect(COL.margin, y, COL.contentW, 8, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.text(`MAPA DE MARCAÇÕES — PÁGINA ${pageNum}`, COL.margin + 4, y + 5.5);
-      y += 10;
-
-      // Map area: draw PDF page image
-      const mapH = 140; // mm height for map
-      const mapW = COL.contentW;
-
-      if (pageImgData) {
-        // Draw a light border
-        doc.setDrawColor(180, 220, 190);
-        doc.setLineWidth(0.4);
-        doc.rect(COL.margin, y, mapW, mapH, 'D');
-        doc.addImage(pageImgData, 'JPEG', COL.margin, y, mapW, mapH);
-      } else {
-        doc.setFillColor(245, 248, 245);
-        doc.setDrawColor(180, 220, 190);
-        doc.setLineWidth(0.3);
-        doc.rect(COL.margin, y, mapW, mapH, 'FD');
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(8);
-        doc.setTextColor(140, 140, 140);
-        doc.text('Projeto não disponível', COL.margin + mapW / 2, y + mapH / 2, { align: 'center' });
-      }
-
-      // Build a global index map: servicoId → sequential number across all environments
-      const globalPinIndex: Map<string, number> = new Map();
-      let pinCounter = 1;
-      ambientes.forEach(amb => {
-        amb.servicos.forEach(s => {
-          if (s.location_pin) {
-            globalPinIndex.set(s.id, pinCounter++);
-          }
-        });
-      });
-
-      // Overlay pins as numbered circles on the map image
-      const pageAmbs = ambsByPage.get(pageNum) || [];
-      pageAmbs.forEach(amb => {
-        amb.servicos.forEach(s => {
-          const pin = s.location_pin as { x: number; y: number } | null;
-          if (!pin) return;
-
-          const pinNum = globalPinIndex.get(s.id) ?? 0;
-          const { r, g, b } = statusColor(s.status);
-
-          // Convert 0-100 coordinates to PDF mm within the map rect
-          const pinX = COL.margin + (pin.x / 100) * mapW;
-          const pinY = y + (pin.y / 100) * mapH;
-
-          const circleR = 2.0;
-
-          // Drop shadow
-          doc.setFillColor(0, 0, 0);
-          doc.setGState(doc.GState({ opacity: 0.2 }));
-          doc.circle(pinX + 0.4, pinY + 0.4, circleR, 'F');
-          doc.setGState(doc.GState({ opacity: 1 }));
-
-          // Colored circle
-          doc.setFillColor(r, g, b);
-          doc.setDrawColor(255, 255, 255);
-          doc.setLineWidth(0.5);
-          doc.circle(pinX, pinY, circleR, 'FD');
-
-          // Number
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(pinNum > 9 ? 3.5 : 4.5);
-          doc.setTextColor(255, 255, 255);
-          doc.text(String(pinNum), pinX, pinY + (pinNum > 9 ? 1.0 : 1.2), { align: 'center' });
-        });
-      });
-
-      y += mapH + 6;
-
-      // Legend below the map
-      checkY(20);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(...PRIMARY);
-      doc.text('LEGENDA DOS PINS:', COL.margin, y + 4);
-      y += 7;
-
-      // List pins for this page in 2 columns
-      const pageServicos: { num: number; descricao: string; status: string; ambNome: string }[] = [];
-      pageAmbs.forEach(amb => {
-        amb.servicos.forEach(s => {
-          const pin = s.location_pin as { x: number; y: number } | null;
-          if (!pin) return;
-          pageServicos.push({
-            num: globalPinIndex.get(s.id) ?? 0,
-            descricao: s.descricao,
-            status: s.status,
-            ambNome: amb.nome,
-          });
-        });
-      });
-
-      const legendColW = (COL.contentW - 6) / 2;
-      pageServicos.forEach((item, idx) => {
-        const col = idx % 2;
-        const lx = col === 0 ? COL.margin : COL.margin + legendColW + 6;
-        if (col === 0 && idx > 0) checkY(7);
-
-        const { r, g, b } = statusColor(item.status);
-        const rowY = y;
-
-        doc.setFillColor(r, g, b);
-        doc.setDrawColor(255, 255, 255);
-        doc.setLineWidth(0.3);
-        doc.circle(lx + 3, rowY + 2.5, 2.8, 'FD');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(5.5);
-        doc.setTextColor(255, 255, 255);
-        doc.text(String(item.num), lx + 3, rowY + 3.8, { align: 'center' });
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(20, 20, 20);
-        const descWrapped = doc.splitTextToSize(`${item.ambNome} · ${item.descricao}`, legendColW - 10);
-        doc.text(descWrapped[0], lx + 7.5, rowY + 2.5);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6);
-        doc.setTextColor(r, g, b);
-        doc.text(statusLabel(item.status), lx + 7.5, rowY + 5.5);
-
-        if (col === 1 || idx === pageServicos.length - 1) y += 8;
-      });
-
-      y += 4;
-    }
-  }
-
-  // ── Por ambiente ─────────────────────────────────────────────────────────
-  // Build a global sequential index for pins
-  const globalPinIndexFinal: Map<string, number> = new Map();
-  let pinCounterFinal = 1;
-  ambientes.forEach(amb => {
-    amb.servicos.forEach(s => {
-      if (s.location_pin) {
-        globalPinIndexFinal.set(s.id, pinCounterFinal++);
-      }
-    });
-  });
-
+  // 5. Pendências por ambiente
+  s.section('Pendências por ambiente');
   for (const amb of ambientes) {
-    const reprovados = amb.servicos.filter(s => s.status === 'reprovado');
-    const aprovados = amb.servicos.filter(s => s.status === 'aprovado');
-    const pendentes = amb.servicos.filter(s => s.status === 'pendente');
+    const doAmbiente = pendencias.filter((p) => p.ambienteId === amb.id);
+    const r = resumoGravidade(doAmbiente);
+    const resumoTxt = `${r.total} pendência(s) · ${r.criticas} crítica(s) · ${r.medias} média(s) · ${r.baixas} baixa(s)`;
 
-    checkY(24);
+    cabecalhoAmbiente(s, amb.nome, resumoTxt);
 
-    // Cabeçalho do ambiente
-    const statusAmb =
-      reprovados.length > 0 ? 'reprovado' :
-      pendentes.length > 0 ? 'pendente' : 'aprovado';
-    const { r, g, b } = statusColor(statusAmb);
+    // Checklist do ambiente (dados atuais preservados)
+    const verificacoes = [...amb.servicos].sort((a, b) => a.ordem - b.ordem);
+    if (verificacoes.length) {
+      s.table({
+        head: [['Verificação', 'Gravidade', 'Situação']],
+        body: verificacoes.map((v) => [v.descricao, gravidadeLabel(v.gravidade), statusLabel(v.status)]),
+        styles: { fontSize: 8, cellPadding: 3.2, overflow: 'linebreak' },
+        columnStyles: { 1: { cellWidth: 80 }, 2: { cellWidth: 70 } },
+      });
+    } else {
+      s.text('Nenhuma verificação cadastrada neste ambiente.', 9);
+    }
 
-    doc.setFillColor(r, g, b);
-    doc.rect(COL.margin, y, 2.5, 9, 'F');
-
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(220, 220, 220);
-    doc.setLineWidth(0.2);
-    doc.rect(COL.margin + 2.5, y, COL.contentW - 2.5, 9, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(20, 20, 20);
-    doc.text(amb.nome.toUpperCase(), COL.margin + 6, y + 5.8);
-
-    // mini badges
-    const badgeX = COL.margin + COL.contentW - 65;
-    const badges = [
-      { label: `${aprovados.length} Aprov.`, c: [22, 163, 74] as [number, number, number] },
-      { label: `${reprovados.length} Reprov.`, c: [220, 38, 38] as [number, number, number] },
-      { label: `${pendentes.length} Pend.`, c: [202, 138, 4] as [number, number, number] },
-    ];
-    let bx = badgeX;
-    badges.forEach(({ label, c }) => {
-      doc.setFillColor(...c);
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(6.5);
-      doc.setFont('helvetica', 'bold');
-      const tw = doc.getTextWidth(label) + 3;
-      doc.roundedRect(bx, y + 2, tw, 5, 1, 1, 'F');
-      doc.text(label, bx + tw / 2, y + 5.8, { align: 'center' });
-      bx += tw + 2;
-    });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(120, 120, 120);
-    doc.text(`Pág. ${amb.pagina}`, COL.margin + 6, y + 8.5);
-
-    y += 11;
-
-    // Tabela de serviços
-    if (amb.servicos.length === 0) {
-      checkY(8);
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(7.5);
-      doc.setTextColor(160, 160, 160);
-      doc.text('Nenhum serviço cadastrado neste ambiente.', COL.margin + 4, y + 5);
-      y += 10;
+    if (!doAmbiente.length) {
+      s.text('Nenhuma pendência registrada neste ambiente.', 9);
+      s.gap(8);
       continue;
     }
 
-    // Table header
-    checkY(8);
-    doc.setFillColor(...PRIMARY);
-    doc.rect(COL.margin, y, COL.contentW, 7, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.text('Nº', COL.margin + 3, y + 4.8);
-    doc.text('DESCRIÇÃO DO SERVIÇO', COL.margin + 12, y + 4.8);
-    doc.text('GRAVIDADE', COL.pageW - COL.margin - 55, y + 4.8);
-    doc.text('STATUS', COL.pageW - COL.margin - 12, y + 4.8, { align: 'right' });
-    y += 7;
-
-    // Table rows
-    for (let idx = 0; idx < amb.servicos.length; idx++) {
-      const serv = amb.servicos[idx];
-      const ocorrencias = ocorrenciasPorServico?.[serv.id] ?? [];
-      const extraRowH = serv.observacao ? 4 : 0;
-      const rowH = 8 + extraRowH;
-
-      // Pre-calculate photos height so we can do a single checkY for the whole block
-      const photoPairs: { url: string; label: string }[] = [];
-      if (serv.foto_reprovacao_url) photoPairs.push({ url: serv.foto_reprovacao_url, label: 'Foto do Problema' });
-      if (serv.foto_correcao_url) photoPairs.push({ url: serv.foto_correcao_url, label: 'Foto da Correção' });
-
-      const photoW = 85;
-      const photoH = 52;
-      const photoBlockH = photoPairs.length > 0 ? photoH + 10 : 0;
-
-      // checkY for the full block (row + photos) so they always stay together
-      checkY(rowH + photoBlockH + 2);
-
-      const rowBg = idx % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
-      doc.setFillColor(...(rowBg as [number, number, number]));
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(0.1);
-      doc.rect(COL.margin, y, COL.contentW, rowH, 'FD');
-
-      // Nº
-      const pinNum = globalPinIndexFinal.get(serv.id);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
-      doc.text(String(idx + 1).padStart(2, '0'), COL.margin + 3, y + 5);
-
-      // If has pin, draw a small colored circle with the global number
-      if (pinNum !== undefined) {
-        const { r: pr, g: pg, b: pb } = statusColor(serv.status);
-        doc.setFillColor(pr, pg, pb);
-        doc.setDrawColor(255, 255, 255);
-        doc.setLineWidth(0.3);
-        doc.circle(COL.margin + 7.5, y + 4, 2.2, 'FD');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(pinNum > 9 ? 4.5 : 5.5);
-        doc.setTextColor(255, 255, 255);
-        doc.text(String(pinNum), COL.margin + 7.5, y + 5.8, { align: 'center' });
-      }
-
-      // Descrição
-      const descLines = doc.splitTextToSize(serv.descricao, 95);
-      doc.setTextColor(20, 20, 20);
-      doc.setFont('helvetica', serv.status === 'reprovado' ? 'bold' : 'normal');
-      doc.setFontSize(7);
-      doc.text(descLines[0], COL.margin + 12, y + 5);
-
-      // Observação
-      if (serv.observacao) {
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(6);
-        doc.setTextColor(120, 120, 120);
-        const obsLines = doc.splitTextToSize(`Obs: ${serv.observacao}`, 95);
-        doc.text(obsLines[0], COL.margin + 12, y + 9);
-      }
-
-      // Gravidade pill — posicionada antes do Status
-      const [gr, gg, gb] = gravidadeColor(serv.gravidade);
-      const gLabel = gravidadeLabel(serv.gravidade).replace(/🔴 |🟡 |🟢 /, '');
-      doc.setFillColor(gr, gg, gb);
-      const gw = doc.getTextWidth(gLabel) + 4;
-      doc.roundedRect(COL.pageW - COL.margin - 57, y + 1.5, gw, 4.5, 1, 1, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.5);
-      doc.text(gLabel, COL.pageW - COL.margin - 57 + gw / 2, y + 4.3, { align: 'center' });
-
-      // Status pill
-      const { r: sr, g: sg, b: sb } = statusColor(serv.status);
-      doc.setFillColor(sr, sg, sb);
-      const sLabel = statusLabel(serv.status);
-      const sw2 = doc.getTextWidth(sLabel) + 4;
-      doc.roundedRect(COL.pageW - COL.margin - sw2 - 1, y + 1.5, sw2, 4.5, 1, 1, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6);
-      doc.text(sLabel, COL.pageW - COL.margin - 1 - sw2 / 2, y + 4.3, { align: 'center' });
-
-      y += rowH;
-
-      // ── Fotos inline do serviço ────
-      if (photoPairs.length > 0) {
-        let px = COL.margin;
-        for (const { url, label } of photoPairs) {
-          const imgData = await loadImageAsBase64(url);
-          doc.setFillColor(245, 245, 245);
-          doc.setDrawColor(200, 200, 200);
-          doc.setLineWidth(0.2);
-          doc.rect(px, y, photoW, photoH + 6, 'FD');
-
-          if (imgData) {
-            try {
-              doc.addImage(imgData, 'JPEG', px + 1, y + 1, photoW - 2, photoH - 2);
-            } catch {
-              doc.setFont('helvetica', 'italic');
-              doc.setFontSize(7);
-              doc.setTextColor(160, 160, 160);
-              doc.text('[Imagem não disponível]', px + photoW / 2, y + photoH / 2, { align: 'center' });
-            }
-          }
-
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6.5);
-          doc.setTextColor(80, 80, 80);
-          doc.text(label, px + photoW / 2, y + photoH + 4, { align: 'center' });
-          px += photoW + 12;
-        }
-
-        y += photoBlockH;
-      }
-
-      // ── Ocorrências internas ────────────────────────────────────────────
-      if (ocorrencias.length > 0) {
-        checkY(10);
-        // Cabeçalho da seção de ocorrências
-        doc.setFillColor(250, 240, 240);
-        doc.setDrawColor(220, 180, 180);
-        doc.setLineWidth(0.2);
-        doc.rect(COL.margin + 6, y, COL.contentW - 6, 6, 'FD');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(6);
-        doc.setTextColor(180, 60, 60);
-        doc.text(`OCORRÊNCIAS ESPECÍFICAS (${ocorrencias.length})`, COL.margin + 10, y + 4);
-        y += 6;
-
-        for (let oi = 0; oi < ocorrencias.length; oi++) {
-          const oc = ocorrencias[oi];
-          const ocPhotos: { url: string; label: string }[] = [];
-          if (oc.foto_reprovacao_url) ocPhotos.push({ url: oc.foto_reprovacao_url, label: 'Foto do Problema' });
-          if (oc.foto_correcao_url) ocPhotos.push({ url: oc.foto_correcao_url, label: 'Foto Após Correção' });
-
-          const ocPhotoBlockH = ocPhotos.length > 0 ? photoH + 10 : 0;
-          const ocRowH = oc.observacao ? 11 : 8;
-          checkY(ocRowH + ocPhotoBlockH + 2);
-
-          // Sub-row
-          doc.setFillColor(255, 248, 248);
-          doc.setDrawColor(220, 200, 200);
-          doc.setLineWidth(0.1);
-          doc.rect(COL.margin + 6, y, COL.contentW - 6, ocRowH, 'FD');
-
-          // Número da ocorrência
-          doc.setFillColor(220, 38, 38);
-          doc.setDrawColor(255, 255, 255);
-          doc.setLineWidth(0.2);
-          doc.circle(COL.margin + 10, y + ocRowH / 2, 2, 'FD');
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(5);
-          doc.setTextColor(255, 255, 255);
-          doc.text(String(oi + 1), COL.margin + 10, y + ocRowH / 2 + 1.5, { align: 'center' });
-
-          // Descrição da ocorrência
-          const ocDesc = oc.descricao || `Ocorrência ${oi + 1}`;
-          const ocDescLines = doc.splitTextToSize(ocDesc, 95);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6.5);
-          doc.setTextColor(60, 20, 20);
-          doc.text(ocDescLines[0], COL.margin + 15, y + 4.5);
-
-          // Observação
-          if (oc.observacao) {
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(5.5);
-            doc.setTextColor(120, 80, 80);
-            const ocObsLines = doc.splitTextToSize(`Obs: ${oc.observacao}`, 90);
-            doc.text(ocObsLines[0], COL.margin + 15, y + 8.5);
-          }
-
-          // Gravidade pill
-          const [ogr, ogg, ogb] = gravidadeColor(oc.gravidade);
-          const ogLabel = gravidadeLabel(oc.gravidade).replace(/🔴 |🟡 |🟢 /, '');
-          doc.setFillColor(ogr, ogg, ogb);
-          const ogw = doc.getTextWidth(ogLabel) + 4;
-          doc.roundedRect(COL.pageW - COL.margin - 57, y + 1.5, ogw, 4, 0.8, 0.8, 'F');
-          doc.setTextColor(255, 255, 255);
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(5);
-          doc.text(ogLabel, COL.pageW - COL.margin - 57 + ogw / 2, y + 4, { align: 'center' });
-
-          // Status pill
-          const { r: osr, g: osg, b: osb } = statusColor(oc.status);
-          doc.setFillColor(osr, osg, osb);
-          const osLabel = statusLabel(oc.status);
-          const osw = doc.getTextWidth(osLabel) + 4;
-          doc.roundedRect(COL.pageW - COL.margin - osw - 1, y + 1.5, osw, 4, 0.8, 0.8, 'F');
-          doc.setTextColor(255, 255, 255);
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(5.5);
-          doc.text(osLabel, COL.pageW - COL.margin - 1 - osw / 2, y + 4, { align: 'center' });
-
-          y += ocRowH;
-
-          // Fotos da ocorrência
-          if (ocPhotos.length > 0) {
-            let opx = COL.margin + 6;
-            const ocPhotoW = 82;
-            const ocPhotoH = 50;
-            for (const { url, label } of ocPhotos) {
-              const imgData = await loadImageAsBase64(url);
-              doc.setFillColor(250, 245, 245);
-              doc.setDrawColor(200, 180, 180);
-              doc.setLineWidth(0.2);
-              doc.rect(opx, y, ocPhotoW, ocPhotoH + 6, 'FD');
-
-              if (imgData) {
-                try {
-                  doc.addImage(imgData, 'JPEG', opx + 1, y + 1, ocPhotoW - 2, ocPhotoH - 2);
-                } catch {
-                  doc.setFont('helvetica', 'italic');
-                  doc.setFontSize(6.5);
-                  doc.setTextColor(160, 140, 140);
-                  doc.text('[Imagem não disponível]', opx + ocPhotoW / 2, y + ocPhotoH / 2, { align: 'center' });
-                }
-              }
-
-              doc.setFont('helvetica', 'normal');
-              doc.setFontSize(6);
-              doc.setTextColor(100, 70, 70);
-              doc.text(label, opx + ocPhotoW / 2, y + ocPhotoH + 4, { align: 'center' });
-              opx += ocPhotoW + 12;
-            }
-            y += ocPhotoBlockH;
-          }
-        }
-      }
+    s.gap(6);
+    for (const p of doAmbiente) {
+      await desenharPendencia(s, p, resumoTxt);
     }
-
-    y += 6;
   }
 
-  // ── Rodapé em todas as páginas ───────────────────────────────────────────
-  const totalPagesAll = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPagesAll; i++) {
-    doc.setPage(i);
-    drawPageFooter();
-  }
+  // 6. Conclusão
+  s.section('Conclusão');
+  s.text(
+    pendencias.length
+      ? `Foram vistoriados ${ambientes.length} ambiente(s), com ${servicos.length} verificação(ões) realizada(s) e ${pendencias.length} pendência(s) registrada(s), das quais ${grav.criticas} de gravidade crítica. As pendências relacionadas neste relatório devem ser tratadas pela contratada e serão objeto de verificação pela fiscalização em vistoria posterior.`
+      : `Foram vistoriados ${ambientes.length} ambiente(s), com ${servicos.length} verificação(ões) realizada(s). Não foram registradas pendências nesta vistoria.`,
+    9,
+  );
 
-  // ── Bloco de assinatura formal ───────────────────────────────────────────
-  doc.setPage(totalPagesAll);
-  checkY(70);
-
-  // Separador
-  doc.setDrawColor(...PRIMARY);
-  doc.setLineWidth(0.5);
-  doc.line(COL.margin, y, COL.pageW - COL.margin, y);
-  y += 6;
-
-  // Texto institucional
-  doc.setFillColor(...PRIMARY_LIGHT);
-  doc.setDrawColor(180, 220, 190);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(COL.margin, y, COL.contentW, 14, 2, 2, 'FD');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(50, 80, 60);
-  doc.text('Este relatório foi gerado pelo Sistema Integrado de Fiscalização (SIDIF) · Defensoria Pública do Estado de Mato Grosso.', COL.margin + 4, y + 5.5);
-  doc.text('Documento de uso interno. Para esclarecimentos, contate o fiscal responsável pela obra.', COL.margin + 4, y + 10);
-  y += 20;
-
-  // Três campos de assinatura lado a lado
-  const sigW = 52;
-  const sigGap = (COL.contentW - sigW * 3) / 2;
-  const sigs: { line: string; label: string; name?: string }[] = [
-    { line: '_'.repeat(30), label: 'Fiscal Responsável', name: meta.fiscal },
-    { line: '_'.repeat(30), label: 'Responsável pela Empresa', name: undefined },
-    { line: '_'.repeat(30), label: 'Coordenador / Gestor', name: undefined },
-  ];
-
-  sigs.forEach((sig, i) => {
-    const sx = COL.margin + i * (sigW + sigGap);
-    // Box
-    doc.setFillColor(250, 252, 250);
-    doc.setDrawColor(180, 220, 190);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(sx, y, sigW, 28, 2, 2, 'FD');
-    // Linha de assinatura
-    doc.setDrawColor(100, 100, 100);
-    doc.setLineWidth(0.3);
-    doc.line(sx + 4, y + 16, sx + sigW - 4, y + 16);
-    // Label
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...PRIMARY);
-    doc.text(sig.label, sx + sigW / 2, y + 20, { align: 'center' });
-    // Nome
-    if (sig.name) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6);
-      doc.setTextColor(40, 40, 40);
-      const nameWrapped = doc.splitTextToSize(sig.name, sigW - 6);
-      doc.text(nameWrapped[0], sx + sigW / 2, y + 24.5, { align: 'center' });
-    }
-    // Data
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(140, 140, 140);
-    doc.text(`Data: ____/____/________`, sx + sigW / 2, y + 25.5 + (sig.name ? 2 : 0), { align: 'center' });
+  // 7. Situação consolidada
+  s.section('Situação consolidada');
+  s.table({
+    head: [['Gravidade', 'Aprovadas', 'Reprovadas', 'Pendentes', 'Total']],
+    body: (['critico', 'medio', 'estetico'] as const).map((g) => {
+      const lista = pendencias.filter((p) =>
+        g === 'medio' ? !p.gravidade || p.gravidade === 'medio' : p.gravidade === g,
+      );
+      return [
+        gravidadeLabel(g),
+        String(lista.filter((p) => p.status === 'aprovado').length),
+        String(lista.filter((p) => p.status === 'reprovado').length),
+        String(lista.filter((p) => p.status === 'pendente').length),
+        String(lista.length),
+      ];
+    }),
+    columnStyles: {
+      1: { halign: 'center' },
+      2: { halign: 'center' },
+      3: { halign: 'center' },
+      4: { halign: 'center', fontStyle: 'bold' },
+    },
   });
 
-  y += 32;
+  // 8. Assinaturas
+  s.section('Assinaturas');
+  s.assinaturas([
+    {
+      nome: meta.fiscal || 'Fiscal do Contrato',
+      funcao: 'Fiscal do Contrato',
+      orgao: 'Defensoria Pública do Estado de Mato Grosso',
+    },
+    { nome: meta.empresa || 'Contratada', funcao: 'Responsável Técnico da Contratada' },
+  ]);
 
-  doc.save(`checklist_${meta.obraId}_${Date.now()}.pdf`);
+  s.finalizar();
+  s.doc.save(`relatorio-vistoria-${meta.obraId}-${Date.now()}.pdf`);
 }
-

@@ -54,6 +54,10 @@ interface Options {
   subtitulo?: string;
   /** Identificador exibido à direita da faixa (ex.: "Nº 0007"). */
   numero?: string;
+  /** Quando true, a primeira página fica limpa (capa) e sem rodapé. */
+  primeiraPaginaCapa?: boolean;
+  /** Texto customizado do rodapé (canto esquerdo). */
+  rodapeTexto?: string;
 }
 
 export interface SidifDoc {
@@ -61,9 +65,13 @@ export interface SidifDoc {
   pageW: number;
   pageH: number;
   contentW: number;
+  /** Limite inferior útil da página (antes do rodapé). */
+  bottomLimit: number;
   get y(): number;
   set y(v: number);
   ensure: (needed: number) => void;
+  novaPagina: () => void;
+  espacoRestante: () => number;
   gap: (v?: number) => void;
   text: (t: string, size?: number, bold?: boolean, indent?: number) => void;
   section: (title: string) => void;
@@ -75,7 +83,14 @@ export interface SidifDoc {
   finalizar: () => void;
 }
 
-export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): SidifDoc {
+export function criarDocumentoSidif({
+  titulo,
+  subtitulo,
+  numero,
+  primeiraPaginaCapa,
+  rodapeTexto,
+}: Options): SidifDoc {
+
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -114,13 +129,14 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
     doc.setFontSize(7.5);
     doc.setTextColor(130, 130, 130);
     doc.text(
-      `Gerado automaticamente pelo SiDIF em ${new Date().toLocaleString('pt-BR')}`,
+      rodapeTexto ?? `Gerado automaticamente pelo SiDIF em ${new Date().toLocaleString('pt-BR')}`,
       MARGIN,
       footerY + 2,
     );
     doc.text(`Página ${page} de ${total}`, pageW - MARGIN, footerY + 2, { align: 'right' });
     doc.setTextColor(...GRAY_TEXT);
   };
+
 
   const newPage = () => {
     doc.addPage();
@@ -315,20 +331,26 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
   const finalizar = () => {
     const total = doc.getNumberOfPages();
     for (let i = 1; i <= total; i++) {
+      if (primeiraPaginaCapa && i === 1) continue;
       doc.setPage(i);
       drawFooter(i, total);
     }
     doc.setPage(total);
   };
 
-  drawHeader();
-  y = headerH + 30;
+  if (primeiraPaginaCapa) {
+    y = 0;
+  } else {
+    drawHeader();
+    y = headerH + 30;
+  }
 
   return {
     doc,
     pageW,
     pageH,
     contentW,
+    bottomLimit,
     get y() {
       return y;
     },
@@ -336,6 +358,8 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
       y = v;
     },
     ensure,
+    novaPagina: newPage,
+    espacoRestante: () => bottomLimit - y,
     gap,
     text,
     section,
@@ -347,3 +371,4 @@ export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): Sid
     finalizar,
   };
 }
+
