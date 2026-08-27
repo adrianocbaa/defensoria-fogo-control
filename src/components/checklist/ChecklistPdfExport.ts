@@ -193,15 +193,34 @@ function blocoTexto(s: SidifDoc, rotulo: string, texto: string) {
   s.gap(4);
 }
 
-/** Altura do cabeçalho da pendência (mesma medida usada no cálculo de quebra). */
-const ALTURA_CABECALHO_PENDENCIA = 34;
+function linhasMeta(s: SidifDoc, p: PendenciaPdf) {
+  const meta = [
+    `Ambiente: ${p.ambienteNome}`,
+    `Serviço: ${resumir(p.servico, 42)}`,
+    p.local ? `Local: ${p.local}` : null,
+    p.pin ? `Pin ${p.pin}` : null,
+  ]
+    .filter(Boolean)
+    .join('   ·   ');
+  s.doc.setFont('helvetica', 'normal');
+  s.doc.setFontSize(7.5);
+  return (s.doc.splitTextToSize(meta, s.contentW - 20) as string[]).slice(0, 2);
+}
+
+/** Altura total do cabeçalho da pendência (usada no cálculo de quebra). */
+function alturaCabecalhoPendencia(s: SidifDoc, p: PendenciaPdf) {
+  return 34 + (linhasMeta(s, p).length > 1 ? 9 : 0);
+}
 
 /** Cabeçalho da pendência (usado também nas continuações). */
 function cabecalhoPendencia(s: SidifDoc, p: PendenciaPdf, continuacao = false) {
+  const metaLinhas = linhasMeta(s, p);
+  const alturaBox = 34 + (metaLinhas.length > 1 ? 9 : 0);
+
   s.doc.setFillColor(248, 251, 249);
   s.doc.setDrawColor(...GRAY_LINE);
   s.doc.setLineWidth(0.6);
-  s.doc.rect(MARGIN, s.y, s.contentW, ALTURA_CABECALHO_PENDENCIA, 'FD');
+  s.doc.rect(MARGIN, s.y, s.contentW, alturaBox, 'FD');
 
   s.doc.setFont('helvetica', 'bold');
   s.doc.setFontSize(10);
@@ -232,19 +251,11 @@ function cabecalhoPendencia(s: SidifDoc, p: PendenciaPdf, continuacao = false) {
   s.doc.setFont('helvetica', 'normal');
   s.doc.setFontSize(7.5);
   s.doc.setTextColor(...GRAY_LABEL);
-  const meta = [
-    `Ambiente: ${p.ambienteNome}`,
-    `Serviço: ${resumir(p.servico, 42)}`,
-    p.local ? `Local: ${p.local}` : null,
-    p.pin ? `Pin ${p.pin}` : null,
-  ]
-    .filter(Boolean)
-    .join('   ·   ');
-  const metaLinhas = (s.doc.splitTextToSize(meta, s.contentW - 20) as string[]).slice(0, 2);
   metaLinhas.forEach((ln, i) => s.doc.text(ln, MARGIN + 10, s.y + 25 + i * 9));
   s.doc.setTextColor(...GRAY_TEXT);
-  s.y += ALTURA_CABECALHO_PENDENCIA + 8 + (metaLinhas.length > 1 ? 9 : 0);
+  s.y += alturaBox + 8;
 }
+
 
 
 /** Bloco completo de uma pendência, com paginação inteligente. */
