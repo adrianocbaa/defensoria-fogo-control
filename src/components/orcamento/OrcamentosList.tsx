@@ -149,7 +149,7 @@ export function OrcamentosList() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => navigate(`/orcamento/${orc.id}/editar`)}
+                        onClick={() => navigate(`/orcamento/${orc.id}`)}
                         title="Editar"
                       >
                         <Edit className="h-4 w-4" />
