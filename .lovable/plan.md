@@ -1,165 +1,65 @@
-# Recebimento de Obra — modelagem final (revisão 2)
+# Refatoração do Relatório PDF de Vistoria/Checklist — Padrão Institucional
 
-Novo modo de checklist no módulo Obras. O checklist **Dinâmico com Projeto** permanece intocado; a rota `/obras/:id/checklist` ganha um seletor de modo (preferência por obra em localStorage).
+## 1. Auditoria do relatório atual (feita)
 
-Todas as tabelas: `id uuid default gen_random_uuid()`, `created_at`, `updated_at` (com trigger), GRANTs explícitos, RLS por obra no padrão atual (`can_edit_obra`, `user_has_obra_access`, `is_admin`), índices em todos os FKs e nos campos de filtro (`obra_id`, `vistoria_id`, `ambiente_id`, `pendencia_id`, `status`, `situacao`).
+- **Gerador:** `src/components/checklist/ChecklistPdfExport.ts` (função `exportChecklistPdf`), chamado em `src/pages/ChecklistDinamico.tsx`. É o único PDF do checklist dinâmico. Os relatórios de Recebimento e Entrega são outros arquivos e **não** serão tocados.
+- **Biblioteca:** jsPDF puro (A4, mm), desenho manual. Sem autotable. O helper institucional `src/lib/pdf/sidifPdf.ts` (usado nos relatórios de recebimento/entrega) existe e traz cabeçalho/rodapé/tabelas/assinaturas padronizados.
+- **Fonte dos dados:** `useChecklistDinamico` (pdf, ambientes, serviços) + `useChecklistOcorrencias` (ocorrências por serviço) + dados da obra.
+- **Agrupamento:** por ambiente (`checklist_ambientes`, campo `pagina` da planta) → serviços → ocorrências.
+- **Fotos:** `foto_reprovacao_url` e `foto_correcao_url` no serviço e na ocorrência, baixadas por fetch e inseridas com tamanho fixo 85×52 mm (**a imagem é esticada — hoje distorce**).
+- **Planta e pins:** página do PDF de projeto renderizada via `pdfjsLib` e pins numerados sequencialmente por `location_pin` (0–100 em %). Legenda em 2 colunas.
+- **Paginação:** `checkY(n)` simples; rodapé "Relatório Técnico de Checklist · obra" + "Página N" (sem total). Cabeçalho de páginas seguintes é apenas uma faixa verde de 1 mm.
+- **Status:** `pendente | aprovado | reprovado`. **Gravidade:** `critico | medio | estetico`.
+- **Assinaturas:** 3 caixas fixas (Fiscal, Empresa, Coordenador), sem persistência.
+- **Exportação:** `doc.save(checklist_<obraId>_<timestamp>.pdf)`.
 
-## 1. Biblioteca (normalizada)
+### O que o novo layout pede × o que existe hoje
 
-```text
-biblioteca_servicos
-  macro text            -- ex.: "Esquadrias"
-  servico text          -- ex.: "Porta"
-  descricao text
-  keywords text[]       -- apenas busca
-  escopo text           -- 'global' | 'obra'
-  obra_id uuid null     -- preenchido quando escopo='obra'
-  ordem int
-  ativo bool default true          -- soft delete
+| Item do novo layout | Situação |
+|---|---|
+| Capa, cabeçalho/rodapé institucional, cores, tipografia | Só transformação visual |
+| Identificação, resumo, planta, ambientes, fotos, assinaturas | Existem — só reorganização visual |
+| Quadro geral de pendências | Derivável dos dados atuais |
+| Código P-001 | **Não existe** — gerado só no PDF, determinístico |
+| Gravidade Crítica/Média/Baixa-Estética | Existe (`critico/medio/estetico`) |
+| "Situação identificada" | Mapeia para `descricao`/`observacao` |
+| "Correção solicitada" | **Campo não existe** — bloco visual preparado, exibido só se houver `observacao` designada; caso contrário, "—" |
+| Registro da Execução / Verificação da Fiscalização / Antes×Depois / Correção aceita ou não / múltiplas tentativas | **Só "Antes×Depois" existe** (foto reprovação + foto correção). Aceite, data de execução, responsável pela correção e histórico de tentativas **não existem** |
+| Relatório nº, Revisão, Tipo | **Não existem** — template preparado, sem valores inventados |
+| Conclusão / situação consolidada | Só contagens reais existentes, texto neutro |
 
-biblioteca_verificacoes
-  servico_id uuid -> biblioteca_servicos(id)
-  descricao text        -- ex.: "Maçaneta"
-  ordem int
-  default_aplicavel bool default true   -- false = sugerir "Não se aplica"
-  ativo bool default true
-```
+**Campos que seriam necessários no futuro (não serão criados agora):** `codigo` persistido na pendência; `correcao_solicitada`; `execucao_descricao`, `execucao_data`, `execucao_responsavel`; `verificacao_resultado` (aceita/não aceita), `verificacao_data`, `verificacao_por`; tabela de tentativas de correção; `relatorio_numero`, `revisao`, `tipo_relatorio`.
 
-Sem `text[]` de verificações: cada verificação é editável, ordenável e desativável individualmente. Seed com as 30 macros / famílias / verificações da especificação.
+## 2. O que será implementado
 
-## 2. Templates de ambiente
+Refatoração de `ChecklistPdfExport.ts` (mesma assinatura pública, mesmo ponto de chamada), quebrada em módulos sob `src/lib/pdf/checklist/`:
 
-```text
-recebimento_templates
-  nome, descricao, ordem, ativo
+1. **Capa** — brasão/logo DPE-MT, "Defensoria Pública do Estado de Mato Grosso / Diretoria de Infraestrutura Física / Relatório de Vistoria — SiDIF", nome da obra, contrato, data, campos de Relatório nº / Revisão / Tipo renderizados apenas quando houver fonte real.
+2. **Cabeçalho corrido** em todas as páginas internas (linha institucional discreta, sem faixa colorida grande).
+3. **Rodapé** — `SiDIF · <obra> · Documento de uso interno` e `Página X de Y` (total calculado no fim).
+4. **Identificação da vistoria** — tabela sóbria com quebra de linha (sem cortar texto).
+5. **Resumo** — números em tabela/linha discreta (sem cards estilo dashboard, sem barra de progresso colorida).
+6. **Planta de localização** — mesma renderização e coordenadas dos pins; planta maior, legenda em tabela `Pin | Ambiente | Pendência | Gravidade | Situação`.
+7. **Quadro geral de pendências** — tabela `Nº | Ambiente | Serviço | Descrição resumida | Gravidade | Situação`, com o código P-XXX na coluna Nº.
+8. **Pendências por ambiente** — cabeçalho `NOME DO AMBIENTE` + resumo `X pendências · X críticas · X médias · X baixas`; continuação marcada como `Ambiente: X — Continuação`.
+9. **Bloco de pendência** — P-XXX, título, gravidade, status, ambiente, local, Situação identificada, Correção solicitada, fotos e legenda, medido antes de imprimir; se não couber inteiro, vai para a próxima página; se for maior que uma página, quebra com `P-XXX — Título — Continuação`.
+10. **Fotos** — proporção preservada (`drawImageContain` de `sidifPdf.ts`); 1 foto centralizada, 2 em colunas, 3+ em grid; sem foto = aviso compacto de uma linha.
+11. **Correção/reinspeção** — bloco "Antes × Depois" com as fotos existentes; subtítulos "Registro da Execução" e "Verificação da Fiscalização" renderizados apenas quando houver dado (hoje: não renderizam).
+12. **Conclusão e situação consolidada** — apenas contagens reais e texto neutro; nenhuma regra percentual inventada.
+13. **Assinaturas** — mesmo mecanismo, layout institucional.
 
-recebimento_template_servicos
-  template_id -> recebimento_templates(id)
-  biblioteca_servico_id -> biblioteca_servicos(id)
-  ordem
-```
+**Definição de pendência (P-XXX):** todo serviço com status `reprovado` e toda ocorrência registrada, ordenados por ambiente → ordem do serviço → ordem da ocorrência. Serviços aprovados/pendentes continuam listados no checklist por ambiente, sem código P.
 
-Seed: Sala/Gabinete, Banheiro, Banheiro PCD, Copa, Circulação, Área externa. Aplicar um template **copia** serviços e verificações para o ambiente; edições posteriores no ambiente não afetam o template global (e vice-versa).
+**Terminologia unificada:** "Situação identificada" e "Correção solicitada" em todo o documento.
 
-## 3. Vistorias e o vínculo da reinspeção
+## 3. Testes
 
-```text
-recebimento_vistorias
-  obra_id -> obras(id)
-  tipo text              -- 'provisorio' | 'reinspecao' | 'definitivo'
-  vistoria_origem_id uuid null -> recebimento_vistorias(id)
-  status text            -- 'em_andamento' | 'concluida' | 'cancelada'
-  data date, iniciado_em, concluido_em
-  fiscal_id uuid, concluida_por uuid
-  observacoes text
-```
+Três PDFs gerados via Playwright na obra de teste: poucas pendências, muitas pendências, e fotos com proporções diferentes (retrato/paisagem). Conferência página a página (via `pdftoppm`) de: A4, cabeçalho, rodapé com X de Y, quebras, planta, quadro geral, ambientes, fotos, pendências sem foto, textos longos, sobreposição e corte.
 
-Auto-relacionamento simples: `Provisório ← Reinspeção 1 ← Reinspeção 2 …`. A cadeia inteira é recuperável seguindo `vistoria_origem_id`.
+## 4. Fora do escopo (não será feito)
 
-**Reinspeção não recria checklist**: ela não gera ambientes, serviços nem verificações. A tela consulta as pendências abertas da vistoria de origem (e da cadeia) e exibe o ambiente original de cada uma. Checklist integral só é criado em `provisorio` e, se o fiscal optar, em `definitivo`.
+Nenhuma migração, tabela, coluna, status, política RLS ou mudança de storage/URLs. Se algum ponto do layout exigir isso, paro e pergunto antes.
 
-## 4. Ambientes, serviços e verificações (com snapshot)
+## Observação sobre o Figma
 
-```text
-recebimento_ambientes
-  vistoria_id, obra_id, nome, tipo_modelo, pavimento, observacoes, ordem, ativo
-
-recebimento_ambiente_servicos
-  ambiente_id, obra_id
-  biblioteca_servico_id uuid null -> biblioteca_servicos(id)   -- null se personalizado
-  macro_snapshot text, servico_snapshot text
-  ordem, ativo
-
-recebimento_verificacoes
-  ambiente_servico_id, ambiente_id, vistoria_id, obra_id
-  biblioteca_verificacao_id uuid null -> biblioteca_verificacoes(id)
-  descricao_snapshot text
-  status text default 'nao_vistoriado'
-      -- nao_vistoriado | conforme | nao_conforme | nao_executado | nao_aplica
-  observacao text
-  respondido_por uuid, respondido_em timestamptz
-  ordem, ativo
-```
-
-O snapshot textual garante que alterações futuras na biblioteca **não** mudem retroativamente vistorias já realizadas; o FK preserva a rastreabilidade de origem. Todas as consultas de tela usam IDs, nunca texto de macro/serviço.
-
-## 5. Ciclo de vida da pendência
-
-```text
-recebimento_pendencias
-  verificacao_id, ambiente_id, obra_id
-  vistoria_origem_id      -- vistoria em que nasceu
-  titulo, descricao
-  classificacao text      -- acabamento | funcional | seguranca | acessibilidade | instalacao | outro
-  prazo_correcao date
-  situacao text default 'pendente'
-      -- pendente | correcao_registrada | reprovada | sanada | cancelada
-  criada_por, sanada_em, sanada_por
-  cancelada_em, cancelada_por, motivo_cancelamento
-```
-
-A pendência é **única e persistente**: nasce no provisório e atravessa quantas reinspeções forem necessárias, sempre com o mesmo id. Nenhuma reinspeção duplica pendência. Cancelamento exige justificativa e gera histórico; nunca há exclusão silenciosa de pendência com histórico.
-
-```text
-recebimento_pendencia_historico
-  pendencia_id, obra_id
-  vistoria_id uuid null    -- vistoria em que o evento ocorreu (reinspeção, etc.)
-  evento text  -- criada | descricao_alterada | correcao_registrada |
-               -- reinspecionada | reprovada | sanada | cancelada
-  situacao_anterior, situacao_nova
-  observacao text
-  autor uuid, created_at
-```
-
-Histórico é append-only: nenhum evento é apagado ou sobrescrito.
-
-## 6. Fotos ligadas à etapa
-
-```text
-recebimento_fotos
-  obra_id, vistoria_id, ambiente_id
-  pendencia_id uuid null
-  historico_id uuid null -> recebimento_pendencia_historico(id)   -- etapa exata
-  tipo text        -- ocorrencia | correcao | geral
-  storage_path text, legenda text
-  autor uuid, created_at
-```
-
-`historico_id` amarra cada foto à etapa que a originou, então a linha do tempo fica completa:
-
-```text
-Ocorrência inicial      -> Foto A (evento: criada)
-1ª correção             -> Foto B (correcao_registrada)
-1ª reinspeção reprovada -> Foto C (reprovada)
-2ª correção             -> Foto D (correcao_registrada)
-2ª reinspeção sanada    -> Foto E (sanada)
-```
-
-Nenhuma foto é substituída; fotos gerais do ambiente entram com `tipo='geral'` e sem pendência.
-
-## 7. Storage
-
-Bucket existente `checklist-fotos`, com prefixo próprio para não misturar com o checklist dinâmico:
-
-```text
-recebimento/{obra_id}/{vistoria_id}/{ambiente_id}/{pendencia_id|geral}/{arquivo}
-```
-
-Políticas por prefixo no padrão atual; leitura via URL assinada (`signChecklistUrl`).
-
-## 8. Exclusões
-
-Soft delete (`ativo=false`) para ambientes, serviços e verificações; cancelamento registrado para pendências e vistorias. Antes de qualquer exclusão física, o sistema verifica respostas, fotos e histórico — havendo qualquer um deles, só permite inativar/cancelar com justificativa.
-
-## 9. Interface (resumo)
-
-Aba **Recebimento** com Visão Geral · Checklist · Pendências · Fotos · Histórico · Relatório; checklist mobile-first em cards/accordion, botões grandes de status, **✓ Marcar todos como Conforme** / **Marcar grupo como N/A**, barra fixa inferior (Anterior · 📷 Foto · Próximo) e seletor rápido de ambiente. "Não Conforme" abre bottom sheet que cria a pendência com fotos, classificação e prazo. Autosave por verificação com "Salvo ✓" e erro explícito. Reinspeção mostra só pendências abertas com Antes/Depois e Sanada / Continua Pendente. Relatório reutiliza o padrão institucional do módulo Obras.
-
-## 10. Ordem de execução
-
-1. Migração + seeds (biblioteca, verificações, templates)
-2. Seletor de modo + casca da aba Recebimento + vistorias e ambientes
-3. Templates, duplicação, checklist, status, ações em massa, progresso, autosave
-4. Pendências + fotos
-5. Reinspeção + histórico
-6. Visão Geral + Relatório
+Não tenho acesso ao arquivo do Figma nesta sessão (o conector Figma exige o app Lovable Desktop). A implementação seguirá a especificação escrita acima; se você anexar prints das páginas-chave do Figma (capa, bloco de pendência, planta, conclusão), eu ajusto a fidelidade visual.
