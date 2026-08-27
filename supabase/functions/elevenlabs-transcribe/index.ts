@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"; // redeployed
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,59 +12,87 @@ serve(async (req) => {
   }
 
   try {
-    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-    if (!ELEVENLABS_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "ELEVENLABS_API_KEY não configurada" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const formData = await req.formData();
-    const audioFile = formData.get("audio") as File;
+    const audioFile = formData.get("audio") as File | null;
 
-    if (!audioFile) {
+    if (!audioFile || audioFile.size < 1024) {
       return new Response(
-        JSON.stringify({ error: "Arquivo de áudio não encontrado" }),
+        JSON.stringify({ error: "Áudio vazio ou muito curto. Grave novamente." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const apiFormData = new FormData();
-    apiFormData.append("file", audioFile);
-    apiFormData.append("model_id", "scribe_v2");
-    apiFormData.append("language_code", "por");
+    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
+    const useElevenLabs = !!ELEVENLABS_API_KEY && ELEVENLABS_API_KEY.startsWith("sk_");
 
-    const response = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-      method: "POST",
-      headers: {
-        "xi-api-key": ELEVENLABS_API_KEY,
-      },
-      body: apiFormData,
-    });
+    if (useElevenLabs) {
+      const apiFormData = new FormData();
+      apiFormData.append("file", audioFile);
+      apiFormData.append("model_id", "scribe_v2");
+      apiFormData.append("language_code", "por");
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("ElevenLabs error:", response.status, errorText);
-      let detalhe = errorText;
-      try {
-        const parsed = JSON.parse(errorText);
-        detalhe = parsed?.detail?.message ?? parsed?.detail?.status ?? errorText;
-      } catch (_) { /* texto puro */ }
-      const isAuth = response.status === 401 || /api_key|authentication/i.test(errorText);
+      const response = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+        method: "POST",
+        headers: { "xi-api-key": ELEVENLABS_API_KEY! },
+        body: apiFormData,
+      });
+
+      if (response.ok) {
+        const transcription = await response.json();
+        return new Response(JSON.stringify({ text: transcription.text }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.error("ElevenLabs error, caindo para Lovable AI:", response.status, await response.text());
+    }
+
+    // Fallback / padrão: Lovable AI Gateway (speech-to-text)
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
       return new Response(
-        JSON.stringify({
-          error: isAuth
-            ? "Chave da ElevenLabs inválida. Atualize a ELEVENLABS_API_KEY (deve começar com 'sk_')."
-            : `Erro na transcrição (${response.status}): ${detalhe}`,
-        }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Transcrição indisponível: nenhuma chave de IA configurada." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const transcription = await response.json();
+    const mime = (audioFile.type || "audio/webm").split(";")[0];
+    const extMap: Record<string, string> = {
+      "audio/webm": "webm",
+      "audio/mp4": "mp4",
+      "audio/mpeg": "mp3",
+      "audio/wav": "wav",
+      "audio/x-wav": "wav",
+      "audio/ogg": "ogg",
+    };
+    const ext = extMap[mime] ?? "webm";
 
-    return new Response(JSON.stringify({ text: transcription.text }), {
+    const upstream = new FormData();
+    upstream.append("model", "openai/gpt-4o-mini-transcribe");
+    upstream.append("file", audioFile, `recording.${ext}`);
+
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}` },
+      body: upstream,
+    });
+
+    if (!aiResp.ok) {
+      const errText = await aiResp.text();
+      console.error("Lovable AI STT error:", aiResp.status, errText);
+      const msg =
+        aiResp.status === 429
+          ? "Muitas requisições. Aguarde alguns segundos e tente novamente."
+          : aiResp.status === 402
+          ? "Créditos de IA esgotados. Adicione créditos no Lovable."
+          : `Erro na transcrição (${aiResp.status}).`;
+      return new Response(JSON.stringify({ error: msg }), {
+        status: aiResp.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const data = await aiResp.json();
+    return new Response(JSON.stringify({ text: data.text ?? "" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
