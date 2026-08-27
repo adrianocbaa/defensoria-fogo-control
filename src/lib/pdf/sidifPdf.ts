@@ -54,6 +54,10 @@ interface Options {
   subtitulo?: string;
   /** Identificador exibido à direita da faixa (ex.: "Nº 0007"). */
   numero?: string;
+  /** Quando true, a primeira página fica limpa (capa) e sem rodapé. */
+  primeiraPaginaCapa?: boolean;
+  /** Texto customizado do rodapé (canto esquerdo). */
+  rodapeTexto?: string;
 }
 
 export interface SidifDoc {
@@ -61,9 +65,13 @@ export interface SidifDoc {
   pageW: number;
   pageH: number;
   contentW: number;
+  /** Limite inferior útil da página (antes do rodapé). */
+  bottomLimit: number;
   get y(): number;
   set y(v: number);
   ensure: (needed: number) => void;
+  novaPagina: () => void;
+  espacoRestante: () => number;
   gap: (v?: number) => void;
   text: (t: string, size?: number, bold?: boolean, indent?: number) => void;
   section: (title: string) => void;
@@ -75,7 +83,14 @@ export interface SidifDoc {
   finalizar: () => void;
 }
 
-export function criarDocumentoSidif({ titulo, subtitulo, numero }: Options): SidifDoc {
+export function criarDocumentoSidif({
+  titulo,
+  subtitulo,
+  numero,
+  primeiraPaginaCapa,
+  rodapeTexto,
+}: Options): SidifDoc {
+
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
