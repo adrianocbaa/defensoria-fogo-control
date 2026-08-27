@@ -401,6 +401,15 @@ const AppRoutes = () => {
         }
       />
       <Route 
+        path="/obras/:obraId" 
+        element={
+          <ProtectedRoute>
+            <Obras />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route 
         path="/admin/obras" 
         element={
           <ProtectedRoute>

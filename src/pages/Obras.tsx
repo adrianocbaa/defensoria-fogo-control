@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BarChart3, List, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ObrasLayout } from '@/components/obras/ObrasLayout';
@@ -17,11 +17,28 @@ import { type Obra, type ObraStatus } from '@/data/mockObras';
 
 export default function Obras() {
   const { obras, loading, error, refetch } = useObras();
+  const { obraId } = useParams<{ obraId?: string }>();
+  const navigate = useNavigate();
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedObra, setSelectedObra] = useState<Obra | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [filters, setFilters] = useState<FiltersData>({ status: [], tipos: [], municipio: '' });
+
+  // Abre o resumo da obra quando a URL for /obras/:obraId (deep link / botão voltar)
+  useEffect(() => {
+    if (!obraId) {
+      setDetailsOpen(false);
+      setSelectedObra(null);
+      return;
+    }
+    const obra = obras.find((o) => String(o.id) === obraId);
+    if (obra) {
+      setSelectedObra(obra);
+      setDetailsOpen(true);
+    }
+  }, [obraId, obras]);
+
 
   const availableTypes = useMemo(() => {
     const setT = new Set(obras.map((o) => o.tipo).filter(Boolean));
@@ -66,6 +83,7 @@ export default function Obras() {
   const handleDetailsClose = () => {
     setDetailsOpen(false);
     setSelectedObra(null);
+    if (obraId) navigate('/obras', { replace: true });
   };
 
   const renderHeader = ({ openMenu }: { openMenu: () => void }) => (
