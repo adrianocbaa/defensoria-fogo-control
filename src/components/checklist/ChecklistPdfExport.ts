@@ -264,7 +264,8 @@ async function desenharPendencia(s: SidifDoc, p: PendenciaPdf, ambienteResumo: s
   const correcao = p.correcaoSolicitada?.trim() || '—';
 
   const alturaTextual =
-    42 + 14 + alturaTexto(s, situacao, s.contentW) + 4 + 14 + alturaTexto(s, correcao, s.contentW) + 8;
+    alturaCabecalhoPendencia(s, p) + 8 + 14 + alturaTexto(s, situacao, s.contentW) + 4 + 14 +
+    alturaTexto(s, correcao, s.contentW) + 8;
   const lay = layoutFotos(p.fotos.length, s.contentW);
   const primeiraLinhaFotos = p.fotos.length ? lay.alturaLinha : 16;
 
