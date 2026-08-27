@@ -129,13 +129,14 @@ export function criarDocumentoSidif({
     doc.setFontSize(7.5);
     doc.setTextColor(130, 130, 130);
     doc.text(
-      `Gerado automaticamente pelo SiDIF em ${new Date().toLocaleString('pt-BR')}`,
+      rodapeTexto ?? `Gerado automaticamente pelo SiDIF em ${new Date().toLocaleString('pt-BR')}`,
       MARGIN,
       footerY + 2,
     );
     doc.text(`Página ${page} de ${total}`, pageW - MARGIN, footerY + 2, { align: 'right' });
     doc.setTextColor(...GRAY_TEXT);
   };
+
 
   const newPage = () => {
     doc.addPage();
