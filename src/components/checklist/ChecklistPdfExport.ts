@@ -193,22 +193,25 @@ function blocoTexto(s: SidifDoc, rotulo: string, texto: string) {
   s.gap(4);
 }
 
+/** Altura do cabeçalho da pendência (mesma medida usada no cálculo de quebra). */
+const ALTURA_CABECALHO_PENDENCIA = 34;
+
 /** Cabeçalho da pendência (usado também nas continuações). */
 function cabecalhoPendencia(s: SidifDoc, p: PendenciaPdf, continuacao = false) {
   s.doc.setFillColor(248, 251, 249);
   s.doc.setDrawColor(...GRAY_LINE);
   s.doc.setLineWidth(0.6);
-  s.doc.rect(MARGIN, s.y, s.contentW, 34, 'FD');
+  s.doc.rect(MARGIN, s.y, s.contentW, ALTURA_CABECALHO_PENDENCIA, 'FD');
 
   s.doc.setFont('helvetica', 'bold');
   s.doc.setFontSize(10);
   s.doc.setTextColor(...GREEN);
-  s.doc.text(p.codigo, MARGIN + 10, s.y + 15);
+  s.doc.text(p.codigo, MARGIN + 10, s.y + 14);
 
   s.doc.setTextColor(40, 40, 40);
   const tituloMax = s.contentW - 240;
   const titulo = continuacao ? `${p.titulo} — Continuação` : p.titulo;
-  s.doc.text(s.doc.splitTextToSize(titulo, tituloMax)[0] as string, MARGIN + 52, s.y + 15);
+  s.doc.text(s.doc.splitTextToSize(titulo, tituloMax)[0] as string, MARGIN + 52, s.y + 14);
 
   // indicadores discretos de gravidade e situação
   const [gr, gg, gb] = gravidadeCor(p.gravidade);
@@ -218,29 +221,31 @@ function cabecalhoPendencia(s: SidifDoc, p: PendenciaPdf, continuacao = false) {
   s.doc.setFontSize(8);
   s.doc.setTextColor(sr, sg, sb);
   const statusTxt = statusLabel(p.status);
-  s.doc.text(statusTxt, dirX, s.y + 15, { align: 'right' });
+  s.doc.text(statusTxt, dirX, s.y + 14, { align: 'right' });
   const wStatus = s.doc.getTextWidth(statusTxt);
   s.doc.setTextColor(gr, gg, gb);
   const gravTxt = gravidadeLabel(p.gravidade);
-  s.doc.text(gravTxt, dirX - wStatus - 14, s.y + 15, { align: 'right' });
+  s.doc.text(gravTxt, dirX - wStatus - 14, s.y + 14, { align: 'right' });
   s.doc.setFillColor(gr, gg, gb);
-  s.doc.circle(dirX - wStatus - 18 - s.doc.getTextWidth(gravTxt), s.y + 12, 2.6, 'F');
+  s.doc.circle(dirX - wStatus - 18 - s.doc.getTextWidth(gravTxt), s.y + 11, 2.6, 'F');
 
   s.doc.setFont('helvetica', 'normal');
-  s.doc.setFontSize(8);
+  s.doc.setFontSize(7.5);
   s.doc.setTextColor(...GRAY_LABEL);
   const meta = [
     `Ambiente: ${p.ambienteNome}`,
-    `Serviço: ${resumir(p.servico, 60)}`,
+    `Serviço: ${resumir(p.servico, 42)}`,
     p.local ? `Local: ${p.local}` : null,
     p.pin ? `Pin ${p.pin}` : null,
   ]
     .filter(Boolean)
     .join('   ·   ');
-  s.doc.text(s.doc.splitTextToSize(meta, s.contentW - 20)[0] as string, MARGIN + 10, s.y + 27);
+  const metaLinhas = (s.doc.splitTextToSize(meta, s.contentW - 20) as string[]).slice(0, 2);
+  metaLinhas.forEach((ln, i) => s.doc.text(ln, MARGIN + 10, s.y + 25 + i * 9));
   s.doc.setTextColor(...GRAY_TEXT);
-  s.y += 42;
+  s.y += ALTURA_CABECALHO_PENDENCIA + 8 + (metaLinhas.length > 1 ? 9 : 0);
 }
+
 
 /** Bloco completo de uma pendência, com paginação inteligente. */
 async function desenharPendencia(s: SidifDoc, p: PendenciaPdf, ambienteResumo: string) {
