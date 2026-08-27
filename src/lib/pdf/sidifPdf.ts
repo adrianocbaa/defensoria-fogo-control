@@ -331,20 +331,26 @@ export function criarDocumentoSidif({
   const finalizar = () => {
     const total = doc.getNumberOfPages();
     for (let i = 1; i <= total; i++) {
+      if (primeiraPaginaCapa && i === 1) continue;
       doc.setPage(i);
       drawFooter(i, total);
     }
     doc.setPage(total);
   };
 
-  drawHeader();
-  y = headerH + 30;
+  if (primeiraPaginaCapa) {
+    y = 0;
+  } else {
+    drawHeader();
+    y = headerH + 30;
+  }
 
   return {
     doc,
     pageW,
     pageH,
     contentW,
+    bottomLimit,
     get y() {
       return y;
     },
@@ -352,6 +358,8 @@ export function criarDocumentoSidif({
       y = v;
     },
     ensure,
+    novaPagina: newPage,
+    espacoRestante: () => bottomLimit - y,
     gap,
     text,
     section,
@@ -363,3 +371,4 @@ export function criarDocumentoSidif({
     finalizar,
   };
 }
+
