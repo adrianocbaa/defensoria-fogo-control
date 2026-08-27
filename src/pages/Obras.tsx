@@ -83,6 +83,7 @@ export default function Obras() {
   const handleDetailsClose = () => {
     setDetailsOpen(false);
     setSelectedObra(null);
+    if (obraId) navigate('/obras', { replace: true });
   };
 
   const renderHeader = ({ openMenu }: { openMenu: () => void }) => (
