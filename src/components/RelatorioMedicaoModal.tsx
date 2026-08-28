@@ -446,7 +446,7 @@ export function RelatorioMedicaoModal({
             previstoAcum: previstoAcumMed,
             executadoAcum: executadoAcumMed,
             pctPrevisto: valorTotalContrato > 0 ? Math.min((previstoAcumMed / valorTotalContrato) * 100, 100) : 0,
-            pctExecutado: valorTotalContrato > 0 ? (executadoAcumMed / valorTotalContrato) * 100 : 0
+            pctExecutado: valorTotalContrato > 0 ? Math.min((executadoAcumMed / valorTotalContrato) * 100, 100) : 0
           });
         }
         
