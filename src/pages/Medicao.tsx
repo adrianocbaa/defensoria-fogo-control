@@ -125,7 +125,9 @@ export function Medicao() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAdmin, canEdit: roleCanEdit } = useUserRole();
-  const { canEditObra, loading: permissionLoading } = useCanEditObra(id);
+  const { canEditObra, role: obraRole, loading: permissionLoading } = useCanEditObra(id);
+  // Reabertura de medição: administradores ou fiscais (titular/substituto) da própria obra
+  const podeReabrirMedicao = isAdmin || (canEditObra && (obraRole === 'titular' || obraRole === 'substituto'));
   // Permissão efetiva: admin sempre pode, outros usam canEditObra
   const canEdit = isAdmin ? roleCanEdit : canEditObra;
   const { dados: dadosMedicaoFinanceiro } = useMedicoesFinanceiro(id || '');
@@ -3421,10 +3423,10 @@ export function Medicao() {
     }
   };
 
-  // Função para reabrir medição (apenas admins)
+  // Função para reabrir medição (admins ou fiscais da obra)
   const reabrirMedicao = async (medicaoId: number) => {
-    if (!isAdmin) {
-      toast.error('Apenas administradores podem reabrir medições.');
+    if (!podeReabrirMedicao) {
+      toast.error('Apenas administradores ou o fiscal da obra podem reabrir medições.');
       return;
     }
 
@@ -4266,7 +4268,7 @@ export function Medicao() {
                             Ajustar valores
                           </Button>
                         )}
-                        {isAdmin && (
+                        {podeReabrirMedicao && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -4974,7 +4976,7 @@ export function Medicao() {
                           </DropdownMenuItem>
                           {m.bloqueada ? (
                             <>
-                              {isAdmin && (
+                              {podeReabrirMedicao && (
                                 <DropdownMenuItem
                                   onSelect={(e) => {
                                     e.preventDefault();
