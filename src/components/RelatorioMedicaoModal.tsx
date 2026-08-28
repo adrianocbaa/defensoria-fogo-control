@@ -424,20 +424,24 @@ export function RelatorioMedicaoModal({
           // Dias reais do N-ésimo período (mapeamento ordinal)
           const diasReais = todosPeriodosOrdenados[seq - 1] ?? seq * 30;
 
-          // Previsto acumulado: soma dos N primeiros períodos de cada macro
+          // Previsto acumulado: soma dos períodos com dias <= dias do período atual
+          // (mesma regra do gráfico do sistema — CronogramaComparativo)
           let previstoAcumMed = 0;
           cronograma.items.forEach(item => {
-            const periodosOrdenados = [...item.periodos].sort((a, b) => a.periodo - b.periodo);
-            previstoAcumMed += periodosOrdenados
-              .slice(0, seq)
+            previstoAcumMed += item.periodos
+              .filter(p => p.periodo <= diasReais)
               .reduce((sum, p) => sum + p.valor, 0);
           });
-          
-          // Executado acumulado até esta medição
+
+          // Executado acumulado até esta medição — apenas macros presentes no
+          // cronograma, garantindo paridade entre numerador e denominador
           let executadoAcumMed = 0;
           for (let s = 1; s <= seq; s++) {
             const execMap = executadoPorMacroPorMedicao.get(s);
-            if (execMap) execMap.forEach((val) => { executadoAcumMed += val; });
+            if (!execMap) continue;
+            cronograma.items.forEach(item => {
+              executadoAcumMed += execMap.get(item.item_numero) || 0;
+            });
           }
           
           historico.push({
