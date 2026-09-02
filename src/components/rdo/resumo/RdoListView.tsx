@@ -99,14 +99,19 @@ export function RdoListView({ obraId, data, onOpenDay, onDelete, onPrint, canEdi
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-home-border bg-home-surface px-6 py-12 text-center text-sm text-home-muted">
-        Nenhum RDO no período selecionado.
+      <div className="space-y-3">
+        {monthNav}
+        <div className="rounded-xl border border-dashed border-home-border bg-home-surface px-6 py-12 text-center text-sm text-home-muted">
+          Nenhum RDO no período selecionado.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-home-border bg-home-surface">
+    <div className="space-y-3">
+      {monthNav}
+      <div className="overflow-hidden rounded-xl border border-home-border bg-home-surface">
       <div className="hidden grid-cols-[80px_120px_1fr_140px_repeat(4,72px)_140px_60px] items-center gap-3 border-b border-home-border bg-muted/30 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-home-muted lg:grid">
         <span>RDO</span>
         <span>Data</span>
