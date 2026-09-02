@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     .select("role, content")
     .eq("user_id", user.id)
     .order("created_at", { ascending: true })
-    .limit(MAX_HISTORICO sub as never); // placeholder
+    .limit(MAX_HISTORICO);
 
   if (histError) {
     return new Response(JSON.stringify({ error: "Falha ao carregar histórico" }), {
