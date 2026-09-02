@@ -42,7 +42,23 @@ Deno.serve(async (req) => {
   let text = "";
   try {
     const body = await req.json();
-    text = typeof body?.text === "string" ? body.text.trim() : "";
+    if (typeof body?.text === "string") {
+      text = body.text.trim();
+    } else if (Array.isArray(body?.messages)) {
+      // Formato do useChat / DefaultChatTransport (UIMessage[])
+      const lastUser = [...body.messages].reverse().find((m: any) => m?.role === "user");
+      if (lastUser) {
+        if (typeof lastUser.content === "string") {
+          text = lastUser.content.trim();
+        } else if (Array.isArray(lastUser.parts)) {
+          text = lastUser.parts
+            .filter((p: any) => p?.type === "text" && typeof p.text === "string")
+            .map((p: any) => p.text)
+            .join("\n")
+            .trim();
+        }
+      }
+    }
   } catch {
     return new Response(JSON.stringify({ error: "Corpo inválido" }), {
       status: 400,
