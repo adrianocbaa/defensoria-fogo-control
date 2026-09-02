@@ -12,9 +12,9 @@ export const cadastroObraSchema = z.object({
     .trim()
     .min(1, 'Informe a cidade')
     .max(100, 'Máximo 100 caracteres'),
-  uf: z.enum(UFS, { errorMap: () => ({ message: 'Selecione a UF' }) }),
+  uf: z.enum(UFS, { message: 'Selecione a UF' }),
   tipo_edificacao: z.enum(TIPOS_EDIFICACAO, {
-    errorMap: () => ({ message: 'Selecione o tipo de edificação' }),
+    message: 'Selecione o tipo de edificação',
   }),
   responsavel_tecnico: z
     .string()

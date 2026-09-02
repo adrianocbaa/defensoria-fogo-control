@@ -20,11 +20,11 @@ import { useAuth } from '@/contexts/AuthContext';
 const movementSchema = z.object({
   material_id: z.string().min(1, 'Material é obrigatório'),
   type: z.enum(['ENTRADA', 'SAIDA', 'DESCARTE'], {
-    required_error: 'Tipo é obrigatório',
+    message: 'Tipo é obrigatório',
   }),
   quantity: z.number().min(0.01, 'Quantidade deve ser maior que 0'),
   date: z.date({
-    required_error: 'Data é obrigatória',
+    message: 'Data é obrigatória',
   }),
   description: z.string().optional(),
 });
