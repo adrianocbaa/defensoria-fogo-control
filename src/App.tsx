@@ -78,6 +78,7 @@ import { RecebimentoObra } from "./pages/RecebimentoObra";
 import { EntregaInstitucional } from "./pages/EntregaInstitucional";
 import Dimensionamento from "./pages/Dimensionamento";
 import DimensionamentoCalhas from "./pages/DimensionamentoCalhas";
+import { SuporteChatWidget } from "@/components/suporte/SuporteChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ const AppRoutes = () => {
   }
 
   return (
+    <>
     <Routes>
       <Route path="/public" element={<PublicView />} />
       <Route path="/public/obras" element={<PublicObras />} />
@@ -541,7 +543,9 @@ const AppRoutes = () => {
         } 
       />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+      {user && <SuporteChatWidget />}
+    </>
   );
 };
 
