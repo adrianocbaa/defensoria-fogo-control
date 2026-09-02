@@ -14,10 +14,10 @@ export const CoordinatesSchema = z.object({
 export const FireExtinguisherSchema = z.object({
   id: z.string().optional(),
   type: z.enum(['H2O', 'PQS', 'CO2', 'ABC'], {
-    errorMap: () => ({ message: 'Tipo de extintor inválido' })
+    message: 'Tipo de extintor inválido'
   }),
   expirationDate: z.date({
-    errorMap: () => ({ message: 'Data de vencimento é obrigatória' })
+    message: 'Data de vencimento é obrigatória'
   }),
   location: z.string().min(1, 'Localização é obrigatória'),
   serialNumber: z.string().optional(),
@@ -29,7 +29,7 @@ export const FireExtinguisherSchema = z.object({
 export const DocumentSchema = z.object({
   id: z.string().optional(),
   type: z.enum(['project', 'fire-license', 'photos', 'report'], {
-    errorMap: () => ({ message: 'Tipo de documento inválido' })
+    message: 'Tipo de documento inválido'
   }),
   name: z.string().min(1, 'Nome do documento é obrigatório'),
   url: z.string().url('URL inválida'),
@@ -40,7 +40,7 @@ export const DocumentSchema = z.object({
 
 export const FireDepartmentLicenseSchema = z.object({
   validUntil: z.date({
-    errorMap: () => ({ message: 'Data de validade é obrigatória' })
+    message: 'Data de validade é obrigatória'
   }),
   documentUrl: z.string().url('URL do documento inválida').optional(),
 });
