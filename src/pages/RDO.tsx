@@ -263,24 +263,27 @@ function RDOResumo({
           canEdit={hasEditPermission}
           onOpenDay={(d) => setDrawerDay(d)}
         />
-      ) : (calendarData ?? []).length === 0 ? (
-        <RdoEmptyMonth
-          onCreate={() =>
-            navigate(`/obras/${obraId}/rdo/diario?data=${todayIso()}`)
-          }
-        />
       ) : (
-        <RdoCalendar
-          obraId={obraId!}
-          rdoData={filteredCalendar}
-          isLoading={false}
-          currentMonth={currentMonth}
-          onMonthChange={setCurrentMonth}
-          obraStartDate={obra.data_inicio}
-          rdoHabilitado={obra.rdo_habilitado}
-          canEditRdo={hasEditPermission}
-          obraStatus={obra.status}
-        />
+        <>
+          <RdoCalendar
+            obraId={obraId!}
+            rdoData={filteredCalendar}
+            isLoading={false}
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+            obraStartDate={obra.data_inicio}
+            rdoHabilitado={obra.rdo_habilitado}
+            canEditRdo={hasEditPermission}
+            obraStatus={obra.status}
+          />
+          {(calendarData ?? []).length === 0 && (
+            <RdoEmptyMonth
+              onCreate={() =>
+                navigate(`/obras/${obraId}/rdo/diario?data=${todayIso()}`)
+              }
+            />
+          )}
+        </>
       )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
