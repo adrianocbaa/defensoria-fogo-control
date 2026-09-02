@@ -78,6 +78,7 @@ import { RecebimentoObra } from "./pages/RecebimentoObra";
 import { EntregaInstitucional } from "./pages/EntregaInstitucional";
 import Dimensionamento from "./pages/Dimensionamento";
 import DimensionamentoCalhas from "./pages/DimensionamentoCalhas";
+import { SuporteChatWidget } from "@/components/suporte/SuporteChatWidget";
 
 const queryClient = new QueryClient();
 

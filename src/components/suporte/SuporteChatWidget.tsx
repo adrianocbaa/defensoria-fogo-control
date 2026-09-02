@@ -244,12 +244,8 @@ export function SuporteChatWidget() {
 
           <div className="border-t p-3">
             <PromptInput
-              onSubmit={(mensagem) => {
-                const texto =
-                  typeof mensagem === 'string'
-                    ? mensagem
-                    : (mensagem as { text?: string })?.text ?? '';
-                if (texto.trim()) sendMessage({ text: texto.trim() });
+              onSubmit={({ text }) => {
+                if (text?.trim()) sendMessage({ text: text.trim() });
               }}
             >
               <PromptInputTextarea
