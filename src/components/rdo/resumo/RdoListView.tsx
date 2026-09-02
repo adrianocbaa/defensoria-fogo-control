@@ -198,6 +198,7 @@ export function RdoListView({ obraId, data, onOpenDay, onDelete, onPrint, canEdi
           );
         })}
       </ul>
+      </div>
     </div>
   );
 }
