@@ -262,6 +262,8 @@ function RDOResumo({
           data={filteredCalendar}
           canEdit={hasEditPermission}
           onOpenDay={(d) => setDrawerDay(d)}
+          currentMonth={currentMonth}
+          onMonthChange={setCurrentMonth}
         />
       ) : (
         <>
