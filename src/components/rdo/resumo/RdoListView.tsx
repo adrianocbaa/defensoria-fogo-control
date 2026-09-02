@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Video, AlertTriangle, MessageSquareText, MoreHorizontal, Eye, Pencil, Printer, Trash2 } from 'lucide-react';
+import { addMonths, format, isSameMonth, subMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Camera, Video, AlertTriangle, MessageSquareText, MoreHorizontal, Eye, Pencil, Printer, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,10 +45,50 @@ interface Props {
   onDelete?: (day: RdoCalendarDay) => void;
   onPrint?: (day: RdoCalendarDay) => void;
   canEdit?: boolean;
+  currentMonth?: Date;
+  onMonthChange?: (d: Date) => void;
 }
 
-export function RdoListView({ obraId, data, onOpenDay, onDelete, onPrint, canEdit = true }: Props) {
+export function RdoListView({ obraId, data, onOpenDay, onDelete, onPrint, canEdit = true, currentMonth, onMonthChange }: Props) {
   const navigate = useNavigate();
+
+  const monthNav = currentMonth && onMonthChange ? (
+    <div className="flex items-center justify-between rounded-xl border border-home-border bg-home-surface px-4 py-2.5">
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => onMonthChange(subMonths(currentMonth, 1))}
+        aria-label="Mês anterior"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      <span className="text-sm font-semibold capitalize text-foreground">
+        {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+      </span>
+      <div className="flex items-center gap-2">
+        {!isSameMonth(currentMonth, new Date()) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs"
+            onClick={() => onMonthChange(new Date())}
+          >
+            Hoje
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onMonthChange(addMonths(currentMonth, 1))}
+          aria-label="Próximo mês"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  ) : null;
   const rows = useMemo(
     () => [...data].sort((a, b) => b.data.localeCompare(a.data)),
     [data],
