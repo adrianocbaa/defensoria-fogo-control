@@ -194,7 +194,7 @@ export function SuporteChatWidget() {
                     className={message.role === 'assistant' ? 'mb-4' : 'mb-4 justify-end'}
                   >
                     {message.role === 'user' ? (
-                      <MessageContent variant="bubble">
+                      <MessageContent className="bg-primary text-primary-foreground">
                         {message.parts
                           .filter((p) => p.type === 'text')
                           .map((p, i) => (
