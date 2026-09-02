@@ -94,6 +94,7 @@ const AppRoutes = () => {
   }
 
   return (
+    <>
     <Routes>
       <Route path="/public" element={<PublicView />} />
       <Route path="/public/obras" element={<PublicObras />} />
