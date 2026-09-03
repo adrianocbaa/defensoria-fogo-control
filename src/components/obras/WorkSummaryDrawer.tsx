@@ -357,12 +357,21 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
             <AccordionTrigger className="px-4 hover:no-underline">
               <div className="flex w-full items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
-                <span className="font-semibold">Álbum de Fotos ({photosWithMetadata.length})</span>
+                <span className="font-semibold">Álbum de Fotos ({allPhotos.length})</span>
+                {rdoPhotosMetadata.length > 0 && (
+                  <Badge variant="outline" className="ml-1 text-[10px]">
+                    {rdoPhotosMetadata.length} do RDO
+                  </Badge>
+                )}
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-3">
-              {photosWithMetadata.length > 0 ? (
-                <PhotoGalleryCollapsible photos={photosWithMetadata} />
+              {allPhotos.length > 0 ? (
+                <PhotoGalleryCollapsible
+                  photos={allPhotos}
+                  isEditing={canEditObra}
+                  onPhotoRemove={canEditObra ? handleRemovePhoto : undefined}
+                />
               ) : (
                 <p className="py-3 text-center text-sm text-home-muted">Nenhuma foto cadastrada</p>
               )}
