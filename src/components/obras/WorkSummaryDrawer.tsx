@@ -143,6 +143,30 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
     .filter((p): p is NonNullable<typeof p> => !!p && !!p.url)
     .sort((a, b) => (a.isCover ? -1 : b.isCover ? 1 : 0));
 
+  // Fotos anexadas pela empresa nos RDOs — agrupadas pelo mês do relatório
+  const rdoFotosMap = new Map(rdoFotos.map((f) => [f.url, f.id]));
+  const rdoPhotosMetadata = rdoFotos
+    .filter((f) => !!f.url && !photosWithMetadata.some((p) => p.url === f.url))
+    .map((f) => ({
+      url: f.url,
+      uploadedAt: f.uploadedAt,
+      fileName: f.fileName,
+      monthFolder: f.monthFolder,
+      isCover: false,
+    }));
+
+  const allPhotos = [...photosWithMetadata, ...rdoPhotosMetadata];
+
+  const handleRemovePhoto = (url: string) => {
+    const id = rdoFotosMap.get(url);
+    if (!id) {
+      toast.info('Apenas fotos vindas do RDO podem ser ocultadas por aqui.');
+      return;
+    }
+    ocultarFoto(id);
+  };
+
+
   const status = statusPill[obra.status];
 
   return (
