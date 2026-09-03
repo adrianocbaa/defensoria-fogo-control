@@ -1,0 +1,1 @@
+ALTER TABLE public.rdo_media ADD COLUMN IF NOT EXISTS oculto_resumo boolean NOT NULL DEFAULT false;

@@ -10,6 +10,8 @@ import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
+import { useObraRdoFotos } from '@/hooks/useObraRdoFotos';
+import { useCanEditObra } from '@/hooks/useCanEditObra';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
@@ -116,6 +118,9 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
   const restantes = prev ? Math.ceil((prev.getTime() - today.getTime()) / 86400000) : 0;
   const pctTempo = totalDias > 0 ? Math.min(100, (decorridos / totalDias) * 100) : 0;
 
+  const { fotos: rdoFotos, ocultarFoto } = useObraRdoFotos(obra.id);
+  const { canEditObra } = useCanEditObra(obra.id);
+
   const fotos = obra.fotos || [];
   const documentos = obra.documentos || [];
 
@@ -142,6 +147,30 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
     })
     .filter((p): p is NonNullable<typeof p> => !!p && !!p.url)
     .sort((a, b) => (a.isCover ? -1 : b.isCover ? 1 : 0));
+
+  // Fotos anexadas pela empresa nos RDOs — agrupadas pelo mês do relatório
+  const rdoFotosMap = new Map(rdoFotos.map((f) => [f.url, f.id]));
+  const rdoPhotosMetadata = rdoFotos
+    .filter((f) => !!f.url && !photosWithMetadata.some((p) => p.url === f.url))
+    .map((f) => ({
+      url: f.url,
+      uploadedAt: f.uploadedAt,
+      fileName: f.fileName,
+      monthFolder: f.monthFolder,
+      isCover: false,
+    }));
+
+  const allPhotos = [...photosWithMetadata, ...rdoPhotosMetadata];
+
+  const handleRemovePhoto = (url: string) => {
+    const id = rdoFotosMap.get(url);
+    if (!id) {
+      toast.info('Apenas fotos vindas do RDO podem ser ocultadas por aqui.');
+      return;
+    }
+    ocultarFoto(id);
+  };
+
 
   const status = statusPill[obra.status];
 
@@ -328,12 +357,21 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
             <AccordionTrigger className="px-4 hover:no-underline">
               <div className="flex w-full items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
-                <span className="font-semibold">Álbum de Fotos ({photosWithMetadata.length})</span>
+                <span className="font-semibold">Álbum de Fotos ({allPhotos.length})</span>
+                {rdoPhotosMetadata.length > 0 && (
+                  <Badge variant="outline" className="ml-1 text-[10px]">
+                    {rdoPhotosMetadata.length} do RDO
+                  </Badge>
+                )}
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-3">
-              {photosWithMetadata.length > 0 ? (
-                <PhotoGalleryCollapsible photos={photosWithMetadata} />
+              {allPhotos.length > 0 ? (
+                <PhotoGalleryCollapsible
+                  photos={allPhotos}
+                  isEditing={canEditObra}
+                  onPhotoRemove={canEditObra ? handleRemovePhoto : undefined}
+                />
               ) : (
                 <p className="py-3 text-center text-sm text-home-muted">Nenhuma foto cadastrada</p>
               )}
