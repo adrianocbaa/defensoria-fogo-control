@@ -10,6 +10,8 @@ import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { useRdoProgressByObra } from '@/hooks/useRdoProgressByObra';
+import { useObraRdoFotos } from '@/hooks/useObraRdoFotos';
+import { useCanEditObra } from '@/hooks/useCanEditObra';
 import { type Obra, type ObraStatus } from '@/data/mockObras';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
