@@ -116,6 +116,9 @@ function Content({ obra, onClose }: { obra: Obra; onClose: () => void }) {
   const restantes = prev ? Math.ceil((prev.getTime() - today.getTime()) / 86400000) : 0;
   const pctTempo = totalDias > 0 ? Math.min(100, (decorridos / totalDias) * 100) : 0;
 
+  const { fotos: rdoFotos, ocultarFoto } = useObraRdoFotos(obra.id);
+  const { canEditObra } = useCanEditObra(obra.id);
+
   const fotos = obra.fotos || [];
   const documentos = obra.documentos || [];
 
