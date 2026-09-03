@@ -4591,6 +4591,7 @@ export type Database = {
           file_url: string
           id: string
           obra_id: string
+          oculto_resumo: boolean
           report_id: string
           thumb_url: string | null
           tipo: Database["public"]["Enums"]["rdo_media_type"]
@@ -4601,6 +4602,7 @@ export type Database = {
           file_url: string
           id?: string
           obra_id: string
+          oculto_resumo?: boolean
           report_id: string
           thumb_url?: string | null
           tipo: Database["public"]["Enums"]["rdo_media_type"]
@@ -4611,6 +4613,7 @@ export type Database = {
           file_url?: string
           id?: string
           obra_id?: string
+          oculto_resumo?: boolean
           report_id?: string
           thumb_url?: string | null
           tipo?: Database["public"]["Enums"]["rdo_media_type"]
