@@ -885,14 +885,13 @@ export default function PreventivosEdit() {
                     </div>
                     <div className="flex items-center gap-1">
                       {doc.url && (
-                        <a
-                          href={doc.url}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => openObraDocument(doc.url, doc.name)}
                           className="text-sm text-primary hover:underline"
                         >
                           Ver
-                        </a>
+                        </button>
                       )}
                       {canEdit && (
                         <Button
