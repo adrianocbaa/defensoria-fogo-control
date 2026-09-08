@@ -28,6 +28,7 @@ import { StatusBadge } from '@/components/preventivos/StatusBadge';
 import { DeleteNucleusDialog } from '@/components/preventivos/DeleteNucleusDialog';
 import { calcPinColor, getExtinguisherStatus, getLicenseStatus } from '@/lib/nucleusStatus';
 import { cn } from '@/lib/utils';
+import { openObraDocument } from '@/lib/obraDocumentUrl';
 
 interface NucleoBasico {
   id: string;
