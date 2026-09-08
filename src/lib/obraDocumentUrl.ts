@@ -42,8 +42,19 @@ export async function getObraDocumentUrl(
 }
 
 export async function openObraDocument(urlOrPath: string, nome?: string, download = false) {
-  const signed = await getObraDocumentUrl(urlOrPath, download ? { download: nome || true as any } : undefined);
-  if (!signed) return false;
+  // Abre a janela ANTES do await para não ser bloqueada pelo navegador
+  const win = download ? null : window.open('', '_blank', 'noopener,noreferrer');
+
+  const signed = await getObraDocumentUrl(
+    urlOrPath,
+    download ? { download: nome || (true as any) } : undefined,
+  );
+
+  if (!signed) {
+    win?.close();
+    return false;
+  }
+
   if (download) {
     const a = document.createElement('a');
     a.href = signed;
@@ -51,8 +62,11 @@ export async function openObraDocument(urlOrPath: string, nome?: string, downloa
     document.body.appendChild(a);
     a.click();
     a.remove();
+  } else if (win) {
+    win.location.href = signed;
   } else {
     window.open(signed, '_blank', 'noopener,noreferrer');
   }
   return true;
 }
+
