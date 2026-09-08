@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useObraNotifications } from '@/hooks/useObraNotifications';
+import { openObraDocument } from '@/lib/obraDocumentUrl';
 
 interface NucleoBasico {
   id: string;
@@ -884,14 +885,13 @@ export default function PreventivosEdit() {
                     </div>
                     <div className="flex items-center gap-1">
                       {doc.url && (
-                        <a
-                          href={doc.url}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => openObraDocument(doc.url, doc.name)}
                           className="text-sm text-primary hover:underline"
                         >
                           Ver
-                        </a>
+                        </button>
                       )}
                       {canEdit && (
                         <Button
