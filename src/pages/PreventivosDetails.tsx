@@ -132,16 +132,13 @@ export default function PreventivosDetails() {
   const color = calcPinColor({ licenseValidUntil, extinguishers });
   const licenseStatus = getLicenseStatus(licenseValidUntil);
 
-  const handleView = (url: string) => window.open(url, '_blank', 'noopener,noreferrer');
-  const handleDownload = (row: DocumentRow) => {
-    const a = window.document.createElement('a');
-    a.href = row.url;
-    a.download = row.name;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    window.document.body.appendChild(a);
-    a.click();
-    window.document.body.removeChild(a);
+  const handleView = async (url: string) => {
+    const ok = await openObraDocument(url);
+    if (!ok) toast({ title: 'Não foi possível abrir o arquivo', variant: 'destructive' });
+  };
+  const handleDownload = async (row: DocumentRow) => {
+    const ok = await openObraDocument(row.url, row.name, true);
+    if (!ok) toast({ title: 'Não foi possível baixar o arquivo', variant: 'destructive' });
   };
 
   return (
