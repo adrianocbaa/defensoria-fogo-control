@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useObraNotifications } from '@/hooks/useObraNotifications';
+import { openObraDocument } from '@/lib/obraDocumentUrl';
 
 interface NucleoBasico {
   id: string;
