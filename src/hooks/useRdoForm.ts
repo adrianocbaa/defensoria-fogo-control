@@ -151,27 +151,28 @@ export function useRdoForm(obraId: string, data: string) {
         if (error) throw error;
         return data.id;
       } else {
-        // Insert - buscar próximo numero_seq
-        const { data: lastReport } = await supabase
-          .from('rdo_reports')
-          .select('numero_seq')
-          .eq('obra_id', obraId)
-          .order('numero_seq', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const numero_seq = (lastReport?.numero_seq || 0) + 1;
-
+        // A numeração é atribuída e reorganizada atomicamente pelo banco.
         const { data: newReport, error } = await supabase
           .from('rdo_reports')
-          .upsert({
+          .insert({
             ...data,
-            numero_seq,
             modo_atividades: modoAtividades,
             created_by: user?.id,
-          }, { onConflict: 'obra_id,data' })
+          })
           .select()
           .single();
+
+        if (error?.code === '23505') {
+          const { data: existingReport, error: existingError } = await supabase
+            .from('rdo_reports')
+            .select('id')
+            .eq('obra_id', obraId)
+            .eq('data', data.data)
+            .single();
+
+          if (existingError) throw existingError;
+          return existingReport.id;
+        }
 
         if (error) throw error;
         return newReport.id;

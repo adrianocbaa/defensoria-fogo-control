@@ -171,24 +171,12 @@ export function RdoCalendar({ obraId, rdoData, isLoading, currentMonth, onMonthC
     }
     
     try {
-      // Buscar próximo número sequencial
-      const { data: maxSeq } = await supabase
-        .from('rdo_reports')
-        .select('numero_seq')
-        .eq('obra_id', obraId)
-        .order('numero_seq', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      const nextSeq = (maxSeq?.numero_seq || 0) + 1;
-      
-      // Criar RDO vazio
+      // O banco atribui a posição cronológica e reorganiza os posteriores.
       const { data: newRdo, error } = await supabase
         .from('rdo_reports')
         .insert({
           obra_id: obraId,
           data: dateStr,
-          numero_seq: nextSeq,
           status: 'preenchendo',
           observacoes: 'Sem atividade no dia'
         })
