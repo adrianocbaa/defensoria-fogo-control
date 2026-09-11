@@ -1,5 +1,7 @@
 # Roadmap
 
-## Concluídas
-- [x] Chat de suporte com IA (conversa única, histórico no banco, todos os usuários autenticados)
-  - Tabela `suporte_mensagens` (RLS por user_id), Edge Function `suporte-chat` (streaming, gemini-3.1-flash-lite), widget flutuante com AI Elements
+- [ ] Centralizar no banco a numeração sequencial diária de RDO por obra
+- [ ] Bloquear saltos, duplicidades e sobrescritas de número
+- [ ] Preservar sequência em fins de semana e dias sem expediente
+- [ ] Adequar todos os fluxos de criação do RDO
+- [ ] Validar banco, tipos e fluxo na interface
