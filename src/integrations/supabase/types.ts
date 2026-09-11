@@ -4786,7 +4786,7 @@ export type Database = {
           hash_verificacao?: string | null
           id?: string
           modo_atividades?: string | null
-          numero_seq: number
+          numero_seq?: number
           obra_id: string
           observacoes?: string | null
           pdf_url?: string | null
