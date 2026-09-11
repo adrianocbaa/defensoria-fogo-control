@@ -4,4 +4,4 @@
 - [x] Bloquear saltos, duplicidades e sobrescritas de número
 - [x] Preservar sequência em fins de semana e dias sem expediente
 - [x] Adequar todos os fluxos de criação do RDO
-- [ ] Validar banco, tipos e fluxo na interface
+- [x] Validar banco, tipos e fluxo na interface
