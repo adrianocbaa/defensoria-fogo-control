@@ -15,6 +15,13 @@
  * externas. Todos os usuários são fixtures criadas e removidas pela própria
  * suíte.
  *
+ * Abordagem de grants adotada (coerente com a migration v3): anon fica SEM
+ * qualquer privilégio em public.profiles. Portanto o comportamento esperado
+ * para requisições anônimas é ERRO 42501, e não zero linhas sem erro.
+ *
+ * Pré-requisito adicional: o projeto de homologação deve ter o trigger em
+ * auth.users que chama public.handle_new_user().
+ *
  * Execução:
  *   deno test --allow-net --allow-env tests/homolog/profiles_lote1_test.ts
  */
