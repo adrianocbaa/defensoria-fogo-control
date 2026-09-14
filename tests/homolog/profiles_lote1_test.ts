@@ -455,8 +455,11 @@ Deno.test("Lote 1 — profiles (homologação)", async (t) => {
       assertEquals(after.user_id, fixtures.viewer.userId);
     });
 
-    await t.step("19 — usuário comum e anônimo não executam qa_teardown (42501)", async () => {
-      for (const f of [fixtures.viewer, fixtures.contratada, fixtures.demo]) {
+    await t.step("19 — usuários de aplicação e anônimo não executam qa_teardown (42501)", async () => {
+      // fixtures.admin tem papel 'admin' na aplicação, mas sua sessão é
+      // 'authenticated' — NÃO é a role de banco service_role. Só a chave de
+      // serviço executa qa_teardown (etapa 20).
+      for (const f of [fixtures.viewer, fixtures.contratada, fixtures.demo, fixtures.admin]) {
         const { error } = await f.client.rpc("qa_teardown");
         assertExists(error, `${f.key} executou qa_teardown`);
         assertEquals(error!.code, "42501", `código inesperado para ${f.key}: ${error!.code}`);
