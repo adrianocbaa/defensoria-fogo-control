@@ -146,12 +146,27 @@ explicitamente — antes de qualquer teste.
 
 Em ambos os casos: **nenhuma linha de dado institucional** deve ser restaurada.
 
+### Opção C — estrutura-base consolidada (projeto Supabase novo e vazio)
+
+Para um projeto recém-criado, sem schema algum, existe
+`docs/lote1/homolog_base_schema.sql`: uma consolidação das migrations reais deste
+repositório que reproduz o estado **anterior** ao Lote 1 (tipos, `profiles`,
+`audit_logs`, `empresas` mínima, `handle_new_user` e o trigger de `auth.users`),
+sem dados, crons, webhooks, Storage ou integrações.
+
+Limite conhecido e **bloqueante**: o bloco 7 do arquivo está pendente — as definições
+reais de `public.user_roles`, `public.has_role()` e da versão atual de
+`public.is_admin()` não existem em `supabase/migrations` e precisam ser extraídas
+do projeto atual com `docs/lote1/extrair_definicoes_autorizacao.sql` (somente leitura).
+Não substituir por versões simplificadas.
+
 ---
 
 ## 5. Ordem de configuração
 
 1. Criar o projeto isolado e anotar a URL (conferir que não é a de produção).
-2. Preparar o schema pela Opção A ou B.
+2. Preparar o schema pela Opção A, B ou C (na C, completar antes o bloco 7).
+
 3. Desativar crons, webhooks e provedores de e-mail.
 4. Rodar o **preflight** `docs/lote1/profiles_lote1_preflight_homolog.sql` no SQL Editor
    do projeto isolado e registrar todas as saídas. O arquivo é somente leitura e marca
