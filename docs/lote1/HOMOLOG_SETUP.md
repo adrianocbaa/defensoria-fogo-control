@@ -111,9 +111,20 @@ ou manter `empresa_id` sem FK. A suíte nunca grava um `empresa_id` real.
 `pg_dump --schema-only` da produção, com autorização formal, restaurado no projeto isolado.
 
 - Vantagem: traz tipos, tabelas, funções, triggers, policies, grants e defaults exatamente
-  como em produção, inclusive o trigger de `auth.users` e as 46 funções dependentes.
+  como em produção, inclusive as 46 funções dependentes.
 - Risco: um dump abrangente pode arrastar objetos indesejados (crons, webhooks, funções de
   integração). Exige revisão do arquivo antes de restaurar e desativação de crons depois.
+- **Atenção — o dump schema-only NÃO garante a exportação do trigger de `auth.users`.**
+  Triggers de tabelas do schema `auth` (gerenciado pelo Supabase) podem ser omitidos do
+  dump ou falhar silenciosamente na restauração. Após restaurar, é **obrigatório**
+  confirmar a existência do trigger que chama `handle_new_user()` (verificação 5.1 do
+  preflight / P2 da seção 6). Se ele estiver ausente, recriá-lo manualmente antes de
+  qualquer teste.
+- **Qualquer definição de função com referência à produção deve ser revisada antes da
+  execução.** O preflight verifica `pg_proc.prosrc` em busca de `mmumfgxngzaivvyqfbed`,
+  URLs de integrações pagas e chamadas webhook/http (verificações 8.2–8.5). Toda
+  ocorrência precisa ser removida ou neutralizada no ambiente isolado antes de aplicar
+  a migration.
 
 ### Opção B — Aplicar as migrations necessárias em ordem
 
@@ -126,11 +137,12 @@ Aplicar as migrations do repositório, sem qualquer cópia de dados.
 
 ### Recomendação
 
-**Opção A (dump schema-only, revisado), seguida da verificação V6.**
+**Opção A (dump schema-only, revisado), seguida do preflight completo.**
 É a única forma que garante, sem reconstrução manual, que `handle_new_user()` e todas as
 funções dependentes (`is_admin`, `has_role`, `update_updated_at_column`) existam com as
-mesmas assinaturas e o mesmo `search_path`. Se a equipe optar pela Opção B, o trigger de
-`auth.users` precisa ser recriado explicitamente e conferido em V6 antes de qualquer teste.
+mesmas assinaturas e o mesmo `search_path`. Tanto na Opção A quanto na Opção B, o trigger
+de `auth.users` precisa ser **confirmado após a restauração** — e, se ausente, recriado
+explicitamente — antes de qualquer teste.
 
 Em ambos os casos: **nenhuma linha de dado institucional** deve ser restaurada.
 
@@ -141,14 +153,19 @@ Em ambos os casos: **nenhuma linha de dado institucional** deve ser restaurada.
 1. Criar o projeto isolado e anotar a URL (conferir que não é a de produção).
 2. Preparar o schema pela Opção A ou B.
 3. Desativar crons, webhooks e provedores de e-mail.
-4. Rodar as verificações pré-migration da seção 6.
-5. Aplicar, no SQL Editor do projeto isolado, `docs/lote1/profiles_lote1_v3.sql`.
-6. Aplicar `docs/lote1/profiles_lote1_qa_homolog.sql`.
-7. Executar as consultas V1–V6 do mesmo arquivo e registrar as saídas.
-8. Cadastrar as quatro variáveis (seção 7).
-9. Executar a suíte: `deno test --allow-net --allow-env tests/homolog/profiles_lote1_test.ts`.
-10. Conferir que `qa_current_role()` e `qa_teardown()` não existem mais.
-11. Em caso de falha crítica: interromper, registrar o erro e, se preciso, aplicar
+4. Rodar o **preflight** `docs/lote1/profiles_lote1_preflight_homolog.sql` no SQL Editor
+   do projeto isolado e registrar todas as saídas. O arquivo é somente leitura e marca
+   cada verificação como OK / FALHA / ATENÇÃO.
+5. **Critério de passagem: o preflight deve passar antes da aplicação de
+   `profiles_lote1_v3.sql`.** Qualquer FALHA impede a migration; qualquer ATENÇÃO exige
+   revisão manual documentada antes de prosseguir.
+6. Aplicar, no SQL Editor do projeto isolado, `docs/lote1/profiles_lote1_v3.sql`.
+7. Aplicar `docs/lote1/profiles_lote1_qa_homolog.sql`.
+8. Executar as consultas V1–V6 do mesmo arquivo e registrar as saídas.
+9. Cadastrar as quatro variáveis (seção 7).
+10. Executar a suíte: `deno test --allow-net --allow-env tests/homolog/profiles_lote1_test.ts`.
+11. Conferir que `qa_current_role()` e `qa_teardown()` não existem mais.
+12. Em caso de falha crítica: interromper, registrar o erro e, se preciso, aplicar
     `docs/lote1/profiles_lote1_v3_rollback.sql`.
 
 Todos os comandos SQL rodam no **SQL Editor** do projeto isolado. O pacote não usa `psql`,
@@ -157,6 +174,10 @@ portanto **não** é necessária nenhuma variável de conexão direta ao banco.
 ---
 
 ## 6. Verificações antes da migration (somente leitura)
+
+> As consultas abaixo estão consolidadas e ampliadas no arquivo
+> `docs/lote1/profiles_lote1_preflight_homolog.sql` (formato OK / FALHA / ATENÇÃO).
+> Preferir o preflight; esta seção permanece como referência manual.
 
 ```sql
 -- P1 — O projeto não é produção (comparar com a URL do painel: não pode conter
