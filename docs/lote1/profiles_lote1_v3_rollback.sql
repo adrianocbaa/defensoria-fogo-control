@@ -30,12 +30,34 @@ CREATE POLICY "Users can insert their own profile"
   ON public.profiles FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- 3. Restaurar somente os grants efetivamente modificados
+-- 3. Restaurar INTEGRALMENTE o ACL original de public.profiles
+--    A migration v3 usa REVOKE ALL; portanto a reversão precisa devolver o
+--    conjunto completo confirmado no catálogo (relacl = arwdDxtm) e não
+--    apenas INSERT/UPDATE/DELETE.
+--    a=INSERT r=SELECT w=UPDATE d=DELETE D=TRUNCATE x=REFERENCES t=TRIGGER
+--    m=MAINTAIN (existe apenas a partir do PostgreSQL 17).
 GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.profiles TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.profiles TO authenticated;
+
+DO $$
+BEGIN
+  IF current_setting('server_version_num')::int >= 170000 THEN
+    EXECUTE 'GRANT MAINTAIN ON public.profiles TO anon';
+    EXECUTE 'GRANT MAINTAIN ON public.profiles TO authenticated';
+  END IF;
+END $$;
+
 -- Observação: service_role não foi alterado (permanece ALL).
 
 COMMIT;
+
+-- VERIFICAÇÃO PÓS-REVERSÃO (executar manualmente):
+--   SELECT relacl FROM pg_class WHERE oid = 'public.profiles'::regclass;
+--   -- Estado final esperado: equivalente ao ACL original confirmado no
+--   -- catálogo em 2026-09-14, ou seja, anon=arwdDxtm/postgres,
+--   -- authenticated=arwdDxtm/postgres e service_role=arwdDxtm/postgres
+--   -- (o sufixo 'm' só aparece no PostgreSQL 17+).
+--   -- Se algum dos três conjuntos divergir, a reversão está incompleta.
 
 -- =====================================================================
 -- NOTAS DE REVERSÃO
