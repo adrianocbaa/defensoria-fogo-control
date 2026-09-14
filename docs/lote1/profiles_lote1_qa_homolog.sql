@@ -22,6 +22,37 @@ COMMENT ON FUNCTION public.qa_current_role() IS
 GRANT EXECUTE ON FUNCTION public.qa_current_role() TO authenticated, anon;
 
 -- ---------------------------------------------------------------------
+-- LIMPEZA AUTOMÁTICA — chamada pelo teardown da suíte de testes
+-- (tests/homolog/profiles_lote1_test.ts) dentro do bloco finally.
+-- Remove qa_current_role() e a si mesma, para que nenhum artefato de
+-- homologação permaneça mesmo se a suíte falhar em qualquer teste.
+-- Executável APENAS por service_role (o cliente de serviço da suíte).
+-- SECURITY DEFINER é necessário porque DDL não é permitido via PostgREST;
+-- a função NÃO participa de autorização — apenas executa os dois DROPs.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.qa_teardown()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF current_user <> 'service_role'
+     AND current_user NOT IN ('postgres', 'supabase_admin') THEN
+    RAISE EXCEPTION 'qa_teardown: executável apenas por service_role'
+      USING ERRCODE = '42501';
+  END IF;
+  EXECUTE 'DROP FUNCTION IF EXISTS public.qa_current_role()';
+  -- Autorremoção: o DROP vale após o COMMIT da transação; a execução em
+  -- curso não é afetada.
+  EXECUTE 'DROP FUNCTION IF EXISTS public.qa_teardown()';
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.qa_teardown() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.qa_teardown() TO service_role;
+
+-- ---------------------------------------------------------------------
 -- VERIFICAÇÕES PÓS-MIGRATION (executar após profiles_lote1_v3.sql)
 -- Nenhuma destas consultas altera estado.
 -- ---------------------------------------------------------------------
@@ -84,6 +115,9 @@ SELECT tgname, pg_get_triggerdef(oid) AS definicao
    AND NOT tgisinternal;
 
 -- ---------------------------------------------------------------------
--- LIMPEZA (obrigatória ao final da homologação, antes de qualquer promoção)
+-- LIMPEZA (automática via qa_teardown() no teardown da suíte)
+-- Segunda garantia manual, caso a suíte seja interrompida (ex.: Ctrl+C)
+-- antes de alcançar o bloco finally:
+--   DROP FUNCTION IF EXISTS public.qa_current_role();
+--   DROP FUNCTION IF EXISTS public.qa_teardown();
 -- ---------------------------------------------------------------------
--- DROP FUNCTION IF EXISTS public.qa_current_role();

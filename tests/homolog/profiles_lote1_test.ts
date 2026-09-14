@@ -4,7 +4,9 @@
  * EXECUTAR SOMENTE EM PROJETO SUPABASE ISOLADO DE HOMOLOGAÇÃO.
  * Pré-requisitos no projeto de destino:
  *   1. docs/lote1/profiles_lote1_v3.sql aplicado;
- *   2. docs/lote1/profiles_lote1_qa_homolog.sql aplicado (qa_current_role);
+ *   2. docs/lote1/profiles_lote1_qa_homolog.sql aplicado
+ *      (qa_current_role para os testes; qa_teardown para a limpeza
+ *      automática executada no finally desta suíte);
  *   3. variáveis de ambiente:
  *        HOMOLOG_SUPABASE_URL
  *        HOMOLOG_SERVICE_ROLE_KEY
@@ -153,11 +155,20 @@ async function teardown() {
     if (error) console.error(`teardown auth.users ${id}:`, error.message);
   }
 
-  // qa_current_role() é artefato exclusivo de homologação e não pode ser
-  // removido pelo cliente (DDL). Limpeza manual obrigatória ao final:
-  console.warn(
-    "LIMPEZA PENDENTE (executar no SQL do projeto de homologação): DROP FUNCTION IF EXISTS public.qa_current_role();",
-  );
+  // Remoção automática dos artefatos de homologação. qa_teardown() é
+  // SECURITY DEFINER, executável apenas por service_role, e remove
+  // qa_current_role() e a si mesma. Como este teardown está no finally
+  // da suíte, a limpeza ocorre mesmo se qualquer teste falhar.
+  const { error: qaErr } = await admin.rpc("qa_teardown");
+  if (qaErr) {
+    // Segunda garantia: se a RPC falhar, exigir limpeza manual explícita.
+    console.error("teardown qa_teardown:", qaErr.message);
+    console.warn(
+      "LIMPEZA MANUAL PENDENTE no SQL do projeto de homologação: " +
+        "DROP FUNCTION IF EXISTS public.qa_current_role(); " +
+        "DROP FUNCTION IF EXISTS public.qa_teardown();",
+    );
+  }
 }
 
 /** UPDATE por usuário comum que deve ser bloqueado pela guarda. */
