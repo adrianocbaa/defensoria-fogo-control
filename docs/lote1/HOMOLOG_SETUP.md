@@ -175,6 +175,10 @@ portanto **não** é necessária nenhuma variável de conexão direta ao banco.
 
 ## 6. Verificações antes da migration (somente leitura)
 
+> As consultas abaixo estão consolidadas e ampliadas no arquivo
+> `docs/lote1/profiles_lote1_preflight_homolog.sql` (formato OK / FALHA / ATENÇÃO).
+> Preferir o preflight; esta seção permanece como referência manual.
+
 ```sql
 -- P1 — O projeto não é produção (comparar com a URL do painel: não pode conter
 --      'mmumfgxngzaivvyqfbed'). Identificador interno do banco:
