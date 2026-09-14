@@ -30,22 +30,46 @@ GRANT EXECUTE ON FUNCTION public.qa_current_role() TO authenticated, anon;
 -- SECURITY DEFINER é necessário porque DDL não é permitido via PostgREST;
 -- a função NÃO participa de autorização — apenas executa os dois DROPs.
 -- ---------------------------------------------------------------------
+-- ATENÇÃO: por ser SECURITY DEFINER, current_user dentro da função é o
+-- PROPRIETÁRIO, e não o chamador. A identidade do chamador vem do papel do
+-- JWT validado da requisição (request.jwt.claim.role / auth.jwt()).
+-- Chamadas diretas pelo SQL Editor não carregam JWT de API; nesse caso o
+-- fallback é session_user (a conexão real), restrito a postgres/supabase_admin.
 CREATE OR REPLACE FUNCTION public.qa_teardown()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  jwt_role text := coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    auth.jwt() ->> 'role'
+  );
 BEGIN
-  IF current_user <> 'service_role'
-     AND current_user NOT IN ('postgres', 'supabase_admin') THEN
-    RAISE EXCEPTION 'qa_teardown: executável apenas por service_role'
+  IF jwt_role IS NOT NULL THEN
+    -- Chamada via API (PostgREST): somente a chave de serviço.
+    IF jwt_role <> 'service_role' THEN
+      RAISE EXCEPTION 'qa_teardown: executavel apenas por service_role (papel do JWT: %)', jwt_role
+        USING ERRCODE = '42501';
+    END IF;
+  ELSIF session_user NOT IN ('postgres', 'supabase_admin') THEN
+    -- Chamada direta sem JWT de API: somente conexão administrativa real.
+    RAISE EXCEPTION 'qa_teardown: executavel apenas por service_role ou conexao administrativa'
       USING ERRCODE = '42501';
   END IF;
+
   EXECUTE 'DROP FUNCTION IF EXISTS public.qa_current_role()';
-  -- Autorremoção: o DROP vale após o COMMIT da transação; a execução em
-  -- curso não é afetada.
-  EXECUTE 'DROP FUNCTION IF EXISTS public.qa_teardown()';
+
+  -- Autorremoção. Compatibilidade no PostgreSQL do ambiente: NÃO CONFIRMADO
+  -- antes da execução real — por isso o DROP da própria função fica em bloco
+  -- protegido: se a autorremoção não for suportada, a limpeza de
+  -- qa_current_role já ocorreu e o comando manual abaixo remove qa_teardown.
+  BEGIN
+    EXECUTE 'DROP FUNCTION IF EXISTS public.qa_teardown()';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'qa_teardown: autorremocao nao suportada (%); remover manualmente.', SQLERRM;
+  END;
 END;
 $$;
 
