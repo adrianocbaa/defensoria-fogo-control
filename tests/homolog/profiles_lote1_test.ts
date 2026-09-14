@@ -145,6 +145,12 @@ async function teardown() {
     const { error } = await admin.auth.admin.deleteUser(id);
     if (error) console.error(`teardown auth.users ${id}:`, error.message);
   }
+
+  // qa_current_role() é artefato exclusivo de homologação e não pode ser
+  // removido pelo cliente (DDL). Limpeza manual obrigatória ao final:
+  console.warn(
+    "LIMPEZA PENDENTE (executar no SQL do projeto de homologação): DROP FUNCTION IF EXISTS public.qa_current_role();",
+  );
 }
 
 /** UPDATE por usuário comum que deve ser bloqueado pela guarda. */
