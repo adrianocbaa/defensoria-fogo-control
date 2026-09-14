@@ -370,22 +370,64 @@ Deno.test("Lote 1 — profiles (homologação)", async (t) => {
       }
     });
 
-    await t.step("16 — anônimo não lê nem escreve perfis", async () => {
+    // Abordagem adotada na migration v3: anon fica SEM qualquer privilégio em
+    // public.profiles (REVOKE ALL). Logo o resultado esperado é ERRO de
+    // permissão (42501), e não "zero linhas sem erro".
+    await t.step("16 — anônimo recebe erro de permissão (42501) em profiles", async () => {
       const anon = anonClient();
+
       const { data: readData, error: readErr } = await anon
         .from("profiles").select("id").limit(1);
-      assert(readErr !== null || (readData?.length ?? 0) === 0, "anônimo leu perfis");
+      assertExists(readErr, "anônimo não recebeu erro de permissão no SELECT");
+      assertEquals(readErr!.code, "42501", `código inesperado no SELECT anônimo: ${readErr!.code}`);
+      assertEquals(readData, null);
 
       const { data: updData, error: updErr } = await anon
         .from("profiles").update({ role: "admin" }).eq("user_id", fixtures.viewer.userId).select("id");
-      assert(updErr !== null || (updData?.length ?? 0) === 0, "anônimo escreveu em perfis");
+      assertExists(updErr, "anônimo não recebeu erro de permissão no UPDATE");
+      assertEquals(updErr!.code, "42501", `código inesperado no UPDATE anônimo: ${updErr!.code}`);
+      assertEquals(updData, null);
 
-      const { error: insErr } = await anon
+      const { data: insData, error: insErr } = await anon
         .from("profiles").insert({ user_id: crypto.randomUUID(), display_name: "anon" }).select("id");
       assertExists(insErr, "anônimo inseriu perfil");
+      assertEquals(insErr!.code, "42501", `código inesperado no INSERT anônimo: ${insErr!.code}`);
+      assertEquals(insData, null);
 
       const after = await readProfile(fixtures.viewer.userId);
       assertEquals(after.role, "viewer");
+    });
+
+    await t.step("17 — policies de SELECT seguem corretas após a redução dos grants", async () => {
+      // viewer ativo lê o próprio perfil
+      const { data: proprio, error: e1 } = await fixtures.viewer.client
+        .from("profiles").select("id, user_id").eq("user_id", fixtures.viewer.userId);
+      assertEquals(e1, null, `viewer não leu o próprio perfil: ${e1?.message}`);
+      assertEquals(proprio?.length, 1);
+      assertEquals(proprio![0].user_id, fixtures.viewer.userId);
+
+      // admin lê todos os perfis das fixtures
+      const ids = Object.values(fixtures).map((f) => f.userId);
+      const { data: todos, error: e2 } = await fixtures.admin.client
+        .from("profiles").select("id, user_id").in("user_id", ids);
+      assertEquals(e2, null, `admin não leu perfis: ${e2?.message}`);
+      assertEquals(todos?.length, ids.length, "admin não enxergou todos os perfis das fixtures");
+
+      // contratada não recebe erro de permissão e não enxerga perfil de terceiro
+      const { data: terceiro, error: e3 } = await fixtures.contratada.client
+        .from("profiles").select("id").eq("user_id", fixtures.viewer2.userId);
+      assertEquals(e3, null, `contratada recebeu erro inesperado: ${e3?.code} ${e3?.message}`);
+      assertEquals(terceiro?.length ?? 0, 0, "contratada leu perfil de terceiro");
+    });
+
+    await t.step("18 — usuário comum não possui DELETE em profiles", async () => {
+      const { data, error } = await fixtures.viewer.client
+        .from("profiles").delete().eq("user_id", fixtures.viewer.userId).select("id");
+      assertExists(error, "viewer conseguiu executar DELETE em profiles");
+      assertEquals(error!.code, "42501", `código inesperado no DELETE: ${error!.code}`);
+      assertEquals(data, null);
+      const after = await readProfile(fixtures.viewer.userId);
+      assertEquals(after.user_id, fixtures.viewer.userId);
     });
   } finally {
     await teardown();
