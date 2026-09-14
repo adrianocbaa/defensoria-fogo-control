@@ -160,7 +160,8 @@ async function teardown() {
   // qa_current_role() e a si mesma. Como este teardown está no finally
   // da suíte, a limpeza ocorre mesmo se qualquer teste falhar.
   const { error: qaErr } = await admin.rpc("qa_teardown");
-  if (qaErr) {
+  // PGRST202 = função inexistente: a etapa 20 da suíte já a removeu.
+  if (qaErr && qaErr.code !== "PGRST202") {
     // Segunda garantia: se a RPC falhar, exigir limpeza manual explícita.
     console.error("teardown qa_teardown:", qaErr.message);
     console.warn(
@@ -452,6 +453,38 @@ Deno.test("Lote 1 — profiles (homologação)", async (t) => {
       assertEquals(data, null);
       const after = await readProfile(fixtures.viewer.userId);
       assertEquals(after.user_id, fixtures.viewer.userId);
+    });
+
+    await t.step("19 — usuário comum e anônimo não executam qa_teardown (42501)", async () => {
+      for (const f of [fixtures.viewer, fixtures.contratada, fixtures.demo]) {
+        const { error } = await f.client.rpc("qa_teardown");
+        assertExists(error, `${f.key} executou qa_teardown`);
+        assertEquals(error!.code, "42501", `código inesperado para ${f.key}: ${error!.code}`);
+      }
+      const { error: anonErr } = await anonClient().rpc("qa_teardown");
+      assertExists(anonErr, "anônimo executou qa_teardown");
+      assertEquals(anonErr!.code, "42501", `código inesperado para anon: ${anonErr!.code}`);
+      // As funções de apoio precisam continuar existindo para a etapa 20.
+      const { data, error } = await fixtures.viewer.client.rpc("qa_current_role");
+      assertEquals(error, null, `qa_current_role sumiu antes da limpeza: ${error?.message}`);
+      assertEquals(data, "authenticated");
+    });
+
+    await t.step("20 — service_role executa qa_teardown e as funções qa_% deixam de existir", async () => {
+      const { error } = await admin.rpc("qa_teardown");
+      assertEquals(error, null, `service_role não executou qa_teardown: ${error?.message}`);
+
+      // PGRST202 = a função não existe mais no schema cache do PostgREST.
+      const { error: e1 } = await admin.rpc("qa_current_role");
+      assertExists(e1, "qa_current_role ainda existe após qa_teardown");
+      assertEquals(e1!.code, "PGRST202", `código inesperado: ${e1!.code}`);
+
+      const { error: e2 } = await admin.rpc("qa_teardown");
+      assertExists(e2, "qa_teardown não se autorremoveu");
+      assertEquals(e2!.code, "PGRST202", `código inesperado: ${e2!.code}`);
+      // Se e2 não for PGRST202, a autorremoção não é suportada neste
+      // PostgreSQL: aplicar a segunda garantia manual do arquivo
+      // profiles_lote1_qa_homolog.sql (DROP FUNCTION public.qa_teardown();).
     });
   } finally {
     await teardown();
