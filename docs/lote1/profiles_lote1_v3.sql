@@ -205,12 +205,34 @@ CREATE POLICY "Admins can update any profile"
 --    (SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN).
 --    anon não lê nada hoje apenas porque a policy de SELECT é USING(false);
 --    a RLS é a única barreira. Reduzimos a superfície ao necessário.
+--
+--    DECISÃO DE ABORDAGEM (única, adotada e refletida nos testes):
+--      ABORDAGEM "SEM PRIVILÉGIO PARA anon".
+--      anon fica SEM nenhum privilégio sobre public.profiles. Consequência
+--      esperada e testada: qualquer requisição anônima a profiles falha com
+--      erro de permissão (SQLSTATE 42501 / HTTP 401-403 via PostgREST),
+--      NÃO com "zero linhas sem erro".
+--      A alternativa descartada seria conceder apenas SELECT a anon e manter
+--      a policy "Block anonymous access to profiles" USING (false), que
+--      devolveria 0 linhas sem erro. Ela não foi adotada porque nenhum fluxo
+--      público do SiDIF lê profiles; defesa em profundidade (grant + RLS)
+--      é preferível.
+--
+--    authenticated mantém somente SELECT e UPDATE — o fluxo atual não faz
+--    INSERT direto (criação via handle_new_user) nem DELETE de perfis; e
+--    TRUNCATE/REFERENCES/TRIGGER nunca foram necessários ao aplicativo.
 -- ---------------------------------------------------------------------
 REVOKE ALL ON public.profiles FROM anon;
 REVOKE ALL ON public.profiles FROM authenticated;
 
 GRANT SELECT, UPDATE ON public.profiles TO authenticated;
 GRANT ALL ON public.profiles TO service_role;
+
+-- Estado final esperado dos grants em public.profiles:
+--   anon           -> nenhum privilégio
+--   authenticated  -> SELECT, UPDATE (sem INSERT, DELETE, TRUNCATE,
+--                     REFERENCES, TRIGGER, MAINTAIN)
+--   service_role   -> ALL
 
 COMMIT;
 
