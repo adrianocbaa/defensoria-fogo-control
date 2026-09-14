@@ -231,6 +231,18 @@ Deno.test("Lote 1 — profiles (homologação)", async (t) => {
       assertEquals(after.is_maintenance_responsible, before.is_maintenance_responsible);
     });
 
+    await t.step("06b — UPSERT legítimo de campo pessoal continua funcionando", async () => {
+      const { data, error } = await fixtures.viewer.client.from("profiles").upsert({
+        id: fixtures.viewer.profileId,
+        user_id: fixtures.viewer.userId,
+        display_name: "upsert pessoal",
+      }, { onConflict: "id" }).select("id");
+      assertEquals(error, null, `UPSERT pessoal falhou: ${error?.message}`);
+      assertEquals(data?.length, 1, "UPSERT pessoal não retornou exatamente 1 linha");
+      const after = await readProfile(fixtures.viewer.userId);
+      assertEquals(after.display_name, "upsert pessoal");
+    });
+
     await t.step("07 — INSERT direto de perfil por usuário comum é recusado (policy removida)", async () => {
       const { error } = await fixtures.viewer.client.from("profiles").insert({
         user_id: fixtures.viewer.userId,
