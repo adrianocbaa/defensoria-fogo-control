@@ -236,9 +236,7 @@ export function AjustarMedicaoCongeladaModal({
     try {
       const ajustes = alterados.map((r) => ({
         id: r.id,
-        qtd: parseNum(r.qtd_novo),
-        pct: parseNum(r.pct_novo),
-        total: parseNum(r.total_novo),
+        ...valoresParaSalvar(r),
       }));
 
       // Chunk para evitar timeout da conexão em lotes grandes
