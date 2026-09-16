@@ -123,9 +123,12 @@ export function AjustarMedicaoCongeladaModal({
             qtd_atual: Number(qtd),
             pct_atual: Number(pct),
             total_atual: Number(total),
-            qtd_novo: numToStr(Number(qtd), 4),
-            pct_novo: numToStr(Number(pct), 2),
-            total_novo: numToStr(Number(total), 2),
+            qtd_novo: numToStr(Number(qtd), 2, 8),
+            pct_novo: numToStr(Number(pct), 2, 8),
+            total_novo: numToStr(Number(total), 2, 8),
+            qtd_editado: false,
+            pct_editado: false,
+            total_editado: false,
           };
         });
 
