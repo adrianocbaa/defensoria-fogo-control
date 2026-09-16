@@ -356,7 +356,7 @@ export function AjustarMedicaoCongeladaModal({
                           />
                         </td>
                         <td className="p-2 text-right text-muted-foreground">
-                          {numToStr(r.pct_atual, 2)}
+                          {numToStr(r.pct_atual, 2, 8)}
                         </td>
                         <td className="p-1">
                           <Input
