@@ -157,18 +157,28 @@ export function AjustarMedicaoCongeladaModal({
   }, [open]);
 
   const update = (id: string, field: 'qtd_novo' | 'pct_novo' | 'total_novo', value: string) => {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+    const flag =
+      field === 'qtd_novo' ? 'qtd_editado' : field === 'pct_novo' ? 'pct_editado' : 'total_editado';
+    setRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value, [flag]: true } : r))
+    );
   };
+
+  /** Valor que será gravado: só muda o campo que o usuário digitou; os demais
+   * mantêm exatamente o valor congelado original (sem arredondar nem recalcular). */
+  const valoresParaSalvar = (r: Row) => ({
+    qtd: r.qtd_editado ? parseNum(r.qtd_novo) : r.qtd_atual,
+    pct: r.pct_editado ? parseNum(r.pct_novo) : r.pct_atual,
+    total: r.total_editado ? parseNum(r.total_novo) : r.total_atual,
+  });
 
   const alterados = useMemo(() => {
     return rows.filter((r) => {
-      const qn = parseNum(r.qtd_novo);
-      const pn = parseNum(r.pct_novo);
-      const tn = parseNum(r.total_novo);
+      const v = valoresParaSalvar(r);
       return (
-        Math.abs(qn - r.qtd_atual) > 1e-6 ||
-        Math.abs(pn - r.pct_atual) > 1e-6 ||
-        Math.abs(tn - r.total_atual) > 0.005
+        (r.qtd_editado && Math.abs(v.qtd - r.qtd_atual) > 1e-9) ||
+        (r.pct_editado && Math.abs(v.pct - r.pct_atual) > 1e-9) ||
+        (r.total_editado && Math.abs(v.total - r.total_atual) > 1e-9)
       );
     });
   }, [rows]);
