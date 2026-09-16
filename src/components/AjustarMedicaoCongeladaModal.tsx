@@ -48,10 +48,14 @@ interface Row {
   qtd_novo: string;
   pct_novo: string;
   total_novo: string;
+  // quais campos o usuário realmente editou (só estes são gravados)
+  qtd_editado: boolean;
+  pct_editado: boolean;
+  total_editado: boolean;
 }
 
 const formatCurrency = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
 
 const parseNum = (s: string): number => {
   if (!s) return 0;
@@ -59,10 +63,11 @@ const parseNum = (s: string): number => {
   return isNaN(n) ? 0 : n;
 };
 
-const numToStr = (n: number, decimals = 2): string =>
+/** Exibe o número sem perder casas decimais (até 8), sem forçar zeros à direita. */
+const numToStr = (n: number, minDecimals = 2, maxDecimals = 8): string =>
   Number(n ?? 0).toLocaleString('pt-BR', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+    minimumFractionDigits: minDecimals,
+    maximumFractionDigits: Math.max(minDecimals, maxDecimals),
   });
 
 export function AjustarMedicaoCongeladaModal({
@@ -118,9 +123,12 @@ export function AjustarMedicaoCongeladaModal({
             qtd_atual: Number(qtd),
             pct_atual: Number(pct),
             total_atual: Number(total),
-            qtd_novo: numToStr(Number(qtd), 4),
-            pct_novo: numToStr(Number(pct), 2),
-            total_novo: numToStr(Number(total), 2),
+            qtd_novo: numToStr(Number(qtd), 2, 8),
+            pct_novo: numToStr(Number(pct), 2, 8),
+            total_novo: numToStr(Number(total), 2, 8),
+            qtd_editado: false,
+            pct_editado: false,
+            total_editado: false,
           };
         });
 
@@ -149,18 +157,28 @@ export function AjustarMedicaoCongeladaModal({
   }, [open]);
 
   const update = (id: string, field: 'qtd_novo' | 'pct_novo' | 'total_novo', value: string) => {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+    const flag =
+      field === 'qtd_novo' ? 'qtd_editado' : field === 'pct_novo' ? 'pct_editado' : 'total_editado';
+    setRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value, [flag]: true } : r))
+    );
   };
+
+  /** Valor que será gravado: só muda o campo que o usuário digitou; os demais
+   * mantêm exatamente o valor congelado original (sem arredondar nem recalcular). */
+  const valoresParaSalvar = (r: Row) => ({
+    qtd: r.qtd_editado ? parseNum(r.qtd_novo) : r.qtd_atual,
+    pct: r.pct_editado ? parseNum(r.pct_novo) : r.pct_atual,
+    total: r.total_editado ? parseNum(r.total_novo) : r.total_atual,
+  });
 
   const alterados = useMemo(() => {
     return rows.filter((r) => {
-      const qn = parseNum(r.qtd_novo);
-      const pn = parseNum(r.pct_novo);
-      const tn = parseNum(r.total_novo);
+      const v = valoresParaSalvar(r);
       return (
-        Math.abs(qn - r.qtd_atual) > 1e-6 ||
-        Math.abs(pn - r.pct_atual) > 1e-6 ||
-        Math.abs(tn - r.total_atual) > 0.005
+        (r.qtd_editado && Math.abs(v.qtd - r.qtd_atual) > 1e-9) ||
+        (r.pct_editado && Math.abs(v.pct - r.pct_atual) > 1e-9) ||
+        (r.total_editado && Math.abs(v.total - r.total_atual) > 1e-9)
       );
     });
   }, [rows]);
@@ -170,7 +188,7 @@ export function AjustarMedicaoCongeladaModal({
     [rows]
   );
   const totalNovo = useMemo(
-    () => rows.reduce((s, r) => s + parseNum(r.total_novo), 0),
+    () => rows.reduce((s, r) => s + (r.total_editado ? parseNum(r.total_novo) : r.total_atual), 0),
     [rows]
   );
   const delta = totalNovo - totalAtual;
@@ -218,9 +236,7 @@ export function AjustarMedicaoCongeladaModal({
     try {
       const ajustes = alterados.map((r) => ({
         id: r.id,
-        qtd: parseNum(r.qtd_novo),
-        pct: parseNum(r.pct_novo),
-        total: parseNum(r.total_novo),
+        ...valoresParaSalvar(r),
       }));
 
       // Chunk para evitar timeout da conexão em lotes grandes
@@ -264,7 +280,8 @@ export function AjustarMedicaoCongeladaModal({
             </DialogTitle>
             <DialogDescription>
               Use somente para igualar os valores do sistema ao PDF impresso/pago.
-              Toda alteração é registrada em auditoria.
+              Só o campo que você digitar é alterado — os demais permanecem exatamente como estão.
+              É possível usar mais de duas casas decimais (até 8). Toda alteração é registrada em auditoria.
             </DialogDescription>
           </DialogHeader>
 
@@ -330,7 +347,7 @@ export function AjustarMedicaoCongeladaModal({
                         <td className="p-2 font-mono text-xs">{r.item_code}</td>
                         <td className="p-2 text-xs">{r.descricao}</td>
                         <td className="p-2 text-right text-muted-foreground">
-                          {numToStr(r.qtd_atual, 4)}
+                          {numToStr(r.qtd_atual, 2, 8)}
                         </td>
                         <td className="p-1">
                           <Input
@@ -340,7 +357,7 @@ export function AjustarMedicaoCongeladaModal({
                           />
                         </td>
                         <td className="p-2 text-right text-muted-foreground">
-                          {numToStr(r.pct_atual, 2)}
+                          {numToStr(r.pct_atual, 2, 8)}
                         </td>
                         <td className="p-1">
                           <Input
