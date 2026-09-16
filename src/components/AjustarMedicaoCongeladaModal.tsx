@@ -280,7 +280,8 @@ export function AjustarMedicaoCongeladaModal({
             </DialogTitle>
             <DialogDescription>
               Use somente para igualar os valores do sistema ao PDF impresso/pago.
-              Toda alteração é registrada em auditoria.
+              Só o campo que você digitar é alterado — os demais permanecem exatamente como estão.
+              É possível usar mais de duas casas decimais (até 8). Toda alteração é registrada em auditoria.
             </DialogDescription>
           </DialogHeader>
 
