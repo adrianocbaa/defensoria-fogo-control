@@ -346,7 +346,7 @@ export function AjustarMedicaoCongeladaModal({
                         <td className="p-2 font-mono text-xs">{r.item_code}</td>
                         <td className="p-2 text-xs">{r.descricao}</td>
                         <td className="p-2 text-right text-muted-foreground">
-                          {numToStr(r.qtd_atual, 4)}
+                          {numToStr(r.qtd_atual, 2, 8)}
                         </td>
                         <td className="p-1">
                           <Input
