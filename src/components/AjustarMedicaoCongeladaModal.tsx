@@ -188,7 +188,7 @@ export function AjustarMedicaoCongeladaModal({
     [rows]
   );
   const totalNovo = useMemo(
-    () => rows.reduce((s, r) => s + parseNum(r.total_novo), 0),
+    () => rows.reduce((s, r) => s + (r.total_editado ? parseNum(r.total_novo) : r.total_atual), 0),
     [rows]
   );
   const delta = totalNovo - totalAtual;
