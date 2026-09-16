@@ -48,10 +48,14 @@ interface Row {
   qtd_novo: string;
   pct_novo: string;
   total_novo: string;
+  // quais campos o usuário realmente editou (só estes são gravados)
+  qtd_editado: boolean;
+  pct_editado: boolean;
+  total_editado: boolean;
 }
 
 const formatCurrency = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
 
 const parseNum = (s: string): number => {
   if (!s) return 0;
@@ -59,10 +63,11 @@ const parseNum = (s: string): number => {
   return isNaN(n) ? 0 : n;
 };
 
-const numToStr = (n: number, decimals = 2): string =>
+/** Exibe o número sem perder casas decimais (até 8), sem forçar zeros à direita. */
+const numToStr = (n: number, minDecimals = 2, maxDecimals = 8): string =>
   Number(n ?? 0).toLocaleString('pt-BR', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+    minimumFractionDigits: minDecimals,
+    maximumFractionDigits: Math.max(minDecimals, maxDecimals),
   });
 
 export function AjustarMedicaoCongeladaModal({
