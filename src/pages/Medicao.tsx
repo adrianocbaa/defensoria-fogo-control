@@ -1801,24 +1801,28 @@ export function Medicao() {
       });
 
       // Calcular totais (apenas itens folha/MICRO, excluindo MACROS)
+      // Mesmas regras de arredondamento exibidas na tela:
+      // - TOTAL CONTRATO: soma com precisão plena e arredonda no final (card Pós-Aditivo)
+      // - Medição/Acumulado: arredonda cada item e depois soma (cards Executado/Acumulado)
+      const round2Exp = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
       const itensParaTotais = apenasItensAcima ? itensParaExportar : itensParaExportar.filter(item => ehItemFolha(item.item));
-      
-      const totalTotalContrato = itensParaTotais
-        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, maiorMedicaoId), 0);
+
+      const totalTotalContrato = round2Exp(itensParaTotais
+        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, maiorMedicaoId), 0));
       
       // Totais por medição
       const totaisPorMedicao: Record<number, number> = {};
       medicoesParaExportar.forEach(med => {
-        totaisPorMedicao[med.id] = itensParaTotais.reduce((sum, item) => {
+        totaisPorMedicao[med.id] = round2Exp(itensParaTotais.reduce((sum, item) => {
           const medicaoData = apenasItensAcima 
             ? (dadosHierarquicosMemoizados[med.id]?.[item.id] || { total: 0 })
             : (med.dados[item.id] || { total: 0 });
-          return sum + (medicaoData.total || 0);
-        }, 0);
+          return sum + round2Exp(medicaoData.total || 0);
+        }, 0));
       });
 
-      const totalAcumulado = itensParaTotais
-        .reduce((sum, item) => sum + calcularValorAcumuladoItem(item.id), 0);
+      const totalAcumulado = round2Exp(itensParaTotais
+        .reduce((sum, item) => sum + round2Exp(calcularValorAcumuladoItem(item.id)), 0));
 
       // Adicionar linha de totais
       const totalRow: any = {
@@ -1946,9 +1950,11 @@ export function Medicao() {
       // IMPORTANTE: arredondar cada item para 2 casas ANTES de somar, mantendo
       // paridade com "Serviços Executados" exibido na tela (medicaoCalculo.ts).
       const round2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
+      // TOTAL CONTRATO: soma os itens com precisão plena e arredonda só no final,
+      // exatamente como o card "Pós-Aditivo" exibido na tela.
       const totalTotalContratoPDF = round2(items
         .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => sum + round2(calcularTotalContratoComAditivos(item, medicaoAtual)), 0));
+        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0));
       const totalMedicaoAtualPDF = round2(items
         .filter(item => ehItemFolha(item.item))
         .reduce((sum, item) => {

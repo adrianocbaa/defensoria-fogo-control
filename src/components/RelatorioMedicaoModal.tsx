@@ -571,6 +571,9 @@ export function RelatorioMedicaoModal({
     setFotosRelatorio(newFotos);
   };
 
+  // Arredondamento monetário usado em todo o relatório (mesma regra da tela)
+  const round2Rel = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
+
   // Calcular grupos de primeiro nível (MACROs) - usando dados específicos da medição selecionada
   const gruposMedicao = useMemo(() => {
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
@@ -590,10 +593,11 @@ export function RelatorioMedicaoModal({
       let executadoAcum = 0;
       
       // Executado desta medição específica
+      // Arredonda cada item antes de somar (mesma regra do card "Executado" na tela)
       itemsDoGrupo.forEach(item => {
         const dadosMedicao = medicaoAtualObj.dados?.[item.id];
         if (dadosMedicao) {
-          executado += dadosMedicao.total || 0;
+          executado += round2Rel(dadosMedicao.total || 0);
         }
       });
       
@@ -602,7 +606,7 @@ export function RelatorioMedicaoModal({
         itemsDoGrupo.forEach(item => {
           const dadosMed = med.dados?.[item.id];
           if (dadosMed) {
-            executadoAcum += dadosMed.total || 0;
+            executadoAcum += round2Rel(dadosMed.total || 0);
           }
         });
       });
@@ -610,8 +614,8 @@ export function RelatorioMedicaoModal({
       return {
         item: grupo.item,
         descricao: grupo.descricao,
-        executado,
-        executadoAcum
+        executado: round2Rel(executado),
+        executadoAcum: round2Rel(executadoAcum)
       } as GrupoMedicao;
     }).filter(g => g.executado > 0 || g.executadoAcum > 0);
   }, [items, medicoes, medicaoAtual]);
@@ -647,9 +651,9 @@ export function RelatorioMedicaoModal({
       
       const dadosMedicao = dadosHierarquicos[medicaoAtual]?.[item.id];
       if (dadosMedicao) {
-        totalExecutado += dadosMedicao.total;
+        totalExecutado += round2Rel(dadosMedicao.total);
       }
-      totalExecutadoAcum += calcularValorAcumuladoItem(item.id);
+      totalExecutadoAcum += round2Rel(calcularValorAcumuladoItem(item.id));
     });
 
     // Calcular valor de cada sessão de aditivo separadamente
@@ -674,14 +678,18 @@ export function RelatorioMedicaoModal({
       }
     });
 
-    const totalAditivo = totalContrato - valorInicial;
+    const contratoFinal = round2Rel(totalContrato);
+    const valorInicialFinal = round2Rel(valorInicial);
+    const executadoFinal = round2Rel(totalExecutado);
+    const executadoAcumFinal = round2Rel(totalExecutadoAcum);
+    const totalAditivo = round2Rel(contratoFinal - valorInicialFinal);
 
     return {
-      executado: totalExecutado,
-      executadoAcum: totalExecutadoAcum,
-      contrato: totalContrato,
-      percentual: totalContrato > 0 ? (totalExecutadoAcum / totalContrato) * 100 : 0,
-      valorInicial,
+      executado: executadoFinal,
+      executadoAcum: executadoAcumFinal,
+      contrato: contratoFinal,
+      percentual: contratoFinal > 0 ? (executadoAcumFinal / contratoFinal) * 100 : 0,
+      valorInicial: valorInicialFinal,
       totalAditivo,
       aditivosPorSessao
     };
