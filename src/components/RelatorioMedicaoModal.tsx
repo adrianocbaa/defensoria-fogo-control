@@ -571,6 +571,9 @@ export function RelatorioMedicaoModal({
     setFotosRelatorio(newFotos);
   };
 
+  // Arredondamento monetário usado em todo o relatório (mesma regra da tela)
+  const round2Rel = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
+
   // Calcular grupos de primeiro nível (MACROs) - usando dados específicos da medição selecionada
   const gruposMedicao = useMemo(() => {
     const medicaoAtualObj = medicoes.find(m => m.id === medicaoAtual);
