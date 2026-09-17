@@ -678,14 +678,18 @@ export function RelatorioMedicaoModal({
       }
     });
 
-    const totalAditivo = totalContrato - valorInicial;
+    const contratoFinal = round2Rel(totalContrato);
+    const valorInicialFinal = round2Rel(valorInicial);
+    const executadoFinal = round2Rel(totalExecutado);
+    const executadoAcumFinal = round2Rel(totalExecutadoAcum);
+    const totalAditivo = round2Rel(contratoFinal - valorInicialFinal);
 
     return {
-      executado: totalExecutado,
-      executadoAcum: totalExecutadoAcum,
-      contrato: totalContrato,
-      percentual: totalContrato > 0 ? (totalExecutadoAcum / totalContrato) * 100 : 0,
-      valorInicial,
+      executado: executadoFinal,
+      executadoAcum: executadoAcumFinal,
+      contrato: contratoFinal,
+      percentual: contratoFinal > 0 ? (executadoAcumFinal / contratoFinal) * 100 : 0,
+      valorInicial: valorInicialFinal,
       totalAditivo,
       aditivosPorSessao
     };
