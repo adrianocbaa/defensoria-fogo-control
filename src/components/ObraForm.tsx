@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -310,7 +309,6 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const form = useForm<ObraFormData>({
-    resolver: zodResolver(obraSchema),
     defaultValues: {
       nome: initialData?.nome || '',
       municipio: initialData?.municipio || '',
@@ -586,22 +584,33 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
   };
 
   const handleFinalSubmit = async () => {
-    // Validação integral (schema completo, inclui superRefine)
-    const ok = await form.trigger();
-    if (!ok) {
+    // Validação integral direta (schema completo, inclui superRefine).
+    form.clearErrors();
+    const result = obraSchema.safeParse(form.getValues());
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const fieldName = issue.path[0];
+        if (typeof fieldName !== 'string') continue;
+        form.setError(fieldName as keyof ObraFormData, {
+          type: issue.code,
+          message: issue.message,
+        });
+      }
       // Marca todas as etapas com campos inválidos
       const errored: Set<StepKey> = new Set();
-      const errs = form.formState.errors as Record<string, any>;
       for (const s of STEPS) {
-        if (s.fields.some(f => (errs as any)[f as string])) errored.add(s.key);
+        if (s.fields.some(field => result.error.issues.some(issue => issue.path[0] === field))) {
+          errored.add(s.key);
+        }
       }
       setStepsWithErrors(errored);
       // Vai para a primeira etapa com erro
       const first = [...errored].sort((a, b) => a - b)[0];
       if (first) goToStep(first);
-      const problems = Object.entries(errs)
-        .filter(([, e]) => (e as any)?.message)
-        .map(([field, e]) => `• ${FIELD_LABELS[field] || field}: ${(e as any).message}`);
+      const problems = result.error.issues.map(issue => {
+        const field = String(issue.path[0] ?? 'campo');
+        return `• ${FIELD_LABELS[field] || field}: ${issue.message}`;
+      });
       toast.error('Não foi possível salvar. Verifique os campos:', {
         description: problems.length > 0
           ? problems.join('\n')
@@ -610,7 +619,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       });
       return;
     }
-    await form.handleSubmit(onSubmit)();
+    await onSubmit(result.data);
   };
 
   // ==== Derivados para o resumo lateral e revisão ====
