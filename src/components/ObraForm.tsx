@@ -130,6 +130,33 @@ interface StepDef {
   fields: (keyof ObraFormData)[];
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  nome: 'Nome da Obra',
+  municipio: 'Município',
+  n_contrato: 'Número do Contrato',
+  sei_numero: 'Número do Procedimento SEI',
+  status: 'Status',
+  tipo: 'Tipo',
+  valor_total: 'Valor Total',
+  valor_aditivado: 'Valor Aditivado',
+  valor_executado: 'Valor Executado',
+  data_inicio: 'Data de Início',
+  data_inicio_prevista: 'Data de Início Prevista',
+  tempo_obra: 'Tempo de Obra',
+  aditivo_prazo: 'Aditivo de Prazo',
+  previsao_termino: 'Previsão de Término',
+  data_termino_real: 'Data de Término Real',
+  empresa_id: 'Empresa Responsável',
+  empresa_responsavel: 'Empresa Responsável',
+  regiao: 'Região',
+  secretaria_responsavel: 'Secretaria Responsável',
+  fiscal_id: 'Fiscal do Contrato',
+  fiscal_substituto_id: 'Fiscal Substituto',
+  responsavel_projeto_id: 'Responsável pelo Projeto',
+  endereco_completo: 'Endereço Completo',
+  nucleo_nome: 'Núcleo',
+};
+
 const STEPS: StepDef[] = [
   { key: 1, label: 'Identificação', short: 'Identificação', fields: ['nome', 'municipio', 'sei_numero', 'status', 'tipo'] },
   { key: 2, label: 'Contrato e Valores', short: 'Contrato', fields: ['n_contrato', 'valor_total', 'valor_aditivado', 'valor_executado', 'empresa_id', 'regiao'] },
