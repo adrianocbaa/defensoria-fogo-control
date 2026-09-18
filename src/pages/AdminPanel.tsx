@@ -65,6 +65,75 @@ export default function AdminPanel() {
   const [deleteUserDialog, setDeleteUserDialog] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deletingUser, setDeletingUser] = useState(false);
+  const [editUserDialog, setEditUserDialog] = useState(false);
+  const [editUser, setEditUser] = useState<Profile | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState<UserRole>('viewer');
+  const [editEmpresaId, setEditEmpresaId] = useState<string>('');
+  const [editSetores, setEditSetores] = useState<string[]>([]);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEditUser = (profile: Profile) => {
+    setEditUser(profile);
+    setEditName(profile.display_name || '');
+    setEditRole(profile.role);
+    setEditEmpresaId(profile.empresa_id || '');
+    setEditSetores(profile.setores_atuantes || []);
+    setEditUserDialog(true);
+  };
+
+  const saveUserEdit = async () => {
+    if (!editUser) return;
+    const requiresEmpresa = editRole === 'contratada' || editSetores.includes('contratada');
+    if (requiresEmpresa && !editEmpresaId) {
+      toast({
+        title: 'Empresa obrigatória',
+        description: 'Informe a empresa do representante para o perfil Contratada.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const { error: profileError } = await (supabase.from('profiles') as any)
+        .update({
+          display_name: editName || null,
+          role: editRole,
+          empresa_id: requiresEmpresa ? editEmpresaId : null,
+          setores_atuantes: editSetores,
+        })
+        .eq('user_id', editUser.user_id);
+      if (profileError) throw profileError;
+
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', editUser.user_id)
+        .maybeSingle();
+
+      if (existingRole) {
+        const { error } = await supabase
+          .from('user_roles')
+          .update({ role: editRole as any })
+          .eq('user_id', editUser.user_id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: editUser.user_id, role: editRole as any });
+        if (error) throw error;
+      }
+
+      await fetchProfiles();
+      setEditUserDialog(false);
+      setEditUser(null);
+      toast({ title: 'Cadastro atualizado', description: 'Os dados do usuário foram salvos.' });
+    } catch (e: any) {
+      toast({ title: 'Erro ao salvar', description: e?.message || 'Tente novamente.', variant: 'destructive' });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   useEffect(() => {
     if (isAdmin) {
