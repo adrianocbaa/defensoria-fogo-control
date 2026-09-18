@@ -688,7 +688,7 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
                           <Input
                             placeholder="Ex.: 2025.0.000024717-0"
                             inputMode="numeric"
-                            maxLength={17}
+                            maxLength={18}
                             value={field.value || ''}
                             onChange={(e) => field.onChange(formatSei(e.target.value))}
                           />
