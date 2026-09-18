@@ -1192,7 +1192,7 @@ export default function AdminPanel() {
                 </Button>
                 <Button 
                   onClick={createNewUser} 
-                  disabled={creatingUser || !newUserEmail || (newUserRole === 'contratada' && !newUserEmpresaId)}
+                  disabled={creatingUser || !newUserEmail || ((newUserRole === 'contratada' || newUserSetoresAtuantes.includes('contratada')) && !newUserEmpresaId)}
                 >
                   {creatingUser ? 'Criando...' : 'Criar Usuário'}
                 </Button>
