@@ -53,7 +53,7 @@ const obraSchema = z.object({
     .string()
     .optional()
     .refine(
-      (v) => !v || /^\d{4}\.\d{1}\.\d{9}-\d{1}$/.test(v),
+      (v) => !v || /^\d{4}\.\d{1}\.\d{9}(-\d{1})?$/.test(v),
       'Formato inválido. Use AAAA.D.DDDDDDDDD-D (ex.: 2025.0.000024717-0)'
     ),
   status: z.enum(['planejamento', 'em_andamento', 'concluida', 'paralisada']),
