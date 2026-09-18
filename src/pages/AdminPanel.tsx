@@ -401,6 +401,18 @@ export default function AdminPanel() {
       return;
     }
 
+    const requiresEmpresa = newUserRole === 'contratada' || newUserSetoresAtuantes.includes('contratada');
+    if (requiresEmpresa && !newUserEmpresaId) {
+      toast({
+        title: 'Empresa obrigatória',
+        description: 'Selecione a empresa do representante para o perfil Contratada.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+
+
     setCreatingUser(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
