@@ -65,6 +65,75 @@ export default function AdminPanel() {
   const [deleteUserDialog, setDeleteUserDialog] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deletingUser, setDeletingUser] = useState(false);
+  const [editUserDialog, setEditUserDialog] = useState(false);
+  const [editUser, setEditUser] = useState<Profile | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState<UserRole>('viewer');
+  const [editEmpresaId, setEditEmpresaId] = useState<string>('');
+  const [editSetores, setEditSetores] = useState<string[]>([]);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEditUser = (profile: Profile) => {
+    setEditUser(profile);
+    setEditName(profile.display_name || '');
+    setEditRole(profile.role);
+    setEditEmpresaId(profile.empresa_id || '');
+    setEditSetores(profile.setores_atuantes || []);
+    setEditUserDialog(true);
+  };
+
+  const saveUserEdit = async () => {
+    if (!editUser) return;
+    const requiresEmpresa = editRole === 'contratada' || editSetores.includes('contratada');
+    if (requiresEmpresa && !editEmpresaId) {
+      toast({
+        title: 'Empresa obrigatória',
+        description: 'Informe a empresa do representante para o perfil Contratada.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const { error: profileError } = await (supabase.from('profiles') as any)
+        .update({
+          display_name: editName || null,
+          role: editRole,
+          empresa_id: requiresEmpresa ? editEmpresaId : null,
+          setores_atuantes: editSetores,
+        })
+        .eq('user_id', editUser.user_id);
+      if (profileError) throw profileError;
+
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', editUser.user_id)
+        .maybeSingle();
+
+      if (existingRole) {
+        const { error } = await supabase
+          .from('user_roles')
+          .update({ role: editRole as any })
+          .eq('user_id', editUser.user_id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: editUser.user_id, role: editRole as any });
+        if (error) throw error;
+      }
+
+      await fetchProfiles();
+      setEditUserDialog(false);
+      setEditUser(null);
+      toast({ title: 'Cadastro atualizado', description: 'Os dados do usuário foram salvos.' });
+    } catch (e: any) {
+      toast({ title: 'Erro ao salvar', description: e?.message || 'Tente novamente.', variant: 'destructive' });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   useEffect(() => {
     if (isAdmin) {
@@ -181,7 +250,22 @@ export default function AdminPanel() {
     const roleChanges = Object.entries(pendingChanges);
     const sectorChanges = Object.entries(pendingSectorChanges);
     const setorAtuanteChanges = Object.entries(pendingSetorAtuanteChanges);
-    
+
+    // Perfil Contratada exige empresa vinculada
+    for (const [userId, newRole] of roleChanges) {
+      if (newRole === 'contratada') {
+        const prof = profiles.find(p => p.user_id === userId);
+        if (!prof?.empresa_id) {
+          toast({
+            title: 'Empresa obrigatória',
+            description: `Informe a empresa de ${formatName(prof?.display_name || '') || 'usuário'} em "Editar cadastro" antes de definir o perfil Contratada.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+    }
+
     if (roleChanges.length === 0 && sectorChanges.length === 0 && setorAtuanteChanges.length === 0) {
       toast({
         title: 'Nenhuma alteração',
@@ -332,6 +416,18 @@ export default function AdminPanel() {
       return;
     }
 
+    const requiresEmpresa = newUserRole === 'contratada' || newUserSetoresAtuantes.includes('contratada');
+    if (requiresEmpresa && !newUserEmpresaId) {
+      toast({
+        title: 'Empresa obrigatória',
+        description: 'Selecione a empresa do representante para o perfil Contratada.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+
+
     setCreatingUser(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -359,7 +455,7 @@ export default function AdminPanel() {
           email: newUserEmail,
           displayName: newUserName || newUserEmail.split('@')[0],
           role: newUserRole,
-          empresaId: newUserRole === 'contratada' ? newUserEmpresaId || null : null,
+          empresaId: requiresEmpresa ? newUserEmpresaId || null : null,
           setoresAtuantes: newUserSetoresAtuantes,
         },
         headers: {
@@ -663,6 +759,14 @@ export default function AdminPanel() {
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                               {/* Ações Rápidas */}
                               <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditUser(profile)}
+                                  title="Editar cadastro"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="sm" title="Resetar senha">
@@ -1054,7 +1158,7 @@ export default function AdminPanel() {
                     ))}
                   </div>
                 </div>
-                {newUserRole === 'contratada' && (
+                {(newUserRole === 'contratada' || newUserSetoresAtuantes.includes('contratada')) && (
                   <div className="space-y-2">
                     <Label htmlFor="new-user-empresa">Empresa *</Label>
                     <Select value={newUserEmpresaId} onValueChange={setNewUserEmpresaId}>
@@ -1096,9 +1200,105 @@ export default function AdminPanel() {
                 </Button>
                 <Button 
                   onClick={createNewUser} 
-                  disabled={creatingUser || !newUserEmail || (newUserRole === 'contratada' && !newUserEmpresaId)}
+                  disabled={creatingUser || !newUserEmail || ((newUserRole === 'contratada' || newUserSetoresAtuantes.includes('contratada')) && !newUserEmpresaId)}
                 >
                   {creatingUser ? 'Criando...' : 'Criar Usuário'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Dialog de edição de cadastro do usuário */}
+          <Dialog open={editUserDialog} onOpenChange={setEditUserDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Editar cadastro do usuário</DialogTitle>
+                <DialogDescription>{editUser?.email}</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-name">Nome de Exibição</Label>
+                  <Input
+                    id="edit-user-name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Nome do usuário"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-role">Perfil</Label>
+                  <Select value={editRole} onValueChange={(v) => setEditRole(v as UserRole)}>
+                    <SelectTrigger id="edit-user-role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewer">Visitante</SelectItem>
+                      <SelectItem value="editor">Fiscal</SelectItem>
+                      <SelectItem value="gm">Manutenção</SelectItem>
+                      <SelectItem value="contratada">Contratada</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Setores Atuantes</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {setoresAtuantesOptions.map((setor) => (
+                      <div key={setor.id} className="flex items-center justify-between p-2 border rounded-md">
+                        <Label htmlFor={`edit-setor-${setor.id}`} className="text-sm cursor-pointer">
+                          {setor.label}
+                        </Label>
+                        <Switch
+                          id={`edit-setor-${setor.id}`}
+                          checked={editSetores.includes(setor.id)}
+                          onCheckedChange={(checked) =>
+                            setEditSetores(checked
+                              ? [...editSetores, setor.id]
+                              : editSetores.filter(s => s !== setor.id))
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {(editRole === 'contratada' || editSetores.includes('contratada')) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-user-empresa">Empresa *</Label>
+                    <Select value={editEmpresaId} onValueChange={setEditEmpresaId}>
+                      <SelectTrigger id="edit-user-empresa">
+                        <SelectValue placeholder="Selecione a empresa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {empresas.map((empresa) => (
+                          <SelectItem key={empresa.id} value={empresa.id}>
+                            {empresa.razao_social}
+                            {empresa.nome_fantasia && ` (${empresa.nome_fantasia})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {empresas.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma empresa cadastrada. Cadastre uma empresa primeiro na aba "Empresas".
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditUserDialog(false)} disabled={savingEdit}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={saveUserEdit}
+                  disabled={savingEdit || ((editRole === 'contratada' || editSetores.includes('contratada')) && !editEmpresaId)}
+                >
+                  {savingEdit ? 'Salvando...' : 'Salvar'}
                 </Button>
               </DialogFooter>
             </DialogContent>
