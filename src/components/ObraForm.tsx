@@ -497,7 +497,13 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
 
   const handleNext = async () => {
     const ok = await validateStep(currentStep);
-    if (!ok) return;
+    if (!ok) {
+      const def = STEPS.find(s => s.key === currentStep);
+      const errs = form.formState.errors as Record<string, any>;
+      const firstMsg = def?.fields.map(f => errs[f as string]?.message).find(Boolean);
+      toast.error(firstMsg || 'Existem campos inválidos nesta etapa. Revise os campos destacados.');
+      return;
+    }
     if (currentStep < 7) goToStep((currentStep + 1) as StepKey);
   };
 
