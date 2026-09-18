@@ -525,10 +525,16 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
   const handleNext = async () => {
     const ok = await validateStep(currentStep);
     if (!ok) {
-      const def = STEPS.find(s => s.key === currentStep);
       const errs = form.formState.errors as Record<string, any>;
-      const firstMsg = def?.fields.map(f => errs[f as string]?.message).find(Boolean);
-      toast.error(firstMsg || 'Existem campos inválidos nesta etapa. Revise os campos destacados.');
+      const problems = Object.entries(errs)
+        .filter(([, e]) => e?.message)
+        .map(([field, e]) => `• ${FIELD_LABELS[field] || field}: ${e.message}`);
+      toast.error('Não foi possível avançar. Verifique os campos:', {
+        description: problems.length > 0
+          ? problems.join('\n')
+          : 'Existem campos inválidos nesta etapa. Revise os campos destacados.',
+        duration: 8000,
+      });
       return;
     }
     if (currentStep < 7) goToStep((currentStep + 1) as StepKey);
