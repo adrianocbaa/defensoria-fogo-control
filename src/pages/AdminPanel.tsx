@@ -1208,6 +1208,102 @@ export default function AdminPanel() {
             </DialogContent>
           </Dialog>
 
+          {/* Dialog de edição de cadastro do usuário */}
+          <Dialog open={editUserDialog} onOpenChange={setEditUserDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Editar cadastro do usuário</DialogTitle>
+                <DialogDescription>{editUser?.email}</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-name">Nome de Exibição</Label>
+                  <Input
+                    id="edit-user-name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Nome do usuário"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-role">Perfil</Label>
+                  <Select value={editRole} onValueChange={(v) => setEditRole(v as UserRole)}>
+                    <SelectTrigger id="edit-user-role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewer">Visitante</SelectItem>
+                      <SelectItem value="editor">Fiscal</SelectItem>
+                      <SelectItem value="gm">Manutenção</SelectItem>
+                      <SelectItem value="contratada">Contratada</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Setores Atuantes</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {setoresAtuantesOptions.map((setor) => (
+                      <div key={setor.id} className="flex items-center justify-between p-2 border rounded-md">
+                        <Label htmlFor={`edit-setor-${setor.id}`} className="text-sm cursor-pointer">
+                          {setor.label}
+                        </Label>
+                        <Switch
+                          id={`edit-setor-${setor.id}`}
+                          checked={editSetores.includes(setor.id)}
+                          onCheckedChange={(checked) =>
+                            setEditSetores(checked
+                              ? [...editSetores, setor.id]
+                              : editSetores.filter(s => s !== setor.id))
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {(editRole === 'contratada' || editSetores.includes('contratada')) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-user-empresa">Empresa *</Label>
+                    <Select value={editEmpresaId} onValueChange={setEditEmpresaId}>
+                      <SelectTrigger id="edit-user-empresa">
+                        <SelectValue placeholder="Selecione a empresa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {empresas.map((empresa) => (
+                          <SelectItem key={empresa.id} value={empresa.id}>
+                            {empresa.razao_social}
+                            {empresa.nome_fantasia && ` (${empresa.nome_fantasia})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {empresas.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma empresa cadastrada. Cadastre uma empresa primeiro na aba "Empresas".
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditUserDialog(false)} disabled={savingEdit}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={saveUserEdit}
+                  disabled={savingEdit || ((editRole === 'contratada' || editSetores.includes('contratada')) && !editEmpresaId)}
+                >
+                  {savingEdit ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* Dialog para forçar exclusão de usuário por email */}
           <Dialog open={deleteUserDialog} onOpenChange={setDeleteUserDialog}>
             <DialogContent>
