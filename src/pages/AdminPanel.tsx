@@ -1150,7 +1150,7 @@ export default function AdminPanel() {
                     ))}
                   </div>
                 </div>
-                {newUserRole === 'contratada' && (
+                {(newUserRole === 'contratada' || newUserSetoresAtuantes.includes('contratada')) && (
                   <div className="space-y-2">
                     <Label htmlFor="new-user-empresa">Empresa *</Label>
                     <Select value={newUserEmpresaId} onValueChange={setNewUserEmpresaId}>
