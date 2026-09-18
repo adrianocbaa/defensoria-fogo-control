@@ -130,6 +130,33 @@ interface StepDef {
   fields: (keyof ObraFormData)[];
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  nome: 'Nome da Obra',
+  municipio: 'Município',
+  n_contrato: 'Número do Contrato',
+  sei_numero: 'Número do Procedimento SEI',
+  status: 'Status',
+  tipo: 'Tipo',
+  valor_total: 'Valor Total',
+  valor_aditivado: 'Valor Aditivado',
+  valor_executado: 'Valor Executado',
+  data_inicio: 'Data de Início',
+  data_inicio_prevista: 'Data de Início Prevista',
+  tempo_obra: 'Tempo de Obra',
+  aditivo_prazo: 'Aditivo de Prazo',
+  previsao_termino: 'Previsão de Término',
+  data_termino_real: 'Data de Término Real',
+  empresa_id: 'Empresa Responsável',
+  empresa_responsavel: 'Empresa Responsável',
+  regiao: 'Região',
+  secretaria_responsavel: 'Secretaria Responsável',
+  fiscal_id: 'Fiscal do Contrato',
+  fiscal_substituto_id: 'Fiscal Substituto',
+  responsavel_projeto_id: 'Responsável pelo Projeto',
+  endereco_completo: 'Endereço Completo',
+  nucleo_nome: 'Núcleo',
+};
+
 const STEPS: StepDef[] = [
   { key: 1, label: 'Identificação', short: 'Identificação', fields: ['nome', 'municipio', 'sei_numero', 'status', 'tipo'] },
   { key: 2, label: 'Contrato e Valores', short: 'Contrato', fields: ['n_contrato', 'valor_total', 'valor_aditivado', 'valor_executado', 'empresa_id', 'regiao'] },
@@ -498,10 +525,16 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
   const handleNext = async () => {
     const ok = await validateStep(currentStep);
     if (!ok) {
-      const def = STEPS.find(s => s.key === currentStep);
       const errs = form.formState.errors as Record<string, any>;
-      const firstMsg = def?.fields.map(f => errs[f as string]?.message).find(Boolean);
-      toast.error(firstMsg || 'Existem campos inválidos nesta etapa. Revise os campos destacados.');
+      const problems = Object.entries(errs)
+        .filter(([, e]) => e?.message)
+        .map(([field, e]) => `• ${FIELD_LABELS[field] || field}: ${e.message}`);
+      toast.error('Não foi possível avançar. Verifique os campos:', {
+        description: problems.length > 0
+          ? problems.join('\n')
+          : 'Existem campos inválidos nesta etapa. Revise os campos destacados.',
+        duration: 8000,
+      });
       return;
     }
     if (currentStep < 7) goToStep((currentStep + 1) as StepKey);
@@ -536,7 +569,15 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       // Vai para a primeira etapa com erro
       const first = [...errored].sort((a, b) => a - b)[0];
       if (first) goToStep(first);
-      toast.error('Existem campos inválidos. Revise as etapas destacadas.');
+      const problems = Object.entries(errs)
+        .filter(([, e]) => (e as any)?.message)
+        .map(([field, e]) => `• ${FIELD_LABELS[field] || field}: ${(e as any).message}`);
+      toast.error('Não foi possível salvar. Verifique os campos:', {
+        description: problems.length > 0
+          ? problems.join('\n')
+          : 'Existem campos inválidos. Revise as etapas destacadas.',
+        duration: 8000,
+      });
       return;
     }
     await form.handleSubmit(onSubmit)();
