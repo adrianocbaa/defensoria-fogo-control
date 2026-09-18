@@ -455,7 +455,7 @@ export default function AdminPanel() {
           email: newUserEmail,
           displayName: newUserName || newUserEmail.split('@')[0],
           role: newUserRole,
-          empresaId: newUserRole === 'contratada' ? newUserEmpresaId || null : null,
+          empresaId: requiresEmpresa ? newUserEmpresaId || null : null,
           setoresAtuantes: newUserSetoresAtuantes,
         },
         headers: {
