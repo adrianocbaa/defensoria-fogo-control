@@ -250,7 +250,22 @@ export default function AdminPanel() {
     const roleChanges = Object.entries(pendingChanges);
     const sectorChanges = Object.entries(pendingSectorChanges);
     const setorAtuanteChanges = Object.entries(pendingSetorAtuanteChanges);
-    
+
+    // Perfil Contratada exige empresa vinculada
+    for (const [userId, newRole] of roleChanges) {
+      if (newRole === 'contratada') {
+        const prof = profiles.find(p => p.user_id === userId);
+        if (!prof?.empresa_id) {
+          toast({
+            title: 'Empresa obrigatória',
+            description: `Informe a empresa de ${formatName(prof?.display_name || '') || 'usuário'} em "Editar cadastro" antes de definir o perfil Contratada.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+    }
+
     if (roleChanges.length === 0 && sectorChanges.length === 0 && setorAtuanteChanges.length === 0) {
       toast({
         title: 'Nenhuma alteração',
