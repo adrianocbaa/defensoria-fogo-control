@@ -569,7 +569,15 @@ export function ObraForm({ obraId, initialData, onSuccess, onCancel, canChangeFi
       // Vai para a primeira etapa com erro
       const first = [...errored].sort((a, b) => a - b)[0];
       if (first) goToStep(first);
-      toast.error('Existem campos inválidos. Revise as etapas destacadas.');
+      const problems = Object.entries(errs)
+        .filter(([, e]) => (e as any)?.message)
+        .map(([field, e]) => `• ${FIELD_LABELS[field] || field}: ${(e as any).message}`);
+      toast.error('Não foi possível salvar. Verifique os campos:', {
+        description: problems.length > 0
+          ? problems.join('\n')
+          : 'Existem campos inválidos. Revise as etapas destacadas.',
+        duration: 8000,
+      });
       return;
     }
     await form.handleSubmit(onSubmit)();
