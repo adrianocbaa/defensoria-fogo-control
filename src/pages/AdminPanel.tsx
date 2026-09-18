@@ -759,6 +759,14 @@ export default function AdminPanel() {
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                               {/* Ações Rápidas */}
                               <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditUser(profile)}
+                                  title="Editar cadastro"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="sm" title="Resetar senha">
