@@ -681,11 +681,17 @@ export function Medicao() {
       itemsComTotais.forEach(item => {
         if (determinarNivel(item.item) === nivel && ehItemPai(item.item, itemsComTotais)) {
           // Somar todos os filhos diretos
+          // Filhos = descendentes cujo ancestral existente mais próximo é este item
+          // (suporta planilhas sem o nível intermediário, ex.: "1" e "1.1.1").
+          const existentes = new Set(itemsComTotais.map(i => i.item));
           const filhos = itemsComTotais.filter(filho => {
-            const filhoPartes = filho.item.split('.');
-            const paiPartes = item.item.split('.');
-            return filhoPartes.length === paiPartes.length + 1 &&
-                   filho.item.startsWith(item.item + '.');
+            if (!filho.item.startsWith(item.item + '.')) return false;
+            const partes = filho.item.split('.');
+            for (let i = partes.length - 1; i >= 1; i--) {
+              const anc = partes.slice(0, i).join('.');
+              if (existentes.has(anc)) return anc === item.item;
+            }
+            return false;
           });
           
           const somaQuantidade = filhos.reduce((sum, filho) => sum + filho.quantidade, 0);
