@@ -3640,10 +3640,14 @@ export function Medicao() {
         origem: 'contratual'
       }));
 
-      setItems(dadosComNivel);
+      // Recalcular toda a árvore antes de exibir e salvar. Isso garante que um
+      // item principal também seja preenchido quando a planilha pula níveis
+      // intermediários (ex.: 1 -> 1.1.1 e 1.2.1).
+      const dadosComTotais = calcularTotaisHierarquicos(dadosComNivel);
+      setItems(dadosComTotais);
 
       // Salvar no banco de dados
-      const itemsParaSalvar = dadosComNivel.map((item) => ({
+      const itemsParaSalvar = dadosComTotais.map((item) => ({
         obra_id: id,
         item: item.item,
         codigo: item.codigo,
@@ -4697,14 +4701,14 @@ export function Medicao() {
                                   return item.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                 }
                                 
-                                // Para itens pai, somar valores dos filhos diretos
-                                const filhosDirectos = items.filter(filho => {
-                                  const paiDoFilho = filho.item.split('.').slice(0, -1).join('.');
-                                  return paiDoFilho === item.item;
-                                });
-                                
-                                const somaFilhos = filhosDirectos.reduce((sum, filho) => sum + filho.valorTotal, 0);
-                                return somaFilhos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                // Somar apenas folhas descendentes, inclusive quando
+                                // a planilha não possui um nível intermediário.
+                                const somaDescendentes = descendantIds.reduce((sum, id) => {
+                                  const descendente = items.find(candidato => candidato.id === id);
+                                  if (!descendente || !ehItemFolha(descendente.item)) return sum;
+                                  return sum + descendente.valorTotal;
+                                }, 0);
+                                return somaDescendentes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                               })()}
                             </div>
                           </TableCell>
@@ -4766,13 +4770,11 @@ export function Medicao() {
                                   return `R$ ${totalContratoVisual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                                 }
                                 
-                                // Para itens pai, somar valores dos filhos diretos
-                                const filhosDirectos = items.filter(filho => {
-                                  const paiDoFilho = filho.item.split('.').slice(0, -1).join('.');
-                                  return paiDoFilho === item.item;
-                                });
-                                
-                                const somaFilhos = filhosDirectos.reduce((sum, filho) => {
+                                // Somar apenas folhas descendentes, inclusive quando
+                                // a planilha não possui um nível intermediário.
+                                const somaFilhos = descendantIds.reduce((sum, id) => {
+                                  const filho = items.find(candidato => candidato.id === id);
+                                  if (!filho || !ehItemFolha(filho.item)) return sum;
                                   const somaAditivosFilho = aditivos
                                     .filter(a => a.bloqueada)
                                     .reduce((sumA, a) => sumA + ((a.dados[filho.id]?.total) || 0), 0);
