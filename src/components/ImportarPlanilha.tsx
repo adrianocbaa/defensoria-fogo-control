@@ -194,34 +194,59 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
         //  2) unitário derivado (total ÷ qtd) arredondado em 2 casas, se reproduz o total;
         //  3) coluna de valor unitário, se existir;
         //  4) derivado sem arredondar (último recurso).
-        const unitarioPlanilha = parseNumeric(row[valorUnitCol])
+        const unitarioPlanilha = parseNumeric(row[bdiValue > 0 ? (columnMap['valorUnit'] ?? valorUnitCol) : valorUnitCol])
         const unitarioDerivado = derivarUnitarioBruto(totalOriginal, quantidade)
         const unitarioDerivado2 = Math.round(unitarioDerivado * 100) / 100
         const reproduzTotal = (u: number) =>
           Math.abs(u) > 1e-12 && truncar2(quantidade * u) === totalOriginal
 
         let valorUnitarioBruto: number
-        if (reproduzTotal(unitarioPlanilha)) {
-          valorUnitarioBruto = unitarioPlanilha
-        } else if (reproduzTotal(unitarioDerivado2)) {
-          valorUnitarioBruto = unitarioDerivado2
-        } else if (Math.abs(unitarioPlanilha) > 1e-12) {
-          valorUnitarioBruto = unitarioPlanilha
+        let valorUnitarioComDesconto: number
+        let valorTotalComDesconto: number
+        let totalReferencia = totalOriginal
+
+        if (bdiValue > 0) {
+          // Planilha traz apenas o unitário ORIGINAL (sem BDI) e o quantitativo.
+          // O sistema aplica BDI e desconto truncando cada etapa em 2 casas,
+          // na ordem escolhida pelo usuário.
+          const base = Math.abs(unitarioPlanilha) > 1e-12 ? unitarioPlanilha : unitarioDerivado
+          const aplicarBdi = (v: number) => truncar2(v * (1 + bdiValue / 100))
+          const aplicarDesconto = (v: number) => truncar2(v * (1 - descontoValue / 100))
+
+          if (ordemCalculo === 'desconto_primeiro') {
+            const comDesconto = aplicarDesconto(base)
+            valorUnitarioComDesconto = aplicarBdi(comDesconto)
+            valorUnitarioBruto = aplicarBdi(base) // referência sem desconto (com BDI)
+          } else {
+            const comBdi = aplicarBdi(base)
+            valorUnitarioBruto = comBdi
+            valorUnitarioComDesconto = aplicarDesconto(comBdi)
+          }
+
+          valorTotalComDesconto = truncar2(quantidade * valorUnitarioComDesconto)
+          totalReferencia = truncar2(quantidade * valorUnitarioBruto)
         } else {
-          valorUnitarioBruto = unitarioDerivado
+          if (reproduzTotal(unitarioPlanilha)) {
+            valorUnitarioBruto = unitarioPlanilha
+          } else if (reproduzTotal(unitarioDerivado2)) {
+            valorUnitarioBruto = unitarioDerivado2
+          } else if (Math.abs(unitarioPlanilha) > 1e-12) {
+            valorUnitarioBruto = unitarioPlanilha
+          } else {
+            valorUnitarioBruto = unitarioDerivado
+          }
+
+          // Desconto aplicado de forma centralizada.
+          // Padrão: unitário líquido sem truncar, truncando apenas o total do item.
+          // Opção "truncar unitário": trunca também o unitário com desconto em 2 casas,
+          // e o total passa a ser calculado sobre esse unitário truncado.
+          valorUnitarioComDesconto = truncarUnitario
+            ? truncar2(unitarioLiquido(valorUnitarioBruto, descontoValue))
+            : unitarioLiquido(valorUnitarioBruto, descontoValue)
+          valorTotalComDesconto = truncarUnitario
+            ? truncar2(quantidade * valorUnitarioComDesconto)
+            : totalItem(quantidade, valorUnitarioBruto, descontoValue)
         }
-
-
-        // Desconto aplicado de forma centralizada.
-        // Padrão: unitário líquido sem truncar, truncando apenas o total do item.
-        // Opção "truncar unitário": trunca também o unitário com desconto em 2 casas,
-        // e o total passa a ser calculado sobre esse unitário truncado.
-        const valorUnitarioComDesconto = truncarUnitario
-          ? truncar2(unitarioLiquido(valorUnitarioBruto, descontoValue))
-          : unitarioLiquido(valorUnitarioBruto, descontoValue)
-        const valorTotalComDesconto = truncarUnitario
-          ? truncar2(quantidade * valorUnitarioComDesconto)
-          : totalItem(quantidade, valorUnitarioBruto, descontoValue)
 
         const item: Item = {
           id: Date.now() + i, // ID único
