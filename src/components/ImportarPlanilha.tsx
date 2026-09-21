@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
 import { readExcelFile } from '@/lib/excelUtils'
@@ -40,6 +41,7 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [percentualDesconto, setPercentualDesconto] = useState<string>('')
+  const [truncarUnitario, setTruncarUnitario] = useState(false)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -210,10 +212,16 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
         }
 
 
-        // Desconto aplicado de forma centralizada: unitário líquido sem truncar,
-        // truncando apenas o total do item (mesma regra do Excel).
-        const valorTotalComDesconto = totalItem(quantidade, valorUnitarioBruto, descontoValue)
-        const valorUnitarioComDesconto = unitarioLiquido(valorUnitarioBruto, descontoValue)
+        // Desconto aplicado de forma centralizada.
+        // Padrão: unitário líquido sem truncar, truncando apenas o total do item.
+        // Opção "truncar unitário": trunca também o unitário com desconto em 2 casas,
+        // e o total passa a ser calculado sobre esse unitário truncado.
+        const valorUnitarioComDesconto = truncarUnitario
+          ? truncar2(unitarioLiquido(valorUnitarioBruto, descontoValue))
+          : unitarioLiquido(valorUnitarioBruto, descontoValue)
+        const valorTotalComDesconto = truncarUnitario
+          ? truncar2(quantidade * valorUnitarioComDesconto)
+          : totalItem(quantidade, valorUnitarioBruto, descontoValue)
 
         const item: Item = {
           id: Date.now() + i, // ID único
@@ -303,6 +311,22 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
           <p className="text-xs text-muted-foreground mt-1">
             Se informado, o desconto será aplicado aos valores unitários e totais usando TRUNCAR(valor × (1 - desconto%), 2).
           </p>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-md border p-3">
+          <Checkbox
+            id="truncar-unitario"
+            checked={truncarUnitario}
+            onCheckedChange={(v) => setTruncarUnitario(v === true)}
+          />
+          <div className="space-y-1">
+            <label htmlFor="truncar-unitario" className="text-sm font-medium cursor-pointer">
+              Truncar o desconto em 2 casas decimais
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Se marcado, o valor unitário com desconto também é truncado em 2 casas, e o total do item é calculado a partir dele.
+            </p>
+          </div>
         </div>
 
         {erro && (
