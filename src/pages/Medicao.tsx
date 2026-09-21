@@ -1952,18 +1952,11 @@ export function Medicao() {
       const round2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
       // TOTAL CONTRATO: soma os itens com precisão plena e arredonda só no final,
       // exatamente como o card "Pós-Aditivo" exibido na tela.
-      const totalTotalContratoPDF = round2(items
-        .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => sum + calcularTotalContratoComAditivos(item, medicaoAtual), 0));
-      const totalMedicaoAtualPDF = round2(items
-        .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => {
-          const medicaoData = medicaoAtualObj.dados[item.id] || { qnt: 0, percentual: 0, total: 0 };
-          return sum + round2(medicaoData.total);
-        }, 0));
-      const totalAcumuladoPDF = round2(items
-        .filter(item => ehItemFolha(item.item))
-        .reduce((sum, item) => sum + round2(calcularValorAcumuladoItem(item.id)), 0));
+      // Reproduzir exatamente os cartões da tela. O detalhamento continua por
+      // item, mas os totais não são recalculados por um caminho independente.
+      const totalTotalContratoPDF = round2(resumoFinanceiro.valorContratoPosAditivo);
+      const totalMedicaoAtualPDF = round2(totalServicosExecutados);
+      const totalAcumuladoPDF = round2(valorAcumuladoTotal);
       const percentualExecucao = totalTotalContratoPDF > 0 ? (totalAcumuladoPDF / totalTotalContratoPDF) * 100 : 0;
       
       // Criar conteúdo HTML profissional
@@ -5186,6 +5179,11 @@ export function Medicao() {
         calcularValorAcumuladoItem={calcularValorAcumuladoItem}
         calcularTotalContratoComAditivos={calcularTotalContratoComAditivos}
         dadosHierarquicos={dadosHierarquicosMemoizados}
+        valoresTela={{
+          contrato: resumoFinanceiro.valorContratoPosAditivo,
+          executado: totalServicosExecutados,
+          acumulado: valorAcumuladoTotal,
+        }}
       />
     )}
 
