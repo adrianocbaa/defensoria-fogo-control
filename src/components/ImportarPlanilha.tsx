@@ -267,7 +267,7 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
           valorUnitario: valorUnitarioComDesconto, // Unitário líquido (sem truncar)
           valorUnitarioBruto: valorUnitarioBruto, // Base única para contrato e aditivos
           valorTotal: valorTotalComDesconto, // Total truncado em 2 casas
-          valorTotalSemDesconto: totalOriginal, // Valor original da planilha para referência
+          valorTotalSemDesconto: totalReferencia, // Total sem desconto (com BDI, quando informado)
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: valorTotalComDesconto, // Valor com desconto para o contrato
           importado: true,
