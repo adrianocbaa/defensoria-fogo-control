@@ -102,7 +102,7 @@ interface RelatorioMedicaoModalProps {
   calcularValorAcumuladoItem: (itemId: number) => number;
   calcularTotalContratoComAditivos: (item: Item, medicaoId: number) => number;
   dadosHierarquicos: { [medicaoId: number]: { [itemId: number]: { qnt: number; percentual: number; total: number } } };
-  valoresTela: {
+  valoresTela?: {
     contrato: number;
     executado: number;
     acumulado: number;
