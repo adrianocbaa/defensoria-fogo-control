@@ -42,6 +42,8 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
   const [sucesso, setSucesso] = useState('')
   const [percentualDesconto, setPercentualDesconto] = useState<string>('')
   const [truncarUnitario, setTruncarUnitario] = useState(false)
+  const [percentualBdi, setPercentualBdi] = useState<string>('')
+  const [ordemCalculo, setOrdemCalculo] = useState<'bdi_primeiro' | 'desconto_primeiro'>('bdi_primeiro')
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -67,6 +69,12 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
     const descontoValue = percentualDesconto ? parseFloat(percentualDesconto) : 0
     if (percentualDesconto && (descontoValue < 0 || descontoValue > 100)) {
       setErro('Percentual de desconto deve ser entre 0 e 100')
+      return
+    }
+
+    const bdiValue = percentualBdi ? parseFloat(percentualBdi) : 0
+    if (percentualBdi && (bdiValue < 0 || bdiValue > 100)) {
+      setErro('Percentual de BDI deve ser entre 0 e 100')
       return
     }
 
@@ -194,34 +202,59 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
         //  2) unitário derivado (total ÷ qtd) arredondado em 2 casas, se reproduz o total;
         //  3) coluna de valor unitário, se existir;
         //  4) derivado sem arredondar (último recurso).
-        const unitarioPlanilha = parseNumeric(row[valorUnitCol])
+        const unitarioPlanilha = parseNumeric(row[bdiValue > 0 ? (columnMap['valorUnit'] ?? valorUnitCol) : valorUnitCol])
         const unitarioDerivado = derivarUnitarioBruto(totalOriginal, quantidade)
         const unitarioDerivado2 = Math.round(unitarioDerivado * 100) / 100
         const reproduzTotal = (u: number) =>
           Math.abs(u) > 1e-12 && truncar2(quantidade * u) === totalOriginal
 
         let valorUnitarioBruto: number
-        if (reproduzTotal(unitarioPlanilha)) {
-          valorUnitarioBruto = unitarioPlanilha
-        } else if (reproduzTotal(unitarioDerivado2)) {
-          valorUnitarioBruto = unitarioDerivado2
-        } else if (Math.abs(unitarioPlanilha) > 1e-12) {
-          valorUnitarioBruto = unitarioPlanilha
+        let valorUnitarioComDesconto: number
+        let valorTotalComDesconto: number
+        let totalReferencia = totalOriginal
+
+        if (bdiValue > 0) {
+          // Planilha traz apenas o unitário ORIGINAL (sem BDI) e o quantitativo.
+          // O sistema aplica BDI e desconto truncando cada etapa em 2 casas,
+          // na ordem escolhida pelo usuário.
+          const base = Math.abs(unitarioPlanilha) > 1e-12 ? unitarioPlanilha : unitarioDerivado
+          const aplicarBdi = (v: number) => truncar2(v * (1 + bdiValue / 100))
+          const aplicarDesconto = (v: number) => truncar2(v * (1 - descontoValue / 100))
+
+          if (ordemCalculo === 'desconto_primeiro') {
+            const comDesconto = aplicarDesconto(base)
+            valorUnitarioComDesconto = aplicarBdi(comDesconto)
+            valorUnitarioBruto = aplicarBdi(base) // referência sem desconto (com BDI)
+          } else {
+            const comBdi = aplicarBdi(base)
+            valorUnitarioBruto = comBdi
+            valorUnitarioComDesconto = aplicarDesconto(comBdi)
+          }
+
+          valorTotalComDesconto = truncar2(quantidade * valorUnitarioComDesconto)
+          totalReferencia = truncar2(quantidade * valorUnitarioBruto)
         } else {
-          valorUnitarioBruto = unitarioDerivado
+          if (reproduzTotal(unitarioPlanilha)) {
+            valorUnitarioBruto = unitarioPlanilha
+          } else if (reproduzTotal(unitarioDerivado2)) {
+            valorUnitarioBruto = unitarioDerivado2
+          } else if (Math.abs(unitarioPlanilha) > 1e-12) {
+            valorUnitarioBruto = unitarioPlanilha
+          } else {
+            valorUnitarioBruto = unitarioDerivado
+          }
+
+          // Desconto aplicado de forma centralizada.
+          // Padrão: unitário líquido sem truncar, truncando apenas o total do item.
+          // Opção "truncar unitário": trunca também o unitário com desconto em 2 casas,
+          // e o total passa a ser calculado sobre esse unitário truncado.
+          valorUnitarioComDesconto = truncarUnitario
+            ? truncar2(unitarioLiquido(valorUnitarioBruto, descontoValue))
+            : unitarioLiquido(valorUnitarioBruto, descontoValue)
+          valorTotalComDesconto = truncarUnitario
+            ? truncar2(quantidade * valorUnitarioComDesconto)
+            : totalItem(quantidade, valorUnitarioBruto, descontoValue)
         }
-
-
-        // Desconto aplicado de forma centralizada.
-        // Padrão: unitário líquido sem truncar, truncando apenas o total do item.
-        // Opção "truncar unitário": trunca também o unitário com desconto em 2 casas,
-        // e o total passa a ser calculado sobre esse unitário truncado.
-        const valorUnitarioComDesconto = truncarUnitario
-          ? truncar2(unitarioLiquido(valorUnitarioBruto, descontoValue))
-          : unitarioLiquido(valorUnitarioBruto, descontoValue)
-        const valorTotalComDesconto = truncarUnitario
-          ? truncar2(quantidade * valorUnitarioComDesconto)
-          : totalItem(quantidade, valorUnitarioBruto, descontoValue)
 
         const item: Item = {
           id: Date.now() + i, // ID único
@@ -234,7 +267,7 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
           valorUnitario: valorUnitarioComDesconto, // Unitário líquido (sem truncar)
           valorUnitarioBruto: valorUnitarioBruto, // Base única para contrato e aditivos
           valorTotal: valorTotalComDesconto, // Total truncado em 2 casas
-          valorTotalSemDesconto: totalOriginal, // Valor original da planilha para referência
+          valorTotalSemDesconto: totalReferencia, // Total sem desconto (com BDI, quando informado)
           aditivo: { qnt: 0, percentual: 0, total: 0 },
           totalContrato: valorTotalComDesconto, // Valor com desconto para o contrato
           importado: true,
@@ -328,6 +361,61 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
             </p>
           </div>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Percentual de BDI (%) <span className="text-muted-foreground font-normal">(opcional)</span>
+          </label>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            value={percentualBdi}
+            onChange={(e) => setPercentualBdi(e.target.value)}
+            placeholder="Ex: 25.00"
+            className="w-full"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Preencha somente se a planilha trouxer o valor unitário ORIGINAL (sem BDI). O sistema aplica o BDI e o desconto truncando cada etapa em 2 casas.
+          </p>
+        </div>
+
+        {percentualBdi && parseFloat(percentualBdi) > 0 && (
+          <div className="rounded-md border p-3 space-y-2">
+            <p className="text-sm font-medium">O que aplicar primeiro?</p>
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="ordem-calculo"
+                className="mt-1"
+                checked={ordemCalculo === 'bdi_primeiro'}
+                onChange={() => setOrdemCalculo('bdi_primeiro')}
+              />
+              <span>
+                BDI primeiro, depois o desconto
+                <span className="block text-xs text-muted-foreground">
+                  TRUNCAR(unitário × (1 + BDI%)) → TRUNCAR(resultado × (1 - desconto%))
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="ordem-calculo"
+                className="mt-1"
+                checked={ordemCalculo === 'desconto_primeiro'}
+                onChange={() => setOrdemCalculo('desconto_primeiro')}
+              />
+              <span>
+                Desconto primeiro, depois o BDI
+                <span className="block text-xs text-muted-foreground">
+                  TRUNCAR(unitário × (1 - desconto%)) → TRUNCAR(resultado × (1 + BDI%))
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
 
         {erro && (
           <Alert variant="destructive">
