@@ -524,10 +524,16 @@ export function Medicao() {
     items.forEach((it) => {
       const code = it.item.trim();
       const parts = code.split('.');
-      if (parts.length > 1) {
-        const parent = parts.slice(0, -1).join('.');
-        if (!mapChildren.has(parent)) mapChildren.set(parent, []);
-        mapChildren.get(parent)!.push(it);
+      // Procura o ancestral mais próximo que EXISTE na planilha.
+      // Ex.: se existe "1" e "1.1.1" mas não existe "1.1",
+      // o item "1.1.1" é filho direto de "1" (evita macro sem somatória).
+      for (let i = parts.length - 1; i >= 1; i--) {
+        const parent = parts.slice(0, i).join('.');
+        if (mapItems.has(parent)) {
+          if (!mapChildren.has(parent)) mapChildren.set(parent, []);
+          mapChildren.get(parent)!.push(it);
+          break;
+        }
       }
     });
 
