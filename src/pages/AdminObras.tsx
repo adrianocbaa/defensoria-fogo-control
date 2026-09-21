@@ -271,30 +271,63 @@ export function AdminObras() {
         setFiscalNames(map);
       }
 
-      const [rdoProgressData, aditivoData, medicaoData, orcamentoFinanceiroData] = await Promise.all([
+      // Busca paginada: evita truncamento silencioso quando o volume de itens
+      // ultrapassa o limite máximo de linhas por requisição.
+      const fetchAllPaged = async (
+        build: (from: number, to: number) => any,
+      ): Promise<any[]> => {
+        const PAGE = 1000;
+        const all: any[] = [];
+        for (let from = 0; ; from += PAGE) {
+          const { data, error } = await build(from, from + PAGE - 1);
+          if (error) throw error;
+          const rows = data || [];
+          all.push(...rows);
+          if (rows.length < PAGE) break;
+        }
+        return all;
+      };
+
+      const [rdoProgressData, aditivoData, medicaoData, orcamentoItensTodos] = await Promise.all([
         supabase.rpc('get_rdo_progress_batch', { p_obra_ids: ids }),
         supabase.from('aditivo_sessions').select('id, obra_id').in('obra_id', ids).eq('status', 'bloqueada'),
         supabase.from('medicao_sessions')
           .select('id, obra_id, sequencia, periodo_inicio, periodo_fim, data_vistoria, data_relatorio')
           .in('obra_id', ids),
-        supabase.from('orcamento_items')
-          .select('obra_id, total_contrato, item, eh_administracao_local')
-          .in('obra_id', ids).limit(10000),
+        fetchAllPaged((from, to) =>
+          supabase.from('orcamento_items')
+            .select('obra_id, total_contrato, item, eh_administracao_local')
+            .in('obra_id', ids)
+            .order('id', { ascending: true })
+            .range(from, to)),
       ]);
+
+      const orcamentoFinanceiroData: any = { data: orcamentoItensTodos, error: null };
 
       let aditivoItemsData: any = { data: [], error: null };
       let medicaoItemsData: any = { data: [], error: null };
 
       if (aditivoData.data && aditivoData.data.length > 0) {
-        aditivoItemsData = await supabase.from('aditivo_items')
-          .select('aditivo_id, total, item_code, qtd')
-          .in('aditivo_id', aditivoData.data.map((s) => s.id));
+        const adIds = aditivoData.data.map((s) => s.id);
+        aditivoItemsData = {
+          data: await fetchAllPaged((from, to) =>
+            supabase.from('aditivo_items')
+              .select('aditivo_id, total, item_code, qtd')
+              .in('aditivo_id', adIds)
+              .order('id', { ascending: true })
+              .range(from, to)),
+          error: null,
+        };
       }
       if (medicaoData.data && medicaoData.data.length > 0) {
-        medicaoItemsData = await supabase.from('medicao_items')
-          .select(`medicao_id, total, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`)
-          .in('medicao_id', medicaoData.data.map((s) => s.id));
-        if (medicaoItemsData.data) medicaoItemsData.data = resolveItensEfetivos(medicaoItemsData.data);
+        const medIds = medicaoData.data.map((s) => s.id);
+        const medRows = await fetchAllPaged((from, to) =>
+          supabase.from('medicao_items')
+            .select(`medicao_id, total, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`)
+            .in('medicao_id', medIds)
+            .order('id', { ascending: true })
+            .range(from, to));
+        medicaoItemsData = { data: resolveItensEfetivos(medRows), error: null };
       }
 
       const rdoProgressMap = new Map<string, number>();
