@@ -237,9 +237,10 @@ export function calcularFinanceiroMedicao(
       medicaoItems.forEach(i => {
         if (!openSessionIdsAteAgora.has(i.medicao_id)) return;
         if (ehFolhaNonAL(i.item_code) || !folhasSet.has(i.item_code)) {
-          nonALOpenAcum += Number(i.total || 0);
+          nonALOpenAcum += round2(Number(i.total || 0));
         }
       });
+      nonALOpenAcum = round2(nonALOpenAcum);
       const pctOpen = totalContratoNonALRemanescente > 0
         ? Math.min(nonALOpenAcum / totalContratoNonALRemanescente, 1)
         : 0;
