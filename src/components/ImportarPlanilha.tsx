@@ -40,6 +40,7 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [percentualDesconto, setPercentualDesconto] = useState<string>('')
+  const [truncarUnitario, setTruncarUnitario] = useState(false)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -210,10 +211,16 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
         }
 
 
-        // Desconto aplicado de forma centralizada: unitário líquido sem truncar,
-        // truncando apenas o total do item (mesma regra do Excel).
-        const valorTotalComDesconto = totalItem(quantidade, valorUnitarioBruto, descontoValue)
-        const valorUnitarioComDesconto = unitarioLiquido(valorUnitarioBruto, descontoValue)
+        // Desconto aplicado de forma centralizada.
+        // Padrão: unitário líquido sem truncar, truncando apenas o total do item.
+        // Opção "truncar unitário": trunca também o unitário com desconto em 2 casas,
+        // e o total passa a ser calculado sobre esse unitário truncado.
+        const valorUnitarioComDesconto = truncarUnitario
+          ? truncar2(unitarioLiquido(valorUnitarioBruto, descontoValue))
+          : unitarioLiquido(valorUnitarioBruto, descontoValue)
+        const valorTotalComDesconto = truncarUnitario
+          ? truncar2(quantidade * valorUnitarioComDesconto)
+          : totalItem(quantidade, valorUnitarioBruto, descontoValue)
 
         const item: Item = {
           id: Date.now() + i, // ID único
