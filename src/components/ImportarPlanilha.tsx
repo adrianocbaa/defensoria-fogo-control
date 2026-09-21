@@ -362,6 +362,61 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Percentual de BDI (%) <span className="text-muted-foreground font-normal">(opcional)</span>
+          </label>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            value={percentualBdi}
+            onChange={(e) => setPercentualBdi(e.target.value)}
+            placeholder="Ex: 25.00"
+            className="w-full"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Preencha somente se a planilha trouxer o valor unitário ORIGINAL (sem BDI). O sistema aplica o BDI e o desconto truncando cada etapa em 2 casas.
+          </p>
+        </div>
+
+        {percentualBdi && parseFloat(percentualBdi) > 0 && (
+          <div className="rounded-md border p-3 space-y-2">
+            <p className="text-sm font-medium">O que aplicar primeiro?</p>
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="ordem-calculo"
+                className="mt-1"
+                checked={ordemCalculo === 'bdi_primeiro'}
+                onChange={() => setOrdemCalculo('bdi_primeiro')}
+              />
+              <span>
+                BDI primeiro, depois o desconto
+                <span className="block text-xs text-muted-foreground">
+                  TRUNCAR(unitário × (1 + BDI%)) → TRUNCAR(resultado × (1 - desconto%))
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="ordem-calculo"
+                className="mt-1"
+                checked={ordemCalculo === 'desconto_primeiro'}
+                onChange={() => setOrdemCalculo('desconto_primeiro')}
+              />
+              <span>
+                Desconto primeiro, depois o BDI
+                <span className="block text-xs text-muted-foreground">
+                  TRUNCAR(unitário × (1 - desconto%)) → TRUNCAR(resultado × (1 + BDI%))
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
+
         {erro && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
