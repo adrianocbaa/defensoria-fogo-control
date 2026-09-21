@@ -72,6 +72,12 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
       return
     }
 
+    const bdiValue = percentualBdi ? parseFloat(percentualBdi) : 0
+    if (percentualBdi && (bdiValue < 0 || bdiValue > 100)) {
+      setErro('Percentual de BDI deve ser entre 0 e 100')
+      return
+    }
+
     setCarregando(true)
     setErro('')
     setSucesso('')
