@@ -120,7 +120,7 @@ export function RelatorioMedicaoModal({
   calcularValorAcumuladoItem,
   calcularTotalContratoComAditivos,
   dadosHierarquicos,
-  valoresTela
+  valoresTela = { contrato: 0, executado: 0, acumulado: 0 }
 }: RelatorioMedicaoModalProps) {
   const [servicosExecutados, setServicosExecutados] = useState('');
   const [periodoInicio, setPeriodoInicio] = useState('');
