@@ -209,15 +209,15 @@ export function calcularFinanceiroMedicao(
     medicaoItems.forEach(i => {
       if (!blockedSessionIds.has(i.medicao_id)) return;
       if (ehFolhaNonAL(i.item_code) || !folhasSet.has(i.item_code)) {
-        soma += Number(i.total || 0);
+        soma += round2(Number(i.total || 0));
       }
     });
-    return soma;
+    return round2(soma);
   })();
   const totalContratoNonALRemanescente = Math.max(0, totalContratoNonAL - nonALBlockedConsumido);
-  const totalCongeladoBlocked = sessionsSorted
+  const totalCongeladoBlocked = round2(sessionsSorted
     .filter(s => s.status === 'bloqueada')
-    .reduce((acc, s) => acc + sumTotalSessao(s.id), 0);
+    .reduce((acc, s) => acc + sumTotalSessao(s.id), 0));
   const totalContratoALRemanescente = Math.max(0, totalContratoAL - Math.max(0, totalCongeladoBlocked - nonALBlockedConsumido));
 
   let acumuladoAnterior = 0;
