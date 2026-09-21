@@ -102,6 +102,11 @@ interface RelatorioMedicaoModalProps {
   calcularValorAcumuladoItem: (itemId: number) => number;
   calcularTotalContratoComAditivos: (item: Item, medicaoId: number) => number;
   dadosHierarquicos: { [medicaoId: number]: { [itemId: number]: { qnt: number; percentual: number; total: number } } };
+  valoresTela: {
+    contrato: number;
+    executado: number;
+    acumulado: number;
+  };
 }
 
 export function RelatorioMedicaoModal({
@@ -114,7 +119,8 @@ export function RelatorioMedicaoModal({
   aditivos,
   calcularValorAcumuladoItem,
   calcularTotalContratoComAditivos,
-  dadosHierarquicos
+  dadosHierarquicos,
+  valoresTela
 }: RelatorioMedicaoModalProps) {
   const [servicosExecutados, setServicosExecutados] = useState('');
   const [periodoInicio, setPeriodoInicio] = useState('');
@@ -678,10 +684,12 @@ export function RelatorioMedicaoModal({
       }
     });
 
-    const contratoFinal = round2Rel(totalContrato);
+    // Os totais do documento devem reproduzir os cartões da tela, sem uma
+    // recomposição paralela que possa gerar diferenças de centavos.
+    const contratoFinal = round2Rel(valoresTela.contrato);
     const valorInicialFinal = round2Rel(valorInicial);
-    const executadoFinal = round2Rel(totalExecutado);
-    const executadoAcumFinal = round2Rel(totalExecutadoAcum);
+    const executadoFinal = round2Rel(valoresTela.executado);
+    const executadoAcumFinal = round2Rel(valoresTela.acumulado);
     const totalAditivo = round2Rel(contratoFinal - valorInicialFinal);
 
     return {
@@ -693,7 +701,7 @@ export function RelatorioMedicaoModal({
       totalAditivo,
       aditivosPorSessao
     };
-  }, [items, medicoes, medicaoAtual, dadosHierarquicos, calcularValorAcumuladoItem, calcularTotalContratoComAditivos, aditivos]);
+  }, [items, medicoes, medicaoAtual, dadosHierarquicos, calcularValorAcumuladoItem, calcularTotalContratoComAditivos, aditivos, valoresTela]);
 
   const formatMoney = (valor: number) => {
     return new Intl.NumberFormat('pt-BR', {
