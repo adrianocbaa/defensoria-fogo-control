@@ -42,6 +42,8 @@ const ImportarPlanilha = ({ onImportar, onFechar, obraId }: ImportarPlanilhaProp
   const [sucesso, setSucesso] = useState('')
   const [percentualDesconto, setPercentualDesconto] = useState<string>('')
   const [truncarUnitario, setTruncarUnitario] = useState(false)
+  const [percentualBdi, setPercentualBdi] = useState<string>('')
+  const [ordemCalculo, setOrdemCalculo] = useState<'bdi_primeiro' | 'desconto_primeiro'>('bdi_primeiro')
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
