@@ -167,33 +167,37 @@ export function calcularFinanceiroMedicao(
         // a 2ª condição garante inclusão de extracontratuais (que não estão
         // em folhasSet) — mas estes não devem ser AL nem ter contrato.
         if (ehFolhaNonAL(i.item_code) || (!folhasSet.has(i.item_code))) {
-          soma += Number(i.total || 0);
+          soma += round2(Number(i.total || 0));
         }
       }
     });
-    return soma;
+    return round2(soma);
   };
 
   // Soma TOTAL (todos os itens, AL + não-AL + extracontratuais) de uma sessão.
   // Usado para medições BLOQUEADAS: o valor já está congelado em medicao_items
   // (qtd/pct/total_congelado) e representa exatamente o que foi pago — não pode
   // ser recalculado quando aditivos futuros alteram a base do contrato.
+  // IMPORTANTE: arredonda ITEM A ITEM (mesma regra do card "Executado", da
+  // planilha exportada e do relatório) e depois arredonda o total da sessão,
+  // para que o Acumulado seja exatamente a soma dos Executados de cada medição.
   const sumTotalSessao = (sessionId: string) => {
     let soma = 0;
     medicaoItems.forEach(i => {
-      if (i.medicao_id === sessionId) soma += Number(i.total || 0);
+      if (i.medicao_id === sessionId) soma += round2(Number(i.total || 0));
     });
-    return soma;
+    return round2(soma);
   };
 
   // Soma acumulada congelada das sessões bloqueadas até (e incluindo) idx.
+  // Soma os totais JÁ arredondados de cada sessão — nunca valores brutos.
   const sumCongeladoAteIdx = (idx: number) => {
     let soma = 0;
     for (let k = 0; k <= idx; k++) {
       const s = sessionsSorted[k];
       if (s.status === 'bloqueada') soma += sumTotalSessao(s.id);
     }
-    return soma;
+    return round2(soma);
   };
 
   // Total não-AL já consumido por sessões bloqueadas (não entra na distribuição
@@ -205,15 +209,15 @@ export function calcularFinanceiroMedicao(
     medicaoItems.forEach(i => {
       if (!blockedSessionIds.has(i.medicao_id)) return;
       if (ehFolhaNonAL(i.item_code) || !folhasSet.has(i.item_code)) {
-        soma += Number(i.total || 0);
+        soma += round2(Number(i.total || 0));
       }
     });
-    return soma;
+    return round2(soma);
   })();
   const totalContratoNonALRemanescente = Math.max(0, totalContratoNonAL - nonALBlockedConsumido);
-  const totalCongeladoBlocked = sessionsSorted
+  const totalCongeladoBlocked = round2(sessionsSorted
     .filter(s => s.status === 'bloqueada')
-    .reduce((acc, s) => acc + sumTotalSessao(s.id), 0);
+    .reduce((acc, s) => acc + sumTotalSessao(s.id), 0));
   const totalContratoALRemanescente = Math.max(0, totalContratoAL - Math.max(0, totalCongeladoBlocked - nonALBlockedConsumido));
 
   let acumuladoAnterior = 0;
@@ -233,9 +237,10 @@ export function calcularFinanceiroMedicao(
       medicaoItems.forEach(i => {
         if (!openSessionIdsAteAgora.has(i.medicao_id)) return;
         if (ehFolhaNonAL(i.item_code) || !folhasSet.has(i.item_code)) {
-          nonALOpenAcum += Number(i.total || 0);
+          nonALOpenAcum += round2(Number(i.total || 0));
         }
       });
+      nonALOpenAcum = round2(nonALOpenAcum);
       const pctOpen = totalContratoNonALRemanescente > 0
         ? Math.min(nonALOpenAcum / totalContratoNonALRemanescente, 1)
         : 0;
