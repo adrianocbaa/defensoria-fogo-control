@@ -16,15 +16,16 @@
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
--- ── notify-rdo-delay ────────────────────────────────────────────────
--- Remove o job antigo (sem senha) e recria com a senha interna.
--- Se a leitura mostrar um nome diferente de 'notify-rdo-delay',
--- ajuste o nome em cron.unschedule(...).
-SELECT cron.unschedule('notify-rdo-delay');
+-- Nomes e horários confirmados pela leitura em produção (29/09/2026).
+-- Os jobs check-maintenance-confirmations-5min e check-teletrabalho-ending-daily
+-- NÃO são alterados.
+
+-- ── notify-rdo-delay-daily (diário 08:00 UTC) ───────────────────────
+SELECT cron.unschedule('notify-rdo-delay-daily');
 
 SELECT cron.schedule(
-  'notify-rdo-delay',
-  '0 9 * * *', -- diariamente 09:00 UTC — CONFIRMAR com a leitura
+  'notify-rdo-delay-daily',
+  '0 8 * * *',
   $$
   SELECT net.http_post(
     url := 'https://mmumfgxngzaivvyqfbed.supabase.co/functions/v1/notify-rdo-delay',
@@ -37,14 +38,12 @@ SELECT cron.schedule(
   $$
 );
 
--- ── demo-reset ──────────────────────────────────────────────────────
--- Se a leitura NÃO mostrar um job para demo-reset, apague este bloco
--- (significa que o reset de demonstração só é disparado manualmente).
-SELECT cron.unschedule('demo-reset');
+-- ── demo-reset-weekly (domingo 03:00 UTC) ───────────────────────────
+SELECT cron.unschedule('demo-reset-weekly');
 
 SELECT cron.schedule(
-  'demo-reset',
-  '0 6 * * *', -- diariamente 06:00 UTC — CONFIRMAR com a leitura
+  'demo-reset-weekly',
+  '0 3 * * 0',
   $$
   SELECT net.http_post(
     url := 'https://mmumfgxngzaivvyqfbed.supabase.co/functions/v1/demo-reset',
