@@ -206,14 +206,24 @@ SELECT CASE
 -- ----------------------------------------------------------------------------
 -- 8. Segurança do ambiente
 -- ----------------------------------------------------------------------------
-SELECT CASE
-         WHEN EXISTS (SELECT 1 FROM cron.job WHERE active) THEN 'FALHA'
-         WHEN EXISTS (SELECT 1 FROM cron.job) THEN 'ATENÇÃO'
-         ELSE 'OK'
-       END AS resultado,
-       format('8.1 - Jobs em cron.job (ativos: %s; total: %s)',
-              (SELECT count(*) FROM cron.job WHERE active),
-              (SELECT count(*) FROM cron.job)) AS verificacao;
+-- cron.job só existe se a extensão pg_cron estiver instalada; leitura dinâmica
+-- evita erro 42P01 em projetos novos (sem pg_cron = nenhum job = OK).
+WITH c AS (
+  SELECT CASE WHEN to_regclass('cron.job') IS NULL THEN 0
+              ELSE (xpath('/row/n/text()', query_to_xml(
+                     'SELECT count(*) AS n FROM cron.job WHERE active', false, true, '')))[1]::text::int
+         END AS ativos,
+         CASE WHEN to_regclass('cron.job') IS NULL THEN 0
+              ELSE (xpath('/row/n/text()', query_to_xml(
+                     'SELECT count(*) AS n FROM cron.job', false, true, '')))[1]::text::int
+         END AS total
+)
+SELECT CASE WHEN ativos > 0 THEN 'FALHA'
+            WHEN total > 0 THEN 'ATENÇÃO'
+            ELSE 'OK' END AS resultado,
+       format('8.1 - Jobs em cron.job (pg_cron instalado: %s; ativos: %s; total: %s)',
+              (to_regclass('cron.job') IS NOT NULL), ativos, total) AS verificacao
+FROM c;
 
 -- Webhooks de banco (pg_net / triggers http) — informativo
 SELECT CASE WHEN EXISTS (
