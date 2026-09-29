@@ -73,50 +73,51 @@ serve(async (req: Request) => {
     }
 
     // Send email with code
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #0066cc; }
-            .logo { font-size: 24px; font-weight: bold; color: #0066cc; }
-            .content { padding: 30px 0; }
-            .code-box { background: #f5f5f5; border: 2px dashed #0066cc; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
-            .code { font-size: 32px; font-weight: bold; color: #0066cc; letter-spacing: 5px; }
-            .footer { text-align: center; padding: 20px 0; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
-            .button { display: inline-block; padding: 12px 24px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="logo">🔐 Sistema de Redefinição de Senha</div>
-            </div>
-            <div class="content">
-              <h2>Redefinição de Senha</h2>
-              <p>Você solicitou a redefinição de senha da sua conta.</p>
-              <p>Use o código abaixo para redefinir sua senha:</p>
-              <div class="code-box">
-                <div class="code">${code}</div>
-              </div>
-              <p style="text-align: center;">
-                <a href="${origin}/auth?verify=${code}" class="button">
-                  Verificar Código
-                </a>
-              </p>
-              <p><strong>Este código expira em 15 minutos.</strong></p>
-              <p>Se você não solicitou esta redefinição, ignore este e-mail.</p>
-            </div>
-            <div class="footer">
-              <p>Este é um e-mail automático, por favor não responda.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+    const emailHtml = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Redefinição de Senha - SiDIF</title></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:24px 0;"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:6px;overflow:hidden;">
+<tr><td style="background:#0f2a4a;padding:28px 32px;text-align:center;">
+<div style="font-size:28px;font-weight:bold;color:#ffffff;letter-spacing:1px;">SiDIF</div>
+<div style="font-size:13px;color:#dbe4f0;margin-top:4px;">Sistema de Gestão de Obras e Fiscalização</div>
+<div style="font-size:12px;color:#c9a227;margin-top:6px;">Defensoria Pública do Estado de Mato Grosso — DPE-MT</div>
+</td></tr>
+<tr><td style="background:#c9a227;height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
+<tr><td style="padding:32px;">
+<h2 style="margin:0 0 16px;font-size:20px;color:#0f2a4a;">Redefinição de Senha</h2>
+<p style="margin:0 0 12px;font-size:14px;line-height:1.6;">Recebemos uma solicitação para redefinir a senha da sua conta no SiDIF.</p>
+<p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Informe o código abaixo na tela de redefinição:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;border-left:4px solid #0f2a4a;margin:0 0 20px;"><tr><td style="padding:20px;text-align:center;">
+<div style="font-size:12px;color:#64748b;margin-bottom:6px;">Código de verificação</div>
+<div style="font-family:'Courier New',Courier,monospace;font-size:32px;font-weight:bold;color:#0f2a4a;letter-spacing:6px;">${code}</div>
+</td></tr></table>
+<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 20px;"><tr><td style="background:#0f2a4a;border-radius:4px;">
+<a href="${origin}/auth?verify=${code}" style="display:inline-block;padding:12px 28px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;">Redefinir minha senha</a>
+</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fdf6e3;border:1px solid #f1e0a8;border-radius:4px;"><tr><td style="padding:14px 16px;font-size:13px;line-height:1.5;color:#7a5b00;">
+<strong>Atenção:</strong> este código expira em 15 minutos. Se você não solicitou a redefinição, ignore este e-mail — sua senha atual continua válida.
+</td></tr></table>
+</td></tr>
+<tr><td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:20px 32px;text-align:center;font-size:12px;color:#64748b;line-height:1.5;">
+SiDIF — Defensoria Pública do Estado de Mato Grosso<br>
+<a href="https://sidif.com.br" style="color:#0f2a4a;">sidif.com.br</a><br>
+Mensagem automática. Por favor, não responda.
+</td></tr>
+</table></td></tr></table></body></html>`;
+
+    const emailText = `SiDIF - Defensoria Pública do Estado de Mato Grosso (DPE-MT)
+
+Redefinição de Senha
+
+Recebemos uma solicitação para redefinir a senha da sua conta no SiDIF.
+Código de verificação: ${code}
+
+Ou acesse: ${origin}/auth?verify=${code}
+
+Este código expira em 15 minutos. Se você não solicitou a redefinição, ignore este e-mail.
+
+sidif.com.br - Mensagem automática, não responda.`;
 
     // Send email using Resend API
     const emailResponse = await fetch("https://api.resend.com/emails", {
@@ -128,8 +129,9 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         from: "SiDIF - DPE-MT <sidif@sidif.com.br>",
         to: [email],
-        subject: "Código de Redefinição de Senha",
+        subject: "Redefinição de Senha - SiDIF",
         html: emailHtml,
+        text: emailText,
       }),
     });
 
