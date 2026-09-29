@@ -12,10 +12,11 @@
 -- Objetos nativos do Supabase (auth.users, auth.uid(), auth.jwt())
 -- NÃO são recriados aqui — já existem em qualquer projeto Supabase.
 --
--- ATENÇÃO — BLOCO 6 (public.user_roles / public.has_role / public.is_admin
--- atual) NÃO PÔDE SER COMPROVADO PELO REPOSITÓRIO. Ver instruções no
--- próprio bloco: sem essas definições reais o Lote 1 NÃO deve ser
--- homologado. O arquivo para até lá, de forma explícita.
+-- ATENÇÃO — BLOCO 7 PARCIALMENTE PENDENTE: as funções public.has_role e
+-- public.is_admin já foram EXTRAÍDAS do projeto atual e estão registradas
+-- abaixo (CONFIRMADAS). Falta a TABELA public.user_roles (colunas, chaves,
+-- grants e policies — consultas E2, E3 e E4). Sem ela o arquivo NÃO deve
+-- ser aplicado. O arquivo para até lá, de forma explícita.
 -- =====================================================================
 
 BEGIN;
