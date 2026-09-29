@@ -12,6 +12,10 @@
 --
 -- IMPORTANTE: substitua COLE_A_SENHA_INTERNA_AQUI pelo valor do
 -- segredo SIDIF_CRON_SECRET (o mesmo cadastrado no painel).
+--
+-- BLOQUEADO TEMPORARIAMENTE: não execute novamente até confirmar, pelo
+-- arquivo lote3_crons_leitura.sql, o proprietário dos jobs 3 e 4.
+-- cron.alter_job só aceita alterações feitas pelo proprietário do job.
 
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
@@ -20,9 +24,9 @@ CREATE EXTENSION IF NOT EXISTS pg_net;
 -- Os jobs check-maintenance-confirmations-5min e check-teletrabalho-ending-daily
 -- NÃO são alterados.
 
--- Ajuste: os jobs pertencem a outro usuário interno, por isso
--- unschedule por nome falha. Alteramos o comando pelo número (jobid),
--- mantendo nome e horário.
+-- A tentativa de alterar pelo jobid também foi recusada por propriedade.
+-- Este conteúdo fica preservado, mas só poderá ser executado depois de
+-- definida uma forma suportada de agir como o proprietário confirmado.
 
 -- ── jobid 3: notify-rdo-delay-daily (diário 08:00 UTC) ──────────────
 SELECT cron.alter_job(
