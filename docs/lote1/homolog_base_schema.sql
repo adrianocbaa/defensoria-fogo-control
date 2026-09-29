@@ -174,37 +174,9 @@ END $$;
 
 -- POLICIES — estado anterior ao Lote 1.
 -- UPDATE sem WITH CHECK: é a falha A1 que o Lote 1 corrige.
-DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
-CREATE POLICY "Users can update their own profile"
-  ON public.profiles FOR UPDATE
-  USING (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Admins can update any profile" ON public.profiles;
-CREATE POLICY "Admins can update any profile"
-  ON public.profiles FOR UPDATE
-  USING (public.is_admin(auth.uid()));
-
-DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
-CREATE POLICY "Users can insert their own profile"
-  ON public.profiles FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
--- SELECT — fonte: 20260220125907 (policies vigentes)
-DROP POLICY IF EXISTS "Internal staff can view all active profiles" ON public.profiles;
-CREATE POLICY "Internal staff can view all active profiles"
-  ON public.profiles FOR SELECT
-  USING (
-    auth.uid() IS NOT NULL
-    AND NOT public.has_role(auth.uid(), 'contratada'::public.user_role)
-  );
-
-DROP POLICY IF EXISTS "Contratada can view own profile" ON public.profiles;
-CREATE POLICY "Contratada can view own profile"
-  ON public.profiles FOR SELECT
-  USING (
-    public.has_role(auth.uid(), 'contratada'::public.user_role)
-    AND user_id = auth.uid()
-  );
+-- As policies de profiles são criadas no bloco 10-A, DEPOIS de
+-- has_role/is_admin existirem — o PostgreSQL valida as expressões das
+-- policies na criação, e funções inexistentes falhariam aqui.
 
 -- ---------------------------------------------------------------------
 -- 6. CRIAÇÃO AUTOMÁTICA DE PERFIL
@@ -300,9 +272,47 @@ AS $function$
 $function$;
 
 -- =====================================================================
+-- 10-A. POLICIES DE PROFILES — estado anterior ao Lote 1
+-- =====================================================================
+-- Movidas para cá: dependem de has_role/is_admin (bloco 8).
+-- UPDATE sem WITH CHECK: é a falha A1 que o Lote 1 corrige.
+-- SELECT — fonte: 20260220125907 (policies vigentes)
+
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+CREATE POLICY "Users can update their own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can update any profile" ON public.profiles;
+CREATE POLICY "Admins can update any profile"
+  ON public.profiles FOR UPDATE
+  USING (public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+CREATE POLICY "Users can insert their own profile"
+  ON public.profiles FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Internal staff can view all active profiles" ON public.profiles;
+CREATE POLICY "Internal staff can view all active profiles"
+  ON public.profiles FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL
+    AND NOT public.has_role(auth.uid(), 'contratada'::public.user_role)
+  );
+
+DROP POLICY IF EXISTS "Contratada can view own profile" ON public.profiles;
+CREATE POLICY "Contratada can view own profile"
+  ON public.profiles FOR SELECT
+  USING (
+    public.has_role(auth.uid(), 'contratada'::public.user_role)
+    AND user_id = auth.uid()
+  );
+
+-- =====================================================================
 -- 9. PENDENTE — public.is_maintenance_responsible(uuid) (consulta E6)
 -- =====================================================================
--- A policy "Maintenance responsibles can view all roles" (bloco 10)
+-- A policy "Maintenance responsibles can view all roles" (bloco 11)
 -- referencia public.is_maintenance_responsible(uuid). A definição real
 -- desta função AINDA NÃO foi extraída do projeto atual.
 --
@@ -310,12 +320,12 @@ $function$;
 -- >>> extrair_definicoes_autorizacao.sql (pg_get_functiondef).
 --
 -- ENQUANTO ESTE ESPAÇO NÃO FOR PREENCHIDO, ESTE ARQUIVO NÃO DEVE SER
--- APLICADO em nenhum banco: a criação das policies do bloco 10 falhará
+-- APLICADO em nenhum banco: a criação das policies do bloco 11 falhará
 -- (função inexistente), deixando user_roles sem regras de acesso.
 -- =====================================================================
 
 -- =====================================================================
--- 10. POLICIES DE USER_ROLES — E4-3 CONFIRMADO (6 policies)
+-- 11. POLICIES DE USER_ROLES — E4-3 CONFIRMADO (6 policies)
 -- =====================================================================
 -- Reproduz o catálogo do projeto ATUAL, sem alteração (pg_policies).
 -- Observação fiel ao estado anterior ao Lote 1: a policy de UPDATE tem
