@@ -146,15 +146,73 @@ serve(async (req) => {
             to: [email],
             subject: 'Bem-vindo ao SiDIF - Suas Credenciais de Acesso',
             html: `
-              <h2>Bem-vindo ao Sistema!</h2>
-              <p>Uma conta foi criada para você pelo administrador.</p>
-              <p><strong>Suas credenciais de acesso:</strong></p>
-              <ul>
-                <li><strong>Email:</strong> ${email}</li>
-                <li><strong>Senha temporária:</strong> ${defaultPassword}</li>
-              </ul>
-              <p><strong>IMPORTANTE:</strong> Por segurança, você será solicitado a alterar sua senha no primeiro login.</p>
-              <p>Acesse o sistema e faça login com as credenciais acima.</p>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border:1px solid #e2e5ea;border-radius:8px;overflow:hidden;">
+          <!-- Cabeçalho institucional -->
+          <tr>
+            <td style="background-color:#0f2a4a;padding:28px 32px;text-align:center;">
+              <div style="color:#ffffff;font-size:26px;font-weight:bold;letter-spacing:2px;">SiDIF</div>
+              <div style="color:#c8d6e5;font-size:12px;margin-top:6px;letter-spacing:1px;">SISTEMA DE GESTÃO DE OBRAS E FISCALIZAÇÃO</div>
+              <div style="color:#8fa8c0;font-size:11px;margin-top:4px;">Defensoria Pública do Estado de Mato Grosso — DPE-MT</div>
+            </td>
+          </tr>
+          <!-- Faixa dourada -->
+          <tr><td style="background-color:#c9a227;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
+          <!-- Corpo -->
+          <tr>
+            <td style="padding:32px;">
+              <h1 style="color:#0f2a4a;font-size:20px;margin:0 0 16px 0;font-weight:bold;">Bem-vindo ao SiDIF</h1>
+              <p style="color:#3d4756;font-size:14px;line-height:1.6;margin:0 0 20px 0;">
+                Uma conta de acesso foi criada para você pelo administrador do sistema.
+                Utilize as credenciais abaixo para realizar seu primeiro acesso.
+              </p>
+              <!-- Caixa de credenciais -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;border:1px solid #d4dde6;border-left:4px solid #0f2a4a;border-radius:4px;margin:0 0 20px 0;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <div style="color:#0f2a4a;font-size:13px;font-weight:bold;letter-spacing:1px;margin-bottom:12px;">SUAS CREDENCIAIS DE ACESSO</div>
+                    <div style="color:#3d4756;font-size:14px;line-height:1.8;">
+                      <strong>E-mail:</strong> ${email}<br>
+                      <strong>Senha temporária:</strong>
+                      <span style="font-family:'Courier New',Courier,monospace;background-color:#ffffff;border:1px solid #d4dde6;border-radius:4px;padding:2px 8px;font-size:15px;letter-spacing:1px;">${defaultPassword}</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <!-- Aviso de segurança -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fdf6e3;border:1px solid #ecd9a0;border-radius:4px;margin:0 0 20px 0;">
+                <tr>
+                  <td style="padding:14px 18px;color:#7a5c00;font-size:13px;line-height:1.5;">
+                    <strong>Importante:</strong> por segurança, você será solicitado a definir uma nova senha no primeiro acesso. Não compartilhe estas credenciais com terceiros.
+                  </td>
+                </tr>
+              </table>
+              <p style="color:#3d4756;font-size:14px;line-height:1.6;margin:0;">
+                Acesse o sistema em <a href="https://sidif.com.br" style="color:#0f2a4a;font-weight:bold;text-decoration:none;">sidif.com.br</a> e faça login com as credenciais acima.
+              </p>
+            </td>
+          </tr>
+          <!-- Rodapé -->
+          <tr>
+            <td style="background-color:#f0f4f8;border-top:1px solid #e2e5ea;padding:20px 32px;text-align:center;">
+              <div style="color:#8a94a3;font-size:11px;line-height:1.6;">
+                Este é um e-mail automático. Por favor, não responda.<br>
+                SiDIF — Defensoria Pública do Estado de Mato Grosso
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
             `,
           }),
         });
