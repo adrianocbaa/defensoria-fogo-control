@@ -59,7 +59,28 @@ serve(async (req) => {
 
     console.log('Creating user with email:', email);
 
-    const defaultPassword = 'Admin123';
+    // Senha temporária aleatória e única por usuário (Lote 5)
+    const genPassword = () => {
+      const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+      const lower = 'abcdefghijkmnpqrstuvwxyz';
+      const digits = '23456789';
+      const all = upper + lower + digits;
+      const pick = (set: string) => {
+        const b = new Uint32Array(1);
+        crypto.getRandomValues(b);
+        return set[b[0] % set.length];
+      };
+      const chars = [pick(upper), pick(lower), pick(digits)];
+      for (let i = 0; i < 9; i++) chars.push(pick(all));
+      for (let i = chars.length - 1; i > 0; i--) {
+        const b = new Uint32Array(1);
+        crypto.getRandomValues(b);
+        const j = b[0] % (i + 1);
+        [chars[i], chars[j]] = [chars[j], chars[i]];
+      }
+      return chars.join('');
+    };
+    const defaultPassword = genPassword();
 
     // Create the user in Supabase Auth
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
