@@ -175,15 +175,22 @@ CREATE TRIGGER profiles_audit_privileged_changes_trg
 
 -- ---------------------------------------------------------------------
 -- 3. POLICIES
---    Nenhum fluxo do SiDIF (frontend ou Edge Function) insere em profiles:
---    a criação é feita por public.handle_new_user() (SECURITY DEFINER,
---    trigger em auth.users). Logo, a policy de INSERT para usuários comuns
---    é removida.
+--    A criação de perfil é feita por public.handle_new_user() (SECURITY
+--    DEFINER, trigger em auth.users), mas o UPSERT legítimo do próprio
+--    perfil (requisito do Lote 1) exige policy de INSERT para o usuário
+--    autenticado. A segurança do INSERT é garantida pela guarda
+--    profiles_guard_privileged_columns (BEFORE INSERT OR UPDATE), que
+--    neutraliza os campos privilegiados para não-administradores e
+--    bloqueia criação de perfil de terceiro.
 --    As policies de UPDATE existentes ("Users can update their own profile"
 --    e "Admins can update any profile") são recriadas com WITH CHECK
 --    explícito, para não depender da reutilização implícita do USING.
 -- ---------------------------------------------------------------------
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+CREATE POLICY "Users can insert their own profile"
+  ON public.profiles FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile"
@@ -225,12 +232,12 @@ CREATE POLICY "Admins can update any profile"
 REVOKE ALL ON public.profiles FROM anon;
 REVOKE ALL ON public.profiles FROM authenticated;
 
-GRANT SELECT, UPDATE ON public.profiles TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
 GRANT ALL ON public.profiles TO service_role;
 
 -- Estado final esperado dos grants em public.profiles:
 --   anon           -> nenhum privilégio
---   authenticated  -> SELECT, UPDATE (sem INSERT, DELETE, TRUNCATE,
+--   authenticated  -> SELECT, INSERT, UPDATE (sem DELETE, TRUNCATE,
 --                     REFERENCES, TRIGGER, MAINTAIN)
 --   service_role   -> ALL
 
