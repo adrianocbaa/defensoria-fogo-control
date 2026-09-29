@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.5';
+import { requireServiceOrAdmin } from '../_shared/service-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-sidif-cron-secret',
 };
 
 // All demo fixed UUIDs (prefix de00000...)
@@ -16,32 +17,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Allow cron (no auth) or admin calls
-  const authHeader = req.headers.get('Authorization');
-  const isCronCall = !authHeader || authHeader === `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`;
+  const denied = await requireServiceOrAdmin(req, corsHeaders);
+  if (denied) return denied;
 
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
-
-  // If called with Bearer token, verify admin
-  if (!isCronCall) {
-    const token = authHeader!.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401
-      });
-    }
-    const { data: isAdmin } = await supabaseAdmin.rpc('is_admin', { user_uuid: user.id });
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: 'Admin only' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403
-      });
-    }
-  }
 
   console.log('[demo-reset] Starting demo data reset...');
 
