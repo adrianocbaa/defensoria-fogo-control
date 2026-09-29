@@ -32,10 +32,19 @@ WHERE n.nspname = 'public'
 ORDER BY p.proname;
 
 -- V3) Modo da visão pública de núcleos
---     Esperado: nuclei_public com security_invoker = false.
-SELECT viewname, security_invoker
-FROM pg_views
-WHERE schemaname = 'public' AND viewname IN ('nuclei_public','nuclei_secure');
+--     Esperado: nuclei_public SEM a opção security_invoker (ou seja, false).
+SELECT c.relname AS visao,
+       COALESCE(
+         (SELECT split_part(opt, '=', 2)
+          FROM unnest(c.reloptions) AS opt
+          WHERE opt LIKE 'security_invoker=%'),
+         'false'
+       ) AS security_invoker
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relkind IN ('v','m')
+  AND c.relname IN ('nuclei_public','nuclei_secure');
 
 -- V4) Permissão de leitura anônima na visão pública
 --     Esperado: uma linha com SELECT para nuclei_public.
