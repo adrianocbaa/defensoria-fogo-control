@@ -12,12 +12,14 @@
 -- Objetos nativos do Supabase (auth.users, auth.uid(), auth.jwt())
 -- NÃO são recriados aqui — já existem em qualquer projeto Supabase.
 --
--- ATENÇÃO — BLOCO 7 PARCIALMENTE PENDENTE: as funções public.has_role e
--- public.is_admin já foram EXTRAÍDAS do projeto atual e estão registradas
--- abaixo (CONFIRMADAS). A estrutura de colunas de public.user_roles
--- também já foi comprovada (E2, registrada no bloco 8). Faltam as CHAVES
--- (E3) e os GRANTS/POLICIES (E4). Sem E3 e E4 o arquivo NÃO deve ser
--- aplicado. O arquivo para até lá, de forma explícita.
+-- ATENÇÃO — STATUS: E1 (funções), E2 (colunas), E3 (chaves), E4-1 (RLS),
+-- E4-2 (grants) e E4-3 (policies) CONFIRMADOS e registrados abaixo.
+-- NOVA DEPENDÊNCIA DESCOBERTA NA E4-3: a policy "Maintenance responsibles
+-- can view all roles" referencia public.is_maintenance_responsible(uuid),
+-- cuja definição ainda NÃO foi extraída (consulta E6 de
+-- extrair_definicoes_autorizacao.sql). Sem E6 este arquivo NÃO deve ser
+-- aplicado — a criação das policies falhará sem a função. O arquivo para
+-- até lá, de forma explícita.
 -- =====================================================================
 
 BEGIN;
