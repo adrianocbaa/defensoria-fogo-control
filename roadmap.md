@@ -7,5 +7,7 @@
 - [x] Validar banco, tipos e fluxo na interface
 - [x] Alinhar os totais da Planilha PDF e do Relatório de Medição aos cartões da tela
 - [x] Homologar o Lote 1 (public.profiles) no ambiente isolado — suíte 22/22
-- [ ] Aplicar o Lote 1 em produção (aguarda autorização: preflight → v3.sql → pós-verificação)
+- [x] Aplicar e validar o Lote 1 em produção
+- [x] Aplicar e validar o Lote 2 em produção
+- [ ] Concluir o Lote 3 — aguardando diagnóstico de propriedade dos agendamentos 3 e 4
 - [ ] Regenerar a service_role (sb_secret) do sidif-homologacao (higiene pós-testes)
