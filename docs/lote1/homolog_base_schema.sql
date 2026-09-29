@@ -300,52 +300,68 @@ AS $function$
 $function$;
 
 -- =====================================================================
--- 8. BLOCO PENDENTE — TABELA public.user_roles (aguardando E4)
+-- 9. PENDENTE — public.is_maintenance_responsible(uuid) (consulta E6)
 -- =====================================================================
--- E2 — RESULTADO CONFIRMADO (colado pelo usuário, catálogo do projeto
--- ATUAL, 5 linhas — reproduzir sem alteração):
+-- A policy "Maintenance responsibles can view all roles" (bloco 10)
+-- referencia public.is_maintenance_responsible(uuid). A definição real
+-- desta função AINDA NÃO foi extraída do projeto atual.
 --
---   column_name | data_type                | udt_name   | is_nullable | column_default
---   ------------+--------------------------+------------+-------------+------------------
---   id          | uuid                     | uuid       | NO          | gen_random_uuid()
---   user_id     | uuid                     | uuid       | NO          | NULL
---   role        | USER-DEFINED             | user_role  | NO          | NULL
---   created_at  | timestamp with time zone | timestamptz| NO          | now()
---   created_by  | uuid                     | uuid       | YES         | NULL
+-- >>> INSERIR AQUI, SEM ALTERAÇÃO, o resultado da consulta E6 de
+-- >>> extrair_definicoes_autorizacao.sql (pg_get_functiondef).
 --
--- E3 — RESULTADO CONFIRMADO (colado pelo usuário, 4 linhas — reproduzir
--- sem alteração):
+-- ENQUANTO ESTE ESPAÇO NÃO FOR PREENCHIDO, ESTE ARQUIVO NÃO DEVE SER
+-- APLICADO em nenhum banco: a criação das policies do bloco 10 falhará
+-- (função inexistente), deixando user_roles sem regras de acesso.
+-- =====================================================================
+
+-- =====================================================================
+-- 10. POLICIES DE USER_ROLES — E4-3 CONFIRMADO (6 policies)
+-- =====================================================================
+-- Reproduz o catálogo do projeto ATUAL, sem alteração (pg_policies).
+-- Observação fiel ao estado anterior ao Lote 1: a policy de UPDATE tem
+-- USING mas WITH CHECK NULL; a de INSERT tem WITH CHECK mas USING NULL.
 --
---   conname                   | definicao
---   --------------------------+--------------------------------------------------------------
---   user_roles_created_by_fkey | FOREIGN KEY (created_by) REFERENCES auth.users(id)
---   user_roles_pkey            | PRIMARY KEY (id)
---   user_roles_user_id_fkey    | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
---   user_roles_user_id_role_key| UNIQUE (user_id, role)
---
--- E4 — RESULTADO PARCIALMENTE CONFIRMADO (colado pelo usuário):
---
---   a) RLS: relrowsecurity = true, relforcerowsecurity = false (E4-1)
---
---   b) GRANTS CONFIRMADOS (E4-2, 4 linhas — todos com o conjunto completo
---      DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE):
---
---     grantee       | privilegios
---     --------------+----------------------------------------------------------
---     anon          | DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
---     authenticated | DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
---     postgres      | DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
---     service_role  | DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
---
--- AINDA PENDENTE (bloqueia a aplicação deste arquivo):
---   E4-3 — policies reais de public.user_roles (6 policies, segundo o catálogo)
---
--- Com a E4 em mãos, inserir no corpo do arquivo (ordenado):
---   a) CREATE TABLE public.user_roles ...  ANTES das funções do bloco 7
---      (o corpo delas referencia a tabela e o PostgreSQL valida na criação);
---   b) os GRANTs e policies de user_roles logo após a tabela;
---   c) só então as funções has_role e is_admin.
--- Enquanto a E4 não chegar, ESTE ARQUIVO NÃO DEVE SER APLICADO em
--- nenhum banco — o Lote 1 baseia toda a autorização administrativa em
--- user_roles/has_role/is_admin.
+-- ATENÇÃO: depende do bloco 9 (is_maintenance_responsible) existir antes.
+
+DROP POLICY IF EXISTS "Admins can delete roles" ON public.user_roles;
+CREATE POLICY "Admins can delete roles"
+  ON public.user_roles FOR DELETE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::public.user_role));
+
+DROP POLICY IF EXISTS "Admins can insert roles" ON public.user_roles;
+CREATE POLICY "Admins can insert roles"
+  ON public.user_roles FOR INSERT TO authenticated
+  WITH CHECK (public.has_role(auth.uid(), 'admin'::public.user_role));
+
+DROP POLICY IF EXISTS "Admins can update roles" ON public.user_roles;
+CREATE POLICY "Admins can update roles"
+  ON public.user_roles FOR UPDATE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::public.user_role));
+
+DROP POLICY IF EXISTS "Admins can view all roles" ON public.user_roles;
+CREATE POLICY "Admins can view all roles"
+  ON public.user_roles FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::public.user_role));
+
+DROP POLICY IF EXISTS "Maintenance responsibles can view all roles" ON public.user_roles;
+CREATE POLICY "Maintenance responsibles can view all roles"
+  ON public.user_roles FOR SELECT TO authenticated
+  USING (public.is_maintenance_responsible(auth.uid()));
+
+DROP POLICY IF EXISTS "Users can view their own roles" ON public.user_roles;
+CREATE POLICY "Users can view their own roles"
+  ON public.user_roles FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+COMMIT;
+
+-- =====================================================================
+-- STATUS FINAL DO ARQUIVO (não remover):
+--   CONFIRMADO: tipos, empresas, audit_logs, profiles, handle_new_user
+--   + trigger, user_roles (E2/E3/E4-1/E4-2), has_role e is_admin (E1),
+--   policies de user_roles (E4-3).
+--   PENDENTE (bloqueia a aplicação): definição de
+--   public.is_maintenance_responsible(uuid) — consulta E6.
+--   Com a E6 colada no bloco 9, o arquivo fica PRONTO para o preflight
+--   no projeto sidif-homologacao.
 -- =====================================================================
