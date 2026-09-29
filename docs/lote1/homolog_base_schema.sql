@@ -294,8 +294,22 @@ $function$;
 --   user_roles_user_id_fkey    | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 --   user_roles_user_id_role_key| UNIQUE (user_id, role)
 --
+-- E4 — RESULTADO PARCIALMENTE CONFIRMADO (colado pelo usuário):
+--
+--   a) RLS: relrowsecurity = true, relforcerowsecurity = false (E4-1)
+--
+--   b) GRANTS CONFIRMADOS (E4-2, 4 linhas — todos com o conjunto completo
+--      DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE):
+--
+--     grantee       | privilegios
+--     --------------+----------------------------------------------------------
+--     anon          | DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+--     authenticated | DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+--     postgres      | DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+--     service_role  | DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+--
 -- AINDA PENDENTE (bloqueia a aplicação deste arquivo):
---   E4 — grants e policies reais (6 policies, segundo o catálogo)
+--   E4-3 — policies reais de public.user_roles (6 policies, segundo o catálogo)
 --
 -- Com a E4 em mãos, inserir no corpo do arquivo (ordenado):
 --   a) CREATE TABLE public.user_roles ...  ANTES das funções do bloco 7
