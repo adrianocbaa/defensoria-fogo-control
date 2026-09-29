@@ -133,13 +133,13 @@ DECLARE
   v_new     jsonb;
   v_f       text;
 BEGIN
-  IF NEW.role IS DISTINCT FROM OLD.role THEN v_fields := v_fields || 'role'; END IF;
-  IF NEW.is_maintenance_responsible IS DISTINCT FROM OLD.is_maintenance_responsible THEN v_fields := v_fields || 'is_maintenance_responsible'; END IF;
-  IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN v_fields := v_fields || 'is_active'; END IF;
-  IF NEW.empresa_id IS DISTINCT FROM OLD.empresa_id THEN v_fields := v_fields || 'empresa_id'; END IF;
-  IF NEW.email IS DISTINCT FROM OLD.email THEN v_fields := v_fields || 'email'; END IF;
-  IF NEW.setores_atuantes IS DISTINCT FROM OLD.setores_atuantes THEN v_fields := v_fields || 'setores_atuantes'; END IF;
-  IF NEW.force_password_change IS DISTINCT FROM OLD.force_password_change THEN v_fields := v_fields || 'force_password_change'; END IF;
+  IF NEW.role IS DISTINCT FROM OLD.role THEN v_fields := v_fields || 'role'::text; END IF;
+  IF NEW.is_maintenance_responsible IS DISTINCT FROM OLD.is_maintenance_responsible THEN v_fields := v_fields || 'is_maintenance_responsible'::text; END IF;
+  IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN v_fields := v_fields || 'is_active'::text; END IF;
+  IF NEW.empresa_id IS DISTINCT FROM OLD.empresa_id THEN v_fields := v_fields || 'empresa_id'::text; END IF;
+  IF NEW.email IS DISTINCT FROM OLD.email THEN v_fields := v_fields || 'email'::text; END IF;
+  IF NEW.setores_atuantes IS DISTINCT FROM OLD.setores_atuantes THEN v_fields := v_fields || 'setores_atuantes'::text; END IF;
+  IF NEW.force_password_change IS DISTINCT FROM OLD.force_password_change THEN v_fields := v_fields || 'force_password_change'::text; END IF;
 
   IF COALESCE(array_length(v_fields, 1), 0) = 0 THEN
     RETURN NULL;  -- alterações pessoais não geram auditoria privilegiada

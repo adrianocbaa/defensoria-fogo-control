@@ -477,14 +477,15 @@ Deno.test("Lote 1 — profiles (homologação)", async (t) => {
       const { error } = await admin.rpc("qa_teardown");
       assertEquals(error, null, `service_role não executou qa_teardown: ${error?.message}`);
 
-      // PGRST202 = a função não existe mais no schema cache do PostgREST.
+      // PGRST202 (PostgREST) ou 42883 (Postgres) = a função não existe mais.
+      const inexistente = (code?: string) => code === "PGRST202" || code === "42883";
       const { error: e1 } = await admin.rpc("qa_current_role");
       assertExists(e1, "qa_current_role ainda existe após qa_teardown");
-      assertEquals(e1!.code, "PGRST202", `código inesperado: ${e1!.code}`);
+      assertEquals(inexistente(e1!.code), true, `código inesperado: ${e1!.code}`);
 
       const { error: e2 } = await admin.rpc("qa_teardown");
       assertExists(e2, "qa_teardown não se autorremoveu");
-      assertEquals(e2!.code, "PGRST202", `código inesperado: ${e2!.code}`);
+      assertEquals(inexistente(e2!.code), true, `código inesperado: ${e2!.code}`);
       // Se e2 não for PGRST202, a autorremoção não é suportada neste
       // PostgreSQL: aplicar a segunda garantia manual do arquivo
       // profiles_lote1_qa_homolog.sql (DROP FUNCTION public.qa_teardown();).
