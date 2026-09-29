@@ -1,5 +1,6 @@
--- PREFLIGHT CONSOLIDADO (somente leitura): todas as verificações em UMA tabela.
--- Gerado a partir de profiles_lote1_preflight_homolog.sql.
+-- PREFLIGHT CONSOLIDADO (somente leitura): todas as verificações C0-C9 + RESUMO em UMA tabela.
+-- Gerado a partir de profiles_lote1_preflight_homolog.sql. Nenhum objeto é criado ou alterado.
+SELECT resultado, verificacao FROM (
 (
 SELECT CASE
          WHEN current_setting('app.settings.project_ref', true) LIKE '%mmumfgxngzaivvyqfbed%'
@@ -65,11 +66,7 @@ SELECT CASE
            THEN 'ATENÇÃO'
          ELSE 'OK'
        END AS resultado,
-       format('3.x - Coluna profiles.%s (tipo esperado: %s
-)
-UNION ALL
-(
-encontrado: %s)',
+       format('3.x - Coluna profiles.%s (tipo esperado: %s; encontrado: %s)',
               e.col, e.dtype,
               COALESCE(format_type(a.atttypid, a.atttypmod), 'AUSENTE')) AS verificacao
 FROM esperadas e
@@ -99,11 +96,7 @@ WITH esperadas(func) AS (
   VALUES ('is_admin'), ('has_role'), ('handle_new_user'), ('update_updated_at_column')
 )
 SELECT CASE WHEN p.oid IS NOT NULL THEN 'OK' ELSE 'FALHA' END AS resultado,
-       format('4.x - Função public.%s (security definer: %s
-)
-UNION ALL
-(
-search_path: %s)',
+       format('4.x - Função public.%s (security definer: %s; search_path: %s)',
               e.func,
               CASE WHEN p.prosecdef THEN 'sim' ELSE 'não' END,
               COALESCE(p.proconfig::text, 'padrão')) AS verificacao
@@ -148,11 +141,7 @@ WHERE t.tgrelid = 'auth.users'::regclass
 UNION ALL
 (
 SELECT CASE WHEN relrowsecurity THEN 'OK' ELSE 'FALHA' END AS resultado,
-       format('6.1 - RLS em profiles (habilitada: %s
-)
-UNION ALL
-(
-forçada: %s)',
+       format('6.1 - RLS em profiles (habilitada: %s; forçada: %s)',
               relrowsecurity, relforcerowsecurity) AS verificacao
 FROM pg_class WHERE oid = 'public.profiles'::regclass
 )
@@ -222,15 +211,7 @@ WITH c AS (
 SELECT CASE WHEN ativos > 0 THEN 'FALHA'
             WHEN total > 0 THEN 'ATENÇÃO'
             ELSE 'OK' END AS resultado,
-       format('8.1 - Jobs em cron.job (pg_cron instalado: %s
-)
-UNION ALL
-(
-ativos: %s
-)
-UNION ALL
-(
-total: %s)',
+       format('8.1 - Jobs em cron.job (pg_cron instalado: %s; ativos: %s; total: %s)',
               (to_regclass('cron.job') IS NOT NULL), ativos, total) AS verificacao
 FROM c
 )
@@ -324,4 +305,5 @@ SELECT 'OK' AS resultado,
               (SELECT count(*) FROM public.user_roles),
               (SELECT count(*) FROM public.audit_logs),
               (SELECT count(*) FROM auth.users)) AS verificacao
-);
+)
+) t;
