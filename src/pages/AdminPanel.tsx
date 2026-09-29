@@ -503,7 +503,7 @@ export default function AdminPanel() {
 
       toast({
         title: 'Usuário criado!',
-        description: `Email enviado para ${newUserEmail} com a senha temporária: Admin123`,
+        description: `Email enviado para ${newUserEmail} com uma senha temporária exclusiva.`,
       });
 
       setCreateUserDialog(false);
@@ -1081,7 +1081,7 @@ export default function AdminPanel() {
               <DialogHeader>
                 <DialogTitle>Criar Novo Usuário</DialogTitle>
                 <DialogDescription>
-                  Preencha os dados do novo usuário. Uma senha temporária (Admin123) será enviada por email.
+                  Preencha os dados do novo usuário. Uma senha temporária exclusiva será gerada e enviada por email.
                 </DialogDescription>
               </DialogHeader>
               
