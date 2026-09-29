@@ -12,10 +12,11 @@
 -- Objetos nativos do Supabase (auth.users, auth.uid(), auth.jwt())
 -- NÃO são recriados aqui — já existem em qualquer projeto Supabase.
 --
--- ATENÇÃO — BLOCO 6 (public.user_roles / public.has_role / public.is_admin
--- atual) NÃO PÔDE SER COMPROVADO PELO REPOSITÓRIO. Ver instruções no
--- próprio bloco: sem essas definições reais o Lote 1 NÃO deve ser
--- homologado. O arquivo para até lá, de forma explícita.
+-- ATENÇÃO — BLOCO 7 PARCIALMENTE PENDENTE: as funções public.has_role e
+-- public.is_admin já foram EXTRAÍDAS do projeto atual e estão registradas
+-- abaixo (CONFIRMADAS). Falta a TABELA public.user_roles (colunas, chaves,
+-- grants e policies — consultas E2, E3 e E4). Sem ela o arquivo NÃO deve
+-- ser aplicado. O arquivo para até lá, de forma explícita.
 -- =====================================================================
 
 BEGIN;
@@ -230,27 +231,58 @@ CREATE TRIGGER on_auth_user_created
 COMMIT;
 
 -- =====================================================================
--- 7. BLOCO PENDENTE — NÃO PODE SER PREENCHIDO A PARTIR DESTE REPOSITÓRIO
+-- 7. DEFINIÇÕES DE AUTORIZAÇÃO EXTRAÍDAS DO PROJETO ATUAL (E1)
 -- =====================================================================
--- As definições abaixo NÃO existem em supabase/migrations e, portanto,
--- NÃO PODEM SER COMPROVADAS aqui. Elas são indispensáveis: o Lote 1
--- baseia toda a autorização administrativa em
---   public.is_admin(auth.uid()) -> public.has_role() -> public.user_roles
--- e as policies de SELECT de profiles (bloco 5) também usam has_role().
+-- As duas funções abaixo foram extraídas do catálogo do projeto ATUAL
+-- (consulta E1 de extrair_definicoes_autorizacao.sql, resultado colado
+-- e conferido). Elas representam o estado real vigente e devem ser
+-- reproduzidas aqui SEM ALTERAÇÃO.
 --
---   a) TABELA public.user_roles  — colunas, PK, FKs, UNIQUE, grants, RLS
---                                   e policies reais (5 colunas, 6 policies,
---                                   2 FKs, segundo o catálogo atual).
---   b) FUNÇÃO public.has_role(uuid, public.user_role)  — corpo real.
---   c) FUNÇÃO public.is_admin(uuid)  — corpo REAL ATUAL. A única versão
---      presente no repositório (20250721030911) lê public.profiles.role,
---      o que NÃO corresponde ao desenho atual baseado em user_roles.
+-- PENDENTE: a TABELA public.user_roles ainda não foi comprovada
+-- (colunas: E2; chaves: E3; grants/policies: E4). Ela é pré-requisito
+-- destas funções (o corpo delas referencia a tabela). NÃO aplique este
+-- arquivo enquanto E2–E4 não forem coladas no sub-bloco 8 abaixo.
+-- =====================================================================
+
+-- FUNÇÃO CONFIRMADA (E1) — public.has_role
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role user_role)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND role = _role
+  );
+$function$;
+
+-- FUNÇÃO CONFIRMADA (E1) — public.is_admin
+CREATE OR REPLACE FUNCTION public.is_admin(user_uuid uuid DEFAULT auth.uid())
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT public.has_role(user_uuid, 'admin'::user_role);
+$function$;
+
+-- =====================================================================
+-- 8. BLOCO PENDENTE — TABELA public.user_roles (aguardando E2, E3 e E4)
+-- =====================================================================
+-- Cole aqui, sem alterar, o resultado de:
+--   E2 — colunas da tabela user_roles
+--   E3 — chaves (PK, FKs, UNIQUE)
+--   E4 — grants e policies reais (6 policies, segundo o catálogo)
 --
--- NÃO invente versões simplificadas destas definições: isso faria a suíte
--- passar sem reproduzir o comportamento real e invalidaria a homologação.
---
--- COMO OBTER (leitura, sem alterar nada), no SQL Editor do projeto ATUAL:
---   ver docs/lote1/extrair_definicoes_autorizacao.sql
--- Cole o resultado neste arquivo, abaixo desta linha, antes de aplicar
--- a estrutura-base no projeto de homologação.
+-- Depois disso, inserir no corpo do arquivo (ordenado):
+--   a) CREATE TABLE public.user_roles ...  ANTES das funções do bloco 7
+--      (o corpo delas referencia a tabela e o PostgreSQL valida na criação);
+--   b) os GRANTs e policies de user_roles logo após a tabela;
+--   c) só então as funções has_role e is_admin.
+-- Enquanto E2–E4 não chegarem, ESTE ARQUIVO NÃO DEVE SER APLICADO em
+-- nenhum banco — o Lote 1 baseia toda a autorização administrativa em
+-- user_roles/has_role/is_admin.
 -- =====================================================================
