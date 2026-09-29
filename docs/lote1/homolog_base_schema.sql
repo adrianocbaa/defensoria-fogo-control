@@ -14,9 +14,10 @@
 --
 -- ATENÇÃO — BLOCO 7 PARCIALMENTE PENDENTE: as funções public.has_role e
 -- public.is_admin já foram EXTRAÍDAS do projeto atual e estão registradas
--- abaixo (CONFIRMADAS). Falta a TABELA public.user_roles (colunas, chaves,
--- grants e policies — consultas E2, E3 e E4). Sem ela o arquivo NÃO deve
--- ser aplicado. O arquivo para até lá, de forma explícita.
+-- abaixo (CONFIRMADAS). A estrutura de colunas de public.user_roles
+-- também já foi comprovada (E2, registrada no bloco 8). Faltam as CHAVES
+-- (E3) e os GRANTS/POLICIES (E4). Sem E3 e E4 o arquivo NÃO deve ser
+-- aplicado. O arquivo para até lá, de forma explícita.
 -- =====================================================================
 
 BEGIN;
@@ -270,19 +271,29 @@ AS $function$
 $function$;
 
 -- =====================================================================
--- 8. BLOCO PENDENTE — TABELA public.user_roles (aguardando E2, E3 e E4)
+-- 8. BLOCO PENDENTE — TABELA public.user_roles (aguardando E3 e E4)
 -- =====================================================================
--- Cole aqui, sem alterar, o resultado de:
---   E2 — colunas da tabela user_roles
---   E3 — chaves (PK, FKs, UNIQUE)
+-- E2 — RESULTADO CONFIRMADO (colado pelo usuário, catálogo do projeto
+-- ATUAL, 5 linhas — reproduzir sem alteração):
+--
+--   column_name | data_type                | udt_name   | is_nullable | column_default
+--   ------------+--------------------------+------------+-------------+------------------
+--   id          | uuid                     | uuid       | NO          | gen_random_uuid()
+--   user_id     | uuid                     | uuid       | NO          | NULL
+--   role        | USER-DEFINED             | user_role  | NO          | NULL
+--   created_at  | timestamp with time zone | timestamptz| NO          | now()
+--   created_by  | uuid                     | uuid       | YES         | NULL
+--
+-- AINDA PENDENTE (bloqueia a aplicação deste arquivo):
+--   E3 — chaves e restrições (PK, FKs de user_id/created_by, UNIQUE)
 --   E4 — grants e policies reais (6 policies, segundo o catálogo)
 --
--- Depois disso, inserir no corpo do arquivo (ordenado):
+-- Com E3 e E4 em mãos, inserir no corpo do arquivo (ordenado):
 --   a) CREATE TABLE public.user_roles ...  ANTES das funções do bloco 7
 --      (o corpo delas referencia a tabela e o PostgreSQL valida na criação);
 --   b) os GRANTs e policies de user_roles logo após a tabela;
 --   c) só então as funções has_role e is_admin.
--- Enquanto E2–E4 não chegarem, ESTE ARQUIVO NÃO DEVE SER APLICADO em
+-- Enquanto E3 e E4 não chegarem, ESTE ARQUIVO NÃO DEVE SER APLICADO em
 -- nenhum banco — o Lote 1 baseia toda a autorização administrativa em
 -- user_roles/has_role/is_admin.
 -- =====================================================================
