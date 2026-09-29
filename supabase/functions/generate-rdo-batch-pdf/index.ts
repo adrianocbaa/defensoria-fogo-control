@@ -16,7 +16,34 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    const json401 = (msg: string, status = 401) =>
+      new Response(JSON.stringify({ error: msg }), {
+        status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
+    // Lote 2: exige usuário autenticado com acesso à obra
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    if (!token) return json401('Não autenticado');
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) return json401('Não autenticado');
+    const userId = userData.user.id;
+
     const { obraId, dataInicio, dataFim } = await req.json();
+    const uuidRe = /^[0-9a-f-]{36}$/i;
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+    if (typeof obraId !== 'string' || !uuidRe.test(obraId) ||
+        typeof dataInicio !== 'string' || !dateRe.test(dataInicio) ||
+        typeof dataFim !== 'string' || !dateRe.test(dataFim)) {
+      return json401('Parâmetros inválidos', 400);
+    }
+
+    const [{ data: isAdmin }, { data: hasAccess }] = await Promise.all([
+      supabase.rpc('is_admin', { user_uuid: userId }),
+      supabase.rpc('user_has_obra_access', { user_uuid: userId, obra_uuid: obraId }),
+    ]);
+    if (!isAdmin && !hasAccess) return json401('Sem acesso a esta obra', 403);
 
     console.log('Batch PDF generation for obra:', obraId, 'from:', dataInicio, 'to:', dataFim);
 
