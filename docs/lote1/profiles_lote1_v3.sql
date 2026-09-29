@@ -225,8 +225,9 @@ CREATE POLICY "Admins can update any profile"
 --      público do SiDIF lê profiles; defesa em profundidade (grant + RLS)
 --      é preferível.
 --
---    authenticated mantém somente SELECT e UPDATE — o fluxo atual não faz
---    INSERT direto (criação via handle_new_user) nem DELETE de perfis; e
+--    authenticated mantém SELECT, INSERT e UPDATE — o INSERT cobre o
+--    UPSERT legítimo do próprio perfil (requisito do Lote 1), protegido
+--    pela guarda BEFORE INSERT; DELETE de perfis e
 --    TRUNCATE/REFERENCES/TRIGGER nunca foram necessários ao aplicativo.
 -- ---------------------------------------------------------------------
 REVOKE ALL ON public.profiles FROM anon;
