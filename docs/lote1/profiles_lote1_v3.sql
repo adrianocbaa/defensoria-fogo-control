@@ -59,20 +59,26 @@ BEGIN
 
   IF TG_OP = 'INSERT' THEN
     -- INSERT direto existe para o UPSERT legítimo do próprio perfil
-    -- (policy "Users can insert their own profile"). Os campos
-    -- privilegiados são neutralizados, nunca herdados do payload.
+    -- (policy "Users can insert their own profile"). Como o perfil ainda
+    -- não existe, nenhum campo privilegiado tem valor legítimo a preservar:
+    -- qualquer valor fora do padrão enviado por não-administrador é
+    -- tentativa de escalação e é BLOQUEADO com erro (não sanitizado
+    -- silenciosamente), para não mascarar o ataque.
     IF NOT v_admin THEN
       IF NEW.user_id IS DISTINCT FROM v_actor OR v_actor IS NULL THEN
         RAISE EXCEPTION 'profiles: criação de perfil de terceiro não permitida'
           USING ERRCODE = '42501';
       END IF;
-      NEW.role                       := 'viewer'::user_role;
-      NEW.is_active                  := true;
-      NEW.is_maintenance_responsible := false;
-      NEW.force_password_change      := false;
-      NEW.empresa_id                 := NULL;
-      NEW.setores_atuantes           := '{}'::text[];
-      NEW.created_at                 := now();
+      IF NEW.role IS DISTINCT FROM 'viewer'::user_role
+         OR NEW.is_active IS DISTINCT FROM true
+         OR NEW.is_maintenance_responsible IS DISTINCT FROM false
+         OR NEW.force_password_change IS DISTINCT FROM false
+         OR NEW.empresa_id IS NOT NULL
+         OR NEW.setores_atuantes IS DISTINCT FROM '{}'::text[] THEN
+        RAISE EXCEPTION 'profiles: definição de coluna privilegiada requer administrador'
+          USING ERRCODE = '42501';
+      END IF;
+      NEW.created_at := now();
     END IF;
     RETURN NEW;
   END IF;
