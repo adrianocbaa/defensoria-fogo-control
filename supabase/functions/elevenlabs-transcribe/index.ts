@@ -12,6 +12,20 @@ serve(async (req) => {
   }
 
   try {
+    // Lote 2: exige usuário autenticado
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const authResp = token
+      ? await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+          headers: { Authorization: `Bearer ${token}`, apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "" },
+        })
+      : null;
+    if (!authResp || !authResp.ok) {
+      return new Response(JSON.stringify({ error: "Não autenticado. Faça login novamente." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const formData = await req.formData();
     const audioFile = formData.get("audio") as File | null;
 
