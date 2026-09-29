@@ -206,7 +206,12 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
           }}
         >
         
-        {obras.map((obra) => (
+        {obras.filter((obra) =>
+          Array.isArray(obra.coordenadas) &&
+          Number.isFinite(Number(obra.coordenadas[0])) &&
+          Number.isFinite(Number(obra.coordenadas[1])) &&
+          obra.coordenadas[0] !== null && obra.coordenadas[1] !== null
+        ).map((obra) => (
           <Marker
             key={obra.id}
             position={obra.coordenadas}
