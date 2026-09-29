@@ -271,7 +271,7 @@ AS $function$
 $function$;
 
 -- =====================================================================
--- 8. BLOCO PENDENTE — TABELA public.user_roles (aguardando E3 e E4)
+-- 8. BLOCO PENDENTE — TABELA public.user_roles (aguardando E4)
 -- =====================================================================
 -- E2 — RESULTADO CONFIRMADO (colado pelo usuário, catálogo do projeto
 -- ATUAL, 5 linhas — reproduzir sem alteração):
@@ -284,16 +284,25 @@ $function$;
 --   created_at  | timestamp with time zone | timestamptz| NO          | now()
 --   created_by  | uuid                     | uuid       | YES         | NULL
 --
+-- E3 — RESULTADO CONFIRMADO (colado pelo usuário, 4 linhas — reproduzir
+-- sem alteração):
+--
+--   conname                   | definicao
+--   --------------------------+--------------------------------------------------------------
+--   user_roles_created_by_fkey | FOREIGN KEY (created_by) REFERENCES auth.users(id)
+--   user_roles_pkey            | PRIMARY KEY (id)
+--   user_roles_user_id_fkey    | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+--   user_roles_user_id_role_key| UNIQUE (user_id, role)
+--
 -- AINDA PENDENTE (bloqueia a aplicação deste arquivo):
---   E3 — chaves e restrições (PK, FKs de user_id/created_by, UNIQUE)
 --   E4 — grants e policies reais (6 policies, segundo o catálogo)
 --
--- Com E3 e E4 em mãos, inserir no corpo do arquivo (ordenado):
+-- Com a E4 em mãos, inserir no corpo do arquivo (ordenado):
 --   a) CREATE TABLE public.user_roles ...  ANTES das funções do bloco 7
 --      (o corpo delas referencia a tabela e o PostgreSQL valida na criação);
 --   b) os GRANTs e policies de user_roles logo após a tabela;
 --   c) só então as funções has_role e is_admin.
--- Enquanto E3 e E4 não chegarem, ESTE ARQUIVO NÃO DEVE SER APLICADO em
+-- Enquanto a E4 não chegar, ESTE ARQUIVO NÃO DEVE SER APLICADO em
 -- nenhum banco — o Lote 1 baseia toda a autorização administrativa em
 -- user_roles/has_role/is_admin.
 -- =====================================================================
