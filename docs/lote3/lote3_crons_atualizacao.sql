@@ -20,13 +20,14 @@ CREATE EXTENSION IF NOT EXISTS pg_net;
 -- Os jobs check-maintenance-confirmations-5min e check-teletrabalho-ending-daily
 -- NÃO são alterados.
 
--- ── notify-rdo-delay-daily (diário 08:00 UTC) ───────────────────────
-SELECT cron.unschedule('notify-rdo-delay-daily');
+-- Ajuste: os jobs pertencem a outro usuário interno, por isso
+-- unschedule por nome falha. Alteramos o comando pelo número (jobid),
+-- mantendo nome e horário.
 
-SELECT cron.schedule(
-  'notify-rdo-delay-daily',
-  '0 8 * * *',
-  $$
+-- ── jobid 3: notify-rdo-delay-daily (diário 08:00 UTC) ──────────────
+SELECT cron.alter_job(
+  job_id := 3,
+  command := $cmd$
   SELECT net.http_post(
     url := 'https://mmumfgxngzaivvyqfbed.supabase.co/functions/v1/notify-rdo-delay',
     headers := jsonb_build_object(
@@ -35,16 +36,13 @@ SELECT cron.schedule(
     ),
     body := '{}'::jsonb
   ) AS request_id;
-  $$
+  $cmd$
 );
 
--- ── demo-reset-weekly (domingo 03:00 UTC) ───────────────────────────
-SELECT cron.unschedule('demo-reset-weekly');
-
-SELECT cron.schedule(
-  'demo-reset-weekly',
-  '0 3 * * 0',
-  $$
+-- ── jobid 4: demo-reset-weekly (domingo 03:00 UTC) ──────────────────
+SELECT cron.alter_job(
+  job_id := 4,
+  command := $cmd$
   SELECT net.http_post(
     url := 'https://mmumfgxngzaivvyqfbed.supabase.co/functions/v1/demo-reset',
     headers := jsonb_build_object(
@@ -53,8 +51,8 @@ SELECT cron.schedule(
     ),
     body := '{}'::jsonb
   ) AS request_id;
-  $$
+  $cmd$
 );
 
--- Verificação final (leitura): confirma que os jobs foram recriados.
-SELECT jobid, jobname, schedule, active FROM cron.job ORDER BY jobname;
+-- Verificação final (leitura)
+SELECT jobid, jobname, schedule, active, command FROM cron.job ORDER BY jobid;
