@@ -13,13 +13,10 @@
 -- NÃO são recriados aqui — já existem em qualquer projeto Supabase.
 --
 -- ATENÇÃO — STATUS: E1 (funções), E2 (colunas), E3 (chaves), E4-1 (RLS),
--- E4-2 (grants) e E4-3 (policies) CONFIRMADOS e registrados abaixo.
--- NOVA DEPENDÊNCIA DESCOBERTA NA E4-3: a policy "Maintenance responsibles
--- can view all roles" referencia public.is_maintenance_responsible(uuid),
--- cuja definição ainda NÃO foi extraída (consulta E6 de
--- extrair_definicoes_autorizacao.sql). Sem E6 este arquivo NÃO deve ser
--- aplicado — a criação das policies falhará sem a função. O arquivo para
--- até lá, de forma explícita.
+-- E4-2 (grants), E4-3 (policies) e E6 (is_maintenance_responsible)
+-- CONFIRMADOS e registrados abaixo. ARQUIVO PRONTO para o preflight no
+-- projeto sidif-homologacao.
+-- Pendente (opcional, não bloqueia): E7 — grants de EXECUTE das funções.
 -- =====================================================================
 
 BEGIN;
@@ -310,19 +307,27 @@ CREATE POLICY "Contratada can view own profile"
   );
 
 -- =====================================================================
--- 9. PENDENTE — public.is_maintenance_responsible(uuid) (consulta E6)
+-- 9. FUNÇÃO EXTRAÍDA DO PROJETO ATUAL (E6 CONFIRMADO)
 -- =====================================================================
--- A policy "Maintenance responsibles can view all roles" (bloco 11)
--- referencia public.is_maintenance_responsible(uuid). A definição real
--- desta função AINDA NÃO foi extraída do projeto atual.
---
--- >>> INSERIR AQUI, SEM ALTERAÇÃO, o resultado da consulta E6 de
--- >>> extrair_definicoes_autorizacao.sql (pg_get_functiondef).
---
--- ENQUANTO ESTE ESPAÇO NÃO FOR PREENCHIDO, ESTE ARQUIVO NÃO DEVE SER
--- APLICADO em nenhum banco: a criação das policies do bloco 11 falhará
--- (função inexistente), deixando user_roles sem regras de acesso.
+-- Definição real de public.is_maintenance_responsible(uuid), extraída do
+-- catálogo do projeto ATUAL (consulta E6, resultado colado e conferido).
+-- Referenciada pela policy "Maintenance responsibles can view all roles"
+-- (bloco 11). Fica DEPOIS da tabela profiles (bloco 5) — o PostgreSQL
+-- valida o corpo na criação.
 -- =====================================================================
+
+-- FUNÇÃO CONFIRMADA (E6) — public.is_maintenance_responsible
+CREATE OR REPLACE FUNCTION public.is_maintenance_responsible(_user_id uuid DEFAULT auth.uid())
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE user_id = _user_id AND is_maintenance_responsible = true
+  );
+$function$;
 
 -- =====================================================================
 -- 11. POLICIES DE USER_ROLES — E4-3 CONFIRMADO (6 policies)
@@ -369,9 +374,8 @@ COMMIT;
 -- STATUS FINAL DO ARQUIVO (não remover):
 --   CONFIRMADO: tipos, empresas, audit_logs, profiles, handle_new_user
 --   + trigger, user_roles (E2/E3/E4-1/E4-2), has_role e is_admin (E1),
---   policies de user_roles (E4-3).
---   PENDENTE (bloqueia a aplicação): definição de
---   public.is_maintenance_responsible(uuid) — consulta E6.
---   Com a E6 colada no bloco 9, o arquivo fica PRONTO para o preflight
---   no projeto sidif-homologacao.
+--   policies de user_roles (E4-3), is_maintenance_responsible (E6).
+--   ARQUIVO PRONTO para aplicação no projeto sidif-homologacao.
+--   Pendente (opcional, não bloqueia): E7 — grants de EXECUTE das
+--   funções (o default do PostgreSQL já concede EXECUTE ao PUBLIC).
 -- =====================================================================
