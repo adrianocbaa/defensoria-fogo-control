@@ -53,3 +53,20 @@ SELECT p.proname, r.rolname AS proprietario, p.prosecdef, p.proconfig, p.proacl
   JOIN pg_namespace n ON n.oid = p.pronamespace
  WHERE n.nspname = 'public'
    AND p.proname IN ('has_role', 'is_admin');
+
+-- E6 — Definição completa de public.is_maintenance_responsible.
+-- (Descoberta na E4-3: a policy "Maintenance responsibles can view all
+-- roles" de public.user_roles referencia esta função.)
+SELECT p.proname, pg_get_functiondef(p.oid) AS definicao
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+ WHERE n.nspname = 'public'
+   AND p.proname = 'is_maintenance_responsible';
+
+-- E7 — Grants de EXECUTE sobre is_maintenance_responsible.
+SELECT p.proname, r.rolname AS proprietario, p.prosecdef, p.proconfig, p.proacl
+  FROM pg_proc p
+  JOIN pg_roles r ON r.oid = p.proowner
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+ WHERE n.nspname = 'public'
+   AND p.proname = 'is_maintenance_responsible';
