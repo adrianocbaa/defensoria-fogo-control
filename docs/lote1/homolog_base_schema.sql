@@ -234,17 +234,44 @@ CREATE TRIGGER on_auth_user_created
 COMMIT;
 
 -- =====================================================================
--- 7. DEFINIÇÕES DE AUTORIZAÇÃO EXTRAÍDAS DO PROJETO ATUAL (E1)
+-- 7. USER_ROLES — TABELA (E2 + E3 + E4-1 + E4-2 CONFIRMADOS)
+-- =====================================================================
+-- Reproduz o catálogo do projeto ATUAL, sem alteração.
+-- E2 (colunas), E3 (restrições), E4-1 (RLS ativa, FORCE RLS desligado —
+-- padrão), E4-2 (grants amplos para anon, authenticated, postgres e
+-- service_role). Os grants amplos são exatamente o estado que o Lote 1
+-- audita; não são reduzidos aqui.
+-- =====================================================================
+
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS public.user_roles (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role       public.user_role NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  created_by uuid REFERENCES auth.users(id),
+  CONSTRAINT user_roles_user_id_role_key UNIQUE (user_id, role)
+);
+
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+  ON public.user_roles TO anon;
+GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+  ON public.user_roles TO authenticated;
+GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE
+  ON public.user_roles TO postgres;
+GRANT ALL ON public.user_roles TO service_role;
+
+-- =====================================================================
+-- 8. FUNÇÕES DE AUTORIZAÇÃO EXTRAÍDAS DO PROJETO ATUAL (E1 CONFIRMADO)
 -- =====================================================================
 -- As duas funções abaixo foram extraídas do catálogo do projeto ATUAL
 -- (consulta E1 de extrair_definicoes_autorizacao.sql, resultado colado
 -- e conferido). Elas representam o estado real vigente e devem ser
--- reproduzidas aqui SEM ALTERAÇÃO.
---
--- PENDENTE: a TABELA public.user_roles ainda não foi comprovada
--- (colunas: E2; chaves: E3; grants/policies: E4). Ela é pré-requisito
--- destas funções (o corpo delas referencia a tabela). NÃO aplique este
--- arquivo enquanto E2–E4 não forem coladas no sub-bloco 8 abaixo.
+-- reproduzidas aqui SEM ALTERAÇÃO. Ficam DEPOIS da tabela (o PostgreSQL
+-- valida o corpo na criação).
 -- =====================================================================
 
 -- FUNÇÃO CONFIRMADA (E1) — public.has_role
