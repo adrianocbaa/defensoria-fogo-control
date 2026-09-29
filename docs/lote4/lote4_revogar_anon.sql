@@ -28,7 +28,7 @@ BEGIN
     WHERE n.nspname = 'public'
       AND c.relkind = 'r'                       -- somente tabelas
       AND c.relname <> ALL (whitelist)
-      AND has_table_privilege('anon', c.oid, 'SELECT')
+      AND has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
   LOOP
     EXECUTE format('REVOKE ALL ON public.%I FROM anon', t.tabela);
   END LOOP;
