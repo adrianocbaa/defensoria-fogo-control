@@ -160,8 +160,9 @@ async function teardown() {
   // qa_current_role() e a si mesma. Como este teardown está no finally
   // da suíte, a limpeza ocorre mesmo se qualquer teste falhar.
   const { error: qaErr } = await admin.rpc("qa_teardown");
-  // PGRST202 = função inexistente: a etapa 20 da suíte já a removeu.
-  if (qaErr && qaErr.code !== "PGRST202") {
+  // PGRST202 (PostgREST) ou 42883 (Postgres) = função inexistente:
+  // a etapa 20 da suíte já a removeu.
+  if (qaErr && qaErr.code !== "PGRST202" && qaErr.code !== "42883") {
     // Segunda garantia: se a RPC falhar, exigir limpeza manual explícita.
     console.error("teardown qa_teardown:", qaErr.message);
     console.warn(
