@@ -36,6 +36,15 @@ END $$;
 
 -- Garante que as tabelas do portal público continuam com leitura anônima
 -- (não altera nada se já estiver correto):
+-- Nas 10 tabelas do portal, o visitante fica SOMENTE com leitura (sem gravar/apagar):
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['obras','nucleos_central','nucleo_module_visibility','rdo_reports','orcamento_items','medicao_sessions','aditivo_sessions','hydrants','fire_extinguishers','documents'] LOOP
+    EXECUTE format('REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.%I FROM anon', t);
+  END LOOP;
+END $$;
+
 GRANT SELECT ON public.obras TO anon;
 GRANT SELECT ON public.nucleos_central TO anon;
 GRANT SELECT ON public.nucleo_module_visibility TO anon;
