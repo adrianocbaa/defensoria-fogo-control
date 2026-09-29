@@ -142,9 +142,9 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Sistema <noreply@sistema.com>',
+            from: 'SiDIF - DPE-MT <sidif@sidif.com.br>',
             to: [email],
-            subject: 'Bem-vindo ao Sistema - Suas Credenciais de Acesso',
+            subject: 'Bem-vindo ao SiDIF - Suas Credenciais de Acesso',
             html: `
               <h2>Bem-vindo ao Sistema!</h2>
               <p>Uma conta foi criada para você pelo administrador.</p>
