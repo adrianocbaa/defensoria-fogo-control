@@ -126,7 +126,7 @@ serve(async (req: Request) => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Sistema <onboarding@resend.dev>",
+        from: "SiDIF - DPE-MT <sidif@sidif.com.br>",
         to: [email],
         subject: "Código de Redefinição de Senha",
         html: emailHtml,
