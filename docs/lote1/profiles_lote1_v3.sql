@@ -58,9 +58,9 @@ BEGIN
   v_admin := COALESCE(public.is_admin(v_actor), false);
 
   IF TG_OP = 'INSERT' THEN
-    -- INSERT direto por usuário comum não é usado por nenhum fluxo do SiDIF
-    -- (a policy de INSERT é removida abaixo). Caso algum caminho residual
-    -- exista, os campos privilegiados são neutralizados, nunca herdados do payload.
+    -- INSERT direto existe para o UPSERT legítimo do próprio perfil
+    -- (policy "Users can insert their own profile"). Os campos
+    -- privilegiados são neutralizados, nunca herdados do payload.
     IF NOT v_admin THEN
       IF NEW.user_id IS DISTINCT FROM v_actor OR v_actor IS NULL THEN
         RAISE EXCEPTION 'profiles: criação de perfil de terceiro não permitida'
