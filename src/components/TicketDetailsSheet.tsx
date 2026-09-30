@@ -125,18 +125,31 @@ function extractDocumentsPath(url: string | null): string | null {
   }
 }
 
-async function openConfirmationAttachment(url: string) {
-  const path = extractDocumentsPath(url);
-  if (path) {
-    const { data, error } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(path, 60 * 10); // 10 min
-    if (!error && data?.signedUrl) {
-      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
+/**
+ * Baixa o arquivo do bucket e abre como blob local. Evita abrir o domínio
+ * do Supabase em nova aba, que bloqueadores de anúncio barram
+ * (ERR_BLOCKED_BY_CLIENT).
+ */
+async function openDocumentsFile(path: string, fileName?: string): Promise<boolean> {
+  const { data, error } = await supabase.storage.from('documents').download(path);
+  if (error || !data) return false;
+  const blobUrl = URL.createObjectURL(data);
+  const win = window.open(blobUrl, '_blank');
+  if (!win) {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName || path.split('/').pop() || 'arquivo';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
-  // Fallback: URL salva
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  return true;
+}
+
+async function openConfirmationAttachment(url: string, fileName?: string) {
+  const path = extractDocumentsPath(url) ?? (!/^https?:\/\//i.test(url) ? url : null);
+  if (path && (await openDocumentsFile(path, fileName))) return;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
@@ -321,7 +334,7 @@ export function TicketDetailsSheet({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => openConfirmationAttachment(ticket.confirmation_file_url!)}
+                        onClick={() => openConfirmationAttachment(ticket.confirmation_file_url!, ticket.confirmation_file_name ?? undefined)}
                       >
                         <Download className="mr-1 h-3.5 w-3.5" />
                         Abrir
@@ -338,6 +351,10 @@ export function TicketDetailsSheet({
                       {ticket.finalization_note}
                     </div>
             )}
+                </div>
+              </>
+            )}
+
 
             {/* PDF de arquivamento / SEI */}
             {(ticket.archive_pdf_url || ticket.completed_at || ticket.finalized_at) && (
@@ -379,12 +396,7 @@ export function TicketDetailsSheet({
                             const path = (data as any)?.path as string | undefined;
                             if (!path) throw new Error('PDF não gerado');
                             setTicket((t) => (t ? { ...t, archive_pdf_url: path } : t));
-                            const { data: signed } = await supabase.storage
-                              .from('documents')
-                              .createSignedUrl(path, 3600);
-                            if (signed?.signedUrl) {
-                              window.open(signed.signedUrl, '_blank', 'noopener,noreferrer');
-                            }
+                            await openDocumentsFile(path, 'relatorio-chamado.pdf');
                             toast({ title: 'PDF gerado com sucesso' });
                           } catch (e: any) {
                             toast({
@@ -409,14 +421,10 @@ export function TicketDetailsSheet({
                           variant="outline"
                           size="sm"
                           onClick={async () => {
-                            const { data, error } = await supabase.storage
-                              .from('documents')
-                              .createSignedUrl(ticket.archive_pdf_url!, 3600);
-                            if (error || !data?.signedUrl) {
-                              toast({ title: 'Erro ao abrir PDF', description: error?.message ?? 'Tente novamente.', variant: 'destructive' });
-                              return;
+                            const ok = await openDocumentsFile(ticket.archive_pdf_url!, 'relatorio-chamado.pdf');
+                            if (!ok) {
+                              toast({ title: 'Erro ao abrir PDF', description: 'Tente novamente.', variant: 'destructive' });
                             }
-                            window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
                           }}
                         >
                           <Download className="mr-1 h-3.5 w-3.5" />
@@ -425,10 +433,6 @@ export function TicketDetailsSheet({
                       )}
                     </div>
                   </div>
-                </div>
-              </>
-            )}
-
                 </div>
               </>
             )}
