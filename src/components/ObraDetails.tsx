@@ -83,13 +83,18 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   const { dados: dadosFinanceiros, loading: loadingFinanceiro } = useMedicoesFinanceiro(obra.id);
   
   // Buscar andamento do RDO
-  const { data: rdoProgress = 0 } = useRdoProgressByObra(obra.id);
+  const { data: rdoProgress = 0 } = useRdoProgressByObra(obra.id, true);
   
   // Usar dados das medições se disponíveis, senão usar dados da obra
   const valorInicial = dadosFinanceiros.valorTotalOriginal || (obra?.valor || 0);
   const valorAditivado = dadosFinanceiros.totalAditivo || ((obra as any)?.valor_aditivado || 0);
   const valorFinal = dadosFinanceiros.totalContrato || (valorInicial + valorAditivado); // Valor Final = Total do Contrato
   const valorExecutado = dadosFinanceiros.valorAcumulado || (obra?.valorExecutado || 0); // Valor Executado = Valor Acumulado
+  const percentualFinanceiro = valorFinal > 0 ? Math.min(100, Math.max(0, valorExecutado / valorFinal * 100)) : 0;
+  const prazoFinal = obra.previsaoTermino ? new Date(...(obra.previsaoTermino.slice(0, 10).split('-').map(Number).map((n, i) => i === 1 ? n - 1 : n) as [number, number, number])) : null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const diasRestantes = prazoFinal ? Math.max(0, Math.ceil((prazoFinal.getTime() - hoje.getTime()) / 86400000)) : null;
   
   // Simulate photo loading delay
   React.useEffect(() => {
@@ -196,7 +201,25 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
         </div>
       </div>
 
-      <Separator />
+       <div className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="Progresso da obra">
+         <div className="min-w-0 space-y-2 border rounded-md p-2 sm:p-3">
+           <p className="text-xs text-muted-foreground">Andamento físico</p>
+           <p className="text-base sm:text-lg font-semibold text-primary">{Math.min(100, Math.max(0, rdoProgress)).toFixed(2)}%</p>
+           <Progress value={Math.min(100, Math.max(0, rdoProgress))} color="blue" className="h-2" aria-label="Andamento físico" />
+         </div>
+         <div className="min-w-0 space-y-2 border rounded-md p-2 sm:p-3">
+           <p className="text-xs text-muted-foreground">Valor pago</p>
+           <p className="text-base sm:text-lg font-semibold text-primary">{percentualFinanceiro.toFixed(2)}%</p>
+           <Progress value={percentualFinanceiro} color="green" className="h-2" aria-label="Valor pago" />
+         </div>
+         <div className="min-w-0 space-y-2 border rounded-md p-2 sm:p-3">
+           <p className="text-xs text-muted-foreground">Tempo restante</p>
+           <p className="text-base sm:text-lg font-semibold">{diasRestantes === null ? '—' : `${diasRestantes} dias`}</p>
+           <p className="text-xs text-muted-foreground">{diasRestantes === null ? 'Sem previsão' : diasRestantes === 0 ? 'Prazo encerrado' : 'Até a previsão de término'}</p>
+         </div>
+       </div>
+
+       <Separator />
 
       {/* Accordion com seções organizadas */}
       <Accordion type="multiple" defaultValue={["geral", "prazos", "financeiro", "fotos"]} className="space-y-2">

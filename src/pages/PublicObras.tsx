@@ -32,7 +32,8 @@ export default function PublicObras() {
         const { data, error: fetchError } = await supabase
           .from('obras')
           .select('*')
-          .order('created_at', { ascending: false });
+           .order('created_at', { ascending: false })
+           .limit(10000);
 
         if (fetchError) throw fetchError;
         
@@ -45,9 +46,16 @@ export default function PublicObras() {
           coordenadas: [item.coordinates_lat, item.coordinates_lng] as [number, number],
           valor: item.valor_total,
           valorExecutado: item.valor_executado || 0,
+           valor_aditivado: item.valor_aditivado || 0,
           porcentagemExecucao: item.porcentagem_execucao || 0,
           dataInicio: item.data_inicio,
           previsaoTermino: item.data_previsao_termino || '',
+           data_inicio_prevista: item.data_inicio_prevista,
+           data_termino_real: item.data_termino_real,
+           tempo_obra: item.tempo_obra,
+           aditivo_prazo: item.aditivo_prazo,
+           n_contrato: item.n_contrato,
+           endereco_completo: item.endereco_completo,
           empresaResponsavel: item.empresa_responsavel,
           secretariaResponsavel: 'Defensoria Pública de Mato Grosso',
           descricao: item.descricao || '',
