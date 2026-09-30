@@ -1,0 +1,9 @@
+REVOKE SELECT ON public.nuclei_secure FROM anon;
+REVOKE SELECT ON public.vw_nucleos_public FROM anon;
+REVOKE SELECT ON public.medicao_acumulado_por_item FROM anon;
+REVOKE SELECT ON public.medicao_contrato_atual_por_item FROM anon;
+REVOKE SELECT ON public.vw_planilha_hierarquia FROM anon;
+REVOKE SELECT ON public.nucleos_central_public FROM anon;
+REVOKE SELECT ON public.profiles_secure FROM anon;
+REVOKE SELECT ON public.orcamento_items_hierarquia FROM anon;
+REVOKE SELECT ON public.rdo_activities_acumulado FROM anon;
