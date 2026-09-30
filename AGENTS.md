@@ -1,0 +1,1 @@
+Use a SECURITY INVOKER RPC for public RDO progress, relying on the existing row-level access rules instead of granting visitors the internal SECURITY DEFINER progress function; this preserves the public map's visibility boundary.
