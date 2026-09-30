@@ -1,0 +1,1 @@
+ALTER POLICY "Users with edit permission can view rdo_activities" ON public.rdo_activities TO authenticated;
