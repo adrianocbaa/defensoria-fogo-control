@@ -15,3 +15,4 @@
 - [ ] Republicar o SiDIF após o Lote 4c (o site publicado usa páginas públicas antigas que não funcionam para visitantes)
 - [ ] Decidir se as páginas públicas de Medição e RDO devem mostrar dados a visitantes (hoje: fechadas)
 - [ ] Regenerar a service_role (sb_secret) do sidif-homologacao (higiene pós-testes)
+- [x] Restaurar no topo do resumo público os indicadores de andamento físico, valor pago e tempo restante
