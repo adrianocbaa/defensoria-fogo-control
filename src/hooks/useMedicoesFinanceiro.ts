@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { calcularFinanceiroMedicao, MarcoCalculado } from '@/lib/medicaoCalculo';
 import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
+import { fetchAllPaged } from '@/lib/supabasePaged';
 
 // Re-exporta como MedicaoMarco para retrocompatibilidade
 export type MedicaoMarco = MarcoCalculado;
@@ -42,35 +43,39 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         setLoading(true);
         setError(null);
 
-        // Buscar todos os dados em paralelo
-        const [obraResult, orcResult, sessionsResult, aditivoSessionsResult] = await Promise.all([
+        // Buscar todos os dados em paralelo (paginado para evitar truncamento
+        // silencioso no limite de linhas por requisição)
+        const [obraResult, orcItems, sessions, aditivoSessions] = await Promise.all([
           supabase.from('obras').select('valor_total, valor_aditivado').eq('id', obraId).single(),
-          supabase.from('orcamento_items').select('item, total_contrato, origem, eh_administracao_local').eq('obra_id', obraId).limit(10000),
-          supabase.from('medicao_sessions').select('id, sequencia, status, periodo_inicio, periodo_fim, data_vistoria, data_relatorio').eq('obra_id', obraId).order('sequencia', { ascending: true }).limit(10000),
-          supabase.from('aditivo_sessions').select('id').eq('obra_id', obraId).eq('status', 'bloqueada').limit(10000),
+          fetchAllPaged((from, to) =>
+            supabase.from('orcamento_items').select('item, total_contrato, origem, eh_administracao_local')
+              .eq('obra_id', obraId).order('id', { ascending: true }).range(from, to)),
+          fetchAllPaged((from, to) =>
+            supabase.from('medicao_sessions').select('id, sequencia, status, periodo_inicio, periodo_fim, data_vistoria, data_relatorio')
+              .eq('obra_id', obraId).order('sequencia', { ascending: true }).order('id', { ascending: true }).range(from, to)),
+          fetchAllPaged((from, to) =>
+            supabase.from('aditivo_sessions').select('id').eq('obra_id', obraId).eq('status', 'bloqueada')
+              .order('id', { ascending: true }).range(from, to)),
         ]);
 
+        if (obraResult.error) throw obraResult.error;
         const obraData = obraResult.data;
-        const orcItems = orcResult.data || [];
-        const sessions = sessionsResult.data || [];
-        const aditivoSessions = aditivoSessionsResult.data || [];
 
         // Buscar itens de medição e aditivos em paralelo (se houver)
-        const [medicaoItemsResult, aditivoItemsResult] = await Promise.all([
+        const [medicaoRows, aditivoItems] = await Promise.all([
           sessions.length > 0
-            ? supabase.from('medicao_items').select(`total, medicao_id, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`).in('medicao_id', sessions.map(s => s.id)).limit(10000)
-            : Promise.resolve({ data: [] }),
+            ? fetchAllPaged((from, to) =>
+                supabase.from('medicao_items').select(`total, medicao_id, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`)
+                  .in('medicao_id', sessions.map(s => s.id)).order('id', { ascending: true }).range(from, to))
+            : Promise.resolve([] as any[]),
           aditivoSessions.length > 0
-            ? supabase.from('aditivo_items').select('total').in('aditivo_id', aditivoSessions.map(s => s.id)).limit(10000)
-            : Promise.resolve({ data: [] }),
+            ? fetchAllPaged((from, to) =>
+                supabase.from('aditivo_items').select('total').in('aditivo_id', aditivoSessions.map(s => s.id))
+                  .order('id', { ascending: true }).range(from, to))
+            : Promise.resolve([] as any[]),
         ]);
 
-        const fetchError = [obraResult, orcResult, sessionsResult, aditivoSessionsResult, medicaoItemsResult, aditivoItemsResult]
-          .find(result => 'error' in result && result.error)?.error;
-        if (fetchError) throw fetchError;
-
-        const medicaoItems = resolveItensEfetivos(medicaoItemsResult.data || []);
-        const aditivoItems = aditivoItemsResult.data || [];
+        const medicaoItems = resolveItensEfetivos(medicaoRows);
 
         // Calcular usando o utilitário centralizado
         const resultado = calcularFinanceiroMedicao(

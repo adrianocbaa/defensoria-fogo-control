@@ -33,6 +33,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
 import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
+import { fetchAllPaged } from '@/lib/supabasePaged';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
 import { MedicaoProgressBar } from '@/components/MedicaoProgressBar';
 import * as LoadingStates from '@/components/LoadingStates';
@@ -270,23 +271,6 @@ export function AdminObras() {
         (profs || []).forEach((p: any) => { map[p.user_id] = p.display_name || ''; });
         setFiscalNames(map);
       }
-
-      // Busca paginada: evita truncamento silencioso quando o volume de itens
-      // ultrapassa o limite máximo de linhas por requisição.
-      const fetchAllPaged = async (
-        build: (from: number, to: number) => any,
-      ): Promise<any[]> => {
-        const PAGE = 1000;
-        const all: any[] = [];
-        for (let from = 0; ; from += PAGE) {
-          const { data, error } = await build(from, from + PAGE - 1);
-          if (error) throw error;
-          const rows = data || [];
-          all.push(...rows);
-          if (rows.length < PAGE) break;
-        }
-        return all;
-      };
 
       const [rdoProgressData, aditivoData, medicaoData, orcamentoItensTodos] = await Promise.all([
         supabase.rpc('get_rdo_progress_batch', { p_obra_ids: ids }),
