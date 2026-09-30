@@ -19,5 +19,5 @@
 - [x] Alinhar os indicadores do resumo público aos registros atuais de RDO e medição das obras exibidas no mapa
 - [x] Revisar os 39 alertas restantes: 36 intencionais (portal público, links de manutenção, login, regras de acesso), 1 não movível (pg_net)
 - [x] Lote 11 — busca paginada nas consultas financeiras globais (mapa, estatísticas, resumo de medições) para eliminar valores truncados
-- [ ] Ativar proteção contra senhas vazadas (painel Supabase — usuário)
-- [ ] Atualizar versão do Postgres (painel Supabase — usuário, fora do horário)
+- [x] Ativar proteção contra senhas vazadas (painel Supabase) — confirmado pelo usuário em 30/09/2026
+- [x] Atualizar versão do Postgres — sem atualização disponível (PostgreSQL 17.4, já na versão mais recente; alerta desatualizado)
