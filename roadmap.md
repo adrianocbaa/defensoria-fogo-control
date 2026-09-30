@@ -13,7 +13,7 @@
 - [x] Lote 4 — revogar acesso anônimo às 94 tabelas (aplicado); views só leitura (aplicado)
 - [x] Lote 4c — reparo do portal público: políticas de leitura anônima por is_demo IS NOT TRUE nas 6 tabelas de dados; indicadores reais validados pelo usuário
 - [x] Republicar o SiDIF após o reparo do portal público (usuário publica; confirmado funcionando)
-- [ ] Decidir se as páginas públicas de Medição e RDO devem mostrar dados a visitantes (hoje: fechadas)
+- [x] Decidir se as páginas públicas de Medição e RDO devem mostrar dados a visitantes — DECIDIDO: permanecem fechadas ao público por ora
 - [ ] Regenerar a service_role (sb_secret) do sidif-homologacao (higiene pós-testes)
 - [x] Restaurar no topo do resumo público os indicadores de andamento físico, valor pago e tempo restante
 - [x] Alinhar os indicadores do resumo público aos registros atuais de RDO e medição das obras exibidas no mapa
