@@ -14,7 +14,7 @@
 - [x] Lote 4c — reparo do portal público: políticas de leitura anônima por is_demo IS NOT TRUE nas 6 tabelas de dados; indicadores reais validados pelo usuário
 - [x] Republicar o SiDIF após o reparo do portal público (usuário publica; confirmado funcionando)
 - [x] Decidir se as páginas públicas de Medição e RDO devem mostrar dados a visitantes — DECIDIDO: permanecem fechadas ao público por ora
-- [ ] Regenerar a service_role (sb_secret) do sidif-homologacao (higiene pós-testes)
+- [x] Regenerar a service_role (sb_secret) do sidif-homologacao (higiene pós-testes) — concluído 30/09/2026: migrado para chaves novas (sb_publishable/sb_secret) e chaves legacy eyJ... desabilitadas ("Disable JWT-based API keys"); homologação não tem site, segredo SUPABASE_SERVICE_ROLE_KEY é gerenciado pelo Supabase e atualiza sozinho
 - [x] Restaurar no topo do resumo público os indicadores de andamento físico, valor pago e tempo restante
 - [x] Alinhar os indicadores do resumo público aos registros atuais de RDO e medição das obras exibidas no mapa
 - [x] Revisar os 39 alertas restantes: 36 intencionais (portal público, links de manutenção, login, regras de acesso), 1 não movível (pg_net)
