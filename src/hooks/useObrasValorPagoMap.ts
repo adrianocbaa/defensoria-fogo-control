@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
 import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
+import { fetchAllPaged } from '@/lib/supabasePaged';
 
 interface ValorPagoItem {
   obraId: string;
@@ -21,54 +22,65 @@ export function useObrasValorPagoMap(obraIds: string[]) {
     queryFn: async (): Promise<Record<string, ValorPagoItem>> => {
       if (!obraIds.length) return {};
 
-      // Buscar todos os dados necessários em paralelo
-      const [sessionsResult, orcResult, obrasResult, aditivoSessionsResult] = await Promise.all([
-        supabase
-          .from('medicao_sessions')
-          .select('id, obra_id, sequencia')
-          .in('obra_id', obraIds),
-        supabase
-          .from('orcamento_items')
-          .select('obra_id, item, total_contrato, origem, eh_administracao_local')
-          .in('obra_id', obraIds)
-          .limit(10000),
+      // Buscar todos os dados necessários em paralelo (paginado para evitar
+      // truncamento silencioso no limite de linhas por requisição)
+      const [sessions, orcItems, obrasResult, aditivoSessions] = await Promise.all([
+        fetchAllPaged((from, to) =>
+          supabase
+            .from('medicao_sessions')
+            .select('id, obra_id, sequencia')
+            .in('obra_id', obraIds)
+            .order('id', { ascending: true })
+            .range(from, to)),
+        fetchAllPaged((from, to) =>
+          supabase
+            .from('orcamento_items')
+            .select('obra_id, item, total_contrato, origem, eh_administracao_local')
+            .in('obra_id', obraIds)
+            .order('id', { ascending: true })
+            .range(from, to)),
         supabase
           .from('obras')
           .select('id, valor_total, valor_aditivado')
           .in('id', obraIds),
-        supabase
-          .from('aditivo_sessions')
-          .select('id, obra_id')
-          .in('obra_id', obraIds)
-          .eq('status', 'bloqueada'),
+        fetchAllPaged((from, to) =>
+          supabase
+            .from('aditivo_sessions')
+            .select('id, obra_id')
+            .in('obra_id', obraIds)
+            .eq('status', 'bloqueada')
+            .order('id', { ascending: true })
+            .range(from, to)),
       ]);
 
-      const sessions = sessionsResult.data || [];
-      const orcItems = orcResult.data || [];
       const obrasData = obrasResult.data || [];
-      const aditivoSessions = aditivoSessionsResult.data || [];
 
       const sessionIds = sessions.map(s => s.id);
       const aditivoSessionIds = aditivoSessions.map(s => s.id);
 
       // Buscar itens de medição e de aditivos em paralelo
-      const [medicaoItemsResult, aditivoItemsResult] = await Promise.all([
+      const [medicaoRows, allAditivoItems] = await Promise.all([
         sessionIds.length > 0
-          ? supabase
-              .from('medicao_items')
-              .select(`medicao_id, item_code, pct, total, ${MEDICAO_SNAPSHOT_COLUMNS}`)
-              .in('medicao_id', sessionIds)
-          : Promise.resolve({ data: [] as any[] }),
+          ? fetchAllPaged((from, to) =>
+              supabase
+                .from('medicao_items')
+                .select(`medicao_id, item_code, pct, total, ${MEDICAO_SNAPSHOT_COLUMNS}`)
+                .in('medicao_id', sessionIds)
+                .order('id', { ascending: true })
+                .range(from, to))
+          : Promise.resolve([] as any[]),
         aditivoSessionIds.length > 0
-          ? supabase
-              .from('aditivo_items')
-              .select('aditivo_id, total')
-              .in('aditivo_id', aditivoSessionIds)
-          : Promise.resolve({ data: [] as { aditivo_id: string; total: number }[] }),
+          ? fetchAllPaged((from, to) =>
+              supabase
+                .from('aditivo_items')
+                .select('aditivo_id, total')
+                .in('aditivo_id', aditivoSessionIds)
+                .order('id', { ascending: true })
+                .range(from, to))
+          : Promise.resolve([] as { aditivo_id: string; total: number }[]),
       ]);
 
-      const allMedicaoItems = resolveItensEfetivos(medicaoItemsResult.data || []);
-      const allAditivoItems = aditivoItemsResult.data || [];
+      const allMedicaoItems = resolveItensEfetivos(medicaoRows);
 
       // Calcular resultado por obra usando exatamente calcularFinanceiroMedicao
       const result: Record<string, ValorPagoItem> = {};

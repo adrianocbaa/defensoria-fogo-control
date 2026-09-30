@@ -23,6 +23,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { useObras as useObrasFull } from '@/hooks/useObras';
 import { calcularFinanceiroMedicao } from '@/lib/medicaoCalculo';
 import { resolveItensEfetivos, MEDICAO_SNAPSHOT_COLUMNS } from '@/lib/medicaoSnapshot';
+import { fetchAllPaged } from '@/lib/supabasePaged';
 import {
   calcularRiscoObra, normalizarStatus,
   rotuloClassificacao, corClassificacao, corDotClassificacao,
@@ -125,48 +126,61 @@ export function AdminObrasEstatisticas() {
         const ids = (obrasData || []).map((o: any) => o.id);
         if (ids.length === 0) { setLinhas([]); setLoading(false); return; }
 
-        const [rdoProgress, aditivoSess, medicaoSess, orcamento, rdoLastRes] = await Promise.all([
+        // Buscas paginadas: evita truncamento silencioso no limite de linhas por requisição
+        const [rdoProgress, aditivoSess, medicaoSess, orcamento, rdoLastRows] = await Promise.all([
           supabase.rpc('get_rdo_progress_batch', { p_obra_ids: ids }),
-          supabase.from('aditivo_sessions').select('id, obra_id').in('obra_id', ids).eq('status', 'bloqueada'),
-          supabase.from('medicao_sessions')
-            .select('id, obra_id, sequencia, status, periodo_inicio, periodo_fim, data_vistoria, data_relatorio')
-            .in('obra_id', ids),
-          supabase.from('orcamento_items')
-            .select('obra_id, total_contrato, item, eh_administracao_local')
-            .in('obra_id', ids).limit(10000),
-          supabase.from('rdo_reports').select('obra_id, data').in('obra_id', ids).limit(10000),
+          fetchAllPaged((from, to) =>
+            supabase.from('aditivo_sessions').select('id, obra_id').in('obra_id', ids).eq('status', 'bloqueada')
+              .order('id', { ascending: true }).range(from, to)),
+          fetchAllPaged((from, to) =>
+            supabase.from('medicao_sessions')
+              .select('id, obra_id, sequencia, status, periodo_inicio, periodo_fim, data_vistoria, data_relatorio')
+              .in('obra_id', ids)
+              .order('id', { ascending: true }).range(from, to)),
+          fetchAllPaged((from, to) =>
+            supabase.from('orcamento_items')
+              .select('obra_id, total_contrato, item, eh_administracao_local')
+              .in('obra_id', ids)
+              .order('id', { ascending: true }).range(from, to)),
+          fetchAllPaged((from, to) =>
+            supabase.from('rdo_reports').select('obra_id, data').in('obra_id', ids)
+              .order('id', { ascending: true }).range(from, to)),
         ]);
 
-        const aditivoIds = (aditivoSess.data || []).map((s: any) => s.id);
-        const medicaoIds = (medicaoSess.data || []).map((s: any) => s.id);
-        const [aditivoItemsRes, medicaoItemsRes] = await Promise.all([
-          aditivoIds.length ? supabase.from('aditivo_items').select('aditivo_id, total, item_code, qtd').in('aditivo_id', aditivoIds) : Promise.resolve({ data: [] } as any),
-          medicaoIds.length ? supabase.from('medicao_items').select(`medicao_id, total, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`).in('medicao_id', medicaoIds) : Promise.resolve({ data: [] } as any),
+        const aditivoIds = aditivoSess.map((s: any) => s.id);
+        const medicaoIds = medicaoSess.map((s: any) => s.id);
+        const [aditivoItemsRows, medicaoItemsRows] = await Promise.all([
+          aditivoIds.length ? fetchAllPaged((from, to) =>
+            supabase.from('aditivo_items').select('aditivo_id, total, item_code, qtd').in('aditivo_id', aditivoIds)
+              .order('id', { ascending: true }).range(from, to)) : Promise.resolve([] as any[]),
+          medicaoIds.length ? fetchAllPaged((from, to) =>
+            supabase.from('medicao_items').select(`medicao_id, total, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`).in('medicao_id', medicaoIds)
+              .order('id', { ascending: true }).range(from, to)) : Promise.resolve([] as any[]),
         ]);
 
-        const medicaoItems = resolveItensEfetivos(medicaoItemsRes.data || []) as any[];
+        const medicaoItems = resolveItensEfetivos(medicaoItemsRows) as any[];
         const rdoMap = new Map<string, number>();
         (rdoProgress.data || []).forEach((r: any) => rdoMap.set(r.obra_id, Number(r.progress)));
 
         const ultimoRdoMap = new Map<string, string>();
-        (rdoLastRes.data || []).forEach((r: any) => {
+        rdoLastRows.forEach((r: any) => {
           const prev = ultimoRdoMap.get(r.obra_id);
           if (!prev || r.data > prev) ultimoRdoMap.set(r.obra_id, r.data);
         });
 
         const bloqueadaObrasSet = new Set<string>();
         const sessObraMap = new Map<string, string>();
-        (medicaoSess.data || []).forEach((s: any) => {
+        medicaoSess.forEach((s: any) => {
           sessObraMap.set(s.id, s.obra_id);
           if (s.status === 'bloqueada') bloqueadaObrasSet.add(s.obra_id);
         });
 
         const rows: ObraStat[] = (obrasData || []).map((obra: any) => {
-          const obraOrc = (orcamento.data || []).filter((it: any) => it.obra_id === obra.id);
-          const obraAdSess = (aditivoSess.data || []).filter((s: any) => s.obra_id === obra.id);
+          const obraOrc = orcamento.filter((it: any) => it.obra_id === obra.id);
+          const obraAdSess = aditivoSess.filter((s: any) => s.obra_id === obra.id);
           const adIds = obraAdSess.map((s: any) => s.id);
-          const obraAdItems = (aditivoItemsRes.data || []).filter((it: any) => adIds.includes(it.aditivo_id));
-          const obraMedSess = (medicaoSess.data || []).filter((s: any) => s.obra_id === obra.id).sort((a: any, b: any) => a.sequencia - b.sequencia);
+          const obraAdItems = aditivoItemsRows.filter((it: any) => adIds.includes(it.aditivo_id));
+          const obraMedSess = medicaoSess.filter((s: any) => s.obra_id === obra.id).sort((a: any, b: any) => a.sequencia - b.sequencia);
           const medSessIds = obraMedSess.map((s: any) => s.id);
           const obraMedItems = medicaoItems.filter((it: any) => medSessIds.includes(it.medicao_id));
 
