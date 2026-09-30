@@ -1,0 +1,11 @@
+GRANT SELECT ON public.obras TO anon;
+GRANT SELECT ON public.orcamento_items TO anon;
+GRANT SELECT ON public.medicao_sessions TO anon;
+GRANT SELECT ON public.medicao_items TO anon;
+GRANT SELECT ON public.aditivo_sessions TO anon;
+GRANT SELECT ON public.aditivo_items TO anon;
+GRANT SELECT ON public.rdo_reports TO anon;
+GRANT SELECT ON public.rdo_activities TO anon;
+GRANT SELECT ON public.rdo_occurrences TO anon;
+GRANT SELECT ON public.rdo_comments TO anon;
+GRANT SELECT ON public.rdo_media TO anon;
