@@ -31,7 +31,7 @@ export default function PublicObras() {
       try {
         const { data, error: fetchError } = await supabase
           .from('obras')
-          .select('*')
+           .select('*')
            .order('created_at', { ascending: false })
            .limit(10000);
 
@@ -49,7 +49,7 @@ export default function PublicObras() {
            valor_aditivado: item.valor_aditivado || 0,
           porcentagemExecucao: item.porcentagem_execucao || 0,
           dataInicio: item.data_inicio,
-          previsaoTermino: item.data_previsao_termino || '',
+           previsaoTermino: item.previsao_termino || '',
            data_inicio_prevista: item.data_inicio_prevista,
            data_termino_real: item.data_termino_real,
            tempo_obra: item.tempo_obra,
