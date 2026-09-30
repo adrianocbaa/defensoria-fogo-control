@@ -16,3 +16,4 @@
 - [ ] Decidir se as páginas públicas de Medição e RDO devem mostrar dados a visitantes (hoje: fechadas)
 - [ ] Regenerar a service_role (sb_secret) do sidif-homologacao (higiene pós-testes)
 - [x] Restaurar no topo do resumo público os indicadores de andamento físico, valor pago e tempo restante
+- [x] Alinhar os indicadores do resumo público aos registros atuais de RDO e medição das obras exibidas no mapa

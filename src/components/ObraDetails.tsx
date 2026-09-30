@@ -80,16 +80,16 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   const navigate = useNavigate();
   
   // Buscar dados financeiros das medições
-  const { dados: dadosFinanceiros, loading: loadingFinanceiro } = useMedicoesFinanceiro(obra.id);
+  const { dados: dadosFinanceiros, loading: loadingFinanceiro, error: financeiroError } = useMedicoesFinanceiro(obra.id);
   
   // Buscar andamento do RDO
-  const { data: rdoProgress = 0 } = useRdoProgressByObra(obra.id, true);
+  const { data: rdoProgress, isLoading: loadingRdo, isError: rdoError } = useRdoProgressByObra(obra.id, true);
   
   // Usar dados das medições se disponíveis, senão usar dados da obra
   const valorInicial = dadosFinanceiros.valorTotalOriginal || (obra?.valor || 0);
   const valorAditivado = dadosFinanceiros.totalAditivo || ((obra as any)?.valor_aditivado || 0);
   const valorFinal = dadosFinanceiros.totalContrato || (valorInicial + valorAditivado); // Valor Final = Total do Contrato
-  const valorExecutado = dadosFinanceiros.valorAcumulado || (obra?.valorExecutado || 0); // Valor Executado = Valor Acumulado
+  const valorExecutado = dadosFinanceiros.marcos.length > 0 ? dadosFinanceiros.valorAcumulado : (obra?.valorExecutado || 0); // Valor Executado = Valor Acumulado
   const percentualFinanceiro = valorFinal > 0 ? Math.min(100, Math.max(0, valorExecutado / valorFinal * 100)) : 0;
   const [anoFim, mesFim, diaFim] = obra.previsaoTermino?.slice(0, 10).split('-').map(Number) || [];
   const prazoFinal = anoFim && mesFim && diaFim ? new Date(anoFim, mesFim - 1, diaFim) : null;
@@ -205,12 +205,12 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
        <div className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="Progresso da obra">
          <div className="min-w-0 space-y-2 border rounded-md p-2 sm:p-3">
            <p className="text-xs text-muted-foreground">Andamento físico</p>
-           <p className="text-base sm:text-lg font-semibold text-primary">{Math.min(100, Math.max(0, rdoProgress)).toFixed(2)}%</p>
-           <Progress value={Math.min(100, Math.max(0, rdoProgress))} color="blue" className="h-2" aria-label="Andamento físico" />
+            <p className="text-base sm:text-lg font-semibold text-primary">{loadingRdo ? '…' : rdoError || rdoProgress == null ? 'Indisponível' : `${Math.min(100, Math.max(0, rdoProgress)).toFixed(2)}%`}</p>
+            <Progress value={rdoProgress == null ? 0 : Math.min(100, Math.max(0, rdoProgress))} color="blue" className="h-2" aria-label="Andamento físico" />
          </div>
          <div className="min-w-0 space-y-2 border rounded-md p-2 sm:p-3">
            <p className="text-xs text-muted-foreground">Valor pago</p>
-           <p className="text-base sm:text-lg font-semibold text-primary">{percentualFinanceiro.toFixed(2)}%</p>
+            <p className="text-base sm:text-lg font-semibold text-primary">{loadingFinanceiro ? '…' : financeiroError ? 'Indisponível' : `${percentualFinanceiro.toFixed(2)}%`}</p>
            <Progress value={percentualFinanceiro} color="green" className="h-2" aria-label="Valor pago" />
          </div>
          <div className="min-w-0 space-y-2 border rounded-md p-2 sm:p-3">
@@ -405,7 +405,7 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
               
               <div className="space-y-4">
                 {/* Andamento da Obra (RDO) - Ocultar se 0% */}
-                {rdoProgress > 0 && (
+                {rdoProgress != null && rdoProgress > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-muted-foreground">Andamento da Obra:</span>

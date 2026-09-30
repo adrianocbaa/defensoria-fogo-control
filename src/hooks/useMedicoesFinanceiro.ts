@@ -46,8 +46,8 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         const [obraResult, orcResult, sessionsResult, aditivoSessionsResult] = await Promise.all([
           supabase.from('obras').select('valor_total, valor_aditivado').eq('id', obraId).single(),
           supabase.from('orcamento_items').select('item, total_contrato, origem, eh_administracao_local').eq('obra_id', obraId).limit(10000),
-          supabase.from('medicao_sessions').select('id, sequencia, status, periodo_inicio, periodo_fim, data_vistoria, data_relatorio').eq('obra_id', obraId).order('sequencia', { ascending: true }),
-          supabase.from('aditivo_sessions').select('id').eq('obra_id', obraId).eq('status', 'bloqueada'),
+          supabase.from('medicao_sessions').select('id, sequencia, status, periodo_inicio, periodo_fim, data_vistoria, data_relatorio').eq('obra_id', obraId).order('sequencia', { ascending: true }).limit(10000),
+          supabase.from('aditivo_sessions').select('id').eq('obra_id', obraId).eq('status', 'bloqueada').limit(10000),
         ]);
 
         const obraData = obraResult.data;
@@ -58,12 +58,16 @@ export const useMedicoesFinanceiro = (obraId: string) => {
         // Buscar itens de medição e aditivos em paralelo (se houver)
         const [medicaoItemsResult, aditivoItemsResult] = await Promise.all([
           sessions.length > 0
-            ? supabase.from('medicao_items').select(`total, medicao_id, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`).in('medicao_id', sessions.map(s => s.id))
+            ? supabase.from('medicao_items').select(`total, medicao_id, item_code, pct, ${MEDICAO_SNAPSHOT_COLUMNS}`).in('medicao_id', sessions.map(s => s.id)).limit(10000)
             : Promise.resolve({ data: [] }),
           aditivoSessions.length > 0
-            ? supabase.from('aditivo_items').select('total').in('aditivo_id', aditivoSessions.map(s => s.id))
+            ? supabase.from('aditivo_items').select('total').in('aditivo_id', aditivoSessions.map(s => s.id)).limit(10000)
             : Promise.resolve({ data: [] }),
         ]);
+
+        const fetchError = [obraResult, orcResult, sessionsResult, aditivoSessionsResult, medicaoItemsResult, aditivoItemsResult]
+          .find(result => 'error' in result && result.error)?.error;
+        if (fetchError) throw fetchError;
 
         const medicaoItems = resolveItensEfetivos(medicaoItemsResult.data || []);
         const aditivoItems = aditivoItemsResult.data || [];

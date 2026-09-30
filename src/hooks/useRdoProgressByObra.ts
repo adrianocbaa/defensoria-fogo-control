@@ -10,7 +10,7 @@ export function useRdoProgressByObra(obraId: string, publicOnly = false) {
       });
 
       if (error) throw error;
-      return Number(data) || 0;
+      return data === null ? null : Number(data);
     },
     enabled: !!obraId,
     staleTime: 1000 * 60 * 5,
