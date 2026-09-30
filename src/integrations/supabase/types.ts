@@ -6254,6 +6254,10 @@ export type Database = {
         Args: { p_token: string }
         Returns: Json
       }
+      get_public_rdo_progress_by_obra: {
+        Args: { p_obra_id: string }
+        Returns: number
+      }
       get_rdo_progress_batch: {
         Args: { p_obra_ids: string[] }
         Returns: {
