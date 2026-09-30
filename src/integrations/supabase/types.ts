@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      addons: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          key: string
+          nome: string
+          quantidade: number
+          tipo: string
+          unidade: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          key: string
+          nome: string
+          quantidade: number
+          tipo: string
+          unidade: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          key?: string
+          nome?: string
+          quantidade?: number
+          tipo?: string
+          unidade?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       aditivo_items: {
         Row: {
           aditivo_id: string
@@ -716,6 +752,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      commercial_modules: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          key: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          key: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          key?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       config_institucional: {
         Row: {
@@ -3013,6 +3082,57 @@ export type Database = {
           },
         ]
       }
+      module_tiers: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          includes_tier_id: string | null
+          key: string
+          module_id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          includes_tier_id?: string | null
+          key: string
+          module_id: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          includes_tier_id?: string | null
+          key?: string
+          module_id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_tiers_includes_tier_id_fkey"
+            columns: ["includes_tier_id"]
+            isOneToOne: false
+            referencedRelation: "module_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_tiers_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           created_at: string
@@ -3960,6 +4080,62 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_versions: {
+        Row: {
+          api_enabled: boolean
+          created_at: string
+          external_users_limit: number
+          id: string
+          internal_users_limit: number
+          personalizacao_institucional: boolean
+          plan_id: string
+          priority_support: boolean
+          sso_enabled: boolean
+          storage_limit_bytes: number
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          api_enabled?: boolean
+          created_at?: string
+          external_users_limit: number
+          id?: string
+          internal_users_limit: number
+          personalizacao_institucional?: boolean
+          plan_id: string
+          priority_support?: boolean
+          sso_enabled?: boolean
+          storage_limit_bytes: number
+          updated_at?: string
+          valid_from: string
+          valid_to?: string | null
+        }
+        Update: {
+          api_enabled?: boolean
+          created_at?: string
+          external_users_limit?: number
+          id?: string
+          internal_users_limit?: number
+          personalizacao_institucional?: boolean
+          plan_id?: string
+          priority_support?: boolean
+          sso_enabled?: boolean
+          storage_limit_bytes?: number
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_versions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plano_expansao_historico: {
         Row: {
           created_at: string
@@ -4133,6 +4309,131 @@ export type Database = {
           observacao?: string | null
           updated_at?: string
           vigente?: boolean
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          key: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          key: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          key?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      price_items: {
+        Row: {
+          addon_id: string | null
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          module_tier_id: string | null
+          plan_id: string | null
+          price_table_id: string
+          updated_at: string
+        }
+        Insert: {
+          addon_id?: string | null
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          id?: string
+          module_tier_id?: string | null
+          plan_id?: string | null
+          price_table_id: string
+          updated_at?: string
+        }
+        Update: {
+          addon_id?: string | null
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          module_tier_id?: string | null
+          plan_id?: string | null
+          price_table_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_items_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_items_module_tier_id_fkey"
+            columns: ["module_tier_id"]
+            isOneToOne: false
+            referencedRelation: "module_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_items_price_table_id_fkey"
+            columns: ["price_table_id"]
+            isOneToOne: false
+            referencedRelation: "price_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_tables: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          status: string
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          status?: string
+          updated_at?: string
+          valid_from: string
+          valid_to?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          status?: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
         }
         Relationships: []
       }
