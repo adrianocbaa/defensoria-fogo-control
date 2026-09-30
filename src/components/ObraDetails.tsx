@@ -91,7 +91,8 @@ function ObraDetailsContent({ obra, onClose, loading }: { obra: Obra; onClose: (
   const valorFinal = dadosFinanceiros.totalContrato || (valorInicial + valorAditivado); // Valor Final = Total do Contrato
   const valorExecutado = dadosFinanceiros.valorAcumulado || (obra?.valorExecutado || 0); // Valor Executado = Valor Acumulado
   const percentualFinanceiro = valorFinal > 0 ? Math.min(100, Math.max(0, valorExecutado / valorFinal * 100)) : 0;
-  const prazoFinal = obra.previsaoTermino ? new Date(...(obra.previsaoTermino.slice(0, 10).split('-').map(Number).map((n, i) => i === 1 ? n - 1 : n) as [number, number, number])) : null;
+  const [anoFim, mesFim, diaFim] = obra.previsaoTermino?.slice(0, 10).split('-').map(Number) || [];
+  const prazoFinal = anoFim && mesFim && diaFim ? new Date(anoFim, mesFim - 1, diaFim) : null;
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
   const diasRestantes = prazoFinal ? Math.max(0, Math.ceil((prazoFinal.getTime() - hoje.getTime()) / 86400000)) : null;
