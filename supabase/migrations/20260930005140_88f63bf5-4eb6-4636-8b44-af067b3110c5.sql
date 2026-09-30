@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.ajustar_medicao_congelada(uuid, numeric, numeric, numeric) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.ajustar_medicao_congelada(uuid, numeric, numeric, numeric) TO service_role;
