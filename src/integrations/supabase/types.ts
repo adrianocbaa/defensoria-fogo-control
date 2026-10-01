@@ -364,6 +364,7 @@ export type Database = {
           grupo: string | null
           id: string
           observacao: string | null
+          organization_id: string
           preco_unitario: number
           tipo: string
           unidade: string
@@ -382,6 +383,7 @@ export type Database = {
           grupo?: string | null
           id?: string
           observacao?: string | null
+          organization_id?: string
           preco_unitario?: number
           tipo: string
           unidade: string
@@ -400,13 +402,22 @@ export type Database = {
           grupo?: string | null
           id?: string
           observacao?: string | null
+          organization_id?: string
           preco_unitario?: number
           tipo?: string
           unidade?: string
           updated_at?: string
           versao?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "base_composicoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       biblioteca_servicos: {
         Row: {
@@ -874,6 +885,7 @@ export type Database = {
           created_at: string
           endereco: string | null
           id: string
+          organization_id: string
           razao_social: string
           updated_at: string
         }
@@ -883,6 +895,7 @@ export type Database = {
           created_at?: string
           endereco?: string | null
           id?: string
+          organization_id?: string
           razao_social?: string
           updated_at?: string
         }
@@ -892,10 +905,19 @@ export type Database = {
           created_at?: string
           endereco?: string | null
           id?: string
+          organization_id?: string
           razao_social?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "config_institucional_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contratos_licitacao: {
         Row: {
@@ -905,6 +927,7 @@ export type Database = {
           empresa_id: string | null
           id: string
           numero_contrato: string
+          organization_id: string
           pregao_eletronico: string | null
           protocolo: string | null
           updated_at: string
@@ -917,6 +940,7 @@ export type Database = {
           empresa_id?: string | null
           id?: string
           numero_contrato: string
+          organization_id?: string
           pregao_eletronico?: string | null
           protocolo?: string | null
           updated_at?: string
@@ -929,6 +953,7 @@ export type Database = {
           empresa_id?: string | null
           id?: string
           numero_contrato?: string
+          organization_id?: string
           pregao_eletronico?: string | null
           protocolo?: string | null
           updated_at?: string
@@ -940,6 +965,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_licitacao_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1419,6 +1451,7 @@ export type Database = {
           is_active: boolean
           nome_fantasia: string | null
           numero: string | null
+          organization_id: string
           razao_social: string
           representante_legal_cargo: string | null
           representante_legal_cpf: string | null
@@ -1447,6 +1480,7 @@ export type Database = {
           is_active?: boolean
           nome_fantasia?: string | null
           numero?: string | null
+          organization_id?: string
           razao_social: string
           representante_legal_cargo?: string | null
           representante_legal_cpf?: string | null
@@ -1475,6 +1509,7 @@ export type Database = {
           is_active?: boolean
           nome_fantasia?: string | null
           numero?: string | null
+          organization_id?: string
           razao_social?: string
           representante_legal_cargo?: string | null
           representante_legal_cpf?: string | null
@@ -1486,7 +1521,15 @@ export type Database = {
           uf?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "empresas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entrega_ambiente_grupos: {
         Row: {
@@ -3210,6 +3253,7 @@ export type Database = {
           description: string
           id: string
           minimum_stock: number
+          organization_id: string
           unit: Database["public"]["Enums"]["unit_type"]
           updated_at: string
         }
@@ -3220,6 +3264,7 @@ export type Database = {
           description: string
           id?: string
           minimum_stock?: number
+          organization_id?: string
           unit: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
@@ -3230,10 +3275,19 @@ export type Database = {
           description?: string
           id?: string
           minimum_stock?: number
+          organization_id?: string
           unit?: Database["public"]["Enums"]["unit_type"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "materials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       medicao_items: {
         Row: {
@@ -4303,6 +4357,7 @@ export type Database = {
           nivel: number
           orcamento_id: string
           ordem: number
+          organization_id: string
           parent_id: string | null
           preco_unitario_base: number | null
           preco_unitario_com_bdi: number | null
@@ -4326,6 +4381,7 @@ export type Database = {
           nivel?: number
           orcamento_id: string
           ordem?: number
+          organization_id?: string
           parent_id?: string | null
           preco_unitario_base?: number | null
           preco_unitario_com_bdi?: number | null
@@ -4349,6 +4405,7 @@ export type Database = {
           nivel?: number
           orcamento_id?: string
           ordem?: number
+          organization_id?: string
           parent_id?: string | null
           preco_unitario_base?: number | null
           preco_unitario_com_bdi?: number | null
@@ -4364,6 +4421,13 @@ export type Database = {
             columns: ["orcamento_id"]
             isOneToOne: false
             referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -4394,6 +4458,7 @@ export type Database = {
           is_licitacao: boolean | null
           nome: string
           numero_processo_licitacao: string | null
+          organization_id: string
           prazo_entrega: string | null
           status: string | null
           tipo_encargo: string | null
@@ -4421,6 +4486,7 @@ export type Database = {
           is_licitacao?: boolean | null
           nome: string
           numero_processo_licitacao?: string | null
+          organization_id?: string
           prazo_entrega?: string | null
           status?: string | null
           tipo_encargo?: string | null
@@ -4448,6 +4514,7 @@ export type Database = {
           is_licitacao?: boolean | null
           nome?: string
           numero_processo_licitacao?: string | null
+          organization_id?: string
           prazo_entrega?: string | null
           status?: string | null
           tipo_encargo?: string | null
@@ -4457,7 +4524,15 @@ export type Database = {
           valor_total_bdi?: number | null
           valor_total_sem_bdi?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organization_entitlement_overrides: {
         Row: {
@@ -4762,6 +4837,7 @@ export type Database = {
           descricao: string | null
           id: string
           meta_id: string
+          organization_id: string
           titulo: string
           updated_at: string
         }
@@ -4772,6 +4848,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           meta_id: string
+          organization_id?: string
           titulo: string
           updated_at?: string
         }
@@ -4782,6 +4859,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           meta_id?: string
+          organization_id?: string
           titulo?: string
           updated_at?: string
         }
@@ -4791,6 +4869,13 @@ export type Database = {
             columns: ["meta_id"]
             isOneToOne: false
             referencedRelation: "plano_expansao_metas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plano_expansao_historico_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -4816,6 +4901,7 @@ export type Database = {
           obra_id: string | null
           observacoes: string | null
           ordem: number
+          organization_id: string
           previsao_conclusao: string | null
           progresso: number
           revisao_id: string | null
@@ -4845,6 +4931,7 @@ export type Database = {
           obra_id?: string | null
           observacoes?: string | null
           ordem?: number
+          organization_id?: string
           previsao_conclusao?: string | null
           progresso?: number
           revisao_id?: string | null
@@ -4874,6 +4961,7 @@ export type Database = {
           obra_id?: string | null
           observacoes?: string | null
           ordem?: number
+          organization_id?: string
           previsao_conclusao?: string | null
           progresso?: number
           revisao_id?: string | null
@@ -4892,6 +4980,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plano_expansao_metas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "plano_expansao_metas_revisao_id_fkey"
             columns: ["revisao_id"]
             isOneToOne: false
@@ -4907,6 +5002,7 @@ export type Database = {
           id: string
           nome: string
           observacao: string | null
+          organization_id: string
           updated_at: string
           vigente: boolean
         }
@@ -4916,6 +5012,7 @@ export type Database = {
           id?: string
           nome: string
           observacao?: string | null
+          organization_id?: string
           updated_at?: string
           vigente?: boolean
         }
@@ -4925,10 +5022,19 @@ export type Database = {
           id?: string
           nome?: string
           observacao?: string | null
+          organization_id?: string
           updated_at?: string
           vigente?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "plano_expansao_revisoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plans: {
         Row: {
@@ -6702,6 +6808,7 @@ export type Database = {
           description: string | null
           id: string
           material_id: string
+          organization_id: string
           quantity: number
           type: Database["public"]["Enums"]["movement_type"]
           user_id: string | null
@@ -6712,6 +6819,7 @@ export type Database = {
           description?: string | null
           id?: string
           material_id: string
+          organization_id?: string
           quantity: number
           type: Database["public"]["Enums"]["movement_type"]
           user_id?: string | null
@@ -6722,6 +6830,7 @@ export type Database = {
           description?: string | null
           id?: string
           material_id?: string
+          organization_id?: string
           quantity?: number
           type?: Database["public"]["Enums"]["movement_type"]
           user_id?: string | null
@@ -6732,6 +6841,13 @@ export type Database = {
             columns: ["material_id"]
             isOneToOne: false
             referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
