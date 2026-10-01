@@ -67,6 +67,9 @@ export default function LandingPage() {
                   Acessar Sistema <Users className="h-4 w-4" />
                 </Link>
               </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link to="/planos">Ver planos</Link>
+              </Button>
             </div>
           </motion.div>
         </div>
@@ -364,6 +367,7 @@ export default function LandingPage() {
                 <li><Link to="/public/obras" className="hover:text-primary transition-colors">Obras (Público)</Link></li>
                 <li><Link to="/public/nucleos" className="hover:text-primary transition-colors">Núcleos (Público)</Link></li>
                 <li><Link to="/auth" className="hover:text-primary transition-colors">Acessar Sistema</Link></li>
+                <li><Link to="/planos" className="hover:text-primary transition-colors">Planos e contratação</Link></li>
               </ul>
             </div>
             <div>

@@ -38,3 +38,4 @@
 - [x] Lote 10 — Interface comercial: página pública /planos lendo catálogo do banco, formulário "Solicitar proposta" (commercial_leads, anon insere, só super admin lê), aba Pedidos no /super-admin. Decidido: sem trial self-service (toda contratação é manual)
 - [ ] Lote 11 — Testes ponta a ponta (2 organizações, isolamento, limites) + homologação
 - [ ] Decisões pendentes (seção P do plano): usuário único por org, invited conta vaga, bloqueio de estouro de storage, duração do trial, URL do portal por organização, nome commercial_modules
+- [x] Tornar /planos fácil de acessar sem login e aproximar a seleção, módulos, capacidade e resumo do layout de referência — validado sem login em desktop e celular

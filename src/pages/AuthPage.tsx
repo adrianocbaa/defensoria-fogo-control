@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import logoSidif from '@/assets/sidif-logo-oficial.png';
 import bb2Asset from '@/assets/bb2.png.asset.json';
@@ -541,6 +541,12 @@ const AuthPage = () => {
             </h2>
 
             {renderFormArea()}
+
+            {resetFlow === 'login' && !showNewPassword && (
+              <div className="mt-6 text-center">
+                <Link to="/planos" className="text-sm font-medium text-primary hover:underline">Conhecer planos e solicitar proposta</Link>
+              </div>
+            )}
 
             {/* Divider + support */}
             <div className="mt-14 pt-6 border-t border-neutral-200">
