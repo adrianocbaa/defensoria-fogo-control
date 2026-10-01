@@ -30,7 +30,7 @@ const STATUS_LABELS: Record<string, string> = {
 interface Organization { id: string; nome: string; cnpj: string | null; slug: string; status: string; }
 interface Subscription { id: string; organization_id: string; status: string; billing_cycle: string; started_at: string; current_period_end: string | null; origin: string; contracted_amount_cents: number | null; discount_cents: number | null; external_reference: string | null; notes: string | null; plan_versions?: { plans?: { nome: string } }; }
 interface SubItem { id: string; subscription_id: string; item_type: string; descricao: string | null; amount_cents: number; quantity: number; }
-interface Usage { organization_id: string; internal_users: number; external_users: number; storage_bytes: number; }
+interface Usage { organization_id: string; internal_users_count: number; external_users_count: number; storage_bytes_used: number; }
 interface Entitlements { organization_id: string; can_use_obras: boolean; can_use_rdo: boolean; can_use_manutencao: boolean; can_use_preventivos: boolean; internal_users_limit: number | null; external_users_limit: number | null; storage_limit_bytes: number | null; }
 interface Override { id: string; organization_id: string; key: string; value: unknown; motivo: string; valid_to: string | null; }
 interface HistoryRow { id: string; entity: string; action: string; reason: string | null; created_at: string; new_value: unknown; old_value: unknown; }
@@ -189,10 +189,8 @@ export default function SuperAdmin() {
   return (
     <Layout>
       <div className="container mx-auto p-4 md:p-6 space-y-6">
-        <PageHeader
-          title="Administração Geral (SaaS)"
-          description="Organizações, assinaturas, limites e exceções contratuais"
-        />
+        <PageHeader title="Administração Geral (SaaS)" />
+        <p className="text-muted-foreground -mt-2">Organizações, assinaturas, limites e exceções contratuais</p>
 
         {loading ? (
           <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
