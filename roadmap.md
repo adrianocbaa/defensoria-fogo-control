@@ -27,7 +27,7 @@
 - [x] Lote 1 — Catálogo comercial criado e semeado (4 planos, 4 versões, 3 módulos, 4 níveis, 4 extras, tabela 2026 ativa, 24 preços); validado: Equipe + Gestão Completa + Manutenção + 250 GB = R$ 4.869,00
 - [x] Lote 2 — Tenancy: org 1 (DPE-MT, slug dpe-mt) criada; 38 membros (34 internos, 4 externos); organization_id em obras (24), nuclei, maintenance_tickets; novos perfis entram na org 1
 - [x] Lote 3 — Subscriptions criadas; org 1 = Institucional + Obras Gestão Completa + Manutenção + Preventivos, contrato, ativa, R$ 7.760,00/mês (ajustável); histórico automático validado
-- [ ] Lote 4 — Entitlements: organization_entitlements, overrides, recálculo, org_can/org_limit
+- [x] Lote 4 — Entitlements, overrides, recálculo automático, org_can/org_limit; DPE-MT gratuita (R$ 0) e ilimitada via overrides
 - [ ] Lote 5 — Usage: contadores, triggers de members, job de reconciliação
 - [ ] Lote 6 — Propagação de organization_id + RLS por módulo (Obras/Medição → RDO → Manutenção → Preventivos → demais)
 - [ ] Lote 7 — Enforcement de módulos e limites no backend
