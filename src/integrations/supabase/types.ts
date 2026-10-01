@@ -4767,6 +4767,7 @@ export type Database = {
           obra_id: string
           observacao: string | null
           orcamento_item_id: string | null
+          organization_id: string | null
           progresso: number | null
           qtd: number | null
           quantidade_total: number | null
@@ -4784,6 +4785,7 @@ export type Database = {
           obra_id: string
           observacao?: string | null
           orcamento_item_id?: string | null
+          organization_id?: string | null
           progresso?: number | null
           qtd?: number | null
           quantidade_total?: number | null
@@ -4801,6 +4803,7 @@ export type Database = {
           obra_id?: string
           observacao?: string | null
           orcamento_item_id?: string | null
+          organization_id?: string | null
           progresso?: number | null
           qtd?: number | null
           quantidade_total?: number | null
@@ -4829,6 +4832,13 @@ export type Database = {
             columns: ["orcamento_item_id"]
             isOneToOne: false
             referencedRelation: "orcamento_items_hierarquia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_activities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -4974,6 +4984,7 @@ export type Database = {
           created_by: string | null
           id: string
           obra_id: string
+          organization_id: string | null
           report_id: string
           texto: string
         }
@@ -4982,6 +4993,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           obra_id: string
+          organization_id?: string | null
           report_id: string
           texto: string
         }
@@ -4990,6 +5002,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           obra_id?: string
+          organization_id?: string | null
           report_id?: string
           texto?: string
         }
@@ -4999,6 +5012,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_comments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -5136,6 +5156,7 @@ export type Database = {
           id: string
           obra_id: string
           oculto_resumo: boolean
+          organization_id: string | null
           report_id: string
           thumb_url: string | null
           tipo: Database["public"]["Enums"]["rdo_media_type"]
@@ -5147,6 +5168,7 @@ export type Database = {
           id?: string
           obra_id: string
           oculto_resumo?: boolean
+          organization_id?: string | null
           report_id: string
           thumb_url?: string | null
           tipo: Database["public"]["Enums"]["rdo_media_type"]
@@ -5158,6 +5180,7 @@ export type Database = {
           id?: string
           obra_id?: string
           oculto_resumo?: boolean
+          organization_id?: string | null
           report_id?: string
           thumb_url?: string | null
           tipo?: Database["public"]["Enums"]["rdo_media_type"]
@@ -5168,6 +5191,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_media_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -5220,6 +5250,7 @@ export type Database = {
           id: string
           impacto_cronograma: boolean | null
           obra_id: string
+          organization_id: string | null
           report_id: string
           titulo: string
         }
@@ -5231,6 +5262,7 @@ export type Database = {
           id?: string
           impacto_cronograma?: boolean | null
           obra_id: string
+          organization_id?: string | null
           report_id: string
           titulo: string
         }
@@ -5242,6 +5274,7 @@ export type Database = {
           id?: string
           impacto_cronograma?: boolean | null
           obra_id?: string
+          organization_id?: string | null
           report_id?: string
           titulo?: string
         }
@@ -5251,6 +5284,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_occurrences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -5295,6 +5335,7 @@ export type Database = {
           numero_seq: number
           obra_id: string
           observacoes: string | null
+          organization_id: string | null
           pdf_url: string | null
           pluviometria_mm: number | null
           status: Database["public"]["Enums"]["rdo_status"]
@@ -5333,6 +5374,7 @@ export type Database = {
           numero_seq?: number
           obra_id: string
           observacoes?: string | null
+          organization_id?: string | null
           pdf_url?: string | null
           pluviometria_mm?: number | null
           status?: Database["public"]["Enums"]["rdo_status"]
@@ -5371,6 +5413,7 @@ export type Database = {
           numero_seq?: number
           obra_id?: string
           observacoes?: string | null
+          organization_id?: string | null
           pdf_url?: string | null
           pluviometria_mm?: number | null
           status?: Database["public"]["Enums"]["rdo_status"]
@@ -5383,6 +5426,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
