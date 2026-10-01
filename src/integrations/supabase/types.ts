@@ -1400,6 +1400,7 @@ export type Database = {
           id: string
           obra_id: string
           ordem: number
+          organization_id: string | null
           responsabilidade_padrao: string
           updated_at: string
         }
@@ -1414,6 +1415,7 @@ export type Database = {
           id?: string
           obra_id: string
           ordem?: number
+          organization_id?: string | null
           responsabilidade_padrao?: string
           updated_at?: string
         }
@@ -1428,6 +1430,7 @@ export type Database = {
           id?: string
           obra_id?: string
           ordem?: number
+          organization_id?: string | null
           responsabilidade_padrao?: string
           updated_at?: string
         }
@@ -1446,6 +1449,13 @@ export type Database = {
             referencedRelation: "entrega_vistorias"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "entrega_ambiente_grupos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       entrega_ambientes: {
@@ -1459,6 +1469,7 @@ export type Database = {
           obra_id: string
           observacoes: string | null
           ordem: number
+          organization_id: string | null
           pavimento: string | null
           recebimento_ambiente_id: string | null
           tipo_modelo: string | null
@@ -1474,6 +1485,7 @@ export type Database = {
           obra_id: string
           observacoes?: string | null
           ordem?: number
+          organization_id?: string | null
           pavimento?: string | null
           recebimento_ambiente_id?: string | null
           tipo_modelo?: string | null
@@ -1489,6 +1501,7 @@ export type Database = {
           obra_id?: string
           observacoes?: string | null
           ordem?: number
+          organization_id?: string | null
           pavimento?: string | null
           recebimento_ambiente_id?: string | null
           tipo_modelo?: string | null
@@ -1502,6 +1515,13 @@ export type Database = {
             referencedRelation: "entrega_vistorias"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "entrega_ambientes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       entrega_biblioteca_grupos: {
@@ -1511,6 +1531,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          organization_id: string | null
           responsabilidade_padrao: string
           updated_at: string
         }
@@ -1520,6 +1541,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          organization_id?: string | null
           responsabilidade_padrao?: string
           updated_at?: string
         }
@@ -1529,10 +1551,19 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          organization_id?: string | null
           responsabilidade_padrao?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "entrega_biblioteca_grupos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entrega_biblioteca_verificacoes: {
         Row: {
@@ -1542,6 +1573,7 @@ export type Database = {
           grupo_id: string
           id: string
           ordem: number
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1551,6 +1583,7 @@ export type Database = {
           grupo_id: string
           id?: string
           ordem?: number
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1560,6 +1593,7 @@ export type Database = {
           grupo_id?: string
           id?: string
           ordem?: number
+          organization_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1568,6 +1602,13 @@ export type Database = {
             columns: ["grupo_id"]
             isOneToOne: false
             referencedRelation: "entrega_biblioteca_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_biblioteca_verificacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1582,6 +1623,7 @@ export type Database = {
           id: string
           legenda: string | null
           obra_id: string
+          organization_id: string | null
           pendencia_id: string | null
           reinspecao_id: string | null
           storage_path: string
@@ -1596,6 +1638,7 @@ export type Database = {
           id?: string
           legenda?: string | null
           obra_id: string
+          organization_id?: string | null
           pendencia_id?: string | null
           reinspecao_id?: string | null
           storage_path: string
@@ -1610,6 +1653,7 @@ export type Database = {
           id?: string
           legenda?: string | null
           obra_id?: string
+          organization_id?: string | null
           pendencia_id?: string | null
           reinspecao_id?: string | null
           storage_path?: string
@@ -1631,6 +1675,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "entrega_fotos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "entrega_fotos_pendencia_id_fkey"
             columns: ["pendencia_id"]
             isOneToOne: false
@@ -1647,6 +1698,7 @@ export type Database = {
           id: string
           nome_snapshot: string
           obra_id: string
+          organization_id: string | null
           papel: string
           user_id: string | null
         }
@@ -1657,6 +1709,7 @@ export type Database = {
           id?: string
           nome_snapshot: string
           obra_id: string
+          organization_id?: string | null
           papel?: string
           user_id?: string | null
         }
@@ -1667,6 +1720,7 @@ export type Database = {
           id?: string
           nome_snapshot?: string
           obra_id?: string
+          organization_id?: string | null
           papel?: string
           user_id?: string | null
         }
@@ -1676,6 +1730,13 @@ export type Database = {
             columns: ["entrega_id"]
             isOneToOne: false
             referencedRelation: "entrega_vistorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_participantes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1690,6 +1751,7 @@ export type Database = {
           id: string
           obra_id: string
           observacao: string | null
+          organization_id: string | null
           pendencia_id: string
           reinspecao_id: string | null
           situacao_anterior: string | null
@@ -1704,6 +1766,7 @@ export type Database = {
           id?: string
           obra_id: string
           observacao?: string | null
+          organization_id?: string | null
           pendencia_id: string
           reinspecao_id?: string | null
           situacao_anterior?: string | null
@@ -1718,12 +1781,20 @@ export type Database = {
           id?: string
           obra_id?: string
           observacao?: string | null
+          organization_id?: string | null
           pendencia_id?: string
           reinspecao_id?: string | null
           situacao_anterior?: string | null
           situacao_nova?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "entrega_pendencia_historico_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "entrega_pendencia_historico_pendencia_id_fkey"
             columns: ["pendencia_id"]
@@ -1747,6 +1818,7 @@ export type Database = {
           impacto: string
           motivo_cancelamento: string | null
           obra_id: string
+          organization_id: string | null
           prazo_correcao: string | null
           responsabilidade: string
           responsavel_terceiro: string | null
@@ -1770,6 +1842,7 @@ export type Database = {
           impacto?: string
           motivo_cancelamento?: string | null
           obra_id: string
+          organization_id?: string | null
           prazo_correcao?: string | null
           responsabilidade?: string
           responsavel_terceiro?: string | null
@@ -1793,6 +1866,7 @@ export type Database = {
           impacto?: string
           motivo_cancelamento?: string | null
           obra_id?: string
+          organization_id?: string | null
           prazo_correcao?: string | null
           responsabilidade?: string
           responsavel_terceiro?: string | null
@@ -1826,6 +1900,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "entrega_pendencias_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "entrega_pendencias_verificacao_id_fkey"
             columns: ["verificacao_id"]
             isOneToOne: false
@@ -1842,6 +1923,7 @@ export type Database = {
           id: string
           obra_id: string
           observacao: string | null
+          organization_id: string | null
           pendencia_id: string
           reinspecao_id: string
           resultado: string | null
@@ -1853,6 +1935,7 @@ export type Database = {
           id?: string
           obra_id: string
           observacao?: string | null
+          organization_id?: string | null
           pendencia_id: string
           reinspecao_id: string
           resultado?: string | null
@@ -1864,11 +1947,19 @@ export type Database = {
           id?: string
           obra_id?: string
           observacao?: string | null
+          organization_id?: string | null
           pendencia_id?: string
           reinspecao_id?: string
           resultado?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "entrega_reinspecao_itens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "entrega_reinspecao_itens_pendencia_id_fkey"
             columns: ["pendencia_id"]
@@ -1894,6 +1985,7 @@ export type Database = {
           id: string
           obra_id: string
           observacoes: string | null
+          organization_id: string | null
           responsavel_id: string | null
           responsavel_nome: string | null
           sequencia: number
@@ -1908,6 +2000,7 @@ export type Database = {
           id?: string
           obra_id: string
           observacoes?: string | null
+          organization_id?: string | null
           responsavel_id?: string | null
           responsavel_nome?: string | null
           sequencia?: number
@@ -1922,6 +2015,7 @@ export type Database = {
           id?: string
           obra_id?: string
           observacoes?: string | null
+          organization_id?: string | null
           responsavel_id?: string | null
           responsavel_nome?: string | null
           sequencia?: number
@@ -1936,6 +2030,13 @@ export type Database = {
             referencedRelation: "entrega_vistorias"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "entrega_reinspecoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       entrega_template_grupos: {
@@ -1944,6 +2045,7 @@ export type Database = {
           grupo_id: string
           id: string
           ordem: number
+          organization_id: string | null
           template_id: string
         }
         Insert: {
@@ -1951,6 +2053,7 @@ export type Database = {
           grupo_id: string
           id?: string
           ordem?: number
+          organization_id?: string | null
           template_id: string
         }
         Update: {
@@ -1958,6 +2061,7 @@ export type Database = {
           grupo_id?: string
           id?: string
           ordem?: number
+          organization_id?: string | null
           template_id?: string
         }
         Relationships: [
@@ -1966,6 +2070,13 @@ export type Database = {
             columns: ["grupo_id"]
             isOneToOne: false
             referencedRelation: "entrega_biblioteca_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_template_grupos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1984,6 +2095,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          organization_id: string | null
           tipo_modelo: string | null
           updated_at: string
         }
@@ -1993,6 +2105,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          organization_id?: string | null
           tipo_modelo?: string | null
           updated_at?: string
         }
@@ -2002,10 +2115,19 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          organization_id?: string | null
           tipo_modelo?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "entrega_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entrega_verificacoes: {
         Row: {
@@ -2020,6 +2142,7 @@ export type Database = {
           obra_id: string
           observacao: string | null
           ordem: number
+          organization_id: string | null
           respondido_em: string | null
           respondido_por: string | null
           status: string
@@ -2037,6 +2160,7 @@ export type Database = {
           obra_id: string
           observacao?: string | null
           ordem?: number
+          organization_id?: string | null
           respondido_em?: string | null
           respondido_por?: string | null
           status?: string
@@ -2054,6 +2178,7 @@ export type Database = {
           obra_id?: string
           observacao?: string | null
           ordem?: number
+          organization_id?: string | null
           respondido_em?: string | null
           respondido_por?: string | null
           status?: string
@@ -2081,6 +2206,13 @@ export type Database = {
             referencedRelation: "entrega_vistorias"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "entrega_verificacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       entrega_vistorias: {
@@ -2098,6 +2230,7 @@ export type Database = {
           motivo_cancelamento: string | null
           obra_id: string
           observacoes: string | null
+          organization_id: string | null
           recebimento_definitivo_data: string | null
           recebimento_definitivo_id: string | null
           resultado_congelado: string | null
@@ -2119,6 +2252,7 @@ export type Database = {
           motivo_cancelamento?: string | null
           obra_id: string
           observacoes?: string | null
+          organization_id?: string | null
           recebimento_definitivo_data?: string | null
           recebimento_definitivo_id?: string | null
           resultado_congelado?: string | null
@@ -2140,6 +2274,7 @@ export type Database = {
           motivo_cancelamento?: string | null
           obra_id?: string
           observacoes?: string | null
+          organization_id?: string | null
           recebimento_definitivo_data?: string | null
           recebimento_definitivo_id?: string | null
           resultado_congelado?: string | null
@@ -2153,6 +2288,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_vistorias_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
