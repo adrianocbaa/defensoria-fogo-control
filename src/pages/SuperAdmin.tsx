@@ -84,7 +84,7 @@ export default function SuperAdmin() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [o, s, i, u, e, ov, h, p, t, a] = await Promise.all([
+    const [o, s, i, u, e, ov, h, p, t, a, l] = await Promise.all([
       supabase.from('organizations').select('*').order('nome'),
       supabase.from('subscriptions').select('*, plan_versions(plans(nome))').order('created_at', { ascending: false }),
       supabase.from('subscription_items').select('*').limit(10000),
@@ -107,6 +107,7 @@ export default function SuperAdmin() {
     setPlans((p.data as Plan[]) ?? []);
     setTiers((t.data as unknown as Tier[]) ?? []);
     setAddons((a.data as Addon[]) ?? []);
+    setLeads((l.data as Lead[]) ?? []);
     setLoading(false);
   }, []);
 
