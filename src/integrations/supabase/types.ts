@@ -7697,6 +7697,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      my_org_can: { Args: { _feature: string }; Returns: boolean }
       obra_in_user_org: { Args: { _obra_id: string }; Returns: boolean }
       obra_is_demo: { Args: { obra_uuid: string }; Returns: boolean }
       org_can: { Args: { _feature: string; _org: string }; Returns: boolean }
