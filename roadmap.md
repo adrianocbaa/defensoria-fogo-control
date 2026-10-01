@@ -35,6 +35,6 @@
 - [x] Lote 7 — Enforcement de módulos e limites no backend (criação exige módulo contratado em obras/RDO/manutenção/preventivos; limite de usuários internos/externos por gatilho; limite de armazenamento fica no Lote 8)
 - [x] Lote 8 — Storage: [x] 8a limite de armazenamento no envio de arquivos (aplicado 01/10/2026, validado em tela) · [ ] 8b pastas por órgão nos arquivos (adiado: só necessário quando entrar o 2º órgão; mexe em caminhos de ~5 GB de arquivos)
 - [x] Lote 9 — Super Admin: papel super_admin (Adriano), funções super_admin_* (criar órgão/assinatura, status, preço de item, overrides), painel /super-admin (lista de órgãos, resumo, itens, exceções, histórico) — validado em tela 01/10/2026
-- [ ] Lote 10 — Interface comercial: página de planos, contratação em 4 etapas, trial self-service
+- [x] Lote 10 — Interface comercial: página pública /planos lendo catálogo do banco, formulário "Solicitar proposta" (commercial_leads, anon insere, só super admin lê), aba Pedidos no /super-admin. Decidido: sem trial self-service (toda contratação é manual)
 - [ ] Lote 11 — Testes ponta a ponta (2 organizações, isolamento, limites) + homologação
 - [ ] Decisões pendentes (seção P do plano): usuário único por org, invited conta vaga, bloqueio de estouro de storage, duração do trial, URL do portal por organização, nome commercial_modules
