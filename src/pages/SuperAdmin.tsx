@@ -360,6 +360,40 @@ export default function SuperAdmin() {
           </div>
         )}
 
+        {/* Pedidos de proposta vindos da página pública de planos */}
+        {!loading && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Pedidos de proposta</CardTitle>
+              <CardDescription>Enviados pela página pública de planos (/planos)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {leads.length === 0 && <p className="text-muted-foreground text-sm">Nenhum pedido até agora.</p>}
+              {leads.map(lead => (
+                <div key={lead.id} className="border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="text-sm space-y-1">
+                    <div className="font-medium">{lead.nome_orgao} {lead.cnpj ? `· ${lead.cnpj}` : ''}</div>
+                    <div className="text-muted-foreground">{lead.contato_nome} · {lead.email}{lead.telefone ? ` · ${lead.telefone}` : ''}</div>
+                    <div className="text-muted-foreground text-xs">
+                      {lead.plan_key ? `Plano: ${lead.plan_key}` : 'Sem plano definido'}
+                      {lead.module_tier_keys?.length ? ` · Módulos: ${lead.module_tier_keys.join(', ')}` : ''}
+                      {lead.addon_keys?.length ? ` · Extras: ${lead.addon_keys.join(', ')}` : ''}
+                    </div>
+                    {lead.mensagem && <div className="text-xs italic">"{lead.mensagem}"</div>}
+                    <div className="text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleString('pt-BR')}</div>
+                  </div>
+                  <Select value={lead.status} onValueChange={v => handleLeadStatus(lead.id, v)}>
+                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(LEAD_STATUS).map(([k, label]) => <SelectItem key={k} value={k}>{label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Dialog: criar órgão + assinatura */}
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
