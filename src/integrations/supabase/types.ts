@@ -7711,6 +7711,49 @@ export type Database = {
         Args: { p_medicao_id: string }
         Returns: undefined
       }
+      super_admin_add_override: {
+        Args: {
+          p_key: string
+          p_motivo: string
+          p_organization_id: string
+          p_valid_to?: string
+          p_value: Json
+        }
+        Returns: string
+      }
+      super_admin_create_organization: {
+        Args: { p_cnpj: string; p_nome: string; p_slug: string }
+        Returns: string
+      }
+      super_admin_create_subscription: {
+        Args: {
+          p_addon_keys?: string[]
+          p_billing_cycle?: string
+          p_custom_amounts?: Json
+          p_discount_cents?: number
+          p_external_reference?: string
+          p_module_tier_keys?: string[]
+          p_notes?: string
+          p_organization_id: string
+          p_origin?: string
+          p_period_end?: string
+          p_plan_key: string
+          p_started_at?: string
+        }
+        Returns: string
+      }
+      super_admin_remove_override: {
+        Args: { p_override_id: string; p_reason: string }
+        Returns: undefined
+      }
+      super_admin_set_subscription_status: {
+        Args: { p_reason: string; p_status: string; p_subscription_id: string }
+        Returns: undefined
+      }
+      super_admin_update_item_price: {
+        Args: { p_amount_cents: number; p_item_id: string; p_reason: string }
+        Returns: undefined
+      }
       unaccent: { Args: { "": string }; Returns: string }
       user_has_obra_access: {
         Args: { obra_uuid: string; user_uuid: string }
