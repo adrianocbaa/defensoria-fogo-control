@@ -95,6 +95,7 @@ export default function SuperAdmin() {
       supabase.from('plans').select('*').eq('ativo', true).order('ordem'),
       supabase.from('module_tiers').select('*, commercial_modules(nome, key)').eq('ativo', true).order('ordem'),
       supabase.from('addons').select('*').eq('ativo', true),
+      supabase.from('commercial_leads').select('*').order('created_at', { ascending: false }).limit(500),
     ]);
     setOrgs((o.data as Organization[]) ?? []);
     setSubs((s.data as unknown as Subscription[]) ?? []);
