@@ -30,8 +30,8 @@
 - [x] Lote 4 — Entitlements, overrides, recálculo automático, org_can/org_limit; DPE-MT gratuita (R$ 0) e ilimitada via overrides
 - [x] Lote 5 — Contadores de uso (org 1: 34 internos, 4 externos, ~5 GB); recontagem por trigger; conferência noturna agendada (job 9, 03:00 UTC)
 - [ ] Lote 6 — Propagação de organization_id + RLS por módulo (Obras/Medição → RDO → Manutenção → Preventivos → demais)
-  - [x] 6a Obras/Medição — 18 regras restritivas "org_isolation" (aplicado; aguarda conferência em tela pelo usuário)
-  - [ ] 6b RDO · [ ] 6c Manutenção · [ ] 6d Preventivos/Núcleos · [ ] 6e demais
+  - [x] 6a Obras/Medição — 18 regras restritivas "org_isolation" (validado em tela pelo usuário)
+  - [x] 6b RDO — organization_id nas 5 tabelas (515 reports, 46k atividades, ocorrências, comentários, mídias), preenchimento automático por gatilho, 20 regras por órgão; gatilhos de validação desligados e religados durante o backfill · [ ] 6c Manutenção · [ ] 6d Preventivos/Núcleos · [ ] 6e demais
 - [ ] Lote 7 — Enforcement de módulos e limites no backend
 - [ ] Lote 8 — Storage: espelho storage_objects, upload assinado com limite, prefixo por organização
 - [ ] Lote 9 — Super Admin: painel, assinatura manual, overrides, histórico
