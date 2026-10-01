@@ -4084,6 +4084,109 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_entitlement_overrides: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          id: string
+          key: string
+          motivo: string
+          organization_id: string
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+          value: Json | null
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          key: string
+          motivo: string
+          organization_id: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+          value?: Json | null
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          key?: string
+          motivo?: string
+          organization_id?: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_entitlement_overrides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_entitlements: {
+        Row: {
+          api_enabled: boolean
+          can_use_manutencao: boolean
+          can_use_obras: boolean
+          can_use_preventivos: boolean
+          can_use_rdo: boolean
+          computed_at: string
+          external_users_limit: number | null
+          internal_users_limit: number | null
+          organization_id: string
+          personalizacao_institucional: boolean
+          priority_support: boolean
+          sso_enabled: boolean
+          storage_limit_bytes: number | null
+        }
+        Insert: {
+          api_enabled?: boolean
+          can_use_manutencao?: boolean
+          can_use_obras?: boolean
+          can_use_preventivos?: boolean
+          can_use_rdo?: boolean
+          computed_at?: string
+          external_users_limit?: number | null
+          internal_users_limit?: number | null
+          organization_id: string
+          personalizacao_institucional?: boolean
+          priority_support?: boolean
+          sso_enabled?: boolean
+          storage_limit_bytes?: number | null
+        }
+        Update: {
+          api_enabled?: boolean
+          can_use_manutencao?: boolean
+          can_use_obras?: boolean
+          can_use_preventivos?: boolean
+          can_use_rdo?: boolean
+          computed_at?: string
+          external_users_limit?: number | null
+          internal_users_limit?: number | null
+          organization_id?: string
+          personalizacao_institucional?: boolean
+          priority_support?: boolean
+          sso_enabled?: boolean
+          storage_limit_bytes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_entitlements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           activated_at: string | null
@@ -6919,6 +7022,9 @@ export type Database = {
         Returns: undefined
       }
       obra_is_demo: { Args: { obra_uuid: string }; Returns: boolean }
+      org_can: { Args: { _feature: string; _org: string }; Returns: boolean }
+      org_limit: { Args: { _key: string; _org: string }; Returns: number }
+      recalculate_entitlements: { Args: { _org: string }; Returns: undefined }
       snapshot_medicao_items: {
         Args: { p_medicao_id: string }
         Returns: undefined
