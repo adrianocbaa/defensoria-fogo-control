@@ -845,6 +845,57 @@ export type Database = {
           },
         ]
       }
+      commercial_leads: {
+        Row: {
+          addon_keys: string[] | null
+          cnpj: string | null
+          contato_nome: string
+          created_at: string
+          email: string
+          id: string
+          mensagem: string | null
+          module_tier_keys: string[] | null
+          nome_orgao: string
+          notas_internas: string | null
+          plan_key: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          addon_keys?: string[] | null
+          cnpj?: string | null
+          contato_nome: string
+          created_at?: string
+          email: string
+          id?: string
+          mensagem?: string | null
+          module_tier_keys?: string[] | null
+          nome_orgao: string
+          notas_internas?: string | null
+          plan_key?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          addon_keys?: string[] | null
+          cnpj?: string | null
+          contato_nome?: string
+          created_at?: string
+          email?: string
+          id?: string
+          mensagem?: string | null
+          module_tier_keys?: string[] | null
+          nome_orgao?: string
+          notas_internas?: string | null
+          plan_key?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       commercial_modules: {
         Row: {
           ativo: boolean
