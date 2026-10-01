@@ -420,6 +420,7 @@ export type Database = {
           macro: string
           obra_id: string | null
           ordem: number
+          organization_id: string | null
           servico: string
           updated_at: string
         }
@@ -434,6 +435,7 @@ export type Database = {
           macro: string
           obra_id?: string | null
           ordem?: number
+          organization_id?: string | null
           servico: string
           updated_at?: string
         }
@@ -448,6 +450,7 @@ export type Database = {
           macro?: string
           obra_id?: string | null
           ordem?: number
+          organization_id?: string | null
           servico?: string
           updated_at?: string
         }
@@ -457,6 +460,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biblioteca_servicos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -469,6 +479,7 @@ export type Database = {
           descricao: string
           id: string
           ordem: number
+          organization_id: string | null
           servico_id: string
           updated_at: string
         }
@@ -479,6 +490,7 @@ export type Database = {
           descricao: string
           id?: string
           ordem?: number
+          organization_id?: string | null
           servico_id: string
           updated_at?: string
         }
@@ -489,10 +501,18 @@ export type Database = {
           descricao?: string
           id?: string
           ordem?: number
+          organization_id?: string | null
           servico_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "biblioteca_verificacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "biblioteca_verificacoes_servico_id_fkey"
             columns: ["servico_id"]
@@ -538,6 +558,7 @@ export type Database = {
           id: string
           nome: string
           obra_id: string
+          organization_id: string | null
           pagina: number
           pdf_id: string
           pos_h: number
@@ -553,6 +574,7 @@ export type Database = {
           id?: string
           nome: string
           obra_id: string
+          organization_id?: string | null
           pagina?: number
           pdf_id: string
           pos_h?: number
@@ -568,6 +590,7 @@ export type Database = {
           id?: string
           nome?: string
           obra_id?: string
+          organization_id?: string | null
           pagina?: number
           pdf_id?: string
           pos_h?: number
@@ -579,6 +602,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "checklist_ambientes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "checklist_ambientes_pdf_id_fkey"
             columns: ["pdf_id"]
@@ -604,6 +634,7 @@ export type Database = {
           obra_id: string
           observacao: string | null
           ordem: number
+          organization_id: string | null
           servico_id: string
           status: string
           updated_at: string
@@ -624,6 +655,7 @@ export type Database = {
           obra_id: string
           observacao?: string | null
           ordem?: number
+          organization_id?: string | null
           servico_id: string
           status?: string
           updated_at?: string
@@ -644,12 +676,20 @@ export type Database = {
           obra_id?: string
           observacao?: string | null
           ordem?: number
+          organization_id?: string | null
           servico_id?: string
           status?: string
           updated_at?: string
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "checklist_ocorrencias_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "checklist_ocorrencias_servico_id_fkey"
             columns: ["servico_id"]
@@ -665,6 +705,7 @@ export type Database = {
           id: string
           nome_arquivo: string
           obra_id: string
+          organization_id: string | null
           pdf_url: string
           prazo_correcao: number | null
           total_paginas: number | null
@@ -675,6 +716,7 @@ export type Database = {
           id?: string
           nome_arquivo: string
           obra_id: string
+          organization_id?: string | null
           pdf_url: string
           prazo_correcao?: number | null
           total_paginas?: number | null
@@ -685,6 +727,7 @@ export type Database = {
           id?: string
           nome_arquivo?: string
           obra_id?: string
+          organization_id?: string | null
           pdf_url?: string
           prazo_correcao?: number | null
           total_paginas?: number | null
@@ -696,6 +739,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_pdfs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -718,6 +768,7 @@ export type Database = {
           obra_id: string
           observacao: string | null
           ordem: number
+          organization_id: string | null
           status: string
           updated_at: string
           user_id: string | null
@@ -739,6 +790,7 @@ export type Database = {
           obra_id: string
           observacao?: string | null
           ordem?: number
+          organization_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -760,6 +812,7 @@ export type Database = {
           obra_id?: string
           observacao?: string | null
           ordem?: number
+          organization_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -770,6 +823,13 @@ export type Database = {
             columns: ["ambiente_id"]
             isOneToOne: false
             referencedRelation: "checklist_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_servicos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -997,6 +1057,7 @@ export type Database = {
           nome: string
           obra_id: string | null
           observacoes: string | null
+          organization_id: string | null
           resultados: Json
           updated_at: string
           user_id: string
@@ -1008,6 +1069,7 @@ export type Database = {
           nome: string
           obra_id?: string | null
           observacoes?: string | null
+          organization_id?: string | null
           resultados?: Json
           updated_at?: string
           user_id: string
@@ -1019,6 +1081,7 @@ export type Database = {
           nome?: string
           obra_id?: string | null
           observacoes?: string | null
+          organization_id?: string | null
           resultados?: Json
           updated_at?: string
           user_id?: string
@@ -1029,6 +1092,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dimensionamento_calhas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1089,6 +1159,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          organization_id: string | null
         }
         Insert: {
           bloco: string
@@ -1100,6 +1171,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          organization_id?: string | null
         }
         Update: {
           bloco?: string
@@ -1111,6 +1183,7 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          organization_id?: string | null
         }
         Relationships: [
           {
@@ -1118,6 +1191,13 @@ export type Database = {
             columns: ["documento_id"]
             isOneToOne: false
             referencedRelation: "documentos_encerramento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documento_assinantes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1135,6 +1215,7 @@ export type Database = {
           id: string
           justificativa_excecao: string | null
           obra_id: string
+          organization_id: string | null
           snapshot_dados: Json
           status: string
           tipo: string
@@ -1152,6 +1233,7 @@ export type Database = {
           id?: string
           justificativa_excecao?: string | null
           obra_id: string
+          organization_id?: string | null
           snapshot_dados: Json
           status?: string
           tipo: string
@@ -1169,6 +1251,7 @@ export type Database = {
           id?: string
           justificativa_excecao?: string | null
           obra_id?: string
+          organization_id?: string | null
           snapshot_dados?: Json
           status?: string
           tipo?: string
@@ -1182,6 +1265,13 @@ export type Database = {
             referencedRelation: "obras"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "documentos_encerramento_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       documents: {
@@ -1190,6 +1280,7 @@ export type Database = {
           mime_type: string | null
           name: string
           nucleus_id: string
+          organization_id: string | null
           size: number | null
           type: Database["public"]["Enums"]["document_type"]
           uploaded_at: string
@@ -1200,6 +1291,7 @@ export type Database = {
           mime_type?: string | null
           name: string
           nucleus_id: string
+          organization_id?: string | null
           size?: number | null
           type: Database["public"]["Enums"]["document_type"]
           uploaded_at?: string
@@ -1210,6 +1302,7 @@ export type Database = {
           mime_type?: string | null
           name?: string
           nucleus_id?: string
+          organization_id?: string | null
           size?: number | null
           type?: Database["public"]["Enums"]["document_type"]
           uploaded_at?: string
@@ -1235,6 +1328,13 @@ export type Database = {
             columns: ["nucleus_id"]
             isOneToOne: false
             referencedRelation: "nuclei_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
