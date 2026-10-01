@@ -248,7 +248,7 @@ export default function Planos() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                       {tiers.map(t => (
                         <label key={t.key} className="flex items-center gap-2 text-sm">
-                          <Checkbox checked={leadTiers.includes(t.key)} onCheckedChange={c => setLeadTiers(c ? [...leadTiers, t.key] : leadTiers.filter(k => k !== t.key))} />
+                          <Checkbox checked={leadTiers.includes(t.key)} onCheckedChange={() => toggleTier(t)} />
                           {t.commercial_modules?.nome} — {t.nome}
                         </label>
                       ))}
@@ -259,7 +259,7 @@ export default function Planos() {
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       {addons.map(a => (
                         <label key={a.key} className="flex items-center gap-2 text-sm">
-                          <Checkbox checked={leadAddons.includes(a.key)} onCheckedChange={c => setLeadAddons(c ? [...leadAddons, a.key] : leadAddons.filter(k => k !== a.key))} />
+                          <Checkbox checked={leadAddons.includes(a.key)} onCheckedChange={() => toggleAddon(a)} />
                           {a.nome}
                         </label>
                       ))}
