@@ -26,7 +26,7 @@
 - [x] Lote 0 — Verificação de integridade (baseline 30/09/2026): obras 24, profiles 38, user_roles 37, medicao_sessions 52, medicao_items 2189, rdo_reports 515, maintenance_tickets 132, nuclei 12, orcamento_items 4950, aditivo_items 330; backup nativo diário do Supabase já ativo
 - [x] Lote 1 — Catálogo comercial criado e semeado (4 planos, 4 versões, 3 módulos, 4 níveis, 4 extras, tabela 2026 ativa, 24 preços); validado: Equipe + Gestão Completa + Manutenção + 250 GB = R$ 4.869,00
 - [x] Lote 2 — Tenancy: org 1 (DPE-MT, slug dpe-mt) criada; 38 membros (34 internos, 4 externos); organization_id em obras (24), nuclei, maintenance_tickets; novos perfis entram na org 1
-- [ ] Lote 3 — Subscriptions: subscriptions, subscription_items, subscription_history; assinatura da org 1
+- [x] Lote 3 — Subscriptions criadas; org 1 = Institucional + Obras Gestão Completa + Manutenção + Preventivos, contrato, ativa, R$ 7.760,00/mês (ajustável); histórico automático validado
 - [ ] Lote 4 — Entitlements: organization_entitlements, overrides, recálculo, org_can/org_limit
 - [ ] Lote 5 — Usage: contadores, triggers de members, job de reconciliação
 - [ ] Lote 6 — Propagação de organization_id + RLS por módulo (Obras/Medição → RDO → Manutenção → Preventivos → demais)
