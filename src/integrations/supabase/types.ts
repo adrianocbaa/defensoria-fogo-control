@@ -2685,6 +2685,7 @@ export type Database = {
           materials: Json | null
           nucleo_id: string | null
           observations: string[] | null
+          organization_id: string
           priority: string
           process_number: string | null
           raw_email: Json | null
@@ -2727,6 +2728,7 @@ export type Database = {
           materials?: Json | null
           nucleo_id?: string | null
           observations?: string[] | null
+          organization_id?: string
           priority: string
           process_number?: string | null
           raw_email?: Json | null
@@ -2769,6 +2771,7 @@ export type Database = {
           materials?: Json | null
           nucleo_id?: string | null
           observations?: string[] | null
+          organization_id?: string
           priority?: string
           process_number?: string | null
           raw_email?: Json | null
@@ -2807,6 +2810,13 @@ export type Database = {
             columns: ["nucleo_id"]
             isOneToOne: false
             referencedRelation: "vw_nucleos_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tickets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -3176,6 +3186,7 @@ export type Database = {
           is_agent_mode: boolean
           membro_coordenador: string | null
           name: string
+          organization_id: string
           telefone: string | null
           uf: string | null
           updated_at: string
@@ -3199,6 +3210,7 @@ export type Database = {
           is_agent_mode?: boolean
           membro_coordenador?: string | null
           name: string
+          organization_id?: string
           telefone?: string | null
           uf?: string | null
           updated_at?: string
@@ -3222,12 +3234,21 @@ export type Database = {
           is_agent_mode?: boolean
           membro_coordenador?: string | null
           name?: string
+          organization_id?: string
           telefone?: string | null
           uf?: string | null
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "nuclei_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nucleo_module_visibility: {
         Row: {
@@ -3670,6 +3691,7 @@ export type Database = {
           numero_art_execucao: string | null
           objeto_contrato: string | null
           obra_bloqueada: boolean | null
+          organization_id: string
           percentual_desconto: number | null
           porcentagem_execucao: number | null
           prazo_observacao_dias: number | null
@@ -3726,6 +3748,7 @@ export type Database = {
           numero_art_execucao?: string | null
           objeto_contrato?: string | null
           obra_bloqueada?: boolean | null
+          organization_id?: string
           percentual_desconto?: number | null
           porcentagem_execucao?: number | null
           prazo_observacao_dias?: number | null
@@ -3782,6 +3805,7 @@ export type Database = {
           numero_art_execucao?: string | null
           objeto_contrato?: string | null
           obra_bloqueada?: boolean | null
+          organization_id?: string
           percentual_desconto?: number | null
           porcentagem_execucao?: number | null
           prazo_observacao_dias?: number | null
@@ -3809,6 +3833,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -4050,6 +4081,80 @@ export type Database = {
           valor_total?: number | null
           valor_total_bdi?: number | null
           valor_total_sem_bdi?: number | null
+        }
+        Relationships: []
+      }
+      organization_members: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          id: string
+          invited_at: string | null
+          member_type: string
+          organization_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          member_type?: string
+          organization_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          member_type?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          id: string
+          nome: string
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          slug?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -6613,6 +6718,7 @@ export type Database = {
         Args: { obra_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      user_organization_id: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       document_type: "project" | "fire-license" | "photos" | "report"
