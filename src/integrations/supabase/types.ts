@@ -6083,6 +6083,216 @@ export type Database = {
           },
         ]
       }
+      subscription_history: {
+        Row: {
+          action: string
+          changed_by: string | null
+          created_at: string
+          entity: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          organization_id: string
+          reason: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          created_at?: string
+          entity: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          organization_id: string
+          reason?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          created_at?: string
+          entity?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          organization_id?: string
+          reason?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_items: {
+        Row: {
+          addon_id: string | null
+          amount_cents: number
+          created_at: string
+          descricao: string | null
+          id: string
+          item_type: string
+          module_id: string | null
+          module_tier_id: string | null
+          plan_id: string | null
+          price_item_id: string | null
+          quantity: number
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          addon_id?: string | null
+          amount_cents?: number
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          item_type: string
+          module_id?: string | null
+          module_tier_id?: string | null
+          plan_id?: string | null
+          price_item_id?: string | null
+          quantity?: number
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          addon_id?: string | null
+          amount_cents?: number
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          item_type?: string
+          module_id?: string | null
+          module_tier_id?: string | null
+          plan_id?: string | null
+          price_item_id?: string | null
+          quantity?: number
+          subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_items_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_items_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_items_module_tier_id_fkey"
+            columns: ["module_tier_id"]
+            isOneToOne: false
+            referencedRelation: "module_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_items_price_item_id_fkey"
+            columns: ["price_item_id"]
+            isOneToOne: false
+            referencedRelation: "price_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_items_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          billing_cycle: string
+          cancelled_at: string | null
+          contracted_amount_cents: number
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          discount_cents: number
+          external_reference: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          origin: string
+          plan_version_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: string
+          cancelled_at?: string | null
+          contracted_amount_cents?: number
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          discount_cents?: number
+          external_reference?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          origin?: string
+          plan_version_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          cancelled_at?: string | null
+          contracted_amount_cents?: number
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          discount_cents?: number
+          external_reference?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          origin?: string
+          plan_version_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_version_id_fkey"
+            columns: ["plan_version_id"]
+            isOneToOne: false
+            referencedRelation: "plan_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suporte_mensagens: {
         Row: {
           content: string
