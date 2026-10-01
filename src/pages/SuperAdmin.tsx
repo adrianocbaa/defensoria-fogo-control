@@ -251,9 +251,9 @@ export default function SuperAdmin() {
                               const u = orgUsage(sel.id); const e = orgEnt(sel.id);
                               return (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm border-t pt-4">
-                                  <div><div className="text-muted-foreground">Usuários internos</div><div className="font-semibold">{u?.internal_users ?? 0} / {e?.internal_users_limit ?? 'Ilimitado'}</div></div>
-                                  <div><div className="text-muted-foreground">Usuários externos</div><div className="font-semibold">{u?.external_users ?? 0} / {e?.external_users_limit ?? 'Ilimitado'}</div></div>
-                                  <div><div className="text-muted-foreground">Armazenamento</div><div className="font-semibold">{fmtGB(u?.storage_bytes)} / {fmtGB(e?.storage_limit_bytes)}</div></div>
+                                  <div><div className="text-muted-foreground">Usuários internos</div><div className="font-semibold">{u?.internal_users_count ?? 0} / {e?.internal_users_limit ?? 'Ilimitado'}</div></div>
+                                  <div><div className="text-muted-foreground">Usuários externos</div><div className="font-semibold">{u?.external_users_count ?? 0} / {e?.external_users_limit ?? 'Ilimitado'}</div></div>
+                                  <div><div className="text-muted-foreground">Armazenamento</div><div className="font-semibold">{fmtGB(u?.storage_bytes_used)} / {fmtGB(e?.storage_limit_bytes)}</div></div>
                                 </div>
                               );
                             })()}
