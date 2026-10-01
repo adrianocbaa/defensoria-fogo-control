@@ -4231,6 +4231,41 @@ export type Database = {
           },
         ]
       }
+      organization_usage_counters: {
+        Row: {
+          external_users_count: number
+          internal_users_count: number
+          organization_id: string
+          storage_bytes_used: number
+          storage_counted_at: string | null
+          users_counted_at: string
+        }
+        Insert: {
+          external_users_count?: number
+          internal_users_count?: number
+          organization_id: string
+          storage_bytes_used?: number
+          storage_counted_at?: string | null
+          users_counted_at?: string
+        }
+        Update: {
+          external_users_count?: number
+          internal_users_count?: number
+          organization_id?: string
+          storage_bytes_used?: number
+          storage_counted_at?: string | null
+          users_counted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_usage_counters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           cnpj: string | null
@@ -7025,6 +7060,8 @@ export type Database = {
       org_can: { Args: { _feature: string; _org: string }; Returns: boolean }
       org_limit: { Args: { _key: string; _org: string }; Returns: number }
       recalculate_entitlements: { Args: { _org: string }; Returns: undefined }
+      reconcile_usage_counters: { Args: never; Returns: undefined }
+      recount_org_users: { Args: { _org: string }; Returns: undefined }
       snapshot_medicao_items: {
         Args: { p_medicao_id: string }
         Returns: undefined
