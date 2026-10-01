@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Building2, ArrowLeft } from 'lucide-react';
+import { Check, Building2, ArrowLeft, ArrowRight, Users, HardDrive, ShieldCheck, ClipboardList, Crown, FileText, Wrench, Flame, BriefcaseBusiness } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import logoSidif from '@/assets/sidif-logo-oficial.png';
 
 const fmtBRL = (cents: number | null | undefined) =>
   ((cents ?? 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -20,6 +21,7 @@ interface Plan { id: string; key: string; nome: string; descricao?: string | nul
 interface Tier { id: string; key: string; nome: string; descricao: string | null; module_id: string; commercial_modules?: { nome: string; key: string }; }
 interface Addon { id: string; key: string; nome: string; descricao?: string | null; }
 interface PriceItem { plan_id: string | null; module_tier_id: string | null; addon_id: string | null; amount_cents: number; }
+interface PlanVersion { plan_id: string; internal_users_limit: number; external_users_limit: number; storage_limit_bytes: number; valid_to: string | null; }
 
 export default function Planos() {
   const { toast } = useToast();
@@ -27,7 +29,9 @@ export default function Planos() {
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [addons, setAddons] = useState<Addon[]>([]);
   const [prices, setPrices] = useState<PriceItem[]>([]);
+  const [versions, setVersions] = useState<PlanVersion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const [leadOpen, setLeadOpen] = useState(false);
   const [leadPlan, setLeadPlan] = useState('');
@@ -44,26 +48,47 @@ export default function Planos() {
 
   useEffect(() => {
     (async () => {
-      const [p, t, a, pt] = await Promise.all([
+      const [p, t, a, pt, pv] = await Promise.all([
         supabase.from('plans').select('*').eq('ativo', true).order('ordem'),
         supabase.from('module_tiers').select('*, commercial_modules(nome, key)').eq('ativo', true).order('ordem'),
         supabase.from('addons').select('*').eq('ativo', true),
         supabase.from('price_tables').select('id').eq('status', 'active').limit(1).maybeSingle(),
+        supabase.from('plan_versions').select('plan_id, internal_users_limit, external_users_limit, storage_limit_bytes, valid_to').is('valid_to', null).limit(10000),
       ]);
       setPlans((p.data as Plan[]) ?? []);
       setTiers((t.data as unknown as Tier[]) ?? []);
       setAddons((a.data as Addon[]) ?? []);
+      setVersions((pv.data as PlanVersion[]) ?? []);
+      setLoadError(Boolean(p.error || t.error || a.error || pt.error || pv.error || !pt.data));
       if (pt.data) {
-        const { data: pi } = await supabase.from('price_items').select('plan_id, module_tier_id, addon_id, amount_cents').eq('price_table_id', pt.data.id).limit(10000);
+        const { data: pi, error } = await supabase.from('price_items').select('plan_id, module_tier_id, addon_id, amount_cents').eq('price_table_id', pt.data.id).limit(10000);
         setPrices((pi as PriceItem[]) ?? []);
+        if (error) setLoadError(true);
       }
       setLoading(false);
     })();
   }, []);
 
   const planPrice = (planId: string) => prices.find(p => p.plan_id === planId)?.amount_cents;
-  const tierPrice = (tierId: string) => prices.find(p => p.module_tier_id === tierId)?.amount_cents;
+  const tierPrice = (tierId: string, planId?: string) => prices.find(p => p.module_tier_id === tierId && p.plan_id === planId)?.amount_cents;
   const addonPrice = (addonId: string) => prices.find(p => p.addon_id === addonId)?.amount_cents;
+
+  const selectedPlan = plans.find(p => p.key === leadPlan);
+  const selectedTiers = tiers.filter(t => leadTiers.includes(t.key));
+  const selectedAddons = addons.filter(a => leadAddons.includes(a.key));
+  const total = selectedPlan && prices.length
+    ? (planPrice(selectedPlan.id) ?? 0) + selectedTiers.reduce((sum, t) => sum + (tierPrice(t.id, selectedPlan.id) ?? 0), 0) + selectedAddons.reduce((sum, a) => sum + (addonPrice(a.id) ?? 0), 0)
+    : null;
+
+  const toggleTier = (tier: Tier) => {
+    setLeadTiers(current => {
+      if (current.includes(tier.key)) return current.filter(k => k !== tier.key);
+      // Each commercial module has one tier; Gestão Completa already includes Medição.
+      return [...current.filter(k => !tiers.some(t => t.key === k && t.module_id === tier.module_id)), tier.key];
+    });
+  };
+
+  const toggleAddon = (addon: Addon) => setLeadAddons(current => current.includes(addon.key) ? current.filter(k => k !== addon.key) : [...current, addon.key]);
 
   const openLead = (planKey?: string) => {
     if (planKey) setLeadPlan(planKey);
