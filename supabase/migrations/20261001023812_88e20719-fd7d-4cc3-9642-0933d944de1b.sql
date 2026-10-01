@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.set_maintenance_organization_id() FROM PUBLIC, anon, authenticated;
