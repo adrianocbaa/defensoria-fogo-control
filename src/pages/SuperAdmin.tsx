@@ -37,6 +37,9 @@ interface HistoryRow { id: string; entity: string; action: string; reason: strin
 interface Plan { id: string; key: string; nome: string; }
 interface Tier { id: string; key: string; nome: string; module_id: string; commercial_modules?: { nome: string; key: string }; }
 interface Addon { id: string; key: string; nome: string; }
+interface Lead { id: string; nome_orgao: string; cnpj: string | null; contato_nome: string; email: string; telefone: string | null; plan_key: string | null; module_tier_keys: string[]; addon_keys: string[]; mensagem: string | null; status: string; notas_internas: string | null; created_at: string; }
+
+const LEAD_STATUS: Record<string, string> = { novo: 'Novo', em_contato: 'Em contato', convertido: 'Convertido', descartado: 'Descartado' };
 
 export default function SuperAdmin() {
   const { toast } = useToast();
@@ -51,6 +54,7 @@ export default function SuperAdmin() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [addons, setAddons] = useState<Addon[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -80,7 +84,7 @@ export default function SuperAdmin() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [o, s, i, u, e, ov, h, p, t, a] = await Promise.all([
+    const [o, s, i, u, e, ov, h, p, t, a, l] = await Promise.all([
       supabase.from('organizations').select('*').order('nome'),
       supabase.from('subscriptions').select('*, plan_versions(plans(nome))').order('created_at', { ascending: false }),
       supabase.from('subscription_items').select('*').limit(10000),
@@ -91,6 +95,7 @@ export default function SuperAdmin() {
       supabase.from('plans').select('*').eq('ativo', true).order('ordem'),
       supabase.from('module_tiers').select('*, commercial_modules(nome, key)').eq('ativo', true).order('ordem'),
       supabase.from('addons').select('*').eq('ativo', true),
+      supabase.from('commercial_leads').select('*').order('created_at', { ascending: false }).limit(500),
     ]);
     setOrgs((o.data as Organization[]) ?? []);
     setSubs((s.data as unknown as Subscription[]) ?? []);
@@ -102,6 +107,7 @@ export default function SuperAdmin() {
     setPlans((p.data as Plan[]) ?? []);
     setTiers((t.data as unknown as Tier[]) ?? []);
     setAddons((a.data as Addon[]) ?? []);
+    setLeads((l.data as Lead[]) ?? []);
     setLoading(false);
   }, []);
 
@@ -176,6 +182,12 @@ export default function SuperAdmin() {
     } as never);
     if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Exceção concedida' }); setOverrideDialog(false); setOvKey(''); setOvValue(''); setOvMotivo(''); setOvValidTo(''); load(); }
+  };
+
+  const handleLeadStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from('commercial_leads').update({ status } as never).eq('id', id);
+    if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    else setLeads(prev => prev.map(x => x.id === id ? { ...x, status } : x));
   };
 
   const handleRemoveOverride = async (id: string) => {
@@ -346,6 +358,40 @@ export default function SuperAdmin() {
               )}
             </div>
           </div>
+        )}
+
+        {/* Pedidos de proposta vindos da página pública de planos */}
+        {!loading && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Pedidos de proposta</CardTitle>
+              <CardDescription>Enviados pela página pública de planos (/planos)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {leads.length === 0 && <p className="text-muted-foreground text-sm">Nenhum pedido até agora.</p>}
+              {leads.map(lead => (
+                <div key={lead.id} className="border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="text-sm space-y-1">
+                    <div className="font-medium">{lead.nome_orgao} {lead.cnpj ? `· ${lead.cnpj}` : ''}</div>
+                    <div className="text-muted-foreground">{lead.contato_nome} · {lead.email}{lead.telefone ? ` · ${lead.telefone}` : ''}</div>
+                    <div className="text-muted-foreground text-xs">
+                      {lead.plan_key ? `Plano: ${lead.plan_key}` : 'Sem plano definido'}
+                      {lead.module_tier_keys?.length ? ` · Módulos: ${lead.module_tier_keys.join(', ')}` : ''}
+                      {lead.addon_keys?.length ? ` · Extras: ${lead.addon_keys.join(', ')}` : ''}
+                    </div>
+                    {lead.mensagem && <div className="text-xs italic">"{lead.mensagem}"</div>}
+                    <div className="text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleString('pt-BR')}</div>
+                  </div>
+                  <Select value={lead.status} onValueChange={v => handleLeadStatus(lead.id, v)}>
+                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(LEAD_STATUS).map(([k, label]) => <SelectItem key={k} value={k}>{label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         )}
 
         {/* Dialog: criar órgão + assinatura */}

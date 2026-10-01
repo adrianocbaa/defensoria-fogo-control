@@ -30,6 +30,7 @@ import PublicRDODiario from "./pages/PublicRDODiario";
 import PublicMaintenanceConfirmation from "./pages/PublicMaintenanceConfirmation";
 import AdminPanel from "./pages/AdminPanel";
 import SuperAdmin from "./pages/SuperAdmin";
+import Planos from "./pages/Planos";
 import AdminEncerramento from "./pages/AdminEncerramento";
 import MapPinSelector from "./pages/MapPinSelector";
 import Maintenance from "./pages/Maintenance";
@@ -121,6 +122,7 @@ const AppRoutes = () => {
       <Route path="/plano-expansao" element={<ProtectedRoute><PlanoExpansao /></ProtectedRoute>} />
       <Route path="/admin/plano-expansao" element={<ProtectedRoute><AdminPlanoExpansao /></ProtectedRoute>} />
       <Route path="/super-admin" element={<ProtectedRoute><SuperAdmin /></ProtectedRoute>} />
+      <Route path="/planos" element={<Planos />} />
       
       {/* Main Dashboard */}
       <Route 
