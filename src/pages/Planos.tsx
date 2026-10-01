@@ -16,9 +16,9 @@ import { Link } from 'react-router-dom';
 const fmtBRL = (cents: number | null | undefined) =>
   ((cents ?? 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-interface Plan { id: string; key: string; nome: string; descricao: string | null; ordem: number; destaque?: boolean; }
+interface Plan { id: string; key: string; nome: string; descricao?: string | null; ordem: number; }
 interface Tier { id: string; key: string; nome: string; descricao: string | null; module_id: string; commercial_modules?: { nome: string; key: string }; }
-interface Addon { id: string; key: string; nome: string; descricao: string | null; }
+interface Addon { id: string; key: string; nome: string; descricao?: string | null; }
 interface PriceItem { plan_id: string | null; module_tier_id: string | null; addon_id: string | null; amount_cents: number; }
 
 export default function Planos() {
