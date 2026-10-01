@@ -2342,6 +2342,7 @@ export type Database = {
           id: string
           kind: string
           last_error: string | null
+          organization_id: string | null
           payload: Json | null
           scheduled_for: string
           sent_at: string | null
@@ -2354,6 +2355,7 @@ export type Database = {
           id?: string
           kind: string
           last_error?: string | null
+          organization_id?: string | null
           payload?: Json | null
           scheduled_for?: string
           sent_at?: string | null
@@ -2366,6 +2368,7 @@ export type Database = {
           id?: string
           kind?: string
           last_error?: string | null
+          organization_id?: string | null
           payload?: Json | null
           scheduled_for?: string
           sent_at?: string | null
@@ -2373,6 +2376,13 @@ export type Database = {
           ticket_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_email_outbox_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "maintenance_ticket_email_outbox_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -2394,6 +2404,7 @@ export type Database = {
           in_reply_to: string | null
           message_id: string | null
           meta: Json | null
+          organization_id: string | null
           received_at: string
           subject: string | null
           ticket_id: string
@@ -2410,6 +2421,7 @@ export type Database = {
           in_reply_to?: string | null
           message_id?: string | null
           meta?: Json | null
+          organization_id?: string | null
           received_at?: string
           subject?: string | null
           ticket_id: string
@@ -2426,12 +2438,20 @@ export type Database = {
           in_reply_to?: string | null
           message_id?: string | null
           meta?: Json | null
+          organization_id?: string | null
           received_at?: string
           subject?: string | null
           ticket_id?: string
           to_addrs?: string[] | null
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_emails_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "maintenance_ticket_emails_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -2448,6 +2468,7 @@ export type Database = {
           created_by_name: string | null
           id: string
           motivo: string
+          organization_id: string | null
           resolved_at: string | null
           resolved_by: string | null
           resolved_by_name: string | null
@@ -2459,6 +2480,7 @@ export type Database = {
           created_by_name?: string | null
           id?: string
           motivo: string
+          organization_id?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           resolved_by_name?: string | null
@@ -2470,12 +2492,20 @@ export type Database = {
           created_by_name?: string | null
           id?: string
           motivo?: string
+          organization_id?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           resolved_by_name?: string | null
           ticket_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_impediments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "maintenance_ticket_impediments_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -2500,6 +2530,7 @@ export type Database = {
           materials: Json
           nucleo_id: string | null
           order_index: number
+          organization_id: string | null
           reference_photos: Json
           scheduled_date: string | null
           status: string
@@ -2528,6 +2559,7 @@ export type Database = {
           materials?: Json
           nucleo_id?: string | null
           order_index?: number
+          organization_id?: string | null
           reference_photos?: Json
           scheduled_date?: string | null
           status?: string
@@ -2556,6 +2588,7 @@ export type Database = {
           materials?: Json
           nucleo_id?: string | null
           order_index?: number
+          organization_id?: string | null
           reference_photos?: Json
           scheduled_date?: string | null
           status?: string
@@ -2607,6 +2640,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "maintenance_ticket_services_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "maintenance_ticket_services_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
@@ -2629,6 +2669,7 @@ export type Database = {
           changed_by_name: string | null
           from_status: string | null
           id: string
+          organization_id: string | null
           ticket_id: string
           to_status: string
         }
@@ -2638,6 +2679,7 @@ export type Database = {
           changed_by_name?: string | null
           from_status?: string | null
           id?: string
+          organization_id?: string | null
           ticket_id: string
           to_status: string
         }
@@ -2647,10 +2689,18 @@ export type Database = {
           changed_by_name?: string | null
           from_status?: string | null
           id?: string
+          organization_id?: string | null
           ticket_id?: string
           to_status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_status_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "maintenance_ticket_status_history_ticket_id_fkey"
             columns: ["ticket_id"]
