@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.set_rdo_organization_id() FROM anon, authenticated, public;
