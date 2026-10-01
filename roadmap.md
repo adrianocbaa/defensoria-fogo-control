@@ -28,7 +28,7 @@
 - [x] Lote 2 — Tenancy: org 1 (DPE-MT, slug dpe-mt) criada; 38 membros (34 internos, 4 externos); organization_id em obras (24), nuclei, maintenance_tickets; novos perfis entram na org 1
 - [x] Lote 3 — Subscriptions criadas; org 1 = Institucional + Obras Gestão Completa + Manutenção + Preventivos, contrato, ativa, R$ 7.760,00/mês (ajustável); histórico automático validado
 - [x] Lote 4 — Entitlements, overrides, recálculo automático, org_can/org_limit; DPE-MT gratuita (R$ 0) e ilimitada via overrides
-- [ ] Lote 5 — Usage: contadores, triggers de members, job de reconciliação
+- [x] Lote 5 — Contadores de uso (org 1: 34 internos, 4 externos, ~5 GB); recontagem por trigger; conferência noturna agendada (job 9, 03:00 UTC)
 - [ ] Lote 6 — Propagação de organization_id + RLS por módulo (Obras/Medição → RDO → Manutenção → Preventivos → demais)
 - [ ] Lote 7 — Enforcement de módulos e limites no backend
 - [ ] Lote 8 — Storage: espelho storage_objects, upload assinado com limite, prefixo por organização
