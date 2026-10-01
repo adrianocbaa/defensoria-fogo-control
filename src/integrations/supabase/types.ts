@@ -211,6 +211,7 @@ export type Database = {
           desconto: number | null
           empresa_id: string | null
           id: string
+          organization_id: string | null
           polo: string
           regiao: string | null
           seq: string | null
@@ -223,6 +224,7 @@ export type Database = {
           desconto?: number | null
           empresa_id?: string | null
           id?: string
+          organization_id?: string | null
           polo: string
           regiao?: string | null
           seq?: string | null
@@ -235,6 +237,7 @@ export type Database = {
           desconto?: number | null
           empresa_id?: string | null
           id?: string
+          organization_id?: string | null
           polo?: string
           regiao?: string | null
           seq?: string | null
@@ -256,6 +259,13 @@ export type Database = {
             referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ata_polos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       atas: {
@@ -265,6 +275,7 @@ export type Database = {
           id: string
           is_active: boolean
           numero_ata: string
+          organization_id: string | null
           pregao_eletronico: string | null
           protocolo: string | null
           updated_at: string
@@ -275,6 +286,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           numero_ata: string
+          organization_id?: string | null
           pregao_eletronico?: string | null
           protocolo?: string | null
           updated_at?: string
@@ -285,11 +297,20 @@ export type Database = {
           id?: string
           is_active?: boolean
           numero_ata?: string
+          organization_id?: string | null
           pregao_eletronico?: string | null
           protocolo?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "atas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -1230,6 +1251,7 @@ export type Database = {
           id: string
           nome: string
           observacoes: string | null
+          organization_id: string | null
           texto_cargo_documento: string
           updated_at: string
           vigencia_fim: string | null
@@ -1246,6 +1268,7 @@ export type Database = {
           id?: string
           nome: string
           observacoes?: string | null
+          organization_id?: string | null
           texto_cargo_documento: string
           updated_at?: string
           vigencia_fim?: string | null
@@ -1262,12 +1285,21 @@ export type Database = {
           id?: string
           nome?: string
           observacoes?: string | null
+          organization_id?: string | null
           texto_cargo_documento?: string
           updated_at?: string
           vigencia_fim?: string | null
           vigencia_inicio?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dpg_gestao_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       empresas: {
         Row: {
@@ -2143,6 +2175,7 @@ export type Database = {
           last_inspection: string | null
           location: string
           nucleus_id: string
+          organization_id: string | null
           serial_number: string | null
           status: Database["public"]["Enums"]["extinguisher_status"]
           support_type: string | null
@@ -2159,6 +2192,7 @@ export type Database = {
           last_inspection?: string | null
           location: string
           nucleus_id: string
+          organization_id?: string | null
           serial_number?: string | null
           status: Database["public"]["Enums"]["extinguisher_status"]
           support_type?: string | null
@@ -2175,6 +2209,7 @@ export type Database = {
           last_inspection?: string | null
           location?: string
           nucleus_id?: string
+          organization_id?: string | null
           serial_number?: string | null
           status?: Database["public"]["Enums"]["extinguisher_status"]
           support_type?: string | null
@@ -2203,6 +2238,13 @@ export type Database = {
             referencedRelation: "nuclei_secure"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fire_extinguishers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       hydrants: {
@@ -2218,6 +2260,7 @@ export type Database = {
           id: string
           location: string
           nucleus_id: string
+          organization_id: string | null
           status: string
           updated_at: string
         }
@@ -2233,6 +2276,7 @@ export type Database = {
           id?: string
           location: string
           nucleus_id: string
+          organization_id?: string | null
           status: string
           updated_at?: string
         }
@@ -2248,6 +2292,7 @@ export type Database = {
           id?: string
           location?: string
           nucleus_id?: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -2271,6 +2316,13 @@ export type Database = {
             columns: ["nucleus_id"]
             isOneToOne: false
             referencedRelation: "nuclei_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hydrants_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -3306,18 +3358,21 @@ export type Database = {
           id: string
           module_key: string
           nucleo_id: string
+          organization_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           module_key: string
           nucleo_id: string
+          organization_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           module_key?: string
           nucleo_id?: string
+          organization_id?: string | null
         }
         Relationships: [
           {
@@ -3348,6 +3403,13 @@ export type Database = {
             referencedRelation: "vw_nucleos_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "nucleo_module_visibility_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       nucleo_teletrabalho: {
@@ -3358,6 +3420,7 @@ export type Database = {
           id: string
           motivo: string | null
           nucleo_id: string
+          organization_id: string | null
           portaria: string | null
           portaria_file: string | null
           procedimento: string
@@ -3370,6 +3433,7 @@ export type Database = {
           id?: string
           motivo?: string | null
           nucleo_id: string
+          organization_id?: string | null
           portaria?: string | null
           portaria_file?: string | null
           procedimento: string
@@ -3382,6 +3446,7 @@ export type Database = {
           id?: string
           motivo?: string | null
           nucleo_id?: string
+          organization_id?: string | null
           portaria?: string | null
           portaria_file?: string | null
           procedimento?: string
@@ -3409,6 +3474,13 @@ export type Database = {
             referencedRelation: "vw_nucleos_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "nucleo_teletrabalho_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
       }
       nucleos_central: {
@@ -3425,6 +3497,7 @@ export type Database = {
           lng: number | null
           membro_coordenador: string | null
           nome: string
+          organization_id: string | null
           telefone_auxiliar_coordenador: string | null
           telefone_coordenador_substituto: string | null
           telefone_membro_coordenador: string | null
@@ -3445,6 +3518,7 @@ export type Database = {
           lng?: number | null
           membro_coordenador?: string | null
           nome: string
+          organization_id?: string | null
           telefone_auxiliar_coordenador?: string | null
           telefone_coordenador_substituto?: string | null
           telefone_membro_coordenador?: string | null
@@ -3465,6 +3539,7 @@ export type Database = {
           lng?: number | null
           membro_coordenador?: string | null
           nome?: string
+          organization_id?: string | null
           telefone_auxiliar_coordenador?: string | null
           telefone_coordenador_substituto?: string | null
           telefone_membro_coordenador?: string | null
@@ -3472,7 +3547,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "nucleos_central_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       obra_action_logs: {
         Row: {
@@ -6565,6 +6648,7 @@ export type Database = {
           id: string
           manager_ids: string[]
           motivo: string
+          organization_id: string | null
           servidor: string
           ticket_id: string | null
           updated_at: string
@@ -6579,6 +6663,7 @@ export type Database = {
           id?: string
           manager_ids?: string[]
           motivo: string
+          organization_id?: string | null
           servidor: string
           ticket_id?: string | null
           updated_at?: string
@@ -6593,12 +6678,20 @@ export type Database = {
           id?: string
           manager_ids?: string[]
           motivo?: string
+          organization_id?: string | null
           servidor?: string
           ticket_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "travels_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "travels_ticket_id_fkey"
             columns: ["ticket_id"]
