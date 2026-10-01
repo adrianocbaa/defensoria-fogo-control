@@ -184,6 +184,12 @@ export default function SuperAdmin() {
     else { toast({ title: 'Exceção concedida' }); setOverrideDialog(false); setOvKey(''); setOvValue(''); setOvMotivo(''); setOvValidTo(''); load(); }
   };
 
+  const handleLeadStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from('commercial_leads').update({ status } as never).eq('id', id);
+    if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    else setLeads(prev => prev.map(x => x.id === id ? { ...x, status } : x));
+  };
+
   const handleRemoveOverride = async (id: string) => {
     const reason = window.prompt('Motivo da remoção:');
     if (!reason) return;
