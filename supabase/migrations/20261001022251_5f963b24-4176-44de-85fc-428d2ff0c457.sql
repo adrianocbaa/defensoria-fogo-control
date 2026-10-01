@@ -1,0 +1,10 @@
+ALTER TABLE public.rdo_reports ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.rdo_activities ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.rdo_occurrences ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.rdo_comments ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id);
+ALTER TABLE public.rdo_media ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id);
+CREATE INDEX IF NOT EXISTS idx_rdo_reports_org ON public.rdo_reports(organization_id);
+CREATE INDEX IF NOT EXISTS idx_rdo_activities_org ON public.rdo_activities(organization_id);
+CREATE INDEX IF NOT EXISTS idx_rdo_occurrences_org ON public.rdo_occurrences(organization_id);
+CREATE INDEX IF NOT EXISTS idx_rdo_comments_org ON public.rdo_comments(organization_id);
+CREATE INDEX IF NOT EXISTS idx_rdo_media_org ON public.rdo_media(organization_id);
