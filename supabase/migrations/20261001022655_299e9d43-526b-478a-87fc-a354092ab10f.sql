@@ -1,0 +1,3 @@
+ALTER TABLE public.rdo_activities DISABLE TRIGGER rdo_block_administracao_trigger;
+ALTER TABLE public.rdo_activities DISABLE TRIGGER rdo_block_excesso_quantidade_trigger;
+ALTER TABLE public.rdo_activities DISABLE TRIGGER trg_rdo_block_administracao;
