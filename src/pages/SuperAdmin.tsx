@@ -37,6 +37,9 @@ interface HistoryRow { id: string; entity: string; action: string; reason: strin
 interface Plan { id: string; key: string; nome: string; }
 interface Tier { id: string; key: string; nome: string; module_id: string; commercial_modules?: { nome: string; key: string }; }
 interface Addon { id: string; key: string; nome: string; }
+interface Lead { id: string; nome_orgao: string; cnpj: string | null; contato_nome: string; email: string; telefone: string | null; plan_key: string | null; module_tier_keys: string[]; addon_keys: string[]; mensagem: string | null; status: string; notas_internas: string | null; created_at: string; }
+
+const LEAD_STATUS: Record<string, string> = { novo: 'Novo', em_contato: 'Em contato', convertido: 'Convertido', descartado: 'Descartado' };
 
 export default function SuperAdmin() {
   const { toast } = useToast();
@@ -51,6 +54,7 @@ export default function SuperAdmin() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [addons, setAddons] = useState<Addon[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
