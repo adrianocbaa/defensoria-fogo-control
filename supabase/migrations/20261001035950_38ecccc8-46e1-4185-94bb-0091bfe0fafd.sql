@@ -1,0 +1,6 @@
+CREATE POLICY rdo_notes_org_boundary ON public.rdo_activity_notes AS RESTRICTIVE FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.rdo_reports r WHERE r.id = rdo_activity_notes.report_id AND r.organization_id = public.user_organization_id(auth.uid()))) WITH CHECK (EXISTS (SELECT 1 FROM public.rdo_reports r WHERE r.id = rdo_activity_notes.report_id AND r.organization_id = public.user_organization_id(auth.uid())));
+CREATE POLICY rdo_audit_org_boundary ON public.rdo_audit_log AS RESTRICTIVE FOR ALL TO authenticated USING (public.obra_in_user_org(obra_id)) WITH CHECK (public.obra_in_user_org(obra_id));
+CREATE POLICY rdo_config_org_boundary ON public.rdo_config AS RESTRICTIVE FOR ALL TO authenticated USING (public.obra_in_user_org(obra_id)) WITH CHECK (public.obra_in_user_org(obra_id));
+CREATE POLICY rdo_equipment_org_boundary ON public.rdo_equipment AS RESTRICTIVE FOR ALL TO authenticated USING (public.obra_in_user_org(obra_id)) WITH CHECK (public.obra_in_user_org(obra_id));
+CREATE POLICY rdo_visits_org_boundary ON public.rdo_visits AS RESTRICTIVE FOR ALL TO authenticated USING (public.obra_in_user_org(obra_id)) WITH CHECK (public.obra_in_user_org(obra_id));
+CREATE POLICY rdo_workforce_org_boundary ON public.rdo_workforce AS RESTRICTIVE FOR ALL TO authenticated USING (public.obra_in_user_org(obra_id)) WITH CHECK (public.obra_in_user_org(obra_id));
