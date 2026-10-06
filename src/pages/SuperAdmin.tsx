@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InviteOrgAdminCard } from '@/components/superadmin/InviteOrgAdminCard';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -245,6 +246,7 @@ export default function SuperAdmin() {
                   </TabsList>
 
                   <TabsContent value="resumo" className="space-y-4 mt-4">
+                    <InviteOrgAdminCard organizationId={sel.id} organizationName={sel.nome} />
                     <Card>
                       <CardHeader>
                         <CardTitle>{sel.nome}</CardTitle>
