@@ -3,3 +3,4 @@ Use a SECURITY INVOKER RPC for public RDO progress, relying on the existing row-
 Use the shared `fetchAllPaged` helper (`src/lib/supabasePaged.ts`) with a deterministic `.order('id')` + `.range(from, to)` for any bulk query over `medicao_items`, `aditivo_items`, `orcamento_items` or `rdo_reports` that spans multiple obras; a single request silently truncates at ~1000 rows and understates financial totals.
 
 - Multi-tenant: org 1 has fixed UUID 00000000-0000-0000-0000-000000000001; one active org per user at launch (partial unique index); resolve via public.user_organization_id(). Why: safe backfill/default while single-tenant.
+- New users join the organization in auth app_metadata.organization_id (set only by admin-create-user: super_admin may target any org, admins inherit their own); admin edge functions refuse cross-org targets. Why: tenant isolation without manual reassignment.
