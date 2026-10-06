@@ -1,0 +1,1 @@
+GRANT INSERT ON public.commercial_leads TO authenticated;
