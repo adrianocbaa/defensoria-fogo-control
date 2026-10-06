@@ -83,6 +83,16 @@ serve(async (req) => {
       }
     }
 
+    // Isolamento: só exclui usuários da própria instituição (Super Admin exclui de qualquer uma)
+    {
+      const { data: isSuper } = await supabaseAdmin.rpc('is_super_admin', { _user_id: user.id });
+      if (!isSuper) {
+        const { data: a } = await supabaseAdmin.rpc('user_organization_id', { _user_id: user.id });
+        const { data: b } = await supabaseAdmin.rpc('user_organization_id', { _user_id: targetUserId });
+        if (b && a !== b) throw new Error('Usuário pertence a outra instituição');
+      }
+    }
+
     console.log('Deleting related rows for user:', targetUserId);
 
     // Clean dependent rows that may block deletion

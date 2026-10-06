@@ -65,6 +65,19 @@ serve(async (req) => {
       );
     }
 
+    // Isolamento: só redefine senha de usuários da própria instituição
+    {
+      const { data: isSuper } = await supabaseAdmin.rpc('is_super_admin', { _user_id: user.id });
+      if (!isSuper) {
+        const { data: a } = await supabaseAdmin.rpc('user_organization_id', { _user_id: user.id });
+        const { data: b } = await supabaseAdmin.rpc('user_organization_id', { _user_id: userId });
+        if (b && a !== b) {
+          return new Response(JSON.stringify({ error: 'Usuário pertence a outra instituição' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+      }
+    }
+
     // Generate secure random temporary password
     const crypto = await import('node:crypto');
     const tempPassword = crypto.randomBytes(16).toString('base64url').slice(0, 22);
