@@ -32,7 +32,7 @@ test('password recovery email branding has no DPE-MT references', () => {
 
 test('authentication and recovery use neutral SiDIF copy', () => {
   assert.match(authPage, /nome@instituicao\.gov\.br/);
-  assert.match(authPage, /Procure o administrador da sua instituição/);
+  assert.match(authPage, /Fale com o administrador da sua instituição/);
   assert.match(authPage, /SiDIF © 2026/);
   assert.match(recoveryEmail, /from: "SiDIF <sidif@sidif\.com\.br>"/);
   assert.match(recoveryEmail, /SiDIF — Sistema de Gestão de Infraestrutura/);
