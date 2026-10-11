@@ -46,9 +46,30 @@ const cache = new Map<string, CacheEntry>();
 const pending = new Map<string, Promise<string | null>>();
 const queue = new Map<PrivateBucket, Map<string, Array<(u: string | null) => void>>>();
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
+/** Época da sessão: respostas iniciadas em época anterior nunca gravam no cache nem são entregues. */
+let epoch = 0;
+
+/** Invalida tudo ligado à sessão atual (cache, fila, pendentes, timer). */
+export function resetPrivateStorageSession() {
+  epoch++;
+  if (flushTimer) clearTimeout(flushTimer);
+  flushTimer = null;
+  const old = Array.from(queue.values());
+  queue.clear();
+  pending.clear();
+  cache.clear();
+  // Resolve chamadores antigos com null (sem URL da sessão anterior)
+  old.forEach((items) => items.forEach((cbs) => cbs.forEach((cb) => cb(null))));
+}
+
+/** Somente para testes. */
+export function __privateStorageState() {
+  return { epoch, cache: cache.size, pending: pending.size, queue: queue.size };
+}
 
 function flush() {
   flushTimer = null;
+  const myEpoch = epoch;
   const batches = Array.from(queue.entries());
   queue.clear();
   for (const [bucket, items] of batches) {
@@ -59,11 +80,14 @@ function flush() {
         .from(bucket)
         .createSignedUrls(chunk, EXPIRES_IN)
         .then(({ data, error }) => {
+          const stale = myEpoch !== epoch;
           const byPath = new Map<string, string | null>();
           (data || []).forEach((d: any) => byPath.set(d.path, d.error ? null : d.signedUrl));
           for (const p of chunk) {
-            const url = error ? null : byPath.get(p) ?? null;
-            cache.set(`${bucket}/${p}`, { url, exp: Date.now() + (url ? EXPIRES_IN * 1000 - REFRESH_MARGIN_MS : 30_000) });
+            const url = stale || error ? null : byPath.get(p) ?? null;
+            if (!stale) {
+              cache.set(`${bucket}/${p}`, { url, exp: Date.now() + (url ? EXPIRES_IN * 1000 - REFRESH_MARGIN_MS : 30_000) });
+            }
             items.get(p)?.forEach((cb) => cb(url));
           }
         })
@@ -78,13 +102,14 @@ export function signPrivatePath(bucket: PrivateBucket, path: string): Promise<st
   if (c && c.exp > Date.now()) return Promise.resolve(c.url);
   const p = pending.get(key);
   if (p) return p;
+  const myEpoch = epoch;
   const promise = new Promise<string | null>((resolve) => {
     if (!queue.has(bucket)) queue.set(bucket, new Map());
     const m = queue.get(bucket)!;
     if (!m.has(path)) m.set(path, []);
-    m.get(path)!.push(resolve);
+    m.get(path)!.push((u) => resolve(myEpoch === epoch ? u : null));
     if (!flushTimer) flushTimer = setTimeout(flush, 15);
-  }).finally(() => pending.delete(key));
+  }).finally(() => { if (pending.get(key) === promise) pending.delete(key); });
   pending.set(key, promise);
   return promise;
 }
@@ -215,7 +240,15 @@ export function getMyOrganizationId(): Promise<string | null> {
   }
   return orgPromise;
 }
-supabase.auth.onAuthStateChange(() => { orgPromise = null; cache.clear(); });
+let lastSessionKey: string | null | undefined;
+supabase.auth.onAuthStateChange((_evt, session) => {
+  const key = session?.user?.id ?? null;
+  // Renovação de token do mesmo usuário não invalida; troca de usuário/logout invalida tudo
+  if (lastSessionKey !== undefined && key === lastSessionKey) return;
+  lastSessionKey = key;
+  orgPromise = null;
+  resetPrivateStorageSession();
+});
 
 /** Caminho tenant-aware: <org>/<modulo>/<...segmentos>/<arquivo> */
 export async function tenantPath(module: string, ...rest: string[]): Promise<string> {
