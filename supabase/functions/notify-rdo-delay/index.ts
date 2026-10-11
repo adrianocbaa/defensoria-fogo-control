@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from "npm:resend@2.0.0";
-import { requireServiceOrAdmin } from "../_shared/service-auth.ts";
+import { requireServiceOrSuperAdmin } from "../_shared/service-auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,7 +19,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const denied = await requireServiceOrAdmin(req, corsHeaders);
+  const denied = await requireServiceOrSuperAdmin(req, corsHeaders);
   if (denied) return denied;
 
   try {
