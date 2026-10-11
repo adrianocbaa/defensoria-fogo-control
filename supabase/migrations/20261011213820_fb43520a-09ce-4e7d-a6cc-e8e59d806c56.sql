@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.storage_path_entities_match_org(text, uuid) FROM authenticated;
