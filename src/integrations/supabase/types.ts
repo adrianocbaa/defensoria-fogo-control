@@ -320,6 +320,7 @@ export type Database = {
           new_values: Json | null
           old_values: Json | null
           operation: string
+          organization_id: string | null
           record_id: string
           table_name: string
           user_email: string | null
@@ -332,6 +333,7 @@ export type Database = {
           new_values?: Json | null
           old_values?: Json | null
           operation: string
+          organization_id?: string | null
           record_id: string
           table_name: string
           user_email?: string | null
@@ -344,6 +346,7 @@ export type Database = {
           new_values?: Json | null
           old_values?: Json | null
           operation?: string
+          organization_id?: string | null
           record_id?: string
           table_name?: string
           user_email?: string | null
@@ -2698,6 +2701,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          organization_id: string
           updated_at: string
           user_id: string | null
         }
@@ -2708,6 +2712,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          organization_id?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -2718,10 +2723,19 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          organization_id?: string
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_managers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       maintenance_ticket_email_outbox: {
         Row: {
@@ -3274,6 +3288,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          organization_id: string
           updated_at: string
         }
         Insert: {
@@ -3283,6 +3298,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          organization_id?: string
           updated_at?: string
         }
         Update: {
@@ -3292,9 +3308,18 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          organization_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       materials: {
         Row: {
@@ -5983,6 +6008,7 @@ export type Database = {
           descricao: string | null
           id: string
           itens: Json
+          organization_id: string
           tipo_obra: string | null
           titulo: string
           updated_at: string
@@ -5993,6 +6019,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           itens?: Json
+          organization_id?: string
           tipo_obra?: string | null
           titulo: string
           updated_at?: string
@@ -6003,11 +6030,20 @@ export type Database = {
           descricao?: string | null
           id?: string
           itens?: Json
+          organization_id?: string
           tipo_obra?: string | null
           titulo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rdo_templates_atividades_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rdo_ui_prefs: {
         Row: {
