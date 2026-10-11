@@ -7797,6 +7797,10 @@ export type Database = {
         Args: { p_created_at: string; p_name: string; p_owner: string }
         Returns: string
       }
+      storage_path_entities_match_org: {
+        Args: { p_name: string; p_org: string }
+        Returns: boolean
+      }
       super_admin_add_override: {
         Args: {
           p_key: string
