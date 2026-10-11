@@ -509,7 +509,7 @@ const AuthPage = () => {
             {/* Divider + support */}
             <div className="mt-14 pt-6 border-t border-neutral-200">
               <p className="text-[13px] text-neutral-500 leading-relaxed">
-                Problemas de acesso? Procure o administrador da sua instituição.
+                Problemas de acesso? Fale com o administrador da sua instituição.
               </p>
             </div>
           </div>
