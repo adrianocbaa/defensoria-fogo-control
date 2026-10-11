@@ -23,3 +23,8 @@ verify_jwt = false
 
 [functions.inbound-maintenance-email]
 verify_jwt = false
+[functions.check-teletrabalho-ending]
+verify_jwt = false
+
+[functions.check-maintenance-confirmations]
+verify_jwt = false

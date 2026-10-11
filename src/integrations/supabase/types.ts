@@ -7694,6 +7694,8 @@ export type Database = {
       }
     }
     Functions: {
+      _medicao_item_same_org: { Args: { _item_id: string }; Returns: boolean }
+      _rdo_progress_allowed: { Args: { _obra_id: string }; Returns: boolean }
       _s1_uuid: { Args: { p: string }; Returns: string }
       ajustar_medicao_congelada: {
         Args: {
@@ -7790,6 +7792,10 @@ export type Database = {
       my_org_storage_ok: { Args: never; Returns: boolean }
       obra_in_user_org: { Args: { _obra_id: string }; Returns: boolean }
       obra_is_demo: { Args: { obra_uuid: string }; Returns: boolean }
+      obra_same_org_as_user: {
+        Args: { _obra_id: string; _user_id: string }
+        Returns: boolean
+      }
       org_can: { Args: { _feature: string; _org: string }; Returns: boolean }
       org_limit: { Args: { _key: string; _org: string }; Returns: number }
       recalculate_entitlements: { Args: { _org: string }; Returns: undefined }
@@ -7798,6 +7804,14 @@ export type Database = {
       snapshot_medicao_items: {
         Args: { p_medicao_id: string }
         Returns: undefined
+      }
+      storage_admin_same_org_folder: {
+        Args: { p_folder: string }
+        Returns: boolean
+      }
+      storage_admin_same_org_obra_folder: {
+        Args: { p_folder: string }
+        Returns: boolean
       }
       storage_can_insert: {
         Args: { p_bucket: string; p_name: string }
@@ -7886,6 +7900,10 @@ export type Database = {
         Returns: boolean
       }
       user_organization_id: { Args: { _user_id: string }; Returns: string }
+      verify_internal_cron_token: {
+        Args: { p_token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       document_type: "project" | "fire-license" | "photos" | "report"

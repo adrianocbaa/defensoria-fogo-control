@@ -6,6 +6,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireInternal } from "../_shared/service-auth.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -86,6 +87,9 @@ async function invokePdf(ticket_id: string) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  // S4: rotina interna/cron — usuário comum e anon key são recusados
+  const denied = await requireInternal(req, cors);
+  if (denied) return denied;
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
   const now = new Date();
   const summary = { processed_outbox: 0, reminders_sent: 0, auto_finalized: 0, errors: [] as string[] };
