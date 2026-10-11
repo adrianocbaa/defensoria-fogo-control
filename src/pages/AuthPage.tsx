@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import logoSidif from '@/assets/sidif-logo-oficial.png';
-import bb2Asset from '@/assets/bb2.png.asset.json';
-import econucleoAsset from '@/assets/econucleo3.jpg.asset.json';
-import e01Asset from '@/assets/e01.png.asset.json';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -224,7 +221,7 @@ const AuthPage = () => {
           <Input
             id="login-email"
             type="email"
-            placeholder="usuario@defensoria.mt.gov.br"
+            placeholder="nome@instituicao.gov.br"
             value={loginForm.email}
             onChange={(e) => setLoginForm((p) => ({ ...p, email: e.target.value }))}
             className={fieldCls}
@@ -282,46 +279,7 @@ const AuthPage = () => {
         {/* Base green */}
         <div className="absolute inset-0 bg-[#062A1B]" />
 
-        {/* Image layer 1 — E01 facade, main background */}
-        <img
-          src={e01Asset.url}
-          alt=""
-          fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover opacity-[0.55]"
-          style={{ filter: 'grayscale(1) contrast(1.05) brightness(0.7)', mixBlendMode: 'luminosity' }}
-        />
-
-        {/* Image layer 2 — BB2 entrance canopy, overlapping mid-right */}
-        <img
-          src={bb2Asset.url}
-          alt=""
-          loading="lazy"
-          className="absolute h-[62%] w-[52%] object-cover opacity-[0.42]"
-          style={{
-            top: '18%',
-            right: '-4%',
-            filter: 'grayscale(1) contrast(1.1) brightness(0.65)',
-            mixBlendMode: 'luminosity',
-            clipPath: 'polygon(8% 0, 100% 0, 100% 92%, 0 100%)',
-          }}
-        />
-
-        {/* Image layer 3 — Econucleo, bottom-left overlap */}
-        <img
-          src={econucleoAsset.url}
-          alt=""
-          loading="lazy"
-          className="absolute h-[48%] w-[62%] object-cover opacity-[0.32]"
-          style={{
-            bottom: '0%',
-            left: '-6%',
-            filter: 'grayscale(1) contrast(1.1) brightness(0.6)',
-            mixBlendMode: 'luminosity',
-            clipPath: 'polygon(0 12%, 100% 0, 92% 100%, 0 100%)',
-          }}
-        />
-
-        {/* Green tint wash — unifies the composition */}
+        {/* Layered green wash preserves the architectural composition without client imagery */}
         <div
           className="absolute inset-0"
           style={{
@@ -426,7 +384,7 @@ const AuthPage = () => {
           </g>
           <text x="820" y="792" textAnchor="middle" fill="#CDEAD8" fillOpacity="0.55" fontSize="10" fontFamily="Inter, sans-serif" letterSpacing="1.5">N</text>
 
-          {/* DPMT watermark large near center */}
+          {/* SiDIF watermark large near center */}
           <text
             x="500" y="600"
             textAnchor="middle"
@@ -434,7 +392,7 @@ const AuthPage = () => {
             fontSize="160" fontWeight="700"
             fontFamily="Inter, sans-serif" letterSpacing="8"
           >
-            DPMT
+            SiDIF
           </text>
 
           {/* dimension line bottom */}
@@ -463,7 +421,7 @@ const AuthPage = () => {
         {/* Top-right corner label */}
         <div className="absolute top-12 right-14 z-10 text-right">
           <p className="text-[10px] font-medium tracking-[0.28em] uppercase text-white/55 leading-relaxed">
-            Defensoria Pública<br />de Mato Grosso
+            SiDIF<br />Plataforma Institucional
           </p>
         </div>
 
@@ -471,7 +429,7 @@ const AuthPage = () => {
         <div className="absolute z-10 left-14 top-[52%] flex items-center gap-3">
           <span className="block h-px w-8 bg-[#5FBF87]" />
           <p className="text-[10px] font-medium tracking-[0.28em] uppercase text-[#8FD3A9]">
-            Diretoria de Infraestrutura Física
+            Gestão de Infraestrutura Pública
           </p>
         </div>
 
@@ -486,8 +444,8 @@ const AuthPage = () => {
             <span className="text-[#5FBF87] font-bold">com mais controle.</span>
           </h1>
           <p className="mt-6 text-[14px] leading-relaxed text-white/65 max-w-[440px]">
-            Gestão técnica de ativos, manutenções e projetos da<br />
-            Defensoria Pública do Estado de Mato Grosso.
+            Gestão integrada de obras, medições, manutenção e ativos<br />
+            para instituições públicas.
           </p>
         </div>
 
@@ -497,7 +455,7 @@ const AuthPage = () => {
             V2.1.4 — 2025
           </span>
           <span className="text-[10px] font-medium tracking-[0.28em] uppercase text-white/45">
-            MT-DIF / DPMT-0042
+            Plataforma SiDIF
           </span>
           <span className="text-[10px] font-medium tracking-[0.28em] uppercase text-white/45">
             Acesso Institucional
@@ -511,14 +469,14 @@ const AuthPage = () => {
         <div className="lg:hidden px-6 py-6 flex items-center justify-between bg-[#062A1B]">
           <img src={logoSidif} alt="SiDIF" className="h-8 w-auto brightness-0 invert" />
           <p className="text-[9px] font-medium tracking-[0.28em] uppercase text-white/60 text-right">
-            Defensoria Pública<br />de Mato Grosso
+            Plataforma<br />Institucional
           </p>
         </div>
 
         {/* Top-right corner label (desktop) */}
         <div className="hidden lg:block absolute top-12 right-14 text-right">
           <p className="text-[10px] font-medium tracking-[0.28em] uppercase text-neutral-500 leading-relaxed">
-            DPMT<br />Sistema Corporativo
+            SiDIF<br />Plataforma Institucional
           </p>
         </div>
 
@@ -551,13 +509,7 @@ const AuthPage = () => {
             {/* Divider + support */}
             <div className="mt-14 pt-6 border-t border-neutral-200">
               <p className="text-[13px] text-neutral-500 leading-relaxed">
-                Problemas de acesso? Entre em contato com a{' '}
-                <a
-                  href="mailto:ti@defensoria.mt.gov.br"
-                  className="text-[#0F5132] font-medium hover:underline"
-                >
-                  Diretoria de TI.
-                </a>
+                Problemas de acesso? Procure o administrador da sua instituição.
               </p>
             </div>
           </div>
@@ -566,7 +518,7 @@ const AuthPage = () => {
         {/* Bottom footer */}
         <div className="pb-8 text-center">
           <p className="text-[11px] font-medium tracking-[0.32em] uppercase text-neutral-400">
-            SiDIF © 2025 — DPMT
+            SiDIF © 2026
           </p>
         </div>
       </section>

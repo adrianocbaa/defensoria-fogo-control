@@ -80,8 +80,7 @@ serve(async (req: Request) => {
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:6px;overflow:hidden;">
 <tr><td style="background:#0f2a4a;padding:28px 32px;text-align:center;">
 <div style="font-size:28px;font-weight:bold;color:#ffffff;letter-spacing:1px;">SiDIF</div>
-<div style="font-size:13px;color:#dbe4f0;margin-top:4px;">Sistema de Gestão de Obras e Fiscalização</div>
-<div style="font-size:12px;color:#c9a227;margin-top:6px;">Defensoria Pública do Estado de Mato Grosso — DPE-MT</div>
+<div style="font-size:13px;color:#dbe4f0;margin-top:4px;">Sistema de Gestão de Infraestrutura</div>
 </td></tr>
 <tr><td style="background:#c9a227;height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
 <tr><td style="padding:32px;">
@@ -100,13 +99,13 @@ serve(async (req: Request) => {
 </td></tr></table>
 </td></tr>
 <tr><td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:20px 32px;text-align:center;font-size:12px;color:#64748b;line-height:1.5;">
-SiDIF — Defensoria Pública do Estado de Mato Grosso<br>
+SiDIF — Sistema de Gestão de Infraestrutura<br>
 <a href="https://sidif.com.br" style="color:#0f2a4a;">sidif.com.br</a><br>
 Mensagem automática. Por favor, não responda.
 </td></tr>
 </table></td></tr></table></body></html>`;
 
-    const emailText = `SiDIF - Defensoria Pública do Estado de Mato Grosso (DPE-MT)
+    const emailText = `SiDIF — Sistema de Gestão de Infraestrutura
 
 Redefinição de Senha
 
@@ -127,7 +126,7 @@ sidif.com.br - Mensagem automática, não responda.`;
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "SiDIF - DPE-MT <sidif@sidif.com.br>",
+        from: "SiDIF <sidif@sidif.com.br>",
         to: [email],
         subject: "Redefinição de Senha - SiDIF",
         html: emailHtml,
