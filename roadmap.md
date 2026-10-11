@@ -43,5 +43,5 @@
 ## Auditoria multi-tenant (11/10/2026)
 - [x] S1 Storage (P0) — aprovado com ressalvas (T10 manual pendente)
 - [ ] S2 Edge Functions (P0) — aguardando autorização
-- [x] S3 RLS auxiliar (P1) — aguardando autorização
+- [x] S3 RLS auxiliar (P1) — concluído 11/10/2026
 - [ ] S4 admins/RPCs/crons (P1) — aguardando autorização
