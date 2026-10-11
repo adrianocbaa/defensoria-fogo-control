@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import JSZip from 'https://esm.sh/jszip@3.10.1';
+import { resolveCaller, assertObraAccess, guardResponse, UUID_RE } from '../_shared/tenant-guard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,28 +23,29 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
-    // Lote 2: exige usuário autenticado com acesso à obra
-    const authHeader = req.headers.get('Authorization') ?? '';
-    const token = authHeader.replace(/^Bearer\s+/i, '');
-    if (!token) return json401('Não autenticado');
-    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-    if (userErr || !userData?.user) return json401('Não autenticado');
-    const userId = userData.user.id;
+    // S4: barreira multi-tenant (padrão S2) ANTES de qualquer leitura com service_role.
+    // organization_id do payload é ignorado; órgão resolvido no servidor.
+    let caller;
+    try {
+      caller = await resolveCaller(req, supabase);
+    } catch (e) {
+      const r = guardResponse(e, corsHeaders); if (r) return r; throw e;
+    }
 
-    const { obraId, dataInicio, dataFim } = await req.json();
-    const uuidRe = /^[0-9a-f-]{36}$/i;
+    const body = await req.json().catch(() => ({}));
+    const { obraId, dataInicio, dataFim } = body ?? {};
     const dateRe = /^\d{4}-\d{2}-\d{2}$/;
-    if (typeof obraId !== 'string' || !uuidRe.test(obraId) ||
+    if (typeof obraId !== 'string' || !UUID_RE.test(obraId) ||
         typeof dataInicio !== 'string' || !dateRe.test(dataInicio) ||
         typeof dataFim !== 'string' || !dateRe.test(dataFim)) {
       return json401('Parâmetros inválidos', 400);
     }
 
-    const [{ data: isAdmin }, { data: hasAccess }] = await Promise.all([
-      supabase.rpc('is_admin', { user_uuid: userId }),
-      supabase.rpc('user_has_obra_access', { user_uuid: userId, obra_uuid: obraId }),
-    ]);
-    if (!isAdmin && !hasAccess) return json401('Sem acesso a esta obra', 403);
+    try {
+      await assertObraAccess(supabase, caller, obraId, 'read');
+    } catch (e) {
+      const r = guardResponse(e, corsHeaders); if (r) return r; throw e;
+    }
 
     console.log('Batch PDF generation for obra:', obraId, 'from:', dataInicio, 'to:', dataFim);
 
