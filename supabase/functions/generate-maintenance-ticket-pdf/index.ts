@@ -6,6 +6,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsPDF } from "npm:jspdf@2.5.2";
 import { encode as encodeBase64 } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+import { resolveCaller, loadAuthorizedTicket, guardResponse, GuardError, UUID_RE } from "../_shared/tenant-guard.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -110,10 +111,21 @@ serve(async (req) => {
   if (req.method !== "POST") return j(405, { error: "method_not_allowed" });
 
   try {
-    const { ticket_id } = await req.json();
-    if (!ticket_id) return j(400, { error: "missing_ticket_id" });
-
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    // Lote S2: identificar chamador, conferir órgão e permissão antes de usar service_role
+    let ticket_id: string;
+    try {
+      const caller = await resolveCaller(req, supabase as any);
+      const body = await req.json().catch(() => ({}));
+      if (typeof body?.ticket_id !== "string" || !UUID_RE.test(body.ticket_id)) throw new GuardError(400, "invalid_input");
+      const t = await loadAuthorizedTicket(supabase as any, caller, body.ticket_id, "read");
+      ticket_id = t.id;
+    } catch (e) {
+      const r = guardResponse(e, cors);
+      if (r) return r;
+      throw e;
+    }
 
     const { data: ticket, error: te } = await supabase
       .from("maintenance_tickets")

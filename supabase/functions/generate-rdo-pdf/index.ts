@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.5';
 import { jsPDF } from 'https://esm.sh/jspdf@2.5.2';
 import 'https://esm.sh/jspdf-autotable@3.8.4';
+import { resolveCaller, loadAuthorizedReport, guardResponse, GuardError, UUID_RE } from '../_shared/tenant-guard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,7 +31,22 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { reportId, obraId } = await req.json();
+    // Lote S2: barreira antes de qualquer leitura privilegiada
+    let reportId: string;
+    let obraId: string;
+    try {
+      const caller = await resolveCaller(req, supabase as any);
+      const body = await req.json().catch(() => ({}));
+      if (typeof body?.reportId !== 'string' || !UUID_RE.test(body.reportId)) throw new GuardError(400, 'invalid_input');
+      const report = await loadAuthorizedReport(supabase as any, caller, body.reportId, 'read');
+      if (body.obraId && body.obraId !== report.obra_id) throw new GuardError(400, 'invalid_input');
+      reportId = report.id;
+      obraId = report.obra_id; // derivado do banco, nunca do cliente
+    } catch (e) {
+      const r = guardResponse(e, corsHeaders);
+      if (r) return r;
+      throw e;
+    }
 
     console.log('Generating PDF for report:', reportId, 'obra:', obraId);
 
