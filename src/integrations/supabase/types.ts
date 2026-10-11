@@ -7658,6 +7658,7 @@ export type Database = {
       }
     }
     Functions: {
+      _s1_uuid: { Args: { p: string }; Returns: string }
       ajustar_medicao_congelada: {
         Args: {
           p_medicao_item_id: string
@@ -7761,6 +7762,40 @@ export type Database = {
       snapshot_medicao_items: {
         Args: { p_medicao_id: string }
         Returns: undefined
+      }
+      storage_can_insert: {
+        Args: { p_bucket: string; p_name: string }
+        Returns: boolean
+      }
+      storage_can_modify: {
+        Args: {
+          p_bucket: string
+          p_created_at: string
+          p_name: string
+          p_owner: string
+        }
+        Returns: boolean
+      }
+      storage_can_read: {
+        Args: {
+          p_bucket: string
+          p_created_at: string
+          p_name: string
+          p_owner: string
+        }
+        Returns: boolean
+      }
+      storage_is_uploader: {
+        Args: { p_name: string; p_owner: string }
+        Returns: boolean
+      }
+      storage_object_obra: {
+        Args: { p_bucket: string; p_name: string }
+        Returns: string
+      }
+      storage_object_org: {
+        Args: { p_created_at: string; p_name: string; p_owner: string }
+        Returns: string
       }
       super_admin_add_override: {
         Args: {
