@@ -67,6 +67,15 @@ async function fetchImage(supabase: any, urlOrPath: string): Promise<{ data: str
       }
     }
 
+    // Lote S1: bucket service-photos é privado — lê via Storage do servidor
+    if (!bytes && servicePhotoPath) {
+      const { data } = await supabase.storage.from("service-photos").download(servicePhotoPath);
+      if (data) {
+        bytes = new Uint8Array(await data.arrayBuffer());
+        contentType = data.type || contentType;
+      }
+    }
+
     if (!bytes && urlOrPath.startsWith("http")) {
       const r = await fetch(urlOrPath, { headers: { Accept: "image/jpeg" } });
       if (!r.ok) return null;

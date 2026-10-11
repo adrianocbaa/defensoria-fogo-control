@@ -574,10 +574,17 @@ Deno.serve(async (req) => {
             yPos = HEADER_H + 10;
           }
 
-          // Fetch image
-          const imgResponse = await fetch(media.file_url);
-          if (imgResponse.ok) {
-            const imgBlob = await imgResponse.arrayBuffer();
+          // Fetch image (Lote S1: bucket service-photos é privado — lê via Storage do servidor)
+          let imgBlob: ArrayBuffer | null = null;
+          const spMatch = String(media.file_url).match(/\/storage\/v1\/object\/(?:public|sign)\/service-photos\/([^?]+)/);
+          if (spMatch) {
+            const { data: dl } = await supabase.storage.from('service-photos').download(decodeURIComponent(spMatch[1]));
+            if (dl) imgBlob = await dl.arrayBuffer();
+          } else {
+            const r = await fetch(media.file_url);
+            if (r.ok) imgBlob = await r.arrayBuffer();
+          }
+          if (imgBlob) {
             const imgBase64 = btoa(
               new Uint8Array(imgBlob).reduce((data, byte) => data + String.fromCharCode(byte), '')
             );
