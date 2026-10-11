@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { resolveCaller, loadAuthorizedReport, guardResponse, GuardError, UUID_RE } from '../_shared/tenant-guard.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,34 +12,27 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { reportId, obraId } = await req.json()
-
-    if (!reportId || !obraId) {
-      return new Response(JSON.stringify({ error: 'reportId and obraId are required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Verificar se o report_id realmente existe antes de inserir atividades
-    // (evita FK violation quando o RDO ainda não foi salvo)
-    const { data: reportExists, error: reportErr } = await supabase
-      .from('rdo_reports')
-      .select('id')
-      .eq('id', reportId)
-      .maybeSingle()
-
-    if (reportErr) throw new Error(`report check: ${reportErr.message}`)
-    if (!reportExists) {
-      return new Response(JSON.stringify({ created: 0, skipped: 'report_not_found' }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    // Lote S2: só usuário real com permissão de edição de RDO na obra do próprio órgão.
+    // Sem caminho interno: nenhuma rotina de servidor usa esta função.
+    let reportId: string
+    let obraId: string
+    try {
+      const caller = await resolveCaller(req, supabase, false)
+      const body = await req.json().catch(() => ({}))
+      if (typeof body?.reportId !== 'string' || !UUID_RE.test(body.reportId)) throw new GuardError(400, 'invalid_input')
+      const report = await loadAuthorizedReport(supabase, caller, body.reportId, 'edit_rdo')
+      if (body.obraId && body.obraId !== report.obra_id) throw new GuardError(400, 'invalid_input')
+      reportId = report.id
+      obraId = report.obra_id
+    } catch (e) {
+      const r = guardResponse(e, corsHeaders)
+      if (r) return r
+      throw e
     }
 
     // Buscar itens folha da obra excluindo ADMINISTRAÇÃO (evita trigger vw_planilha_hierarquia)
