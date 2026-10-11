@@ -39,3 +39,9 @@
 - [ ] Lote 11 — Testes ponta a ponta (2 organizações, isolamento, limites) + homologação. Progresso 06/10/2026: órgão de teste criado (slug `teste-homolog`, Base + Obras Medição, sem Manutenção/Preventivos de propósito), usuário `teste.lote11@sidif.com.br` e obra de teste (is_demo, fora do portal público). Validado via Playwright: usuário do órgão de teste vê só a própria obra (1 de 1), obra da DPE-MT inacessível por URL direta, `my_org_can` retorna obras=true e rdo/manutencao/preventivos=false; DPE-MT permanece ilimitada. Corrigido de quebra: `super_admin_create_subscription` inseria itens de módulo como se fossem do plano e falharia em qualquer criação nova pelo painel. Ainda pendente no Lote 11: ambiente de homologação utilizável; segregação de arquivos legados (~5 GB) por órgão (8b); teste de limite de usuários/storage com estouro real; 49 alertas antigos do linter (separados).
 - [ ] Decisões pendentes (seção P do plano): usuário único por org, invited conta vaga, bloqueio de estouro de storage, duração do trial, URL do portal por organização, nome commercial_modules
 - [x] Tornar /planos fácil de acessar sem login e aproximar a seleção, módulos, capacidade e resumo do layout de referência — validado sem login em desktop e celular
+
+## Auditoria multi-tenant (11/10/2026)
+- [x] S1 Storage (P0) — aprovado com ressalvas (T10 manual pendente)
+- [ ] S2 Edge Functions (P0) — aguardando autorização
+- [ ] S3 RLS auxiliar (P1) — aguardando autorização
+- [ ] S4 admins/RPCs/crons (P1) — aguardando autorização

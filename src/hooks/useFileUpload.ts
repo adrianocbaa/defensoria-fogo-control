@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { PRIVATE_BUCKETS, PrivateBucket, storageRef, tenantPath } from '@/lib/privateStorage';
 
 export function useFileUpload() {
   const [uploading, setUploading] = useState(false);
@@ -24,9 +25,13 @@ export function useFileUpload() {
       const fileName = `${timestamp}.${fileExt}`;
       
       // Create path with user folder structure
-      const filePath = folder 
-        ? `${user.id}/${folder}/${fileName}`
-        : `${user.id}/${fileName}`;
+      const isPrivate = (PRIVATE_BUCKETS as readonly string[]).includes(bucket);
+      // Lote S1: buckets privados usam <org>/<modulo>/<...>/<usuario>/<arquivo>
+      const filePath = isPrivate
+        ? await tenantPath(folder || 'files', user.id, fileName)
+        : folder
+          ? `${user.id}/${folder}/${fileName}`
+          : `${user.id}/${fileName}`;
 
       // Upload file
       const { data, error } = await supabase.storage
@@ -41,11 +46,13 @@ export function useFileUpload() {
         return { error: error.message };
       }
 
-      // Get public URL
+      if (isPrivate) {
+        // Referência persistível; exibição usa URL assinada temporária (privateStorage)
+        return { url: storageRef(bucket as PrivateBucket, data.path) };
+      }
       const { data: { publicUrl } } = supabase.storage
         .from(bucket)
         .getPublicUrl(data.path);
-
       return { url: publicUrl };
     } catch (error) {
       console.error('Upload error:', error);

@@ -1,3 +1,4 @@
+import { storageRef, tenantPath } from '@/lib/privateStorage';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
@@ -236,13 +237,12 @@ export function ViewTaskModal({ ticket, open, onOpenChange, onChanged }: ViewTas
       let fileName: string | null = null;
       if (finalFile) {
         const cleanName = sanitizeFileName(finalFile.name);
-        const path = `maintenance-confirmations/${ticket.id}/${Date.now()}_${cleanName}`;
+        const path = await tenantPath('maintenance-confirmations', ticket.id, `${Date.now()}_${cleanName}`);
         const { error: upErr } = await supabase.storage
           .from('documents')
           .upload(path, finalFile, { upsert: false, contentType: finalFile.type || undefined });
         if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
-        fileUrl = pub.publicUrl;
+        fileUrl = storageRef('documents', path);
         fileName = finalFile.name;
       }
       const { data: userRes } = await supabase.auth.getUser();

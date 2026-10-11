@@ -1,3 +1,4 @@
+import { openPrivateFile, resolveStorageUrl, signPrivatePath } from '@/lib/privateStorage';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -629,7 +630,7 @@ export default function NucleosDetails() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => window.open(`https://mmumfgxngzaivvyqfbed.supabase.co/storage/v1/object/public/teletrabalho-portarias/${tele.portaria_file}`, '_blank')}
+                              onClick={() => openPrivateFile(tele.portaria_file!, 'teletrabalho-portarias')}
                             >
                               <Eye className="h-3 w-3 mr-1" />
                               Visualizar
@@ -637,9 +638,12 @@ export default function NucleosDetails() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
+                              onClick={async () => {
+                                const ref = tele.portaria_file!;
+                                const signed = /^https?:/i.test(ref) ? await resolveStorageUrl(ref) : await signPrivatePath('teletrabalho-portarias', ref);
+                                if (!signed) return;
                                 const link = document.createElement('a');
-                                link.href = `https://mmumfgxngzaivvyqfbed.supabase.co/storage/v1/object/public/teletrabalho-portarias/${tele.portaria_file}`;
+                                link.href = signed;
                                 link.download = `portaria-${tele.portaria}.pdf`;
                                 link.click();
                               }}

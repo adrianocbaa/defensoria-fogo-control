@@ -1,3 +1,4 @@
+import { storageRef, tenantPath } from '@/lib/privateStorage';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -183,7 +184,7 @@ export function TaskPhotoUploader({
           }
         }
         const cleanName = sanitize(file.name).replace(/\.(heic|heif|HEIC|HEIF)$/i, '.jpg');
-        const path = `${folder}/${user.id}/${mode}/${Date.now()}_${i}_${cleanName}`;
+        const path = await tenantPath(folder, user.id, mode, `${Date.now()}_${i}_${cleanName}`);
         console.log('[TaskPhotoUploader] Upload iniciado', { path, size: blob.size, contentType });
         const { error: upErr } = await supabase.storage
           .from('service-photos')
@@ -192,7 +193,7 @@ export function TaskPhotoUploader({
           console.error('[TaskPhotoUploader] Erro no upload storage:', upErr);
           throw upErr;
         }
-        const { data: pub } = supabase.storage.from('service-photos').getPublicUrl(path);
+        const pub = { publicUrl: storageRef('service-photos', path) };
         newPhotos.push({
           id: crypto.randomUUID(),
           url: pub.publicUrl,
