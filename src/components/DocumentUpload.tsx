@@ -1,3 +1,4 @@
+import { storageRef, tenantPath } from '@/lib/privateStorage';
 import { useState } from 'react';
 import { Upload, File, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -62,7 +63,7 @@ export function DocumentUpload({ onDocumentAdd }: DocumentUploadProps) {
       // Generate unique filename
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${user.id}/documents/${fileName}`;
+      const filePath = await tenantPath('documents', user.id, fileName);
 
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -71,10 +72,8 @@ export function DocumentUpload({ onDocumentAdd }: DocumentUploadProps) {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
+      // Referência persistível (bucket privado; exibição via URL assinada)
+      const publicUrl = storageRef('documents', filePath);
 
       // Add document to the list
       const newDocument = {
