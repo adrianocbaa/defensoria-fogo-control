@@ -241,10 +241,20 @@ serve(async (req) => {
       payload = {
         from: parsed.from ? { address: parsed.from.address, name: parsed.from.name } : null,
         to: (parsed.to || []).map((t: any) => ({ address: t.address })),
+        cc: (parsed.cc || []).map((t: any) => ({ address: t.address })),
         subject: parsed.subject || "",
         text: parsed.text || "",
         html: parsed.html || "",
-        headers: { "message-id": parsed.messageId || "" },
+        headers: (() => {
+          const h: Record<string, string> = { "message-id": parsed.messageId || "" };
+          for (const it of parsed.headers || []) {
+            const k = String(it.key || "").toLowerCase();
+            if (["in-reply-to", "delivered-to", "x-original-to", "x-forwarded-to", "envelope-to"].includes(k)) {
+              h[k] = h[k] ? `${h[k]}, ${it.value}` : String(it.value || "");
+            }
+          }
+          return h;
+        })(),
         attachments: (() => {
           let used = 0;
           return (parsed.attachments || [])
