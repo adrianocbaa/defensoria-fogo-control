@@ -330,14 +330,43 @@ serve(async (req) => {
       if (anyExternal) requesterEmail = anyExternal;
     }
 
+    // ===== Resolução do tenant (H3) =====
+    // Somente pelo destinatário; organization_id do payload é ignorado; sem fallback para DPE.
+    const recipients = envelopeTo.length
+      ? envelopeTo
+      : [
+          ...addrList(payload.to),
+          ...addrList(payload.cc),
+          ...addrList(payload.headers?.["delivered-to"]),
+          ...addrList(payload.headers?.["x-original-to"]),
+          ...addrList(payload.headers?.["x-forwarded-to"]),
+          ...addrList(payload.headers?.["envelope-to"]),
+        ];
+    const { data: res, error: resErr } = await supabase.rpc("maintenance_inbound_resolve", {
+      p_recipients: [...new Set(recipients)],
+      p_sender: (fromAddr || "").toLowerCase(),
+    });
+    if (resErr) {
+      console.error("inbound: falha ao resolver tenant", resErr.message);
+      return json(500, { error: "resolve_failed" });
+    }
+    const resolved = res as { ok: boolean; reason?: string; organization_id?: string };
+    if (!resolved?.ok || !resolved.organization_id) {
+      const reason = resolved?.reason || "rejected";
+      console.warn("inbound: rejeitado", reason);
+      const status = reason === "unknown_recipient" ? 404 : reason === "sender_not_allowed" ? 403 : 400;
+      return json(status, { error: reason });
+    }
+    const orgId = resolved.organization_id;
 
-
-    // Deduplicação por Message-Id (na tabela de thread)
+    // Deduplicação por Message-Id (na tabela de thread, dentro do tenant)
     if (messageId) {
       const { data: dup } = await supabase
         .from("maintenance_ticket_emails")
         .select("id, ticket_id")
+        .eq("organization_id", orgId)
         .eq("message_id", messageId)
+        .limit(1)
         .maybeSingle();
       if (dup) {
         console.log("inbound: mensagem duplicada", messageId);
