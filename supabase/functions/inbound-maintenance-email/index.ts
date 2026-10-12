@@ -476,6 +476,7 @@ serve(async (req) => {
     const { data: ticket, error: insErr } = await supabase
       .from("maintenance_tickets")
       .insert({
+        organization_id: orgId, // explícito: nunca depender de default/trigger
         title: subject,
         priority,
         type: "Corretiva",
@@ -512,6 +513,7 @@ serve(async (req) => {
     // Grava o primeiro e-mail na thread
     await supabase.from("maintenance_ticket_emails").insert({
       ticket_id: ticket.id,
+      organization_id: orgId,
       direction: "inbound",
       from_addr: fromAddr || null,
       to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
