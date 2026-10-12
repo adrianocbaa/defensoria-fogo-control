@@ -198,17 +198,38 @@ function base64ToBytes(b64: string): Uint8Array {
   return out;
 }
 
+function safeEqual(a: string, b: string): boolean {
+  if (!a || !b || a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
+function addrList(v: unknown): string[] {
+  if (!v) return [];
+  const arr = Array.isArray(v) ? v : [v];
+  const out: string[] = [];
+  for (const it of arr) {
+    const s = typeof it === "string" ? it : (it as any)?.address || (it as any)?.email || "";
+    for (const m of String(s).match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g) || []) out.push(m.toLowerCase());
+  }
+  return out;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
-  // Verificação de token compartilhado (via querystring)
+  // Segredo compartilhado: preferencialmente no header X-SIDIF-INBOUND-SECRET.
+  // DEPRECATED: ?token= na querystring é aceito apenas por compatibilidade com o forwarder atual.
   const url = new URL(req.url);
-  const token = url.searchParams.get("token");
-  if (!INBOUND_TOKEN || token !== INBOUND_TOKEN) {
-    console.warn("inbound: token inválido");
+  const provided = req.headers.get("x-sidif-inbound-secret") || url.searchParams.get("token") || "";
+  if (!INBOUND_TOKEN || !safeEqual(provided, INBOUND_TOKEN)) {
+    console.warn("inbound: segredo ausente/inválido");
     return json(401, { error: "unauthorized" });
   }
+  // Destinatário de envelope informado pelo forwarder autenticado (prioritário).
+  const envelopeTo = addrList(req.headers.get("x-sidif-envelope-to") || url.searchParams.get("rcpt") || "");
 
   let payload: any;
   const contentType = req.headers.get("content-type") || "";
