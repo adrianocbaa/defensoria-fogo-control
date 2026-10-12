@@ -380,36 +380,43 @@ serve(async (req) => {
     const threadMatch = subject.match(/\[SiDIF\s*#\s*(\d+)\]/i);
     if (threadMatch) {
       const ticketNumber = parseInt(threadMatch[1], 10);
+      // Busca SOMENTE no tenant resolvido; nunca global.
       const { data: existing } = await supabase
         .from("maintenance_tickets")
         .select("id, ticket_number, status, confirmed_at")
+        .eq("organization_id", orgId)
         .eq("ticket_number", ticketNumber)
         .maybeSingle();
 
-      if (existing) {
-        await supabase.from("maintenance_ticket_emails").insert({
-          ticket_id: existing.id,
-          direction: "inbound",
-          from_addr: fromAddr || null,
-          to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
-          subject,
-          body_text: textBody.slice(0, 20000),
-          body_html: htmlBody,
-          message_id: messageId ?? null,
-          in_reply_to: inReplyTo ?? null,
-        });
-
-        // reabre se estava concluído e ainda não foi confirmado
-        if (existing.status === "Concluído" && !existing.confirmed_at) {
-          await supabase
-            .from("maintenance_tickets")
-            .update({ status: "Em andamento" })
-            .eq("id", existing.id);
-        }
-
-        console.log(`inbound: resposta anexada ao chamado #${existing.ticket_number}`);
-        return json(200, { ok: true, threaded: true, ticket_id: existing.id });
+      if (!existing) {
+        console.warn("inbound: resposta para chamado inexistente neste tenant; ignorada");
+        return json(404, { error: "ticket_not_found" });
       }
+
+      await supabase.from("maintenance_ticket_emails").insert({
+        ticket_id: existing.id,
+        organization_id: orgId,
+        direction: "inbound",
+        from_addr: fromAddr || null,
+        to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
+        subject,
+        body_text: textBody.slice(0, 20000),
+        body_html: htmlBody,
+        message_id: messageId ?? null,
+        in_reply_to: inReplyTo ?? null,
+      });
+
+      // reabre se estava concluído e ainda não foi confirmado
+      if (existing.status === "Concluído" && !existing.confirmed_at) {
+        await supabase
+          .from("maintenance_tickets")
+          .update({ status: "Em andamento" })
+          .eq("id", existing.id)
+          .eq("organization_id", orgId);
+      }
+
+      console.log(`inbound: resposta anexada ao chamado #${existing.ticket_number}`);
+      return json(200, { ok: true, threaded: true, ticket_id: existing.id });
     }
 
     // Solicitante e localização (extraídos do corpo)
@@ -417,13 +424,15 @@ serve(async (req) => {
     const local = extractField(textBody, "Local") || extractField(textBody, "Localização") || "A definir";
     const nucleoNome = extractField(textBody, "Núcleo") || extractField(textBody, "Nucleo");
 
-    // Tentar vincular núcleo por nome mencionado no corpo
+    // Tentar vincular núcleo por nome mencionado no corpo (somente no tenant)
     let nucleo_id: string | null = null;
     if (nucleoNome) {
+      const safeName = nucleoNome.replace(/[%_\\]/g, (c) => `\\${c}`);
       const { data: n } = await supabase
         .from("nuclei")
         .select("id")
-        .ilike("name", `%${nucleoNome}%`)
+        .eq("organization_id", orgId)
+        .ilike("name", `%${safeName}%`)
         .limit(1)
         .maybeSingle();
       nucleo_id = n?.id ?? null;
@@ -437,6 +446,7 @@ serve(async (req) => {
       const { data: nuclei } = await supabase
         .from("nuclei")
         .select("id, email, contact_email")
+        .eq("organization_id", orgId)
         .limit(10000);
       if (nuclei && nuclei.length) {
         // 1) match exato pelo e-mail
