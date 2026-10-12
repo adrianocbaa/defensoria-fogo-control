@@ -2693,6 +2693,38 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_inbound_addresses: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          note: string | null
+          organization_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          organization_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_inbound_addresses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_managers: {
         Row: {
           ativo: boolean
@@ -4797,6 +4829,10 @@ export type Database = {
           cnpj: string | null
           created_at: string
           id: string
+          maintenance_allowed_domains: string[]
+          maintenance_inbound_alias: string | null
+          maintenance_inbound_enabled: boolean
+          maintenance_sender_policy: string
           nome: string
           slug: string
           status: string
@@ -4806,6 +4842,10 @@ export type Database = {
           cnpj?: string | null
           created_at?: string
           id?: string
+          maintenance_allowed_domains?: string[]
+          maintenance_inbound_alias?: string | null
+          maintenance_inbound_enabled?: boolean
+          maintenance_sender_policy?: string
           nome: string
           slug: string
           status?: string
@@ -4815,6 +4855,10 @@ export type Database = {
           cnpj?: string | null
           created_at?: string
           id?: string
+          maintenance_allowed_domains?: string[]
+          maintenance_inbound_alias?: string | null
+          maintenance_inbound_enabled?: boolean
+          maintenance_sender_policy?: string
           nome?: string
           slug?: string
           status?: string
@@ -7788,6 +7832,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      maintenance_inbound_resolve: {
+        Args: { p_recipients: string[]; p_sender: string }
+        Returns: Json
+      }
       my_org_can: { Args: { _feature: string }; Returns: boolean }
       my_org_storage_ok: { Args: never; Returns: boolean }
       obra_in_user_org: { Args: { _obra_id: string }; Returns: boolean }
@@ -7884,6 +7932,16 @@ export type Database = {
       }
       super_admin_remove_override: {
         Args: { p_override_id: string; p_reason: string }
+        Returns: undefined
+      }
+      super_admin_set_maintenance_inbound: {
+        Args: {
+          p_alias: string
+          p_allowed_domains: string[]
+          p_enabled: boolean
+          p_organization_id: string
+          p_sender_policy: string
+        }
         Returns: undefined
       }
       super_admin_set_subscription_status: {

@@ -1,3 +1,8 @@
+// H3 (multi-tenant): o órgão é resolvido SOMENTE pelo destinatário via RPC
+// maintenance_inbound_resolve (alias <alias>@manutencao.sidif.com.br,
+// chamados+<alias>@sidif.com.br ou endereço legado mapeado). Sem fallback.
+// Segredo: header X-SIDIF-INBOUND-SECRET (querystring ?token= DEPRECATED).
+// Destinatário de envelope opcional: header X-SIDIF-Envelope-To.
 // Recebe e-mails encaminhados para chamados@sidif.com.br via Resend Inbound
 // e cria automaticamente uma tarefa em maintenance_tickets.
 //
@@ -198,17 +203,38 @@ function base64ToBytes(b64: string): Uint8Array {
   return out;
 }
 
+function safeEqual(a: string, b: string): boolean {
+  if (!a || !b || a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
+function addrList(v: unknown): string[] {
+  if (!v) return [];
+  const arr = Array.isArray(v) ? v : [v];
+  const out: string[] = [];
+  for (const it of arr) {
+    const s = typeof it === "string" ? it : (it as any)?.address || (it as any)?.email || "";
+    for (const m of String(s).match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g) || []) out.push(m.toLowerCase());
+  }
+  return out;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
-  // Verificação de token compartilhado (via querystring)
+  // Segredo compartilhado: preferencialmente no header X-SIDIF-INBOUND-SECRET.
+  // DEPRECATED: ?token= na querystring é aceito apenas por compatibilidade com o forwarder atual.
   const url = new URL(req.url);
-  const token = url.searchParams.get("token");
-  if (!INBOUND_TOKEN || token !== INBOUND_TOKEN) {
-    console.warn("inbound: token inválido");
+  const provided = req.headers.get("x-sidif-inbound-secret") || url.searchParams.get("token") || "";
+  if (!INBOUND_TOKEN || !safeEqual(provided, INBOUND_TOKEN)) {
+    console.warn("inbound: segredo ausente/inválido");
     return json(401, { error: "unauthorized" });
   }
+  // Destinatário de envelope informado pelo forwarder autenticado (prioritário).
+  const envelopeTo = addrList(req.headers.get("x-sidif-envelope-to") || url.searchParams.get("rcpt") || "");
 
   let payload: any;
   const contentType = req.headers.get("content-type") || "";
@@ -220,10 +246,20 @@ serve(async (req) => {
       payload = {
         from: parsed.from ? { address: parsed.from.address, name: parsed.from.name } : null,
         to: (parsed.to || []).map((t: any) => ({ address: t.address })),
+        cc: (parsed.cc || []).map((t: any) => ({ address: t.address })),
         subject: parsed.subject || "",
         text: parsed.text || "",
         html: parsed.html || "",
-        headers: { "message-id": parsed.messageId || "" },
+        headers: (() => {
+          const h: Record<string, string> = { "message-id": parsed.messageId || "" };
+          for (const it of parsed.headers || []) {
+            const k = String(it.key || "").toLowerCase();
+            if (["in-reply-to", "delivered-to", "x-original-to", "x-forwarded-to", "envelope-to"].includes(k)) {
+              h[k] = h[k] ? `${h[k]}, ${it.value}` : String(it.value || "");
+            }
+          }
+          return h;
+        })(),
         attachments: (() => {
           let used = 0;
           return (parsed.attachments || [])
@@ -299,14 +335,43 @@ serve(async (req) => {
       if (anyExternal) requesterEmail = anyExternal;
     }
 
+    // ===== Resolução do tenant (H3) =====
+    // Somente pelo destinatário; organization_id do payload é ignorado; sem fallback para DPE.
+    const recipients = envelopeTo.length
+      ? envelopeTo
+      : [
+          ...addrList(payload.to),
+          ...addrList(payload.cc),
+          ...addrList(payload.headers?.["delivered-to"]),
+          ...addrList(payload.headers?.["x-original-to"]),
+          ...addrList(payload.headers?.["x-forwarded-to"]),
+          ...addrList(payload.headers?.["envelope-to"]),
+        ];
+    const { data: res, error: resErr } = await supabase.rpc("maintenance_inbound_resolve", {
+      p_recipients: [...new Set(recipients)],
+      p_sender: (fromAddr || "").toLowerCase(),
+    });
+    if (resErr) {
+      console.error("inbound: falha ao resolver tenant", resErr.message);
+      return json(500, { error: "resolve_failed" });
+    }
+    const resolved = res as { ok: boolean; reason?: string; organization_id?: string };
+    if (!resolved?.ok || !resolved.organization_id) {
+      const reason = resolved?.reason || "rejected";
+      console.warn("inbound: rejeitado", reason);
+      const status = reason === "unknown_recipient" ? 404 : reason === "sender_not_allowed" ? 403 : 400;
+      return json(status, { error: reason });
+    }
+    const orgId = resolved.organization_id;
 
-
-    // Deduplicação por Message-Id (na tabela de thread)
+    // Deduplicação por Message-Id (na tabela de thread, dentro do tenant)
     if (messageId) {
       const { data: dup } = await supabase
         .from("maintenance_ticket_emails")
         .select("id, ticket_id")
+        .eq("organization_id", orgId)
         .eq("message_id", messageId)
+        .limit(1)
         .maybeSingle();
       if (dup) {
         console.log("inbound: mensagem duplicada", messageId);
@@ -320,36 +385,43 @@ serve(async (req) => {
     const threadMatch = subject.match(/\[SiDIF\s*#\s*(\d+)\]/i);
     if (threadMatch) {
       const ticketNumber = parseInt(threadMatch[1], 10);
+      // Busca SOMENTE no tenant resolvido; nunca global.
       const { data: existing } = await supabase
         .from("maintenance_tickets")
         .select("id, ticket_number, status, confirmed_at")
+        .eq("organization_id", orgId)
         .eq("ticket_number", ticketNumber)
         .maybeSingle();
 
-      if (existing) {
-        await supabase.from("maintenance_ticket_emails").insert({
-          ticket_id: existing.id,
-          direction: "inbound",
-          from_addr: fromAddr || null,
-          to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
-          subject,
-          body_text: textBody.slice(0, 20000),
-          body_html: htmlBody,
-          message_id: messageId ?? null,
-          in_reply_to: inReplyTo ?? null,
-        });
-
-        // reabre se estava concluído e ainda não foi confirmado
-        if (existing.status === "Concluído" && !existing.confirmed_at) {
-          await supabase
-            .from("maintenance_tickets")
-            .update({ status: "Em andamento" })
-            .eq("id", existing.id);
-        }
-
-        console.log(`inbound: resposta anexada ao chamado #${existing.ticket_number}`);
-        return json(200, { ok: true, threaded: true, ticket_id: existing.id });
+      if (!existing) {
+        console.warn("inbound: resposta para chamado inexistente neste tenant; ignorada");
+        return json(404, { error: "ticket_not_found" });
       }
+
+      await supabase.from("maintenance_ticket_emails").insert({
+        ticket_id: existing.id,
+        organization_id: orgId,
+        direction: "inbound",
+        from_addr: fromAddr || null,
+        to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
+        subject,
+        body_text: textBody.slice(0, 20000),
+        body_html: htmlBody,
+        message_id: messageId ?? null,
+        in_reply_to: inReplyTo ?? null,
+      });
+
+      // reabre se estava concluído e ainda não foi confirmado
+      if (existing.status === "Concluído" && !existing.confirmed_at) {
+        await supabase
+          .from("maintenance_tickets")
+          .update({ status: "Em andamento" })
+          .eq("id", existing.id)
+          .eq("organization_id", orgId);
+      }
+
+      console.log(`inbound: resposta anexada ao chamado #${existing.ticket_number}`);
+      return json(200, { ok: true, threaded: true, ticket_id: existing.id });
     }
 
     // Solicitante e localização (extraídos do corpo)
@@ -357,13 +429,15 @@ serve(async (req) => {
     const local = extractField(textBody, "Local") || extractField(textBody, "Localização") || "A definir";
     const nucleoNome = extractField(textBody, "Núcleo") || extractField(textBody, "Nucleo");
 
-    // Tentar vincular núcleo por nome mencionado no corpo
+    // Tentar vincular núcleo por nome mencionado no corpo (somente no tenant)
     let nucleo_id: string | null = null;
     if (nucleoNome) {
+      const safeName = nucleoNome.replace(/[%_\\]/g, (c) => `\\${c}`);
       const { data: n } = await supabase
         .from("nuclei")
         .select("id")
-        .ilike("name", `%${nucleoNome}%`)
+        .eq("organization_id", orgId)
+        .ilike("name", `%${safeName}%`)
         .limit(1)
         .maybeSingle();
       nucleo_id = n?.id ?? null;
@@ -377,6 +451,7 @@ serve(async (req) => {
       const { data: nuclei } = await supabase
         .from("nuclei")
         .select("id, email, contact_email")
+        .eq("organization_id", orgId)
         .limit(10000);
       if (nuclei && nuclei.length) {
         // 1) match exato pelo e-mail
@@ -406,6 +481,7 @@ serve(async (req) => {
     const { data: ticket, error: insErr } = await supabase
       .from("maintenance_tickets")
       .insert({
+        organization_id: orgId, // explícito: nunca depender de default/trigger
         title: subject,
         priority,
         type: "Corretiva",
@@ -442,6 +518,7 @@ serve(async (req) => {
     // Grava o primeiro e-mail na thread
     await supabase.from("maintenance_ticket_emails").insert({
       ticket_id: ticket.id,
+      organization_id: orgId,
       direction: "inbound",
       from_addr: fromAddr || null,
       to_addrs: (payload.to || []).map((t: any) => t.address).filter(Boolean),
@@ -500,7 +577,8 @@ serve(async (req) => {
         usedBytes += bytes.length;
 
         const uploadType = contentType.startsWith("image/") ? contentType : "image/jpeg";
-        const path = `maintenance-inbound/${ticket.id}/${Date.now()}-${filename}`;
+        // Path tenant-aware (S1): <org>/maintenance-inbound/<ticket>/<arquivo>
+        const path = `${orgId}/maintenance-inbound/${ticket.id}/${Date.now()}-${filename}`;
         const { error: upErr } = await supabase.storage
           .from(PHOTO_BUCKET)
           .upload(path, bytes, { contentType: uploadType, upsert: false });
@@ -510,12 +588,13 @@ serve(async (req) => {
           continue;
         }
 
-        const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
-        const publicUrl = pub?.publicUrl || path;
+        // Referência privada (formato storageRef do S1): bucket privado, exibida só via signed URL.
+        const ref = `${SUPABASE_URL}/storage/v1/object/public/${PHOTO_BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`;
 
         photos.push({
           id: crypto.randomUUID(),
-          url: publicUrl,
+          url: ref,
+          bucket: PHOTO_BUCKET,
           path,
           description: filename,
           uploaded_at: nowIso,
