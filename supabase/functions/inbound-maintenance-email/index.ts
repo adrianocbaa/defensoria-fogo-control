@@ -1,3 +1,8 @@
+// H3 (multi-tenant): o órgão é resolvido SOMENTE pelo destinatário via RPC
+// maintenance_inbound_resolve (alias <alias>@manutencao.sidif.com.br,
+// chamados+<alias>@sidif.com.br ou endereço legado mapeado). Sem fallback.
+// Segredo: header X-SIDIF-INBOUND-SECRET (querystring ?token= DEPRECATED).
+// Destinatário de envelope opcional: header X-SIDIF-Envelope-To.
 // Recebe e-mails encaminhados para chamados@sidif.com.br via Resend Inbound
 // e cria automaticamente uma tarefa em maintenance_tickets.
 //
@@ -572,7 +577,8 @@ serve(async (req) => {
         usedBytes += bytes.length;
 
         const uploadType = contentType.startsWith("image/") ? contentType : "image/jpeg";
-        const path = `maintenance-inbound/${ticket.id}/${Date.now()}-${filename}`;
+        // Path tenant-aware (S1): <org>/maintenance-inbound/<ticket>/<arquivo>
+        const path = `${orgId}/maintenance-inbound/${ticket.id}/${Date.now()}-${filename}`;
         const { error: upErr } = await supabase.storage
           .from(PHOTO_BUCKET)
           .upload(path, bytes, { contentType: uploadType, upsert: false });
@@ -582,12 +588,13 @@ serve(async (req) => {
           continue;
         }
 
-        const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
-        const publicUrl = pub?.publicUrl || path;
+        // Referência privada (formato storageRef do S1): bucket privado, exibida só via signed URL.
+        const ref = `${SUPABASE_URL}/storage/v1/object/public/${PHOTO_BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`;
 
         photos.push({
           id: crypto.randomUUID(),
-          url: publicUrl,
+          url: ref,
+          bucket: PHOTO_BUCKET,
           path,
           description: filename,
           uploaded_at: nowIso,
