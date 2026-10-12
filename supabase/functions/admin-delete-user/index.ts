@@ -90,6 +90,9 @@ serve(async (req) => {
         const { data: a } = await supabaseAdmin.rpc('user_organization_id', { _user_id: user.id });
         const { data: b } = await supabaseAdmin.rpc('user_organization_id', { _user_id: targetUserId });
         if (b && a !== b) throw new Error('Usuário pertence a outra instituição');
+        // H1: somente Super Admin remove um Super Admin
+        const { data: targetSuper } = await supabaseAdmin.rpc('is_super_admin', { _user_id: targetUserId });
+        if (targetSuper) throw new Error('Sem permissão para excluir este usuário');
       }
     }
 

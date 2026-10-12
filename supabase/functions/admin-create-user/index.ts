@@ -50,6 +50,12 @@ serve(async (req) => {
 
     const { email, displayName, role = 'viewer', empresaId, setoresAtuantes = [], organizationId } = await req.json();
 
+    // H1: papéis permitidos; super_admin nunca é concedido por esta função
+    const ALLOWED_ROLES = ['admin', 'editor', 'viewer', 'gm', 'manutencao', 'contratada', 'prestadora', 'demo'];
+    if (!ALLOWED_ROLES.includes(role)) {
+      throw new Error('Papel não permitido');
+    }
+
     // Instituição do novo usuário: Super Admin pode escolher; demais herdam a de quem cria
     const { data: creatorOrg } = await supabaseAdmin.rpc('user_organization_id', { _user_id: user.id });
     let targetOrgId: string | null = creatorOrg ?? null;
