@@ -164,6 +164,7 @@ serve(async (req) => {
     // Perfil: troca de senha obrigatória, empresa, setores e módulo-base (sem Teletrabalho)
     const profileUpdate: Record<string, any> = {
       force_password_change: true,
+      role, // H2.1: espelha user_roles para exibição no painel
       sectors: role === 'contratada' ? [] : ['nucleos_central'],
     };
     if (role === 'contratada' && empresaId) {
