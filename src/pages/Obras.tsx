@@ -26,6 +26,30 @@ export default function Obras() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [filters, setFilters] = useState<FiltersData>({ status: [], tipos: [], municipio: '' });
+  // Validação explícita do :obraId da rota: RLS filtra; UUID inexistente ou de
+  // outro órgão recebem a mesma resposta genérica, sem revelar existência.
+  const [obraAccess, setObraAccess] = useState<'idle' | 'checking' | 'ok' | 'notfound'>('idle');
+
+  useEffect(() => {
+    if (!obraId) {
+      setObraAccess('idle');
+      return;
+    }
+    let cancelled = false;
+    setObraAccess('checking');
+    supabase
+      .from('obras')
+      .select('id')
+      .eq('id', obraId)
+      .maybeSingle()
+      .then(({ data, error: qError }) => {
+        if (cancelled) return;
+        setObraAccess(data && !qError ? 'ok' : 'notfound');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [obraId]);
 
   // Abre o resumo da obra quando a URL for /obras/:obraId (deep link / botão voltar)
   useEffect(() => {
