@@ -124,6 +124,40 @@ export default function Obras() {
     );
   }
 
+  if (obraAccess === 'checking') {
+    return (
+      <ObrasLayout header={renderHeader}>
+        <div className="flex h-[calc(100vh-200px)] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      </ObrasLayout>
+    );
+  }
+
+  if (obraAccess === 'notfound') {
+    return (
+      <ObrasLayout header={renderHeader}>
+        <Card className="mx-auto w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Obra não encontrada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-muted-foreground">
+              A obra solicitada não foi encontrada ou você não tem permissão para acessá-la.
+            </p>
+            <Button onClick={() => navigate('/obras')} className="w-full">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar para Obras
+            </Button>
+          </CardContent>
+        </Card>
+      </ObrasLayout>
+    );
+  }
+
   return (
     <ObrasLayout header={renderHeader}>
       <div className="space-y-5">
