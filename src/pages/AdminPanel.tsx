@@ -190,14 +190,18 @@ export default function AdminPanel() {
     { id: 'contratada', label: 'Contratada' },
   ];
 
+  // Classificação visual por setor (Contratada também por papel)
+  const matchesSetor = (p: { role?: string; setores_atuantes?: string[] }, setorId: string) =>
+    setorId === 'contratada'
+      ? p.role === 'contratada' || (p.setores_atuantes || []).includes('contratada')
+      : (p.setores_atuantes || []).includes(setorId);
+
   // Contagem de usuários por setor
-  const getSetorCount = (setorId: string) => {
-    return profiles.filter(p => (p.setores_atuantes || []).includes(setorId)).length;
-  };
+  const getSetorCount = (setorId: string) => profiles.filter(p => matchesSetor(p, setorId)).length;
 
   // Filtrar usuários pelo setor selecionado
-  const filteredProfiles = selectedSetorFilter 
-    ? profiles.filter(p => (p.setores_atuantes || []).includes(selectedSetorFilter))
+  const filteredProfiles = selectedSetorFilter
+    ? profiles.filter(p => matchesSetor(p, selectedSetorFilter))
     : profiles;
   
   const updateUserRole = (userId: string, newRole: UserRole) => {

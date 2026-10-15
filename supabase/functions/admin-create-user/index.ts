@@ -133,9 +133,39 @@ serve(async (req) => {
     }
 
     console.log('User created successfully:', newUser.user.id);
+    const newUserId = newUser.user.id;
 
-    // Set force_password_change flag, empresa_id for contratada, and setores_atuantes
-    const profileUpdate: Record<string, any> = { force_password_change: true };
+    // H2.1: rollback completo se qualquer passo de vínculo organizacional falhar
+    const rollback = async (reason: string) => {
+      console.error('admin-create-user rollback:', reason);
+      await supabaseAdmin.from('user_roles').delete().eq('user_id', newUserId);
+      await supabaseAdmin.from('organization_members').delete().eq('user_id', newUserId);
+      await supabaseAdmin.from('profiles').delete().eq('user_id', newUserId);
+      await supabaseAdmin.auth.admin.deleteUser(newUserId);
+    };
+
+    // H2.1: vínculo explícito ao órgão do criador (remove qualquer vínculo automático divergente)
+    {
+      const { error: delErr } = await supabaseAdmin.from('organization_members')
+        .delete().eq('user_id', newUserId).neq('organization_id', targetOrgId);
+      if (delErr) { await rollback('membership cleanup'); throw new Error('Falha ao vincular usuário à instituição'); }
+      const { error: upErr } = await supabaseAdmin.from('organization_members').upsert({
+        organization_id: targetOrgId, user_id: newUserId, member_type: memberType,
+        status: 'active', activated_at: new Date().toISOString(),
+      }, { onConflict: 'organization_id,user_id' });
+      if (upErr) { await rollback('membership upsert'); throw new Error('Falha ao vincular usuário à instituição'); }
+      const { data: mems, error: readErr } = await supabaseAdmin.from('organization_members')
+        .select('organization_id, member_type, status').eq('user_id', newUserId);
+      const ok = !readErr && mems && mems.length === 1 && mems[0].organization_id === targetOrgId
+        && mems[0].member_type === memberType && mems[0].status === 'active';
+      if (!ok) { await rollback('membership verify'); throw new Error('Falha ao vincular usuário à instituição'); }
+    }
+
+    // Perfil: troca de senha obrigatória, empresa, setores e módulo-base (sem Teletrabalho)
+    const profileUpdate: Record<string, any> = {
+      force_password_change: true,
+      sectors: role === 'contratada' ? [] : ['nucleos_central'],
+    };
     if (role === 'contratada' && empresaId) {
       profileUpdate.empresa_id = empresaId;
     }
@@ -145,10 +175,11 @@ serve(async (req) => {
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update(profileUpdate)
-      .eq('user_id', newUser.user.id);
+      .eq('user_id', newUserId);
 
     if (profileError) {
-      console.error('Error setting profile data:', profileError);
+      await rollback('profile update');
+      throw new Error('Falha ao configurar perfil do usuário');
     }
 
     // Insert user role if not viewer
@@ -156,12 +187,13 @@ serve(async (req) => {
       const { error: roleError } = await supabaseAdmin
         .from('user_roles')
         .insert({
-          user_id: newUser.user.id,
+          user_id: newUserId,
           role: role
         });
 
       if (roleError) {
-        console.error('Error assigning role:', roleError);
+        await rollback('role insert');
+        throw new Error('Falha ao atribuir papel ao usuário');
       }
     }
 
