@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { BarChart3, List, Settings } from 'lucide-react';
+import { ArrowLeft, BarChart3, List, Lock, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import { ObrasLayout } from '@/components/obras/ObrasLayout';
 import { WorksPageHeader } from '@/components/obras/WorksPageHeader';
 import { WorksStats } from '@/components/obras/WorksStats';
