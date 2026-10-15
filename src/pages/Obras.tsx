@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { BarChart3, List, Settings } from 'lucide-react';
+import { ArrowLeft, BarChart3, List, Lock, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import { ObrasLayout } from '@/components/obras/ObrasLayout';
 import { WorksPageHeader } from '@/components/obras/WorksPageHeader';
 import { WorksStats } from '@/components/obras/WorksStats';
@@ -24,6 +26,30 @@ export default function Obras() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [filters, setFilters] = useState<FiltersData>({ status: [], tipos: [], municipio: '' });
+  // Validação explícita do :obraId da rota: RLS filtra; UUID inexistente ou de
+  // outro órgão recebem a mesma resposta genérica, sem revelar existência.
+  const [obraAccess, setObraAccess] = useState<'idle' | 'checking' | 'ok' | 'notfound'>('idle');
+
+  useEffect(() => {
+    if (!obraId) {
+      setObraAccess('idle');
+      return;
+    }
+    let cancelled = false;
+    setObraAccess('checking');
+    supabase
+      .from('obras')
+      .select('id')
+      .eq('id', obraId)
+      .maybeSingle()
+      .then(({ data, error: qError }) => {
+        if (cancelled) return;
+        setObraAccess(data && !qError ? 'ok' : 'notfound');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [obraId]);
 
   // Abre o resumo da obra quando a URL for /obras/:obraId (deep link / botão voltar)
   useEffect(() => {
@@ -94,6 +120,40 @@ export default function Obras() {
     return (
       <ObrasLayout header={renderHeader}>
         <ErrorState message={error} onRetry={refetch} />
+      </ObrasLayout>
+    );
+  }
+
+  if (obraAccess === 'checking') {
+    return (
+      <ObrasLayout header={renderHeader}>
+        <div className="flex h-[calc(100vh-200px)] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      </ObrasLayout>
+    );
+  }
+
+  if (obraAccess === 'notfound') {
+    return (
+      <ObrasLayout header={renderHeader}>
+        <Card className="mx-auto w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Obra não encontrada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-muted-foreground">
+              A obra solicitada não foi encontrada ou você não tem permissão para acessá-la.
+            </p>
+            <Button onClick={() => navigate('/obras')} className="w-full">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar para Obras
+            </Button>
+          </CardContent>
+        </Card>
       </ObrasLayout>
     );
   }
