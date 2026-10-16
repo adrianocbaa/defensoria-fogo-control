@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polygon, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polygon, Polyline, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -8,6 +8,81 @@ import { MapLoadingSkeleton } from '@/components/LoadingStates';
 import { createCustomIcon } from '@/components/MapPinOptions';
 import { useObrasValorPagoMap } from '@/hooks/useObrasValorPagoMap';
 import { mtBoundary } from '@/data/mtBoundary';
+import { useOrganizationScope, type OrganizationScope } from '@/hooks/useOrganizationScope';
+import { BRASIL_GEO, ufGeo, type LatLngBounds } from '@/lib/geoScope';
+
+// Fallback legado: Mato Grosso (organizações sem escopo configurado)
+const MT_CENTER: [number, number] = [-12.64, -55.42];
+const MT_BOUNDS: LatLngBounds = [
+  [-18.4, -62.2],
+  [-6.8, -49.6],
+];
+
+interface MapView {
+  bounds: LatLngBounds | null;
+  center: [number, number];
+  zoom: number;
+  minZoom: number;
+  showMtMask: boolean;
+}
+
+// Define o enquadramento inicial do mapa conforme o escopo territorial da organização.
+// Municipal sem obras com coordenadas: usa o centro da UF com zoom mais próximo
+// (não há dataset de coordenadas municipais no projeto).
+function resolveMapView(scope: OrganizationScope | null, obras: Obra[]): MapView {
+  const obrasComCoord = obras.filter(
+    (o) =>
+      Array.isArray(o.coordenadas) &&
+      Number.isFinite(Number(o.coordenadas[0])) &&
+      Number.isFinite(Number(o.coordenadas[1]))
+  );
+
+  if (scope?.abrangencia_geografica === 'nacional') {
+    return { bounds: BRASIL_GEO.bounds, center: BRASIL_GEO.center, zoom: 4, minZoom: 4, showMtMask: false };
+  }
+
+  if (scope?.abrangencia_geografica === 'estadual') {
+    const geo = ufGeo(scope.uf);
+    if (geo) {
+      const isMT = scope.uf?.toUpperCase() === 'MT';
+      return { bounds: geo.bounds, center: geo.center, zoom: 6, minZoom: 5, showMtMask: isMT };
+    }
+  }
+
+  if (scope?.abrangencia_geografica === 'municipal') {
+    if (obrasComCoord.length > 0) {
+      const lats = obrasComCoord.map((o) => Number(o.coordenadas[0]));
+      const lngs = obrasComCoord.map((o) => Number(o.coordenadas[1]));
+      const pad = 0.05;
+      const bounds: LatLngBounds = [
+        [Math.min(...lats) - pad, Math.min(...lngs) - pad],
+        [Math.max(...lats) + pad, Math.max(...lngs) + pad],
+      ];
+      return { bounds, center: MT_CENTER, zoom: 11, minZoom: 4, showMtMask: false };
+    }
+    // Sem obras com coordenadas: centro da UF com zoom municipal aproximado
+    const geo = ufGeo(scope.uf);
+    if (geo) {
+      return { bounds: null, center: geo.center, zoom: 10, minZoom: 4, showMtMask: false };
+    }
+  }
+
+  // Legado / sem escopo: Mato Grosso com máscara
+  return { bounds: MT_BOUNDS, center: MT_CENTER, zoom: 6, minZoom: 6, showMtMask: true };
+}
+
+// Aplica o enquadramento assim que o mapa e o escopo estiverem prontos
+function ScopeController({ view }: { view: MapView }) {
+  const map = useMap();
+  useEffect(() => {
+    if (view.bounds) {
+      map.fitBounds(view.bounds, { padding: [20, 20] });
+    } else {
+      map.setView(view.center, view.zoom);
+    }
+  }, [map, view]);
+  return null;
+}
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -87,14 +162,10 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
   const obraIds = obras.map(o => o.id);
   const { data: valorPagoMap } = useObrasValorPagoMap(obraIds);
 
-  // Coordenadas do centro de Mato Grosso
-  const matogrossoCenter: [number, number] = [-12.64, -55.42];
-  const initialZoom = 6;
-  // Limites aproximados do estado de Mato Grosso (com pequena folga)
-  const matogrossoBounds: [[number, number], [number, number]] = [
-    [-18.4, -62.2],
-    [-6.8, -49.6],
-  ];
+  // Escopo territorial da organização logada (fallback: Mato Grosso)
+  const { scope } = useOrganizationScope();
+  const view = resolveMapView(scope, obras);
+
 
 
   useEffect(() => {
@@ -127,11 +198,11 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
   return (
     <div className={`h-full w-full ${className}`}>
       <MapContainer
-        center={matogrossoCenter}
-        zoom={initialZoom}
-        minZoom={6}
-        maxBounds={matogrossoBounds}
-        maxBoundsViscosity={1}
+        center={view.center}
+        zoom={view.zoom}
+        minZoom={view.minZoom}
+        maxBounds={view.bounds ?? undefined}
+        maxBoundsViscosity={view.bounds ? 1 : 0}
         className="h-full w-full rounded-lg transition-all duration-300"
         ref={mapRef}
         zoomControl={false}
@@ -143,38 +214,43 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Máscara que oculta visualmente os estados vizinhos, deixando apenas Mato Grosso visível */}
-        <Polygon
-          positions={[
-            // Anel externo cobrindo o mundo inteiro para garantir a máscara em qualquer zoom
-            [
-              [-90, -180],
-              [-90, 180],
-              [90, 180],
-              [90, -180],
-            ],
-            // Buraco no formato de Mato Grosso
-            mtBoundary,
-          ]}
-          pathOptions={{
-            fillColor: '#0f172a',
-            fillOpacity: 0.85,
-            stroke: false,
-            fillRule: 'evenodd',
-            interactive: false,
-          }}
-        />
+        <ScopeController view={view} />
 
-        {/* Contorno discreto do estado de Mato Grosso */}
-        <Polyline
-          positions={mtBoundary}
-          pathOptions={{
-            color: '#3b82f6',
-            weight: 2,
-            opacity: 0.8,
-            interactive: false,
-          }}
-        />
+        {/* Máscara e contorno de Mato Grosso: apenas no fallback legado ou escopo estadual MT */}
+        {view.showMtMask && (
+          <>
+            <Polygon
+              positions={[
+                // Anel externo cobrindo o mundo inteiro para garantir a máscara em qualquer zoom
+                [
+                  [-90, -180],
+                  [-90, 180],
+                  [90, 180],
+                  [90, -180],
+                ],
+                // Buraco no formato de Mato Grosso
+                mtBoundary,
+              ]}
+              pathOptions={{
+                fillColor: '#0f172a',
+                fillOpacity: 0.85,
+                stroke: false,
+                fillRule: 'evenodd',
+                interactive: false,
+              }}
+            />
+            <Polyline
+              positions={mtBoundary}
+              pathOptions={{
+                color: '#3b82f6',
+                weight: 2,
+                opacity: 0.8,
+                interactive: false,
+              }}
+            />
+          </>
+        )}
+
         
         {/* Zoom Control positioned for better UX */}
         <div className="leaflet-top leaflet-right">
