@@ -301,10 +301,23 @@ export default function SuperAdmin() {
                     <InviteOrgAdminCard organizationId={sel.id} organizationName={sel.nome} />
                     <Card>
                       <CardHeader>
-                        <CardTitle>{sel.nome}</CardTitle>
-                        <CardDescription>{sel.cnpj ?? 'Sem CNPJ'} · {sel.slug}</CardDescription>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <CardTitle>{sel.nome}</CardTitle>
+                            <CardDescription>{sel.cnpj ?? 'Sem CNPJ'} · {sel.slug}</CardDescription>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={openScopeDialog}>Editar escopo</Button>
+                        </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Escopo territorial: </span>
+                          <span className="font-medium">
+                            {sel.abrangencia_geografica
+                              ? `${ABRANGENCIA_LABELS[sel.abrangencia_geografica]}${sel.uf ? ` · ${sel.uf}` : ''}${sel.municipio_nome ? ` · ${sel.municipio_nome} (IBGE ${sel.municipio_ibge})` : ''}`
+                              : 'Não definido'}
+                          </span>
+                        </div>
                         {selSub ? (
                           <>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -460,6 +473,30 @@ export default function SuperAdmin() {
                 <div><Label>Nome do órgão *</Label><Input value={newNome} onChange={e => setNewNome(e.target.value)} placeholder="Prefeitura Municipal de..." /></div>
                 <div><Label>CNPJ</Label><Input value={newCnpj} onChange={e => setNewCnpj(e.target.value)} placeholder="00.000.000/0001-00" /></div>
                 <div><Label>Sigla (slug) *</Label><Input value={newSlug} onChange={e => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} placeholder="prefeitura-x" /></div>
+                <div>
+                  <Label>Abrangência geográfica</Label>
+                  <Select value={newAbrangencia} onValueChange={v => { setNewAbrangencia(v as AbrangenciaGeografica); if (v === 'nacional') { setNewUf(''); setNewMunIbge(''); setNewMunNome(''); } if (v === 'estadual') { setNewMunIbge(''); setNewMunNome(''); } }}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(ABRANGENCIA_LABELS).map(([k, label]) => <SelectItem key={k} value={k}>{label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(newAbrangencia === 'municipal' || newAbrangencia === 'estadual') && (
+                  <div>
+                    <Label>UF *</Label>
+                    <Select value={newUf} onValueChange={setNewUf}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>{UFS.map(u => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla} — {u.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {newAbrangencia === 'municipal' && (
+                  <>
+                    <div><Label>Município *</Label><Input value={newMunNome} onChange={e => setNewMunNome(e.target.value)} placeholder="Cuiabá" /></div>
+                    <div><Label>Código IBGE do município *</Label><Input value={newMunIbge} onChange={e => setNewMunIbge(e.target.value.replace(/\D/g, '').slice(0, 7))} placeholder="5103403" /></div>
+                  </>
+                )}
                 <div>
                   <Label>Plano *</Label>
                   <Select value={newPlan} onValueChange={setNewPlan}>
