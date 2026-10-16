@@ -181,6 +181,7 @@ export default function SuperAdmin() {
       setCreateOpen(false);
       setNewNome(''); setNewCnpj(''); setNewSlug(''); setNewPlan(''); setNewTiers([]); setNewAddons([]);
       setNewReference(''); setNewNotes(''); setNewDiscount(''); setNewPeriodEnd('');
+      setNewAbrangencia(''); setNewUf(''); setNewMunIbge(''); setNewMunNome('');
       load();
     } catch (err) {
       toast({ title: 'Erro ao criar', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
@@ -206,6 +207,34 @@ export default function SuperAdmin() {
     } as never);
     if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Exceção concedida' }); setOverrideDialog(false); setOvKey(''); setOvValue(''); setOvMotivo(''); setOvValidTo(''); load(); }
+  };
+
+  const openScopeDialog = () => {
+    if (!sel) return;
+    setEditAbrangencia(sel.abrangencia_geografica ?? '');
+    setEditUf(sel.uf ?? '');
+    setEditMunIbge(sel.municipio_ibge ?? '');
+    setEditMunNome(sel.municipio_nome ?? '');
+    setScopeDialog(true);
+  };
+
+  const handleSaveScope = async () => {
+    if (!sel) return;
+    const escopoErro = validarEscopo(editAbrangencia, editUf, editMunIbge, editMunNome);
+    if (escopoErro) {
+      toast({ title: escopoErro, variant: 'destructive' });
+      return;
+    }
+    const escopo = normalizarEscopo(editAbrangencia, editUf, editMunIbge, editMunNome);
+    setSavingScope(true);
+    const { error } = await supabase.rpc('super_admin_update_organization_scope' as never, {
+      p_organization_id: sel.id,
+      p_abrangencia: escopo.abrangencia_geografica, p_uf: escopo.uf,
+      p_municipio_ibge: escopo.municipio_ibge, p_municipio_nome: escopo.municipio_nome,
+    } as never);
+    setSavingScope(false);
+    if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Escopo territorial atualizado' }); setScopeDialog(false); load(); }
   };
 
   const handleLeadStatus = async (id: string, status: string) => {
