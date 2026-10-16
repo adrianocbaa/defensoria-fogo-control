@@ -6942,6 +6942,7 @@ export type Database = {
           organization_id: string
           quantity: number
           type: Database["public"]["Enums"]["movement_type"]
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -6953,6 +6954,7 @@ export type Database = {
           organization_id?: string
           quantity: number
           type: Database["public"]["Enums"]["movement_type"]
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -6964,6 +6966,7 @@ export type Database = {
           organization_id?: string
           quantity?: number
           type?: Database["public"]["Enums"]["movement_type"]
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
