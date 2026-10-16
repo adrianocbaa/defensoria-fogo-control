@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ShieldCheck, Building2, Plus, History, Ban, PlayCircle, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { UFS, ABRANGENCIA_LABELS, normalizarEscopo, validarEscopo, type AbrangenciaGeografica } from '@/lib/ufs';
 
 const fmtBRL = (cents: number | null | undefined) =>
   ((cents ?? 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -28,7 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
   suspended: 'Suspensa', cancelled: 'Cancelada', expired: 'Expirada',
 };
 
-interface Organization { id: string; nome: string; cnpj: string | null; slug: string; status: string; }
+interface Organization { id: string; nome: string; cnpj: string | null; slug: string; status: string; abrangencia_geografica: AbrangenciaGeografica | null; uf: string | null; municipio_ibge: string | null; municipio_nome: string | null; }
 interface Subscription { id: string; organization_id: string; status: string; billing_cycle: string; started_at: string; current_period_end: string | null; origin: string; contracted_amount_cents: number | null; discount_cents: number | null; external_reference: string | null; notes: string | null; plan_versions?: { plans?: { nome: string } }; }
 interface SubItem { id: string; subscription_id: string; item_type: string; descricao: string | null; amount_cents: number; quantity: number; }
 interface Usage { organization_id: string; internal_users_count: number; external_users_count: number; storage_bytes_used: number; }
@@ -73,6 +74,20 @@ export default function SuperAdmin() {
   const [newNotes, setNewNotes] = useState('');
   const [newDiscount, setNewDiscount] = useState('');
   const [creating, setCreating] = useState(false);
+
+  // Escopo territorial (criação)
+  const [newAbrangencia, setNewAbrangencia] = useState<AbrangenciaGeografica | ''>('');
+  const [newUf, setNewUf] = useState('');
+  const [newMunIbge, setNewMunIbge] = useState('');
+  const [newMunNome, setNewMunNome] = useState('');
+
+  // Edição de escopo territorial (organização existente)
+  const [scopeDialog, setScopeDialog] = useState(false);
+  const [editAbrangencia, setEditAbrangencia] = useState<AbrangenciaGeografica | ''>('');
+  const [editUf, setEditUf] = useState('');
+  const [editMunIbge, setEditMunIbge] = useState('');
+  const [editMunNome, setEditMunNome] = useState('');
+  const [savingScope, setSavingScope] = useState(false);
 
   // Status / override
   const [statusDialog, setStatusDialog] = useState<{ open: boolean; status: string }>({ open: false, status: '' });
@@ -135,10 +150,18 @@ export default function SuperAdmin() {
       toast({ title: 'Preencha nome, sigla (slug) e plano', variant: 'destructive' });
       return;
     }
+    const escopoErro = validarEscopo(newAbrangencia, newUf, newMunIbge, newMunNome);
+    if (escopoErro) {
+      toast({ title: escopoErro, variant: 'destructive' });
+      return;
+    }
+    const escopo = normalizarEscopo(newAbrangencia, newUf, newMunIbge, newMunNome);
     setCreating(true);
     try {
       const { data: orgId, error: e1 } = await supabase.rpc('super_admin_create_organization' as never, {
         p_nome: newNome, p_cnpj: newCnpj || null, p_slug: newSlug,
+        p_abrangencia: escopo.abrangencia_geografica, p_uf: escopo.uf,
+        p_municipio_ibge: escopo.municipio_ibge, p_municipio_nome: escopo.municipio_nome,
       } as never);
       if (e1) throw e1;
       const { error: e2 } = await supabase.rpc('super_admin_create_subscription' as never, {
@@ -158,6 +181,7 @@ export default function SuperAdmin() {
       setCreateOpen(false);
       setNewNome(''); setNewCnpj(''); setNewSlug(''); setNewPlan(''); setNewTiers([]); setNewAddons([]);
       setNewReference(''); setNewNotes(''); setNewDiscount(''); setNewPeriodEnd('');
+      setNewAbrangencia(''); setNewUf(''); setNewMunIbge(''); setNewMunNome('');
       load();
     } catch (err) {
       toast({ title: 'Erro ao criar', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
@@ -183,6 +207,34 @@ export default function SuperAdmin() {
     } as never);
     if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Exceção concedida' }); setOverrideDialog(false); setOvKey(''); setOvValue(''); setOvMotivo(''); setOvValidTo(''); load(); }
+  };
+
+  const openScopeDialog = () => {
+    if (!sel) return;
+    setEditAbrangencia(sel.abrangencia_geografica ?? '');
+    setEditUf(sel.uf ?? '');
+    setEditMunIbge(sel.municipio_ibge ?? '');
+    setEditMunNome(sel.municipio_nome ?? '');
+    setScopeDialog(true);
+  };
+
+  const handleSaveScope = async () => {
+    if (!sel) return;
+    const escopoErro = validarEscopo(editAbrangencia, editUf, editMunIbge, editMunNome);
+    if (escopoErro) {
+      toast({ title: escopoErro, variant: 'destructive' });
+      return;
+    }
+    const escopo = normalizarEscopo(editAbrangencia, editUf, editMunIbge, editMunNome);
+    setSavingScope(true);
+    const { error } = await supabase.rpc('super_admin_update_organization_scope' as never, {
+      p_organization_id: sel.id,
+      p_abrangencia: escopo.abrangencia_geografica, p_uf: escopo.uf,
+      p_municipio_ibge: escopo.municipio_ibge, p_municipio_nome: escopo.municipio_nome,
+    } as never);
+    setSavingScope(false);
+    if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Escopo territorial atualizado' }); setScopeDialog(false); load(); }
   };
 
   const handleLeadStatus = async (id: string, status: string) => {
@@ -249,10 +301,23 @@ export default function SuperAdmin() {
                     <InviteOrgAdminCard organizationId={sel.id} organizationName={sel.nome} />
                     <Card>
                       <CardHeader>
-                        <CardTitle>{sel.nome}</CardTitle>
-                        <CardDescription>{sel.cnpj ?? 'Sem CNPJ'} · {sel.slug}</CardDescription>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <CardTitle>{sel.nome}</CardTitle>
+                            <CardDescription>{sel.cnpj ?? 'Sem CNPJ'} · {sel.slug}</CardDescription>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={openScopeDialog}>Editar escopo</Button>
+                        </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Escopo territorial: </span>
+                          <span className="font-medium">
+                            {sel.abrangencia_geografica
+                              ? `${ABRANGENCIA_LABELS[sel.abrangencia_geografica]}${sel.uf ? ` · ${sel.uf}` : ''}${sel.municipio_nome ? ` · ${sel.municipio_nome} (IBGE ${sel.municipio_ibge})` : ''}`
+                              : 'Não definido'}
+                          </span>
+                        </div>
                         {selSub ? (
                           <>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -409,6 +474,30 @@ export default function SuperAdmin() {
                 <div><Label>CNPJ</Label><Input value={newCnpj} onChange={e => setNewCnpj(e.target.value)} placeholder="00.000.000/0001-00" /></div>
                 <div><Label>Sigla (slug) *</Label><Input value={newSlug} onChange={e => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} placeholder="prefeitura-x" /></div>
                 <div>
+                  <Label>Abrangência geográfica</Label>
+                  <Select value={newAbrangencia} onValueChange={v => { setNewAbrangencia(v as AbrangenciaGeografica); if (v === 'nacional') { setNewUf(''); setNewMunIbge(''); setNewMunNome(''); } if (v === 'estadual') { setNewMunIbge(''); setNewMunNome(''); } }}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(ABRANGENCIA_LABELS).map(([k, label]) => <SelectItem key={k} value={k}>{label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(newAbrangencia === 'municipal' || newAbrangencia === 'estadual') && (
+                  <div>
+                    <Label>UF *</Label>
+                    <Select value={newUf} onValueChange={setNewUf}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>{UFS.map(u => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla} — {u.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {newAbrangencia === 'municipal' && (
+                  <>
+                    <div><Label>Município *</Label><Input value={newMunNome} onChange={e => setNewMunNome(e.target.value)} placeholder="Cuiabá" /></div>
+                    <div><Label>Código IBGE do município *</Label><Input value={newMunIbge} onChange={e => setNewMunIbge(e.target.value.replace(/\D/g, '').slice(0, 7))} placeholder="5103403" /></div>
+                  </>
+                )}
+                <div>
                   <Label>Plano *</Label>
                   <Select value={newPlan} onValueChange={setNewPlan}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -456,6 +545,46 @@ export default function SuperAdmin() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
               <Button onClick={handleCreate} disabled={creating}>{creating ? 'Criando...' : 'Criar e ativar'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: editar escopo territorial */}
+        <Dialog open={scopeDialog} onOpenChange={setScopeDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Escopo territorial</DialogTitle>
+              <DialogDescription>Abrangência geográfica da organização, para mapas e filtros futuros.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Abrangência geográfica</Label>
+                <Select value={editAbrangencia} onValueChange={v => { setEditAbrangencia(v as AbrangenciaGeografica); if (v === 'nacional') { setEditUf(''); setEditMunIbge(''); setEditMunNome(''); } if (v === 'estadual') { setEditMunIbge(''); setEditMunNome(''); } }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ABRANGENCIA_LABELS).map(([k, label]) => <SelectItem key={k} value={k}>{label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {(editAbrangencia === 'municipal' || editAbrangencia === 'estadual') && (
+                <div>
+                  <Label>UF *</Label>
+                  <Select value={editUf} onValueChange={setEditUf}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{UFS.map(u => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla} — {u.nome}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              )}
+              {editAbrangencia === 'municipal' && (
+                <>
+                  <div><Label>Município *</Label><Input value={editMunNome} onChange={e => setEditMunNome(e.target.value)} placeholder="Cuiabá" /></div>
+                  <div><Label>Código IBGE do município *</Label><Input value={editMunIbge} onChange={e => setEditMunIbge(e.target.value.replace(/\D/g, '').slice(0, 7))} placeholder="5103403" /></div>
+                </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setScopeDialog(false)}>Cancelar</Button>
+              <Button onClick={handleSaveScope} disabled={savingScope}>{savingScope ? 'Salvando...' : 'Salvar'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

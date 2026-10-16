@@ -4826,6 +4826,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          abrangencia_geografica: string | null
           cnpj: string | null
           created_at: string
           id: string
@@ -4833,12 +4834,16 @@ export type Database = {
           maintenance_inbound_alias: string | null
           maintenance_inbound_enabled: boolean
           maintenance_sender_policy: string
+          municipio_ibge: string | null
+          municipio_nome: string | null
           nome: string
           slug: string
           status: string
+          uf: string | null
           updated_at: string
         }
         Insert: {
+          abrangencia_geografica?: string | null
           cnpj?: string | null
           created_at?: string
           id?: string
@@ -4846,12 +4851,16 @@ export type Database = {
           maintenance_inbound_alias?: string | null
           maintenance_inbound_enabled?: boolean
           maintenance_sender_policy?: string
+          municipio_ibge?: string | null
+          municipio_nome?: string | null
           nome: string
           slug: string
           status?: string
+          uf?: string | null
           updated_at?: string
         }
         Update: {
+          abrangencia_geografica?: string | null
           cnpj?: string | null
           created_at?: string
           id?: string
@@ -4859,9 +4868,12 @@ export type Database = {
           maintenance_inbound_alias?: string | null
           maintenance_inbound_enabled?: boolean
           maintenance_sender_policy?: string
+          municipio_ibge?: string | null
+          municipio_nome?: string | null
           nome?: string
           slug?: string
           status?: string
+          uf?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -7912,10 +7924,23 @@ export type Database = {
         }
         Returns: string
       }
-      super_admin_create_organization: {
-        Args: { p_cnpj: string; p_nome: string; p_slug: string }
-        Returns: string
-      }
+      super_admin_create_organization:
+        | {
+            Args: { p_cnpj: string; p_nome: string; p_slug: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_abrangencia?: string
+              p_cnpj: string
+              p_municipio_ibge?: string
+              p_municipio_nome?: string
+              p_nome: string
+              p_slug: string
+              p_uf?: string
+            }
+            Returns: string
+          }
       super_admin_create_subscription: {
         Args: {
           p_addon_keys?: string[]
@@ -7953,6 +7978,16 @@ export type Database = {
       }
       super_admin_update_item_price: {
         Args: { p_amount_cents: number; p_item_id: string; p_reason: string }
+        Returns: undefined
+      }
+      super_admin_update_organization_scope: {
+        Args: {
+          p_abrangencia: string
+          p_municipio_ibge: string
+          p_municipio_nome: string
+          p_organization_id: string
+          p_uf: string
+        }
         Returns: undefined
       }
       unaccent: { Args: { "": string }; Returns: string }
