@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ShieldCheck, Building2, Plus, History, Ban, PlayCircle, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { UFS, ABRANGENCIA_LABELS, normalizarEscopo, validarEscopo, type AbrangenciaGeografica } from '@/lib/ufs';
 
 const fmtBRL = (cents: number | null | undefined) =>
   ((cents ?? 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -28,7 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
   suspended: 'Suspensa', cancelled: 'Cancelada', expired: 'Expirada',
 };
 
-interface Organization { id: string; nome: string; cnpj: string | null; slug: string; status: string; }
+interface Organization { id: string; nome: string; cnpj: string | null; slug: string; status: string; abrangencia_geografica: AbrangenciaGeografica | null; uf: string | null; municipio_ibge: string | null; municipio_nome: string | null; }
 interface Subscription { id: string; organization_id: string; status: string; billing_cycle: string; started_at: string; current_period_end: string | null; origin: string; contracted_amount_cents: number | null; discount_cents: number | null; external_reference: string | null; notes: string | null; plan_versions?: { plans?: { nome: string } }; }
 interface SubItem { id: string; subscription_id: string; item_type: string; descricao: string | null; amount_cents: number; quantity: number; }
 interface Usage { organization_id: string; internal_users_count: number; external_users_count: number; storage_bytes_used: number; }
@@ -73,6 +74,20 @@ export default function SuperAdmin() {
   const [newNotes, setNewNotes] = useState('');
   const [newDiscount, setNewDiscount] = useState('');
   const [creating, setCreating] = useState(false);
+
+  // Escopo territorial (criação)
+  const [newAbrangencia, setNewAbrangencia] = useState<AbrangenciaGeografica | ''>('');
+  const [newUf, setNewUf] = useState('');
+  const [newMunIbge, setNewMunIbge] = useState('');
+  const [newMunNome, setNewMunNome] = useState('');
+
+  // Edição de escopo territorial (organização existente)
+  const [scopeDialog, setScopeDialog] = useState(false);
+  const [editAbrangencia, setEditAbrangencia] = useState<AbrangenciaGeografica | ''>('');
+  const [editUf, setEditUf] = useState('');
+  const [editMunIbge, setEditMunIbge] = useState('');
+  const [editMunNome, setEditMunNome] = useState('');
+  const [savingScope, setSavingScope] = useState(false);
 
   // Status / override
   const [statusDialog, setStatusDialog] = useState<{ open: boolean; status: string }>({ open: false, status: '' });
