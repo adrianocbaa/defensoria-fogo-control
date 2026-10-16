@@ -549,6 +549,46 @@ export default function SuperAdmin() {
           </DialogContent>
         </Dialog>
 
+        {/* Dialog: editar escopo territorial */}
+        <Dialog open={scopeDialog} onOpenChange={setScopeDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Escopo territorial</DialogTitle>
+              <DialogDescription>Abrangência geográfica da organização, para mapas e filtros futuros.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Abrangência geográfica</Label>
+                <Select value={editAbrangencia} onValueChange={v => { setEditAbrangencia(v as AbrangenciaGeografica); if (v === 'nacional') { setEditUf(''); setEditMunIbge(''); setEditMunNome(''); } if (v === 'estadual') { setEditMunIbge(''); setEditMunNome(''); } }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ABRANGENCIA_LABELS).map(([k, label]) => <SelectItem key={k} value={k}>{label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {(editAbrangencia === 'municipal' || editAbrangencia === 'estadual') && (
+                <div>
+                  <Label>UF *</Label>
+                  <Select value={editUf} onValueChange={setEditUf}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{UFS.map(u => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla} — {u.nome}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              )}
+              {editAbrangencia === 'municipal' && (
+                <>
+                  <div><Label>Município *</Label><Input value={editMunNome} onChange={e => setEditMunNome(e.target.value)} placeholder="Cuiabá" /></div>
+                  <div><Label>Código IBGE do município *</Label><Input value={editMunIbge} onChange={e => setEditMunIbge(e.target.value.replace(/\D/g, '').slice(0, 7))} placeholder="5103403" /></div>
+                </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setScopeDialog(false)}>Cancelar</Button>
+              <Button onClick={handleSaveScope} disabled={savingScope}>{savingScope ? 'Salvando...' : 'Salvar'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Dialog: mudança de status */}
         <Dialog open={statusDialog.open} onOpenChange={o => setStatusDialog({ open: o, status: statusDialog.status })}>
           <DialogContent>
