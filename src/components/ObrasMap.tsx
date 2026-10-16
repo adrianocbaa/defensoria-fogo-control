@@ -198,11 +198,11 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
   return (
     <div className={`h-full w-full ${className}`}>
       <MapContainer
-        center={matogrossoCenter}
-        zoom={initialZoom}
-        minZoom={6}
-        maxBounds={matogrossoBounds}
-        maxBoundsViscosity={1}
+        center={view.center}
+        zoom={view.zoom}
+        minZoom={view.minZoom}
+        maxBounds={view.bounds ?? undefined}
+        maxBoundsViscosity={view.bounds ? 1 : 0}
         className="h-full w-full rounded-lg transition-all duration-300"
         ref={mapRef}
         zoomControl={false}
@@ -214,38 +214,43 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Máscara que oculta visualmente os estados vizinhos, deixando apenas Mato Grosso visível */}
-        <Polygon
-          positions={[
-            // Anel externo cobrindo o mundo inteiro para garantir a máscara em qualquer zoom
-            [
-              [-90, -180],
-              [-90, 180],
-              [90, 180],
-              [90, -180],
-            ],
-            // Buraco no formato de Mato Grosso
-            mtBoundary,
-          ]}
-          pathOptions={{
-            fillColor: '#0f172a',
-            fillOpacity: 0.85,
-            stroke: false,
-            fillRule: 'evenodd',
-            interactive: false,
-          }}
-        />
+        <ScopeController view={view} />
 
-        {/* Contorno discreto do estado de Mato Grosso */}
-        <Polyline
-          positions={mtBoundary}
-          pathOptions={{
-            color: '#3b82f6',
-            weight: 2,
-            opacity: 0.8,
-            interactive: false,
-          }}
-        />
+        {/* Máscara e contorno de Mato Grosso: apenas no fallback legado ou escopo estadual MT */}
+        {view.showMtMask && (
+          <>
+            <Polygon
+              positions={[
+                // Anel externo cobrindo o mundo inteiro para garantir a máscara em qualquer zoom
+                [
+                  [-90, -180],
+                  [-90, 180],
+                  [90, 180],
+                  [90, -180],
+                ],
+                // Buraco no formato de Mato Grosso
+                mtBoundary,
+              ]}
+              pathOptions={{
+                fillColor: '#0f172a',
+                fillOpacity: 0.85,
+                stroke: false,
+                fillRule: 'evenodd',
+                interactive: false,
+              }}
+            />
+            <Polyline
+              positions={mtBoundary}
+              pathOptions={{
+                color: '#3b82f6',
+                weight: 2,
+                opacity: 0.8,
+                interactive: false,
+              }}
+            />
+          </>
+        )}
+
         
         {/* Zoom Control positioned for better UX */}
         <div className="leaflet-top leaflet-right">
