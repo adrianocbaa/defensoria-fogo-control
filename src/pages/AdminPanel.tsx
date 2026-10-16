@@ -149,18 +149,34 @@ export default function AdminPanel() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
+      // Fonte de verdade do papel: user_roles (mesma usada pelo backend/RLS).
+      // Consulta em lote (sem N+1); RLS já restringe ao escopo da organização.
+      const userIds = (data || []).map((p: any) => p.user_id).filter(Boolean);
+      const rolesByUser = new Map<string, UserRole>();
+      if (userIds.length > 0) {
+        const { data: rolesData, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('user_id', userIds);
+        if (rolesError) throw rolesError;
+        (rolesData || []).forEach((r: any) => {
+          if (r?.user_id) rolesByUser.set(r.user_id, r.role as UserRole);
+        });
+      }
+
       setProfiles((data || []).map(profile => {
         // Filtrar apenas setores de módulo válidos
         const rawSectors = (profile as any).sectors || [];
-        const filteredSectors = rawSectors.filter((s: string) => 
+        const filteredSectors = rawSectors.filter((s: string) =>
           VALID_MODULE_SECTORS.includes(s)
         ) as Sector[];
-        
+
         return {
           ...profile,
           email: profile.email || 'Email não disponível',
-          role: profile.role as UserRole,
+          // Papel efetivo vem de user_roles; fallback visual 'viewer' sem gravar nada
+          role: rolesByUser.get(profile.user_id) ?? ('viewer' as UserRole),
           sectors: filteredSectors,
           setores_atuantes: (profile as any).setores_atuantes || [],
           is_active: profile.is_active ?? true,
