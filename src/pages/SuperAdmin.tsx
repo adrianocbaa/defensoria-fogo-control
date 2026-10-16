@@ -150,10 +150,18 @@ export default function SuperAdmin() {
       toast({ title: 'Preencha nome, sigla (slug) e plano', variant: 'destructive' });
       return;
     }
+    const escopoErro = validarEscopo(newAbrangencia, newUf, newMunIbge, newMunNome);
+    if (escopoErro) {
+      toast({ title: escopoErro, variant: 'destructive' });
+      return;
+    }
+    const escopo = normalizarEscopo(newAbrangencia, newUf, newMunIbge, newMunNome);
     setCreating(true);
     try {
       const { data: orgId, error: e1 } = await supabase.rpc('super_admin_create_organization' as never, {
         p_nome: newNome, p_cnpj: newCnpj || null, p_slug: newSlug,
+        p_abrangencia: escopo.abrangencia_geografica, p_uf: escopo.uf,
+        p_municipio_ibge: escopo.municipio_ibge, p_municipio_nome: escopo.municipio_nome,
       } as never);
       if (e1) throw e1;
       const { error: e2 } = await supabase.rpc('super_admin_create_subscription' as never, {
