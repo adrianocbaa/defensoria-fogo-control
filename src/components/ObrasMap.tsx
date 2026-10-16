@@ -162,14 +162,10 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
   const obraIds = obras.map(o => o.id);
   const { data: valorPagoMap } = useObrasValorPagoMap(obraIds);
 
-  // Coordenadas do centro de Mato Grosso
-  const matogrossoCenter: [number, number] = [-12.64, -55.42];
-  const initialZoom = 6;
-  // Limites aproximados do estado de Mato Grosso (com pequena folga)
-  const matogrossoBounds: [[number, number], [number, number]] = [
-    [-18.4, -62.2],
-    [-6.8, -49.6],
-  ];
+  // Escopo territorial da organização logada (fallback: Mato Grosso)
+  const { scope } = useOrganizationScope();
+  const view = resolveMapView(scope, obras);
+
 
 
   useEffect(() => {
