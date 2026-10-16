@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polygon, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polygon, Polyline, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -8,6 +8,81 @@ import { MapLoadingSkeleton } from '@/components/LoadingStates';
 import { createCustomIcon } from '@/components/MapPinOptions';
 import { useObrasValorPagoMap } from '@/hooks/useObrasValorPagoMap';
 import { mtBoundary } from '@/data/mtBoundary';
+import { useOrganizationScope, type OrganizationScope } from '@/hooks/useOrganizationScope';
+import { BRASIL_GEO, ufGeo, type LatLngBounds } from '@/lib/geoScope';
+
+// Fallback legado: Mato Grosso (organizações sem escopo configurado)
+const MT_CENTER: [number, number] = [-12.64, -55.42];
+const MT_BOUNDS: LatLngBounds = [
+  [-18.4, -62.2],
+  [-6.8, -49.6],
+];
+
+interface MapView {
+  bounds: LatLngBounds | null;
+  center: [number, number];
+  zoom: number;
+  minZoom: number;
+  showMtMask: boolean;
+}
+
+// Define o enquadramento inicial do mapa conforme o escopo territorial da organização.
+// Municipal sem obras com coordenadas: usa o centro da UF com zoom mais próximo
+// (não há dataset de coordenadas municipais no projeto).
+function resolveMapView(scope: OrganizationScope | null, obras: Obra[]): MapView {
+  const obrasComCoord = obras.filter(
+    (o) =>
+      Array.isArray(o.coordenadas) &&
+      Number.isFinite(Number(o.coordenadas[0])) &&
+      Number.isFinite(Number(o.coordenadas[1]))
+  );
+
+  if (scope?.abrangencia_geografica === 'nacional') {
+    return { bounds: BRASIL_GEO.bounds, center: BRASIL_GEO.center, zoom: 4, minZoom: 4, showMtMask: false };
+  }
+
+  if (scope?.abrangencia_geografica === 'estadual') {
+    const geo = ufGeo(scope.uf);
+    if (geo) {
+      const isMT = scope.uf?.toUpperCase() === 'MT';
+      return { bounds: geo.bounds, center: geo.center, zoom: 6, minZoom: 5, showMtMask: isMT };
+    }
+  }
+
+  if (scope?.abrangencia_geografica === 'municipal') {
+    if (obrasComCoord.length > 0) {
+      const lats = obrasComCoord.map((o) => Number(o.coordenadas[0]));
+      const lngs = obrasComCoord.map((o) => Number(o.coordenadas[1]));
+      const pad = 0.05;
+      const bounds: LatLngBounds = [
+        [Math.min(...lats) - pad, Math.min(...lngs) - pad],
+        [Math.max(...lats) + pad, Math.max(...lngs) + pad],
+      ];
+      return { bounds, center: MT_CENTER, zoom: 11, minZoom: 4, showMtMask: false };
+    }
+    // Sem obras com coordenadas: centro da UF com zoom municipal aproximado
+    const geo = ufGeo(scope.uf);
+    if (geo) {
+      return { bounds: null, center: geo.center, zoom: 10, minZoom: 4, showMtMask: false };
+    }
+  }
+
+  // Legado / sem escopo: Mato Grosso com máscara
+  return { bounds: MT_BOUNDS, center: MT_CENTER, zoom: 6, minZoom: 6, showMtMask: true };
+}
+
+// Aplica o enquadramento assim que o mapa e o escopo estiverem prontos
+function ScopeController({ view }: { view: MapView }) {
+  const map = useMap();
+  useEffect(() => {
+    if (view.bounds) {
+      map.fitBounds(view.bounds, { padding: [20, 20] });
+    } else {
+      map.setView(view.center, view.zoom);
+    }
+  }, [map, view]);
+  return null;
+}
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
