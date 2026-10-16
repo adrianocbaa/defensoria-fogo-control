@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.super_admin_create_organization(text, text, text, text, text, text, text) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.super_admin_update_organization_scope(uuid, text, text, text, text) FROM anon;
