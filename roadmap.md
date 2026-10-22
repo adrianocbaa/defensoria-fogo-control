@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Escopo municipal — malhas IBGE locais por UF, mapa independente de obras, seleção pesquisável com IBGE automático, compatibilidade e testes; sem publicação
+- [x] Escopo municipal — IBGE local por UF, mapa independente de obras, seleção pesquisável com IBGE automático; 23 testes e simulações Patos/Salvador/Angra passaram, build OK; verificação autenticada indisponível no Supabase externo; frontend aguarda Publish → Update
 
 - [x] Generalizar máscara territorial das 27 UFs — IBGE local, geometria/cache; 14 testes passaram, BA/MT/SC verificados em simulações desktop/celular, clusters preservados, build OK; validação autenticada indisponível no Supabase externo; frontend aguarda Publish → Update
 
