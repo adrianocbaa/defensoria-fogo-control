@@ -6,6 +6,9 @@ import ts from 'typescript';
 
 const source = await readFile(new URL('../supabase/functions/request-password-reset/index.ts', import.meta.url), 'utf8');
 const contextSource = await readFile(new URL('../src/contexts/AuthContext.tsx', import.meta.url), 'utf8');
+const urlsSource = await readFile(new URL('../supabase/functions/_shared/urls.ts', import.meta.url), 'utf8');
+const urls = {};
+vm.runInNewContext(ts.transpileModule(urlsSource, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: urls });
 
 async function generateEmail(headers) {
   let handler;
@@ -20,6 +23,7 @@ async function generateEmail(headers) {
     exports: {}, Request, Response, console,
     Deno: { env: { get: () => 'mock-value' } },
     require: (name) => {
+      if (name.endsWith('/urls.ts')) return urls;
       if (name.includes('/cors')) return { corsHeaders: { 'Access-Control-Allow-Origin': '*' } };
       if (name.includes('supabase-js')) return { createClient: () => client };
       if (name.includes('http/server')) return { serve: (callback) => { handler = callback; } };
@@ -62,6 +66,7 @@ test('native recovery redirect always targets the production app', async () => {
     exports, console,
     window: { location: { origin: 'https://preview.lovable.app' } },
     require: (name) => {
+      if (name === '@/lib/urls') return urls;
       if (name === 'react') return {
         createContext: () => ({ Provider: 'provider' }), useState: () => [null, () => {}],
         useEffect: () => {}, useCallback: (fn) => fn, useMemo: (fn) => fn(),

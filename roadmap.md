@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Centralizar URLs de app/site — 15 testes passaram, build OK; 3 funções republicadas; teste visual de cópia limitado por lista pública em carregamento; frontend aguarda Publish → Update
+
 - [x] Centralizar no banco a numeração sequencial diária de RDO por obra
 - [x] Bloquear saltos, duplicidades e sobrescritas de número
 - [x] Preservar sequência em fins de semana e dias sem expediente
