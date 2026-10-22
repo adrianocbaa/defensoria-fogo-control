@@ -262,7 +262,7 @@ serve(async (req) => {
                 </tr>
               </table>
               <p style="color:#3d4756;font-size:14px;line-height:1.6;margin:0;">
-                Acesse o sistema em <a href="https://sidif.com.br" style="color:#0f2a4a;font-weight:bold;text-decoration:none;">sidif.com.br</a> e faça login com as credenciais acima.
+                Acesse o sistema em <a href="https://app.sidif.com.br/auth" style="color:#0f2a4a;font-weight:bold;text-decoration:none;">app.sidif.com.br/auth</a> e faça login com as credenciais acima.
               </p>
             </td>
           </tr>
