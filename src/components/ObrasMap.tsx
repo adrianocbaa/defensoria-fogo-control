@@ -162,21 +162,21 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
           <>
             <Polygon
               positions={view.boundary.mask}
+              className="uf-territory-mask"
+              interactive={false}
               pathOptions={{
-                className: 'uf-territory-mask',
                 fillOpacity: 0.85,
                 stroke: false,
                 fillRule: 'evenodd',
-                interactive: false,
               }}
             />
             <Polyline
               positions={view.boundary.rings}
+              className="uf-territory-outline"
+              interactive={false}
               pathOptions={{
-                className: 'uf-territory-outline',
                 weight: 2,
                 opacity: 0.8,
-                interactive: false,
               }}
             />
           </>
