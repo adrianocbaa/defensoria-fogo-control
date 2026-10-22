@@ -9,6 +9,8 @@ import { createCustomIcon } from '@/components/MapPinOptions';
 import { useObrasValorPagoMap } from '@/hooks/useObrasValorPagoMap';
 import { useOrganizationScope } from '@/hooks/useOrganizationScope';
 import { resolveMapView, type MapView } from '@/lib/obrasMapView';
+import { useMunicipalityBoundary } from '@/hooks/useMunicipalityBoundary';
+import { useToast } from '@/hooks/use-toast';
 
 // Aplica o enquadramento assim que o mapa e o escopo estiverem prontos
 function ScopeController({ view }: { view: MapView }) {
@@ -105,7 +107,12 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
 
   // Escopo territorial da organização logada (fallback: Mato Grosso)
   const { scope } = useOrganizationScope();
-  const view = useMemo(() => resolveMapView(scope, obras), [scope, obras]);
+  const municipal = useMunicipalityBoundary(scope);
+  const { toast } = useToast();
+  const view = useMemo(() => resolveMapView(scope, [], municipal.boundary), [scope, municipal.boundary]);
+  useEffect(() => {
+    if (municipal.warning) toast({ title: 'Limite municipal indisponível', description: 'O mapa está enquadrado pela UF. Confira o município selecionado no escopo da organização.' });
+  }, [municipal.warning, scope?.uf, scope?.municipio_ibge, toast]);
 
 
 
@@ -128,7 +135,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
   };
 
   // Show loading skeleton while data is loading or map is initializing
-  if (loading || !mapReady) {
+  if (loading || !mapReady || municipal.loading) {
     return (
       <div className={`h-full w-full ${className}`}>
         <MapLoadingSkeleton />
@@ -157,7 +164,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
 
         <ScopeController view={view} />
 
-        {/* Máscara e contorno da UF configurada; MT somente no fallback legado. */}
+        {/* Máscara e contorno do território configurado (UF ou município). */}
         {view.boundary && (
           <>
             <Polygon

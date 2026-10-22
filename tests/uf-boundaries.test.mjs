@@ -52,17 +52,17 @@ test('nacional has Brazil framing and no UF mask', () => {
   assert.equal(result.boundary, null);
   assert.deepEqual(plain(result.bounds), plain(geo.BRASIL_GEO.bounds));
 });
-test('municipal with obras preserves coordinate framing and no UF mask', () => {
+test('municipal missing geometry uses UF bounds regardless of obras, without UF mask', () => {
   const result = view.resolveMapView(scope('BA', 'municipal'), [{ coordenadas: [-13, -42] }]);
   assert.equal(result.boundary, null);
-  assert.deepEqual(plain(result.bounds), [[-13.05, -42.05], [-12.95, -41.95]]);
+  assert.deepEqual(plain(result.bounds), plain(boundaries.getUfBoundary('BA').bounds));
+  assert.deepEqual(plain(result), plain(view.resolveMapView(scope('BA', 'municipal'), [])));
 });
-test('municipal without obras uses UF center and no UF mask', () => {
+test('municipal without geometry uses safe UF framing', () => {
   const result = view.resolveMapView(scope('BA', 'municipal'), []);
   assert.equal(result.boundary, null);
-  assert.equal(result.bounds, null);
-  assert.equal(result.zoom, 10);
-  assert.deepEqual(plain(result.center), plain(geo.UF_GEO.BA.center));
+  assert.deepEqual(plain(result.bounds), plain(boundaries.getUfBoundary('BA').bounds));
+  assert.equal(result.zoom, 6);
 });
 test('unknown statewide UF falls back safely without a mask', () => {
   assert.equal(view.resolveMapView(scope('XX'), []).boundary, null);

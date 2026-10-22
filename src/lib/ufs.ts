@@ -72,8 +72,7 @@ export function validarEscopo(
   if (abrangencia === 'nacional') return null;
   if (!uf) return 'Informe a UF para abrangência municipal/estadual.';
   if (abrangencia === 'municipal') {
-    if (!municipioIbge.trim()) return 'Informe o código IBGE do município.';
-    if (!/^\d{7}$/.test(municipioIbge.trim())) return 'Código IBGE deve ter 7 dígitos.';
+    if (!/^\d{7}$/.test(municipioIbge.trim())) return 'Selecione o município da UF informada.';
     if (!municipioNome.trim()) return 'Informe o nome do município.';
   }
   return null;
