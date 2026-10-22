@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ShieldCheck, Building2, Plus, History, Ban, PlayCircle, PauseCircle, Sparkles, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { UFS, ABRANGENCIA_LABELS, normalizarEscopo, validarEscopo, type AbrangenciaGeografica } from '@/lib/ufs';
+import { MunicipioCombobox } from '@/components/MunicipioCombobox';
+import { municipioAposTrocaUf } from '@/lib/municipios';
 
 const fmtBRL = (cents: number | null | undefined) =>
   ((cents ?? 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -485,17 +487,14 @@ export default function SuperAdmin() {
                 {(newAbrangencia === 'municipal' || newAbrangencia === 'estadual') && (
                   <div>
                     <Label>UF *</Label>
-                    <Select value={newUf} onValueChange={setNewUf}>
+                    <Select value={newUf} onValueChange={uf => { setNewUf(uf); const m = municipioAposTrocaUf(uf, newMunIbge, newMunNome); setNewMunIbge(m.municipio_ibge); setNewMunNome(m.municipio_nome); }}>
                       <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                       <SelectContent>{UFS.map(u => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla} — {u.nome}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 )}
                 {newAbrangencia === 'municipal' && (
-                  <>
-                    <div><Label>Município *</Label><Input value={newMunNome} onChange={e => setNewMunNome(e.target.value)} placeholder="Cuiabá" /></div>
-                    <div><Label>Código IBGE do município *</Label><Input value={newMunIbge} onChange={e => setNewMunIbge(e.target.value.replace(/\D/g, '').slice(0, 7))} placeholder="5103403" /></div>
-                  </>
+                  <div><Label>Município *</Label><MunicipioCombobox key={newUf} uf={newUf} value={newMunIbge} savedName={newMunNome} onChange={m => { setNewMunIbge(m.ibge); setNewMunNome(m.nome); }} /></div>
                 )}
                 <div>
                   <Label>Plano *</Label>
@@ -569,17 +568,14 @@ export default function SuperAdmin() {
               {(editAbrangencia === 'municipal' || editAbrangencia === 'estadual') && (
                 <div>
                   <Label>UF *</Label>
-                  <Select value={editUf} onValueChange={setEditUf}>
+                  <Select value={editUf} onValueChange={uf => { setEditUf(uf); const m = municipioAposTrocaUf(uf, editMunIbge, editMunNome); setEditMunIbge(m.municipio_ibge); setEditMunNome(m.municipio_nome); }}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>{UFS.map(u => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla} — {u.nome}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               )}
               {editAbrangencia === 'municipal' && (
-                <>
-                  <div><Label>Município *</Label><Input value={editMunNome} onChange={e => setEditMunNome(e.target.value)} placeholder="Cuiabá" /></div>
-                  <div><Label>Código IBGE do município *</Label><Input value={editMunIbge} onChange={e => setEditMunIbge(e.target.value.replace(/\D/g, '').slice(0, 7))} placeholder="5103403" /></div>
-                </>
+                <div><Label>Município *</Label><MunicipioCombobox key={editUf} uf={editUf} value={editMunIbge} savedName={editMunNome} onChange={m => { setEditMunIbge(m.ibge); setEditMunNome(m.nome); }} /></div>
               )}
             </div>
             <DialogFooter>
