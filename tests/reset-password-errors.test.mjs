@@ -81,7 +81,7 @@ test('Auth password policy rejection is sanitized and does not consume code', as
   const result = await invoke({ authError: { code: 'weak_password', message: sensitive } });
   assert.equal(result.status, 400);
   assert.equal(result.payload.error, 'password_policy');
-  assert.equal(result.message, 'Essa senha não pode ser utilizada. Escolha uma senha diferente que atenda aos requisitos de segurança.');
+  assert.equal(result.message, categories.resetErrorMessages.password_policy);
   assert.equal(result.consumed, 0);
 });
 
@@ -90,6 +90,9 @@ test('compromised and same-password rejections are sanitized', async () => {
     const result = await invoke({ authError: { code, message: sensitive } });
     assert.equal(result.status, 400);
     assert.equal(result.payload.error, 'password_rejected');
+    assert.equal(result.message, categories.resetErrorMessages.password_rejected);
+    assert.notEqual(result.message, categories.resetErrorMessages.password_policy);
+    assert.equal(result.consumed, 0);
   }
 });
 
