@@ -7,6 +7,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireInternal } from "../_shared/service-auth.ts";
+import { appUrl } from "../_shared/urls.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -15,7 +16,6 @@ const cors = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const APP_URL = "https://app.sidif.com.br";
 
 function baseHtml(inner: string) {
   return `<!doctype html><html><body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;color:#1f2937">
@@ -114,7 +114,7 @@ serve(async (req) => {
         if (!ticket) throw new Error("ticket_not_found");
 
         if (job.kind === "confirmation" && ticket.requester_email) {
-          const link = `${APP_URL}/manutencao/confirmar/${ticket.confirmation_token}`;
+          const link = appUrl(`/manutencao/confirmar/${ticket.confirmation_token}`);
           const btn = `<a href="${link}" style="background:#1a5f3f;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
           const num = String(ticket.ticket_number).padStart(4,"0");
           const html = baseHtml(`
@@ -159,7 +159,7 @@ serve(async (req) => {
 
     for (const t of needsReminder || []) {
       try {
-        const link = `${APP_URL}/manutencao/confirmar/${t.confirmation_token}`;
+        const link = appUrl(`/manutencao/confirmar/${t.confirmation_token}`);
         const btn = `<a href="${link}" style="background:#1a5f3f;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;font-size:14px">Confirmar execução do serviço</a>`;
         const html = baseHtml(`
           <div style="font-size:12px;letter-spacing:1px;color:#b45309;font-weight:700;text-transform:uppercase">Lembrete de confirmação</div>

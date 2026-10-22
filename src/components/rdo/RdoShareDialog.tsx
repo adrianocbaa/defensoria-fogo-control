@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Copy, Download, Mail, Share2 } from 'lucide-react';
 import { createAuditLog } from '@/hooks/useRdoAuditLog';
+import { appUrl } from '@/lib/urls';
 
 interface RdoShareDialogProps {
   open: boolean;
@@ -35,7 +36,7 @@ export function RdoShareDialog({
   const [message, setMessage] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
-  const verifyUrl = `${window.location.origin}/rdo/verify/${hashVerificacao}`;
+  const verifyUrl = appUrl(`/rdo/verify/${hashVerificacao}`);
 
   const handleCopyLink = async () => {
     try {

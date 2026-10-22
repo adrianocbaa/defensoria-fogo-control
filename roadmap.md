@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Centralizar URLs de app/site, validar links persistentes e republicar somente funções alteradas
+
 - [x] Centralizar no banco a numeração sequencial diária de RDO por obra
 - [x] Bloquear saltos, duplicidades e sobrescritas de número
 - [x] Preservar sequência em fins de semana e dias sem expediente

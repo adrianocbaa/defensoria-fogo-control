@@ -13,6 +13,7 @@ import { formatCurrency, formatPercentageValue } from '@/lib/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { type Obra } from '@/data/mockObras';
 import { toast } from 'sonner';
+import { appUrl } from '@/lib/urls';
 
 const statusColors: Record<string, string> = {
   planejamento: 'bg-blue-100 text-blue-800',
@@ -209,7 +210,7 @@ export default function PublicObrasLista() {
                                 size="icon"
                                 title="Compartilhar link"
                                 onClick={() => {
-                                  const url = `${window.location.origin}/public/obras/${obra.id}`;
+                                  const url = appUrl(`/public/obras/${obra.id}`);
                                   navigator.clipboard.writeText(url);
                                   toast.success('Link copiado para a área de transferência!');
                                 }}

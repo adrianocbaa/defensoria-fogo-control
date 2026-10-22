@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-const APP_URL = "https://app.sidif.com.br";
+import { appUrl, INSTITUTIONAL_URL } from "../_shared/urls.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -87,7 +87,7 @@ serve(async (req: Request) => {
 <div style="font-family:'Courier New',Courier,monospace;font-size:32px;font-weight:bold;color:#0f2a4a;letter-spacing:6px;">${code}</div>
 </td></tr></table>
 <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 20px;"><tr><td style="background:#0f2a4a;border-radius:4px;">
-<a href="${APP_URL}/auth?verify=${code}" style="display:inline-block;padding:12px 28px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;">Redefinir minha senha</a>
+<a href="${appUrl(`/auth?verify=${code}`)}" style="display:inline-block;padding:12px 28px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;">Redefinir minha senha</a>
 </td></tr></table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fdf6e3;border:1px solid #f1e0a8;border-radius:4px;"><tr><td style="padding:14px 16px;font-size:13px;line-height:1.5;color:#7a5b00;">
 <strong>Atenção:</strong> este código expira em 15 minutos. Se você não solicitou a redefinição, ignore este e-mail — sua senha atual continua válida.
@@ -95,7 +95,7 @@ serve(async (req: Request) => {
 </td></tr>
 <tr><td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:20px 32px;text-align:center;font-size:12px;color:#64748b;line-height:1.5;">
 SiDIF — Sistema de Gestão de Infraestrutura<br>
-<a href="https://sidif.com.br" style="color:#0f2a4a;">sidif.com.br</a><br>
+<a href="${INSTITUTIONAL_URL}" style="color:#0f2a4a;">sidif.com.br</a><br>
 Mensagem automática. Por favor, não responda.
 </td></tr>
 </table></td></tr></table></body></html>`;
@@ -107,7 +107,7 @@ Redefinição de Senha
 Recebemos uma solicitação para redefinir a senha da sua conta no SiDIF.
 Código de verificação: ${code}
 
-Ou acesse: ${APP_URL}/auth?verify=${code}
+Ou acesse: ${appUrl(`/auth?verify=${code}`)}
 
 Este código expira em 15 minutos. Se você não solicitou a redefinição, ignore este e-mail.
 

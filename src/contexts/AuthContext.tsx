@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo, R
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useSecurityMonitor } from '@/hooks/useSecurityMonitor';
+import { appUrl } from '@/lib/urls';
 
 interface AuthContextType {
   user: User | null;
@@ -14,7 +15,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const PASSWORD_RECOVERY_URL = 'https://app.sidif.com.br/auth';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [cleanupOldAttempts]);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = appUrl('/');
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -205,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: PASSWORD_RECOVERY_URL,
+      redirectTo: appUrl('/auth'),
     });
 
     return { error };
