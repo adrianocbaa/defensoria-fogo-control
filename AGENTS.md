@@ -4,6 +4,8 @@ Use a SECURITY INVOKER RPC for public RDO progress, relying on the existing row-
 
 - Password reset errors use typed categories in the function and an allowlisted frontend mapper; never display or log raw Auth/transport errors. Why: useful recovery messages must not expose account details or internal diagnostics.
 
+- Territorial map boundaries use the local, provenance-tagged IBGE GeoJSON through cached `ufBoundary` conversion and pure `obrasMapView` scope resolution; inverse masks use one evenodd path containing all rings. Why: offline geography supports every UF, multipart islands and holes without coupling state masks to project coordinates.
+
 Use the shared `fetchAllPaged` helper (`src/lib/supabasePaged.ts`) with a deterministic `.order('id')` + `.range(from, to)` for any bulk query over `medicao_items`, `aditivo_items`, `orcamento_items` or `rdo_reports` that spans multiple obras; a single request silently truncates at ~1000 rows and understates financial totals.
 
 - Multi-tenant: org 1 has fixed UUID 00000000-0000-0000-0000-000000000001; one active org per user at launch (partial unique index); resolve via public.user_organization_id(). Why: safe backfill/default while single-tenant.
