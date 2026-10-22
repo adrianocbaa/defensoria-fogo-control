@@ -1,7 +1,7 @@
 const messages: Record<string, string> = {
   reset_code_invalid_or_expired: 'O código expirou ou já foi utilizado. Solicite uma nova recuperação de senha.',
-  password_rejected: 'Essa senha não pode ser utilizada. Escolha uma senha diferente que atenda aos requisitos de segurança.',
-  password_policy: 'Essa senha não pode ser utilizada. Escolha uma senha diferente que atenda aos requisitos de segurança.',
+  password_rejected: 'Essa senha não pode ser utilizada. Escolha uma senha diferente.',
+  password_policy: 'Essa senha é considerada muito comum ou fácil de adivinhar. Escolha uma senha mais exclusiva.',
   password_requirements: 'A senha deve ter no mínimo 8 caracteres, incluindo 1 letra maiúscula e 1 número.',
   invalid_request: 'Informe o código de recuperação e a nova senha.',
   internal_error: 'Não foi possível redefinir a senha. Tente novamente.',

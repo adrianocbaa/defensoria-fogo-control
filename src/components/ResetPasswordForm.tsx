@@ -130,6 +130,9 @@ export function ResetPasswordForm({ code, userId }: ResetPasswordFormProps) {
             <span>Senhas coincidem</span>
           </div>
         </div>
+        <p className="pt-2 text-muted-foreground">
+          Evite senhas comuns ou fáceis de adivinhar. O sistema pode recusá-las mesmo que atendam aos requisitos acima.
+        </p>
       </div>
 
       <Button type="submit" className="w-full" disabled={loading || !isPasswordValid}>

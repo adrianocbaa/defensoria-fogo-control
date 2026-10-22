@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Explicar política adicional de senha na tela — 22 testes passaram; mocks em desktop/celular confirmam checklist e campos preservados; build OK; somente reset-password republicada; frontend aguarda Publish → Update
+
 - [x] Sanitizar erros de redefinição de senha — 25 testes passaram, 3 mensagens verificadas na tela com mocks, build OK; somente reset-password republicada; frontend aguarda Publish → Update
 
 - [x] Centralizar URLs de app/site — 15 testes passaram, build OK; 3 funções republicadas; teste visual de cópia limitado por lista pública em carregamento; frontend aguarda Publish → Update
