@@ -2,6 +2,8 @@ Use a SECURITY INVOKER RPC for public RDO progress, relying on the existing row-
 
 - Persistent app and institutional links must use `src/lib/urls.ts` (frontend) or `supabase/functions/_shared/urls.ts` (Edge Functions); keep both contracts aligned with destination tests. Why: Edge deployments cannot import frontend files, and canonical helpers prevent preview-origin links without changing internal navigation or storage URLs.
 
+- Password reset errors use typed categories in the function and an allowlisted frontend mapper; never display or log raw Auth/transport errors. Why: useful recovery messages must not expose account details or internal diagnostics.
+
 Use the shared `fetchAllPaged` helper (`src/lib/supabasePaged.ts`) with a deterministic `.order('id')` + `.range(from, to)` for any bulk query over `medicao_items`, `aditivo_items`, `orcamento_items` or `rdo_reports` that spans multiple obras; a single request silently truncates at ~1000 rows and understates financial totals.
 
 - Multi-tenant: org 1 has fixed UUID 00000000-0000-0000-0000-000000000001; one active org per user at launch (partial unique index); resolve via public.user_organization_id(). Why: safe backfill/default while single-tenant.

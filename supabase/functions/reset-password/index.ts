@@ -1,13 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { classifyPasswordUpdateError, resetErrorMessages, type ResetErrorCategory } from './errors.ts';
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? '';
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? '';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+function errorResponse(category: ResetErrorCategory, status: number): Response {
+  console.error(JSON.stringify({ category, status }));
+  return new Response(JSON.stringify({ error: category, message: resetErrorMessages[category] }), {
+    status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -15,22 +19,21 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { code, newPassword } = await req.json();
+    let body: unknown;
+    try { body = await req.json(); } catch { return errorResponse('invalid_request', 400); }
+    if (!body || typeof body !== 'object' || !('code' in body) || !('newPassword' in body)) {
+      return errorResponse('invalid_request', 400);
+    }
+    const { code, newPassword } = body;
 
-    if (!code || !newPassword) {
-      return new Response(
-        JSON.stringify({ error: "Código e nova senha são obrigatórios" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (typeof code !== 'string' || !/^\d{6}$/.test(code) || typeof newPassword !== 'string' || !newPassword) {
+      return errorResponse('invalid_request', 400);
     }
 
     // Validate password strength
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(newPassword)) {
-      return new Response(
-        JSON.stringify({ error: "A senha deve ter no mínimo 8 caracteres, incluindo 1 letra maiúscula e 1 número" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse('password_requirements', 400);
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -44,14 +47,10 @@ serve(async (req: Request) => {
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (queryError || !resetRecord) {
-      return new Response(
-        JSON.stringify({ error: "Código inválido ou expirado" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    if (queryError) return errorResponse('internal_error', 500);
+    if (!resetRecord) return errorResponse('reset_code_invalid_or_expired', 400);
 
     // Update user password
     const { error: updateError } = await supabase.auth.admin.updateUserById(
@@ -60,11 +59,8 @@ serve(async (req: Request) => {
     );
 
     if (updateError) {
-      console.error("Error updating password:", updateError);
-      return new Response(
-        JSON.stringify({ error: "Erro ao atualizar senha" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      const category = classifyPasswordUpdateError(updateError);
+      return errorResponse(category, category === 'internal_error' ? 500 : 400);
     }
 
     // Mark code as used
@@ -93,11 +89,7 @@ serve(async (req: Request) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
-    console.error("Error:", error);
-    return new Response(
-      JSON.stringify({ error: "Erro interno do servidor" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+  } catch {
+    return errorResponse('internal_error', 500);
   }
 });

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { resetPasswordErrorMessage } from '@/lib/resetPasswordErrors';
 
 interface ResetPasswordFormProps {
   code: string;
@@ -43,7 +44,10 @@ export function ResetPasswordForm({ code, userId }: ResetPasswordFormProps) {
         body: { code, newPassword },
       });
 
-      if (error) throw error;
+      if (error || data?.error) {
+        toast.error(await resetPasswordErrorMessage(error, data));
+        return;
+      }
 
       toast.success("Senha redefinida com sucesso!");
       
@@ -57,9 +61,8 @@ export function ResetPasswordForm({ code, userId }: ResetPasswordFormProps) {
         navigate("/auth");
         window.location.reload();
       }, 1000);
-    } catch (error: any) {
-      console.error("Error resetting password:", error);
-      toast.error(error.message || "Erro ao redefinir senha");
+    } catch (error: unknown) {
+      toast.error(await resetPasswordErrorMessage(error));
     } finally {
       setLoading(false);
     }
