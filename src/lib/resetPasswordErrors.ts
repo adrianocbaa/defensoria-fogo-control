@@ -16,7 +16,7 @@ function payloadMessage(payload: unknown): string | undefined {
     'A senha deve ter no mínimo 8 caracteres, incluindo 1 letra maiúscula e 1 número': 'password_requirements',
   };
   const category = legacy[payload.error] ?? payload.error;
-  return Object.hasOwn(messages, category) ? messages[category] : undefined;
+  return Object.prototype.hasOwnProperty.call(messages, category) ? messages[category] : undefined;
 }
 
 export async function resetPasswordErrorMessage(error: unknown, payload?: unknown): Promise<string> {
