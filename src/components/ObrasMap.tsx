@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polygon, Polyline, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -7,74 +7,15 @@ import { type ObraStatus, type Obra } from '@/data/mockObras';
 import { MapLoadingSkeleton } from '@/components/LoadingStates';
 import { createCustomIcon } from '@/components/MapPinOptions';
 import { useObrasValorPagoMap } from '@/hooks/useObrasValorPagoMap';
-import { mtBoundary } from '@/data/mtBoundary';
-import { useOrganizationScope, type OrganizationScope } from '@/hooks/useOrganizationScope';
-import { BRASIL_GEO, ufGeo, type LatLngBounds } from '@/lib/geoScope';
-
-// Fallback legado: Mato Grosso (organizações sem escopo configurado)
-const MT_CENTER: [number, number] = [-12.64, -55.42];
-const MT_BOUNDS: LatLngBounds = [
-  [-18.4, -62.2],
-  [-6.8, -49.6],
-];
-
-interface MapView {
-  bounds: LatLngBounds | null;
-  center: [number, number];
-  zoom: number;
-  minZoom: number;
-  showMtMask: boolean;
-}
-
-// Define o enquadramento inicial do mapa conforme o escopo territorial da organização.
-// Municipal sem obras com coordenadas: usa o centro da UF com zoom mais próximo
-// (não há dataset de coordenadas municipais no projeto).
-function resolveMapView(scope: OrganizationScope | null, obras: Obra[]): MapView {
-  const obrasComCoord = obras.filter(
-    (o) =>
-      Array.isArray(o.coordenadas) &&
-      Number.isFinite(Number(o.coordenadas[0])) &&
-      Number.isFinite(Number(o.coordenadas[1]))
-  );
-
-  if (scope?.abrangencia_geografica === 'nacional') {
-    return { bounds: BRASIL_GEO.bounds, center: BRASIL_GEO.center, zoom: 4, minZoom: 4, showMtMask: false };
-  }
-
-  if (scope?.abrangencia_geografica === 'estadual') {
-    const geo = ufGeo(scope.uf);
-    if (geo) {
-      const isMT = scope.uf?.toUpperCase() === 'MT';
-      return { bounds: geo.bounds, center: geo.center, zoom: 6, minZoom: 5, showMtMask: isMT };
-    }
-  }
-
-  if (scope?.abrangencia_geografica === 'municipal') {
-    if (obrasComCoord.length > 0) {
-      const lats = obrasComCoord.map((o) => Number(o.coordenadas[0]));
-      const lngs = obrasComCoord.map((o) => Number(o.coordenadas[1]));
-      const pad = 0.05;
-      const bounds: LatLngBounds = [
-        [Math.min(...lats) - pad, Math.min(...lngs) - pad],
-        [Math.max(...lats) + pad, Math.max(...lngs) + pad],
-      ];
-      return { bounds, center: MT_CENTER, zoom: 11, minZoom: 4, showMtMask: false };
-    }
-    // Sem obras com coordenadas: centro da UF com zoom municipal aproximado
-    const geo = ufGeo(scope.uf);
-    if (geo) {
-      return { bounds: null, center: geo.center, zoom: 10, minZoom: 4, showMtMask: false };
-    }
-  }
-
-  // Legado / sem escopo: Mato Grosso com máscara
-  return { bounds: MT_BOUNDS, center: MT_CENTER, zoom: 6, minZoom: 6, showMtMask: true };
-}
+import { useOrganizationScope } from '@/hooks/useOrganizationScope';
+import { resolveMapView, type MapView } from '@/lib/obrasMapView';
 
 // Aplica o enquadramento assim que o mapa e o escopo estiverem prontos
 function ScopeController({ view }: { view: MapView }) {
   const map = useMap();
   useEffect(() => {
+    map.setMinZoom(view.minZoom);
+    map.setMaxBounds(view.navigationBounds ?? undefined);
     if (view.bounds) {
       map.fitBounds(view.bounds, { padding: [20, 20] });
     } else {
@@ -164,7 +105,7 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
 
   // Escopo territorial da organização logada (fallback: Mato Grosso)
   const { scope } = useOrganizationScope();
-  const view = resolveMapView(scope, obras);
+  const view = useMemo(() => resolveMapView(scope, obras), [scope, obras]);
 
 
 
@@ -201,8 +142,8 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
         center={view.center}
         zoom={view.zoom}
         minZoom={view.minZoom}
-        maxBounds={view.bounds ?? undefined}
-        maxBoundsViscosity={view.bounds ? 1 : 0}
+        maxBounds={view.navigationBounds ?? undefined}
+        maxBoundsViscosity={view.navigationBounds ? 1 : 0}
         className="h-full w-full rounded-lg transition-all duration-300"
         ref={mapRef}
         zoomControl={false}
@@ -216,36 +157,26 @@ export function ObrasMap({ className, obras = [], onObraClick, loading = false }
 
         <ScopeController view={view} />
 
-        {/* Máscara e contorno de Mato Grosso: apenas no fallback legado ou escopo estadual MT */}
-        {view.showMtMask && (
+        {/* Máscara e contorno da UF configurada; MT somente no fallback legado. */}
+        {view.boundary && (
           <>
             <Polygon
-              positions={[
-                // Anel externo cobrindo o mundo inteiro para garantir a máscara em qualquer zoom
-                [
-                  [-90, -180],
-                  [-90, 180],
-                  [90, 180],
-                  [90, -180],
-                ],
-                // Buraco no formato de Mato Grosso
-                mtBoundary,
-              ]}
+              positions={view.boundary.mask}
+              className="uf-territory-mask"
+              interactive={false}
               pathOptions={{
-                fillColor: '#0f172a',
                 fillOpacity: 0.85,
                 stroke: false,
                 fillRule: 'evenodd',
-                interactive: false,
               }}
             />
             <Polyline
-              positions={mtBoundary}
+              positions={view.boundary.rings}
+              className="uf-territory-outline"
+              interactive={false}
               pathOptions={{
-                color: '#3b82f6',
                 weight: 2,
                 opacity: 0.8,
-                interactive: false,
               }}
             />
           </>
