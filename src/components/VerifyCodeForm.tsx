@@ -31,7 +31,13 @@ export function VerifyCodeForm({ email, onCodeVerified, onBack }: VerifyCodeForm
         body: { code },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.context instanceof Response && error.context.status === 400) {
+          toast.error("Código inválido ou expirado");
+          return;
+        }
+        throw error;
+      }
 
       if (data?.valid) {
         toast.success("Código verificado com sucesso!");
