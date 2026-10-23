@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Housekeeping inbound — auditar H3/H3.1, aplicar limites técnicos de anexos sem descarte silencioso e configurar recebimento por organização no Super Admin; republicar somente inbound-maintenance-email; frontend sem publicação automática.
+
 - [x] Escopo municipal — IBGE local por UF, mapa independente de obras, seleção pesquisável com IBGE automático; 23 testes e simulações Patos/Salvador/Angra passaram, build OK; verificação autenticada indisponível no Supabase externo; frontend aguarda Publish → Update
 
 - [x] Generalizar máscara territorial das 27 UFs — IBGE local, geometria/cache; 14 testes passaram, BA/MT/SC verificados em simulações desktop/celular, clusters preservados, build OK; validação autenticada indisponível no Supabase externo; frontend aguarda Publish → Update
