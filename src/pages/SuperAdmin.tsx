@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InviteOrgAdminCard } from '@/components/superadmin/InviteOrgAdminCard';
+import { MaintenanceInboundSettings } from '@/components/superadmin/MaintenanceInboundSettings';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -292,13 +293,17 @@ export default function SuperAdmin() {
                 <Card><CardContent className="py-12 text-center text-muted-foreground">Selecione uma organização ao lado.</CardContent></Card>
               ) : (
                 <Tabs defaultValue="resumo">
-                  <TabsList>
+                  <TabsList className="flex h-auto flex-wrap justify-start">
                     <TabsTrigger value="resumo">Resumo</TabsTrigger>
                     <TabsTrigger value="itens">Itens e valores</TabsTrigger>
                     <TabsTrigger value="excecoes">Exceções</TabsTrigger>
                     <TabsTrigger value="historico">Histórico</TabsTrigger>
+                    <TabsTrigger value="email">E-mail de Manutenção</TabsTrigger>
                   </TabsList>
 
+                  <TabsContent value="email" className="mt-4">
+                    <MaintenanceInboundSettings key={sel.id} organizationId={sel.id} />
+                  </TabsContent>
                   <TabsContent value="resumo" className="space-y-4 mt-4">
                     <InviteOrgAdminCard organizationId={sel.id} organizationName={sel.nome} />
                     <Card>
