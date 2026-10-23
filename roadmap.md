@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Housekeeping inbound — limites técnicos 10 anexos/10 MiB/25 MiB, validação antes de gravar e configuração transacional Super Admin; 29 testes Node + 3 Deno, UI simulada com releitura e build OK; somente inbound-maintenance-email republicada; frontend aguarda Publish → Update. Quota de plano adiada (contagem diária); salvamento autenticado real não verificado no Supabase externo.
+
 - [x] Escopo municipal — IBGE local por UF, mapa independente de obras, seleção pesquisável com IBGE automático; 23 testes e simulações Patos/Salvador/Angra passaram, build OK; verificação autenticada indisponível no Supabase externo; frontend aguarda Publish → Update
 
 - [x] Generalizar máscara territorial das 27 UFs — IBGE local, geometria/cache; 14 testes passaram, BA/MT/SC verificados em simulações desktop/celular, clusters preservados, build OK; validação autenticada indisponível no Supabase externo; frontend aguarda Publish → Update

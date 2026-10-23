@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, MailOpen, Loader2 } from 'lucide-react';
+import { Mail, MailOpen, Loader2, Paperclip } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { openPrivateFile, parsePrivateStorageUrl } from '@/lib/privateStorage';
+import { useToast } from '@/hooks/use-toast';
 
 type EmailRow = {
   id: string;
@@ -11,6 +14,7 @@ type EmailRow = {
   subject: string | null;
   body_text: string | null;
   created_at: string;
+  attachments: unknown;
 };
 
 function formatDT(v: string) {
@@ -25,6 +29,7 @@ function formatDT(v: string) {
 }
 
 export function TicketEmailThread({ ticketId }: { ticketId: string }) {
+  const { toast } = useToast();
   const [rows, setRows] = useState<EmailRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,9 +39,9 @@ export function TicketEmailThread({ ticketId }: { ticketId: string }) {
       setLoading(true);
       const { data, error } = await supabase
         .from('maintenance_ticket_emails')
-        .select('id,direction,from_addr,to_addrs,subject,body_text,created_at')
+        .select('id,direction,from_addr,to_addrs,subject,body_text,created_at,attachments')
         .eq('ticket_id', ticketId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }).limit(10000);
       if (cancelled) return;
       if (error) console.error('Erro ao carregar thread:', error);
       setRows((data as EmailRow[]) ?? []);
@@ -90,6 +95,17 @@ export function TicketEmailThread({ ticketId }: { ticketId: string }) {
                 {r.body_text}
               </div>
             )}
+            {Array.isArray(r.attachments) && <div className="flex flex-wrap gap-2 mt-2">
+              {r.attachments.map((a: unknown, i: number) => {
+                if (!a || typeof a !== 'object') return null;
+                const file = a as { url?: unknown; description?: unknown };
+                if (typeof file.url !== 'string' || !parsePrivateStorageUrl(file.url)) return null;
+                const url = file.url;
+                return <Button key={i} variant="outline" size="sm" className="max-w-full" onClick={async () => {
+                  if (!await openPrivateFile(url)) toast({ title: 'Não foi possível abrir o anexo.', variant: 'destructive' });
+                }}><Paperclip className="h-3 w-3 mr-1 shrink-0"/><span className="truncate">{typeof file.description === 'string' ? file.description : 'Anexo'}</span></Button>;
+              })}
+            </div>}
           </li>
         );
       })}

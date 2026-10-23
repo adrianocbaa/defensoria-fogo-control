@@ -23,24 +23,12 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import PostalMime from "npm:postal-mime@2.2.7";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { AttachmentError, MAX_REQUEST_BYTES, prepareAttachments, readBounded, storeAttachments, cleanupAttachments } from './attachments.ts';
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const INBOUND_TOKEN = Deno.env.get("INBOUND_EMAIL_TOKEN")!;
-const BUCKET = "documents";
-
-type Attachment = {
-  filename?: string;
-  content_type?: string;
-  content_url?: string;
-  content?: string; // base64
-  size?: number;
-};
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const INBOUND_TOKEN = Deno.env.get("INBOUND_EMAIL_TOKEN") || "";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -176,33 +164,6 @@ function sanitizeText(s: string): string {
     .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "$1");
 }
 
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "arquivo";
-}
-
-// Limite por imagem (bytes) e orçamento total de imagens por e-mail.
-// Anexos que não sejam imagem são sempre descartados; imagens acima do limite
-// (ou que estourem o orçamento) são ignoradas — a tarefa é criada mesmo assim.
-const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
-const MAX_TOTAL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-
-const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|bmp|heic|heif|tiff?)$/i;
-
-function isImageAttachment(mime?: string, filename?: string): boolean {
-  const m = (mime || "").toLowerCase();
-  if (m.startsWith("image/")) return true;
-  if (m && m !== "application/octet-stream") return false;
-  return IMAGE_EXT_RE.test(filename || "");
-}
-
-
-function base64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64.replace(/\s+/g, ""));
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
 function safeEqual(a: string, b: string): boolean {
   if (!a || !b || a.length !== b.length) return false;
   let r = 0;
@@ -241,7 +202,7 @@ serve(async (req) => {
   try {
     if (contentType.includes("message/rfc822") || contentType.includes("text/plain")) {
       // Modo bruto: e-mail MIME cru (enviado pelo Cloudflare Email Worker)
-      const rawText = await req.text();
+      const rawText = new TextDecoder().decode(await readBounded(req, MAX_REQUEST_BYTES));
       const parsed: any = await PostalMime.parse(rawText);
       payload = {
         from: parsed.from ? { address: parsed.from.address, name: parsed.from.name } : null,
@@ -260,48 +221,20 @@ serve(async (req) => {
           }
           return h;
         })(),
-        attachments: (() => {
-          let used = 0;
-          return (parsed.attachments || [])
-            .map((att: any) => {
-              const filename = att.filename || "arquivo";
-              // Só imagens: PDFs, vídeos e demais anexos são descartados.
-              if (!isImageAttachment(att.mimeType, filename)) {
-                console.warn("inbound: anexo descartado (não é imagem)", filename, att.mimeType);
-                return null;
-              }
-              const bytes = new Uint8Array(att.content);
-              if (bytes.length > MAX_ATTACHMENT_BYTES) {
-                console.warn("inbound: imagem ignorada por tamanho", filename, bytes.length);
-                return null;
-              }
-              if (used + bytes.length > MAX_TOTAL_ATTACHMENT_BYTES) {
-                console.warn("inbound: imagem ignorada por exceder o limite total", filename);
-                return null;
-              }
-              used += bytes.length;
-              let bin = "";
-              const CHUNK = 0x8000;
-              for (let i = 0; i < bytes.length; i += CHUNK) {
-                bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-              }
-              return {
-                filename,
-                content_type: att.mimeType?.startsWith("image/") ? att.mimeType : "image/jpeg",
-                size: bytes.length,
-                content: btoa(bin),
-              };
-            })
-            .filter(Boolean);
-        })(),
+        attachments: (parsed.attachments || []).map((att: any) => ({
+          filename: att.filename || "arquivo", content_type: att.mimeType,
+          bytes: new Uint8Array(att.content), size: att.content.byteLength,
+        })),
 
 
       };
     } else {
-      payload = await req.json();
+      payload = JSON.parse(new TextDecoder().decode(await readBounded(req, MAX_REQUEST_BYTES)));
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) return json(400, { error: "invalid_payload" });
     }
   } catch (e) {
-    console.error("inbound: falha no parse", e);
+    console.error("inbound: invalid_payload");
+    if (e instanceof AttachmentError) return json(e.status, { error: e.category });
     return json(400, { error: "invalid_payload" });
   }
 
@@ -352,7 +285,7 @@ serve(async (req) => {
       p_sender: (fromAddr || "").toLowerCase(),
     });
     if (resErr) {
-      console.error("inbound: falha ao resolver tenant", resErr.message);
+      console.error("inbound: resolve_failed");
       return json(500, { error: "resolve_failed" });
     }
     const resolved = res as { ok: boolean; reason?: string; organization_id?: string };
@@ -374,10 +307,23 @@ serve(async (req) => {
         .limit(1)
         .maybeSingle();
       if (dup) {
-        console.log("inbound: mensagem duplicada", messageId);
+        console.log("inbound: duplicated");
         return json(200, { ok: true, duplicated: true, ticket_id: dup.ticket_id });
       }
     }
+
+    if (payload.attachments != null && !Array.isArray(payload.attachments)) return json(400, { error: "invalid_attachment" });
+    const prepared = await prepareAttachments(payload.attachments || [], SUPABASE_URL);
+    const storage = {
+      upload: async (bucket: string, path: string, bytes: Uint8Array, mime: string) => {
+        const { error } = await supabase.storage.from(bucket).upload(path, bytes, { contentType: mime, upsert: false });
+        if (error) throw new AttachmentError("attachment_storage_failed", 503);
+      },
+      remove: async (bucket: string, paths: string[]) => {
+        const { error } = await supabase.storage.from(bucket).remove(paths);
+        if (error) throw new AttachmentError("attachment_cleanup_failed", 500);
+      },
+    };
 
     // Detecta thread: [SiDIF #NNNN] no subject ou In-Reply-To
     const inReplyTo: string | undefined =
@@ -398,8 +344,10 @@ serve(async (req) => {
         return json(404, { error: "ticket_not_found" });
       }
 
-      await supabase.from("maintenance_ticket_emails").insert({
+      const stored = await storeAttachments(prepared, orgId, existing.id, SUPABASE_URL, storage);
+      const { error: emailError } = await supabase.from("maintenance_ticket_emails").insert({
         ticket_id: existing.id,
+        attachments: stored,
         organization_id: orgId,
         direction: "inbound",
         from_addr: fromAddr || null,
@@ -410,6 +358,11 @@ serve(async (req) => {
         message_id: messageId ?? null,
         in_reply_to: inReplyTo ?? null,
       });
+
+      if (emailError) {
+        await cleanupAttachments(stored, storage);
+        return json(500, { error: "email_insert_failed" });
+      }
 
       // reabre se estava concluído e ainda não foi confirmado
       if (existing.status === "Concluído" && !existing.confirmed_at) {
@@ -477,10 +430,14 @@ serve(async (req) => {
     const priority = detectPriority(subject, textBody);
 
 
+    const ticketId = crypto.randomUUID();
+    const stored = await storeAttachments(prepared, orgId, ticketId, SUPABASE_URL, storage);
     // Cria ticket (rascunho na coluna Pendente)
     const { data: ticket, error: insErr } = await supabase
       .from("maintenance_tickets")
       .insert({
+        id: ticketId,
+        reference_photos: stored.filter(a => a.content_type.startsWith("image/")),
         organization_id: orgId, // explícito: nunca depender de default/trigger
         title: subject,
         priority,
@@ -511,13 +468,15 @@ serve(async (req) => {
       .single();
 
     if (insErr || !ticket) {
-      console.error("inbound: erro ao criar ticket", insErr);
-      return json(500, { error: "insert_failed", details: insErr?.message });
+      await cleanupAttachments(stored, storage);
+      console.error("inbound: insert_failed");
+      return json(500, { error: "insert_failed" });
     }
 
     // Grava o primeiro e-mail na thread
-    await supabase.from("maintenance_ticket_emails").insert({
+    const { error: emailError } = await supabase.from("maintenance_ticket_emails").insert({
       ticket_id: ticket.id,
+      attachments: stored,
       organization_id: orgId,
       direction: "inbound",
       from_addr: fromAddr || null,
@@ -530,98 +489,26 @@ serve(async (req) => {
     });
 
 
-    // Processa anexos
-    const attachments: Attachment[] = Array.isArray(payload.attachments) ? payload.attachments : [];
-    const photos: Array<any> = [];
-
-    const nowIso = new Date().toISOString();
-    const PHOTO_BUCKET = "service-photos";
-
-    let usedBytes = 0;
-
-    for (const att of attachments) {
-      try {
-        const rawName = att.filename || `anexo-${Date.now()}`;
-        const filename = sanitizeFilename(rawName);
-        const contentType = att.content_type || "application/octet-stream";
-
-        // Só imagens são anexadas à tarefa (PDFs, vídeos e outros são ignorados)
-        if (!isImageAttachment(contentType, rawName)) {
-          console.warn("inbound: anexo descartado (não é imagem)", rawName, contentType);
-          continue;
-        }
-
-        let bytes: Uint8Array | null = null;
-
-        if (att.content_url) {
-          const r = await fetch(att.content_url);
-          if (!r.ok) {
-            console.warn("inbound: falha download anexo", att.content_url, r.status);
-            continue;
-          }
-          bytes = new Uint8Array(await r.arrayBuffer());
-        } else if (att.content) {
-          bytes = base64ToBytes(att.content);
-        }
-
-        if (!bytes) continue;
-
-        if (bytes.length > MAX_ATTACHMENT_BYTES) {
-          console.warn("inbound: imagem ignorada por tamanho", filename, bytes.length);
-          continue;
-        }
-        if (usedBytes + bytes.length > MAX_TOTAL_ATTACHMENT_BYTES) {
-          console.warn("inbound: imagem ignorada por exceder o limite total", filename);
-          continue;
-        }
-        usedBytes += bytes.length;
-
-        const uploadType = contentType.startsWith("image/") ? contentType : "image/jpeg";
-        // Path tenant-aware (S1): <org>/maintenance-inbound/<ticket>/<arquivo>
-        const path = `${orgId}/maintenance-inbound/${ticket.id}/${Date.now()}-${filename}`;
-        const { error: upErr } = await supabase.storage
-          .from(PHOTO_BUCKET)
-          .upload(path, bytes, { contentType: uploadType, upsert: false });
-
-        if (upErr) {
-          console.warn("inbound: erro upload", upErr.message);
-          continue;
-        }
-
-        // Referência privada (formato storageRef do S1): bucket privado, exibida só via signed URL.
-        const ref = `${SUPABASE_URL}/storage/v1/object/public/${PHOTO_BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`;
-
-        photos.push({
-          id: crypto.randomUUID(),
-          url: ref,
-          bucket: PHOTO_BUCKET,
-          path,
-          description: filename,
-          uploaded_at: nowIso,
-          uploaded_by: null,
-          uploaded_by_name: "E-mail (solicitante)",
-        });
-      } catch (e) {
-        console.error("inbound: erro processando anexo", e);
-      }
+    if (emailError) {
+      // The ticket already exists: report failure explicitly, do not claim success.
+      console.error("inbound: email_insert_failed");
+      return json(500, { error: "email_insert_failed", ticket_created: true });
     }
-
-    if (photos.length) {
-      await supabase
-        .from("maintenance_tickets")
-        .update({ reference_photos: photos })
-        .eq("id", ticket.id);
-    }
-
-    console.log(`inbound: ticket #${ticket.ticket_number} criado (${photos.length} fotos)`);
+    const photos = stored.filter(a => a.content_type.startsWith("image/"));
+    console.log("inbound: ticket_created");
     return json(200, {
       ok: true,
       ticket_id: ticket.id,
       ticket_number: ticket.ticket_number,
       photos: photos.length,
+      attachments: stored.length,
     });
   } catch (e) {
-    console.error("inbound: erro inesperado", e);
-    return json(500, { error: "internal", details: e instanceof Error ? e.message : String(e) });
+    if (e instanceof AttachmentError) {
+      console.warn("inbound:", e.category);
+      return json(e.status, { error: e.category });
+    }
+    console.error("inbound: internal");
+    return json(500, { error: "internal" });
   }
 });

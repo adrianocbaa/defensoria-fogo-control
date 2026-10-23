@@ -7962,6 +7962,17 @@ export type Database = {
         Args: { p_override_id: string; p_reason: string }
         Returns: undefined
       }
+      super_admin_save_maintenance_inbound: {
+        Args: {
+          p_addresses: string[]
+          p_alias: string
+          p_allowed_domains: string[]
+          p_enabled: boolean
+          p_organization_id: string
+          p_sender_policy: string
+        }
+        Returns: undefined
+      }
       super_admin_set_maintenance_inbound: {
         Args: {
           p_alias: string
