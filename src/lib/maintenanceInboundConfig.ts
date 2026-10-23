@@ -12,7 +12,7 @@ export function normalizeInboundConfig(v: InboundConfig) {
 export function validateInboundConfig(v: InboundConfig): string | null {
   const c=normalizeInboundConfig(v);
   if (c.alias && !/^[a-z0-9][a-z0-9-]{1,40}$/.test(c.alias)) return 'Alias inválido: use de 2 a 41 letras minúsculas, números ou hífen.';
-  if (!Object.hasOwn(INBOUND_POLICIES,c.policy)) return 'Selecione a política de remetente.';
+  if (!Object.prototype.hasOwnProperty.call(INBOUND_POLICIES,c.policy)) return 'Selecione a política de remetente.';
   if (c.domains.length>100 || c.domains.some(d=>d.length>253 || !domainPattern.test(d))) return 'Informe domínios válidos, sem @ ou endereço de site.';
   if (c.policy==='allowed_domains' && !c.domains.length) return 'Informe ao menos um domínio permitido.';
   if (c.addresses.length>100 || c.addresses.some(a=> { const [local,domain,...rest]=a.split('@'); return rest.length>0 || a.length>254 || !local || local.length>64 || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/.test(local) || !domain || !domainPattern.test(domain); })) return 'Informe endereços de e-mail válidos.';

@@ -48,7 +48,7 @@ async function invoke({files=[],subject='Fixture',resolved={ok:true,organization
     if(name.includes('/cors'))return {corsHeaders:{'Access-Control-Allow-Origin':'*'}};
     if(name.includes('supabase-js'))return {createClient:()=>client};
     if(name.includes('http/server'))return {serve:f=>handler=f};
-    if(name.includes('postal-mime'))return {default:{parse:async()=>({...payload,attachments:files.map(f=>({filename:f.filename,mimeType:f.content_type,content:f.bytes.buffer}))})}};
+    if(name.includes('postal-mime'))return {default:{parse:async()=>({...payload,headers:[],attachments:files.map(f=>({filename:f.filename,mimeType:f.content_type,content:f.bytes.buffer}))})}};
     throw Error(`unexpected import ${name}`);
   }});
   const response=await handler(new Request('https://mock.invalid/inbound',{method:'POST',headers:{'content-type':raw?'message/rfc822':'application/json','x-sidif-inbound-secret':secret,'x-sidif-envelope-to':'org-a@manutencao.sidif.com.br'},body:raw?'fixture':JSON.stringify(payload)}));
