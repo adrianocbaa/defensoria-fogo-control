@@ -52,6 +52,7 @@ export async function prepareAttachments(attachments: IncomingAttachment[], supa
   if (attachments.length > ATTACHMENT_LIMITS.count) throw new AttachmentError('attachment_count_exceeded',413);
   let total = 0; const result: PreparedAttachment[] = [];
   for (const att of attachments) {
+    if (!att || typeof att !== 'object' || (att.filename != null && typeof att.filename !== 'string') || (att.content_type != null && typeof att.content_type !== 'string') || (att.content != null && typeof att.content !== 'string') || (att.content_url != null && typeof att.content_url !== 'string') || (att.bytes != null && !(att.bytes instanceof Uint8Array))) throw new AttachmentError('invalid_attachment');
     if (att.size != null && (!Number.isSafeInteger(att.size) || att.size < 0)) throw new AttachmentError('invalid_attachment');
     if ((att.size ?? 0) > ATTACHMENT_LIMITS.fileBytes) throw new AttachmentError('attachment_size_exceeded',413);
     let bytes = att.bytes;
@@ -70,7 +71,8 @@ export async function prepareAttachments(attachments: IncomingAttachment[], supa
       try { response=await fetcher(url,{redirect:'error',signal:AbortSignal.timeout(15000)}); }
       catch { throw new AttachmentError('attachment_download_failed',502); }
       if (!response.ok) throw new AttachmentError('attachment_download_failed',502);
-      bytes=await readBounded(response,ATTACHMENT_LIMITS.fileBytes);
+      try { bytes=await readBounded(response,ATTACHMENT_LIMITS.fileBytes); }
+      catch (error) { if (error instanceof AttachmentError) throw error; throw new AttachmentError('attachment_download_failed',502); }
     }
     if (!bytes?.length) throw new AttachmentError('invalid_attachment');
     if (bytes.length>ATTACHMENT_LIMITS.fileBytes) throw new AttachmentError('attachment_size_exceeded',413);
