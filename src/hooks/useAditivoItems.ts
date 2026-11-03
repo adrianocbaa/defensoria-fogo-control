@@ -13,7 +13,8 @@ export function useAditivoItems() {
   const upsertItems = async (
     aditivoId: string,
     items: AditivoItemUpsertInput[],
-    userId?: string | null
+    userId?: string | null,
+    zeroCodes?: string[]
   ): Promise<void> => {
     const aggregated = new Map<string, AditivoItemUpsertInput>();
     for (const it of items) {
@@ -53,10 +54,25 @@ export function useAditivoItems() {
       user_id: userId ?? null,
     }));
 
-    const { error } = await supabase
-      .from('aditivo_items')
-      .upsert(payload as any, { onConflict: 'aditivo_id,item_code' });
-    if (error) throw error;
+    if (payload.length > 0) {
+      const { error } = await supabase
+        .from('aditivo_items')
+        .upsert(payload as any, { onConflict: 'aditivo_id,item_code' });
+      if (error) throw error;
+    }
+
+    // Itens zerados pelo usuário: remover o registro salvo anteriormente,
+    // senão o valor antigo reaparece ao recarregar.
+    const keep = new Set(payload.map((p) => p.item_code));
+    const toDelete = Array.from(new Set((zeroCodes || []).map((c) => c.trim()))).filter((c) => c && !keep.has(c));
+    if (toDelete.length > 0) {
+      const { error: delErr } = await supabase
+        .from('aditivo_items')
+        .delete()
+        .eq('aditivo_id', aditivoId)
+        .in('item_code', toDelete);
+      if (delErr) throw delErr;
+    }
   };
 
   return { upsertItems };

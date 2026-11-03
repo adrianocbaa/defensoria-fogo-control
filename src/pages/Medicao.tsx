@@ -1283,12 +1283,13 @@ export function Medicao() {
       return;
     }
     try {
+      const zeroCodes: string[] = [];
       const payload = items.reduce((arr, it) => {
         const d = ad.dados[it.id];
         if (!d) return arr;
         // CORREÇÃO: Considerar valores diferentes de zero (positivos OU negativos para supressões)
         const hasData = (d.qnt ?? 0) !== 0 || (d.percentual ?? 0) !== 0 || (d.total ?? 0) !== 0;
-        if (!hasData) return arr;
+        if (!hasData) { zeroCodes.push(it.item.trim()); return arr; }
         arr.push({ 
           item_code: it.item.trim(), 
           qtd: d.qnt || 0, 
@@ -1301,7 +1302,7 @@ export function Medicao() {
       }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number; valor_unitario_bruto?: number }[]);
 
 
-      await upsertAditivoItems(ad.sessionId, payload);
+      await upsertAditivoItems(ad.sessionId, payload, null, zeroCodes);
       toast.success(`${ad.nome} salvo com sucesso!`);
     } catch (e) {
       console.error(e);
@@ -1317,12 +1318,13 @@ export function Medicao() {
       return;
     }
     try {
+      const zeroCodes: string[] = [];
       const payload = items.reduce((arr, it) => {
         const d = ad.dados[it.id];
         if (!d) return arr;
         // CORREÇÃO: Considerar valores diferentes de zero (positivos OU negativos para supressões)
         const hasData = (d.qnt ?? 0) !== 0 || (d.percentual ?? 0) !== 0 || (d.total ?? 0) !== 0;
-        if (!hasData) return arr;
+        if (!hasData) { zeroCodes.push(it.item.trim()); return arr; }
         arr.push({ 
           item_code: it.item.trim(), 
           qtd: d.qnt || 0, 
@@ -1335,7 +1337,7 @@ export function Medicao() {
       }, [] as { item_code: string; qtd: number; pct: number; total: number; valor_unitario?: number; valor_unitario_bruto?: number }[]);
 
 
-      await upsertAditivoItems(ad.sessionId, payload);
+      await upsertAditivoItems(ad.sessionId, payload, null, zeroCodes);
       await blockAditivoSession(ad.sessionId);
       setAditivos(prev => prev.map(a => a.id === aditivoLocalId ? { ...a, bloqueada: true } : a));
       
