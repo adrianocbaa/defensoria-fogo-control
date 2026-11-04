@@ -1156,6 +1156,13 @@ export function Medicao() {
             const percentualCalculado = quantidadeProjetoAjustada > 0 ? (qntProposta / quantidadeProjetoAjustada) * 100 : 0;
             novosDados[itemId].percentual = percentualCalculado;
             novosDados[itemId].total = (percentualCalculado / 100) * calcularTotalContratoComAditivos(item, medicaoId);
+            // Estorno de item suprimido (contrato ajustado zerado): o valor também
+            // deve ser estornado, proporcional ao preço unitário original.
+            if (qntProposta < 0 && quantidadeProjetoAjustada <= 1e-9 && (item.quantidade || 0) > 0) {
+              const unit = (item.totalContrato ?? item.valorTotal ?? 0) / (item.quantidade || 1);
+              novosDados[itemId].percentual = -(Math.abs(qntProposta) / (item.quantidade || 1)) * 100;
+              novosDados[itemId].total = Math.round(qntProposta * unit * 100) / 100;
+            }
           } else if (campo === 'percentual') {
             const qntEquivalente = qntProposta;
             novosDados[itemId].qnt = qntEquivalente;
