@@ -18,7 +18,7 @@ const BANDS = [{ grau: 'III', maxAmplitudePct: 30 }, { grau: 'II', maxAmplitudeP
 
 test('distributions match reference values', () => {
   close(E.studentTwoTailedP(2.0, 10), 0.07338803477074464, 1e-9, 't p');
-  close(E.fUpperP(4, 2, 10), 0.05284130371654291, 1e-9, 'F p');
+  close(E.fUpperP(4, 2, 10), 0.052922149401344654, 1e-9, 'F p');
   close(E.studentTCritical(0.8, 20), 1.325340706985046, 1e-9, 't crit');
 });
 
