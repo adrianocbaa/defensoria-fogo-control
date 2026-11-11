@@ -52,7 +52,7 @@ test('log response: mode < median < mean and each IC shifted by its own correcti
   const pr = E.project(fit, c.input, c.avaliando, 0.8, BANDS);
   const [mo, me, mn] = pr.centers;
   assert.ok(mo.value < me.value && me.value < mn.value);
-  close(mo.lower / me.lower, Math.exp(-fit.s ** 2), 1e-12, 'mode IC shift');
+  close(mo.lower / me.lower, Math.exp(-(fit.s ** 2)), 1e-12, 'mode IC shift');
   close(mn.upper / me.upper, Math.exp(fit.s ** 2 / 2), 1e-12, 'mean IC shift');
   close(mo.value, Math.exp(pr.z0 - fit.s ** 2), 1e-12, 'mode formula');
 });
