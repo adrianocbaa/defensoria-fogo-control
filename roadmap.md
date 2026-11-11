@@ -1,5 +1,13 @@
 # Roadmap
 
+## Módulo Avaliações V1 (11/11/2026)
+- [ ] Motor estatístico puro (OLS, transformações, IC, precisão) + testes
+- [ ] Validador 13 critérios com política versionada + testes
+- [ ] Banco: tabelas, RLS por organização/papel, numeração, RPCs (aceite, resultado, laudo, invalidação, pendências)
+- [ ] Função do servidor avaliacao-engine (execução, validação, projeção oficial)
+- [ ] Telas: lista, nova, área de trabalho (Resumo, 7 blocos, Documentos, Histórico)
+- [ ] Laudo: seções, tokens protegidos, preflight, emissão imutável, revisão, PDF rascunho/emitido
+
 - [x] Housekeeping inbound — limites técnicos 10 anexos/10 MiB/25 MiB, validação antes de gravar e configuração transacional Super Admin; 29 testes Node + 3 Deno, UI simulada com releitura e build OK; somente inbound-maintenance-email republicada; frontend aguarda Publish → Update. Quota de plano adiada (contagem diária); salvamento autenticado real não verificado no Supabase externo.
 
 - [x] Escopo municipal — IBGE local por UF, mapa independente de obras, seleção pesquisável com IBGE automático; 23 testes e simulações Patos/Salvador/Angra passaram, build OK; verificação autenticada indisponível no Supabase externo; frontend aguarda Publish → Update
