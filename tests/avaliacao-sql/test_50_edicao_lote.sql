@@ -132,11 +132,12 @@ SELECT pg_temp.ok(EXISTS (SELECT 1 FROM public.audit_events WHERE event_type = '
 -- 5) Permissões, isolamento e guarda contra edição silenciosa
 SELECT pg_temp.throws($$UPDATE public.dados_mercado SET valor_utilizado = 1 WHERE id = 'e0000000-0000-0000-0000-000000000001'$$, 'use_change_flow', 'edição direta de dado usado em avaliação é bloqueada');
 SELECT pg_temp.throws($$UPDATE public.imoveis SET area_construida = 1 WHERE id = 'd0000000-0000-0000-0000-000000000001'$$, 'use_change_flow', 'edição direta de imóvel vinculado é bloqueada');
+SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$UPDATE public.avaliacao_amostras SET origem_territorial = 'OUTRA_FONTE' WHERE id = 'f0000000-0000-0000-0000-000000000001'$$, 'use_change_flow', 'origem territorial só muda pelo fluxo com impacto');
 UPDATE public.imoveis SET area_construida = 81 WHERE id = 'd0000000-0000-0000-0000-000000000011';
 SELECT pg_temp.ok((SELECT area_construida FROM public.imoveis WHERE id = 'd0000000-0000-0000-0000-000000000011') = 81, 'imóvel sem vínculo com avaliação continua editável');
 UPDATE public.avaliacao_amostras SET selecionada = NOT selecionada WHERE id = 'f0000000-0000-0000-0000-000000000003';
-SELECT pg_temp.ok(true, 'seleção de amostra continua liberada');
+SELECT pg_temp.ok((SELECT selecionada FROM public.avaliacao_amostras WHERE id = 'f0000000-0000-0000-0000-000000000003') IS DISTINCT FROM (SELECT selecionada FROM public.avaliacao_amostras WHERE id = 'f0000000-0000-0000-0000-000000000004'), 'seleção de amostra continua liberada');
 SELECT pg_temp.login('a3000000-0000-0000-0000-000000000003');
 SELECT pg_temp.throws($$SELECT public.aval_apply_changes((SELECT av FROM fx), jsonb_build_array(jsonb_build_object('entity_type','dado_mercado',
   'entity_id','e0000000-0000-0000-0000-000000000001','campo','valor_utilizado','valor',10)), NULL)$$, 'permission_denied', 'revisor não edita amostra');
