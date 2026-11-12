@@ -18,7 +18,7 @@ SELECT pg_temp.ok((SELECT count(*) FROM public.atributos_imobiliarios WHERE orga
 SELECT pg_temp.login('a2000000-0000-0000-0000-000000000002');
 INSERT INTO public.avaliacao_variaveis(id, avaliacao_id, nome, codigo, tipo_variavel, papel, origem_tipo, campo_origem, atributo_id, unidade, relacao_esperada, obrigatoria)
 SELECT x.id::uuid, (SELECT av FROM fx), x.nome, x.codigo, 'QUANTITATIVA', x.papel, x.origem, x.campo,
-       (SELECT id FROM public.atributos_imobiliarios WHERE organization_id IS NULL AND codigo = x.attr), x.unidade, x.rel, true
+       (SELECT id FROM public.atributos_imobiliarios WHERE organization_id IS NULL AND codigo = x.attr), x.unidade, COALESCE(x.rel, 'INDEFINIDA'), true
   FROM (VALUES ('c1000000-0000-0000-0000-000000000001', 'Valor mensal', 'valor_mensal', 'DEPENDENTE', 'CAMPO_DADO_MERCADO', 'valor_utilizado', NULL, 'R$/mês', NULL),
                ('c1000000-0000-0000-0000-000000000002', 'Área privativa', 'area_privativa', 'INDEPENDENTE', 'ATRIBUTO_IMOBILIARIO', NULL, 'AREA_PRIVATIVA', 'm²', 'POSITIVA'),
                ('c1000000-0000-0000-0000-000000000003', 'Banheiros', 'banheiros', 'INDEPENDENTE', 'ATRIBUTO_IMOBILIARIO', NULL, 'BANHEIROS', 'un', 'POSITIVA')
