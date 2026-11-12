@@ -30,7 +30,7 @@ export interface BancoRow {
 }
 
 /** Filtros iniciais: município da avaliação atual em primeiro lugar; aluguel por padrão (avaliações de locação). */
-export function filtrosIniciais(av: { municipio_ibge: string | null; uf?: string | null }): BancoFiltros {
+export function filtrosIniciais(av: { municipio_ibge?: string | null }): BancoFiltros {
   return { municipio_ibge: av.municipio_ibge ?? '', uf: '', tipo_negocio: 'LOCACAO', tipo_imovel: '', bairro: '', area_min: '', area_max: '',
     data_de: '', data_ate: '', fonte: '', status: '', q: '', somente_recentes: true, excluir_da_avaliacao: false };
 }
