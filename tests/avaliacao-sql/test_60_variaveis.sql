@@ -53,9 +53,11 @@ SELECT pg_temp.throws($q$INSERT INTO public.imovel_atributos(imovel_id, atributo
 
 -- 4) Amostras: 1..8 com banheiros; área privativa em 1..7 (amostra 8 fica incompleta, mas salva)
 SELECT public.aval_apply_changes((SELECT av FROM fx), (SELECT jsonb_agg(c) FROM (
-  SELECT jsonb_build_object('entity_type','imovel_atributo','entity_id',('d0000000-0000-0000-0000-00000000000' || i)::uuid,'campo','BANHEIROS','valor', (1 + i % 3)::text) c FROM generate_series(1, 8) i
+  SELECT jsonb_build_object('entity_type','imovel_atributo','entity_id',('d0000000-0000-0000-0000-00000000000' || i)::uuid,'campo','BANHEIROS','valor', (1 + i % 3)::text,
+    'contexto', jsonb_build_object('dado_id', ('e0000000-0000-0000-0000-00000000000' || i)::uuid)) c FROM generate_series(1, 8) i
   UNION ALL
-  SELECT jsonb_build_object('entity_type','imovel_atributo','entity_id',('d0000000-0000-0000-0000-00000000000' || i)::uuid,'campo','AREA_PRIVATIVA','valor', (40 + i * 10)::text) FROM generate_series(1, 7) i) t), NULL);
+  SELECT jsonb_build_object('entity_type','imovel_atributo','entity_id',('d0000000-0000-0000-0000-00000000000' || i)::uuid,'campo','AREA_PRIVATIVA','valor', (40 + i * 10)::text,
+    'contexto', jsonb_build_object('dado_id', ('e0000000-0000-0000-0000-00000000000' || i)::uuid)) FROM generate_series(1, 7) i) t), NULL);
 INSERT INTO r SELECT 's1', public.aval_variaveis_status((SELECT av FROM fx));
 SELECT pg_temp.ok((SELECT x->>'amostras_completas' FROM r, jsonb_array_elements(j->'variaveis') x WHERE k = 's1' AND x->>'codigo' = 'area_privativa') = '7'
   AND (SELECT x->>'amostras_total' FROM r, jsonb_array_elements(j->'variaveis') x WHERE k = 's1' AND x->>'codigo' = 'area_privativa') = '8',
@@ -83,7 +85,8 @@ END $$;
 -- 6) Corrige a amostra 8 e congela: valores lidos das fontes; conjunto antigo intacto
 SELECT pg_temp.login('a2000000-0000-0000-0000-000000000002');
 SELECT public.aval_apply_changes((SELECT av FROM fx), jsonb_build_array(
-  jsonb_build_object('entity_type','imovel_atributo','entity_id','d0000000-0000-0000-0000-000000000008','campo','AREA_PRIVATIVA','valor','95')), NULL);
+  jsonb_build_object('entity_type','imovel_atributo','entity_id','d0000000-0000-0000-0000-000000000008','campo','AREA_PRIVATIVA','valor','95',
+    'contexto', jsonb_build_object('dado_id','e0000000-0000-0000-0000-000000000008'))), NULL);
 SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT public.aval_dataset_freeze((SELECT (j #>> '{}')::uuid FROM r WHERE k = 'cj'));
 SELECT pg_temp.login(NULL);
@@ -100,13 +103,15 @@ SELECT pg_temp.ok((SELECT count(*) FROM public.avaliacao_amostra_snapshots s JOI
 -- 7) Correção depois do congelamento: impacto DATASET, mesma amostra, fotografia intacta, trilha antes/depois
 SELECT pg_temp.login('a2000000-0000-0000-0000-000000000002');
 SELECT pg_temp.ok(public.aval_evaluate_changes_impact((SELECT av FROM fx), jsonb_build_array(
-  jsonb_build_object('entity_type','imovel_atributo','entity_id','d0000000-0000-0000-0000-000000000001','campo','BANHEIROS','valor','3')))->>'nivel' = 'DATASET',
+  jsonb_build_object('entity_type','imovel_atributo','entity_id','d0000000-0000-0000-0000-000000000001','campo','BANHEIROS','valor','3',
+    'contexto', jsonb_build_object('dado_id','e0000000-0000-0000-0000-000000000001'))))->>'nivel' = 'DATASET',
   'Banheiros de amostra congelada = DATASET');
 SELECT pg_temp.ok(public.aval_evaluate_changes_impact((SELECT av FROM fx), jsonb_build_array(
   jsonb_build_object('entity_type','imovel_atributo','entity_id','d0000000-0000-0000-0000-000000000010','campo','BANHEIROS','valor','3')))->>'nivel' = 'REPORT_ONLY',
   'Banheiros do avaliando antes de modelo calculado = REPORT_ONLY');
 SELECT public.aval_apply_changes((SELECT av FROM fx), jsonb_build_array(
-  jsonb_build_object('entity_type','imovel_atributo','entity_id','d0000000-0000-0000-0000-000000000001','campo','BANHEIROS','valor','3')), 'conferido');
+  jsonb_build_object('entity_type','imovel_atributo','entity_id','d0000000-0000-0000-0000-000000000001','campo','BANHEIROS','valor','3',
+    'contexto', jsonb_build_object('dado_id','e0000000-0000-0000-0000-000000000001'))), 'conferido');
 SELECT pg_temp.login(NULL);
 SELECT pg_temp.ok((SELECT count(*) FROM public.avaliacao_amostra_snapshots s JOIN snap1 o ON o.id = s.id WHERE s.dados = o.dados AND s.hash = o.hash) = 8,
   'conjunto recém-congelado não muda retroativamente');
