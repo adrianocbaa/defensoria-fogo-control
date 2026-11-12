@@ -122,12 +122,13 @@ export function exibicaoAmostra(
   amostra: { snapshot_inclusao?: Foto | null; dados_mercado?: (Rec & { imoveis?: Rec }) | null },
   fotoConjunto: Foto | null | undefined,
   concluida: boolean,
-): { fonte: 'CADASTRO' | 'FOTO_CONJUNTO' | 'FOTO_INCLUSAO'; dado: Rec; imovel: Rec; alterados: string[] } {
+): { fonte: 'CADASTRO' | 'FOTO_CONJUNTO' | 'FOTO_INCLUSAO'; dado: Rec; imovel: Rec; alterados: string[]; comparadoCom: 'CONJUNTO' | 'INCLUSAO' | null } {
   const atual: Foto = { dado: amostra.dados_mercado ?? null, imovel: amostra.dados_mercado?.imoveis ?? null };
   if (concluida) {
     const f = fotoConjunto?.dado ? fotoConjunto : amostra.snapshot_inclusao?.dado ? amostra.snapshot_inclusao : null;
-    if (f) return { fonte: f === fotoConjunto ? 'FOTO_CONJUNTO' : 'FOTO_INCLUSAO', dado: f.dado ?? null, imovel: f.imovel ?? null, alterados: [] };
+    if (f) return { fonte: f === fotoConjunto ? 'FOTO_CONJUNTO' : 'FOTO_INCLUSAO', dado: f.dado ?? null, imovel: f.imovel ?? null, alterados: [], comparadoCom: null };
   }
-  const base = fotoConjunto?.dado ? fotoConjunto : amostra.snapshot_inclusao;
-  return { fonte: 'CADASTRO', dado: atual.dado, imovel: atual.imovel, alterados: camposAlterados(base, atual) };
+  const base = fotoConjunto?.dado ? fotoConjunto : amostra.snapshot_inclusao?.dado ? amostra.snapshot_inclusao : null;
+  return { fonte: 'CADASTRO', dado: atual.dado, imovel: atual.imovel, alterados: camposAlterados(base, atual),
+    comparadoCom: base ? (base === fotoConjunto ? 'CONJUNTO' : 'INCLUSAO') : null };
 }
