@@ -75,6 +75,7 @@ export const EVENTO_MODELO_LABEL: Record<string, string> = {
   MODEL_WITHDRAWN_FROM_VALIDATION: 'Retirado da validação', MODELS_ARCHIVED: 'Arquivado', MODELS_UNARCHIVED: 'Desarquivado',
   VALIDATION_MANUAL_REVIEW: 'Análise manual registrada',
   RELATIONSHIP_VISUAL_ANALYSIS: 'Análise visual do relacionamento',
+  OUTLIER_DECISION: 'Decisão sobre possível outlier',
 };
 const CAMPO_LABEL: Record<string, string> = { relacao_esperada: 'Relação esperada alterada', tipo_variavel: 'Tipo da variável alterado', categorica: 'Classificação categórica alterada' };
 
