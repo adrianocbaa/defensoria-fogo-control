@@ -1,12 +1,14 @@
 # Roadmap
 
 ## Módulo Avaliações V1 (11/11/2026)
-- [ ] Motor estatístico puro (OLS, transformações, IC, precisão) + testes
-- [ ] Validador 13 critérios com política versionada + testes
-- [ ] Banco: tabelas, RLS por organização/papel, numeração, RPCs (aceite, resultado, laudo, invalidação, pendências)
-- [ ] Função do servidor avaliacao-engine (execução, validação, projeção oficial)
-- [ ] Telas: lista, nova, área de trabalho (Resumo, 7 blocos, Documentos, Histórico)
-- [ ] Laudo: seções, tokens protegidos, preflight, emissão imutável, revisão, PDF rascunho/emitido
+- [x] Motor estatístico (OLS, transformações, IC, precisão) + validador 13 critérios — 11 testes passaram
+- [x] Banco: tabelas, regras por órgão/papel, numeração, aceite, resultado, laudo, invalidação, pendências; reforço de segurança aplicado
+- [x] Função do servidor avaliacao-engine publicada (recusa chamadas sem login)
+- [x] Telas: lista, nova, área de trabalho (Resumo, 7 blocos, Documentos, Histórico) — compila; frontend aguarda Publish → Update
+- [x] Laudo: seções, dados protegidos, verificação, emissão imutável, revisão, PDF rascunho/emitido
+- [ ] Teste completo logado (criar → laudo emitido) — bloqueado: login de teste indisponível no Supabase externo; pede validação do usuário em órgão de homologação
+- [ ] Sugestões de texto por IA no laudo — estrutura no banco pronta, botão na tela não implementado
+- [ ] Homologação numérica (Guarantã do Norte, Aripuanã, São Félix do Araguaia) — aguarda planilhas de referência
 
 - [x] Housekeeping inbound — limites técnicos 10 anexos/10 MiB/25 MiB, validação antes de gravar e configuração transacional Super Admin; 29 testes Node + 3 Deno, UI simulada com releitura e build OK; somente inbound-maintenance-email republicada; frontend aguarda Publish → Update. Quota de plano adiada (contagem diária); salvamento autenticado real não verificado no Supabase externo.
 
