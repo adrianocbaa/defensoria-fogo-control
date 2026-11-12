@@ -15,7 +15,7 @@ import { ImpactDialog, type PendingChange } from '../ImpactDialog';
 import { db, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { PAPEL_LABEL, VALOR_ADM_LABEL, fmtDate, fmtMoney } from '@/lib/avaliacao/labels';
-import { camposInvalidos, montarAlteracoes, paraFormulario, type CampoEdicao } from '@/lib/avaliacao/edicao';
+import { camposInvalidos, montarAlteracoes, paraFormulario, parseDecimalBR, type CampoEdicao } from '@/lib/avaliacao/edicao';
 
 const parseMoney = (s: string) => {
   const n = Number(s.replace(/\./g, '').replace(',', '.'));
@@ -87,7 +87,8 @@ export function DadosBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const revisarValor = () => {
     if (!editValor) return;
     const cs = camposValor(editValor.row.id);
-    if (camposInvalidos(cs, editValor.form).length || !(parseMoney(editValor.form.valor || '') > 0)) { toast.error('Informe um valor mensal válido.'); return; }
+    const vm = parseDecimalBR(editValor.form.valor);
+    if (camposInvalidos(cs, editValor.form).length || vm === null || !(vm > 0)) { toast.error('Informe um valor mensal válido.'); return; }
     const lote = montarAlteracoes(cs, editValor.row, editValor.form);
     if (!lote.length) { toast.info('Nenhum campo foi alterado.'); return; }
     setChanges(lote);
@@ -174,7 +175,7 @@ export function DadosBlock({ ctx }: { ctx: AvaliacaoCtx }) {
             : <Input value={edit?.valor ?? ''} onChange={(e) => edit && setEdit({ ...edit, valor: e.target.value })} maxLength={120} />}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEdit(null)}>Cancelar</Button>
-            <Button onClick={() => { if (edit) { setChange({ entity_type: 'avaliacao', entity_id: av.id, campo: edit.campo, valor: edit.valor, rotulo: edit.rotulo }); setEdit(null); } }}>Continuar</Button>
+            <Button onClick={() => { if (edit) { const antes = campos.find((c) => c.campo === edit.campo)?.valor ?? ''; if (antes.trim() === edit.valor.trim()) { setEdit(null); return; } setChange({ entity_type: 'avaliacao', entity_id: av.id, campo: edit.campo, valor: edit.valor, rotulo: edit.rotulo, de: antes.trim() || '—', para: edit.valor.trim() || '—' }); setEdit(null); } }}>Continuar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
