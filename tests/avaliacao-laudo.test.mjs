@@ -16,6 +16,7 @@ function load(path, imports = {}) {
     require: n => { if (!(n in imports)) throw new Error('import ' + n); return imports[n]; } });
   return exports;
 }
+const plain = x => JSON.parse(JSON.stringify(x));
 const A = load('supabase/functions/_shared/avaliacao/aiText.ts');
 const L = load('supabase/functions/_shared/avaliacao/docLabels.ts');
 const D = load('supabase/functions/_shared/avaliacao/laudoDoc.ts', { './docLabels.ts': L });
@@ -24,7 +25,7 @@ const TOK = ['VALOR_FINAL', 'GRAU_FUNDAMENTACAO', 'GRAU_PRECISAO', 'AREA_AVALIAN
 
 test('IA: proposta que remove marcador protegido é recusada', () => {
   const r = A.checkAiText('O valor adotado é R$ 10.000,00.', 'O valor adotado é {{VALOR_FINAL}}.', TOK, '{}');
-  assert.equal(r.ok, false); assert.equal(r.erro, 'TOKEN_REMOVIDO'); assert.deepEqual(r.tokens, ['VALOR_FINAL']);
+  assert.equal(r.ok, false); assert.equal(r.erro, 'TOKEN_REMOVIDO'); assert.deepEqual(plain(r.tokens), ['VALOR_FINAL']);
 });
 test('IA: proposta que inventa marcador é recusada', () => {
   const r = A.checkAiText('Valor {{VALOR_FINAL}} e {{VALOR_INVENTADO}}.', 'Valor {{VALOR_FINAL}}.', TOK, '{}');
@@ -42,7 +43,7 @@ test('IA: instruções proíbem decidir, calcular e escrever graus por extenso',
   const p = A.systemPrompt('GERAR');
   for (const s of ['Nunca invente', 'Não faça cálculos', '{{GRAU_FUNDAMENTACAO}}', 'Não decida']) assert.ok(p.includes(s), s);
   assert.ok(A.systemPrompt('MELHORAR').includes('mantendo todos os marcadores'));
-  assert.deepEqual([...A.AI_CONTEXTS], ['PROPERTY_DESCRIPTION', 'MARKET_DIAGNOSIS', 'VALIDATION_EXPLANATION', 'COMPATIBILITY', 'CONCLUSION', 'REPORT_SECTION']);
+  assert.deepEqual(plain([...A.AI_CONTEXTS]), ['PROPERTY_DESCRIPTION', 'MARKET_DIAGNOSIS', 'VALIDATION_EXPLANATION', 'COMPATIBILITY', 'CONCLUSION', 'REPORT_SECTION']);
 });
 
 const SNAP = {
@@ -59,15 +60,15 @@ const PNG = Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA
 test('documentos oficiais: dados vêm só do snapshot e a fundamentação estruturada vira tabela', () => {
   const d = D.issuedLaudoData(SNAP, 'a'.repeat(64));
   assert.equal(d.rascunho, false); assert.equal(d.hashEmissao, 'a'.repeat(64));
-  assert.deepEqual(d.fundamentacao, { itens: [{ item_number: 1, titulo: 'Caracterização do imóvel avaliando', grade_achieved: 'II', points: 2, status: 'ATENDE' }], total_points: 14, grau: 'II' });
+  assert.deepEqual(plain(d.fundamentacao), { itens: [{ item_number: 1, titulo: 'Caracterização do imóvel avaliando', grade_achieved: 'II', points: 2, status: 'ATENDE' }], total_points: 14, grau: 'II' });
   const tabs = D.systemTables(d, 'TABELA_VALIDACAO');
   assert.equal(tabs.length, 2); assert.match(tabs[1].title, /Grau de fundamentação: II · 14 pontos/);
   const resumo = D.systemTables(d, 'TABELA_RESUMO')[0].body;
-  assert.deepEqual(resumo.find(r => r[0] === 'Grau de fundamentação'), ['Grau de fundamentação', 'II']);
+  assert.deepEqual(plain(resumo.find(r => r[0] === 'Grau de fundamentação')), ['Grau de fundamentação', 'II']);
 });
 
 test('DOCX editável: seções, tabelas, imagem, cabeçalho, rodapé com numeração e integridade', async () => {
-  assert.deepEqual(I.imageInfo(PNG), { tipo: 'png', largura: 1, altura: 1 });
+  assert.deepEqual(plain(I.imageInfo(PNG)), { tipo: 'png', largura: 1, altura: 1 });
   const d = { ...D.issuedLaudoData(SNAP, 'b'.repeat(64)), figuras: [{ titulo: 'Fachada', data: PNG, tipo: 'png', largura: 1, altura: 1 }] };
   const buf = await docx.Packer.toBuffer(D.buildLaudoDocx(d, docx));
   const zip = await JSZip.loadAsync(buf);
