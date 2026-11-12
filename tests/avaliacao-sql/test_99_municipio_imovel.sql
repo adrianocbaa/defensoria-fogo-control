@@ -115,9 +115,9 @@ SELECT pg_temp.ok((SELECT md5((snapshot_inclusao)::text) || snapshot_chave FROM 
   AND (SELECT md5(dados::text) || hash FROM public.avaliacao_amostra_snapshots WHERE amostra_id = 'f9000000-0000-0000-0000-000000000009') = (SELECT conj FROM antes),
   'foto da inclusão e foto do conjunto congelado não são reescritas');
 SELECT pg_temp.ok((SELECT count(*) FROM public.audit_events WHERE avaliacao_id = pg_temp.id('avP') AND event_type = 'CHANGE_APPLIED'
-  AND payload->>'campo' IN ('municipio_nome','municipio_ibge','uf','origem_territorial')) >= 3
-  AND EXISTS (SELECT 1 FROM public.audit_events WHERE avaliacao_id = pg_temp.id('avP') AND event_type = 'CHANGE_APPLIED' AND payload->>'campo' = 'municipio_nome'
-    AND payload->>'anterior' = '"Peixoto de Azevedo"' AND payload->>'novo' = '"Terra Nova do Norte"'),
+  AND details_json->>'campo' IN ('municipio_nome','municipio_ibge','uf','origem_territorial')) >= 3
+  AND EXISTS (SELECT 1 FROM public.audit_events WHERE avaliacao_id = pg_temp.id('avP') AND event_type = 'CHANGE_APPLIED' AND details_json->>'campo' = 'municipio_nome'
+    AND details_json->>'anterior' = '"Peixoto de Azevedo"' AND details_json->>'novo' = '"Terra Nova do Norte"'),
   'histórico registra antes/depois do município');
 SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.imoveis i JOIN outros0 o ON o.id = i.id
   WHERE i.id <> 'd9000000-0000-0000-0000-000000000009' AND md5(to_jsonb(i)::text) <> o.h), 'nenhum outro imóvel da organização foi alterado');
