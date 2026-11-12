@@ -33,8 +33,9 @@ function userClient(req: Request): SupabaseClient {
   });
 }
 
-async function authorize(req: Request, admin: SupabaseClient, avaliacaoId: string, perm: string) {
-  const caller = await resolveCaller(req, admin, false);
+type Caller = Awaited<ReturnType<typeof resolveCaller>>;
+
+async function authorize(req: Request, admin: SupabaseClient, caller: Caller, avaliacaoId: string, perm: string) {
   const { data: av } = await admin.from('avaliacoes').select('id, organization_id, status').eq('id', avaliacaoId).maybeSingle();
   if (!av) throw new GuardError(404, 'not_found');
   assertSameOrg(caller, av.organization_id);
@@ -96,10 +97,10 @@ async function loadModel(admin: SupabaseClient, modeloId: string): Promise<Model
   return { modelo, depVar, indepVars, input, avaliando, sampleMeta: used.map((s: any) => ({ amostra_id: s.amostra_id, snapshot_hash: s.hash })) };
 }
 
-async function runModel(req: Request, admin: SupabaseClient, modeloId: string) {
+async function runModel(req: Request, admin: SupabaseClient, caller0: Caller, modeloId: string) {
   const { data: m0 } = await admin.from('avaliacao_modelos').select('avaliacao_id, organization_id, status').eq('id', modeloId).maybeSingle();
   if (!m0) throw new GuardError(404, 'not_found');
-  const { caller } = await authorize(req, admin, m0.avaliacao_id, 'model.run');
+  const { caller } = await authorize(req, admin, caller0, m0.avaliacao_id, 'model.run');
   const { data: prev } = await admin.from('avaliacao_modelo_execucoes').select('id').eq('modelo_id', modeloId).eq('status', 'SUCESSO').limit(1);
   if (prev && prev.length) return json(409, { error: 'model_already_executed', message: 'Este modelo já foi calculado e é imutável. Duplique-o para alterar.' });
   const b = await loadModel(admin, modeloId);
@@ -156,10 +157,10 @@ async function runModel(req: Request, admin: SupabaseClient, modeloId: string) {
   }
 }
 
-async function runValidation(req: Request, admin: SupabaseClient, modeloId: string) {
+async function runValidation(req: Request, admin: SupabaseClient, caller0: Caller, modeloId: string) {
   const { data: m0 } = await admin.from('avaliacao_modelos').select('avaliacao_id, organization_id, status, stale').eq('id', modeloId).maybeSingle();
   if (!m0) throw new GuardError(404, 'not_found');
-  const { caller } = await authorize(req, admin, m0.avaliacao_id, 'validation.run');
+  const { caller } = await authorize(req, admin, caller0, m0.avaliacao_id, 'validation.run');
   if (m0.stale) return json(409, { error: 'model_stale', message: 'Modelo desatualizado. Crie um novo modelo.' });
   if (m0.status !== 'EM_VALIDACAO') return json(409, { error: 'model_not_in_validation', message: 'Envie o modelo para validação antes.' });
   const { data: exs } = await admin.from('avaliacao_modelo_execucoes').select('id, output_json, input_snapshot_json')
@@ -197,10 +198,10 @@ async function runValidation(req: Request, admin: SupabaseClient, modeloId: stri
   return json(200, { ok: true, validation_id: val.id, overall: out.overall });
 }
 
-async function runProjection(req: Request, admin: SupabaseClient, acceptanceId: string) {
+async function runProjection(req: Request, admin: SupabaseClient, caller0: Caller, acceptanceId: string) {
   const { data: ac } = await admin.from('model_acceptances').select('*').eq('id', acceptanceId).maybeSingle();
   if (!ac) throw new GuardError(404, 'not_found');
-  const { caller } = await authorize(req, admin, ac.avaliacao_id, 'economic.select_center');
+  const { caller } = await authorize(req, admin, caller0, ac.avaliacao_id, 'economic.select_center');
   if (ac.status !== 'VIGENTE') return json(409, { error: 'acceptance_not_current', message: 'O aceite do modelo não está vigente.' });
   const { data: ex } = await admin.from('avaliacao_modelo_execucoes').select('output_json, input_snapshot_json').eq('id', ac.execucao_id).single();
   const b = await loadModel(admin, ac.modelo_id);
@@ -241,9 +242,11 @@ Deno.serve(async (req) => {
   } catch { return json(400, { error: 'invalid_request' }); }
   const admin = adminClient();
   try {
-    if (body.action === 'run_model') return await runModel(req, admin, body.modelo_id);
-    if (body.action === 'run_validation') return await runValidation(req, admin, body.modelo_id);
-    return await runProjection(req, admin, body.acceptance_id);
+    // Valida o chamador antes de qualquer leitura, para não revelar existência de registros.
+    const caller = await resolveCaller(req, admin, false);
+    if (body.action === 'run_model') return await runModel(req, admin, caller, body.modelo_id);
+    if (body.action === 'run_validation') return await runValidation(req, admin, caller, body.modelo_id);
+    return await runProjection(req, admin, caller, body.acceptance_id);
   } catch (e) {
     const g = guardResponse(e, corsHeaders);
     if (g) return g;
