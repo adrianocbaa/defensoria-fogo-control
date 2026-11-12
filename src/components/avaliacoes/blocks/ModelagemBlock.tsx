@@ -158,7 +158,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const limite = gerar ? evaluateCandidateLimit(estimativa.total, gerar.modo, settings) : null;
   const gerarCandidatos = async (confirmado: boolean) => {
     if (!gerar || !dep || !spec || !limite) return;
-    if (!limite.ok) { toast.error(limite.reason === 'EMPTY' ? 'Nenhuma combinação válida com as transformações autorizadas.' : `São ${estimativa.total} candidatos; o limite da organização é ${limite.limit}. Torne variáveis obrigatórias ou reduza transformações.`); return; }
+    if (limite.ok === false) { toast.error(limite.reason === 'EMPTY' ? 'Nenhuma combinação válida com as transformações autorizadas.' : `São ${estimativa.total} candidatos; o limite da organização é ${limite.limit}. Torne variáveis obrigatórias ou reduza transformações.`); return; }
     if (limite.requiresConfirmation && !confirmado) { setConfirmar(estimativa.total); return; }
     setConfirmar(null);
     const lista = buildCandidates(gerar.modo, spec.depSpec, spec.ind).map((c) => ({ dep_transf: c.depT, vars: c.vars.map(([variavel_id, transformacao]) => ({ variavel_id, transformacao })) }));
@@ -354,7 +354,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 <p className="font-medium">Candidatos estimados: {estimativa.total}</p>
                 {estimativa.descartadasDominio > 0 && <p className="text-xs text-muted-foreground">{estimativa.descartadasDominio} transformação(ões) fora do domínio dos dados foram descartadas (ex.: logaritmo de zero).</p>}
                 <p className="text-xs text-muted-foreground">Limite da organização: {gerar.modo === 'AMPLA' ? settings.exploration_candidate_soft_limit : settings.assisted_candidate_soft_limit} sem confirmação{settings.hard_limit ? ` · máximo ${settings.hard_limit}` : ''}.</p>
-                {limite && !limite.ok && limite.reason === 'HARD_LIMIT' && <p className="text-xs text-destructive mt-1">Acima do máximo permitido. Reduza transformações ou marque variáveis obrigatórias.</p>}
+                {limite && limite.ok === false && limite.reason === 'HARD_LIMIT' && <p className="text-xs text-destructive mt-1">Acima do máximo permitido. Reduza transformações ou marque variáveis obrigatórias.</p>}
               </div>
             </div>
           )}
