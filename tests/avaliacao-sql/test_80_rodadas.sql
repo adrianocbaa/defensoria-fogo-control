@@ -6,7 +6,7 @@ CREATE TEMP TABLE c3 AS SELECT '[{"dep_transf":"DIRECT","vars":[{"variavel_id":"
  {"dep_transf":"DIRECT","vars":[{"variavel_id":"c0000000-0000-0000-0000-000000000002","transformacao":"LN"}]},
  {"dep_transf":"LN","vars":[{"variavel_id":"c0000000-0000-0000-0000-000000000002","transformacao":"DIRECT"}]}]'::jsonb AS j;
 CREATE TEMP TABLE r(k text, j jsonb); CREATE TEMP TABLE pl(mod uuid, j jsonb);
-GRANT SELECT ON c3 TO authenticated; GRANT SELECT, INSERT ON r TO authenticated; GRANT SELECT ON pl TO authenticated, service_role;
+GRANT SELECT ON c3 TO authenticated; GRANT SELECT, INSERT ON r TO authenticated, service_role; GRANT SELECT ON pl TO authenticated, service_role;
 -- Segundo conjunto congelado (mesmas amostras): a mesma equação nele é outro modelo.
 INSERT INTO public.avaliacao_conjuntos_dados(id, avaliacao_id, versao, status) SELECT '10000000-0000-0000-0000-000000000002', av, 2, 'CONGELADO' FROM fx;
 INSERT INTO public.avaliacao_amostra_snapshots(avaliacao_id, conjunto_id, amostra_id, dado_id, imovel_id, dados, hash)
