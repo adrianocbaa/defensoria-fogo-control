@@ -24,7 +24,7 @@ import {
   Laptop,
   Building2,
   Calculator,
-  Ruler
+  Ruler,
   FileSearch,
 } from 'lucide-react';
 
