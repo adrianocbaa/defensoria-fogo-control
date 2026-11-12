@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -36,13 +36,14 @@ export function ImovelFields({ value, onChange, showAnuncio, municipioAvaliacao 
   municipioAvaliacao?: { municipio_ibge?: string | null; municipio_nome?: string | null; uf?: string | null };
 }) {
   const f = (k: keyof ImovelInput) => (e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...value, [k]: e.target.value });
+  const uid = useId();
   const outro = !!municipioAvaliacao?.municipio_ibge && !!value.municipio_ibge && value.municipio_ibge !== municipioAvaliacao.municipio_ibge;
   return (
     <div className="grid gap-3 sm:grid-cols-6">
-      <div className="grid gap-1.5 sm:col-span-6"><Label>Tipo de imóvel</Label><Input value={value.tipo_imovel} onChange={f('tipo_imovel')} maxLength={120} /></div>
-      <div className="grid gap-1.5 sm:col-span-2"><Label htmlFor="imv-uf">UF do imóvel</Label>
+      <div className="grid gap-1.5 sm:col-span-6"><Label htmlFor={`${uid}-tipo_imovel`}>Tipo de imóvel</Label><Input id={`${uid}-tipo_imovel`} value={value.tipo_imovel} onChange={f('tipo_imovel')} maxLength={120} /></div>
+      <div className="grid gap-1.5 sm:col-span-2"><Label htmlFor={`${uid}-uf`}>UF do imóvel</Label>
         <Select value={value.uf || undefined} onValueChange={(uf) => onChange({ ...value, uf, municipio_ibge: '', municipio_nome: '' })}>
-          <SelectTrigger id="imv-uf" aria-label="UF do imóvel"><SelectValue placeholder="UF" /></SelectTrigger>
+          <SelectTrigger id={`${uid}-uf`} aria-label="UF do imóvel"><SelectValue placeholder="UF" /></SelectTrigger>
           <SelectContent>{UFS.map((u) => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla} — {u.nome}</SelectItem>)}</SelectContent>
         </Select></div>
       <div className="grid gap-1.5 sm:col-span-4"><Label>Município do imóvel</Label>
@@ -52,15 +53,15 @@ export function ImovelFields({ value, onChange, showAnuncio, municipioAvaliacao 
         {outro ? `Imóvel fora do município da avaliação (${municipioAvaliacao?.municipio_nome}/${municipioAvaliacao?.uf}).`
           : municipioAvaliacao?.municipio_ibge ? 'Sugerido: município da avaliação. Troque se o imóvel for de outra cidade.' : 'Escolha o município onde o imóvel fica.'}
       </p>
-      <div className="grid gap-1.5 sm:col-span-4"><Label>Endereço</Label><Input value={value.endereco} onChange={f('endereco')} maxLength={200} /></div>
-      <div className="grid gap-1.5 sm:col-span-2"><Label>Número</Label><Input value={value.numero} onChange={f('numero')} maxLength={20} /></div>
-      <div className="grid gap-1.5 sm:col-span-3"><Label>Complemento/unidade</Label><Input value={value.complemento} onChange={f('complemento')} maxLength={80} /></div>
-      <div className="grid gap-1.5 sm:col-span-3"><Label>Bairro</Label><Input value={value.bairro} onChange={f('bairro')} maxLength={120} /></div>
-      <div className="grid gap-1.5 sm:col-span-3"><Label>Área construída (m²)</Label><Input inputMode="decimal" value={value.area_construida} onChange={f('area_construida')} /></div>
-      <div className="grid gap-1.5 sm:col-span-3"><Label>Área do terreno (m²)</Label><Input inputMode="decimal" value={value.area_terreno} onChange={f('area_terreno')} /></div>
+      <div className="grid gap-1.5 sm:col-span-4"><Label htmlFor={`${uid}-endereco`}>Endereço</Label><Input id={`${uid}-endereco`} value={value.endereco} onChange={f('endereco')} maxLength={200} /></div>
+      <div className="grid gap-1.5 sm:col-span-2"><Label htmlFor={`${uid}-numero`}>Número</Label><Input id={`${uid}-numero`} value={value.numero} onChange={f('numero')} maxLength={20} /></div>
+      <div className="grid gap-1.5 sm:col-span-3"><Label htmlFor={`${uid}-complemento`}>Complemento/unidade</Label><Input id={`${uid}-complemento`} value={value.complemento} onChange={f('complemento')} maxLength={80} /></div>
+      <div className="grid gap-1.5 sm:col-span-3"><Label htmlFor={`${uid}-bairro`}>Bairro</Label><Input id={`${uid}-bairro`} value={value.bairro} onChange={f('bairro')} maxLength={120} /></div>
+      <div className="grid gap-1.5 sm:col-span-3"><Label htmlFor={`${uid}-area_construida`}>Área construída (m²)</Label><Input id={`${uid}-area_construida`} inputMode="decimal" value={value.area_construida} onChange={f('area_construida')} /></div>
+      <div className="grid gap-1.5 sm:col-span-3"><Label htmlFor={`${uid}-area_terreno`}>Área do terreno (m²)</Label><Input id={`${uid}-area_terreno`} inputMode="decimal" value={value.area_terreno} onChange={f('area_terreno')} /></div>
       {showAnuncio && <>
-        <div className="grid gap-1.5 sm:col-span-4"><Label>Link do anúncio</Label><Input value={value.anuncio_url} onChange={f('anuncio_url')} maxLength={500} /></div>
-        <div className="grid gap-1.5 sm:col-span-2"><Label>Código do anúncio</Label><Input value={value.anuncio_id} onChange={f('anuncio_id')} maxLength={80} /></div>
+        <div className="grid gap-1.5 sm:col-span-4"><Label htmlFor={`${uid}-anuncio_url`}>Link do anúncio</Label><Input id={`${uid}-anuncio_url`} value={value.anuncio_url} onChange={f('anuncio_url')} maxLength={500} /></div>
+        <div className="grid gap-1.5 sm:col-span-2"><Label htmlFor={`${uid}-anuncio_id`}>Código do anúncio</Label><Input id={`${uid}-anuncio_id`} value={value.anuncio_id} onChange={f('anuncio_id')} maxLength={80} /></div>
       </>}
     </div>
   );
