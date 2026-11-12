@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { chartLabels, drawRelationshipChartsPdf, type RelationshipCurve } from '@/lib/avaliacao/engine';
+import { chartLabels, drawRelationshipChartsPdf, niceTicks, type RelationshipCurve } from '@/lib/avaliacao/engine';
 import { fmtDateTime, fmtNum } from '@/lib/avaliacao/labels';
 import { ANALISE_VISUAL_LABEL } from '@/lib/avaliacao/cicloModelo';
 
@@ -49,8 +49,8 @@ function Grafico({ c, info, dep, nomes }: { c: RelationshipCurve; info: VarInfo;
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={c.points} margin={{ top: 8, right: 12, bottom: 22, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-            <XAxis type="number" dataKey="x" domain={[c.min, c.max]} allowDecimals={!c.discrete} ticks={c.discrete && c.points.length <= 12 ? c.points.map((p) => p.x) : undefined}
-              tick={{ fontSize: 11 }} tickFormatter={fmtVal} label={{ value: lb.eixoX, position: 'insideBottom', offset: -12, fontSize: 11 }} />
+            <XAxis type="number" dataKey="x" domain={[c.min, c.max]} allowDecimals={!c.discrete} ticks={c.discrete && c.points.length <= 12 ? c.points.map((p) => p.x) : niceTicks(c.min, c.max)}
+              tick={{ fontSize: 11 }} tickFormatter={(x: number) => (c.discrete && Number.isInteger(x) ? String(x) : fmtVal(x))} label={{ value: lb.eixoX, position: 'insideBottom', offset: -12, fontSize: 11 }} />
             <YAxis type="number" domain={['auto', 'auto']} tick={{ fontSize: 11 }} tickFormatter={fmtVal} width={64}
               label={{ value: lb.eixoY, angle: -90, position: 'insideLeft', offset: 0, fontSize: 11, style: { textAnchor: 'middle' } }} />
             <Tooltip formatter={(v: number) => [fmtNum(v, 2), lb.eixoY]} labelFormatter={(x: number) => `${lb.eixoX}: ${fmtVal(x)}`} />

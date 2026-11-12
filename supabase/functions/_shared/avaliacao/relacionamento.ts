@@ -190,7 +190,8 @@ const fmtAxis = (v: number) => {
   const d = a >= 1000 ? 0 : a >= 100 ? 0 : a >= 10 ? 1 : 2;
   return v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: d });
 };
-function niceTicks(min: number, max: number, count = 5): number[] {
+/** Marcas "redondas" dentro de [min, max]. */
+export function niceTicks(min: number, max: number, count = 5): number[] {
   if (min === max) return [min];
   const step0 = (max - min) / count;
   const mag = 10 ** Math.floor(Math.log10(step0));
