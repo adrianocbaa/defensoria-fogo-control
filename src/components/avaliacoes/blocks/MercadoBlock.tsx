@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Lock, Pencil, Plus } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Copy, Database, History, Lock, Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -14,12 +15,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { EditAmostraDialog } from '../EditAmostraDialog';
+import { BancoImoveisDialog } from '../BancoImoveisDialog';
+import { ImportarAmostrasDialog } from '../ImportarAmostrasDialog';
 import { CamposDinamicosSection, CompletudeTable, useVariaveisStatus } from '../VariaveisShared';
 import { DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelCreator } from '../ImovelForm';
 import { db, rpc } from '@/lib/avaliacao/api';
 import { avalErrorCode, avalErrorMessage } from '@/lib/avaliacao/errors';
 import { alteracoesDinamicas, bloqueiosCongelamento, bloqueiosDoServidor, camposDinamicos, mensagemCongelamento, nomesFaltando, obrigatoriasVazias } from '@/lib/avaliacao/variaveis';
 import { fmtDateTime, fmtMoney, fmtNum } from '@/lib/avaliacao/labels';
+import { type BancoRow, exibicaoAmostra, type Foto, ORIGEM_INCLUSAO_LABEL, rotuloEndereco, SITUACAO_LABEL, TIPO_NEGOCIO_LABEL } from '@/lib/avaliacao/banco';
 
 const NATUREZA: Record<string, string> = { OFERTA: 'Oferta', NEGOCIACAO: 'Negociação', CONTRATO_PRIVADO: 'Contrato privado', CONTRATO_PUBLICO: 'Contrato público', OUTRO: 'Outro' };
 const FONTE: Record<string, string> = { IMOBILIARIA: 'Imobiliária', CORRETOR: 'Corretor', PROPRIETARIO: 'Proprietário', PORTAL: 'Portal', ORGAO_PUBLICO: 'Órgão público', REDE_SOCIAL: 'Rede social', PLACA: 'Placa', OUTRO: 'Outro' };
@@ -30,7 +34,10 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const av = ctx.avaliacao.data!;
   const [add, setAdd] = useState(false);
   const [im, setIm] = useState<ImovelInput>(emptyImovel(av.tipo_imovel));
-  const [dado, setDado] = useState({ natureza: 'OFERTA', ofertado: '', utilizado: '', data: '', fonteTipo: 'IMOBILIARIA', fonteNome: '', origem: 'LOCAL' });
+  const [dado, setDado] = useState({ natureza: 'OFERTA', negocio: 'LOCACAO', situacao: 'ATIVO', obs: '', ofertado: '', utilizado: '', data: '', fonteTipo: 'IMOBILIARIA', fonteNome: '', origem: 'LOCAL' });
+  const [imovelFixo, setImovelFixo] = useState<BancoRow | null>(null);
+  const [banco, setBanco] = useState(false);
+  const [importar, setImportar] = useState(false);
   const [freeze, setFreeze] = useState(false);
   const [editar, setEditar] = useState<{ amostra: any; indice: number } | null>(null);
   const [mun, setMun] = useState<{ nome: string; uf: string; just: string } | null>(null);
@@ -43,32 +50,47 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const bloqueios = bloqueiosCongelamento(st);
 
   const q = useAvalQuery(av.id, 'mercado', async () => {
-    const [am, cj, mc] = await Promise.all([
+    const [am, cj, mc, sn] = await Promise.all([
       db.from('avaliacao_amostras').select('*, dados_mercado(*, imoveis(*), dados_mercado_fontes(principal, fontes_mercado(id, tipo, nome)))').eq('avaliacao_id', av.id).order('created_at').limit(10000),
       db.from('avaliacao_conjuntos_dados').select('*').eq('avaliacao_id', av.id).order('versao', { ascending: false }),
       db.from('avaliacao_municipios_comparaveis').select('*').eq('avaliacao_id', av.id).order('created_at'),
+      db.from('avaliacao_amostra_snapshots').select('amostra_id, dados, avaliacao_conjuntos_dados!inner(status, versao)').eq('avaliacao_id', av.id)
+        .in('avaliacao_conjuntos_dados.status', ['CONGELADO', 'EM_USO']).limit(10000),
     ]);
     if (am.error) throw am.error;
-    return { amostras: am.data as any[], conjuntos: (cj.data ?? []) as any[], municipios: (mc.data ?? []) as any[] };
+    // Foto usada pelo conjunto vigente (a versão mais recente congelada/em uso) para cada amostra.
+    const fotos = new Map<string, { versao: number; dados: Foto }>();
+    for (const x of (sn.data ?? []) as any[]) {
+      const v = x.avaliacao_conjuntos_dados?.versao ?? 0; const cur = fotos.get(x.amostra_id);
+      if (!cur || v > cur.versao) fotos.set(x.amostra_id, { versao: v, dados: x.dados });
+    }
+    return { amostras: am.data as any[], conjuntos: (cj.data ?? []) as any[], municipios: (mc.data ?? []) as any[], fotos };
   });
   const canEdit = ctx.can('market.edit');
   const canSel = ctx.can('market.select_samples');
   const amostras = q.data?.amostras ?? [];
   const vigente = (q.data?.conjuntos ?? []).find((c) => c.status === 'CONGELADO');
 
+  const concluida = av.status !== 'ATIVA';
+  const abrirNovo = (fixo: BancoRow | null) => {
+    setImovelFixo(fixo); creator.setDups(null); setDynNovo({});
+    if (fixo) setDado((d) => ({ ...d, negocio: fixo.tipo_negocio || 'LOCACAO', ofertado: '', utilizado: '', data: '', obs: '' }));
+    setBanco(false); setAdd(true);
+  };
   const salvar = async (decision?: { useExisting?: string; forceNew?: boolean }) => {
     const valorUt = num(dado.utilizado) ?? num(dado.ofertado);
     if (!valorUt || valorUt <= 0) { toast.error('Informe o valor do dado de mercado.'); return; }
     const pre = alteracoesDinamicas(campos, {}, dynNovo, { imovel_id: 'novo' });
     if (pre.invalidos.length) { toast.error(`Revise: ${pre.invalidos.join(', ')}.`); return; }
-    const imovelId = await creator.resolve(im, decision);
+    const imovelId = imovelFixo ? imovelFixo.imovel_id : await creator.resolve(im, decision);
     if (!imovelId) return;
     try {
-      const area = num(im.area_construida);
+      const area = imovelFixo ? imovelFixo.area_construida : num(im.area_construida);
       const { data: d, error } = await db.from('dados_mercado').insert({
-        imovel_id: imovelId, natureza_dado: dado.natureza, valor_ofertado: num(dado.ofertado), valor_utilizado: valorUt,
+        imovel_id: imovelId, natureza_dado: dado.natureza, tipo_negocio: dado.negocio, periodicidade: dado.negocio === 'VENDA' ? 'UNICO' : 'MENSAL',
+        status: dado.situacao, descricao: dado.obs.trim() || null, valor_ofertado: num(dado.ofertado), valor_utilizado: valorUt,
         valor_unitario: area ? Math.round((valorUt / area) * 10000) / 10000 : null, data_observacao: dado.data || null,
-        url_anuncio: im.anuncio_url.trim() || null, anuncio_id: im.anuncio_id.trim() || null,
+        url_anuncio: imovelFixo ? null : im.anuncio_url.trim() || null, anuncio_id: imovelFixo ? null : im.anuncio_id.trim() || null,
       }).select('id').single();
       if (error) throw error;
       if (dado.fonteNome.trim()) {
@@ -86,7 +108,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         catch (e) { aviso = true; toast.warning(`Dado incluído, mas as variáveis não foram salvas: ${avalErrorMessage(e)} Use Editar amostra para completar.`); }
       }
       if (!aviso) toast.success('Dado de mercado incluído.');
-      setAdd(false); setIm(emptyImovel(av.tipo_imovel)); setDado({ ...dado, ofertado: '', utilizado: '', fonteNome: '' }); setDynNovo({});
+      setAdd(false); setImovelFixo(null); setIm(emptyImovel(av.tipo_imovel)); setDado({ ...dado, ofertado: '', utilizado: '', fonteNome: '', obs: '' }); setDynNovo({});
       ctx.refresh();
     } catch (e) { toast.error(avalErrorMessage(e)); }
   };
@@ -128,13 +150,16 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between space-y-0 gap-2 flex-wrap">
           <CardTitle className="text-base">Amostras de mercado ({amostras.filter((a) => a.selecionada).length} selecionadas)</CardTitle>
-          <div className="flex gap-2">
-            {canEdit && <Button size="sm" variant="outline" onClick={() => setAdd(true)}><Plus className="h-4 w-4 mr-1" />Dado de mercado</Button>}
-            {canSel && <Button size="sm" onClick={() => setFreeze(true)} disabled={!amostras.some((a) => a.selecionada)}><Lock className="h-4 w-4 mr-1" />Congelar conjunto</Button>}
+          <div className="flex flex-wrap gap-2">
+            {canEdit && <Button size="sm" variant="outline" onClick={() => abrirNovo(null)}><Plus className="h-4 w-4 mr-1" aria-hidden />Cadastrar novo imóvel</Button>}
+            {canSel && <Button size="sm" variant="outline" onClick={() => setBanco(true)}><Database className="h-4 w-4 mr-1" aria-hidden />Buscar imóveis existentes</Button>}
+            {canSel && <Button size="sm" variant="outline" onClick={() => setImportar(true)}><Copy className="h-4 w-4 mr-1" aria-hidden />Importar amostras de outra avaliação</Button>}
+            {canSel && <Button size="sm" onClick={() => setFreeze(true)} disabled={!amostras.some((a) => a.selecionada)}><Lock className="h-4 w-4 mr-1" aria-hidden />Congelar conjunto</Button>}
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
-          {amostras.length === 0 ? <p className="p-6 text-sm text-muted-foreground">Nenhum dado de mercado incluído.</p> : (
+          {concluida && amostras.length > 0 && <p className="flex items-center gap-2 border-b px-4 py-2 text-xs text-muted-foreground"><History className="h-3.5 w-3.5" aria-hidden />Avaliação concluída: os valores abaixo são a foto dos dados usados no laudo, mesmo que o cadastro tenha mudado depois.</p>}
+          {amostras.length === 0 ? <p className="p-6 text-sm text-muted-foreground">Nenhum dado de mercado incluído. Cadastre um imóvel, busque no banco da organização ou importe amostras de outra avaliação.</p> : (
             <Table>
               <TableHeader><TableRow>
                 <TableHead className="w-12">Usar</TableHead><TableHead className="w-16">No modelo</TableHead><TableHead>Imóvel</TableHead>
@@ -144,12 +169,22 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
               </TableRow></TableHeader>
               <TableBody>
                 {amostras.map((a, i) => {
-                  const d = a.dados_mercado; const imv = d?.imoveis;
+                  const ex = exibicaoAmostra(a, q.data?.fotos.get(a.id)?.dados, concluida);
+                  const d = ex.dado as any; const imv = ex.imovel as any;
                   return (
                     <TableRow key={a.id}>
                       <TableCell><Checkbox aria-label={`Selecionar amostra ${i + 1}`} checked={a.selecionada} disabled={!canSel} onCheckedChange={(v) => toggle(a, 'selecionada', !!v)} /></TableCell>
                       <TableCell><Checkbox aria-label={`Habilitar no modelo amostra ${i + 1}`} checked={a.habilitada_modelo} disabled={!canSel} onCheckedChange={(v) => toggle(a, 'habilitada_modelo', !!v)} /></TableCell>
-                      <TableCell><p className="font-medium">{i + 1}. {[imv?.endereco, imv?.numero, imv?.complemento].filter(Boolean).join(', ') || imv?.tipo_imovel}</p><p className="text-xs text-muted-foreground">{imv?.bairro ?? ''}{a.origem_territorial !== 'LOCAL' ? ' · fora do município' : ''}</p></TableCell>
+                      <TableCell className="min-w-[220px]">
+                        <p className="font-medium">{i + 1}. {rotuloEndereco(imv ?? {})}</p>
+                        <p className="text-xs text-muted-foreground">{[imv?.bairro, a.origem_territorial !== 'LOCAL' ? 'fora do município' : null, d?.tipo_negocio === 'VENDA' ? TIPO_NEGOCIO_LABEL.VENDA : null,
+                          d?.status && d.status !== 'ATIVO' ? SITUACAO_LABEL[d.status] : null].filter(Boolean).join(' · ')}</p>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {a.origem_inclusao && a.origem_inclusao !== 'CADASTRO_NOVO' && <Badge variant="outline" className="text-[11px] font-normal">{ORIGEM_INCLUSAO_LABEL[a.origem_inclusao]}</Badge>}
+                          {ex.alterados.length > 0 && <Badge variant="secondary" className="text-[11px] font-normal" title={`Mudou: ${ex.alterados.join(', ')}`}>
+                            Cadastro alterado desde {ex.comparadoCom === 'CONJUNTO' ? 'o congelamento' : 'a inclusão'}: {ex.alterados.join(', ')}</Badge>}
+                        </div>
+                      </TableCell>
                       <TableCell>{NATUREZA[d?.natureza_dado]}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtNum(imv?.area_construida)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtMoney(d?.valor_utilizado)}</TableCell>
@@ -215,16 +250,28 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       <Dialog open={add} onOpenChange={setAdd}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Novo dado de mercado</DialogTitle>
-            <DialogDescription>O imóvel observado entra no cadastro físico único. Se já existir, use o cadastro existente.</DialogDescription>
+            <DialogTitle>{imovelFixo ? 'Novo dado de mercado para imóvel existente' : 'Cadastrar novo imóvel'}</DialogTitle>
+            <DialogDescription>{imovelFixo ? 'O imóvel continua com um único cadastro. Este novo dado (valor, data, fonte) fica registrado ao lado dos anteriores.'
+              : 'O imóvel entra no banco da organização e poderá ser usado em outras avaliações. Se já existir, use o cadastro existente.'}</DialogDescription>
           </DialogHeader>
-          <ImovelFields value={im} onChange={setIm} showAnuncio />
+          {imovelFixo ? (
+            <div className="rounded-md border bg-muted/40 p-3 text-sm">
+              <p className="font-medium">{rotuloEndereco(imovelFixo)}</p>
+              <p className="text-xs text-muted-foreground">{[imovelFixo.bairro, imovelFixo.municipio_nome && `${imovelFixo.municipio_nome}/${imovelFixo.uf ?? ''}`, imovelFixo.tipo_imovel,
+                imovelFixo.area_construida ? `${fmtNum(imovelFixo.area_construida)} m²` : null].filter(Boolean).join(' · ')}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Último dado: {fmtMoney(imovelFixo.valor_utilizado)} em {imovelFixo.data_observacao ? imovelFixo.data_observacao.split('-').reverse().join('/') : '—'}</p>
+            </div>
+          ) : <ImovelFields value={im} onChange={setIm} showAnuncio />}
           <div className="grid gap-3 sm:grid-cols-6">
+            <div className="grid gap-1.5 sm:col-span-2"><Label>Finalidade</Label>
+              <Select value={dado.negocio} onValueChange={(v) => setDado({ ...dado, negocio: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(TIPO_NEGOCIO_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
             <div className="grid gap-1.5 sm:col-span-2"><Label>Natureza</Label>
               <Select value={dado.natureza} onValueChange={(v) => setDado({ ...dado, natureza: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(NATUREZA).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
-            <div className="grid gap-1.5 sm:col-span-2"><Label>Valor ofertado (R$/mês)</Label><Input inputMode="decimal" value={dado.ofertado} onChange={(e) => setDado({ ...dado, ofertado: e.target.value })} /></div>
-            <div className="grid gap-1.5 sm:col-span-2"><Label>Valor utilizado (R$/mês)</Label><Input inputMode="decimal" value={dado.utilizado} onChange={(e) => setDado({ ...dado, utilizado: e.target.value })} placeholder="igual ao ofertado" /></div>
-            <div className="grid gap-1.5 sm:col-span-2"><Label>Data da observação</Label><Input type="date" value={dado.data} onChange={(e) => setDado({ ...dado, data: e.target.value })} /></div>
+            <div className="grid gap-1.5 sm:col-span-2"><Label>Situação do anúncio</Label>
+              <Select value={dado.situacao} onValueChange={(v) => setDado({ ...dado, situacao: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['ATIVO', 'INATIVO', 'DESATUALIZADO'].map((k) => <SelectItem key={k} value={k}>{SITUACAO_LABEL[k]}</SelectItem>)}</SelectContent></Select></div>
+            <div className="grid gap-1.5 sm:col-span-2"><Label>Valor ofertado ({dado.negocio === 'VENDA' ? 'R$' : 'R$/mês'})</Label><Input inputMode="decimal" value={dado.ofertado} onChange={(e) => setDado({ ...dado, ofertado: e.target.value })} /></div>
+            <div className="grid gap-1.5 sm:col-span-2"><Label>Valor utilizado ({dado.negocio === 'VENDA' ? 'R$' : 'R$/mês'})</Label><Input inputMode="decimal" value={dado.utilizado} onChange={(e) => setDado({ ...dado, utilizado: e.target.value })} placeholder="igual ao ofertado" /></div>
+            <div className="grid gap-1.5 sm:col-span-2"><Label>Data da pesquisa</Label><Input type="date" value={dado.data} onChange={(e) => setDado({ ...dado, data: e.target.value })} /></div>
             <div className="grid gap-1.5 sm:col-span-2"><Label>Fonte</Label>
               <Select value={dado.fonteTipo} onValueChange={(v) => setDado({ ...dado, fonteTipo: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(FONTE).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
             <div className="grid gap-1.5 sm:col-span-2"><Label>Nome da fonte</Label><Input value={dado.fonteNome} onChange={(e) => setDado({ ...dado, fonteNome: e.target.value })} maxLength={160} /></div>
@@ -233,16 +280,17 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 <SelectItem value="LOCAL">Mesmo município</SelectItem><SelectItem value="MUNICIPIO_COMPARAVEL">Município comparável</SelectItem>
                 <SelectItem value="CONTRATO_PUBLICO_LOCAL">Contrato público local</SelectItem><SelectItem value="CONTRATO_PUBLICO_EXTERNO">Contrato público externo</SelectItem><SelectItem value="OUTRA_FONTE">Outra</SelectItem>
               </SelectContent></Select></div>
+            <div className="grid gap-1.5 sm:col-span-6"><Label htmlFor="nd-obs">Observações</Label><Textarea id="nd-obs" rows={2} value={dado.obs} onChange={(e) => setDado({ ...dado, obs: e.target.value })} maxLength={1000} placeholder="Contato, condições do anúncio, estado do imóvel…" /></div>
           </div>
           {campos.length > 0 && (
             <section className="space-y-3" aria-labelledby="nd-vars">
               <h3 id="nd-vars" className="text-sm font-semibold">Variáveis desta avaliação</h3>
               {(() => {
-                const area = num(im.area_construida); const vu = num(dado.utilizado) ?? num(dado.ofertado);
+                const area = imovelFixo ? imovelFixo.area_construida : num(im.area_construida); const vu = num(dado.utilizado) ?? num(dado.ofertado);
                 const refs = Object.fromEntries(campos.filter((c) => !c.editavel).map((c) => {
                   const k = c.variavel.campo_origem;
                   return [c.variavel.id, k === 'valor_utilizado' ? vu : k === 'valor_unitario' ? (vu && area ? Math.round((vu / area) * 10000) / 10000 : null)
-                    : k === 'area_construida' ? area : k === 'area_terreno' ? num(im.area_terreno) : null];
+                    : k === 'area_construida' ? area : k === 'area_terreno' ? (imovelFixo ? imovelFixo.area_terreno : num(im.area_terreno)) : null];
                 }));
                 const falta = obrigatoriasVazias(campos, dynNovo, refs);
                 return (<>
@@ -252,10 +300,13 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
               })()}
             </section>
           )}
-          {creator.dups && <DuplicatePanel dups={creator.dups} onUse={(id) => salvar({ useExisting: id })} onForce={() => salvar({ forceNew: true })} />}
+          {!imovelFixo && creator.dups && <DuplicatePanel dups={creator.dups} onUse={(id) => salvar({ useExisting: id })} onForce={() => salvar({ forceNew: true })} />}
           <DialogFooter><Button variant="outline" onClick={() => setAdd(false)}>Cancelar</Button><Button onClick={() => salvar()}>Incluir</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {banco && <BancoImoveisDialog ctx={ctx} open={banco} onOpenChange={setBanco} onNovoDado={(r) => abrirNovo(r)} />}
+      {importar && <ImportarAmostrasDialog ctx={ctx} open={importar} onOpenChange={setImportar} />}
 
       <EditAmostraDialog avaliacaoId={av.id} amostra={editar?.amostra ?? null} indice={editar?.indice ?? 0} onClose={() => setEditar(null)} onSaved={ctx.refresh} />
 

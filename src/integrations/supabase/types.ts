@@ -659,11 +659,17 @@ export type Database = {
           dado_id: string
           habilitada_modelo: boolean
           id: string
+          importada_de_amostra_id: string | null
           motivo_desabilitacao: string | null
           motivo_inclusao: string | null
           organization_id: string
+          origem_inclusao: string
           origem_territorial: string
           selecionada: boolean
+          snapshot_chave: string | null
+          snapshot_em: string | null
+          snapshot_fonte: string | null
+          snapshot_inclusao: Json | null
           updated_at: string
         }
         Insert: {
@@ -672,11 +678,17 @@ export type Database = {
           dado_id: string
           habilitada_modelo?: boolean
           id?: string
+          importada_de_amostra_id?: string | null
           motivo_desabilitacao?: string | null
           motivo_inclusao?: string | null
           organization_id: string
+          origem_inclusao?: string
           origem_territorial?: string
           selecionada?: boolean
+          snapshot_chave?: string | null
+          snapshot_em?: string | null
+          snapshot_fonte?: string | null
+          snapshot_inclusao?: Json | null
           updated_at?: string
         }
         Update: {
@@ -685,11 +697,17 @@ export type Database = {
           dado_id?: string
           habilitada_modelo?: boolean
           id?: string
+          importada_de_amostra_id?: string | null
           motivo_desabilitacao?: string | null
           motivo_inclusao?: string | null
           organization_id?: string
+          origem_inclusao?: string
           origem_territorial?: string
           selecionada?: boolean
+          snapshot_chave?: string | null
+          snapshot_em?: string | null
+          snapshot_fonte?: string | null
+          snapshot_inclusao?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -705,6 +723,13 @@ export type Database = {
             columns: ["dado_id"]
             isOneToOne: false
             referencedRelation: "dados_mercado"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_amostras_importada_de_amostra_id_fkey"
+            columns: ["importada_de_amostra_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_amostras"
             referencedColumns: ["id"]
           },
         ]
@@ -13396,6 +13421,16 @@ export type Database = {
         Args: { p_aprovar: boolean; p_conteudo: string; p_texto: string }
         Returns: undefined
       }
+      aval_amostra_chave: { Args: { p: Json }; Returns: string }
+      aval_amostra_payload: { Args: { p_dado: string }; Returns: Json }
+      aval_amostras_adicionar: {
+        Args: { p_avaliacao: string; p_dados: string[] }
+        Returns: Json
+      }
+      aval_amostras_importar: {
+        Args: { p_amostras?: string[]; p_avaliacao: string; p_origem: string }
+        Returns: Json
+      }
       aval_apply_change: {
         Args: {
           p_avaliacao: string
@@ -13420,6 +13455,27 @@ export type Database = {
           _event: string
         }
         Returns: undefined
+      }
+      aval_banco_base: {
+        Args: { p_filtros: Json; p_org: string; p_origem: string }
+        Returns: {
+          amostra_origem_id: string
+          dado_id: string
+          data_mais_recente: string
+          imovel_id: string
+          n_dados: number
+          ord: number
+          rk: number
+        }[]
+      }
+      aval_banco_buscar: {
+        Args: {
+          p_avaliacao: string
+          p_filtros?: Json
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Json
       }
       aval_batch_active: { Args: never; Returns: boolean }
       aval_bump_stage: {
@@ -13500,6 +13556,7 @@ export type Database = {
           p_anuncio_id: string
           p_anuncio_url: string
           p_area: number
+          p_bairro?: string
           p_complemento: string
           p_endereco: string
           p_exclude?: string
@@ -13508,6 +13565,7 @@ export type Database = {
           p_longitude: number
           p_municipio_ibge: string
           p_numero: string
+          p_tipo_imovel?: string
         }
         Returns: {
           area_construida: number
@@ -13698,6 +13756,10 @@ export type Database = {
       }
       aval_nivel_rank: { Args: { p: string }; Returns: number }
       aval_normalize_text: { Args: { t: string }; Returns: string }
+      aval_origem_territorial_padrao: {
+        Args: { p_av_ibge: string; p_imovel_ibge: string }
+        Returns: string
+      }
       aval_pendencias: { Args: { p_avaliacao: string }; Returns: Json }
       aval_run_recount: { Args: { p_run: string }; Returns: undefined }
       aval_send_to_validation: {

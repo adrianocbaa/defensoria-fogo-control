@@ -19,7 +19,7 @@ interface Dup { imovel_id: string; pontos: number; motivos: string[]; endereco: 
 
 /**
  * Cadastro físico único de imóvel. Antes de criar, procura possíveis duplicidades por endereço/unidade,
- * coordenadas, anúncio, fotos e área — nunca por telefone, corretor ou imobiliária, e nunca une automaticamente.
+ * coordenadas, anúncio, fotos, bairro/tipo e área — nunca por telefone, corretor ou imobiliária, e nunca une automaticamente.
  */
 export function ImovelFields({ value, onChange, showAnuncio }: { value: ImovelInput; onChange: (v: ImovelInput) => void; showAnuncio?: boolean }) {
   const f = (k: keyof ImovelInput) => (e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...value, [k]: e.target.value });
@@ -47,6 +47,7 @@ export function useImovelCreator(municipio: { ibge: string | null; nome: string;
       p_endereco: v.endereco, p_numero: v.numero, p_complemento: v.complemento, p_municipio_ibge: municipio.ibge,
       p_latitude: null, p_longitude: null, p_anuncio_url: v.anuncio_url || null, p_anuncio_id: v.anuncio_id || null,
       p_area: num(v.area_construida), p_foto_hashes: [], p_exclude: null,
+      p_bairro: v.bairro.trim() || null, p_tipo_imovel: v.tipo_imovel.trim() || null,
     });
     return rows ?? [];
   };
@@ -77,7 +78,10 @@ export function useImovelCreator(municipio: { ibge: string | null; nome: string;
 export function DuplicatePanel({ dups, onUse, onForce }: { dups: Dup[]; onUse: (id: string) => void; onForce: () => void }) {
   return (
     <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
-      <p className="flex items-center gap-2 text-sm font-medium"><AlertTriangle className="h-4 w-4 text-destructive" />Possível imóvel já cadastrado</p>
+      <div role="alert">
+        <p className="flex items-center gap-2 text-sm font-medium"><AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />Encontramos um imóvel possivelmente já cadastrado.</p>
+        <p className="text-xs text-muted-foreground">Deseja utilizar o existente ou cadastrar um novo? Imóveis diferentes no mesmo endereço ou condomínio podem ser cadastrados normalmente.</p>
+      </div>
       <ul className="space-y-2">
         {dups.map((d) => (
           <li key={d.imovel_id} className="flex flex-col gap-2 rounded border bg-background p-2 sm:flex-row sm:items-center sm:justify-between">
@@ -85,7 +89,7 @@ export function DuplicatePanel({ dups, onUse, onForce }: { dups: Dup[]; onUse: (
               <p className="font-medium">{[d.endereco, d.numero, d.complemento].filter(Boolean).join(', ') || 'Sem endereço'}{d.bairro ? ` — ${d.bairro}` : ''}</p>
               <p className="text-xs text-muted-foreground">{d.area_construida ? `${fmtNum(d.area_construida)} m² · ` : ''}{d.motivos.join(' · ')}</p>
             </div>
-            <Button size="sm" variant="outline" onClick={() => onUse(d.imovel_id)}>Usar este imóvel</Button>
+            <Button size="sm" variant="outline" onClick={() => onUse(d.imovel_id)}>Utilizar o existente</Button>
           </li>
         ))}
       </ul>

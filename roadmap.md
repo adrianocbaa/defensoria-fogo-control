@@ -26,6 +26,8 @@
 - [ ] Usuário: congelar nova versão do conjunto na HOMOLOG 001/2026 e regerar os modelos (dados não alterados automaticamente)
 - [ ] Conferir na tela o aviso de conjunto desatualizado e o motivo do Modelo 24 com usuário logado — bloqueado: login de teste indisponível no Supabase externo
 - [x] Rodadas de geração, deduplicação, arquivamento sem exclusão, filtros/ordenação paginados, triagem explicável, seleção humana e comparador de modelos (tela autenticada não conferida)
+- [x] Banco reutilizável de imóveis/dados de mercado: buscar existentes, importar amostras de outra avaliação, foto imutável na inclusão, alerta de duplicidade, legado (13 amostras) preservado, isolamento por organização — 30 verificações SQL novas (todas as suítes 00–90 passam) + 86 testes JS; telas conferidas em simulação; banco atualizado; frontend aguarda Publish → Update
+- [ ] Conferir na tela, logado, buscar/importar/novo dado do mesmo imóvel — bloqueado: login de teste indisponível no Supabase externo
 
 - [x] Housekeeping inbound — limites técnicos 10 anexos/10 MiB/25 MiB, validação antes de gravar e configuração transacional Super Admin; 29 testes Node + 3 Deno, UI simulada com releitura e build OK; somente inbound-maintenance-email republicada; frontend aguarda Publish → Update. Quota de plano adiada (contagem diária); salvamento autenticado real não verificado no Supabase externo.
 
