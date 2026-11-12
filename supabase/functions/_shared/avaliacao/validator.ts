@@ -23,6 +23,8 @@ export interface PolicyRule {
 export interface VariableMeta {
   code: string;
   tipo: 'QUANTITATIVA' | 'DICOTOMICA' | 'PROXY' | 'CODIGO_ALOCADO' | 'OUTRA';
+  /** PROXY/CODIGO_ALOCADO: false quando o profissional indica que NÃO representa categorias discretas. */
+  categorica?: boolean | null;
   relacao_esperada: 'POSITIVA' | 'NEGATIVA' | 'INDEFINIDA';
   transform: TransformCode;
   power?: number;
@@ -45,9 +47,51 @@ export interface CriterionResult {
   bloqueante: boolean;
 }
 
+export type FoundationGrade = Grau | 'NAO_ENQUADRA';
+
+/** Política versionada de fundamentação (validation_policies.parametros.fundamentacao). */
+export interface FoundationPolicy {
+  referencia?: string;
+  origem?: string;
+  pontos: Record<string, number>;
+  itens: {
+    item: number; codigo: string; titulo: string;
+    source_type: 'CRITERIO' | 'MANUAL';
+    criterio?: string;
+    obrigatorio?: boolean;
+  }[];
+  enquadramento: { grau: Grau; pontos_min: number; obrigatorios_grau_min: Grau; demais_grau_min: Grau }[];
+}
+
+export interface FoundationItem {
+  item_number: number; codigo: string; titulo: string; source_type: string; criterio_codigo: string | null;
+  grade_achieved: Grau | null; points: number; mandatory_for_grade: boolean; status: CriterionStatus;
+  details_json: Record<string, unknown>;
+}
+
+export interface FoundationSummary {
+  total_points: number;
+  grade_calculated: Grau | null;
+  requirements_met: boolean;
+  mandatory_requirements_json: { grau: Grau; pontos_min: number; pontos_ok: boolean; obrigatorios_ok: boolean; demais_ok: boolean; atende: boolean; falhas: string[] }[];
+  pendencias: string[];
+  policy_reference: string | null;
+}
+
+export interface CookRule { tipo: 'FIXO' | 'K_SOBRE_N' | 'K_SOBRE_N_MENOS_P'; valor?: number; k?: number; origem?: string; descricao?: string }
+
+export interface ValidateOptions {
+  /** Regra operacional de Cook (sobrepõe a da política, ex.: configuração da organização). */
+  cookRule?: CookRule | null;
+  foundation?: FoundationPolicy | null;
+  /** Graus atribuídos pelo profissional a itens sem regra automática. */
+  foundationGrades?: Record<string, FoundationGrade>;
+}
+
 export interface ValidationOutput {
   results: CriterionResult[];
   fundamentacao: { grau: Grau | null; itens: { codigo: string; nome: string; grau: Grau | null }[] };
+  foundation: { items: FoundationItem[]; summary: FoundationSummary } | null;
   precisao: { amplitudePct: number | null; grau: string | null };
   overall: OverallStatus;
   pendentesRevisao: string[];
@@ -60,6 +104,60 @@ const minGrau = (gs: (Grau | null)[]): Grau | null => {
   return gs.reduce<Grau | null>((m, g) => (m === null || ORDER[g!] < ORDER[m] ? g : m), null);
 };
 const pct = (v: number) => `${(v * 100).toFixed(2).replace('.', ',')}%`;
+
+export interface NormalityBandResult {
+  z: number; referencia: number; tolerancia: number | null; criterio: 'INTERVALO' | 'MINIMO' | 'IGUAL' | null;
+  limite_inferior: number | null; limite_superior: number | null; observado: number;
+  ok: boolean | null; status: 'ATENDE' | 'FORA' | 'NAO_VERIFICADO';
+}
+
+/** Avalia TODAS as faixas da política: com tolerância usa referência ± tolerância; sem tolerância usa a comparação da política. */
+export function evaluateNormality(fit: RegressionResult, th: Record<string, any>): { itens: NormalityBandResult[]; status: CriterionStatus } {
+  const faixas: { z: number; referencia: number; tolerancia?: number | null; comparacao?: string | null }[] = th?.faixas ?? [];
+  const padrao = (th?.comparacao_sem_tolerancia ?? null) as string | null;
+  const eps = 1e-12;
+  const itens = faixas.map((f): NormalityBandResult => {
+    const obs = fit.normality.find((b) => Math.abs(b.z - f.z) < 1e-9)?.observed
+      ?? fit.residualsStd.filter((e) => Math.abs(e) <= f.z).length / fit.n;
+    const tol = f.tolerancia === undefined || f.tolerancia === null ? null : Number(f.tolerancia);
+    let criterio: NormalityBandResult['criterio'] = null; let ok: boolean | null = null; let li: number | null = null; let ls: number | null = null;
+    if (tol !== null) {
+      criterio = 'INTERVALO'; li = f.referencia - tol; ls = f.referencia + tol;
+      ok = obs >= li - eps && obs <= ls + eps;
+    } else {
+      const c = (f.comparacao ?? padrao) as string | null;
+      if (c === 'MINIMO') { criterio = 'MINIMO'; li = f.referencia; ok = obs >= f.referencia - eps; }
+      else if (c === 'IGUAL') { criterio = 'IGUAL'; li = ls = f.referencia; ok = Math.abs(obs - f.referencia) <= eps; }
+    }
+    return { z: f.z, referencia: f.referencia, tolerancia: tol, criterio, limite_inferior: li, limite_superior: ls, observado: obs, ok,
+      status: ok === null ? 'NAO_VERIFICADO' : ok ? 'ATENDE' : 'FORA' };
+  });
+  let status: CriterionStatus;
+  if (itens.length === 0) status = 'NAO_VERIFICADO';
+  else if (itens.some((i) => i.ok === false)) status = (th?.status_fora as CriterionStatus) ?? 'REQUER_ANALISE';
+  else if (itens.some((i) => i.ok === null)) status = 'REQUER_ANALISE';
+  else status = 'ATENDE';
+  return { itens, status };
+}
+
+/** Limite operacional de Cook (procedimento interno). Retorna null quando não há regra configurada. */
+export function resolveCookLimit(rule: CookRule | null | undefined, n: number, p: number): number | null {
+  if (!rule) return null;
+  if (rule.tipo === 'FIXO') return Number.isFinite(Number(rule.valor)) ? Number(rule.valor) : null;
+  if (rule.tipo === 'K_SOBRE_N') return Number.isFinite(Number(rule.k)) && n > 0 ? Number(rule.k) / n : null;
+  if (rule.tipo === 'K_SOBRE_N_MENOS_P') return Number.isFinite(Number(rule.k)) && n - p > 0 ? Number(rule.k) / (n - p) : null;
+  return null;
+}
+
+const CATEGORICAL_DEFAULT = ['DICOTOMICA', 'PROXY', 'CODIGO_ALOCADO'];
+/** Variáveis tratadas como categorias/grupos discretos para micronumerosidade. Quantitativas nunca entram. */
+export function categoricalVariables(vars: VariableMeta[], tipos: string[] = CATEGORICAL_DEFAULT): VariableMeta[] {
+  return vars.filter((v) => {
+    if (v.tipo === 'QUANTITATIVA' || !tipos.includes(v.tipo)) return false;
+    if (v.tipo === 'DICOTOMICA') return true;
+    return v.categorica !== false;
+  });
+}
 
 function gradeByMax(value: number, graus: { grau: Grau; max: number }[]): Grau | null {
   const sorted = [...graus].sort((a, b) => a.max - b.max);
@@ -74,6 +172,7 @@ export function validateModel(
   dependent: { transform: TransformCode; power?: number },
   rules: PolicyRule[],
   manualReviews: Record<string, ManualDecision> = {},
+  options: ValidateOptions = {},
 ): ValidationOutput {
   const active = rules.filter((r) => r.ativo).sort((a, b) => a.numero - b.numero);
   const out: CriterionResult[] = [];
@@ -115,19 +214,12 @@ export function validateModel(
         break;
       }
       case 'NORMALIDADE': {
-        const faixas: { z: number; referencia: number; tolerancia?: number | null }[] = th.faixas ?? [];
-        const itens = faixas.map((f) => {
-          const obs = fit.normality.find((b) => Math.abs(b.z - f.z) < 1e-9)?.observed
-            ?? fit.residualsStd.filter((e) => Math.abs(e) <= f.z).length / fit.n;
-          const avaliada = f.tolerancia !== null && f.tolerancia !== undefined;
-          return { z: f.z, referencia: f.referencia, tolerancia: f.tolerancia ?? null, observado: obs, ok: avaliada ? Math.abs(obs - f.referencia) <= f.tolerancia! + 1e-12 : null };
-        });
-        const ev = itens.filter((i) => i.ok !== null);
-        const fail = ev.some((i) => !i.ok);
-        r = { ...base, grau: null, valor: itens[0]?.observado ?? null,
-          status: ev.length === 0 ? 'NAO_VERIFICADO' : fail ? ((th.status_fora as CriterionStatus) ?? 'REQUER_ANALISE') : 'ATENDE',
-          detalhe: itens.map((i) => `±${String(i.z).replace('.', ',')}σ: ${pct(i.observado)} (ref. ${pct(i.referencia)})`).join(' · '),
-          dados: { itens } };
+        const ev = evaluateNormality(fit, th);
+        const fmtFaixa = (b: NormalityBandResult) => `±${String(b.z).replace('.', ',')}σ: ${pct(b.observado)} (ref. ${pct(b.referencia)}${
+          b.criterio === 'INTERVALO' ? `, aceito ${pct(b.limite_inferior!)}–${pct(b.limite_superior!)}` : b.criterio === 'MINIMO' ? ', mínimo' : b.criterio === 'IGUAL' ? ', igual' : ', sem regra na política'})${b.ok === false ? ' — fora' : ''}`;
+        r = { ...base, grau: null, valor: ev.itens[0]?.observado ?? null, status: ev.status,
+          detalhe: ev.itens.length ? ev.itens.map(fmtFaixa).join(' · ') : 'Política sem faixas de normalidade.',
+          dados: { itens: ev.itens } };
         break;
       }
       case 'PRECISAO': {
@@ -178,14 +270,19 @@ export function validateModel(
         break;
       }
       case 'PONTOS_INFLUENTES': {
-        const lim = th.cook_limite;
+        const rule: CookRule | null = options.cookRule ?? th.cook_regra
+          ?? (th.cook_limite !== null && th.cook_limite !== undefined ? { tipo: 'FIXO', valor: Number(th.cook_limite), origem: 'PROCEDIMENTO_INTERNO' } : null);
+        const lim = resolveCookLimit(rule, fit.n, fit.p);
         const maxCook = Math.max(...fit.cook);
-        if (lim === null || lim === undefined) {
-          r = { ...base, grau: null, valor: maxCook, status: 'NAO_VERIFICADO', detalhe: `Maior distância de Cook: ${maxCook.toFixed(4)} (sem limite configurado na política).` };
+        if (lim === null) {
+          r = { ...base, grau: null, valor: maxCook, status: 'NAO_VERIFICADO', detalhe: `Maior distância de Cook: ${maxCook.toFixed(4)} (sem limite operacional configurado).` };
         } else {
-          const acima = fit.cook.map((c, i) => ({ id: fit.sampleIds[i], c })).filter((x) => x.c > Number(lim));
+          const acima = fit.cook.map((c, i) => ({ amostra_id: fit.sampleIds[i], ordem: i + 1, cook: c, leverage: fit.leverage[i], residuo_dp: fit.residualsStd[i], residuo_relativo: fit.residualsRelative[i] }))
+            .filter((x) => x.cook > lim);
+          const regraTxt = rule!.tipo === 'FIXO' ? `D > ${lim.toFixed(4)}` : `D > ${rule!.k}/${rule!.tipo === 'K_SOBRE_N' ? 'n' : '(n−p)'} = ${lim.toFixed(4)}`;
           r = { ...base, grau: null, valor: maxCook, status: acima.length ? 'REQUER_ANALISE' : 'ATENDE',
-            detalhe: acima.length ? `${acima.length} amostra(s) acima do limite operacional ${lim}.` : 'Nenhuma amostra acima do limite operacional.', dados: { acima } };
+            detalhe: `${acima.length ? `${acima.length} amostra(s) acima do limite operacional` : 'Nenhuma amostra acima do limite operacional'} (${regraTxt}; procedimento interno, não é limite normativo). Nenhuma amostra é excluída automaticamente.`,
+            dados: { acima, limite: lim, regra: { ...rule, origem: rule!.origem ?? 'PROCEDIMENTO_INTERNO' } } };
         }
         break;
       }
@@ -195,21 +292,21 @@ export function validateModel(
         break;
       }
       case 'MICRONUMEROSIDADE': {
-        const dic = vars.filter((v) => v.tipo === 'DICOTOMICA');
-        if (!dic.length) { r = { ...base, grau: null, valor: null, status: 'NAO_APLICAVEL', detalhe: 'Sem variáveis dicotômicas.' }; break; }
+        const dic = categoricalVariables(vars, th.tipos ?? CATEGORICAL_DEFAULT);
+        if (!dic.length) { r = { ...base, grau: null, valor: null, status: 'NAO_APLICAVEL', detalhe: 'Sem variáveis que representem categorias discretas.' }; break; }
         const faixas: { n_max: number | null; minimo_abs?: number; minimo_pct?: number }[] = th.faixas ?? [];
         const faixa = [...faixas].sort((a, b) => (a.n_max ?? Infinity) - (b.n_max ?? Infinity)).find((f) => f.n_max === null || fit.n <= f.n_max);
         if (!faixa) { r = { ...base, grau: null, valor: null, status: 'NAO_VERIFICADO', detalhe: 'Política sem faixa aplicável.' }; break; }
-        const minimo = faixa.minimo_abs ?? Math.ceil(((faixa.minimo_pct ?? 0) / 100) * fit.n);
+        const minimo = faixa.minimo_abs ?? Math.ceil(((faixa.minimo_pct ?? 0) / 100) * fit.n - 1e-9);
         const itens = dic.map((v) => {
           const cats = new Map<number, number>();
           v.values.forEach((x) => cats.set(x, (cats.get(x) ?? 0) + 1));
           const menor = Math.min(...cats.values());
-          return { code: v.code, categorias: Object.fromEntries(cats), menor, ok: menor >= minimo };
+          return { code: v.code, tipo: v.tipo, categorias: Object.fromEntries(cats), menor, ok: menor >= minimo };
         });
         const bad = itens.filter((i) => !i.ok);
         r = { ...base, grau: null, valor: minimo, status: bad.length ? 'NAO_ATENDE' : 'ATENDE',
-          detalhe: bad.length ? `Categoria com menos de ${minimo} dados: ${bad.map((b) => b.code).join(', ')}` : `Todas as categorias têm ao menos ${minimo} dados.`, dados: { itens } };
+          detalhe: bad.length ? `Categoria com menos de ${minimo} dados: ${bad.map((b) => b.code).join(', ')}` : `Todas as categorias têm ao menos ${minimo} dados.`, dados: { itens, minimo, n: fit.n } };
         break;
       }
       default:
@@ -225,11 +322,15 @@ export function validateModel(
     out.push(r);
   }
 
-  const fundItens = active.filter((r) => r.entra_fundamentacao).map((rule) => {
+  const legacyItens = active.filter((r) => r.entra_fundamentacao).map((rule) => {
     const res = out.find((o) => o.codigo === rule.codigo)!;
     return { codigo: rule.codigo, nome: rule.nome, grau: res.status === 'NAO_ATENDE' ? null : res.grau };
   });
-  const fundGrau = fundItens.length ? minGrau(fundItens.map((i) => i.grau)) : null;
+  const foundation = options.foundation ? evaluateFoundation(options.foundation, out, options.foundationGrades ?? {}) : null;
+  const fundItens = foundation
+    ? foundation.items.map((i) => ({ codigo: i.codigo, nome: i.titulo, grau: i.grade_achieved }))
+    : legacyItens;
+  const fundGrau = foundation ? foundation.summary.grade_calculated : (legacyItens.length ? minGrau(legacyItens.map((i) => i.grau)) : null);
   const prec = out.find((o) => o.codigo === 'PRECISAO');
 
   let overall: OverallStatus = 'APTO';
@@ -238,15 +339,80 @@ export function validateModel(
   if (out.some((o) => o.status === 'NAO_ATENDE' && o.bloqueante)) overall = 'BLOQUEADO';
 
   const impedimentos: string[] = [];
-  for (const i of fundItens) if (i.grau !== 'III') impedimentos.push(`${i.nome}: ${i.grau ? `grau ${i.grau}` : 'não enquadra'}`);
+  if (foundation) {
+    const g3 = foundation.summary.mandatory_requirements_json.find((m) => m.grau === 'III');
+    if (g3 && !g3.atende) impedimentos.push(...g3.falhas.map((f) => `Fundamentação: ${f}`));
+    for (const p of foundation.summary.pendencias) impedimentos.push(`Fundamentação: ${p}`);
+  } else {
+    for (const i of fundItens) if (i.grau !== 'III') impedimentos.push(`${i.nome}: ${i.grau ? `grau ${i.grau}` : 'não enquadra'}`);
+  }
   if (prec && prec.grau !== 'III') impedimentos.push(`Precisão: ${prec.grau ? `grau ${prec.grau}` : 'não enquadra'}`);
 
   return {
     results: out,
     fundamentacao: { grau: fundGrau, itens: fundItens },
+    foundation,
     precisao: { amplitudePct: prec?.valor ?? null, grau: prec?.grau ?? null },
     overall,
     pendentesRevisao: out.filter((o) => o.status === 'REQUER_ANALISE' && !o.revisado).map((o) => o.codigo),
-    impedimentosGrauIII: impedimentos,
+    impedimentosGrauIII: [...new Set(impedimentos)],
+  };
+}
+
+/**
+ * Fundamentação por pontos conforme política versionada. Itens sem regra automática formalizada
+ * (ou com critério que requer análise) ficam REQUER_ANALISE/NAO_VERIFICADO sem grau, até o profissional atribuir.
+ */
+export function evaluateFoundation(
+  policy: FoundationPolicy,
+  results: CriterionResult[],
+  manual: Record<string, FoundationGrade>,
+): { items: FoundationItem[]; summary: FoundationSummary } {
+  const pts = (g: Grau | null) => (g ? Number(policy.pontos?.[g] ?? 0) : 0);
+  const items: FoundationItem[] = [...policy.itens].sort((a, b) => a.item - b.item).map((def) => {
+    const mg = manual[def.codigo];
+    let grade: Grau | null = null; let status: CriterionStatus; const details: Record<string, unknown> = {};
+    if (def.source_type === 'CRITERIO') {
+      const res = results.find((r) => r.codigo === def.criterio);
+      details.criterio = def.criterio ?? null;
+      if (!res) { status = 'NAO_VERIFICADO'; details.motivo = 'Critério inativo na política.'; }
+      else {
+        details.criterio_status = res.status; details.criterio_grau = res.grau;
+        if (res.status === 'NAO_ATENDE') { status = 'NAO_ATENDE'; }
+        else if (res.status === 'ATENDE' && res.grau) { status = 'ATENDE'; grade = res.grau; }
+        else { status = res.status === 'NAO_VERIFICADO' ? 'NAO_VERIFICADO' : 'REQUER_ANALISE'; }
+      }
+      if ((status === 'REQUER_ANALISE' || status === 'NAO_VERIFICADO') && mg) {
+        details.grau_profissional = mg;
+        if (mg === 'NAO_ENQUADRA') status = 'NAO_ATENDE'; else { status = 'ATENDE'; grade = mg; }
+      }
+    } else {
+      if (!mg) { status = 'REQUER_ANALISE'; details.motivo = 'Sem regra automática formalizada: requer grau atribuído pelo profissional.'; }
+      else { details.grau_profissional = mg; if (mg === 'NAO_ENQUADRA') status = 'NAO_ATENDE'; else { status = 'ATENDE'; grade = mg; } }
+    }
+    return { item_number: def.item, codigo: def.codigo, titulo: def.titulo, source_type: def.source_type, criterio_codigo: def.criterio ?? null,
+      grade_achieved: grade, points: pts(grade), mandatory_for_grade: !!def.obrigatorio, status, details_json: details };
+  });
+  const total = items.reduce((s, i) => s + i.points, 0);
+  const pendencias = items.filter((i) => i.status === 'REQUER_ANALISE' || i.status === 'NAO_VERIFICADO')
+    .map((i) => `item ${i.item_number} (${i.titulo}) sem grau definido`);
+  const ge = (g: Grau | null, min: Grau) => g !== null && ORDER[g] >= ORDER[min];
+  const evals = [...policy.enquadramento].sort((a, b) => ORDER[b.grau] - ORDER[a.grau]).map((e) => {
+    const falhas: string[] = [];
+    const pontosOk = total >= e.pontos_min;
+    if (!pontosOk) falhas.push(`grau ${e.grau} exige ${e.pontos_min} pontos (obtidos ${total})`);
+    const obrig = items.filter((i) => i.mandatory_for_grade);
+    const demais = items.filter((i) => !i.mandatory_for_grade);
+    const obOk = obrig.every((i) => ge(i.grade_achieved, e.obrigatorios_grau_min));
+    for (const i of obrig) if (!ge(i.grade_achieved, e.obrigatorios_grau_min)) falhas.push(`item ${i.item_number} (${i.titulo}) precisa de grau ${e.obrigatorios_grau_min} ou superior`);
+    const deOk = demais.every((i) => ge(i.grade_achieved, e.demais_grau_min));
+    for (const i of demais) if (!ge(i.grade_achieved, e.demais_grau_min)) falhas.push(`item ${i.item_number} (${i.titulo}) precisa de grau ${e.demais_grau_min} ou superior`);
+    return { grau: e.grau, pontos_min: e.pontos_min, pontos_ok: pontosOk, obrigatorios_ok: obOk, demais_ok: deOk, atende: pontosOk && obOk && deOk, falhas };
+  });
+  const grade = pendencias.length ? null : (evals.find((e) => e.atende)?.grau ?? null);
+  return {
+    items,
+    summary: { total_points: total, grade_calculated: grade, requirements_met: grade !== null, mandatory_requirements_json: evals, pendencias,
+      policy_reference: policy.referencia ?? null },
   };
 }
