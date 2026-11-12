@@ -62,10 +62,14 @@ SELECT pg_temp.ok((SELECT (j->>'aplicados')::int FROM (SELECT public.aval_apply_
 -- 2) Área do avaliando antes e depois de existir modelo calculado
 SELECT pg_temp.ok((public.aval_evaluate_changes_impact((SELECT av FROM fx), jsonb_build_array(jsonb_build_object('entity_type','imovel',
   'entity_id','d0000000-0000-0000-0000-000000000010','campo','area_construida','valor',130)))->>'nivel') = 'REPORT_ONLY', 'área do avaliando antes de modelo calculado = REPORT_ONLY');
-SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
-CREATE TEMP TABLE m AS SELECT public.aval_model_create((SELECT av FROM fx), '10000000-0000-0000-0000-000000000001', 'Manual', 'c0000000-0000-0000-0000-000000000001', 'DIRECT', NULL,
-  '[{"variavel_id":"c0000000-0000-0000-0000-000000000002","transformacao":"DIRECT"}]') AS id;
+-- O snapshot sintético da fixture não reflete o cadastro vivo (área/preço trocados acima para campos estruturados), então
+-- aval_model_create recusaria o conjunto como desatualizado; este teste cobre só a matriz de impacto e cria o modelo como dono.
 SELECT pg_temp.login(NULL);
+CREATE TEMP TABLE m AS SELECT id FROM (SELECT gen_random_uuid() AS id) x;
+INSERT INTO public.avaliacao_modelos(id, organization_id, avaliacao_id, conjunto_id, numero, nome, origem_tipo, dependente_variavel_id, dependente_transformacao)
+SELECT (SELECT id FROM m), '0a000000-0000-0000-0000-00000000000a', av, '10000000-0000-0000-0000-000000000001', 1, 'Manual', 'MANUAL', 'c0000000-0000-0000-0000-000000000001', 'DIRECT' FROM fx;
+INSERT INTO public.avaliacao_modelo_variaveis(organization_id, avaliacao_id, modelo_id, variavel_id, transformacao, ordem)
+SELECT '0a000000-0000-0000-0000-00000000000a', av, (SELECT id FROM m), 'c0000000-0000-0000-0000-000000000002', 'DIRECT', 1 FROM fx;
 UPDATE public.avaliacao_modelos SET status = 'CALCULADO' WHERE id = (SELECT id FROM m);
 UPDATE public.avaliacao_variavel_valores SET valor = 120 WHERE scope_type = 'AVALIANDO' AND variavel_id = 'c0000000-0000-0000-0000-000000000002';
 UPDATE public.avaliacao_modelos SET stale = false WHERE id = (SELECT id FROM m);

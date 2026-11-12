@@ -13322,6 +13322,7 @@ export type Database = {
         }
         Returns: string
       }
+      aval_conjunto_compat: { Args: { p_conjunto: string }; Returns: Json }
       aval_create: {
         Args: {
           p_municipio_ibge: string
