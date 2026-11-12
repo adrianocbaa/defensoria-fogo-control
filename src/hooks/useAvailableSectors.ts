@@ -25,6 +25,7 @@ import {
   Building2,
   Calculator,
   Ruler
+  FileSearch,
 } from 'lucide-react';
 
 export interface SectorInfo {
