@@ -91,7 +91,8 @@ SELECT pg_temp.ok((SELECT count(*) FROM public.audit_events WHERE event_type IN 
 INSERT INTO r SELECT 'l3', public.aval_model_list((SELECT av FROM fx), NULL, '{}', 'numero', true, 50, 0);
 INSERT INTO r SELECT 'l4', public.aval_model_list((SELECT av FROM fx), NULL, '{"arquivados":"SOMENTE"}', 'numero', true, 50, 0);
 SELECT pg_temp.ok((SELECT (j->>'total')::int FROM r WHERE k = 'l3') = 5 AND (SELECT (j->>'total')::int FROM r WHERE k = 'l4') = 2, 'arquivados ocultos por padrão e visíveis no filtro "somente arquivados"');
-SELECT pg_temp.ok((SELECT j->>'alterados' FROM (SELECT public.aval_model_archive((SELECT av FROM fx), NULL, NULL, true) AS j) x) = '4'
+INSERT INTO r SELECT 'a3', public.aval_model_archive((SELECT av FROM fx), NULL, NULL, true);
+SELECT pg_temp.ok((SELECT j->>'alterados' FROM r WHERE k = 'a3') = '4' AND (SELECT j->>'protegidos' FROM r WHERE k = 'a3') = '1'
   AND (SELECT count(*) FROM public.avaliacao_modelos WHERE NOT arquivado) = 1, '"Limpar lista" arquiva todos os não protegidos, sem excluir');
 
 SELECT pg_temp.login(NULL);
