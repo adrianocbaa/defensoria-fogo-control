@@ -7,7 +7,15 @@
 - [x] Telas: lista, nova, área de trabalho (Resumo, 7 blocos, Documentos, Histórico) — compila; frontend aguarda Publish → Update
 - [x] Laudo: seções, dados protegidos, verificação, emissão imutável, revisão, PDF rascunho/emitido
 - [ ] Teste completo logado (criar → laudo emitido) — bloqueado: login de teste indisponível no Supabase externo; pede validação do usuário em órgão de homologação
-- [ ] Sugestões de texto por IA no laudo — estrutura no banco pronta, botão na tela não implementado
+- [ ] Sugestões de texto por IA no laudo — feito na Rodada 2 (ver abaixo)
+
+## Avaliações — Rodada 2 (12/11/2026)
+- [x] Normalidade 68/90/95, fundamentação por itens (resumo + itens), Cook com limite interno configurável, micronumerosidade categórica
+- [x] Tabelas estatísticas derivadas da mesma saída do motor (imutáveis); Exploração ampla; limites de candidatos por organização (servidor também valida)
+- [x] IA no laudo (gerar/melhorar/contexto/restaurar/aprovar), PDF e DOCX oficiais congelados com SHA-256; telas Validação/Resultado/Laudo/Modelagem
+- [x] 111 testes JS + 64 verificações SQL passaram; compila; somente avaliacao-engine atualizada; frontend aguarda Publish → Update
+- [ ] Confirmar com o RT a edição vigente da NBR 14653-2 usada na política de fundamentação (hoje: 2011, itens 1 e 3 exigem grau manual)
+- [ ] Teste logado ponta a ponta — bloqueado: login de teste indisponível no Supabase externo e não há avaliações cadastradas
 - [ ] Homologação numérica (Guarantã do Norte, Aripuanã, São Félix do Araguaia) — aguarda planilhas de referência
 
 - [x] Housekeeping inbound — limites técnicos 10 anexos/10 MiB/25 MiB, validação antes de gravar e configuração transacional Super Admin; 29 testes Node + 3 Deno, UI simulada com releitura e build OK; somente inbound-maintenance-email republicada; frontend aguarda Publish → Update. Quota de plano adiada (contagem diária); salvamento autenticado real não verificado no Supabase externo.
