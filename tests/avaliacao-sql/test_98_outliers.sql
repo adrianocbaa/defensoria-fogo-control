@@ -94,7 +94,10 @@ SELECT pg_temp.ok((public.aval_outlier_decision(pg_temp.k('v1'), 'f0000000-0000-
 SELECT public.aval_outlier_decision(pg_temp.k('v1'), 'f0000000-0000-0000-0000-000000000001', 'MANTER', 'Após vistoria, área confirmada; imóvel representativo');
 SELECT pg_temp.ok((SELECT count(*) FROM public.audit_events WHERE entity_id = pg_temp.k('mod') AND event_type = 'OUTLIER_DECISION') = 4, 'todas as decisões permanecem no histórico');
 
--- Aceite exige validar novamente após decisões
+-- Aceite exige validar novamente após decisões (no teste tudo ocorre na mesma transação: recua a data da validação)
+SELECT pg_temp.login(NULL);
+UPDATE public.model_validations SET created_at = created_at - interval '2 minutes' WHERE id = pg_temp.k('v1');
+SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$SELECT public.aval_accept_model(pg_temp.k('v1'), 'Justificativa do aceite técnico')$$, 'validation_outdated_reviews', 'decisão posterior à validação exige nova validação');
 SELECT pg_temp.login(NULL);
 UPDATE public.model_validations SET created_at = created_at - interval '1 minute' WHERE id = pg_temp.k('v1');
