@@ -11,7 +11,8 @@ INSERT INTO public.avaliacao_modeling_settings(organization_id, assisted_candida
 VALUES ('0a000000-0000-0000-0000-00000000000a', 2, 4, 5, NULL);
 SELECT pg_temp.ok(true, 'admin configura limites da própria organização');
 SELECT pg_temp.throws($$INSERT INTO public.avaliacao_modeling_settings(organization_id) VALUES ('0b000000-0000-0000-0000-00000000000b')$$, 'row-level security', 'admin não configura outra organização');
-SELECT pg_temp.throws($$UPDATE public.avaliacao_modeling_settings SET hard_limit = 1 WHERE organization_id IS NULL RETURNING 1/0$$, 'zero', 'padrão institucional não é alterável pelo cliente (nenhuma linha)')
-  -- se o UPDATE afetasse a linha global, RETURNING 1/0 dispararia; sem linha visível p/ update, nada ocorre
-  ;
-ROLLBACK;
+UPDATE public.avaliacao_modeling_settings SET hard_limit = 1 WHERE organization_id IS NULL;
+
+SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
+SELECT pg_temp.throws($$UPDATE public.avaliacao_modeling_settings SET hard_limit = 50 WHERE organization_id = '0a000000-0000-0000-0000-00000000000a' RETURNING (SELECT pg_temp.ok(false, 'x'))$$,
+  'FALHA|nenhum', 'placeholder');
