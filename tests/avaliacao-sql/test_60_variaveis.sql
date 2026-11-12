@@ -116,8 +116,8 @@ SELECT pg_temp.login(NULL);
 SELECT pg_temp.ok((SELECT count(*) FROM public.avaliacao_amostra_snapshots s JOIN snap1 o ON o.id = s.id WHERE s.dados = o.dados AND s.hash = o.hash) = 8,
   'conjunto recém-congelado não muda retroativamente');
 SELECT pg_temp.ok(EXISTS (SELECT 1 FROM public.avaliacao_amostras WHERE id = 'f0000000-0000-0000-0000-000000000001'), 'amostra mantém o mesmo id');
-SELECT pg_temp.ok(EXISTS (SELECT 1 FROM public.audit_events WHERE event_type = 'FIELD_CHANGED' AND details->>'campo' = 'BANHEIROS'
-  AND details->>'anterior' = '2' AND details->>'novo' = '3'), 'histórico registra Banheiros 2 → 3');
+SELECT pg_temp.ok(EXISTS (SELECT 1 FROM public.audit_events WHERE event_type = 'CHANGE_APPLIED' AND details_json->>'campo' = 'BANHEIROS'
+  AND details_json->>'anterior' = '2' AND details_json->>'novo' = '3'), 'histórico registra Banheiros 2 → 3');
 
 -- 8) Definição da variável e variável personalizada
 SELECT pg_temp.login('a2000000-0000-0000-0000-000000000002');
