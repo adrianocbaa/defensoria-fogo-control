@@ -5,7 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 DIR="$(mktemp -d /tmp/avalpg.XXXX)"; chmod 777 "$DIR"
 PORT="${AVAL_PG_PORT:-54329}"
-as_pg() { runuser -u nobody -- "$@"; }
+PGBIN="$(dirname "$(readlink -f "$(command -v postgres)")")"
+as_pg() { local b="$1"; shift; runuser -u nobody -- "$PGBIN/$b" "$@"; }
 as_pg initdb -D "$DIR/data" -A trust -U postgres >/dev/null
 as_pg pg_ctl -D "$DIR/data" -o "-p $PORT -k $DIR -c listen_addresses=''" -l "$DIR/log" start >/dev/null
 trap 'as_pg pg_ctl -D "$DIR/data" stop -m immediate >/dev/null 2>&1 || true; rm -rf "$DIR"' EXIT
