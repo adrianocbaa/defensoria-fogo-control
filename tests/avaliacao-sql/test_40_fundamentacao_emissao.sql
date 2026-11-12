@@ -6,8 +6,8 @@ CREATE TEMP TABLE m AS SELECT public.aval_model_create((SELECT av FROM fx), '100
   '[{"variavel_id":"c0000000-0000-0000-0000-000000000002","transformacao":"DIRECT"}]') AS id;
 SELECT pg_temp.login(NULL);
 GRANT SELECT ON m TO authenticated, service_role;
-INSERT INTO public.avaliacao_modelo_execucoes(id, avaliacao_id, modelo_id, engine_name, engine_version, status, input_snapshot_json, input_hash, output_json, output_hash)
-SELECT '20000000-0000-0000-0000-000000000001', (SELECT av FROM fx), id, 'sidif', '1.1.0', 'SUCESSO', '{}', repeat('a', 64), '{}', repeat('b', 64) FROM m;
+INSERT INTO public.avaliacao_modelo_execucoes(id, avaliacao_id, modelo_id, engine_name, engine_version, status, input_snapshot_json, input_hash, output_json, output_hash, iniciado_em)
+SELECT '20000000-0000-0000-0000-000000000001', (SELECT av FROM fx), id, 'sidif', '1.1.0', 'SUCESSO', '{}', repeat('a', 64), '{}', repeat('b', 64), now() FROM m;
 
 SET LOCAL ROLE service_role;
 CREATE TEMP TABLE val AS SELECT public.aval_engine_persist_validation(jsonb_build_object('politica', 'SIDIF_V1 v2',
