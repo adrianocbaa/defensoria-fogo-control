@@ -102,6 +102,7 @@ SELECT pg_temp.throws($$UPDATE public.imoveis SET municipio_nome = 'Terra Nova d
 SELECT pg_temp.ok((public.aval_evaluate_changes_impact(pg_temp.id('avP'), (SELECT j FROM lote))->>'nivel') = 'DATASET',
   'corrigir município de amostra do conjunto congelado pede nova versão do conjunto');
 CREATE TEMP TABLE res AS SELECT public.aval_apply_changes(pg_temp.id('avP'), (SELECT j FROM lote), 'Imóvel é de Terra Nova do Norte') j;
+DO $$ DECLARE r record; BEGIN FOR r IN SELECT event_type, entity_type, details_json FROM public.audit_events WHERE avaliacao_id = pg_temp.id('avP') ORDER BY created_at DESC LIMIT 6 LOOP RAISE NOTICE 'EV % % %', r.event_type, r.entity_type, left(r.details_json::text, 300); END LOOP; END $$;
 SELECT pg_temp.check_now();
 SELECT pg_temp.ok((SELECT municipio_nome = 'Terra Nova do Norte' AND municipio_ibge = '5108055' AND uf = 'MT' FROM public.imoveis WHERE id = 'd9000000-0000-0000-0000-000000000009'),
   'correção grava Terra Nova do Norte/MT 5108055 no mesmo imóvel');
