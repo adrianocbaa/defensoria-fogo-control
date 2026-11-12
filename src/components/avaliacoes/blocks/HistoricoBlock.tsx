@@ -4,11 +4,32 @@ import { useAvalQuery } from '../useAvaliacao';
 import { db, rpc } from '@/lib/avaliacao/api';
 import { AUDIT_EVENT_LABEL, NIVEL_IMPACTO_LABEL, fmtDateTime } from '@/lib/avaliacao/labels';
 
+const CAMPO_LABEL: Record<string, string> = {
+  tipo: 'Tipo', valor: 'Valor', data_referencia: 'Data de referência', observacao: 'Observação', processo_administrativo: 'Processo administrativo',
+  numero_contrato: 'Número do contrato', tipo_imovel: 'Tipo de imóvel', endereco: 'Endereço', numero: 'Número', complemento: 'Complemento', bairro: 'Bairro',
+  area_construida: 'Área construída', area_terreno: 'Área do terreno', anuncio_url: 'Link do anúncio', url_anuncio: 'Link do anúncio', anuncio_id: 'Código do anúncio',
+  precisao: 'Precisão da localização', latitude: 'Latitude', longitude: 'Longitude', natureza_dado: 'Natureza', valor_ofertado: 'Valor ofertado',
+  valor_utilizado: 'Valor utilizado', valor_unitario: 'Valor unitário', data_observacao: 'Data da observação', origem_territorial: 'Origem territorial',
+  fonte: 'Fonte principal', imovel_id: 'Imóvel da amostra',
+};
+function valorHist(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '—';
+  if (typeof v === 'object') { const o = v as Record<string, unknown>; return o.nome ? String(o.nome) : JSON.stringify(v); }
+  const s = String(v);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) { const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; }
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/.test(s)) return 'outro cadastro';
+  if (typeof v === 'number') return v.toLocaleString('pt-BR', { maximumFractionDigits: 4 });
+  return s.length > 80 ? `${s.slice(0, 77)}…` : s;
+}
+
 function detalhe(ev: any): string {
   const d = ev.details_json ?? {};
   switch (ev.event_type) {
     case 'INVALIDATION_APPLIED': return `${NIVEL_IMPACTO_LABEL[d.nivel] ?? ''}${d.motivo ? ` — ${d.motivo}` : ''}`;
-    case 'CHANGE_APPLIED': return `Campo ${d.campo}${d.motivo ? ` — ${d.motivo}` : ''}`;
+    case 'CHANGE_APPLIED': return `${CAMPO_LABEL[d.campo] ?? d.campo}: ${valorHist(d.anterior)} → ${valorHist(d.novo)}${d.derivado ? ' (recalculado)' : ''}${d.motivo ? ` — ${d.motivo}` : ''}`;
+    case 'CHANGES_APPLIED': return `${d.campos} campo(s) · ${NIVEL_IMPACTO_LABEL[d.nivel] ?? ''}${d.outras_avaliacoes ? ` · ${d.outras_avaliacoes} outra(s) avaliação(ões)` : ''}${d.motivo ? ` — ${d.motivo}` : ''}`;
+    case 'VARIABLE_VALUE_SYNCED': return `${d.variavel}: ${valorHist(d.anterior)} → ${valorHist(d.novo)}`;
+    case 'SHARED_RECORD_CHANGED': return `Origem: ${d.origem_avaliacao} · ${NIVEL_IMPACTO_LABEL[d.nivel] ?? ''}`;
     case 'EVALUATION_CANCELLED': return d.motivo ?? '';
     case 'DATASET_FROZEN': return `Versão ${d.versao}, ${d.amostras} amostras`;
     case 'REPORT_ISSUED': return d.codigo ?? '';

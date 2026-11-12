@@ -50,7 +50,8 @@ export const AUDIT_EVENT_LABEL: Record<string, string> = {
   ARBITRATION_CONFIRMED: 'Arbítrio confirmado', ECONOMIC_RESULT_CONFIRMED: 'Resultado econômico confirmado', REPORT_CREATED: 'Laudo iniciado',
   REPORT_SECTION_APPROVED: 'Seção do laudo aprovada', REPORT_SECTION_REOPENED: 'Seção do laudo reaberta',
   REPORT_SECTION_REVIEWED_AFTER_CHANGE: 'Seção revisada após alteração', REPORT_ISSUED: 'Laudo emitido', REPORT_REVISION_CREATED: 'Revisão do laudo criada',
-  AI_TEXT_APPROVED: 'Texto sugerido aprovado', AI_TEXT_DISCARDED: 'Texto sugerido descartado', CHANGE_APPLIED: 'Alteração aplicada',
+  AI_TEXT_APPROVED: 'Texto sugerido aprovado', AI_TEXT_DISCARDED: 'Texto sugerido descartado', CHANGE_APPLIED: 'Campo corrigido', CHANGES_APPLIED: 'Correção de dados salva', PROPERTY_CLONED: 'Imóvel separado criado para a amostra',
+  VARIABLE_VALUE_SYNCED: 'Valor de variável atualizado pelo cadastro', SHARED_RECORD_CHANGED: 'Cadastro compartilhado corrigido em outra avaliação',
   INVALIDATION_APPLIED: 'Itens dependentes marcados como desatualizados',
 };
 
