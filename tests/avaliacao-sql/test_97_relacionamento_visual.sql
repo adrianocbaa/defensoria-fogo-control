@@ -65,6 +65,7 @@ UPDATE public.model_validations SET created_at = created_at - interval '1 minute
 SET LOCAL ROLE service_role;
 INSERT INTO k SELECT 'v2', pg_temp.validar('APTO');
 RESET ROLE;
+UPDATE public.model_validations SET created_at = created_at - interval '30 seconds' WHERE id = pg_temp.k('v2');
 SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$SELECT public.aval_relationship_visual_review(pg_temp.k('v1'), 'COERENTE', NULL)$$, 'validation_not_latest', 'validação antiga não recebe nova análise');
 
