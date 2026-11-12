@@ -51,7 +51,7 @@ function issuedData(snap: any): LaudoData {
     secoes: (snap.secoes ?? []).map((s: any) => ({ codigo: s.codigo, titulo: s.titulo, numerada: s.numerada, texto: s.texto ?? '', blocos_sistema: s.blocos_sistema ?? [] })),
     coeficientes: snap.execucao?.output?.fit?.coefficients ?? [],
     validacao: snap.validacao_snapshot?.resultados ?? [], centros: snap.resultado_snapshot?.centros ?? [],
-    amostras: (snap.amostras ?? []).map((a: any) => snapAmostra({ dados: a.dados })).filter((_: any, i: number) => snap.amostras[i]?.dados?.habilitada_modelo !== false),
+    amostras: (snap.amostras ?? []).filter((a: any) => a.dados?.habilitada_modelo !== false && !(snap.modelo?.amostras_excluidas ?? []).includes(a.amostra_id)).map((a: any) => snapAmostra({ dados: a.dados })),
     compatibilidades: snap.resultado_snapshot?.compatibilidades ?? [], anexos: (snap.anexos ?? []).map((a: any) => ({ numero: a.numero, titulo: a.titulo })),
   };
 }
@@ -84,7 +84,7 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
   const call = async (key: string, fn: () => Promise<unknown>, ok?: string) => {
     setBusy(key);
-    try { await fn(); if (ok) toast.success(ok); ctx.refresh(); } catch (e) { toast.error(avalErrorMessage(e)); } finally { setBusy(null); }
+    try { await fn(); if (ok) toast.success(ok); ctx.refresh(); return true; } catch (e) { toast.error(avalErrorMessage(e)); return false; } finally { setBusy(null); }
   };
   const salvarSecao = (s: any) => call(`s-${s.id}`, async () => {
     const { error } = await db.from('laudo_secoes').update({ conteudo: textos[s.id] }).eq('id', s.id);
@@ -210,7 +210,7 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
             <AlertDialogDescription>A emissão é definitiva: o laudo emitido não poderá ser alterado. Correções futuras serão feitas por revisão, mantendo este documento no histórico oficial.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={(e) => { e.preventDefault(); call('emit', () => rpc('aval_laudo_issue', { p_laudo_versao: d.atual.id }), 'Laudo emitido.').then(() => setEmitir(false)); }}>Emitir laudo</AlertDialogAction>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); call('emit', () => rpc('aval_laudo_issue', { p_laudo_versao: d.atual.id }), 'Laudo emitido.').then((r) => r && setEmitir(false)); }}>Emitir laudo</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -221,7 +221,7 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           <Label htmlFor="rev-mot">Motivo da revisão</Label>
           <Textarea id="rev-mot" rows={3} value={revisao ?? ''} onChange={(e) => setRevisao(e.target.value)} maxLength={1000} />
           <DialogFooter><Button variant="outline" onClick={() => setRevisao(null)}>Cancelar</Button>
-            <Button onClick={() => call('rev', () => rpc('aval_laudo_create_revision', { p_laudo: d.laudo.id, p_motivo: revisao }), 'Revisão criada.').then(() => setRevisao(null))}>Criar revisão</Button></DialogFooter>
+            <Button onClick={() => call('rev', () => rpc('aval_laudo_create_revision', { p_laudo: d.laudo.id, p_motivo: revisao }), 'Revisão criada.').then((r) => r && setRevisao(null))}>Criar revisão</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
