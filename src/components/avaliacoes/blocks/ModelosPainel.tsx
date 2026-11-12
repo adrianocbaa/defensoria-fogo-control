@@ -324,7 +324,7 @@ function TriagemPainel({ triagem, vars, sel, onToggle, onClose }: { triagem: Res
                 <label className="flex items-center gap-2 font-medium"><Checkbox checked={sel.has(a.modelo.id)} onCheckedChange={(c) => onToggle(a, !!c)} aria-label={`Selecionar ${a.modelo.nome}`} />{a.modelo.nome}</label>
                 {a.rotulo && <Badge variant={ROTULO_VARIANT[a.rotulo]}>{a.rotulo === 'Requer atenção' && <AlertTriangle className="h-3 w-3 mr-1" aria-hidden />}{a.rotulo}</Badge>}
               </div>
-              <p className="text-xs font-mono text-muted-foreground">{equacao({ dependente_variavel_id: (a.modelo as any).dependente_variavel_id, dependente_transformacao: a.modelo.dependente_transformacao, variaveis: a.modelo.variaveis.map((v, i) => ({ ...v, ordem: i })) }, vars)}</p>
+              <p className="text-xs font-mono text-muted-foreground">{equacao({ dependente_variavel_id: a.modelo.dependente_variavel_id ?? '', dependente_transformacao: a.modelo.dependente_transformacao, variaveis: a.modelo.variaveis.map((v, i) => ({ ...v, ordem: i })) }, vars)}</p>
               <ul className="text-xs space-y-0.5">{a.motivos.map((t) => <li key={t}>• {t}</li>)}</ul>
               {a.alertas.length > 0 && <ul className="text-xs space-y-0.5">{a.alertas.map((t) => <li key={t} className="flex items-start gap-1"><AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" aria-hidden />{t}</li>)}</ul>}
             </li>
@@ -349,7 +349,7 @@ function CompararDialog({ avaliacaoId, ids, vars, onClose }: { avaliacaoId: stri
   const an = (q.data?.modelos ?? []).map((m) => analisar({ ...m, status: 'CALCULADO', stale: false, arquivado: false }, q.data!.politica));
   const linhas = linhasComparacao(an);
   const faltam = ids.length - an.length;
-  const eqs = an.map((a) => equacao({ dependente_variavel_id: (a.modelo as any).dependente_variavel_id, dependente_transformacao: a.modelo.dependente_transformacao, variaveis: a.modelo.variaveis.map((v, i) => ({ ...v, ordem: i })) }, vars));
+  const eqs = an.map((a) => equacao({ dependente_variavel_id: a.modelo.dependente_variavel_id ?? '', dependente_transformacao: a.modelo.dependente_transformacao, variaveis: a.modelo.variaveis.map((v, i) => ({ ...v, ordem: i })) }, vars));
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl">

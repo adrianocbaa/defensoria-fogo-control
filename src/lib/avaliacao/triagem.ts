@@ -12,7 +12,7 @@ export interface TriagemVariavel {
   relacao_esperada: 'POSITIVA' | 'NEGATIVA' | 'INDEFINIDA'; beta: number | null; sig: number | null;
 }
 export interface TriagemModelo {
-  id: string; numero: number; nome: string; status?: string; stale?: boolean; arquivado?: boolean;
+  id: string; numero: number; nome: string; status?: string; stale?: boolean; arquivado?: boolean; dependente_variavel_id?: string;
   dependente_transformacao: string; dependente_power?: number | null;
   resumo: { n: number; k: number; r2: number | null; r2_ajustado: number | null; f: number | null; sig_f: number | null;
     pior_sig_regressor: number | null; amplitude_pct: number | null; grau_precisao: string | null; extrapola: boolean | null } | null;
