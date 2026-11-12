@@ -13268,6 +13268,10 @@ export type Database = {
         }
         Returns: Json
       }
+      aval_apply_changes: {
+        Args: { p_avaliacao: string; p_changes: Json; p_motivo?: string }
+        Returns: Json
+      }
       aval_audit: {
         Args: {
           _av: string
@@ -13278,6 +13282,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      aval_batch_active: { Args: never; Returns: boolean }
       aval_bump_stage: {
         Args: { _av: string; _stage: string }
         Returns: undefined
@@ -13289,6 +13294,20 @@ export type Database = {
       aval_cancel: {
         Args: { p_avaliacao: string; p_motivo: string }
         Returns: undefined
+      }
+      aval_change_level: {
+        Args: {
+          p_av: string
+          p_campo: string
+          p_ctx?: Json
+          p_entity: string
+          p_entity_id: string
+        }
+        Returns: Json
+      }
+      aval_changes_plan: {
+        Args: { p_av: string; p_changes: Json }
+        Returns: Json
       }
       aval_confirm_economic: {
         Args: {
@@ -13332,6 +13351,10 @@ export type Database = {
         }
         Returns: Json
       }
+      aval_evaluate_changes_impact: {
+        Args: { p_avaliacao: string; p_changes: Json }
+        Returns: Json
+      }
       aval_find_duplicates: {
         Args: {
           p_anuncio_id: string
@@ -13365,6 +13388,14 @@ export type Database = {
         Returns: boolean
       }
       aval_hash: { Args: { _j: Json }; Returns: string }
+      aval_imovel_sharing: {
+        Args: { p_avaliacao: string; p_dado?: string; p_imovel: string }
+        Returns: Json
+      }
+      aval_impact_counts: {
+        Args: { p_av: string; p_nivel: string }
+        Returns: Json
+      }
       aval_invalidate: {
         Args: {
           p_av: string
@@ -13467,6 +13498,7 @@ export type Database = {
         Args: { _ano: number; _org: string; _scope: string }
         Returns: number
       }
+      aval_nivel_rank: { Args: { p: string }; Returns: number }
       aval_normalize_text: { Args: { t: string }; Returns: string }
       aval_pendencias: { Args: { p_avaliacao: string }; Returns: Json }
       aval_send_to_validation: {
@@ -13488,6 +13520,15 @@ export type Database = {
         Returns: boolean
       }
       aval_variable_in_use: { Args: { _var: string }; Returns: boolean }
+      aval_vars_match: {
+        Args: {
+          p_av: string
+          p_campos: string[]
+          p_in_use: boolean
+          p_locacional: boolean
+        }
+        Returns: boolean
+      }
       can_edit: { Args: { user_uuid?: string }; Returns: boolean }
       can_edit_obra: {
         Args: { obra_uuid: string; user_uuid?: string }
