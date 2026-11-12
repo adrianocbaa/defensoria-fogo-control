@@ -212,7 +212,7 @@ test('tabelas estatísticas derivadas reproduzem exatamente a saída do motor (o
 });
 
 test('motor 1.1: ANOVA fecha (SQreg + SQres = SQtotal) e estatísticas batem com as amplitudes', () => {
-  assert.equal(E.ENGINE_VERSION, '1.1.0');
+  assert.equal(E.ENGINE_VERSION, '1.1.1');
   const [reg, resid, tot] = fit0.anova;
   assert.ok(Math.abs(reg.ss + resid.ss - tot.ss) <= 1e-9 * tot.ss);
   assert.equal(reg.df + resid.df, tot.df);
