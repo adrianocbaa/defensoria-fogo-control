@@ -13806,6 +13806,7 @@ export type Database = {
         Args: { p_t: string; p_x: number }
         Returns: boolean
       }
+      aval_uf_codigo: { Args: { p_uf: string }; Returns: string }
       aval_var_fonte: {
         Args: { p_atributo: string; p_campo: string }
         Returns: string

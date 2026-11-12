@@ -140,7 +140,7 @@ export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado }: {
             <Table>
               <TableHeader><TableRow>
                 <TableHead className="w-10">{canSel && <Checkbox aria-label="Selecionar todos desta página" checked={todosMarcados} disabled={!paginaSel.length} onCheckedChange={(v) => toggleTodos(!!v)} />}</TableHead>
-                <TableHead>Imóvel</TableHead><TableHead>Dado de mercado a usar</TableHead><TableHead className="text-right">Área (m²)</TableHead>
+                <TableHead>Imóvel</TableHead><TableHead>Município/UF</TableHead><TableHead>Dado de mercado a usar</TableHead><TableHead className="text-right">Área (m²)</TableHead>
                 <TableHead>Situação</TableHead><TableHead>Avisos</TableHead>{canEdit && <TableHead className="w-28"><span className="sr-only">Ações</span></TableHead>}
               </TableRow></TableHeader>
               <TableBody>
@@ -151,8 +151,12 @@ export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado }: {
                       <TableCell>{canSel && <Checkbox aria-label={`Selecionar ${rotuloEndereco(r)}`} checked={r.ja_na_avaliacao || sel.has(r.dado_id)} disabled={r.ja_na_avaliacao} onCheckedChange={(v) => toggle(r.dado_id, !!v)} />}</TableCell>
                       <TableCell className="min-w-[220px]">
                         <p className="font-medium">{rotuloEndereco(r)}</p>
-                        <p className="text-xs text-muted-foreground">{[r.bairro, r.municipio_nome && `${r.municipio_nome}/${r.uf ?? ''}`, r.tipo_imovel].filter(Boolean).join(' · ')}</p>
+                        <p className="text-xs text-muted-foreground">{[r.bairro, r.tipo_imovel].filter(Boolean).join(' · ')}</p>
                         {r.atributos.length > 0 && <p className="text-xs text-muted-foreground">{r.atributos.slice(0, 4).map((a) => `${a.nome}: ${a.valor}${a.unidade && a.unidade !== 'un' ? ` ${a.unidade}` : ''}`).join(' · ')}</p>}
+                      </TableCell>
+                      <TableCell className="min-w-[140px]">
+                        <p className="font-medium">{r.municipio_nome ? `${r.municipio_nome}/${r.uf ?? ''}` : 'Não informado'}</p>
+                        {av.municipio_ibge && r.municipio_ibge && r.municipio_ibge !== av.municipio_ibge && <Badge variant="outline" className="mt-1 text-[11px] font-normal">Outro município</Badge>}
                       </TableCell>
                       <TableCell className="min-w-[200px]">
                         <p className="tabular-nums"><span className="font-medium">{fmtMoney(r.valor_utilizado)}</span>{r.periodicidade === 'MENSAL' ? '/mês' : ''} · {TIPO_NEGOCIO_LABEL[r.tipo_negocio] ?? r.tipo_negocio}</p>

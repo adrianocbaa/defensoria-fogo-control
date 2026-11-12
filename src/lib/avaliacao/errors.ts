@@ -5,6 +5,7 @@ const MESSAGES: Record<string, string> = {
   unauthenticated: 'Sua sessão expirou. Entre novamente.',
   invalid_tipo: 'Tipo de avaliação inválido.',
   missing_required: 'Preencha os campos obrigatórios.',
+  invalid_municipio: 'Escolha um município válido da lista oficial do IBGE (o código precisa ser da UF selecionada).',
   invalid_responsavel: 'O responsável técnico precisa ser um técnico ativo da sua organização.',
   invalid_member: 'A pessoa escolhida precisa ser um técnico ativo da sua organização.',
   invalid_papel: 'Papel inválido.',

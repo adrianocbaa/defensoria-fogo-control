@@ -126,7 +126,7 @@ export function ImportarAmostrasDialog({ ctx, open, onOpenChange }: { ctx: Avali
                       <TableRow key={id} data-state={sel.has(id) ? 'selected' : undefined}>
                         <TableCell><Checkbox aria-label={`Selecionar amostra ${i + 1}`} checked={r.ja_na_avaliacao || sel.has(id)} disabled={r.ja_na_avaliacao} onCheckedChange={(v) => toggle(id, !!v)} /></TableCell>
                         <TableCell className="tabular-nums">{i + 1}</TableCell>
-                        <TableCell className="min-w-[220px]"><p className="font-medium">{rotuloEndereco(r)}</p><p className="text-xs text-muted-foreground">{[r.bairro, r.tipo_imovel, `pesquisa em ${fmtData(r.origem_data ?? r.data_observacao)}`].filter(Boolean).join(' · ')}</p></TableCell>
+                        <TableCell className="min-w-[220px]"><p className="font-medium">{rotuloEndereco(r)}</p><p className="text-xs text-muted-foreground">{[r.municipio_nome ? `${r.municipio_nome}/${r.uf ?? ''}` : null, r.bairro, r.tipo_imovel, `pesquisa em ${fmtData(r.origem_data ?? r.data_observacao)}`].filter(Boolean).join(' · ')}</p></TableCell>
                         <TableCell className="text-right tabular-nums">{fmtMoney(r.origem_valor_utilizado ?? r.valor_utilizado)}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmtNum(r.origem_area ?? r.area_construida)}</TableCell>
                         <TableCell className="text-xs">{r.origem_selecionada === false ? 'Não usada' : r.origem_habilitada === false ? 'Usada, fora do modelo' : 'Usada no modelo'}</TableCell>
