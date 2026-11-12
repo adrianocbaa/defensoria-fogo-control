@@ -144,7 +144,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     try { await rpc('aval_model_flag', { p_modelo: m.id, p_favorito: !m.favorito, p_candidato: null }); ctx.refresh(); }
     catch (e) { toast.error(avalErrorMessage(e)); }
   };
-  const frozen = (code: string) => (q.data?.snaps ?? []).map((x: any) => Number(x.dados?.variaveis?.[code]));
+  const frozen = (code: string) => (q.data?.snaps ?? []).map((x: any) => x.dados?.variaveis?.[code]).filter((x: unknown) => x !== null && x !== undefined && x !== '').map(Number);
   const avaliandoVal = (v: any) => { const raw = valMap.get(cellKey(v.id, 'AV'))?.valor; return raw === null || raw === undefined ? [] : [Number(raw)]; };
   const candSpec = () => {
     if (!gerar || !dep) return null;
