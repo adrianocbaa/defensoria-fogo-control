@@ -150,9 +150,9 @@ async function runModel(req: Request, admin: SupabaseClient, modeloId: string) {
     const { data: ex } = await admin.from('avaliacao_modelo_execucoes').insert({
       ...base, status: 'ERRO', erro_codigo: e.code, concluido_em: new Date().toISOString(),
     }).select('id').single();
-    if (ex) await admin.from('modelo_execucao_erros').insert({ organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, execucao_id: ex.id, codigo: e.code, detalhe: (e as any).details ?? {} });
+    if (ex) await admin.from('modelo_execucao_erros').insert({ organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, execucao_id: ex.id, codigo: e.code, detalhe: e.detail });
     await admin.from('avaliacao_modelos').update({ status: 'ERRO' }).eq('id', modeloId);
-    return json(422, { error: e.code, message: describeEngineError(e.code), details: (e as any).details ?? {} });
+    return json(422, { error: e.code, message: describeEngineError(e.code), details: e.detail });
   }
 }
 
@@ -225,7 +225,7 @@ async function runProjection(req: Request, admin: SupabaseClient, acceptanceId: 
       event_type: 'PROJECTION_CALCULATED', actor_id: caller.userId, details_json: { aceite: ac.id } });
     return json(200, { ok: true, projecao_id: pj.id });
   } catch (e) {
-    if (e instanceof EngineError) return json(422, { error: e.code, message: describeEngineError(e.code), details: (e as any).details ?? {} });
+    if (e instanceof EngineError) return json(422, { error: e.code, message: describeEngineError(e.code), details: e.detail });
     throw e;
   }
 }
