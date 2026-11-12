@@ -392,6 +392,13 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         </Card>
       )}
 
+      {modelo && (
+        <RelacionamentoDialog open={relOpen} onOpenChange={setRelOpen} curves={relCurves} nomes={relNomes} dep={relDep}
+          modeloNome={modelo.nome} engineVersion={val.data?.exec?.engine_version ?? null}
+          criterio={rel ? { status: rel.status, detalhe: rel.detalhe } : null} ultima={ultimaAnalise}
+          podeRegistrar={podeAnalisar} motivoBloqueio={motivoAnalise} obrigatoria={relObrigatoria} onRegistrar={registrarAnalise} />
+      )}
+
       <AlertDialog open={retirar !== null} onOpenChange={(o) => !o && setRetirar(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
