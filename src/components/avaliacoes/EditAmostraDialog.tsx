@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ImovelFields, type ImovelInput } from './ImovelForm';
+import { ComparavelAviso, type ComparavelRow, ImovelFields, type ImovelInput } from './ImovelForm';
 import { ImpactDialog, type PendingChange } from './ImpactDialog';
 import { CompartilhadoAviso, type Compartilhamento } from './CompartilhadoAviso';
 import { CamposDinamicosSection, useVariaveisStatus } from './VariaveisShared';
 import { rpc } from '@/lib/avaliacao/api';
 import { fmtNum } from '@/lib/avaliacao/labels';
 import { camposInvalidos, montarAlteracoes, normalizar, paraFormulario, valorUnitario, type CampoEdicao } from '@/lib/avaliacao/edicao';
+import { municipioValido, mudouMunicipio, origemAposTrocaMunicipio } from '@/lib/avaliacao/municipioImovel';
 import { alteracoesDinamicas, camposDinamicos, obrigatoriasVazias, valorParaFormulario } from '@/lib/avaliacao/variaveis';
 
 export const NATUREZA: Record<string, string> = { OFERTA: 'Oferta', NEGOCIACAO: 'Negociação', CONTRATO_PRIVADO: 'Contrato privado', CONTRATO_PUBLICO: 'Contrato público', OUTRO: 'Outro' };
@@ -30,6 +31,7 @@ export function camposAmostra(a: { id: string; dado_id: string; imovel_id: strin
     ({ chave, entity_type: 'dado_mercado', entity_id: a.dado_id, campo, rotulo, tipo, ...extra });
   return [
     im('tipo_imovel', 'Tipo de imóvel'), im('endereco', 'Endereço'), im('numero', 'Número'), im('complemento', 'Complemento'), im('bairro', 'Bairro'),
+    im('uf', 'UF do imóvel'), im('municipio_ibge', 'Código IBGE do município'), im('municipio_nome', 'Município do imóvel'),
     im('area_construida', 'Área construída', 'numero', { casas: 2, sufixo: 'm²' }), im('area_terreno', 'Área do terreno', 'numero', { casas: 2, sufixo: 'm²' }),
     im('anuncio_url', 'Link do anúncio (imóvel)', 'texto', { origem: 'imovel_anuncio_url' }), im('anuncio_id', 'Código do anúncio (imóvel)', 'texto', { origem: 'imovel_anuncio_id' }),
     dm('anuncio_url', 'url_anuncio', 'Link do anúncio', 'texto', { origem: 'url_anuncio' }), dm('anuncio_id', 'anuncio_id', 'Código do anúncio', 'texto', { origem: 'dado_anuncio_id' }),
@@ -49,6 +51,7 @@ export function originalAmostra(a: any): Record<string, unknown> {
   const fonte = (d.dados_mercado_fontes ?? []).find((f: any) => f.principal)?.fontes_mercado ?? null;
   return {
     tipo_imovel: imv.tipo_imovel, endereco: imv.endereco, numero: imv.numero, complemento: imv.complemento, bairro: imv.bairro,
+    uf: imv.uf, municipio_ibge: imv.municipio_ibge, municipio_nome: imv.municipio_nome,
     area_construida: imv.area_construida, area_terreno: imv.area_terreno, imovel_anuncio_url: imv.anuncio_url, imovel_anuncio_id: imv.anuncio_id,
     url_anuncio: d.url_anuncio, dado_anuncio_id: d.anuncio_id, natureza_dado: d.natureza_dado, valor_ofertado: d.valor_ofertado,
     valor_utilizado: d.valor_utilizado, data_observacao: d.data_observacao, origem_territorial: a.origem_territorial,
@@ -56,8 +59,11 @@ export function originalAmostra(a: any): Record<string, unknown> {
   };
 }
 
-export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSaved }: {
+export function EditAmostraDialog({ avaliacaoId, avaliacao, comparaveis = [], amostra, indice, onClose, onSaved }: {
   avaliacaoId: string; amostra: any | null; indice: number; onClose: () => void; onSaved: () => void;
+  /** Município da avaliação: define a origem territorial sugerida quando o município do imóvel muda. */
+  avaliacao?: { municipio_ibge?: string | null; municipio_nome?: string | null; uf?: string | null };
+  comparaveis?: ComparavelRow[];
 }) {
   const [form, setForm] = useState<Record<string, string> | null>(null);
   const [inicial, setInicial] = useState<Record<string, string>>({});
@@ -121,6 +127,7 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
     const inval = camposInvalidos(cs, form);
     if (inval.length) { toast.error(`Revise: ${inval.join(', ')}.`); return; }
     if (!form.tipo_imovel.trim()) { toast.error('Informe o tipo de imóvel.'); return; }
+    if (mudouMunicipio(original, form) && !municipioValido(form)) { toast.error('Escolha a UF e o município do imóvel.'); return; }
     if (valor === null || !(valor > 0)) { toast.error('Informe o valor utilizado.'); return; }
     for (const k of ['area_construida', 'area_terreno']) { const n = normalizar('numero', form[k]) as number | null; if (n !== null && !(n > 0)) { toast.error('As áreas precisam ser maiores que zero.'); return; } }
     const vo = normalizar('numero', form.valor_ofertado) as number | null;
@@ -147,7 +154,11 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
           <div className="space-y-5">
             <section className="space-y-3" aria-labelledby="ea-imovel">
               <h3 id="ea-imovel" className="text-sm font-semibold">Imóvel físico</h3>
-              <ImovelFields value={form as unknown as ImovelInput} onChange={(v) => setForm({ ...form, ...(v as unknown as Record<string, string>) })} showAnuncio />
+              <ImovelFields value={form as unknown as ImovelInput} municipioAvaliacao={avaliacao} showAnuncio
+                onChange={(v) => setForm({ ...form, ...(v as unknown as Record<string, string>),
+                  // Origem territorial acompanha o município do imóvel (origens escolhidas pelo avaliador são mantidas).
+                  ...(v.municipio_ibge !== form.municipio_ibge && v.municipio_ibge ? { origem_territorial: origemAposTrocaMunicipio(form.origem_territorial, avaliacao?.municipio_ibge, v.municipio_ibge) } : {}) })} />
+              {avaliacao && <ComparavelAviso av={avaliacao} mun={form as never} comparaveis={comparaveis} />}
               {share?.compartilhado && (
                 <CompartilhadoAviso share={share}>
                   {mudaImovel ? (
