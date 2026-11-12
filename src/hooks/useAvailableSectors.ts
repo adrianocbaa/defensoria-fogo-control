@@ -45,6 +45,7 @@ const sectorLabels: Record<string, string> = {
   'nucleos_central': 'Núcleos - Cadastro',
   'orcamento': 'Orçamento',
   'dimensionamento': 'Dimensionamento',
+  'avaliacao': 'Avaliações',
 };
 
 // Adicione os ícones dos novos módulos aqui
@@ -59,6 +60,7 @@ const sectorIcons: Record<string, React.ComponentType<{ className?: string }>> =
   'nucleos_central': Building2,
   'orcamento': Calculator,
   'dimensionamento': Ruler,
+  'avaliacao': FileSearch,
 };
 
 
