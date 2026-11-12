@@ -71,7 +71,7 @@ export function VariaveisBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
   const salvar = async () => {
     if (!cfg) return;
-    let payload;
+    let payload: ReturnType<typeof novaVariavelDoItem>;
     if (cfg.item) payload = novaVariavelDoItem(cfg.item, cfg.papel, cfg.relacao, cfg.obrigatoria);
     else {
       const nome = cfg.nome.trim();
