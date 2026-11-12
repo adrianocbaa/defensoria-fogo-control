@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
-import { db, engine, rpc, sha256Hex } from '@/lib/avaliacao/api';
+import { EngineCallError, db, engine, rpc, sha256Hex } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { fmtDateTime } from '@/lib/avaliacao/labels';
 import { buildLaudoDocxBlob, buildLaudoPdf, foundationFrom, resolveTokens, snapAmostra, type LaudoData } from '@/lib/avaliacao/laudoPdf';
@@ -100,7 +100,7 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
   const call = async (key: string, fn: () => Promise<unknown>, ok?: string) => {
     setBusy(key);
-    try { await fn(); if (ok) toast.success(ok); ctx.refresh(); return true; } catch (e) { toast.error(e instanceof Error && 'code' in e ? e.message : avalErrorMessage(e)); return false; } finally { setBusy(null); }
+    try { await fn(); if (ok) toast.success(ok); ctx.refresh(); return true; } catch (e) { toast.error(e instanceof EngineCallError ? e.message : avalErrorMessage(e)); return false; } finally { setBusy(null); }
   };
   const gravarTexto = async (id: string, conteudo: string) => {
     const { error } = await db.from('laudo_secoes').update({ conteudo }).eq('id', id);
@@ -127,7 +127,7 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       toast.success('Laudo emitido. Gerando os arquivos oficiais…');
       setEmitir(false);
       try { await engine({ action: 'issue_files', emissao_id: emissaoId }); toast.success('Arquivos oficiais PDF e DOCX congelados.'); }
-      catch (e) { toast.error(`${(e as Error).message} Use “Gerar arquivos oficiais” na lista de emissões.`); }
+      catch (e) { toast.error(`${e instanceof EngineCallError ? e.message : 'Os arquivos oficiais não foram gerados.'} Use “Gerar arquivos oficiais” na lista de emissões.`); }
     } catch (e) { toast.error(avalErrorMessage(e)); } finally { setBusy(null); ctx.refresh(); }
   };
   const baixarOficial = async (f: any) => {
@@ -141,7 +141,7 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     } catch (e) { toast.error(avalErrorMessage(e, 'Não foi possível baixar o arquivo oficial.')); } finally { setBusy(null); }
   };
   const gerarIA = (modo: 'GERAR' | 'MELHORAR') => secao && call(`ai-${modo}`, async () => {
-    if (textos[secao.id] !== undefined) throw new Error('Salve a seção antes de usar a IA.');
+    if (textos[secao.id] !== undefined) throw new EngineCallError('local', 'Salve a seção antes de usar a IA.');
     const r = await engine({ action: 'ai_generate', secao_id: secao.id, context_type: aiCtx, modo });
     if (r?.alertas?.length) toast.warning(r.alertas.join(' '));
   }, 'Proposta da IA pronta para sua revisão.');
