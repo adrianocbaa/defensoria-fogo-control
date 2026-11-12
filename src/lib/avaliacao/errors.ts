@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   dataset_incomplete: 'Não é possível congelar o conjunto: há amostras sem variáveis obrigatórias.',
   dependent_exists: 'Já existe uma variável dependente nesta avaliação.',
   dataset_not_frozen: 'Congele o conjunto de dados antes de criar modelos.',
+  dataset_outdated: 'O conjunto vigente foi congelado antes das últimas alterações em variáveis/amostras. Congele uma nova versão do conjunto antes de gerar modelos.',
   transform_not_authorized: 'Há transformação não autorizada para uma das variáveis.',
   missing_variables: 'Escolha ao menos uma variável independente.',
   model_stale: 'Este modelo está desatualizado. Crie um novo modelo.',
@@ -52,13 +53,13 @@ const MESSAGES: Record<string, string> = {
   shared_choice_required: 'Este imóvel é usado em outros registros. Escolha se a correção vale para todos ou só para esta amostra.',
   use_change_flow: 'Este dado já é usado na avaliação. Corrija pelo botão de edição para registrar o impacto.',
   evaluation_not_active: 'Só é possível corrigir dados de uma avaliação ativa.',
-  ZERO_VARIANCE: 'Uma variável tem o mesmo valor em todas as amostras.',
-  INVALID_DOMAIN: 'Uma transformação não é válida para algum valor (ex.: logaritmo de zero ou negativo).',
-  N_LE_P: 'Há poucas amostras para a quantidade de variáveis.',
-  RANK_DEFICIENT: 'Há variáveis redundantes (combinação exata de outras).',
-  NON_FINITE: 'O cálculo produziu valores inválidos.',
+  ZERO_VARIANCE: 'Uma variável não varia entre as amostras.',
+  INVALID_DOMAIN: 'Há valor incompatível com a transformação escolhida (ex.: ln(x) exige valor > 0; 1/x exige valor diferente de zero).',
+  N_LE_P: 'Há poucos dados para a quantidade de parâmetros do modelo.',
+  RANK_DEFICIENT: 'As variáveis escolhidas não permitem estimar coeficientes independentes (colinearidade/perda de posto).',
+  NON_FINITE: 'Há amostra sem valor válido para uma das variáveis do modelo.',
   ZERO_RESIDUAL_VARIANCE: 'O modelo ajusta perfeitamente os dados (sem variância residual).',
-  MISSING_VALUES: 'Há valores faltantes nas amostras do conjunto congelado ou no avaliando.',
+  MISSING_VALUES: 'Há amostra sem valor válido para uma das variáveis do modelo.',
   INVALID_INPUT: 'Dados de entrada incompletos.',
   forbidden: 'Você não tem permissão para esta ação.',
   candidate_confirmation_required: 'O volume de candidatos exige confirmação.',
@@ -83,8 +84,10 @@ const MESSAGES: Record<string, string> = {
 export function avalErrorCode(err: unknown): string | null {
   const anyErr = err as { message?: string; code?: string; context?: unknown } | null;
   const msg = anyErr?.message ?? '';
-  const m = /aval:([a-z_]+)/.exec(msg);
+  const m = /aval:([A-Za-z_]+)/.exec(msg);
   if (m) return m[1];
+  // Erros do motor (EngineCallError) e de RPC trazem o código já separado; só vale se estiver na allowlist.
+  if (typeof anyErr?.code === 'string' && Object.prototype.hasOwnProperty.call(MESSAGES, anyErr.code)) return anyErr.code;
   if (/row-level security/i.test(msg)) return 'permission_denied';
   if (/permission denied/i.test(msg)) return 'permission_denied';
   return null;
