@@ -204,6 +204,42 @@ export type Database = {
           },
         ]
       }
+      arbitration_policies: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          organization_id: string | null
+          origem: string
+          percentual_inferior: number
+          percentual_superior: number
+          status: string
+          versao: number
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          origem?: string
+          percentual_inferior: number
+          percentual_superior: number
+          status?: string
+          versao: number
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          origem?: string
+          percentual_inferior?: number
+          percentual_superior?: number
+          status?: string
+          versao?: number
+        }
+        Relationships: []
+      }
       ata_polos: {
         Row: {
           ata_id: string
@@ -312,6 +348,95 @@ export type Database = {
           },
         ]
       }
+      atributos_imobiliarios: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          codigo: string
+          created_at: string
+          data_type: string
+          id: string
+          modelable: boolean
+          nome: string
+          opcoes: Json | null
+          ordem: number
+          organization_id: string | null
+          unidade: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          codigo: string
+          created_at?: string
+          data_type: string
+          id?: string
+          modelable?: boolean
+          nome: string
+          opcoes?: Json | null
+          ordem?: number
+          organization_id?: string | null
+          unidade?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          codigo?: string
+          created_at?: string
+          data_type?: string
+          id?: string
+          modelable?: boolean
+          nome?: string
+          opcoes?: Json | null
+          ordem?: number
+          organization_id?: string | null
+          unidade?: string | null
+        }
+        Relationships: []
+      }
+      audit_events: {
+        Row: {
+          actor_id: string | null
+          avaliacao_id: string | null
+          created_at: string
+          details_json: Json
+          entity_id: string | null
+          entity_type: string
+          event_type: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          avaliacao_id?: string | null
+          created_at?: string
+          details_json?: Json
+          entity_id?: string | null
+          entity_type: string
+          event_type: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          avaliacao_id?: string | null
+          created_at?: string
+          details_json?: Json
+          entity_id?: string | null
+          entity_type?: string
+          event_type?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           changed_fields: string[] | null
@@ -353,6 +478,2063 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      aval_impact_rules: {
+        Row: {
+          campo: string
+          descricao: string
+          entity_type: string
+          nivel: string
+        }
+        Insert: {
+          campo: string
+          descricao: string
+          entity_type: string
+          nivel: string
+        }
+        Update: {
+          campo?: string
+          descricao?: string
+          entity_type?: string
+          nivel?: string
+        }
+        Relationships: []
+      }
+      avaliacao_ai_conteudos: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          approved_text: string | null
+          avaliacao_id: string
+          context_id: string | null
+          context_json: Json
+          context_type: string
+          created_at: string
+          created_by: string | null
+          generated_text: string
+          id: string
+          model: string
+          organization_id: string
+          prompt_version: string
+          purpose: string
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_text?: string | null
+          avaliacao_id: string
+          context_id?: string | null
+          context_json: Json
+          context_type: string
+          created_at?: string
+          created_by?: string | null
+          generated_text: string
+          id?: string
+          model: string
+          organization_id: string
+          prompt_version: string
+          purpose: string
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_text?: string | null
+          avaliacao_id?: string
+          context_id?: string | null
+          context_json?: Json
+          context_type?: string
+          created_at?: string
+          created_by?: string | null
+          generated_text?: string
+          id?: string
+          model?: string
+          organization_id?: string
+          prompt_version?: string
+          purpose?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_ai_conteudos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_amostra_snapshots: {
+        Row: {
+          amostra_id: string
+          avaliacao_id: string
+          conjunto_id: string
+          created_at: string
+          dado_id: string
+          dados: Json
+          hash: string
+          id: string
+          imovel_id: string
+          organization_id: string
+        }
+        Insert: {
+          amostra_id: string
+          avaliacao_id: string
+          conjunto_id: string
+          created_at?: string
+          dado_id: string
+          dados: Json
+          hash: string
+          id?: string
+          imovel_id: string
+          organization_id: string
+        }
+        Update: {
+          amostra_id?: string
+          avaliacao_id?: string
+          conjunto_id?: string
+          created_at?: string
+          dado_id?: string
+          dados?: Json
+          hash?: string
+          id?: string
+          imovel_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_amostra_snapshots_amostra_id_fkey"
+            columns: ["amostra_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_amostras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_amostra_snapshots_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_amostra_snapshots_conjunto_id_fkey"
+            columns: ["conjunto_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_conjuntos_dados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_amostra_snapshots_dado_id_fkey"
+            columns: ["dado_id"]
+            isOneToOne: false
+            referencedRelation: "dados_mercado"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_amostra_snapshots_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_amostras: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          dado_id: string
+          habilitada_modelo: boolean
+          id: string
+          motivo_desabilitacao: string | null
+          motivo_inclusao: string | null
+          organization_id: string
+          origem_territorial: string
+          selecionada: boolean
+          updated_at: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          dado_id: string
+          habilitada_modelo?: boolean
+          id?: string
+          motivo_desabilitacao?: string | null
+          motivo_inclusao?: string | null
+          organization_id: string
+          origem_territorial?: string
+          selecionada?: boolean
+          updated_at?: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          dado_id?: string
+          habilitada_modelo?: boolean
+          id?: string
+          motivo_desabilitacao?: string | null
+          motivo_inclusao?: string | null
+          organization_id?: string
+          origem_territorial?: string
+          selecionada?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_amostras_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_amostras_dado_id_fkey"
+            columns: ["dado_id"]
+            isOneToOne: false
+            referencedRelation: "dados_mercado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_arbitrio_caracteristicas: {
+        Row: {
+          arbitrio_id: string
+          avaliacao_id: string
+          caracteristica_id: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          arbitrio_id: string
+          avaliacao_id: string
+          caracteristica_id: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          arbitrio_id?: string
+          avaliacao_id?: string
+          caracteristica_id?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_arbitrio_caracteristicas_arbitrio_id_fkey"
+            columns: ["arbitrio_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_arbitrios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_arbitrio_caracteristicas_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_arbitrio_caracteristicas_caracteristica_id_fkey"
+            columns: ["caracteristica_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_caracteristicas_relevantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_arbitrios: {
+        Row: {
+          aplicar: boolean
+          avaliacao_id: string
+          campo_inferior: number
+          campo_superior: number
+          centro: string
+          created_at: string
+          created_by: string | null
+          id: string
+          justificativa: string | null
+          organization_id: string
+          policy_id: string
+          projecao_id: string
+          valor_arbitrado: number | null
+        }
+        Insert: {
+          aplicar?: boolean
+          avaliacao_id: string
+          campo_inferior: number
+          campo_superior: number
+          centro: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          justificativa?: string | null
+          organization_id: string
+          policy_id: string
+          projecao_id: string
+          valor_arbitrado?: number | null
+        }
+        Update: {
+          aplicar?: boolean
+          avaliacao_id?: string
+          campo_inferior?: number
+          campo_superior?: number
+          centro?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          justificativa?: string | null
+          organization_id?: string
+          policy_id?: string
+          projecao_id?: string
+          valor_arbitrado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_arbitrios_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_arbitrios_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "arbitration_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_arbitrios_projecao_id_fkey"
+            columns: ["projecao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_projecoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_caracteristicas_relevantes: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          descricao: string
+          efeito: string
+          id: string
+          modelada: boolean
+          observacao: string | null
+          organization_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          descricao: string
+          efeito?: string
+          id?: string
+          modelada?: boolean
+          observacao?: string | null
+          organization_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          descricao?: string
+          efeito?: string
+          id?: string
+          modelada?: boolean
+          observacao?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_caracteristicas_relevantes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_compatibilidades: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          diferenca_absoluta: number
+          diferenca_percentual: number
+          direcao: string
+          id: string
+          organization_id: string
+          posicao_campo: string
+          posicao_ic: string
+          resultado_id: string
+          tipo_valor: string
+          valor_administrativo_id: string
+          valor_comparado: number
+          valor_referencia: number
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          diferenca_absoluta: number
+          diferenca_percentual: number
+          direcao: string
+          id?: string
+          organization_id: string
+          posicao_campo: string
+          posicao_ic: string
+          resultado_id: string
+          tipo_valor: string
+          valor_administrativo_id: string
+          valor_comparado: number
+          valor_referencia: number
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          diferenca_absoluta?: number
+          diferenca_percentual?: number
+          direcao?: string
+          id?: string
+          organization_id?: string
+          posicao_campo?: string
+          posicao_ic?: string
+          resultado_id?: string
+          tipo_valor?: string
+          valor_administrativo_id?: string
+          valor_comparado?: number
+          valor_referencia?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_compatibilidades_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_compatibilidades_resultado_id_fkey"
+            columns: ["resultado_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_resultado_economico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_compatibilidades_valor_administrativo_id_fkey"
+            columns: ["valor_administrativo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_valores_administrativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_conjunto_amostras: {
+        Row: {
+          amostra_id: string
+          avaliacao_id: string
+          conjunto_id: string
+          dado_id: string
+          habilitada_modelo: boolean
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          amostra_id: string
+          avaliacao_id: string
+          conjunto_id: string
+          dado_id: string
+          habilitada_modelo?: boolean
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          amostra_id?: string
+          avaliacao_id?: string
+          conjunto_id?: string
+          dado_id?: string
+          habilitada_modelo?: boolean
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_conjunto_amostras_amostra_id_fkey"
+            columns: ["amostra_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_amostras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_conjunto_amostras_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_conjunto_amostras_conjunto_id_fkey"
+            columns: ["conjunto_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_conjuntos_dados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_conjunto_amostras_dado_id_fkey"
+            columns: ["dado_id"]
+            isOneToOne: false
+            referencedRelation: "dados_mercado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_conjuntos_dados: {
+        Row: {
+          avaliacao_id: string
+          congelado_em: string | null
+          congelado_por: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          observacao: string | null
+          organization_id: string
+          status: string
+          versao: number
+        }
+        Insert: {
+          avaliacao_id: string
+          congelado_em?: string | null
+          congelado_por?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          observacao?: string | null
+          organization_id: string
+          status?: string
+          versao: number
+        }
+        Update: {
+          avaliacao_id?: string
+          congelado_em?: string | null
+          congelado_por?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          observacao?: string | null
+          organization_id?: string
+          status?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_conjuntos_dados_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_documentos: {
+        Row: {
+          avaliacao_id: string
+          categoria: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome_arquivo: string | null
+          organization_id: string
+          storage_ref: string
+          tamanho_bytes: number | null
+          titulo: string
+        }
+        Insert: {
+          avaliacao_id: string
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome_arquivo?: string | null
+          organization_id: string
+          storage_ref: string
+          tamanho_bytes?: number | null
+          titulo: string
+        }
+        Update: {
+          avaliacao_id?: string
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome_arquivo?: string | null
+          organization_id?: string
+          storage_ref?: string
+          tamanho_bytes?: number | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_documentos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_espaco_transformacoes: {
+        Row: {
+          avaliacao_id: string
+          espaco_id: string
+          id: string
+          organization_id: string
+          power: number | null
+          transformacao: string
+          variavel_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          espaco_id: string
+          id?: string
+          organization_id: string
+          power?: number | null
+          transformacao: string
+          variavel_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          espaco_id?: string
+          id?: string
+          organization_id?: string
+          power?: number | null
+          transformacao?: string
+          variavel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_espaco_transformacoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_espaco_transformacoes_espaco_id_fkey"
+            columns: ["espaco_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_espacos_modelagem"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_espaco_transformacoes_transformacao_fkey"
+            columns: ["transformacao"]
+            isOneToOne: false
+            referencedRelation: "stat_transformations"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "avaliacao_espaco_transformacoes_variavel_id_fkey"
+            columns: ["variavel_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_variaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_espaco_variaveis: {
+        Row: {
+          avaliacao_id: string
+          espaco_id: string
+          id: string
+          obrigatoria: boolean
+          organization_id: string
+          relacao_esperada: string
+          variavel_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          espaco_id: string
+          id?: string
+          obrigatoria?: boolean
+          organization_id: string
+          relacao_esperada?: string
+          variavel_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          espaco_id?: string
+          id?: string
+          obrigatoria?: boolean
+          organization_id?: string
+          relacao_esperada?: string
+          variavel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_espaco_variaveis_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_espaco_variaveis_espaco_id_fkey"
+            columns: ["espaco_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_espacos_modelagem"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_espaco_variaveis_variavel_id_fkey"
+            columns: ["variavel_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_variaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_espacos_modelagem: {
+        Row: {
+          avaliacao_id: string
+          candidatos_estimados: number | null
+          conjunto_id: string
+          created_at: string
+          created_by: string | null
+          dependente_variavel_id: string
+          id: string
+          modo: string
+          organization_id: string
+          status: string
+          transformacoes_dependente: string[]
+        }
+        Insert: {
+          avaliacao_id: string
+          candidatos_estimados?: number | null
+          conjunto_id: string
+          created_at?: string
+          created_by?: string | null
+          dependente_variavel_id: string
+          id?: string
+          modo?: string
+          organization_id: string
+          status?: string
+          transformacoes_dependente?: string[]
+        }
+        Update: {
+          avaliacao_id?: string
+          candidatos_estimados?: number | null
+          conjunto_id?: string
+          created_at?: string
+          created_by?: string | null
+          dependente_variavel_id?: string
+          id?: string
+          modo?: string
+          organization_id?: string
+          status?: string
+          transformacoes_dependente?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_espacos_modelagem_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_espacos_modelagem_conjunto_id_fkey"
+            columns: ["conjunto_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_conjuntos_dados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_espacos_modelagem_dependente_variavel_id_fkey"
+            columns: ["dependente_variavel_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_variaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_fonte_fatos: {
+        Row: {
+          aprovado: boolean
+          aprovado_em: string | null
+          aprovado_por: string | null
+          avaliacao_id: string
+          created_at: string
+          fato: string
+          fonte_id: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          aprovado?: boolean
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          avaliacao_id: string
+          created_at?: string
+          fato: string
+          fonte_id: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          aprovado?: boolean
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          avaliacao_id?: string
+          created_at?: string
+          fato?: string
+          fonte_id?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_fonte_fatos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_fonte_fatos_fonte_id_fkey"
+            columns: ["fonte_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_fontes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_fonte_usos: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          fato_id: string
+          id: string
+          laudo_secao_id: string
+          organization_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          fato_id: string
+          id?: string
+          laudo_secao_id: string
+          organization_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          fato_id?: string
+          id?: string
+          laudo_secao_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_fonte_usos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_fonte_usos_fato_id_fkey"
+            columns: ["fato_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_fonte_fatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_fonte_usos_laudo_secao_id_fkey"
+            columns: ["laudo_secao_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_secoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_fontes: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          created_by: string | null
+          data_consulta: string
+          documento_ref: string | null
+          id: string
+          organization_id: string
+          titulo: string
+          url: string | null
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          created_by?: string | null
+          data_consulta?: string
+          documento_ref?: string | null
+          id?: string
+          organization_id: string
+          titulo: string
+          url?: string | null
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_consulta?: string
+          documento_ref?: string | null
+          id?: string
+          organization_id?: string
+          titulo?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_fontes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_imoveis: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          id: string
+          imovel_id: string
+          organization_id: string
+          papel: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          id?: string
+          imovel_id: string
+          organization_id: string
+          papel?: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          id?: string
+          imovel_id?: string
+          organization_id?: string
+          papel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_imoveis_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_imoveis_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_membros: {
+        Row: {
+          ativo: boolean
+          avaliacao_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          papel: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          avaliacao_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          papel: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          avaliacao_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          papel?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_membros_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_metodos: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          id: string
+          metodo: string
+          organization_id: string
+          principal: boolean
+          status: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          id?: string
+          metodo?: string
+          organization_id: string
+          principal?: boolean
+          status?: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          id?: string
+          metodo?: string
+          organization_id?: string
+          principal?: boolean
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_metodos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_modelo_execucoes: {
+        Row: {
+          avaliacao_id: string
+          concluido_em: string
+          created_at: string
+          engine_name: string
+          engine_version: string
+          erro_codigo: string | null
+          executado_por: string | null
+          id: string
+          iniciado_em: string
+          input_hash: string
+          input_snapshot_json: Json
+          modelo_id: string
+          organization_id: string
+          output_hash: string | null
+          output_json: Json | null
+          status: string
+        }
+        Insert: {
+          avaliacao_id: string
+          concluido_em: string
+          created_at?: string
+          engine_name: string
+          engine_version: string
+          erro_codigo?: string | null
+          executado_por?: string | null
+          id?: string
+          iniciado_em: string
+          input_hash: string
+          input_snapshot_json: Json
+          modelo_id: string
+          organization_id: string
+          output_hash?: string | null
+          output_json?: Json | null
+          status: string
+        }
+        Update: {
+          avaliacao_id?: string
+          concluido_em?: string
+          created_at?: string
+          engine_name?: string
+          engine_version?: string
+          erro_codigo?: string | null
+          executado_por?: string | null
+          id?: string
+          iniciado_em?: string
+          input_hash?: string
+          input_snapshot_json?: Json
+          modelo_id?: string
+          organization_id?: string
+          output_hash?: string | null
+          output_json?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_modelo_execucoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelo_execucoes_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_modelo_variaveis: {
+        Row: {
+          avaliacao_id: string
+          id: string
+          modelo_id: string
+          ordem: number
+          organization_id: string
+          power: number | null
+          transformacao: string
+          variavel_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          id?: string
+          modelo_id: string
+          ordem?: number
+          organization_id: string
+          power?: number | null
+          transformacao: string
+          variavel_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          id?: string
+          modelo_id?: string
+          ordem?: number
+          organization_id?: string
+          power?: number | null
+          transformacao?: string
+          variavel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_modelo_variaveis_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelo_variaveis_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelo_variaveis_transformacao_fkey"
+            columns: ["transformacao"]
+            isOneToOne: false
+            referencedRelation: "stat_transformations"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelo_variaveis_variavel_id_fkey"
+            columns: ["variavel_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_variaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_modelos: {
+        Row: {
+          amostras_excluidas: string[]
+          avaliacao_id: string
+          candidato: boolean
+          conjunto_id: string
+          created_at: string
+          created_by: string | null
+          dependente_power: number | null
+          dependente_transformacao: string
+          dependente_variavel_id: string
+          espaco_id: string | null
+          favorito: boolean
+          id: string
+          modelo_origem_id: string | null
+          nivel_confianca: number
+          nome: string
+          numero: number
+          organization_id: string
+          origem_tipo: string
+          stale: boolean
+          stale_em: string | null
+          stale_motivo: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amostras_excluidas?: string[]
+          avaliacao_id: string
+          candidato?: boolean
+          conjunto_id: string
+          created_at?: string
+          created_by?: string | null
+          dependente_power?: number | null
+          dependente_transformacao: string
+          dependente_variavel_id: string
+          espaco_id?: string | null
+          favorito?: boolean
+          id?: string
+          modelo_origem_id?: string | null
+          nivel_confianca?: number
+          nome: string
+          numero: number
+          organization_id: string
+          origem_tipo?: string
+          stale?: boolean
+          stale_em?: string | null
+          stale_motivo?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amostras_excluidas?: string[]
+          avaliacao_id?: string
+          candidato?: boolean
+          conjunto_id?: string
+          created_at?: string
+          created_by?: string | null
+          dependente_power?: number | null
+          dependente_transformacao?: string
+          dependente_variavel_id?: string
+          espaco_id?: string | null
+          favorito?: boolean
+          id?: string
+          modelo_origem_id?: string | null
+          nivel_confianca?: number
+          nome?: string
+          numero?: number
+          organization_id?: string
+          origem_tipo?: string
+          stale?: boolean
+          stale_em?: string | null
+          stale_motivo?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_modelos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelos_conjunto_id_fkey"
+            columns: ["conjunto_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_conjuntos_dados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelos_dependente_transformacao_fkey"
+            columns: ["dependente_transformacao"]
+            isOneToOne: false
+            referencedRelation: "stat_transformations"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelos_dependente_variavel_id_fkey"
+            columns: ["dependente_variavel_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_variaveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelos_espaco_id_fkey"
+            columns: ["espaco_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_espacos_modelagem"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_modelos_modelo_origem_id_fkey"
+            columns: ["modelo_origem_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_municipios_comparaveis: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          decidido_em: string | null
+          decidido_por: string | null
+          id: string
+          justificativa: string | null
+          municipio_ibge: string | null
+          municipio_nome: string
+          organization_id: string
+          status: string
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          id?: string
+          justificativa?: string | null
+          municipio_ibge?: string | null
+          municipio_nome: string
+          organization_id: string
+          status?: string
+          uf: string
+          updated_at?: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          id?: string
+          justificativa?: string | null
+          municipio_ibge?: string | null
+          municipio_nome?: string
+          organization_id?: string
+          status?: string
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_municipios_comparaveis_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_papel_permissoes: {
+        Row: {
+          papel: string
+          permissao: string
+        }
+        Insert: {
+          papel: string
+          permissao: string
+        }
+        Update: {
+          papel?: string
+          permissao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_papel_permissoes_permissao_fkey"
+            columns: ["permissao"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_permissoes"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
+      avaliacao_permissoes: {
+        Row: {
+          categoria: string
+          codigo: string
+          descricao: string
+        }
+        Insert: {
+          categoria: string
+          codigo: string
+          descricao: string
+        }
+        Update: {
+          categoria?: string
+          codigo?: string
+          descricao?: string
+        }
+        Relationships: []
+      }
+      avaliacao_projecao_centros: {
+        Row: {
+          amplitude_pct: number
+          avaliacao_id: string
+          centro: string
+          grau_precisao: string | null
+          id: string
+          limite_inferior: number
+          limite_superior: number
+          organization_id: string
+          projecao_id: string
+          valor: number
+        }
+        Insert: {
+          amplitude_pct: number
+          avaliacao_id: string
+          centro: string
+          grau_precisao?: string | null
+          id?: string
+          limite_inferior: number
+          limite_superior: number
+          organization_id: string
+          projecao_id: string
+          valor: number
+        }
+        Update: {
+          amplitude_pct?: number
+          avaliacao_id?: string
+          centro?: string
+          grau_precisao?: string | null
+          id?: string
+          limite_inferior?: number
+          limite_superior?: number
+          organization_id?: string
+          projecao_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_projecao_centros_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_projecao_centros_projecao_id_fkey"
+            columns: ["projecao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_projecoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_projecoes: {
+        Row: {
+          acceptance_id: string
+          avaliacao_id: string
+          avaliando_json: Json
+          created_at: string
+          created_by: string | null
+          engine_version: string
+          execucao_id: string
+          extrapolacao: Json
+          id: string
+          intervalo_predicao_status: string
+          log_response: boolean
+          modelo_id: string
+          nivel_confianca: number
+          organization_id: string
+          se_media: number
+          stale: boolean
+          t_critico: number
+          z0: number
+        }
+        Insert: {
+          acceptance_id: string
+          avaliacao_id: string
+          avaliando_json: Json
+          created_at?: string
+          created_by?: string | null
+          engine_version: string
+          execucao_id: string
+          extrapolacao: Json
+          id?: string
+          intervalo_predicao_status?: string
+          log_response: boolean
+          modelo_id: string
+          nivel_confianca: number
+          organization_id: string
+          se_media: number
+          stale?: boolean
+          t_critico: number
+          z0: number
+        }
+        Update: {
+          acceptance_id?: string
+          avaliacao_id?: string
+          avaliando_json?: Json
+          created_at?: string
+          created_by?: string | null
+          engine_version?: string
+          execucao_id?: string
+          extrapolacao?: Json
+          id?: string
+          intervalo_predicao_status?: string
+          log_response?: boolean
+          modelo_id?: string
+          nivel_confianca?: number
+          organization_id?: string
+          se_media?: number
+          stale?: boolean
+          t_critico?: number
+          z0?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_projecoes_acceptance_id_fkey"
+            columns: ["acceptance_id"]
+            isOneToOne: false
+            referencedRelation: "model_acceptances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_projecoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_projecoes_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_projecoes_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_resultado_economico: {
+        Row: {
+          avaliacao_id: string
+          centro: string
+          conclusao: string
+          conclusao_texto: string | null
+          confirmado_em: string
+          confirmado_por: string
+          id: string
+          organization_id: string
+          projecao_id: string
+          stale: boolean
+          status: string
+          valor_adotado_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          centro: string
+          conclusao: string
+          conclusao_texto?: string | null
+          confirmado_em?: string
+          confirmado_por: string
+          id?: string
+          organization_id: string
+          projecao_id: string
+          stale?: boolean
+          status?: string
+          valor_adotado_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          centro?: string
+          conclusao?: string
+          conclusao_texto?: string | null
+          confirmado_em?: string
+          confirmado_por?: string
+          id?: string
+          organization_id?: string
+          projecao_id?: string
+          stale?: boolean
+          status?: string
+          valor_adotado_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_resultado_economico_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_resultado_economico_projecao_id_fkey"
+            columns: ["projecao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_projecoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_resultado_economico_valor_adotado_id_fkey"
+            columns: ["valor_adotado_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_valores_adotados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_resultado_snapshots: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          dados: Json
+          hash: string
+          id: string
+          organization_id: string
+          resultado_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          dados: Json
+          hash: string
+          id?: string
+          organization_id: string
+          resultado_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          dados?: Json
+          hash?: string
+          id?: string
+          organization_id?: string
+          resultado_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_resultado_snapshots_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_resultado_snapshots_resultado_id_fkey"
+            columns: ["resultado_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_resultado_economico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_valores_administrativos: {
+        Row: {
+          ativo: boolean
+          avaliacao_id: string
+          created_at: string
+          created_by: string | null
+          data_referencia: string | null
+          documento_origem_id: string | null
+          id: string
+          observacao: string | null
+          organization_id: string
+          tipo: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          avaliacao_id: string
+          created_at?: string
+          created_by?: string | null
+          data_referencia?: string | null
+          documento_origem_id?: string | null
+          id?: string
+          observacao?: string | null
+          organization_id: string
+          tipo: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          ativo?: boolean
+          avaliacao_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_referencia?: string | null
+          documento_origem_id?: string | null
+          id?: string
+          observacao?: string | null
+          organization_id?: string
+          tipo?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_valores_administrativos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_valores_adotados: {
+        Row: {
+          arbitrio_id: string | null
+          avaliacao_id: string
+          centro_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          origem: string
+          projecao_id: string
+          rounding_policy_id: string | null
+          unidade: string
+          valor_adotado_bruto: number
+          valor_final_apresentacao: number
+        }
+        Insert: {
+          arbitrio_id?: string | null
+          avaliacao_id: string
+          centro_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          origem: string
+          projecao_id: string
+          rounding_policy_id?: string | null
+          unidade?: string
+          valor_adotado_bruto: number
+          valor_final_apresentacao: number
+        }
+        Update: {
+          arbitrio_id?: string | null
+          avaliacao_id?: string
+          centro_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          origem?: string
+          projecao_id?: string
+          rounding_policy_id?: string | null
+          unidade?: string
+          valor_adotado_bruto?: number
+          valor_final_apresentacao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_valores_adotados_arbitrio_id_fkey"
+            columns: ["arbitrio_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_arbitrios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_valores_adotados_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_valores_adotados_centro_id_fkey"
+            columns: ["centro_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_projecao_centros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_valores_adotados_projecao_id_fkey"
+            columns: ["projecao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_projecoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_valores_adotados_rounding_policy_id_fkey"
+            columns: ["rounding_policy_id"]
+            isOneToOne: false
+            referencedRelation: "rounding_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_variaveis: {
+        Row: {
+          ativo: boolean
+          atributo_id: string | null
+          avaliacao_id: string
+          campo_origem: string | null
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+          obrigatoria: boolean
+          organization_id: string
+          origem_tipo: string
+          papel: string
+          relacao_esperada: string
+          tipo_variavel: string
+          transformacoes_autorizadas: string[]
+          unidade: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          atributo_id?: string | null
+          avaliacao_id: string
+          campo_origem?: string | null
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+          obrigatoria?: boolean
+          organization_id: string
+          origem_tipo?: string
+          papel?: string
+          relacao_esperada?: string
+          tipo_variavel?: string
+          transformacoes_autorizadas?: string[]
+          unidade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          atributo_id?: string | null
+          avaliacao_id?: string
+          campo_origem?: string | null
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          obrigatoria?: boolean
+          organization_id?: string
+          origem_tipo?: string
+          papel?: string
+          relacao_esperada?: string
+          tipo_variavel?: string
+          transformacoes_autorizadas?: string[]
+          unidade?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_variaveis_atributo_id_fkey"
+            columns: ["atributo_id"]
+            isOneToOne: false
+            referencedRelation: "atributos_imobiliarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_variaveis_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_variavel_valores: {
+        Row: {
+          amostra_id: string | null
+          avaliacao_id: string
+          id: string
+          organization_id: string
+          origem: string | null
+          scope_type: string
+          updated_at: string
+          valor: number | null
+          valor_texto: string | null
+          variavel_id: string
+        }
+        Insert: {
+          amostra_id?: string | null
+          avaliacao_id: string
+          id?: string
+          organization_id: string
+          origem?: string | null
+          scope_type: string
+          updated_at?: string
+          valor?: number | null
+          valor_texto?: string | null
+          variavel_id: string
+        }
+        Update: {
+          amostra_id?: string | null
+          avaliacao_id?: string
+          id?: string
+          organization_id?: string
+          origem?: string | null
+          scope_type?: string
+          updated_at?: string
+          valor?: number | null
+          valor_texto?: string | null
+          variavel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_variavel_valores_amostra_id_fkey"
+            columns: ["amostra_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_amostras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_variavel_valores_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_variavel_valores_variavel_id_fkey"
+            columns: ["variavel_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_variaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_versoes: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          created_by: string | null
+          emitida_em: string | null
+          id: string
+          motivo: string | null
+          organization_id: string
+          revisao: number
+          status: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          created_by?: string | null
+          emitida_em?: string | null
+          id?: string
+          motivo?: string | null
+          organization_id: string
+          revisao: number
+          status?: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          created_by?: string | null
+          emitida_em?: string | null
+          id?: string
+          motivo?: string | null
+          organization_id?: string
+          revisao?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_versoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacoes: {
+        Row: {
+          ano: number
+          cancelado_em: string | null
+          cancelado_motivo: string | null
+          cancelado_por: string | null
+          codigo: string
+          created_at: string
+          created_by: string | null
+          data_proposta: string | null
+          id: string
+          indice_reajuste: string | null
+          municipio_ibge: string | null
+          municipio_nome: string
+          numero: number
+          numero_contrato: string | null
+          observacao: string | null
+          organization_id: string
+          percentual_reajuste: number | null
+          processo_administrativo: string | null
+          responsavel_tecnico_id: string | null
+          stage: string
+          status: string
+          tipo: string
+          tipo_imovel: string
+          uf: string
+          updated_at: string
+          versao_atual: number
+        }
+        Insert: {
+          ano: number
+          cancelado_em?: string | null
+          cancelado_motivo?: string | null
+          cancelado_por?: string | null
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          data_proposta?: string | null
+          id?: string
+          indice_reajuste?: string | null
+          municipio_ibge?: string | null
+          municipio_nome: string
+          numero: number
+          numero_contrato?: string | null
+          observacao?: string | null
+          organization_id: string
+          percentual_reajuste?: number | null
+          processo_administrativo?: string | null
+          responsavel_tecnico_id?: string | null
+          stage?: string
+          status?: string
+          tipo: string
+          tipo_imovel: string
+          uf: string
+          updated_at?: string
+          versao_atual?: number
+        }
+        Update: {
+          ano?: number
+          cancelado_em?: string | null
+          cancelado_motivo?: string | null
+          cancelado_por?: string | null
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          data_proposta?: string | null
+          id?: string
+          indice_reajuste?: string | null
+          municipio_ibge?: string | null
+          municipio_nome?: string
+          numero?: number
+          numero_contrato?: string | null
+          observacao?: string | null
+          organization_id?: string
+          percentual_reajuste?: number | null
+          processo_administrativo?: string | null
+          responsavel_tecnico_id?: string | null
+          stage?: string
+          status?: string
+          tipo?: string
+          tipo_imovel?: string
+          uf?: string
+          updated_at?: string
+          versao_atual?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       base_composicoes: {
         Row: {
@@ -1135,6 +3317,261 @@ export type Database = {
           },
         ]
       }
+      dados_mercado: {
+        Row: {
+          anuncio_id: string | null
+          contrato_publico: Json | null
+          created_at: string
+          created_by: string | null
+          data_confirmacao: string | null
+          data_observacao: string | null
+          descricao: string | null
+          id: string
+          imovel_id: string
+          natureza_dado: string
+          organization_id: string
+          periodicidade: string
+          status: string
+          tipo_negocio: string
+          updated_at: string
+          url_anuncio: string | null
+          valor_negociado: number | null
+          valor_ofertado: number | null
+          valor_unitario: number | null
+          valor_utilizado: number | null
+        }
+        Insert: {
+          anuncio_id?: string | null
+          contrato_publico?: Json | null
+          created_at?: string
+          created_by?: string | null
+          data_confirmacao?: string | null
+          data_observacao?: string | null
+          descricao?: string | null
+          id?: string
+          imovel_id: string
+          natureza_dado?: string
+          organization_id: string
+          periodicidade?: string
+          status?: string
+          tipo_negocio?: string
+          updated_at?: string
+          url_anuncio?: string | null
+          valor_negociado?: number | null
+          valor_ofertado?: number | null
+          valor_unitario?: number | null
+          valor_utilizado?: number | null
+        }
+        Update: {
+          anuncio_id?: string | null
+          contrato_publico?: Json | null
+          created_at?: string
+          created_by?: string | null
+          data_confirmacao?: string | null
+          data_observacao?: string | null
+          descricao?: string | null
+          id?: string
+          imovel_id?: string
+          natureza_dado?: string
+          organization_id?: string
+          periodicidade?: string
+          status?: string
+          tipo_negocio?: string
+          updated_at?: string
+          url_anuncio?: string | null
+          valor_negociado?: number | null
+          valor_ofertado?: number | null
+          valor_unitario?: number | null
+          valor_utilizado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_mercado_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dados_mercado_confirmacoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dado_id: string
+          data_confirmacao: string
+          id: string
+          meio: string | null
+          observacao: string | null
+          organization_id: string
+          resultado: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dado_id: string
+          data_confirmacao: string
+          id?: string
+          meio?: string | null
+          observacao?: string | null
+          organization_id: string
+          resultado?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dado_id?: string
+          data_confirmacao?: string
+          id?: string
+          meio?: string | null
+          observacao?: string | null
+          organization_id?: string
+          resultado?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_mercado_confirmacoes_dado_id_fkey"
+            columns: ["dado_id"]
+            isOneToOne: false
+            referencedRelation: "dados_mercado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dados_mercado_evidencias: {
+        Row: {
+          capturado_em: string
+          created_at: string
+          dado_id: string
+          descricao: string | null
+          id: string
+          organization_id: string
+          storage_ref: string | null
+          tipo: string
+          url: string | null
+        }
+        Insert: {
+          capturado_em?: string
+          created_at?: string
+          dado_id: string
+          descricao?: string | null
+          id?: string
+          organization_id: string
+          storage_ref?: string | null
+          tipo?: string
+          url?: string | null
+        }
+        Update: {
+          capturado_em?: string
+          created_at?: string
+          dado_id?: string
+          descricao?: string | null
+          id?: string
+          organization_id?: string
+          storage_ref?: string | null
+          tipo?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_mercado_evidencias_dado_id_fkey"
+            columns: ["dado_id"]
+            isOneToOne: false
+            referencedRelation: "dados_mercado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dados_mercado_fontes: {
+        Row: {
+          contato_id: string | null
+          created_at: string
+          dado_id: string
+          fonte_id: string
+          id: string
+          organization_id: string
+          principal: boolean
+        }
+        Insert: {
+          contato_id?: string | null
+          created_at?: string
+          dado_id: string
+          fonte_id: string
+          id?: string
+          organization_id: string
+          principal?: boolean
+        }
+        Update: {
+          contato_id?: string | null
+          created_at?: string
+          dado_id?: string
+          fonte_id?: string
+          id?: string
+          organization_id?: string
+          principal?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_mercado_fontes_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "fonte_mercado_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dados_mercado_fontes_dado_id_fkey"
+            columns: ["dado_id"]
+            isOneToOne: false
+            referencedRelation: "dados_mercado"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dados_mercado_fontes_fonte_id_fkey"
+            columns: ["fonte_id"]
+            isOneToOne: false
+            referencedRelation: "fontes_mercado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dados_mercado_historico: {
+        Row: {
+          alterado_por: string | null
+          anterior: Json
+          created_at: string
+          dado_id: string
+          id: string
+          novo: Json
+          organization_id: string
+        }
+        Insert: {
+          alterado_por?: string | null
+          anterior: Json
+          created_at?: string
+          dado_id: string
+          id?: string
+          novo: Json
+          organization_id: string
+        }
+        Update: {
+          alterado_por?: string | null
+          anterior?: Json
+          created_at?: string
+          dado_id?: string
+          id?: string
+          novo?: Json
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_mercado_historico_dado_id_fkey"
+            columns: ["dado_id"]
+            isOneToOne: false
+            referencedRelation: "dados_mercado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dimensionamento_calhas: {
         Row: {
           created_at: string
@@ -1231,6 +3668,24 @@ export type Database = {
           uf?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      document_tokens: {
+        Row: {
+          codigo: string
+          critico: boolean
+          descricao: string
+        }
+        Insert: {
+          codigo: string
+          critico?: boolean
+          descricao: string
+        }
+        Update: {
+          codigo?: string
+          critico?: boolean
+          descricao?: string
         }
         Relationships: []
       }
@@ -2586,6 +5041,77 @@ export type Database = {
           },
         ]
       }
+      fonte_mercado_contatos: {
+        Row: {
+          created_at: string
+          email: string | null
+          fonte_id: string
+          id: string
+          nome: string | null
+          organization_id: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          fonte_id: string
+          id?: string
+          nome?: string | null
+          organization_id: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          fonte_id?: string
+          id?: string
+          nome?: string | null
+          organization_id?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fonte_mercado_contatos_fonte_id_fkey"
+            columns: ["fonte_id"]
+            isOneToOne: false
+            referencedRelation: "fontes_mercado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fontes_mercado: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          observacao: string | null
+          organization_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          observacao?: string | null
+          organization_id: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          observacao?: string | null
+          organization_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hydrants: {
         Row: {
           created_at: string
@@ -2662,6 +5188,1289 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imoveis: {
+        Row: {
+          anuncio_id: string | null
+          anuncio_url: string | null
+          area_construida: number | null
+          area_terreno: number | null
+          bairro: string | null
+          cep: string | null
+          complemento: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          endereco: string | null
+          endereco_normalizado: string | null
+          foto_hashes: string[]
+          id: string
+          municipio_ibge: string | null
+          municipio_nome: string | null
+          numero: string | null
+          organization_id: string
+          padrao: string | null
+          tipo_imovel: string
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          anuncio_id?: string | null
+          anuncio_url?: string | null
+          area_construida?: number | null
+          area_terreno?: number | null
+          bairro?: string | null
+          cep?: string | null
+          complemento?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          endereco?: string | null
+          endereco_normalizado?: string | null
+          foto_hashes?: string[]
+          id?: string
+          municipio_ibge?: string | null
+          municipio_nome?: string | null
+          numero?: string | null
+          organization_id: string
+          padrao?: string | null
+          tipo_imovel: string
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anuncio_id?: string | null
+          anuncio_url?: string | null
+          area_construida?: number | null
+          area_terreno?: number | null
+          bairro?: string | null
+          cep?: string | null
+          complemento?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          endereco?: string | null
+          endereco_normalizado?: string | null
+          foto_hashes?: string[]
+          id?: string
+          municipio_ibge?: string | null
+          municipio_nome?: string | null
+          numero?: string | null
+          organization_id?: string
+          padrao?: string | null
+          tipo_imovel?: string
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      imovel_ambientes: {
+        Row: {
+          area: number | null
+          created_at: string
+          id: string
+          imovel_id: string
+          nome: string | null
+          observacao: string | null
+          organization_id: string
+          quantidade: number
+          tipo: string
+        }
+        Insert: {
+          area?: number | null
+          created_at?: string
+          id?: string
+          imovel_id: string
+          nome?: string | null
+          observacao?: string | null
+          organization_id: string
+          quantidade?: number
+          tipo: string
+        }
+        Update: {
+          area?: number | null
+          created_at?: string
+          id?: string
+          imovel_id?: string
+          nome?: string | null
+          observacao?: string | null
+          organization_id?: string
+          quantidade?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_ambientes_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_atributos: {
+        Row: {
+          atributo_id: string
+          fonte: string | null
+          id: string
+          imovel_id: string
+          organization_id: string
+          updated_at: string
+          valor_bool: boolean | null
+          valor_category: string | null
+          valor_numeric: number | null
+          valor_status: string | null
+          valor_text: string | null
+        }
+        Insert: {
+          atributo_id: string
+          fonte?: string | null
+          id?: string
+          imovel_id: string
+          organization_id: string
+          updated_at?: string
+          valor_bool?: boolean | null
+          valor_category?: string | null
+          valor_numeric?: number | null
+          valor_status?: string | null
+          valor_text?: string | null
+        }
+        Update: {
+          atributo_id?: string
+          fonte?: string | null
+          id?: string
+          imovel_id?: string
+          organization_id?: string
+          updated_at?: string
+          valor_bool?: boolean | null
+          valor_category?: string | null
+          valor_numeric?: number | null
+          valor_status?: string | null
+          valor_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_atributos_atributo_id_fkey"
+            columns: ["atributo_id"]
+            isOneToOne: false
+            referencedRelation: "atributos_imobiliarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imovel_atributos_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_componentes: {
+        Row: {
+          componente: string
+          created_at: string
+          estado: string | null
+          id: string
+          imovel_id: string
+          observacao: string | null
+          organization_id: string
+        }
+        Insert: {
+          componente: string
+          created_at?: string
+          estado?: string | null
+          id?: string
+          imovel_id: string
+          observacao?: string | null
+          organization_id: string
+        }
+        Update: {
+          componente?: string
+          created_at?: string
+          estado?: string | null
+          id?: string
+          imovel_id?: string
+          observacao?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_componentes_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_documentos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          imovel_id: string
+          organization_id: string
+          storage_ref: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          imovel_id: string
+          organization_id: string
+          storage_ref: string
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          imovel_id?: string
+          organization_id?: string
+          storage_ref?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_documentos_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_infraestrutura: {
+        Row: {
+          created_at: string
+          id: string
+          imovel_id: string
+          item: string
+          observacao: string | null
+          organization_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          imovel_id: string
+          item: string
+          observacao?: string | null
+          organization_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          imovel_id?: string
+          item?: string
+          observacao?: string | null
+          organization_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_infraestrutura_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_localizacao: {
+        Row: {
+          fonte: string | null
+          id: string
+          imovel_id: string
+          latitude: number | null
+          longitude: number | null
+          observacao: string | null
+          organization_id: string
+          precisao: string
+          updated_at: string
+        }
+        Insert: {
+          fonte?: string | null
+          id?: string
+          imovel_id: string
+          latitude?: number | null
+          longitude?: number | null
+          observacao?: string | null
+          organization_id: string
+          precisao?: string
+          updated_at?: string
+        }
+        Update: {
+          fonte?: string | null
+          id?: string
+          imovel_id?: string
+          latitude?: number | null
+          longitude?: number | null
+          observacao?: string | null
+          organization_id?: string
+          precisao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_localizacao_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: true
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_midias: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          hash: string | null
+          id: string
+          imovel_id: string
+          legenda: string | null
+          organization_id: string
+          storage_ref: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          hash?: string | null
+          id?: string
+          imovel_id: string
+          legenda?: string | null
+          organization_id: string
+          storage_ref: string
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          hash?: string | null
+          id?: string
+          imovel_id?: string
+          legenda?: string | null
+          organization_id?: string
+          storage_ref?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_midias_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_snapshots: {
+        Row: {
+          avaliacao_id: string | null
+          created_at: string
+          created_by: string | null
+          dados: Json
+          hash: string
+          id: string
+          imovel_id: string
+          motivo: string
+          organization_id: string
+        }
+        Insert: {
+          avaliacao_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dados: Json
+          hash: string
+          id?: string
+          imovel_id: string
+          motivo: string
+          organization_id: string
+        }
+        Update: {
+          avaliacao_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dados?: Json
+          hash?: string
+          id?: string
+          imovel_id?: string
+          motivo?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_snapshots_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imovel_snapshots_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_vistoria_itens: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          id: string
+          item: string
+          observacao: string | null
+          organization_id: string
+          situacao: string | null
+          vistoria_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          id?: string
+          item: string
+          observacao?: string | null
+          organization_id: string
+          situacao?: string | null
+          vistoria_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          id?: string
+          item?: string
+          observacao?: string | null
+          organization_id?: string
+          situacao?: string | null
+          vistoria_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_vistoria_itens_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imovel_vistoria_itens_vistoria_id_fkey"
+            columns: ["vistoria_id"]
+            isOneToOne: false
+            referencedRelation: "imovel_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_vistoria_midias: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          id: string
+          legenda: string | null
+          organization_id: string
+          storage_ref: string
+          vistoria_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          id?: string
+          legenda?: string | null
+          organization_id: string
+          storage_ref: string
+          vistoria_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          id?: string
+          legenda?: string | null
+          organization_id?: string
+          storage_ref?: string
+          vistoria_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_vistoria_midias_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imovel_vistoria_midias_vistoria_id_fkey"
+            columns: ["vistoria_id"]
+            isOneToOne: false
+            referencedRelation: "imovel_vistorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imovel_vistorias: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          data_vistoria: string
+          estado_conservacao: string | null
+          id: string
+          imovel_id: string
+          observacao: string | null
+          organization_id: string
+          responsavel_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          data_vistoria: string
+          estado_conservacao?: string | null
+          id?: string
+          imovel_id: string
+          observacao?: string | null
+          organization_id: string
+          responsavel_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          data_vistoria?: string
+          estado_conservacao?: string | null
+          id?: string
+          imovel_id?: string
+          observacao?: string | null
+          organization_id?: string
+          responsavel_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imovel_vistorias_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imovel_vistorias_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_anexos: {
+        Row: {
+          avaliacao_id: string
+          id: string
+          incluido: boolean
+          laudo_versao_id: string
+          numero: string
+          opcional: boolean
+          organization_id: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          avaliacao_id: string
+          id?: string
+          incluido?: boolean
+          laudo_versao_id: string
+          numero: string
+          opcional?: boolean
+          organization_id: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          avaliacao_id?: string
+          id?: string
+          incluido?: boolean
+          laudo_versao_id?: string
+          numero?: string
+          opcional?: boolean
+          organization_id?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_anexos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_anexos_laudo_versao_id_fkey"
+            columns: ["laudo_versao_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_versoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_arquivos_emitidos: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          emissao_id: string
+          formato: string
+          hash: string | null
+          id: string
+          organization_id: string
+          storage_ref: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          emissao_id: string
+          formato: string
+          hash?: string | null
+          id?: string
+          organization_id: string
+          storage_ref: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          emissao_id?: string
+          formato?: string
+          hash?: string | null
+          id?: string
+          organization_id?: string
+          storage_ref?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_arquivos_emitidos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_arquivos_emitidos_emissao_id_fkey"
+            columns: ["emissao_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_emissoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_blocos: {
+        Row: {
+          avaliacao_id: string
+          config: Json
+          conteudo: string | null
+          created_at: string
+          id: string
+          ordem: number
+          organization_id: string
+          secao_id: string
+          tipo: string
+        }
+        Insert: {
+          avaliacao_id: string
+          config?: Json
+          conteudo?: string | null
+          created_at?: string
+          id?: string
+          ordem?: number
+          organization_id: string
+          secao_id: string
+          tipo: string
+        }
+        Update: {
+          avaliacao_id?: string
+          config?: Json
+          conteudo?: string | null
+          created_at?: string
+          id?: string
+          ordem?: number
+          organization_id?: string
+          secao_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_blocos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_blocos_secao_id_fkey"
+            columns: ["secao_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_secoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_emissao_snapshots: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          dados: Json
+          emissao_id: string
+          hash: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          dados: Json
+          emissao_id: string
+          hash: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          dados?: Json
+          emissao_id?: string
+          hash?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_emissao_snapshots_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_emissao_snapshots_emissao_id_fkey"
+            columns: ["emissao_id"]
+            isOneToOne: true
+            referencedRelation: "laudo_emissoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_emissoes: {
+        Row: {
+          avaliacao_id: string
+          codigo: string
+          emitido_em: string
+          emitido_por: string
+          hash: string
+          id: string
+          laudo_versao_id: string
+          organization_id: string
+          preflight_run_id: string
+          revisao: number
+        }
+        Insert: {
+          avaliacao_id: string
+          codigo: string
+          emitido_em?: string
+          emitido_por: string
+          hash: string
+          id?: string
+          laudo_versao_id: string
+          organization_id: string
+          preflight_run_id: string
+          revisao: number
+        }
+        Update: {
+          avaliacao_id?: string
+          codigo?: string
+          emitido_em?: string
+          emitido_por?: string
+          hash?: string
+          id?: string
+          laudo_versao_id?: string
+          organization_id?: string
+          preflight_run_id?: string
+          revisao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_emissoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_emissoes_laudo_versao_id_fkey"
+            columns: ["laudo_versao_id"]
+            isOneToOne: true
+            referencedRelation: "laudo_versoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_emissoes_preflight_run_id_fkey"
+            columns: ["preflight_run_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_preflight_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_preflight_results: {
+        Row: {
+          avaliacao_id: string
+          codigo: string
+          id: string
+          mensagem: string
+          organization_id: string
+          run_id: string
+          status: string
+        }
+        Insert: {
+          avaliacao_id: string
+          codigo: string
+          id?: string
+          mensagem: string
+          organization_id: string
+          run_id: string
+          status: string
+        }
+        Update: {
+          avaliacao_id?: string
+          codigo?: string
+          id?: string
+          mensagem?: string
+          organization_id?: string
+          run_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_preflight_results_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_preflight_results_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_preflight_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_preflight_runs: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          executado_por: string | null
+          id: string
+          laudo_versao_id: string
+          organization_id: string
+          resultado: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          executado_por?: string | null
+          id?: string
+          laudo_versao_id: string
+          organization_id: string
+          resultado: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          executado_por?: string | null
+          id?: string
+          laudo_versao_id?: string
+          organization_id?: string
+          resultado?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_preflight_runs_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_preflight_runs_laudo_versao_id_fkey"
+            columns: ["laudo_versao_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_versoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_secoes: {
+        Row: {
+          aprovada_em: string | null
+          aprovada_por: string | null
+          avaliacao_id: string
+          blocos_sistema: string[]
+          codigo: string
+          conteudo: string
+          id: string
+          laudo_versao_id: string
+          numerada: boolean
+          obrigatoria: boolean
+          ordem: number
+          organization_id: string
+          stale: boolean
+          status: string
+          titulo: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          aprovada_em?: string | null
+          aprovada_por?: string | null
+          avaliacao_id: string
+          blocos_sistema?: string[]
+          codigo: string
+          conteudo?: string
+          id?: string
+          laudo_versao_id: string
+          numerada?: boolean
+          obrigatoria?: boolean
+          ordem: number
+          organization_id: string
+          stale?: boolean
+          status?: string
+          titulo: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          aprovada_em?: string | null
+          aprovada_por?: string | null
+          avaliacao_id?: string
+          blocos_sistema?: string[]
+          codigo?: string
+          conteudo?: string
+          id?: string
+          laudo_versao_id?: string
+          numerada?: boolean
+          obrigatoria?: boolean
+          ordem?: number
+          organization_id?: string
+          stale?: boolean
+          status?: string
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_secoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_secoes_laudo_versao_id_fkey"
+            columns: ["laudo_versao_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_versoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_template_blocks: {
+        Row: {
+          config: Json
+          id: string
+          ordem: number
+          section_id: string
+          tipo: string
+        }
+        Insert: {
+          config?: Json
+          id?: string
+          ordem: number
+          section_id: string
+          tipo: string
+        }
+        Update: {
+          config?: Json
+          id?: string
+          ordem?: number
+          section_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_template_blocks_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_template_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_template_sections: {
+        Row: {
+          blocos_sistema: string[]
+          codigo: string
+          conteudo_padrao: string
+          id: string
+          numerada: boolean
+          obrigatoria: boolean
+          ordem: number
+          template_version_id: string
+          titulo: string
+        }
+        Insert: {
+          blocos_sistema?: string[]
+          codigo: string
+          conteudo_padrao?: string
+          id?: string
+          numerada?: boolean
+          obrigatoria?: boolean
+          ordem: number
+          template_version_id: string
+          titulo: string
+        }
+        Update: {
+          blocos_sistema?: string[]
+          codigo?: string
+          conteudo_padrao?: string
+          id?: string
+          numerada?: boolean
+          obrigatoria?: boolean
+          ordem?: number
+          template_version_id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_template_sections_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_template_versions: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          template_id: string
+          versao: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          template_id: string
+          versao: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          template_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_templates: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+          organization_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+          organization_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          organization_id?: string | null
+        }
+        Relationships: []
+      }
+      laudo_texto_versoes: {
+        Row: {
+          avaliacao_id: string
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          secao_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          secao_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          secao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_texto_versoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_texto_versoes_secao_id_fkey"
+            columns: ["secao_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_secoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudo_versoes: {
+        Row: {
+          avaliacao_id: string
+          avaliacao_versao_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          laudo_id: string
+          motivo_revisao: string | null
+          organization_id: string
+          revisao: number
+          status: string
+        }
+        Insert: {
+          avaliacao_id: string
+          avaliacao_versao_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          laudo_id: string
+          motivo_revisao?: string | null
+          organization_id: string
+          revisao: number
+          status?: string
+        }
+        Update: {
+          avaliacao_id?: string
+          avaliacao_versao_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          laudo_id?: string
+          motivo_revisao?: string | null
+          organization_id?: string
+          revisao?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_versoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_versoes_avaliacao_versao_id_fkey"
+            columns: ["avaliacao_versao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_versoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_versoes_laudo_id_fkey"
+            columns: ["laudo_id"]
+            isOneToOne: false
+            referencedRelation: "laudos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudos: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          template_version_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          template_version_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          template_version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: true
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudos_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_template_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -3594,6 +7403,471 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_acceptances: {
+        Row: {
+          accepted_at: string
+          accepted_by: string
+          avaliacao_id: string
+          execucao_id: string
+          id: string
+          invalidado_em: string | null
+          invalidado_motivo: string | null
+          justificativa: string | null
+          modelo_id: string
+          organization_id: string
+          status: string
+          validation_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by: string
+          avaliacao_id: string
+          execucao_id: string
+          id?: string
+          invalidado_em?: string | null
+          invalidado_motivo?: string | null
+          justificativa?: string | null
+          modelo_id: string
+          organization_id: string
+          status?: string
+          validation_id: string
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by?: string
+          avaliacao_id?: string
+          execucao_id?: string
+          id?: string
+          invalidado_em?: string | null
+          invalidado_motivo?: string | null
+          justificativa?: string | null
+          modelo_id?: string
+          organization_id?: string
+          status?: string
+          validation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_acceptances_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_acceptances_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_acceptances_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_acceptances_validation_id_fkey"
+            columns: ["validation_id"]
+            isOneToOne: false
+            referencedRelation: "model_validations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_validation_results: {
+        Row: {
+          avaliacao_id: string
+          bloqueante: boolean
+          codigo: string
+          dados: Json | null
+          detalhe: string | null
+          grau: string | null
+          id: string
+          modo: string
+          nome: string
+          numero: number
+          organization_id: string
+          origem: string
+          revisado: boolean
+          status: string
+          validation_id: string
+          valor: number | null
+        }
+        Insert: {
+          avaliacao_id: string
+          bloqueante?: boolean
+          codigo: string
+          dados?: Json | null
+          detalhe?: string | null
+          grau?: string | null
+          id?: string
+          modo: string
+          nome: string
+          numero: number
+          organization_id: string
+          origem: string
+          revisado?: boolean
+          status: string
+          validation_id: string
+          valor?: number | null
+        }
+        Update: {
+          avaliacao_id?: string
+          bloqueante?: boolean
+          codigo?: string
+          dados?: Json | null
+          detalhe?: string | null
+          grau?: string | null
+          id?: string
+          modo?: string
+          nome?: string
+          numero?: number
+          organization_id?: string
+          origem?: string
+          revisado?: boolean
+          status?: string
+          validation_id?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_validation_results_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_validation_results_validation_id_fkey"
+            columns: ["validation_id"]
+            isOneToOne: false
+            referencedRelation: "model_validations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_validations: {
+        Row: {
+          amplitude_pct: number | null
+          avaliacao_id: string
+          created_at: string
+          created_by: string | null
+          execucao_id: string
+          fundamentacao_grau: string | null
+          id: string
+          modelo_id: string
+          organization_id: string
+          overall_status: string
+          policy_id: string
+          precisao_grau: string | null
+          resumo_json: Json
+          stale: boolean
+        }
+        Insert: {
+          amplitude_pct?: number | null
+          avaliacao_id: string
+          created_at?: string
+          created_by?: string | null
+          execucao_id: string
+          fundamentacao_grau?: string | null
+          id?: string
+          modelo_id: string
+          organization_id: string
+          overall_status: string
+          policy_id: string
+          precisao_grau?: string | null
+          resumo_json: Json
+          stale?: boolean
+        }
+        Update: {
+          amplitude_pct?: number | null
+          avaliacao_id?: string
+          created_at?: string
+          created_by?: string | null
+          execucao_id?: string
+          fundamentacao_grau?: string | null
+          id?: string
+          modelo_id?: string
+          organization_id?: string
+          overall_status?: string
+          policy_id?: string
+          precisao_grau?: string | null
+          resumo_json?: Json
+          stale?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_validations_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_validations_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_validations_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_validations_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "validation_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_coeficientes: {
+        Row: {
+          avaliacao_id: string
+          beta: number
+          codigo: string
+          erro_padrao: number
+          execucao_id: string
+          id: string
+          ordem: number
+          organization_id: string
+          sig: number
+          t: number
+          transformacao: string | null
+        }
+        Insert: {
+          avaliacao_id: string
+          beta: number
+          codigo: string
+          erro_padrao: number
+          execucao_id: string
+          id?: string
+          ordem: number
+          organization_id: string
+          sig: number
+          t: number
+          transformacao?: string | null
+        }
+        Update: {
+          avaliacao_id?: string
+          beta?: number
+          codigo?: string
+          erro_padrao?: number
+          execucao_id?: string
+          id?: string
+          ordem?: number
+          organization_id?: string
+          sig?: number
+          t?: number
+          transformacao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_coeficientes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_coeficientes_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_execucao_erros: {
+        Row: {
+          avaliacao_id: string
+          codigo: string
+          created_at: string
+          detalhe: Json
+          execucao_id: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          codigo: string
+          created_at?: string
+          detalhe?: Json
+          execucao_id: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          codigo?: string
+          created_at?: string
+          detalhe?: Json
+          execucao_id?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_execucao_erros_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_execucao_erros_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_resultado_resumo: {
+        Row: {
+          amplitude_pct: number | null
+          avaliacao_id: string
+          centro_preliminar: number | null
+          created_at: string
+          execucao_id: string
+          extrapola: boolean | null
+          f: number | null
+          grau_precisao: string | null
+          id: string
+          k: number
+          modelo_id: string
+          n: number
+          organization_id: string
+          pior_sig_regressor: number | null
+          r2: number | null
+          r2_ajustado: number | null
+          sig_f: number | null
+        }
+        Insert: {
+          amplitude_pct?: number | null
+          avaliacao_id: string
+          centro_preliminar?: number | null
+          created_at?: string
+          execucao_id: string
+          extrapola?: boolean | null
+          f?: number | null
+          grau_precisao?: string | null
+          id?: string
+          k: number
+          modelo_id: string
+          n: number
+          organization_id: string
+          pior_sig_regressor?: number | null
+          r2?: number | null
+          r2_ajustado?: number | null
+          sig_f?: number | null
+        }
+        Update: {
+          amplitude_pct?: number | null
+          avaliacao_id?: string
+          centro_preliminar?: number | null
+          created_at?: string
+          execucao_id?: string
+          extrapola?: boolean | null
+          f?: number | null
+          grau_precisao?: string | null
+          id?: string
+          k?: number
+          modelo_id?: string
+          n?: number
+          organization_id?: string
+          pior_sig_regressor?: number | null
+          r2?: number | null
+          r2_ajustado?: number | null
+          sig_f?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_resultado_resumo_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_resultado_resumo_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: true
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_resultado_resumo_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_snapshots: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          dados: Json
+          execucao_id: string
+          hash: string
+          id: string
+          modelo_id: string
+          organization_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          dados: Json
+          execucao_id: string
+          hash: string
+          id?: string
+          modelo_id: string
+          organization_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          dados?: Json
+          execucao_id?: string
+          hash?: string
+          id?: string
+          modelo_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_snapshots_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_snapshots_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_snapshots_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
             referencedColumns: ["id"]
           },
         ]
@@ -4789,6 +9063,41 @@ export type Database = {
           },
         ]
       }
+      organization_sequences: {
+        Row: {
+          ano: number
+          id: string
+          last_value: number
+          organization_id: string
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          id?: string
+          last_value?: number
+          organization_id: string
+          scope: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          id?: string
+          last_value?: number
+          organization_id?: string
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_sequences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_usage_counters: {
         Row: {
           external_users_count: number
@@ -4820,6 +9129,42 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: true
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_validation_policy: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          policy_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          policy_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          policy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_validation_policy_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_validation_policy_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "validation_policies"
             referencedColumns: ["id"]
           },
         ]
@@ -4904,6 +9249,108 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      pesquisa_mercado_fontes: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          fonte_id: string
+          id: string
+          observacao: string | null
+          organization_id: string
+          pesquisa_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          fonte_id: string
+          id?: string
+          observacao?: string | null
+          organization_id: string
+          pesquisa_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          fonte_id?: string
+          id?: string
+          observacao?: string | null
+          organization_id?: string
+          pesquisa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pesquisa_mercado_fontes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pesquisa_mercado_fontes_fonte_id_fkey"
+            columns: ["fonte_id"]
+            isOneToOne: false
+            referencedRelation: "fontes_mercado"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pesquisa_mercado_fontes_pesquisa_id_fkey"
+            columns: ["pesquisa_id"]
+            isOneToOne: false
+            referencedRelation: "pesquisas_mercado"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pesquisas_mercado: {
+        Row: {
+          abrangencia: string | null
+          avaliacao_id: string
+          created_at: string
+          id: string
+          observacao: string | null
+          organization_id: string
+          periodo_fim: string | null
+          periodo_inicio: string | null
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          abrangencia?: string | null
+          avaliacao_id: string
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          organization_id: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          abrangencia?: string | null
+          avaliacao_id?: string
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          organization_id?: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pesquisas_mercado_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plan_versions: {
         Row: {
@@ -6944,6 +11391,60 @@ export type Database = {
           },
         ]
       }
+      rounding_policies: {
+        Row: {
+          casas_decimais: number
+          codigo: string
+          created_at: string
+          id: string
+          organization_id: string | null
+          status: string
+          versao: number
+        }
+        Insert: {
+          casas_decimais?: number
+          codigo: string
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          status?: string
+          versao: number
+        }
+        Update: {
+          casas_decimais?: number
+          codigo?: string
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          status?: string
+          versao?: number
+        }
+        Relationships: []
+      }
+      stat_transformations: {
+        Row: {
+          codigo: string
+          dominio: string
+          engine_code: number
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          codigo: string
+          dominio: string
+          engine_code: number
+          nome: string
+          ordem: number
+        }
+        Update: {
+          codigo?: string
+          dominio?: string
+          engine_code?: number
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -7404,6 +11905,198 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      validation_manual_reviews: {
+        Row: {
+          avaliacao_id: string
+          codigo: string
+          created_at: string
+          created_by: string
+          decisao: string
+          id: string
+          justificativa: string
+          modelo_id: string
+          organization_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          codigo: string
+          created_at?: string
+          created_by: string
+          decisao: string
+          id?: string
+          justificativa: string
+          modelo_id: string
+          organization_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          codigo?: string
+          created_at?: string
+          created_by?: string
+          decisao?: string
+          id?: string
+          justificativa?: string
+          modelo_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_manual_reviews_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_manual_reviews_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validation_policies: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+          organization_id: string | null
+          parametros: Json
+          status: string
+          versao: number
+          vigente_desde: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+          organization_id?: string | null
+          parametros?: Json
+          status?: string
+          versao: number
+          vigente_desde?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          organization_id?: string | null
+          parametros?: Json
+          status?: string
+          versao?: number
+          vigente_desde?: string
+        }
+        Relationships: []
+      }
+      validation_policy_rules: {
+        Row: {
+          ativo: boolean
+          bloqueante: boolean
+          codigo: string
+          entra_fundamentacao: boolean
+          id: string
+          modo: string
+          nome: string
+          numero: number
+          origem: string
+          policy_id: string
+          thresholds: Json
+        }
+        Insert: {
+          ativo?: boolean
+          bloqueante?: boolean
+          codigo: string
+          entra_fundamentacao?: boolean
+          id?: string
+          modo: string
+          nome: string
+          numero: number
+          origem: string
+          policy_id: string
+          thresholds?: Json
+        }
+        Update: {
+          ativo?: boolean
+          bloqueante?: boolean
+          codigo?: string
+          entra_fundamentacao?: boolean
+          id?: string
+          modo?: string
+          nome?: string
+          numero?: number
+          origem?: string
+          policy_id?: string
+          thresholds?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_policy_rules_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "validation_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validation_snapshots: {
+        Row: {
+          acceptance_id: string | null
+          avaliacao_id: string
+          created_at: string
+          dados: Json
+          hash: string
+          id: string
+          organization_id: string
+          validation_id: string
+        }
+        Insert: {
+          acceptance_id?: string | null
+          avaliacao_id: string
+          created_at?: string
+          dados: Json
+          hash: string
+          id?: string
+          organization_id: string
+          validation_id: string
+        }
+        Update: {
+          acceptance_id?: string | null
+          avaliacao_id?: string
+          created_at?: string
+          dados?: Json
+          hash?: string
+          id?: string
+          organization_id?: string
+          validation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_snapshots_acceptance_id_fkey"
+            columns: ["acceptance_id"]
+            isOneToOne: false
+            referencedRelation: "model_acceptances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_snapshots_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_snapshots_validation_id_fkey"
+            columns: ["validation_id"]
+            isOneToOne: false
+            referencedRelation: "model_validations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -8038,6 +12731,7 @@ export type Database = {
         | "contratada"
         | "orcamento"
         | "dimensionamento"
+        | "avaliacao"
       unit_type: "KG" | "M" | "LITRO" | "PC" | "CX"
       user_role:
         | "admin"
@@ -8202,6 +12896,7 @@ export const Constants = {
         "contratada",
         "orcamento",
         "dimensionamento",
+        "avaliacao",
       ],
       unit_type: ["KG", "M", "LITRO", "PC", "CX"],
       user_role: [
