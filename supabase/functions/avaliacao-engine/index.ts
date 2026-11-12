@@ -21,6 +21,7 @@ import * as docx from 'npm:docx@9.5.1';
 import {
   AuthenticationError, ConfigurationError, GatewayError, generateResponse, PaymentRequiredError, PermissionDeniedError, RateLimitError,
 } from 'npm:@lovable.dev/ai-gateway@0.1.11';
+import type {} from './ai-gateway.models.ts';
 
 const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('run_model'), modelo_id: z.string().uuid() }),
@@ -37,7 +38,7 @@ const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 async function sha256(text: string | Uint8Array): Promise<string> {
-  const d = await crypto.subtle.digest('SHA-256', typeof text === 'string' ? new TextEncoder().encode(text) : text);
+  const d = await crypto.subtle.digest('SHA-256', typeof text === 'string' ? new TextEncoder().encode(text) : new Uint8Array(text));
   return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
