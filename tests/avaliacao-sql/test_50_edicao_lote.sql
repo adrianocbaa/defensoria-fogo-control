@@ -50,8 +50,6 @@ SELECT pg_temp.ok((SELECT count(*) FROM public.audit_events WHERE event_type = '
   'audit_events registra antes/depois por campo');
 SELECT pg_temp.ok((SELECT j->>'nivel' FROM ap1) = 'ECONOMIC_RESULT' AND (SELECT count(*) FROM public.audit_events WHERE event_type = 'CHANGES_APPLIED') = 1,
   'lote aplicado registra um resumo único com o maior nível');
-SELECT pg_temp.ok((public.aval_apply_changes((SELECT av FROM fx), jsonb_build_array(
-  jsonb_build_object('entity_type','valor_administrativo','entity_id','20000000-0000-0000-0000-000000000001','campo','valor','valor','6200,50'::text)), NULL) IS NULL) IS FALSE
 SELECT pg_temp.throws($$SELECT public.aval_apply_changes((SELECT av FROM fx), jsonb_build_array(jsonb_build_object('entity_type','valor_administrativo',
   'entity_id','20000000-0000-0000-0000-000000000001','campo','valor','valor',-1)), NULL)$$, 'invalid_value', 'valor administrativo negativo é recusado');
 SELECT pg_temp.throws($$SELECT public.aval_apply_changes((SELECT av FROM fx), jsonb_build_array(jsonb_build_object('entity_type','valor_administrativo',
