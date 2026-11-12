@@ -13749,6 +13749,10 @@ export type Database = {
         Args: { p_avaliacao: string; p_ids?: string[]; p_rodada?: string }
         Returns: Json
       }
+      aval_model_withdraw_validation: {
+        Args: { p_modelo: string; p_motivo?: string }
+        Returns: Json
+      }
       aval_my_perms: { Args: { p_avaliacao: string }; Returns: string[] }
       aval_next_sequence: {
         Args: { _ano: number; _org: string; _scope: string }

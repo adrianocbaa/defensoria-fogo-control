@@ -19,6 +19,7 @@ import { db, engine, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { TRANSFORM_LABEL, fmtNum } from '@/lib/avaliacao/labels';
 import { explainModelError, type ConjuntoCompat } from '@/lib/avaliacao/modelDiagnostics';
+import { MSG_ARQUIVAR_EM_VALIDACAO, separarArquivaveis } from '@/lib/avaliacao/cicloModelo';
 import { CRITERIOS_ORDEM, TRIAGEM_AVISO, TRIAGEM_TEXTO, analisar, linhasComparacao, triar, type Analise, type ResultadoTriagem, type TriagemModelo, type TriagemPolitica } from '@/lib/avaliacao/triagem';
 
 const STATUS_MOD: Record<string, string> = { RASCUNHO: 'A calcular', CALCULADO: 'Calculado', ERRO: 'Erro no cálculo', EM_VALIDACAO: 'Em validação' };
@@ -131,11 +132,16 @@ export function ModelosPainel({ ctx, vars, conjunto, desatualizado, mensagemDesa
   const arquivar = async (ids: string[] | null, arquivar = true) => {
     try {
       const r = await rpc<any>('aval_model_archive', { p_avaliacao: av.id, p_modelos: ids, p_rodada: ids ? null : rodadaId, p_arquivar: arquivar });
-      toast.success(arquivar ? `${r.alterados} modelo(s) arquivado(s)${r.protegidos ? `; ${r.protegidos} protegido(s) permanecem visíveis` : ''}. Nada foi excluído.` : `${r.alterados} modelo(s) restaurado(s).`);
+      toast.success(arquivar ? `${r.alterados} modelo(s) arquivado(s)${r.protegidos ? `; ${r.protegidos} protegido(s) permanecem visíveis${r.em_validacao ? ` (${r.em_validacao} em validação — retire-os da validação antes)` : ''}` : ''}. Nada foi excluído.` : `${r.alterados} modelo(s) restaurado(s).`);
       setConfirmArq(null); setSel(new Map()); ctx.refresh();
     } catch (e) { toast.error(avalErrorMessage(e)); }
   };
   const selecionados = [...sel.entries()];
+  const selArq = separarArquivaveis(selecionados.map(([id, s]) => ({ id, ...s })));
+  const arquivarSelecionados = async () => {
+    if (selArq.emValidacao.length) toast.info(`${selArq.emValidacao.map((m) => m.nome).join(', ')}: ${MSG_ARQUIVAR_EM_VALIDACAO}`);
+    if (selArq.arquivaveis.length) await arquivar(selArq.arquivaveis.map((m) => m.id), true);
+  };
   const enviaveis = selecionados.filter(([, s]) => s.status === 'CALCULADO' && !s.stale);
   const enviarSelecionados = async () => {
     setBusy('enviar'); let ok = 0; const falhas: string[] = [];
@@ -207,7 +213,12 @@ export function ModelosPainel({ ctx, vars, conjunto, desatualizado, mensagemDesa
             <span className="text-xs text-muted-foreground">{selecionados.length} selecionado(s)</span>
             {canModel && (arquivados === 'SOMENTE'
               ? <Button size="sm" variant="ghost" onClick={() => arquivar(selecionados.map(([id]) => id), false)}><ArchiveRestore className="h-4 w-4 mr-1" />Desarquivar</Button>
-              : <Button size="sm" variant="ghost" onClick={() => arquivar(selecionados.map(([id]) => id), true)}><Archive className="h-4 w-4 mr-1" />Arquivar</Button>)}
+              : <span title={selArq.arquivaveis.length === 0 ? MSG_ARQUIVAR_EM_VALIDACAO : undefined}>
+                  <Button size="sm" variant="ghost" disabled={selArq.arquivaveis.length === 0} onClick={arquivarSelecionados}
+                    aria-describedby={selArq.arquivaveis.length === 0 ? 'arq-em-validacao' : undefined}><Archive className="h-4 w-4 mr-1" />Arquivar</Button>
+                  {selArq.arquivaveis.length === 0 && <span id="arq-em-validacao" className="sr-only">{MSG_ARQUIVAR_EM_VALIDACAO}</span>}
+                </span>)}
+            {selArq.emValidacao.length > 0 && arquivados !== 'SOMENTE' && <span className="text-xs text-muted-foreground">{MSG_ARQUIVAR_EM_VALIDACAO}</span>}
             <Button size="sm" variant="ghost" onClick={() => setSel(new Map())}>Limpar seleção</Button>
           </>}
         </div>
@@ -248,7 +259,7 @@ export function ModelosPainel({ ctx, vars, conjunto, desatualizado, mensagemDesa
                     <TableCell>{m.stale ? <Badge variant="destructive">Desatualizado</Badge> : m.status === 'ERRO'
                       ? <button type="button" className="inline-flex items-center gap-1 text-left" onClick={() => setAberto(m.id)} aria-label={`Ver por que o ${m.nome} não foi calculado`}>
                           <Badge variant="destructive">{STATUS_MOD[m.status]}</Badge><span className="text-xs underline underline-offset-2 text-destructive">Ver motivo</span></button>
-                      : <Badge variant="outline">{STATUS_MOD[m.status] ?? m.status}</Badge>}</TableCell>
+                      : <Badge variant="outline" title={m.status === 'EM_VALIDACAO' ? 'Para arquivar ou alterar, use “Retirar da validação” na etapa Validação.' : undefined}>{STATUS_MOD[m.status] ?? m.status}</Badge>}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {canRun && !m.stale && m.status === 'RASCUNHO' && <Button size="sm" variant="outline" disabled={busy === m.id || bloqueado}
                         title={bloqueado ? mensagemDesatualizado ?? undefined : undefined} onClick={() => calcular(m)}><Calculator className="h-4 w-4 mr-1" />Calcular</Button>}
@@ -292,7 +303,7 @@ export function ModelosPainel({ ctx, vars, conjunto, desatualizado, mensagemDesa
           <AlertDialogHeader>
             <AlertDialogTitle>{confirmArq === 'RODADA' ? `Arquivar a rodada ${rodadaSel?.numero}?` : 'Limpar a lista atual?'}</AlertDialogTitle>
             <AlertDialogDescription>Os modelos ficam ocultos, mas nada é excluído: histórico, cálculos e registros continuam guardados e podem ser restaurados.
-              Modelos em validação, validados, aceitos, usados em simulação ou resultado e favoritos não são arquivados.</AlertDialogDescription>
+              Modelos em validação (retire-os da validação antes), aceitos, usados em simulação ou resultado e favoritos não são arquivados.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={() => (confirmArq === 'RODADA' ? arquivarRodada() : arquivar(null, true))}>{confirmArq === 'RODADA' ? 'Arquivar rodada' : 'Limpar lista'}</AlertDialogAction></AlertDialogFooter>

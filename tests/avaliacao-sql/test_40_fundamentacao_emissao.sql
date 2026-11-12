@@ -37,6 +37,10 @@ SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$INSERT INTO public.validation_foundation_manual_grades(modelo_id, codigo, grau, justificativa) SELECT id, 'CARACTERIZACAO_AVALIANDO', 'III', 'curta' FROM m$$,
   'check', 'grau exige justificativa');
 
+-- O aceite exige o modelo em validação (ciclo de vida)
+SELECT pg_temp.login(NULL);
+UPDATE public.avaliacao_modelos SET status = 'EM_VALIDACAO' WHERE id = (SELECT id FROM m);
+SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 -- Aceite usa a validação; tokens trazem o grau só do resumo estruturado
 CREATE TEMP TABLE ac AS SELECT public.aval_accept_model((SELECT id FROM val), NULL) AS id;
 SELECT pg_temp.ok((public.aval_tokens((SELECT av FROM fx))->>'GRAU_FUNDAMENTACAO') = 'II' AND (public.aval_tokens((SELECT av FROM fx))->>'PONTOS_FUNDAMENTACAO') = '14',

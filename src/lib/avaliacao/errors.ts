@@ -23,6 +23,7 @@ const MESSAGES: Record<string, string> = {
   model_immutable: 'Modelo calculado não pode ser alterado. Duplique-o para mudar.',
   model_already_executed: 'Este modelo já foi calculado e é imutável. Crie um novo para alterar.',
   model_not_in_validation: 'Envie o modelo para validação antes.',
+  model_in_validation: 'Retire o modelo da validação antes de arquivá-lo.',
   validation_stale: 'A validação está desatualizada. Execute novamente.',
   validation_not_latest: 'Existe uma validação mais recente para este modelo.',
   validation_outdated_reviews: 'Há análises manuais posteriores a esta validação. Execute a validação novamente.',

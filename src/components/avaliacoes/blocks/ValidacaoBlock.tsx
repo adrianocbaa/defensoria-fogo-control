@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, CircleDashed, HelpCircle, MinusCircle, PlayCircle, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, CircleDashed, HelpCircle, History, MinusCircle, PlayCircle, RefreshCw, Undo2, XCircle } from 'lucide-react';
 import { CartesianGrid, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { db, engine, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { CRITERIO_STATUS_LABEL, OVERALL_LABEL, fmtDateTime, fmtNum } from '@/lib/avaliacao/labels';
+import { MSG_CONFIG_ALTERADA, MSG_MODELO_DESATUALIZADO, RETIRADA, eventosDoModelo, relacoesAlteradas, rotuloEventoModelo, situacaoValidacao, type EventoAuditoria } from '@/lib/avaliacao/cicloModelo';
 
 // Situação sempre com ícone + texto (nunca só cor).
 const STATUS_ICON: Record<string, { icon: typeof CheckCircle2; cls: string }> = {
@@ -29,6 +32,18 @@ function StatusTag({ status }: { status: string }) {
   return <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${s.cls}`}><s.icon className="h-4 w-4 shrink-0" aria-hidden />{CRITERIO_STATUS_LABEL[status] ?? status}</span>;
 }
 const pct = (v: number | null | undefined) => (v === null || v === undefined ? '—' : `${fmtNum(v * 100, 1)}%`);
+const RELACAO_LABEL: Record<string, string> = { POSITIVA: 'Positiva', NEGATIVA: 'Negativa', INDEFINIDA: 'Indefinida' };
+function detalheEvento(e: EventoAuditoria): string {
+  const d = e.details_json ?? {};
+  switch (e.event_type) {
+    case 'CHANGE_APPLIED': return `${RELACAO_LABEL[d.anterior] ?? d.anterior ?? '—'} → ${RELACAO_LABEL[d.novo] ?? d.novo ?? '—'}${d.motivo ? ` — ${d.motivo}` : ''}`;
+    case 'VALIDATION_MARKED_STALE': return `${d.motivo ? `${d.motivo}. ` : ''}Coeficientes preservados.`;
+    case 'MODEL_WITHDRAWN_FROM_VALIDATION': return `Em validação → Calculado${d.motivo ? ` — ${d.motivo}` : ''}${d.aceite_revogado ? ' · aceite revogado' : ''}`;
+    case 'MODEL_RESENT_TO_VALIDATION': case 'MODEL_SENT_TO_VALIDATION': return d.status_anterior ? 'Calculado → Em validação' : '';
+    case 'MODEL_REVALIDATED': case 'VALIDATION_EXECUTED': return d.status ? `${OVERALL_LABEL[d.status] ?? d.status}${d.politica ? ` · política ${d.politica}` : ''}` : '';
+    default: return '';
+  }
+}
 
 export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const av = ctx.avaliacao.data!;
@@ -40,17 +55,35 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
   const q = useAvalQuery(av.id, 'validacao', async () => {
     const [mods, ac] = await Promise.all([
-      db.from('avaliacao_modelos').select('id, numero, nome, status, stale').eq('avaliacao_id', av.id).in('status', ['EM_VALIDACAO']).order('numero', { ascending: false }),
+      db.from('avaliacao_modelos').select('id, numero, nome, status, stale, stale_motivo').eq('avaliacao_id', av.id).in('status', ['EM_VALIDACAO']).order('numero', { ascending: false }),
       db.from('model_acceptances').select('*, avaliacao_modelos(nome)').eq('avaliacao_id', av.id).order('accepted_at', { ascending: false }).limit(20),
     ]);
     return { modelos: (mods.data ?? []) as any[], aceites: (ac.data ?? []) as any[] };
   });
   useEffect(() => {
-    if (!modeloId && q.data?.modelos.length) setModeloId(q.data.modelos.find((m) => !m.stale)?.id ?? q.data.modelos[0].id);
+    if (!q.data) return;
+    if (modeloId && !q.data.modelos.some((m) => m.id === modeloId)) { setModeloId(''); return; }
+    if (!modeloId && q.data.modelos.length) setModeloId(q.data.modelos.find((m) => !m.stale)?.id ?? q.data.modelos[0].id);
   }, [q.data, modeloId]);
+  const tecnicos = useAvalQuery(av.id, 'tecnicos', () => rpc<{ user_id: string; display_name: string }[]>('aval_list_tecnicos', {}));
+  const nomeUsuario = (uid: string | null) => (tecnicos.data ?? []).find((t) => t.user_id === uid)?.display_name ?? (uid ? 'Usuário' : 'Sistema');
   const val = useAvalQuery(av.id, `validacao-${modeloId}`, async () => {
-    const { data: v } = await db.from('model_validations').select('*').eq('modelo_id', modeloId).order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (!v) return { v: null, results: [], reviews: [], grades: [], fsum: null, fitems: [], residuos: [] };
+    const [{ data: vs }, { data: mvs }] = await Promise.all([
+      db.from('model_validations').select('*').eq('modelo_id', modeloId).order('created_at', { ascending: false }).limit(200),
+      db.from('avaliacao_modelo_variaveis').select('variavel_id').eq('modelo_id', modeloId).limit(1000),
+    ]);
+    const historico = (vs ?? []) as any[];
+    const v = historico[0] ?? null;
+    const varIds: string[] = (mvs ?? []).map((x: any) => x.variavel_id);
+    const [vq, eq] = await Promise.all([
+      varIds.length ? db.from('avaliacao_variaveis').select('id, codigo, nome, relacao_esperada').in('id', varIds) : Promise.resolve({ data: [] }),
+      db.from('audit_events').select('id, event_type, entity_type, entity_id, details_json, created_at, actor_id').eq('avaliacao_id', av.id)
+        .in('entity_id', [modeloId, av.id, ...varIds]).order('created_at', { ascending: true }).limit(5000),
+    ]);
+    const variaveis = (vq.data ?? []) as { id: string; codigo: string; nome: string; relacao_esperada: string }[];
+    const eventos = eventosDoModelo((eq.data ?? []) as EventoAuditoria[], modeloId, varIds);
+    const extra = { historico, variaveis, eventos };
+    if (!v) return { v: null, results: [], reviews: [], grades: [], fsum: null, fitems: [], residuos: [], ...extra };
     const [r, rv, gr, fs, fi, res] = await Promise.all([
       db.from('model_validation_results').select('*').eq('validation_id', v.id).order('numero'),
       db.from('validation_manual_reviews').select('*').eq('modelo_id', modeloId).order('created_at', { ascending: false }),
@@ -59,7 +92,7 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       db.from('validation_foundation_items').select('*').eq('validation_id', v.id).order('item_number'),
       db.from('modelo_residuos').select('amostra_id, ordem, estimado_original, residuo_dp, residuo_relativo, leverage, cook').eq('execucao_id', v.execucao_id).order('ordem').limit(10000),
     ]);
-    return { v: v as any, results: (r.data ?? []) as any[], reviews: (rv.data ?? []) as any[], grades: (gr.data ?? []) as any[], fsum: fs.data as any, fitems: (fi.data ?? []) as any[], residuos: (res.data ?? []) as any[] };
+    return { v: v as any, results: (r.data ?? []) as any[], reviews: (rv.data ?? []) as any[], grades: (gr.data ?? []) as any[], fsum: fs.data as any, fitems: (fi.data ?? []) as any[], residuos: (res.data ?? []) as any[], ...extra };
   }, !!modeloId);
 
   const modelo = q.data?.modelos.find((m) => m.id === modeloId);
@@ -73,11 +106,20 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const cook = byCode.PONTOS_INFLUENTES;
   const nDados = byCode.NUMERO_DADOS;
   const impedimentos: string[] = v?.resumo_json?.impedimentos_grau_iii ?? [];
-  const canReview = ctx.can('validation.manual_review') && !!v && !v.stale;
+  const alteradas = useMemo(() => relacoesAlteradas(byCode.RELACIONAMENTO?.dados?.itens, val.data?.variaveis ?? []), [byCode, val.data?.variaveis]);
+  const situacao = situacaoValidacao({ modeloStale: !!modelo?.stale, validacao: v, alteradas });
+  const desatualizada = situacao === 'CONFIG_ALTERADA';
+  const canReview = ctx.can('validation.manual_review') && !!v && !desatualizada && situacao !== 'MODELO_DESATUALIZADO';
+  const canRun = ctx.can('validation.run');
+  const aceiteDoModelo = vigente && vigente.modelo_id === modeloId ? vigente : null;
+  const [retirar, setRetirar] = useState<string | null>(null);
 
   const rodar = async () => {
     setBusy(true);
-    try { const r: any = await engine({ action: 'run_validation', modelo_id: modeloId }); toast.success(`Validação concluída: ${OVERALL_LABEL[r.overall] ?? r.overall}.`); }
+    try {
+      const r: any = await engine({ action: 'run_validation', modelo_id: modeloId });
+      toast.success(`${v ? 'Nova validação registrada' : 'Validação concluída'}: ${OVERALL_LABEL[r.overall] ?? r.overall}.${v ? ' A anterior continua no histórico.' : ''}`);
+    }
     catch (e) { toast.error((e as Error).message); } finally { setBusy(false); ctx.refresh(); }
   };
   const salvarReview = async () => {
@@ -91,6 +133,16 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     const { error } = await db.from('validation_foundation_manual_grades').insert({ modelo_id: modeloId, avaliacao_id: av.id, codigo: grade.codigo, grau: grade.grau, justificativa: grade.just });
     if (error) { toast.error(avalErrorMessage(error)); return; }
     toast.success('Grau registrado. Execute a validação novamente para incorporá-lo.'); setGrade(null); ctx.refresh();
+  };
+  const confirmarRetirada = async () => {
+    if (retirar === null) return;
+    if (aceiteDoModelo && retirar.trim().length < RETIRADA.minMotivoAceito) { toast.error('Escreva o motivo da retirada (o modelo está aceito).'); return; }
+    setBusy(true);
+    try {
+      await rpc('aval_model_withdraw_validation', { p_modelo: modeloId, p_motivo: retirar.trim() || null });
+      toast.success(`${modelo?.nome ?? 'Modelo'} retirado da validação. Ele voltou para a Modelagem como calculado; o histórico foi preservado.`);
+      setRetirar(null); setModeloId('');
+    } catch (e) { toast.error(avalErrorMessage(e)); } finally { setBusy(false); ctx.refresh(); }
   };
   const aceitar = async () => {
     try { await rpc('aval_accept_model', { p_validation: v.id, p_justificativa: aceite }); toast.success('Modelo aceito.'); setAceite(null); ctx.refresh(); }
@@ -113,11 +165,27 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 <SelectContent>{q.data!.modelos.map((m) => <SelectItem key={m.id} value={m.id}>{m.nome}{m.stale ? ' (desatualizado)' : ''}</SelectItem>)}</SelectContent>
               </Select>
             )}
-            {ctx.can('validation.run') && modelo && !modelo.stale && <Button size="sm" onClick={rodar} disabled={busy}><PlayCircle className="h-4 w-4 mr-1" />{busy ? 'Validando…' : v ? 'Validar novamente' : 'Executar validação'}</Button>}
+            {canRun && modelo && situacao !== 'MODELO_DESATUALIZADO' && (desatualizada
+              ? <Button size="sm" onClick={rodar} disabled={busy}><RefreshCw className="h-4 w-4 mr-1" />{busy ? 'Validando…' : 'Revalidar com as configurações atuais'}</Button>
+              : <Button size="sm" onClick={rodar} disabled={busy}><PlayCircle className="h-4 w-4 mr-1" />{busy ? 'Validando…' : v ? 'Validar novamente' : 'Executar validação'}</Button>)}
+            {canRun && modelo && <Button size="sm" variant="outline" onClick={() => setRetirar('')} disabled={busy}><Undo2 className="h-4 w-4 mr-1" />Retirar da validação</Button>}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {(q.data?.modelos ?? []).length === 0 && <p className="text-sm text-muted-foreground">Envie um modelo calculado para validação no bloco Modelagem.</p>}
+          {modelo && situacao === 'MODELO_DESATUALIZADO' && (
+            <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Modelo desatualizado</AlertTitle>
+              <AlertDescription>{MSG_MODELO_DESATUALIZADO}{modelo.stale_motivo ? ` Motivo: ${modelo.stale_motivo}.` : ''}</AlertDescription></Alert>
+          )}
+          {modelo && desatualizada && (
+            <Alert><AlertTriangle className="h-4 w-4" /><AlertTitle>Validação desatualizada</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>{MSG_CONFIG_ALTERADA}</p>
+                {alteradas.length > 0 && <ul className="list-disc pl-5">{alteradas.map((a) => <li key={a.codigo}>{a.nome}: relação esperada {RELACAO_LABEL[a.antes] ?? a.antes} → {RELACAO_LABEL[a.agora] ?? a.agora}</li>)}</ul>}
+                {aceiteDoModelo === null && q.data?.aceites.some((a) => a.modelo_id === modeloId && a.status === 'INVALIDADO') && <p>O aceite anterior deste modelo foi invalidado e continua no histórico; aceite novamente após revalidar.</p>}
+                {canRun && <Button size="sm" onClick={rodar} disabled={busy}><RefreshCw className="h-4 w-4 mr-1" />{busy ? 'Validando…' : 'Revalidar com as configurações atuais'}</Button>}
+              </AlertDescription></Alert>
+          )}
           {modelo && !v && <p className="text-sm text-muted-foreground">Ainda não validado.</p>}
           {v && (
             <>
@@ -132,7 +200,8 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Dados</p><p className="text-lg font-semibold">{nDados?.valor ?? '—'} amostras</p>
                   <p className="text-xs text-muted-foreground truncate" title={nDados?.detalhe}>{nDados?.grau ? `Quantidade: grau ${nDados.grau}` : nDados ? CRITERIO_STATUS_LABEL[nDados.status] : ''}</p></div>
               </div>
-              {(v.stale || reviewsAfter) && <p className="flex items-center gap-1.5 text-sm text-destructive"><AlertTriangle className="h-4 w-4" aria-hidden />{v.stale ? 'Esta validação está desatualizada.' : 'Há análises ou graus registrados depois desta validação — execute a validação novamente.'}</p>}
+              {desatualizada && <p className="text-xs text-muted-foreground">Abaixo, a última validação registrada (anterior à alteração), mantida para consulta.</p>}
+              {!desatualizada && reviewsAfter && <p className="flex items-center gap-1.5 text-sm text-destructive"><AlertTriangle className="h-4 w-4" aria-hidden />Há análises ou graus registrados depois desta validação — execute a validação novamente.</p>}
 
               <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
                 <div className="rounded-lg border">
@@ -228,13 +297,69 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 </div>
               )}
 
-              {ctx.can('validation.accept') && !v.stale && !reviewsAfter && ['APTO', 'APTO_COM_RESSALVAS'].includes(v.overall_status) && (
+              {ctx.can('validation.accept') && situacao === 'ATUAL' && !reviewsAfter && !aceiteDoModelo && ['APTO', 'APTO_COM_RESSALVAS'].includes(v.overall_status) && (
                 <div className="flex justify-end"><Button onClick={() => setAceite('')}><CheckCircle2 className="h-4 w-4 mr-1" />Aceitar este modelo</Button></div>
               )}
             </>
           )}
         </CardContent>
       </Card>
+
+      {modelo && val.data && (val.data.historico.length > 0 || val.data.eventos.length > 0) && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" aria-hidden />Histórico de {modelo.nome}</CardTitle></CardHeader>
+          <CardContent className="grid gap-6 lg:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium mb-2">Validações realizadas</p>
+              {val.data.historico.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma validação ainda.</p> : (
+                <ol className="space-y-2" aria-label="Validações realizadas">
+                  {[...val.data.historico].reverse().map((h, i, arr) => (
+                    <li key={h.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-3 py-2 text-sm">
+                      <span className="font-medium">Validação {i + 1}</span>
+                      <span className="text-muted-foreground">{fmtDateTime(h.created_at)}</span>
+                      <span>· {OVERALL_LABEL[h.overall_status] ?? h.overall_status}</span>
+                      {h.resumo_json?.politica && <span className="text-xs text-muted-foreground">política {h.resumo_json.politica.codigo} v{h.resumo_json.politica.versao}</span>}
+                      {h.stale ? <Badge variant="outline">Desatualizada</Badge> : i === arr.length - 1 ? <Badge variant="secondary">Atual</Badge> : null}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">Todas usam os mesmos coeficientes calculados; nenhuma validação é substituída ou apagada.</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-2">Eventos</p>
+              <ol className="relative border-l pl-5 space-y-3" aria-label="Eventos do modelo">
+                {val.data.eventos.map((e) => (
+                  <li key={e.id}>
+                    <span className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border bg-background" aria-hidden />
+                    <p className="text-sm font-medium">{rotuloEventoModelo(e)}</p>
+                    <p className="text-xs text-muted-foreground">{fmtDateTime(e.created_at)} · {nomeUsuario(e.actor_id)}</p>
+                    {detalheEvento(e) && <p className="text-sm">{detalheEvento(e)}</p>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <AlertDialog open={retirar !== null} onOpenChange={(o) => !o && setRetirar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{RETIRADA.titulo}</AlertDialogTitle>
+            <AlertDialogDescription>{RETIRADA.texto}</AlertDialogDescription>
+          </AlertDialogHeader>
+          {aceiteDoModelo && <p className="flex items-start gap-1.5 text-sm"><AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />{RETIRADA.aceito}</p>}
+          <div className="grid gap-2">
+            <Label htmlFor="ret-motivo">Motivo {aceiteDoModelo ? '(obrigatório)' : '(opcional)'}</Label>
+            <Textarea id="ret-motivo" rows={3} maxLength={2000} value={retirar ?? ''} onChange={(e) => setRetirar(e.target.value)} placeholder="Ex.: ajustar a relação esperada das variáveis" />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+            <Button onClick={confirmarRetirada} disabled={busy}><Undo2 className="h-4 w-4 mr-1" />{busy ? 'Retirando…' : 'Retirar da validação'}</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={!!review} onOpenChange={(o) => !o && setReview(null)}>
         <DialogContent>
