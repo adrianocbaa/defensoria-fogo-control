@@ -39,8 +39,8 @@ test('Guarantã do Norte — paridade real SisDEA', () => {
 
   // Coeficientes, t e significâncias
   fit.coefficients.forEach((c, j) => { close(c.beta, X.beta[j], 1e-12, `beta ${c.code}`); close(c.t, X.t[j], 1e-12, `t ${c.code}`); });
-  close(fit.coefficients[1].pValue, X.p.banheiro, 1e-10, 'sig banheiro');
-  close(fit.coefficients[2].pValue, X.p.area, 1e-10, 'sig área');
+  close(fit.coefficients[1].pValue, X.pValues.banheiro, 1e-10, 'sig banheiro');
+  close(fit.coefficients[2].pValue, X.pValues.area, 1e-10, 'sig área');
 
   // Somas, R e F
   close(fit.sse, X.sse, 1e-12, 'SSE'); close(fit.sst, X.sst, 1e-12, 'SST'); close(fit.ssr, X.ssr, 1e-12, 'SSR'); close(fit.mse, X.mse, 1e-12, 'MSE');
