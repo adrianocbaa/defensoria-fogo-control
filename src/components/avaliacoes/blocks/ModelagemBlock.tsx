@@ -242,7 +242,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                         <TableCell className="text-right tabular-nums">{r?.amplitude_pct != null ? `${fmtNum(r.amplitude_pct, 2)}%` : '—'}</TableCell>
                         <TableCell>{m.stale ? <Badge variant="destructive">Desatualizado</Badge> : <Badge variant="outline">{STATUS_MOD[m.status]}</Badge>}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
-                          {canRun && !m.stale && (m.status === 'RASCUNHO' || m.status === 'ERRO') && m.status !== 'ERRO' && <Button size="sm" variant="outline" disabled={busy === m.id} onClick={() => calcular(m)}><Calculator className="h-4 w-4 mr-1" />Calcular</Button>}
+                          {canRun && !m.stale && m.status === 'RASCUNHO' && <Button size="sm" variant="outline" disabled={busy === m.id} onClick={() => calcular(m)}><Calculator className="h-4 w-4 mr-1" />Calcular</Button>}
                           {canVal && !m.stale && m.status === 'CALCULADO' && <Button size="sm" variant="outline" onClick={() => enviar(m)}><Send className="h-4 w-4 mr-1" />Validar</Button>}
                           {canModel && m.status !== 'RASCUNHO' && <Button size="icon" variant="ghost" aria-label="Favorito" onClick={() => favoritar(m)}><Star className={`h-4 w-4 ${m.favorito ? 'fill-current' : ''}`} /></Button>}
                         </TableCell>
