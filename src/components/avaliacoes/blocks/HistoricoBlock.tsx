@@ -10,7 +10,7 @@ const CAMPO_LABEL: Record<string, string> = {
   area_construida: 'Área construída', area_terreno: 'Área do terreno', anuncio_url: 'Link do anúncio', url_anuncio: 'Link do anúncio', anuncio_id: 'Código do anúncio',
   precisao: 'Precisão da localização', latitude: 'Latitude', longitude: 'Longitude', natureza_dado: 'Natureza', valor_ofertado: 'Valor ofertado',
   valor_utilizado: 'Valor utilizado', valor_unitario: 'Valor unitário', data_observacao: 'Data da observação', origem_territorial: 'Origem territorial',
-  fonte: 'Fonte principal', imovel_id: 'Imóvel da amostra',
+  fonte: 'Fonte principal', imovel_id: 'Imóvel da amostra', relacao_esperada: 'Relação esperada', tipo_variavel: 'Tipo da variável', categorica: 'Categórica',
 };
 function valorHist(v: unknown): string {
   if (v === null || v === undefined || v === '') return '—';
@@ -35,6 +35,11 @@ function detalhe(ev: any): string {
     case 'REPORT_ISSUED': return d.codigo ?? '';
     case 'REPORT_REVISION_CREATED': return `Revisão ${String(d.revisao).padStart(2, '0')} — ${d.motivo ?? ''}`;
     case 'MEMBER_CHANGED': return `${d.papel}${d.ativo === false ? ' (removido)' : ''}`;
+    case 'MODEL_WITHDRAWN_FROM_VALIDATION': return `Em validação → Calculado${d.motivo ? ` — ${d.motivo}` : ''}${d.aceite_revogado ? ' · aceite revogado (mantido no histórico)' : ''} · ${d.validacoes_preservadas ?? 0} validação(ões) preservada(s)`;
+    case 'MODEL_RESENT_TO_VALIDATION': return 'Calculado → Em validação';
+    case 'VALIDATION_MARKED_STALE': return `${d.motivo ?? 'Configuração alterada'} · coeficientes preservados`;
+    case 'MODEL_REVALIDATED': return 'Mesmo modelo e mesmos coeficientes; a validação anterior continua registrada.';
+    case 'MODELS_ARCHIVED': return `${d.quantidade} modelo(s)${d.protegidos ? ` · ${d.protegidos} protegido(s)` : ''}`;
     default: return '';
   }
 }
@@ -58,7 +63,7 @@ export function HistoricoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
             {(eventos.data ?? []).map((ev) => (
               <li key={ev.id}>
                 <span className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border bg-background" aria-hidden />
-                <p className="text-sm font-medium">{AUDIT_EVENT_LABEL[ev.event_type] ?? ev.event_type}</p>
+                <p className="text-sm font-medium">{ev.event_type === 'CHANGE_APPLIED' && ev.details_json?.campo === 'relacao_esperada' ? 'Relação esperada alterada' : AUDIT_EVENT_LABEL[ev.event_type] ?? ev.event_type}</p>
                 <p className="text-xs text-muted-foreground">{fmtDateTime(ev.created_at)} · {nome(ev.actor_id)}</p>
                 {detalhe(ev) && <p className="text-sm mt-0.5">{detalhe(ev)}</p>}
               </li>
