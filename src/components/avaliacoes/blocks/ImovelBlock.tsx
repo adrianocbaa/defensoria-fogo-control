@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Info, Pencil, Plus } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImpactDialog, type PendingChange } from '../ImpactDialog';
+import { CompartilhadoAviso, type Compartilhamento } from '../CompartilhadoAviso';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelCreator } from '../ImovelForm';
@@ -27,7 +28,7 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const creator = useImovelCreator({ ibge: av.municipio_ibge, nome: av.municipio_nome, uf: av.uf });
   const [vist, setVist] = useState<{ data: string; estado: string; obs: string } | null>(null);
   const [carac, setCarac] = useState<{ descricao: string; efeito: string } | null>(null);
-  const [edit, setEdit] = useState<{ form: Record<string, string>; original: Record<string, unknown>; share: { compartilhado: boolean; outros_dados: number; outras_avaliacoes: string[] } | null } | null>(null);
+  const [edit, setEdit] = useState<{ form: Record<string, string>; original: Record<string, unknown>; share: Compartilhamento | null } | null>(null);
   const [changes, setChanges] = useState<PendingChange[] | null>(null);
 
   const dados = useAvalQuery(av.id, 'imovel', async () => {
@@ -86,7 +87,7 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     for (const c of camposImovel(im.id)) form[c.chave] = paraFormulario(c.tipo, original[c.chave]);
     setEdit({ form, original, share: null });
     try {
-      const share = await rpc<any>('aval_imovel_sharing', { p_avaliacao: av.id, p_imovel: im.id, p_dado: null });
+      const share = await rpc<Compartilhamento>('aval_imovel_sharing', { p_avaliacao: av.id, p_imovel: im.id, p_dado: null });
       setEdit((e) => (e ? { ...e, share } : e));
     } catch { /* aviso de compartilhamento é informativo */ }
   };
@@ -187,11 +188,7 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
             const imv = edit.form as unknown as ImovelInput;
             return (
               <div className="space-y-4">
-                {edit.share?.compartilhado && (
-                  <p className="flex items-start gap-2 rounded-md border bg-muted/40 p-2.5 text-sm"><Info className="h-4 w-4 mt-0.5 shrink-0" />
-                    <span><strong>Este cadastro físico é reutilizado em outros registros</strong>{edit.share.outros_dados > 0 ? ` (${edit.share.outros_dados} dado(s) de mercado` : ' ('}{edit.share.outras_avaliacoes.length > 0 ? `${edit.share.outros_dados > 0 ? '; ' : ''}avaliações ${edit.share.outras_avaliacoes.join(', ')}` : ''}). A correção vale para todos eles.</span>
-                  </p>
-                )}
+                {edit.share?.compartilhado && <CompartilhadoAviso share={edit.share}><p className="text-muted-foreground">A correção vale para todos os registros vivos que usam este imóvel.</p></CompartilhadoAviso>}
                 <ImovelFields value={imv} onChange={(v) => setEdit({ ...edit, form: { ...edit.form, ...(v as unknown as Record<string, string>) } })} showAnuncio />
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="grid gap-1.5"><Label>Precisão da localização</Label>
