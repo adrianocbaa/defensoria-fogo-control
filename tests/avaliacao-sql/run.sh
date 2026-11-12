@@ -12,7 +12,7 @@ as_pg pg_ctl -D "$DIR/data" -o "-p $PORT -k $DIR -c listen_addresses=''" -l "$DI
 trap 'as_pg pg_ctl -D "$DIR/data" stop -m immediate >/dev/null 2>&1 || true; rm -rf "$DIR"' EXIT
 PSQL=(psql -X -q -v ON_ERROR_STOP=1 -h "$DIR" -p "$PORT" -U postgres -d postgres)
 "${PSQL[@]}" -f "$ROOT/tests/avaliacao-sql/stub.sql" >/dev/null
-for f in "$ROOT"/supabase/migrations/2026111200*.sql "$ROOT"/supabase/migrations/2026111201*.sql "$ROOT"/supabase/migrations/2026111202*.sql "$ROOT"/supabase/migrations/2026111212*.sql "$ROOT"/supabase/migrations/2026111213*.sql "$ROOT"/supabase/migrations/2026111214*.sql "$ROOT"/supabase/migrations/2026111215*.sql "$ROOT"/supabase/migrations/2026111216*.sql "$ROOT"/supabase/migrations/2026111217*.sql "$ROOT"/supabase/migrations/2026111218*.sql "$ROOT"/supabase/migrations/2026111219*.sql "$@"; do
+for f in "$ROOT"/supabase/migrations/2026111200*.sql "$ROOT"/supabase/migrations/2026111201*.sql "$ROOT"/supabase/migrations/2026111202*.sql "$ROOT"/supabase/migrations/2026111212*.sql "$ROOT"/supabase/migrations/2026111213*.sql "$ROOT"/supabase/migrations/2026111214*.sql "$ROOT"/supabase/migrations/2026111215*.sql "$ROOT"/supabase/migrations/2026111216*.sql "$ROOT"/supabase/migrations/2026111217*.sql "$ROOT"/supabase/migrations/2026111218*.sql "$ROOT"/supabase/migrations/2026111219*.sql "$ROOT"/supabase/migrations/2026111220*.sql "$ROOT"/supabase/migrations/2026111221*.sql "$@"; do
   [ -f "$f" ] || continue
   "${PSQL[@]}" -f "$f" >/dev/null 2>"$DIR/err" || { echo "FALHOU ao aplicar $(basename "$f")"; cat "$DIR/err"; exit 1; }
 done
