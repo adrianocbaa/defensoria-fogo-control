@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MunicipioCombobox } from '@/components/MunicipioCombobox';
 import { UFS } from '@/lib/ufs';
 import { db, rpc } from '@/lib/avaliacao/api';
-import { municipioParaGravar, municipioValido, type MunicipioImovel } from '@/lib/avaliacao/municipioImovel';
+import { mensagemComparavel, municipioParaGravar, municipioValido, situacaoComparavel, type MunicipioImovel } from '@/lib/avaliacao/municipioImovel';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { fmtNum } from '@/lib/avaliacao/labels';
 
@@ -122,6 +122,26 @@ export function DuplicatePanel({ dups, onUse, onForce }: { dups: Dup[]; onUse: (
         ))}
       </ul>
       <div className="flex justify-end"><Button size="sm" variant="ghost" onClick={onForce}>Não é o mesmo — cadastrar novo</Button></div>
+    </div>
+  );
+}
+
+export interface ComparavelRow { municipio_ibge?: string | null; municipio_nome?: string | null; uf?: string | null; status: string }
+
+/** Situação do município do imóvel frente aos municípios comparáveis da avaliação (aviso; nunca impede o cadastro). */
+export function ComparavelAviso({ av, mun, comparaveis, onSugerir, children }: {
+  av: { municipio_ibge?: string | null }; mun: Partial<MunicipioImovel>; comparaveis: ComparavelRow[];
+  onSugerir?: () => void; children?: React.ReactNode;
+}) {
+  const s = situacaoComparavel(av, mun, comparaveis);
+  const m = mensagemComparavel(s, mun);
+  if (!m) return null;
+  const Icon = m.tom === 'ok' ? CheckCircle2 : m.tom === 'alerta' ? AlertTriangle : Info;
+  return (
+    <div role="status" className={`rounded-md border p-3 text-sm space-y-2 ${m.tom === 'alerta' ? 'border-destructive/40 bg-destructive/5' : m.tom === 'ok' ? 'bg-muted/40' : 'border-primary/30 bg-primary/5'}`}>
+      <p className="flex items-start gap-2"><Icon className={`mt-0.5 h-4 w-4 shrink-0 ${m.tom === 'alerta' ? 'text-destructive' : 'text-primary'}`} aria-hidden />{m.texto}</p>
+      {s === 'NAO_CADASTRADO' && onSugerir && <Button type="button" size="sm" variant="outline" onClick={onSugerir}>Sugerir como município comparável</Button>}
+      {children}
     </div>
   );
 }

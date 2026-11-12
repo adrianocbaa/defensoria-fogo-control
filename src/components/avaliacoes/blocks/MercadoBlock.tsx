@@ -18,7 +18,10 @@ import { EditAmostraDialog } from '../EditAmostraDialog';
 import { BancoImoveisDialog } from '../BancoImoveisDialog';
 import { ImportarAmostrasDialog } from '../ImportarAmostrasDialog';
 import { CamposDinamicosSection, CompletudeTable, useVariaveisStatus } from '../VariaveisShared';
-import { DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelCreator } from '../ImovelForm';
+import { ComparavelAviso, DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelCreator } from '../ImovelForm';
+import { MunicipioCombobox } from '@/components/MunicipioCombobox';
+import { UFS } from '@/lib/ufs';
+import { municipioSugerido, origemAposTrocaMunicipio, origemPorMunicipio } from '@/lib/avaliacao/municipioImovel';
 import { db, rpc } from '@/lib/avaliacao/api';
 import { avalErrorCode, avalErrorMessage } from '@/lib/avaliacao/errors';
 import { alteracoesDinamicas, bloqueiosCongelamento, bloqueiosDoServidor, camposDinamicos, mensagemCongelamento, nomesFaltando, obrigatoriasVazias } from '@/lib/avaliacao/variaveis';
@@ -33,15 +36,15 @@ const num = (s: string) => { if (!s.trim()) return null; const n = Number(s.repl
 export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const av = ctx.avaliacao.data!;
   const [add, setAdd] = useState(false);
-  const [im, setIm] = useState<ImovelInput>(emptyImovel(av.tipo_imovel));
+  const [im, setIm] = useState<ImovelInput>(emptyImovel(av.tipo_imovel, municipioSugerido(av)));
   const [dado, setDado] = useState({ natureza: 'OFERTA', negocio: 'LOCACAO', situacao: 'ATIVO', obs: '', ofertado: '', utilizado: '', data: '', fonteTipo: 'IMOBILIARIA', fonteNome: '', origem: 'LOCAL' });
   const [imovelFixo, setImovelFixo] = useState<BancoRow | null>(null);
   const [banco, setBanco] = useState(false);
   const [importar, setImportar] = useState(false);
   const [freeze, setFreeze] = useState(false);
   const [editar, setEditar] = useState<{ amostra: any; indice: number } | null>(null);
-  const [mun, setMun] = useState<{ nome: string; uf: string; just: string } | null>(null);
-  const creator = useImovelCreator({ ibge: av.municipio_ibge, nome: av.municipio_nome, uf: av.uf });
+  const [mun, setMun] = useState<{ nome: string; uf: string; ibge: string; just: string; noCadastro?: boolean } | null>(null);
+  const creator = useImovelCreator();
   const [dynNovo, setDynNovo] = useState<Record<string, string>>({});
   const status = useVariaveisStatus(av.id);
   const st = status.data;
@@ -73,8 +76,11 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
   const concluida = av.status !== 'ATIVA';
   const abrirNovo = (fixo: BancoRow | null) => {
-    setImovelFixo(fixo); creator.setDups(null); setDynNovo({});
-    if (fixo) setDado((d) => ({ ...d, negocio: fixo.tipo_negocio || 'LOCACAO', ofertado: '', utilizado: '', data: '', obs: '' }));
+    setImovelFixo(fixo); creator.setDups(null); setDynNovo({}); setMun(null);
+    // Origem territorial pelo município do imóvel (existente: o do cadastro; novo: o escolhido no formulário).
+    const ibge = fixo ? fixo.municipio_ibge : im.municipio_ibge;
+    setDado((d) => ({ ...d, origem: origemAposTrocaMunicipio(d.origem, av.municipio_ibge, ibge),
+      ...(fixo ? { negocio: fixo.tipo_negocio || 'LOCACAO', ofertado: '', utilizado: '', data: '', obs: '' } : {}) }));
     setBanco(false); setAdd(true);
   };
   const salvar = async (decision?: { useExisting?: string; forceNew?: boolean }) => {
@@ -108,7 +114,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         catch (e) { aviso = true; toast.warning(`Dado incluído, mas as variáveis não foram salvas: ${avalErrorMessage(e)} Use Editar amostra para completar.`); }
       }
       if (!aviso) toast.success('Dado de mercado incluído.');
-      setAdd(false); setImovelFixo(null); setIm(emptyImovel(av.tipo_imovel)); setDado({ ...dado, ofertado: '', utilizado: '', fonteNome: '', obs: '' }); setDynNovo({});
+      setAdd(false); setImovelFixo(null); setIm(emptyImovel(av.tipo_imovel, municipioSugerido(av))); setDado({ ...dado, origem: 'LOCAL', ofertado: '', utilizado: '', fonteNome: '', obs: '' }); setDynNovo({}); setMun(null);
       ctx.refresh();
     } catch (e) { toast.error(avalErrorMessage(e)); }
   };
@@ -129,11 +135,18 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     }
   };
   const salvarMun = async () => {
-    if (!mun || !mun.nome.trim() || mun.just.trim().length < 10) { toast.error('Informe o município e uma justificativa.'); return; }
-    const { error } = await db.from('avaliacao_municipios_comparaveis').insert({ avaliacao_id: av.id, uf: mun.uf, municipio_nome: mun.nome.trim(), justificativa: mun.just.trim(), status: 'SUGERIDO' });
+    if (!mun || !mun.ibge || !mun.nome.trim() || mun.just.trim().length < 10) { toast.error('Escolha o município e escreva uma justificativa (mínimo 10 caracteres).'); return; }
+    const { error } = await db.from('avaliacao_municipios_comparaveis').insert({ avaliacao_id: av.id, uf: mun.uf, municipio_nome: mun.nome.trim(), municipio_ibge: mun.ibge, justificativa: mun.just.trim(), status: 'SUGERIDO' });
     if (error) { toast.error(avalErrorMessage(error)); return; }
+    toast.success('Município sugerido; aguarda decisão do responsável técnico.');
     setMun(null); ctx.refresh();
   };
+  const comparaveis = (q.data?.municipios ?? []) as { municipio_ibge: string | null; municipio_nome: string; uf: string; status: string }[];
+  const mudarImovel = (v: ImovelInput) => {
+    if (v.municipio_ibge !== im.municipio_ibge) setDado((d) => ({ ...d, origem: origemAposTrocaMunicipio(d.origem, av.municipio_ibge, v.municipio_ibge) }));
+    setIm(v);
+  };
+  const munNovo = imovelFixo ? { uf: imovelFixo.uf ?? '', municipio_ibge: imovelFixo.municipio_ibge ?? '', municipio_nome: imovelFixo.municipio_nome ?? '' } : im;
   const decidirMun = async (m: any, status: 'APROVADO' | 'REJEITADO') => {
     const { error } = await db.from('avaliacao_municipios_comparaveis').update({ status, decidido_em: new Date().toISOString() }).eq('id', m.id);
     if (error) toast.error(avalErrorMessage(error)); else ctx.refresh();
@@ -177,7 +190,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                       <TableCell><Checkbox aria-label={`Habilitar no modelo amostra ${i + 1}`} checked={a.habilitada_modelo} disabled={!canSel} onCheckedChange={(v) => toggle(a, 'habilitada_modelo', !!v)} /></TableCell>
                       <TableCell className="min-w-[220px]">
                         <p className="font-medium">{i + 1}. {rotuloEndereco(imv ?? {})}</p>
-                        <p className="text-xs text-muted-foreground">{[imv?.bairro, a.origem_territorial !== 'LOCAL' ? 'fora do município' : null, d?.tipo_negocio === 'VENDA' ? TIPO_NEGOCIO_LABEL.VENDA : null,
+                        <p className="text-xs text-muted-foreground">{[imv?.bairro, imv?.municipio_nome ? `${imv.municipio_nome}/${imv.uf ?? ''}` : null, a.origem_territorial !== 'LOCAL' ? 'fora do município' : null, d?.tipo_negocio === 'VENDA' ? TIPO_NEGOCIO_LABEL.VENDA : null,
                           d?.status && d.status !== 'ATIVO' ? SITUACAO_LABEL[d.status] : null].filter(Boolean).join(' · ')}</p>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {a.origem_inclusao && a.origem_inclusao !== 'CADASTRO_NOVO' && <Badge variant="outline" className="text-[11px] font-normal">{ORIGEM_INCLUSAO_LABEL[a.origem_inclusao]}</Badge>}
@@ -224,13 +237,17 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         <Card>
           <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Municípios comparáveis</CardTitle>
-            {canEdit && <Button size="sm" variant="outline" onClick={() => setMun({ nome: '', uf: av.uf, just: '' })}><Plus className="h-4 w-4 mr-1" />Sugerir</Button>}
+            {canEdit && <Button size="sm" variant="outline" onClick={() => setMun({ nome: '', uf: av.uf, ibge: '', just: '' })}><Plus className="h-4 w-4 mr-1" />Sugerir</Button>}
           </CardHeader>
           <CardContent className="text-sm space-y-3">
             <p className="text-muted-foreground">Usar dados de outro município exige justificativa e decisão do responsável técnico.</p>
-            {mun && (
+            {mun && !mun.noCadastro && (
               <div className="grid gap-2 rounded-md border p-3">
-                <div className="grid grid-cols-[1fr_80px] gap-2"><Input placeholder="Município" value={mun.nome} onChange={(e) => setMun({ ...mun, nome: e.target.value })} maxLength={120} /><Input value={mun.uf} onChange={(e) => setMun({ ...mun, uf: e.target.value.toUpperCase().slice(0, 2) })} /></div>
+                <div className="grid grid-cols-[110px_1fr] gap-2">
+                  <Select value={mun.uf || undefined} onValueChange={(uf) => setMun({ ...mun, uf, ibge: '', nome: '' })}><SelectTrigger aria-label="UF do município comparável"><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>{UFS.map((u) => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla}</SelectItem>)}</SelectContent></Select>
+                  <MunicipioCombobox uf={mun.uf} value={mun.ibge} savedName={mun.nome} onChange={(m) => setMun({ ...mun, ibge: m.ibge, nome: m.nome })} />
+                </div>
                 <Input placeholder="Justificativa (semelhança de mercado, escassez local…)" value={mun.just} onChange={(e) => setMun({ ...mun, just: e.target.value })} maxLength={500} />
                 <div className="flex justify-end gap-2"><Button size="sm" variant="ghost" onClick={() => setMun(null)}>Cancelar</Button><Button size="sm" onClick={salvarMun}>Salvar</Button></div>
               </div>
@@ -261,7 +278,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 imovelFixo.area_construida ? `${fmtNum(imovelFixo.area_construida)} m²` : null].filter(Boolean).join(' · ')}</p>
               <p className="mt-1 text-xs text-muted-foreground">Último dado: {fmtMoney(imovelFixo.valor_utilizado)} em {imovelFixo.data_observacao ? imovelFixo.data_observacao.split('-').reverse().join('/') : '—'}</p>
             </div>
-          ) : <ImovelFields value={im} onChange={setIm} showAnuncio />}
+          ) : <ImovelFields value={im} onChange={mudarImovel} showAnuncio municipioAvaliacao={av} />}
           <div className="grid gap-3 sm:grid-cols-6">
             <div className="grid gap-1.5 sm:col-span-2"><Label>Finalidade</Label>
               <Select value={dado.negocio} onValueChange={(v) => setDado({ ...dado, negocio: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(TIPO_NEGOCIO_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
@@ -279,7 +296,20 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
               <Select value={dado.origem} onValueChange={(v) => setDado({ ...dado, origem: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
                 <SelectItem value="LOCAL">Mesmo município</SelectItem><SelectItem value="MUNICIPIO_COMPARAVEL">Município comparável</SelectItem>
                 <SelectItem value="CONTRATO_PUBLICO_LOCAL">Contrato público local</SelectItem><SelectItem value="CONTRATO_PUBLICO_EXTERNO">Contrato público externo</SelectItem><SelectItem value="OUTRA_FONTE">Outra</SelectItem>
-              </SelectContent></Select></div>
+              </SelectContent></Select>
+              <p className="text-xs text-muted-foreground">Definida pelo município do imóvel: {origemPorMunicipio(av.municipio_ibge, munNovo.municipio_ibge) === 'LOCAL' ? 'mesmo município da avaliação' : 'fora do município da avaliação'}.</p></div>
+            <div className="sm:col-span-6">
+              <ComparavelAviso av={av} mun={munNovo} comparaveis={comparaveis}
+                onSugerir={canEdit ? () => setMun({ nome: munNovo.municipio_nome, uf: munNovo.uf, ibge: munNovo.municipio_ibge, just: '', noCadastro: true }) : undefined}>
+                {mun?.noCadastro && mun.ibge === munNovo.municipio_ibge && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="nd-mun-just">Justificativa para usar {mun.nome}/{mun.uf}</Label>
+                    <Input id="nd-mun-just" value={mun.just} onChange={(e) => setMun({ ...mun, just: e.target.value })} maxLength={500} placeholder="Semelhança de mercado, escassez de dados locais…" />
+                    <div className="flex justify-end gap-2"><Button type="button" size="sm" variant="ghost" onClick={() => setMun(null)}>Cancelar</Button><Button type="button" size="sm" onClick={salvarMun}>Enviar sugestão</Button></div>
+                  </div>
+                )}
+              </ComparavelAviso>
+            </div>
             <div className="grid gap-1.5 sm:col-span-6"><Label htmlFor="nd-obs">Observações</Label><Textarea id="nd-obs" rows={2} value={dado.obs} onChange={(e) => setDado({ ...dado, obs: e.target.value })} maxLength={1000} placeholder="Contato, condições do anúncio, estado do imóvel…" /></div>
           </div>
           {campos.length > 0 && (
@@ -308,7 +338,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       {banco && <BancoImoveisDialog ctx={ctx} open={banco} onOpenChange={setBanco} onNovoDado={(r) => abrirNovo(r)} />}
       {importar && <ImportarAmostrasDialog ctx={ctx} open={importar} onOpenChange={setImportar} />}
 
-      <EditAmostraDialog avaliacaoId={av.id} amostra={editar?.amostra ?? null} indice={editar?.indice ?? 0} onClose={() => setEditar(null)} onSaved={ctx.refresh} />
+      <EditAmostraDialog avaliacaoId={av.id} avaliacao={av} comparaveis={comparaveis} amostra={editar?.amostra ?? null} indice={editar?.indice ?? 0} onClose={() => setEditar(null)} onSaved={ctx.refresh} />
 
       <AlertDialog open={freeze} onOpenChange={setFreeze}>
         <AlertDialogContent>
