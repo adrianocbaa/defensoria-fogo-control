@@ -1,36 +1,36 @@
 import { Fragment, useMemo, useState } from 'react';
-import { Calculator, ChevronDown, ChevronRight, Compass, Hand, Plus, Send, Sparkles, Star, Wand2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Calculator, ChevronDown, ChevronRight, Compass, Hand, Pencil, Send, Sparkles, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
+import { ImpactDialog, type PendingChange } from '../ImpactDialog';
+import { useVariaveisStatus } from '../VariaveisShared';
 import { db, engine, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
-import { TRANSFORM_LABEL, TRANSFORMS, fmtNum } from '@/lib/avaliacao/labels';
+import { TRANSFORM_LABEL, TRANSFORMS, fmtNum, transformLabel } from '@/lib/avaliacao/labels';
+import { codigoExibicao, exibirValor, fonteLabel } from '@/lib/avaliacao/variaveis';
 import { buildCandidates, estimateCandidates, evaluateCandidateLimit, type CandidateMode, type ModelingSettings, type TransformCode } from '@/lib/avaliacao/engine';
 
-const ORIGENS: Record<string, string> = {
-  valor_utilizado: 'Valor utilizado (R$/mês)', valor_unitario: 'Valor unitário (R$/m²)', area_construida: 'Área construída (m²)', area_terreno: 'Área do terreno (m²)',
-};
+const RELACAO: Record<string, string> = { POSITIVA: 'Positiva', NEGATIVA: 'Negativa', INDEFINIDA: 'Indefinida' };
 const STATUS_MOD: Record<string, string> = { RASCUNHO: 'A calcular', CALCULADO: 'Calculado', ERRO: 'Erro no cálculo', EM_VALIDACAO: 'Em validação' };
 const ORIGEM_MOD: Record<string, string> = { MANUAL: 'Manual', GERADO_ASSISTIDO: 'Assistido', GERADO_AMPLA: 'Exploração ampla', SIMULACAO_VARIAVEL: 'Simulação', SIMULACAO_AMOSTRA: 'Simulação' };
 const DEFAULT_SETTINGS: ModelingSettings = { assisted_candidate_soft_limit: 30, exploration_candidate_soft_limit: 200, hard_limit: 2000, require_confirmation_over: 100 };
-const categoricoPossivel = (tipo: string) => tipo === 'PROXY' || tipo === 'CODIGO_ALOCADO';
-const parse = (s: string) => { if (!s.trim()) return null; const n = Number(s.replace(/\./g, '').replace(',', '.')); return Number.isFinite(n) ? n : NaN; };
 
 export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const av = ctx.avaliacao.data!;
-  const [novaVar, setNovaVar] = useState<{ nome: string; codigo: string; papel: string; tipo: string; rel: string; unidade: string; origem: string; trans: string[]; categorica?: boolean } | null>(null);
-  const [edits, setEdits] = useState<Record<string, string>>({});
+  const [changes, setChanges] = useState<PendingChange[] | null>(null);
+  const [transf, setTransf] = useState<{ v: any; sel: string[] } | null>(null);
+  const status = useVariaveisStatus(av.id);
+  const stVar = new Map((status.data?.variaveis ?? []).map((v) => [v.id, v]));
   const [novoModelo, setNovoModelo] = useState<{ dep: string; depT: string; vars: Record<string, string> } | null>(null);
   const [gerar, setGerar] = useState<{ modo: CandidateMode; dep: string; depTs: string[]; obrig: Record<string, boolean> } | null>(null);
   const [confirmar, setConfirmar] = useState<number | null>(null);
@@ -38,13 +38,10 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   const q = useAvalQuery(av.id, 'modelagem', async () => {
-    const [vars, vals, am, cj, mods, link, st] = await Promise.all([
+    const [vars, cj, mods, st] = await Promise.all([
       db.from('avaliacao_variaveis').select('*').eq('avaliacao_id', av.id).eq('ativo', true).order('created_at'),
-      db.from('avaliacao_variavel_valores').select('*').eq('avaliacao_id', av.id).limit(10000),
-      db.from('avaliacao_amostras').select('id, selecionada, habilitada_modelo, dados_mercado(valor_utilizado, valor_unitario, imoveis(area_construida, area_terreno, endereco, numero))').eq('avaliacao_id', av.id).eq('selecionada', true).order('created_at').limit(10000),
       db.from('avaliacao_conjuntos_dados').select('id, versao').eq('avaliacao_id', av.id).eq('status', 'CONGELADO').maybeSingle(),
       db.from('avaliacao_modelos').select('*, avaliacao_modelo_variaveis(variavel_id, transformacao, ordem), modelo_resultado_resumo(*)').eq('avaliacao_id', av.id).order('numero', { ascending: false }),
-      db.from('avaliacao_imoveis').select('imoveis(area_construida, area_terreno)').eq('avaliacao_id', av.id).eq('papel', 'AVALIANDO').maybeSingle(),
       db.from('avaliacao_modeling_settings').select('organization_id, assisted_candidate_soft_limit, exploration_candidate_soft_limit, hard_limit, require_confirmation_over'),
     ]);
     const conjunto = cj.data as any;
@@ -52,70 +49,27 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     const snaps = conjunto ? (await db.from('avaliacao_amostra_snapshots').select('dados').eq('conjunto_id', conjunto.id).limit(10000)).data ?? [] : [];
     const settingsRows = (st.data ?? []) as any[];
     const settings: ModelingSettings = settingsRows.find((r) => r.organization_id) ?? settingsRows.find((r) => !r.organization_id) ?? DEFAULT_SETTINGS;
-    return { vars: (vars.data ?? []) as any[], vals: (vals.data ?? []) as any[], amostras: (am.data ?? []) as any[], conjunto, modelos: (mods.data ?? []) as any[],
-      avaliando: (link.data as any)?.imoveis ?? null, snaps: (snaps as any[]).filter((x) => x.dados?.habilitada_modelo !== false), settings };
+    return { vars: (vars.data ?? []) as any[], conjunto, modelos: (mods.data ?? []) as any[],
+      snaps: (snaps as any[]).filter((x) => x.dados?.habilitada_modelo !== false), settings };
   });
   const vars = q.data?.vars ?? [];
-  const amostras = q.data?.amostras ?? [];
-  const valMap = useMemo(() => {
-    const m = new Map<string, any>();
-    for (const v of q.data?.vals ?? []) m.set(`${v.variavel_id}:${v.scope_type === 'AVALIANDO' ? 'AV' : v.amostra_id}`, v);
-    return m;
-  }, [q.data?.vals]);
   const canModel = ctx.can('model.create');
   const canRun = ctx.can('model.run');
   const canVal = ctx.can('validation.run');
   const dep = vars.find((v) => v.papel === 'DEPENDENTE');
-  const indeps = vars.filter((v) => v.papel !== 'DEPENDENTE');
+  const indeps = vars.filter((v) => v.papel === 'INDEPENDENTE');
+  const espaco = [...(dep ? [dep] : []), ...vars.filter((v) => v.papel !== 'DEPENDENTE')];
 
-  const cellKey = (vid: string, aid: string | 'AV') => `${vid}:${aid}`;
-  const cellValue = (vid: string, aid: string | 'AV') => edits[cellKey(vid, aid)] ?? (valMap.get(cellKey(vid, aid))?.valor?.toString().replace('.', ',') ?? '');
-  const filled = (v: any) => amostras.filter((a) => { const s = cellValue(v.id, a.id); return s !== '' && !Number.isNaN(parse(s)); }).length;
-
-  const salvarVar = async () => {
-    if (!novaVar) return;
-    if (!/^[a-z][a-z0-9_]{0,39}$/.test(novaVar.codigo)) { toast.error('Código: letras minúsculas, números e _ (começando por letra).'); return; }
-    if (novaVar.trans.length === 0) { toast.error('Autorize ao menos uma transformação.'); return; }
-    const { error } = await db.from('avaliacao_variaveis').insert({
-      avaliacao_id: av.id, nome: novaVar.nome.trim() || novaVar.codigo, codigo: novaVar.codigo, papel: novaVar.papel, tipo_variavel: novaVar.tipo,
-      relacao_esperada: novaVar.rel, unidade: novaVar.unidade.trim() || null, transformacoes_autorizadas: novaVar.trans,
-      origem_tipo: novaVar.origem ? 'CAMPO_DADO_MERCADO' : 'MANUAL', campo_origem: novaVar.origem || null,
-      categorica: categoricoPossivel(novaVar.tipo) ? novaVar.categorica !== false : null,
-    });
+  /** Incluir/excluir do espaço de modelagem e relação esperada passam pelo resumo de impacto (o servidor decide o nível). */
+  const mudar = (v: any, campo: 'papel' | 'relacao_esperada', valor: string, de: string, para: string, rotulo: string) =>
+    setChanges([{ entity_type: 'variavel', entity_id: v.id, campo, valor, rotulo: `${rotulo} — ${v.nome}`, de, para }]);
+  const salvarTransf = async () => {
+    if (!transf) return;
+    if (transf.sel.length === 0) { toast.error('Autorize ao menos uma transformação.'); return; }
+    const { error } = await db.from('avaliacao_variaveis').update({ transformacoes_autorizadas: TRANSFORMS.filter((t) => transf.sel.includes(t)) }).eq('id', transf.v.id);
     if (error) { toast.error(avalErrorMessage(error)); return; }
-    setNovaVar(null); ctx.refresh();
-  };
-  const preencher = (v: any) => {
-    const next = { ...edits };
-    for (const a of amostras) {
-      const d = a.dados_mercado; const im = d?.imoveis;
-      const raw = v.campo_origem === 'valor_utilizado' ? d?.valor_utilizado : v.campo_origem === 'valor_unitario' ? d?.valor_unitario
-        : v.campo_origem === 'area_construida' ? im?.area_construida : v.campo_origem === 'area_terreno' ? im?.area_terreno : null;
-      if (raw !== null && raw !== undefined) next[cellKey(v.id, a.id)] = String(raw).replace('.', ',');
-    }
-    const avRaw = v.campo_origem === 'area_construida' ? q.data?.avaliando?.area_construida : v.campo_origem === 'area_terreno' ? q.data?.avaliando?.area_terreno : null;
-    if (avRaw !== null && avRaw !== undefined && v.papel !== 'DEPENDENTE') next[cellKey(v.id, 'AV')] = String(avRaw).replace('.', ',');
-    setEdits(next);
-  };
-  const salvarValores = async () => {
-    setBusy('valores');
-    try {
-      for (const [k, s] of Object.entries(edits)) {
-        const [vid, aid] = k.split(':');
-        const n = parse(s);
-        if (Number.isNaN(n)) throw new Error('valor inválido');
-        const ex = valMap.get(k);
-        if (ex) {
-          const { error } = await db.from('avaliacao_variavel_valores').update({ valor: n }).eq('id', ex.id);
-          if (error) throw error;
-        } else if (n !== null) {
-          const { error } = await db.from('avaliacao_variavel_valores').insert({ avaliacao_id: av.id, variavel_id: vid, scope_type: aid === 'AV' ? 'AVALIANDO' : 'AMOSTRA', amostra_id: aid === 'AV' ? null : aid, valor: n, origem: 'MANUAL' });
-          if (error) throw error;
-        }
-      }
-      toast.success('Valores salvos.' + (q.data?.conjunto ? ' Lembre-se: o modelo usa o conjunto congelado; congele nova versão para incluir mudanças de amostras.' : ''));
-      setEdits({}); ctx.refresh();
-    } catch (e) { toast.error(avalErrorMessage(e, 'Verifique os valores digitados.')); } finally { setBusy(null); }
+    toast.success('Transformações atualizadas. Valem para as próximas gerações; modelos já calculados não mudam.');
+    setTransf(null); ctx.refresh();
   };
 
   const criarModelo = async (spec: { dep: string; depT: string; vars: [string, string][]; origem?: string }) => {
@@ -145,7 +99,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     catch (e) { toast.error(avalErrorMessage(e)); }
   };
   const frozen = (code: string) => (q.data?.snaps ?? []).map((x: any) => x.dados?.variaveis?.[code]).filter((x: unknown) => x !== null && x !== undefined && x !== '').map(Number);
-  const avaliandoVal = (v: any) => { const raw = valMap.get(cellKey(v.id, 'AV'))?.valor; return raw === null || raw === undefined ? [] : [Number(raw)]; };
+  const avaliandoVal = (v: any) => { const raw = stVar.get(v.id)?.valor_avaliando; return raw === null || raw === undefined ? [] : [Number(raw)]; };
   const candSpec = () => {
     if (!gerar || !dep) return null;
     const depSpec = { transforms: dep.transformacoes_autorizadas as TransformCode[], selected: gerar.depTs as TransformCode[], values: frozen(dep.codigo) };
@@ -183,55 +137,42 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   return (
     <div className="space-y-5">
       <Card>
-        <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Variáveis</CardTitle>
-          {canModel && <Button size="sm" variant="outline" onClick={() => setNovaVar({ nome: '', codigo: '', papel: dep ? 'INDEPENDENTE' : 'DEPENDENTE', tipo: 'QUANTITATIVA', rel: 'INDEFINIDA', unidade: '', origem: '', trans: dep ? ['DIRECT', 'LN', 'INVERSE'] : ['DIRECT', 'LN'] })}><Plus className="h-4 w-4 mr-1" />Variável</Button>}
+        <CardHeader className="pb-3 space-y-1">
+          <CardTitle className="text-base">Espaço de modelagem</CardTitle>
+          <p className="text-sm text-muted-foreground">Como testar matematicamente as variáveis da pesquisa? Os valores vêm do cadastro do imóvel e das amostras — não é preciso redigitar. Para incluir outra característica, use a etapa <Link className="underline underline-offset-2" to={`/avaliacoes/${av.id}/variaveis`}>Variáveis</Link>.</p>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
-          {vars.length === 0 ? <p className="p-6 text-sm text-muted-foreground">Defina a variável dependente (ex.: valor unitário) e as independentes (ex.: área).</p> : (
+          {espaco.length === 0 ? <p className="p-6 text-sm text-muted-foreground">Defina as variáveis na etapa <Link className="underline underline-offset-2" to={`/avaliacoes/${av.id}/variaveis`}>Variáveis</Link> antes de modelar.</p> : (
             <Table>
-              <TableHeader><TableRow><TableHead>Variável</TableHead><TableHead>Papel</TableHead><TableHead>Relação esperada</TableHead><TableHead>Transformações</TableHead><TableHead className="text-right">Completude</TableHead><TableHead /></TableRow></TableHeader>
-              <TableBody>{vars.map((v) => (
-                <TableRow key={v.id}>
-                  <TableCell><p className="font-medium">{v.nome}</p><p className="text-xs text-muted-foreground">{v.codigo}{v.unidade ? ` · ${v.unidade}` : ''}</p></TableCell>
-                  <TableCell>{v.papel === 'DEPENDENTE' ? <Badge>Dependente</Badge> : <Badge variant="outline">Independente</Badge>}</TableCell>
-                  <TableCell>{v.relacao_esperada === 'POSITIVA' ? 'Positiva' : v.relacao_esperada === 'NEGATIVA' ? 'Negativa' : 'Indefinida'}</TableCell>
-                  <TableCell className="text-xs">{(v.transformacoes_autorizadas as string[]).map((t) => TRANSFORM_LABEL[t]).join(', ')}</TableCell>
-                  <TableCell className="text-right tabular-nums">{filled(v)}/{amostras.length}{v.papel !== 'DEPENDENTE' && (cellValue(v.id, 'AV') === '' ? ' · avaliando sem valor' : '')}</TableCell>
-                  <TableCell className="text-right">{canModel && v.campo_origem && <Button size="sm" variant="ghost" onClick={() => preencher(v)}><Wand2 className="h-4 w-4 mr-1" />Preencher</Button>}</TableCell>
-                </TableRow>
-              ))}</TableBody>
+              <TableHeader><TableRow><TableHead className="w-16">Incluir</TableHead><TableHead>Variável</TableHead><TableHead>Relação esperada</TableHead><TableHead>Transformações autorizadas</TableHead><TableHead className="text-right">Valores coletados</TableHead></TableRow></TableHeader>
+              <TableBody>{espaco.map((v) => {
+                const sv = stVar.get(v.id);
+                const isDep = v.papel === 'DEPENDENTE';
+                return (
+                  <TableRow key={v.id} className={v.papel === 'DISPONIVEL' ? 'text-muted-foreground' : ''}>
+                    <TableCell>{isDep ? <Badge>Dependente</Badge> : (
+                      <Checkbox aria-label={`Incluir ${v.nome} no espaço de modelagem`} checked={v.papel === 'INDEPENDENTE'} disabled={!canModel}
+                        onCheckedChange={(c) => mudar(v, 'papel', c ? 'INDEPENDENTE' : 'DISPONIVEL', v.papel === 'INDEPENDENTE' ? 'Incluída' : 'Fora', c ? 'Incluída' : 'Fora', 'Espaço de modelagem')} />)}</TableCell>
+                    <TableCell><p className="font-medium text-foreground">{v.nome}</p><p className="text-xs text-muted-foreground">{codigoExibicao(v.codigo)}{sv ? ` · ${fonteLabel(sv)}` : ''}{v.unidade ? ` · ${v.unidade}` : ''}</p></TableCell>
+                    <TableCell>{isDep ? <span className="text-muted-foreground">—</span> : (
+                      <Select value={v.relacao_esperada} disabled={!canModel} onValueChange={(r) => r !== v.relacao_esperada && mudar(v, 'relacao_esperada', r, RELACAO[v.relacao_esperada], RELACAO[r], 'Relação esperada')}>
+                        <SelectTrigger className="h-8 w-32" aria-label={`Relação esperada de ${v.nome}`}><SelectValue /></SelectTrigger>
+                        <SelectContent>{Object.entries(RELACAO).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select>)}</TableCell>
+                    <TableCell className="text-xs">
+                      <span className="inline-flex flex-wrap items-center gap-1">{(v.transformacoes_autorizadas as string[]).map((t) => <Badge key={t} variant="outline" className="font-mono font-normal">{transformLabel(t, isDep)}</Badge>)}
+                        {canModel && <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={`Editar transformações de ${v.nome}`} onClick={() => setTransf({ v, sel: [...v.transformacoes_autorizadas] })}><Pencil className="h-3.5 w-3.5" /></Button>}</span>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">{sv ? <>
+                      <span className={sv.obrigatoria && sv.amostras_completas < sv.amostras_total ? 'text-destructive' : ''}>{sv.amostras_completas}/{sv.amostras_total} amostras</span>
+                      {sv.precisa_avaliando && <span className="block text-muted-foreground">avaliando: {exibirValor(sv, sv.valor_avaliando)}</span>}</> : '—'}</TableCell>
+                  </TableRow>
+                );
+              })}</TableBody>
             </Table>
           )}
+          <p className="px-6 py-3 text-xs text-muted-foreground">Mudar a relação esperada de variável usada em modelo calculado invalida a validação. Mudar transformações vale só para as próximas gerações.</p>
         </CardContent>
       </Card>
-
-      {vars.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Valores por amostra</CardTitle>
-            {canModel && <Button size="sm" onClick={salvarValores} disabled={Object.keys(edits).length === 0 || busy === 'valores'}>Salvar valores</Button>}
-          </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
-            <Table>
-              <TableHeader><TableRow><TableHead>Dado</TableHead>{vars.map((v) => <TableHead key={v.id} className="min-w-28">{v.codigo}</TableHead>)}</TableRow></TableHeader>
-              <TableBody>
-                <TableRow className="bg-muted/40">
-                  <TableCell className="font-medium">Avaliando</TableCell>
-                  {vars.map((v) => <TableCell key={v.id}>{v.papel === 'DEPENDENTE' ? <span className="text-xs text-muted-foreground">a estimar</span> :
-                    <Input aria-label={`${v.codigo} do avaliando`} className="h-8" inputMode="decimal" disabled={!canModel} value={cellValue(v.id, 'AV')} onChange={(e) => setEdits({ ...edits, [cellKey(v.id, 'AV')]: e.target.value })} />}</TableCell>)}
-                </TableRow>
-                {amostras.map((a, i) => (
-                  <TableRow key={a.id} className={a.habilitada_modelo ? '' : 'opacity-60'}>
-                    <TableCell className="whitespace-nowrap">{i + 1}. {[a.dados_mercado?.imoveis?.endereco, a.dados_mercado?.imoveis?.numero].filter(Boolean).join(', ') || 'Amostra'}</TableCell>
-                    {vars.map((v) => <TableCell key={v.id}><Input aria-label={`${v.codigo} da amostra ${i + 1}`} className="h-8" inputMode="decimal" disabled={!canModel} value={cellValue(v.id, a.id)} onChange={(e) => setEdits({ ...edits, [cellKey(v.id, a.id)]: e.target.value })} /></TableCell>)}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between space-y-0 flex-wrap gap-2">
@@ -255,7 +196,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           </CardContent>
         )}
         <CardContent className="p-0 overflow-x-auto">
-          {!q.data?.conjunto ? <p className="p-6 text-sm text-muted-foreground">Preencha as variáveis e congele o conjunto de dados no bloco Mercado para criar modelos.</p> :
+          {!q.data?.conjunto ? <p className="p-6 text-sm text-muted-foreground">Congele o conjunto de dados no bloco Mercado para criar modelos.</p> :
             (q.data.modelos.length === 0 ? <p className="p-6 text-sm text-muted-foreground">Nenhum modelo. Conjunto vigente: versão {q.data.conjunto.versao}.</p> : (
               <Table>
                 <TableHeader><TableRow><TableHead /><TableHead>Modelo</TableHead><TableHead>Origem</TableHead><TableHead>Equação</TableHead><TableHead className="text-right">n</TableHead><TableHead className="text-right">R² aj.</TableHead><TableHead className="text-right">Pior sig.</TableHead><TableHead className="text-right">Amplitude IC</TableHead><TableHead>Situação</TableHead><TableHead /></TableRow></TableHeader>
@@ -291,32 +232,17 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         </CardContent>
       </Card>
 
-      <Dialog open={!!novaVar} onOpenChange={(o) => !o && setNovaVar(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Nova variável</DialogTitle></DialogHeader>
-          {novaVar && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-1.5"><Label>Nome</Label><Input value={novaVar.nome} onChange={(e) => setNovaVar({ ...novaVar, nome: e.target.value })} maxLength={80} /></div>
-              <div className="grid gap-1.5"><Label>Código</Label><Input value={novaVar.codigo} onChange={(e) => setNovaVar({ ...novaVar, codigo: e.target.value.toLowerCase() })} maxLength={40} placeholder="ex.: area" /></div>
-              <div className="grid gap-1.5"><Label>Papel</Label><Select value={novaVar.papel} onValueChange={(p) => setNovaVar({ ...novaVar, papel: p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="DEPENDENTE" disabled={!!dep}>Dependente</SelectItem><SelectItem value="INDEPENDENTE">Independente</SelectItem></SelectContent></Select></div>
-              <div className="grid gap-1.5"><Label>Tipo</Label><Select value={novaVar.tipo} onValueChange={(p) => setNovaVar({ ...novaVar, tipo: p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="QUANTITATIVA">Quantitativa</SelectItem><SelectItem value="DICOTOMICA">Dicotômica</SelectItem><SelectItem value="PROXY">Proxy</SelectItem><SelectItem value="CODIGO_ALOCADO">Código alocado</SelectItem></SelectContent></Select></div>
-              <div className="grid gap-1.5"><Label>Relação esperada</Label><Select value={novaVar.rel} onValueChange={(p) => setNovaVar({ ...novaVar, rel: p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="POSITIVA">Positiva</SelectItem><SelectItem value="NEGATIVA">Negativa</SelectItem><SelectItem value="INDEFINIDA">Indefinida</SelectItem></SelectContent></Select></div>
-              {categoricoPossivel(novaVar.tipo) && (
-                <label className="flex items-start gap-2 text-sm sm:col-span-2"><Checkbox checked={novaVar.categorica !== false} onCheckedChange={(c) => setNovaVar({ ...novaVar, categorica: !!c })} />
-                  <span>Representa categorias ou grupos discretos <span className="block text-xs text-muted-foreground">Quando marcado, entra na verificação de micronumerosidade.</span></span></label>
-              )}
-              <div className="grid gap-1.5"><Label>Unidade</Label><Input value={novaVar.unidade} onChange={(e) => setNovaVar({ ...novaVar, unidade: e.target.value })} maxLength={20} /></div>
-              <div className="grid gap-1.5 sm:col-span-2"><Label>Preencher a partir de</Label><Select value={novaVar.origem || 'MANUAL'} onValueChange={(p) => setNovaVar({ ...novaVar, origem: p === 'MANUAL' ? '' : p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="MANUAL">Digitação manual</SelectItem>{Object.entries(ORIGENS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
-              <div className="grid gap-1.5 sm:col-span-2"><Label>Transformações autorizadas</Label>
-                <div className="flex flex-wrap gap-3">{TRANSFORMS.map((t) => (
-                  <label key={t} className="flex items-center gap-1.5 text-sm"><Checkbox checked={novaVar.trans.includes(t)} onCheckedChange={(c) => setNovaVar({ ...novaVar, trans: c ? [...novaVar.trans, t] : novaVar.trans.filter((x) => x !== t) })} />{TRANSFORM_LABEL[t]}</label>
-                ))}</div>
-              </div>
-            </div>
-          )}
-          <DialogFooter><Button variant="outline" onClick={() => setNovaVar(null)}>Cancelar</Button><Button onClick={salvarVar}>Salvar</Button></DialogFooter>
+      <Dialog open={!!transf} onOpenChange={(o) => !o && setTransf(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Transformações autorizadas — {transf?.v.nome}</DialogTitle>
+            <DialogDescription>Somente as transformações marcadas serão testadas nas próximas gerações de modelos.</DialogDescription></DialogHeader>
+          {transf && <div className="flex flex-wrap gap-3">{TRANSFORMS.map((t) => (
+            <label key={t} className="flex items-center gap-1.5 text-sm font-mono"><Checkbox checked={transf.sel.includes(t)} onCheckedChange={(c) => setTransf({ ...transf, sel: c ? [...transf.sel, t] : transf.sel.filter((x) => x !== t) })} />{transformLabel(t, transf.v.papel === 'DEPENDENTE')}</label>
+          ))}</div>}
+          <DialogFooter><Button variant="outline" onClick={() => setTransf(null)}>Cancelar</Button><Button onClick={salvarTransf}>Salvar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+      <ImpactDialog avaliacaoId={av.id} changes={changes} onClose={() => setChanges(null)} onApplied={ctx.refresh} />
 
       <Dialog open={!!novoModelo} onOpenChange={(o) => !o && setNovoModelo(null)}>
         <DialogContent className="max-w-lg">
@@ -324,7 +250,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           {novoModelo && dep && (
             <div className="grid gap-3">
               <div className="grid grid-cols-[1fr_140px] items-center gap-2"><span className="text-sm font-medium">{dep.nome} (dependente)</span>
-                <Select value={novoModelo.depT} onValueChange={(t) => setNovoModelo({ ...novoModelo, depT: t })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(dep.transformacoes_autorizadas as string[]).map((t) => <SelectItem key={t} value={t}>{TRANSFORM_LABEL[t]}</SelectItem>)}</SelectContent></Select></div>
+                <Select value={novoModelo.depT} onValueChange={(t) => setNovoModelo({ ...novoModelo, depT: t })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(dep.transformacoes_autorizadas as string[]).map((t) => <SelectItem key={t} value={t}>{transformLabel(t, true)}</SelectItem>)}</SelectContent></Select></div>
               {indeps.map((v) => (
                 <div key={v.id} className="grid grid-cols-[1fr_140px] items-center gap-2"><span className="text-sm">{v.nome}</span>
                   <Select value={novoModelo.vars[v.id] ?? 'NONE'} onValueChange={(t) => setNovoModelo({ ...novoModelo, vars: { ...novoModelo.vars, [v.id]: t } })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="NONE">Fora do modelo</SelectItem>{(v.transformacoes_autorizadas as string[]).map((t) => <SelectItem key={t} value={t}>{TRANSFORM_LABEL[t]}</SelectItem>)}</SelectContent></Select></div>
@@ -346,7 +272,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           {gerar && dep && (
             <div className="grid gap-3 text-sm">
               {gerar.modo === 'ASSISTIDO' && <div><p className="font-medium mb-1">Transformações da dependente</p>
-                <div className="flex flex-wrap gap-3">{(dep.transformacoes_autorizadas as string[]).map((t) => <label key={t} className="flex items-center gap-1.5"><Checkbox checked={gerar.depTs.includes(t)} onCheckedChange={(c) => setGerar({ ...gerar, depTs: c ? [...gerar.depTs, t] : gerar.depTs.filter((x) => x !== t) })} />{TRANSFORM_LABEL[t]}</label>)}</div></div>}
+                <div className="flex flex-wrap gap-3">{(dep.transformacoes_autorizadas as string[]).map((t) => <label key={t} className="flex items-center gap-1.5"><Checkbox checked={gerar.depTs.includes(t)} onCheckedChange={(c) => setGerar({ ...gerar, depTs: c ? [...gerar.depTs, t] : gerar.depTs.filter((x) => x !== t) })} />{transformLabel(t, true)}</label>)}</div></div>}
               {gerar.modo === 'ASSISTIDO' && <div><p className="font-medium mb-1">Variáveis obrigatórias</p>
                 {indeps.map((v) => <label key={v.id} className="flex items-center gap-1.5 py-0.5"><Checkbox checked={!!gerar.obrig[v.id]} onCheckedChange={(c) => setGerar({ ...gerar, obrig: { ...gerar.obrig, [v.id]: !!c } })} />{v.nome} <span className="text-muted-foreground">({(v.transformacoes_autorizadas as string[]).length} transformações)</span></label>)}</div>}
               {gerar.modo === 'AMPLA' && <p className="text-muted-foreground">Espaço: {indeps.length} variáveis independentes e {(dep.transformacoes_autorizadas as string[]).length} transformações da dependente, todas dentro do que foi autorizado.</p>}
