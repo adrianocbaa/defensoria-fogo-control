@@ -3,7 +3,7 @@
 // Regras técnicas (limites, tolerâncias, faixas) NÃO ficam aqui: chegam por política versionada.
 
 export const ENGINE_NAME = 'SiDIF Statistical Engine';
-export const ENGINE_VERSION = '1.0.0';
+export const ENGINE_VERSION = '1.1.0';
 
 export type TransformCode = 'DIRECT' | 'INVERSE' | 'LN' | 'SQUARE' | 'SQRT' | 'INV_SQUARE' | 'INV_SQRT' | 'POWER';
 
@@ -242,9 +242,28 @@ export interface RegressionResult {
   correlation: { codes: string[]; matrix: number[][] };
   normality: { z: number; observed: number }[];
   ranges: Record<string, { min: number; max: number }>;
+  /** Observado da dependente na escala original (alinhado a sampleIds). */
+  yOriginal: number[];
+  /** Quadro de análise da variância (mesmas somas usadas em R², F e MSE). */
+  anova: AnovaRow[];
+  /** Estatísticas descritivas por variável, nas escalas original e transformada. */
+  variableStats: VariableStats[];
   /** (X'X)^-1 — necessário à projeção. */
   covUnscaled: number[][];
   sampleIds: string[];
+}
+
+export interface AnovaRow { source: 'REGRESSAO' | 'RESIDUO' | 'TOTAL'; ss: number; df: number; ms: number; f: number | null; p: number | null }
+
+export interface VariableStats {
+  code: string; role: 'DEPENDENTE' | 'INDEPENDENTE'; transform: TransformCode; power?: number; n: number;
+  min: number; max: number; mean: number; stdDev: number; amplitude: number;
+  minTransformed: number; maxTransformed: number; meanTransformed: number; stdDevTransformed: number;
+}
+
+function sampleStd(v: number[], m: number): number {
+  if (v.length < 2) return 0;
+  return Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / (v.length - 1));
 }
 
 const NORMALITY_BANDS = [1, 1.64, 1.96];
@@ -338,13 +357,30 @@ export function fitRegression(input: RegressionInput): RegressionResult {
   const ranges: Record<string, { min: number; max: number }> = {};
   for (const v of all) ranges[v.code] = { min: Math.min(...v.values), max: Math.max(...v.values) };
 
+  const anova: AnovaRow[] = [
+    { source: 'REGRESSAO', ss: ssr, df: dfReg, ms: ssr / dfReg, f, p: fPValue },
+    { source: 'RESIDUO', ss: sse, df: dfRes, ms: mse, f: null, p: null },
+    { source: 'TOTAL', ss: sst, df: n - 1, ms: sst / (n - 1), f: null, p: null },
+  ];
+  const variableStats: VariableStats[] = all.map((v, idx) => {
+    const tv = series[idx];
+    const m = mean(v.values), mt = mean(tv);
+    const min = Math.min(...v.values), max = Math.max(...v.values);
+    return {
+      code: v.code, role: idx === 0 ? 'DEPENDENTE' : 'INDEPENDENTE', transform: v.transform, power: v.power, n,
+      min, max, mean: m, stdDev: sampleStd(v.values, m), amplitude: max - min,
+      minTransformed: Math.min(...tv), maxTransformed: Math.max(...tv), meanTransformed: mt, stdDevTransformed: sampleStd(tv, mt),
+    };
+  });
+
   const result: RegressionResult = {
     engine: { name: ENGINE_NAME, version: ENGINE_VERSION },
     n, k, p, dfReg, dfRes, coefficients,
     yTransformed: y, yhat, residuals, sse, sst, ssr, mse, s,
     r2, r2Adj, rRegressao: Math.sqrt(Math.max(0, r2)), rEstimativa,
     f, fPValue, leverage, residualsStd, residualsRelative, estimatedOriginal, cook,
-    correlation: { codes, matrix }, normality, ranges, covUnscaled: C, sampleIds,
+    correlation: { codes, matrix }, normality, ranges, yOriginal: [...dependent.values], anova, variableStats,
+    covUnscaled: C, sampleIds,
   };
   const scalars = [sse, sst, ssr, mse, r2, r2Adj, f, fPValue, rEstimativa];
   if (scalars.some((v) => !Number.isFinite(v)) || coefficients.some((c) => !Number.isFinite(c.beta) || !Number.isFinite(c.stdError))) {
