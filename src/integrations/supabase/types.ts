@@ -12462,6 +12462,127 @@ export type Database = {
         Args: { p_ajustes: Json; p_motivo: string }
         Returns: number
       }
+      aval_accept_model: {
+        Args: { p_justificativa: string; p_validation: string }
+        Returns: string
+      }
+      aval_audit: {
+        Args: {
+          _av: string
+          _details?: Json
+          _entity: string
+          _entity_id: string
+          _event: string
+        }
+        Returns: undefined
+      }
+      aval_bump_stage: {
+        Args: { _av: string; _stage: string }
+        Returns: undefined
+      }
+      aval_can_edit: {
+        Args: { _avaliacao: string; _perm: string }
+        Returns: boolean
+      }
+      aval_cancel: {
+        Args: { p_avaliacao: string; p_motivo: string }
+        Returns: undefined
+      }
+      aval_create: {
+        Args: {
+          p_municipio_ibge: string
+          p_municipio_nome: string
+          p_processo?: string
+          p_responsavel_id: string
+          p_tipo: string
+          p_tipo_imovel: string
+          p_uf: string
+        }
+        Returns: string
+      }
+      aval_dataset_freeze: { Args: { p_conjunto: string }; Returns: string }
+      aval_dataset_prepare: { Args: { p_avaliacao: string }; Returns: string }
+      aval_fmt_money: { Args: { v: number }; Returns: string }
+      aval_fmt_num: { Args: { casas: number; v: number }; Returns: string }
+      aval_has_global_perm: { Args: { _perm: string }; Returns: boolean }
+      aval_has_perm: {
+        Args: { _avaliacao: string; _perm: string }
+        Returns: boolean
+      }
+      aval_hash: { Args: { _j: Json }; Returns: string }
+      aval_invalidate: {
+        Args: {
+          p_av: string
+          p_motivo: string
+          p_nivel: string
+          p_secoes?: string[]
+        }
+        Returns: Json
+      }
+      aval_is_privileged: { Args: never; Returns: boolean }
+      aval_is_reader: { Args: { _org: string }; Returns: boolean }
+      aval_is_technical: { Args: { _uid: string }; Returns: boolean }
+      aval_keep_snapshot: {
+        Args: { p_amostra: string; p_avaliacao: string }
+        Returns: undefined
+      }
+      aval_list_tecnicos: {
+        Args: never
+        Returns: {
+          cargo: string
+          display_name: string
+          user_id: string
+        }[]
+      }
+      aval_manual_review: {
+        Args: {
+          p_codigo: string
+          p_decisao: string
+          p_justificativa: string
+          p_modelo: string
+        }
+        Returns: string
+      }
+      aval_model_create: {
+        Args: {
+          p_amostras_excluidas?: string[]
+          p_avaliacao: string
+          p_conjunto: string
+          p_dep_power: number
+          p_dep_transf: string
+          p_dep_var: string
+          p_espaco?: string
+          p_modelo_origem?: string
+          p_nome: string
+          p_origem_tipo?: string
+          p_vars: Json
+        }
+        Returns: string
+      }
+      aval_model_flag: {
+        Args: { p_candidato: boolean; p_favorito: boolean; p_modelo: string }
+        Returns: undefined
+      }
+      aval_my_perms: { Args: { p_avaliacao: string }; Returns: string[] }
+      aval_next_sequence: {
+        Args: { _ano: number; _org: string; _scope: string }
+        Returns: number
+      }
+      aval_normalize_text: { Args: { t: string }; Returns: string }
+      aval_send_to_validation: {
+        Args: { p_modelo: string }
+        Returns: undefined
+      }
+      aval_set_member: {
+        Args: {
+          p_ativo?: boolean
+          p_avaliacao: string
+          p_papel: string
+          p_user: string
+        }
+        Returns: undefined
+      }
+      aval_variable_in_use: { Args: { _var: string }; Returns: boolean }
       can_edit: { Args: { user_uuid?: string }; Returns: boolean }
       can_edit_obra: {
         Args: { obra_uuid: string; user_uuid?: string }
