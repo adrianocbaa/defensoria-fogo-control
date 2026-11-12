@@ -23,9 +23,12 @@ export interface ModelingSettings {
   require_confirmation_over: number | null;
 }
 
-/** Transformações autorizadas que são válidas para todos os valores (domínio). */
+/**
+ * Transformações autorizadas que são válidas para todos os valores (domínio).
+ * POWER exige expoente explícito do profissional e fica restrita ao modo Manual.
+ */
 export function validTransforms(transforms: TransformCode[], values: number[]): TransformCode[] {
-  return transforms.filter((t) => values.every((x) => Number.isFinite(x) && transformDomainOk(t, x)));
+  return transforms.filter((t) => t !== 'POWER' && values.every((x) => Number.isFinite(x) && transformDomainOk(t, x)));
 }
 
 /** Quantidade estimada antes de enumerar (já descontando transformações inválidas pelo domínio). */
