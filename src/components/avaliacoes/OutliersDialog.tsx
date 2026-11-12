@@ -33,8 +33,8 @@ function NivelTag({ nivel }: { nivel: DadosOutliers['nivel'] }) {
   return <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${cls}`}><Icon className="h-4 w-4 shrink-0" aria-hidden />{NIVEL_OUTLIER_LABEL[nivel]}</span>;
 }
 
-function Suspeita({ a, d, regra, decisao, autor, pode, onDecidir }: {
-  a: AmostraOutlier; d: DadosOutliers; regra: DadosOutliers['politica']['justificativa_manter']; decisao: EventoDecisao | undefined; autor: string;
+function Suspeita({ a, regra, decisao, autor, pode, onDecidir }: {
+  a: AmostraOutlier; regra: DadosOutliers['politica']['justificativa_manter']; decisao: EventoDecisao | undefined; autor: string;
   pode: boolean; onDecidir: Props['onDecidir'];
 }) {
   const [just, setJust] = useState('');
@@ -117,7 +117,7 @@ export function OutliersDialog({ open, onOpenChange, dados: d, modeloNome, decis
             <ul className="space-y-2">
               {d.suspeitas.map((a) => {
                 const dec = decisoes[a.amostra_id];
-                return <Suspeita key={a.amostra_id} a={a} d={d} regra={d.politica.justificativa_manter} decisao={dec} autor={nomeUsuario(dec?.actor_id ?? null)}
+                return <Suspeita key={a.amostra_id} a={a} regra={d.politica.justificativa_manter} decisao={dec} autor={nomeUsuario(dec?.actor_id ?? null)}
                   pode={podeDecidir} onDecidir={onDecidir} />;
               })}
             </ul>
