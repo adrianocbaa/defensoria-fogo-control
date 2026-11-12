@@ -10,7 +10,7 @@ import {
   canonicalJson, describeEngineError, ENGINE_NAME, ENGINE_VERSION, EngineError, fitRegression, project,
   type PrecisionBand, type RegressionInput, type RegressionResult, type TransformCode,
 } from '../_shared/avaliacao/engine.ts';
-import { type CookRule, type FoundationGrade, type FoundationPolicy, type ManualDecision, type PolicyRule, validateModel, type VariableMeta } from '../_shared/avaliacao/validator.ts';
+import { type CookRule, type FoundationGrade, type FoundationPolicy, type ManualDecision, type OutlierDecision, type PolicyRule, validateModel, type VariableMeta } from '../_shared/avaliacao/validator.ts';
 import { buildRunPayload, buildValidationPayload } from '../_shared/avaliacao/persist.ts';
 import { buildLaudoDocx, buildLaudoPdf, issuedLaudoData, type LaudoData } from '../_shared/avaliacao/laudoDoc.ts';
 import { imageInfo } from '../_shared/avaliacao/images.ts';
@@ -189,17 +189,26 @@ async function runValidation(req: Request, admin: SupabaseClient, caller0: Calle
     code: v.codigo, tipo: v.tipo_variavel, categorica: v.categorica ?? null, relacao_esperada: v.relacao_esperada, transform: mv.transformacao, power: mv.power ?? undefined,
     values: input.independents[i].values,
   }));
-  const [{ data: reviews }, { data: grades }, cookRule] = await Promise.all([
+  const [{ data: reviews }, { data: grades }, cookRule, { data: outEvents }] = await Promise.all([
     admin.from('validation_manual_reviews').select('codigo, decisao, created_at').eq('modelo_id', modeloId).order('created_at'),
     admin.from('validation_foundation_manual_grades').select('codigo, grau, created_at').eq('modelo_id', modeloId).order('created_at'),
     loadCookRule(admin, m0.organization_id),
+    admin.from('audit_events').select('details_json, created_at').eq('organization_id', m0.organization_id).eq('entity_type', 'modelo').eq('entity_id', modeloId)
+      .eq('event_type', 'OUTLIER_DECISION').order('created_at').limit(10000),
   ]);
   const manual: Record<string, ManualDecision> = {};
   for (const r of reviews ?? []) manual[(r as any).codigo] = (r as any).decisao;
+  // Decisões por amostra do critério Outliers (mesma execução; a mais recente vale) substituem a análise genérica do critério.
+  const outlierDecisions: Record<string, OutlierDecision> = {};
+  for (const e of outEvents ?? []) {
+    const d = (e as any).details_json ?? {};
+    if (d.execucao === ex.id && d.amostra_id && (d.decisao === 'MANTER' || d.decisao === 'EXCLUIR')) outlierDecisions[d.amostra_id] = { decisao: d.decisao, justificativa: d.justificativa ?? null };
+  }
+  if (Object.keys(outlierDecisions).length) delete manual.OUTLIERS;
   const foundationGrades: Record<string, FoundationGrade> = {};
   for (const g of grades ?? []) foundationGrades[(g as any).codigo] = (g as any).grau;
   const out = validateModel(fit, projection, vars, { transform: b.modelo.dependente_transformacao, power: b.modelo.dependente_power ?? undefined }, rules, manual,
-    { cookRule, foundation, foundationGrades });
+    { cookRule, foundation, foundationGrades, outlierDecisions });
   const payload = buildValidationPayload(
     { organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, modelo_id: modeloId, execucao_id: ex.id, created_by: caller.userId },
     policy, out, manual, { cook_regra: cookRule, fundamentacao_estruturada: out.foundation?.summary ?? null });

@@ -1,6 +1,6 @@
 // Validador do modelo (13 critérios). Todos os limites vêm da política versionada (validation_policy_rules).
 import {
-  type ProjectionResult, type RegressionResult, type TransformCode, transformMonotonicSign,
+  type ProjectionResult, type RegressionResult, studentTwoTailedP, type TransformCode, transformMonotonicSign,
 } from './engine.ts';
 
 export type CriterionStatus = 'ATENDE' | 'NAO_ATENDE' | 'REQUER_ANALISE' | 'NAO_APLICAVEL' | 'NAO_VERIFICADO';
@@ -86,6 +86,8 @@ export interface ValidateOptions {
   foundation?: FoundationPolicy | null;
   /** Graus atribuídos pelo profissional a itens sem regra automática. */
   foundationGrades?: Record<string, FoundationGrade>;
+  /** Decisões do avaliador sobre amostras sinalizadas no critério Outliers (última decisão por amostra, mesma execução). */
+  outlierDecisions?: Record<string, OutlierDecision>;
 }
 
 export interface ValidationOutput {
@@ -157,6 +159,142 @@ export function categoricalVariables(vars: VariableMeta[], tipos: string[] = CAT
     if (v.tipo === 'DICOTOMICA') return true;
     return v.categorica !== false;
   });
+}
+
+// ---------------------------------------------------------------- Outliers (critério 12)
+export type OutlierMetric = 'STUDENTIZADO_EXTERNO' | 'RESIDUO_DP';
+export type OutlierLevel = 'SEM_INDICIO' | 'MODERADO' | 'FORTE';
+export type OutlierJustification = 'SEMPRE' | 'FORTE' | 'OPCIONAL';
+export interface OutlierDecision { decisao: 'MANTER' | 'EXCLUIR'; justificativa?: string | null }
+
+/** Limites do critério Outliers definidos na política versionada. */
+export interface OutlierPolicy {
+  metrica: OutlierMetric;
+  limite_moderado: number;
+  limite_forte: number;
+  alpha: number;
+  /** p do resíduo studentizado externo < alpha sinaliza indício moderado. */
+  p_moderado: boolean;
+  /** p do resíduo studentizado externo < alpha/n (Bonferroni) sinaliza forte indício. */
+  bonferroni: boolean;
+  justificativa_manter: OutlierJustification;
+  origem: string | null;
+}
+
+export interface OutlierSample {
+  amostra_id: string; ordem: number;
+  residuo_dp: number; studentizado_externo: number | null; p_valor: number | null;
+  cook: number; leverage: number;
+  nivel: OutlierLevel; motivos: string[];
+}
+
+export const OUTLIER_METRIC_LABEL: Record<OutlierMetric, string> = {
+  STUDENTIZADO_EXTERNO: 'resíduo studentizado externo',
+  RESIDUO_DP: 'Resíduo/DP',
+};
+
+/** Política sem limites (versões antigas) → null: o critério mantém o comportamento anterior (requer análise). */
+export function outlierPolicy(th: Record<string, any> | null | undefined): OutlierPolicy | null {
+  if (!th || th.limite_moderado === undefined || th.limite_moderado === null) return null;
+  const num = (x: unknown, d: number) => (Number.isFinite(Number(x)) ? Number(x) : d);
+  const metrica: OutlierMetric = th.metrica === 'STUDENTIZADO_EXTERNO' ? 'STUDENTIZADO_EXTERNO' : 'RESIDUO_DP';
+  const just = ['SEMPRE', 'FORTE', 'OPCIONAL'].includes(th.justificativa_manter) ? th.justificativa_manter : 'FORTE';
+  return {
+    metrica, limite_moderado: num(th.limite_moderado, 2), limite_forte: num(th.limite_forte, 3), alpha: num(th.alpha, 0.05),
+    p_moderado: th.p_moderado === true, bonferroni: th.bonferroni !== false, justificativa_manter: just, origem: th.origem ?? null,
+  };
+}
+
+/**
+ * Resíduo studentizado externo (deleção): tᵢ = eᵢ·√[(n−p−1) / (SSE·(1−hᵢ) − eᵢ²)], com p-valor bicaudal t(n−p−1).
+ * Usa somente resíduos, leverage e SSE já calculados; não reajusta a regressão. Null quando gl < 1 ou hᵢ ≈ 1.
+ */
+export function externallyStudentized(fit: Pick<RegressionResult, 'n' | 'p' | 'sse' | 'residuals' | 'leverage'>): { df: number; t: (number | null)[]; p: (number | null)[] } {
+  const df = fit.n - fit.p - 1;
+  const t = fit.residuals.map((e, i) => {
+    if (df < 1) return null;
+    const den = fit.sse * (1 - fit.leverage[i]) - e * e;
+    if (!(den > 1e-14 * Math.max(1, fit.sse))) return null;
+    const v = e * Math.sqrt(df / den);
+    return Number.isFinite(v) ? v : null;
+  });
+  return { df, t, p: t.map((v) => (v === null ? null : studentTwoTailedP(v, df))) };
+}
+
+const fmt2 = (v: number) => v.toFixed(2).replace('.', ',');
+const fmtP = (v: number) => (v < 0.0001 ? '< 0,0001' : v.toFixed(4).replace('.', ','));
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** Classificação em três níveis. Nunca reprova: mesmo forte indício fica para decisão do avaliador. */
+export function classifyOutliers(fit: RegressionResult, pol: OutlierPolicy) {
+  const st = externallyStudentized(fit);
+  const studAvail = st.t.some((x) => x !== null);
+  const metricaUsada: OutlierMetric = pol.metrica === 'STUDENTIZADO_EXTERNO' && studAvail ? 'STUDENTIZADO_EXTERNO' : 'RESIDUO_DP';
+  const bonfLim = pol.alpha / fit.n;
+  const amostras: OutlierSample[] = fit.residualsStd.map((rd, i) => {
+    const t = st.t[i]; const pv = st.p[i];
+    const m = Math.abs(metricaUsada === 'STUDENTIZADO_EXTERNO' ? (t ?? rd) : rd);
+    const label = metricaUsada === 'STUDENTIZADO_EXTERNO' ? '|resíduo studentizado externo|' : '|Resíduo/DP|';
+    const motivos: string[] = [];
+    let nivel: OutlierLevel = 'SEM_INDICIO';
+    if (m > pol.limite_forte) { nivel = 'FORTE'; motivos.push(`${label} ${fmt2(m)} > ${fmt2(pol.limite_forte)}`); }
+    if (pol.bonferroni && pv !== null && pv < bonfLim) { nivel = 'FORTE'; motivos.push(`p-valor ${fmtP(pv)} < ${fmtP(bonfLim)} (Bonferroni α/n)`); }
+    if (nivel !== 'FORTE') {
+      if (m > pol.limite_moderado) { nivel = 'MODERADO'; motivos.push(`${label} ${fmt2(m)} > ${fmt2(pol.limite_moderado)}`); }
+      if (pol.p_moderado && pv !== null && pv < pol.alpha) { nivel = 'MODERADO'; motivos.push(`p-valor ${fmtP(pv)} < ${fmt2(pol.alpha)}`); }
+    }
+    return { amostra_id: fit.sampleIds[i], ordem: i + 1, residuo_dp: rd, studentizado_externo: t, p_valor: pv, cook: fit.cook[i], leverage: fit.leverage[i], nivel, motivos };
+  });
+  const valorMetrica = (a: OutlierSample) => Math.abs(metricaUsada === 'STUDENTIZADO_EXTERNO' ? (a.studentizado_externo ?? a.residuo_dp) : a.residuo_dp);
+  const maior = amostras.reduce((b, a) => (valorMetrica(a) > valorMetrica(b) ? a : b), amostras[0]);
+  const suspeitas = amostras.filter((a) => a.nivel !== 'SEM_INDICIO').sort((a, b) => valorMetrica(b) - valorMetrica(a));
+  const nivel: OutlierLevel = suspeitas.some((a) => a.nivel === 'FORTE') ? 'FORTE' : suspeitas.length ? 'MODERADO' : 'SEM_INDICIO';
+  return {
+    nivel, metrica: metricaUsada, metrica_politica: pol.metrica,
+    aviso_metrica: pol.metrica !== metricaUsada ? 'Resíduo studentizado externo indisponível (graus de liberdade insuficientes); usado |Resíduo/DP|.' : null,
+    n: fit.n, df_studentizado: st.df, maior: { valor: valorMetrica(maior), ordem: maior.ordem, amostra_id: maior.amostra_id },
+    acima_limite: amostras.filter((a) => valorMetrica(a) > pol.limite_moderado).length,
+    bonferroni_limite: pol.bonferroni ? bonfLim : null,
+    amostras, suspeitas,
+  };
+}
+
+export function outlierJustificationRequired(decisao: OutlierDecision['decisao'], nivel: OutlierLevel, regra: OutlierJustification): boolean {
+  if (decisao === 'EXCLUIR') return true;
+  return regra === 'SEMPRE' || (regra === 'FORTE' && nivel === 'FORTE');
+}
+
+function evaluateOutliers(fit: RegressionResult, th: Record<string, any>, decisions: Record<string, OutlierDecision>): Omit<CriterionResult, 'codigo' | 'numero' | 'nome' | 'origem' | 'modo' | 'bloqueante'> {
+  const pol = outlierPolicy(th);
+  if (!pol) {
+    const maxStd = Math.max(...fit.residualsStd.map(Math.abs));
+    return { grau: null, valor: maxStd, status: 'REQUER_ANALISE', detalhe: `Maior |Resíduo/DP|: ${maxStd.toFixed(2)}. Classificação automática não validada — requer análise.` };
+  }
+  const c = classifyOutliers(fit, pol);
+  const label = c.metrica === 'STUDENTIZADO_EXTERNO' ? '|resíduo studentizado externo|' : '|Resíduo/DP|';
+  const resumo = `Maior ${label}: ${fmt2(c.maior.valor)} · limite indicativo ${fmt2(pol.limite_moderado)} · amostras acima de ${fmt2(pol.limite_moderado)}: ${c.acima_limite} de ${c.n}`;
+  const dadosBase = { ...c, politica: pol };
+  if (c.nivel === 'SEM_INDICIO') {
+    return { grau: null, valor: c.maior.valor, status: 'ATENDE', detalhe: `Nenhum indício de outlier identificado. ${resumo}.`, dados: dadosBase };
+  }
+  const nomes = (xs: OutlierSample[]) => xs.map((x) => pad2(x.ordem)).join(', ');
+  const decs = c.suspeitas.map((s) => ({ amostra_id: s.amostra_id, ordem: s.ordem, nivel: s.nivel, decisao: decisions[s.amostra_id]?.decisao ?? null }));
+  const mantidas = c.suspeitas.filter((s) => decisions[s.amostra_id]?.decisao === 'MANTER');
+  const excluir = c.suspeitas.filter((s) => decisions[s.amostra_id]?.decisao === 'EXCLUIR');
+  const pendentes = c.suspeitas.filter((s) => !decisions[s.amostra_id]);
+  const cab = c.nivel === 'FORTE' ? 'Forte indício de outlier — análise obrigatória' : 'Possível outlier identificado';
+  const base = `${cab}: amostra(s) ${nomes(c.suspeitas)}. ${resumo}. Nenhuma amostra é excluída automaticamente.`;
+  const dados = { ...dadosBase, decisoes: decs, sem_revisao_generica: Object.keys(decisions).length > 0 };
+  if (pendentes.length === 0 && excluir.length === 0) {
+    return { grau: null, valor: c.maior.valor, status: 'ATENDE', revisado: true, dados,
+      detalhe: `${base} Avaliador manteve a(s) amostra(s) ${nomes(mantidas)}.` };
+  }
+  const extra = [
+    mantidas.length ? `mantida(s) pelo avaliador: ${nomes(mantidas)}` : null,
+    excluir.length ? `exclusão indicada pelo avaliador: ${nomes(excluir)} — use o novo modelo sem a(s) amostra(s)` : null,
+    pendentes.length ? `aguardando decisão: ${nomes(pendentes)}` : null,
+  ].filter(Boolean).join(' · ');
+  return { grau: null, valor: c.maior.valor, status: 'REQUER_ANALISE', dados, detalhe: `${base}${extra ? ` ${extra[0].toUpperCase()}${extra.slice(1)}.` : ''}` };
 }
 
 function gradeByMax(value: number, graus: { grau: Grau; max: number }[]): Grau | null {
@@ -287,8 +425,7 @@ export function validateModel(
         break;
       }
       case 'OUTLIERS': {
-        const maxStd = Math.max(...fit.residualsStd.map(Math.abs));
-        r = { ...base, grau: null, valor: maxStd, status: 'REQUER_ANALISE', detalhe: `Maior |Resíduo/DP|: ${maxStd.toFixed(2)}. Classificação automática não validada — requer análise.` };
+        r = { ...base, ...evaluateOutliers(fit, th, options.outlierDecisions ?? {}) };
         break;
       }
       case 'MICRONUMEROSIDADE': {
@@ -314,7 +451,7 @@ export function validateModel(
     }
 
     const rev = manualReviews[rule.codigo];
-    if (rev && (r.status === 'REQUER_ANALISE' || rule.modo === 'MANUAL')) {
+    if (rev && !(r.dados as any)?.sem_revisao_generica && (r.status === 'REQUER_ANALISE' || rule.modo === 'MANUAL')) {
       r.revisado = true;
       r.status = rev === 'INCONCLUSIVO' ? 'REQUER_ANALISE' : rev;
       r.detalhe = `${r.detalhe} · Análise do profissional: ${rev === 'ATENDE' ? 'atende' : rev === 'NAO_ATENDE' ? 'não atende' : 'inconclusiva'}.`;

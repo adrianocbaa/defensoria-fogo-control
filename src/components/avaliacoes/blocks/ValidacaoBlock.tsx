@@ -20,6 +20,8 @@ import { CRITERIO_STATUS_LABEL, OVERALL_LABEL, fmtDateTime, fmtNum } from '@/lib
 import { ANALISE_VISUAL_LABEL, MSG_CONFIG_ALTERADA, MSG_MODELO_DESATUALIZADO, RETIRADA, detalheAnaliseVisual, eventosDoModelo, relacoesAlteradas, rotuloEventoModelo, situacaoValidacao, type EventoAuditoria } from '@/lib/avaliacao/cicloModelo';
 import { relationshipCurves, type TransformCode } from '@/lib/avaliacao/engine';
 import { RelacionamentoDialog, type VarInfo } from '../RelacionamentoDialog';
+import { OutliersDialog } from '../OutliersDialog';
+import { NIVEL_OUTLIER_LABEL, NIVEL_OUTLIER_TEXTO, dadosOutliers, detalheDecisaoOutlier, indicadoresAmostra, resumoOutliers, rotuloAmostra, ultimasDecisoes, type DecisaoOutlier } from '@/lib/avaliacao/outliers';
 
 // Situação sempre com ícone + texto (nunca só cor).
 const STATUS_ICON: Record<string, { icon: typeof CheckCircle2; cls: string }> = {
@@ -43,6 +45,7 @@ function detalheEvento(e: EventoAuditoria): string {
     case 'MODEL_WITHDRAWN_FROM_VALIDATION': return `Em validação → Calculado${d.motivo ? ` — ${d.motivo}` : ''}${d.aceite_revogado ? ' · aceite revogado' : ''}`;
     case 'MODEL_RESENT_TO_VALIDATION': case 'MODEL_SENT_TO_VALIDATION': return d.status_anterior ? 'Calculado → Em validação' : '';
     case 'RELATIONSHIP_VISUAL_ANALYSIS': return detalheAnaliseVisual(d);
+    case 'OUTLIER_DECISION': return detalheDecisaoOutlier(d);
     case 'MODEL_REVALIDATED': case 'VALIDATION_EXECUTED': return d.status ? `${OVERALL_LABEL[d.status] ?? d.status}${d.politica ? ` · política ${d.politica}` : ''}` : '';
     default: return '';
   }
@@ -107,7 +110,8 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const v = val.data?.v;
   const results = val.data?.results ?? [];
   const after = (rows: any[]) => !!v && rows.some((r) => r.created_at > v.created_at);
-  const reviewsAfter = after(val.data?.reviews ?? []) || after(val.data?.grades ?? []);
+  const outlierEventos = useMemo(() => (val.data?.eventos ?? []).filter((e) => e.event_type === 'OUTLIER_DECISION'), [val.data?.eventos]);
+  const reviewsAfter = after(val.data?.reviews ?? []) || after(val.data?.grades ?? []) || after(outlierEventos);
   const byCode = useMemo(() => Object.fromEntries(results.map((r) => [r.codigo, r])), [results]);
   const homo = byCode.HOMOCEDASTICIDADE;
   const cook = byCode.PONTOS_INFLUENTES;
@@ -142,6 +146,22 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const podeAnalisar = ctx.can('validation.manual_review') && !!v && situacao === 'ATUAL';
   const motivoAnalise = !v ? 'Execute a validação para registrar a análise.' : situacao !== 'ATUAL' ? 'Revalide o modelo com as configurações atuais para registrar a análise.'
     : !ctx.can('validation.manual_review') ? 'Seu papel nesta avaliação não permite registrar análises.' : null;
+  const outl = byCode.OUTLIERS;
+  const outDados = useMemo(() => dadosOutliers(outl?.dados), [outl]);
+  const outDecisoes = useMemo(() => ultimasDecisoes(outlierEventos, v?.execucao_id), [outlierEventos, v?.execucao_id]);
+  const [outOpen, setOutOpen] = useState(false);
+  const decidirOutlier = async (amostraId: string, decisao: DecisaoOutlier, justificativa: string) => {
+    try {
+      const r = await rpc<{ modelo_novo: string | null; modelo_novo_nome: string | null; erro_modelo: string | null }>('aval_outlier_decision',
+        { p_validation: v.id, p_amostra: amostraId, p_decisao: decisao, p_justificativa: justificativa || null });
+      if (decisao === 'MANTER') toast.success('Decisão registrada no histórico. Execute a validação novamente para incorporá-la.');
+      else if (r?.modelo_novo) {
+        try { await engine({ action: 'run_model', modelo_id: r.modelo_novo }); toast.success(`Exclusão registrada. ${r.modelo_novo_nome ?? 'Novo modelo'} foi criado sem a amostra e calculado; envie-o para validação na Modelagem.`); }
+        catch { toast.warning(`Exclusão registrada e ${r.modelo_novo_nome ?? 'novo modelo'} criado sem a amostra. Calcule-o na Modelagem.`); }
+      } else toast.warning(`Exclusão registrada no histórico, mas o novo modelo não foi criado: ${avalErrorMessage(new Error(`aval:${r?.erro_modelo ?? 'model_create_failed'}`))}`);
+      ctx.refresh(); return true;
+    } catch (e) { toast.error(avalErrorMessage(e)); return false; }
+  };
   const registrarAnalise = async (conclusao: 'COERENTE' | 'REVISAR', observacao: string) => {
     try {
       const r = await rpc<{ incorpora_validacao: boolean }>('aval_relationship_visual_review', { p_validation: v.id, p_conclusao: conclusao, p_observacao: observacao || null });
@@ -249,7 +269,20 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium">{r.nome}{r.grau ? <span className="ml-2 text-xs font-normal text-muted-foreground">grau {r.grau}</span> : null}</p>
                           <p className="text-xs text-muted-foreground">{r.modo === 'MANUAL' ? 'Análise manual' : r.modo === 'ASSISTIDO' ? 'Assistido' : r.modo === 'DERIVADO' ? 'Derivado' : 'Automático'}{r.origem === 'PROCEDIMENTO_INTERNO' ? ' · procedimento interno' : ''}{r.bloqueante ? ' · bloqueante' : ''}{r.revisado ? ' · revisado' : ''}</p>
-                          <p className="text-xs mt-0.5">{r.detalhe}</p>
+                          {r.codigo === 'OUTLIERS' && outDados ? (
+                            <div className="mt-0.5 space-y-1">
+                              <p className="text-xs font-medium">{r.revisado && outDados.nivel !== 'SEM_INDICIO' ? 'Amostras sinalizadas mantidas pelo avaliador.' : NIVEL_OUTLIER_TEXTO[outDados.nivel]}</p>
+                              <p className="text-xs text-muted-foreground">{resumoOutliers(outDados).join(' · ')}</p>
+                              {outDados.suspeitas.length > 0 && (
+                                <ul className="text-xs space-y-0.5">{outDados.suspeitas.slice(0, 5).map((a) => {
+                                  const dec = outDecisoes[a.amostra_id]?.details_json?.decisao;
+                                  return <li key={a.amostra_id}><span className="font-medium">{rotuloAmostra(a.ordem)}</span> — {indicadoresAmostra(a)}{dec ? ` · ${dec === 'MANTER' ? 'mantida' : 'exclusão indicada'}` : ''}</li>;
+                                })}{outDados.suspeitas.length > 5 && <li className="text-muted-foreground">+{outDados.suspeitas.length - 5} amostra(s)</li>}</ul>
+                              )}
+                              <Button size="sm" variant={outDados.nivel === 'SEM_INDICIO' ? 'ghost' : 'outline'} className="mt-1" onClick={() => setOutOpen(true)}>
+                                {outDados.nivel === 'SEM_INDICIO' ? 'Ver diagnóstico' : 'Analisar'}</Button>
+                            </div>
+                          ) : <p className="text-xs mt-0.5">{r.detalhe}</p>}
                           {r.codigo === 'RELACIONAMENTO' && (
                             <div className="mt-1.5 flex flex-wrap items-center gap-2">
                               <Button size="sm" variant="outline" onClick={() => setRelOpen(true)}><LineChartIcon className="h-4 w-4 mr-1" />Ver gráficos de relacionamento</Button>
@@ -262,8 +295,11 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-2"><StatusTag status={r.status} />
-                          {canReview && ['REQUER_ANALISE', 'NAO_VERIFICADO'].includes(r.status) &&
+                        <div className="flex items-center gap-2">
+                          {r.codigo === 'OUTLIERS' && outDados?.nivel === 'FORTE' && r.status === 'REQUER_ANALISE'
+                            ? <span className="inline-flex items-center gap-1.5 text-sm font-medium text-destructive"><AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />{NIVEL_OUTLIER_LABEL.FORTE}</span>
+                            : <StatusTag status={r.status} />}
+                          {canReview && ['REQUER_ANALISE', 'NAO_VERIFICADO'].includes(r.status) && !(r.codigo === 'OUTLIERS' && outDados) &&
                             <Button size="sm" variant="outline" onClick={() => setReview({ codigo: r.codigo, nome: r.nome, decisao: 'ATENDE', just: '' })}>Analisar</Button>}</div>
                       </li>
                     ))}
@@ -397,6 +433,11 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           modeloNome={modelo.nome} engineVersion={val.data?.exec?.engine_version ?? null}
           criterio={rel ? { status: rel.status, detalhe: rel.detalhe } : null} ultima={ultimaAnalise}
           podeRegistrar={podeAnalisar} motivoBloqueio={motivoAnalise} obrigatoria={relObrigatoria} onRegistrar={registrarAnalise} />
+      )}
+
+      {modelo && outDados && (
+        <OutliersDialog open={outOpen} onOpenChange={setOutOpen} dados={outDados} modeloNome={modelo.nome} decisoes={outDecisoes} nomeUsuario={nomeUsuario}
+          podeDecidir={podeAnalisar} motivoBloqueio={motivoAnalise} onDecidir={decidirOutlier} />
       )}
 
       <AlertDialog open={retirar !== null} onOpenChange={(o) => !o && setRetirar(null)}>

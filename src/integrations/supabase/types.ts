@@ -13764,6 +13764,16 @@ export type Database = {
         Args: { p_av_ibge: string; p_imovel_ibge: string }
         Returns: string
       }
+      aval_outlier_decision: {
+        Args: {
+          p_amostra: string
+          p_criar_modelo?: boolean
+          p_decisao: string
+          p_justificativa?: string
+          p_validation: string
+        }
+        Returns: Json
+      }
       aval_pendencias: { Args: { p_avaliacao: string }; Returns: Json }
       aval_relationship_visual_review: {
         Args: {
