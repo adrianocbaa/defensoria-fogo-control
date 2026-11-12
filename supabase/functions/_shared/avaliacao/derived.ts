@@ -10,7 +10,7 @@ export interface DerivedTables {
     observado_transformado: number; estimado_transformado: number; residuo: number; residuo_relativo: number;
     residuo_dp: number; leverage: number; cook: number;
   }[];
-  normalidade: { z: number; referencia: number; tolerancia: number | null; criterio: string | null; limite_inferior: number | null; limite_superior: number | null; observado: number; status: string }[];
+  normalidade: { z: number; referencia: number | null; tolerancia: number | null; criterio: string | null; limite_inferior: number | null; limite_superior: number | null; observado: number; status: string }[];
   correlacoes: { variavel_a: string; variavel_b: string; correlacao: number; escala: string }[];
   estatisticas: {
     variavel: string; papel: string; transformacao: string; n: number; minimo: number; maximo: number; media: number; desvio_padrao: number; amplitude: number;
@@ -41,8 +41,7 @@ export function deriveStatTables(
     normalidade: normalityThresholds
       ? evaluateNormality(fit, normalityThresholds).itens.map((b) => ({ z: b.z, referencia: b.referencia, tolerancia: b.tolerancia, criterio: b.criterio,
           limite_inferior: b.limite_inferior, limite_superior: b.limite_superior, observado: b.observado, status: b.status }))
-      : fit.normality.map((b) => ({ z: b.z, referencia: NaN, tolerancia: null, criterio: null, limite_inferior: null, limite_superior: null, observado: b.observed, status: 'NAO_VERIFICADO' }))
-          .map((b) => ({ ...b, referencia: null as unknown as number })),
+      : fit.normality.map((b) => ({ z: b.z, referencia: null, tolerancia: null, criterio: null, limite_inferior: null, limite_superior: null, observado: b.observed, status: 'NAO_VERIFICADO' })),
     correlacoes,
     estatisticas: (fit.variableStats ?? []).map((v) => ({
       variavel: v.code, papel: v.role, transformacao: v.transform, n: v.n, minimo: v.min, maximo: v.max, media: v.mean, desvio_padrao: v.stdDev,
