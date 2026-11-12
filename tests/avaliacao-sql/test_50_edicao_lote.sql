@@ -2,8 +2,10 @@
 BEGIN;
 \ir _fixture.sql
 -- Cenário: amostra 1 (dado e1 / imóvel d1) no conjunto congelado; amostra 2 (e2/d2) com imóvel compartilhado por e9; avaliando d0..10.
+UPDATE public.avaliacao_conjuntos_dados SET status = 'RASCUNHO' WHERE id = '10000000-0000-0000-0000-000000000001';
 INSERT INTO public.avaliacao_conjunto_amostras(organization_id, avaliacao_id, conjunto_id, amostra_id, dado_id)
 SELECT '0a000000-0000-0000-0000-00000000000a', av, '10000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001' FROM fx;
+UPDATE public.avaliacao_conjuntos_dados SET status = 'CONGELADO' WHERE id = '10000000-0000-0000-0000-000000000001';
 UPDATE public.imoveis SET area_construida = 50, area_terreno = 100 WHERE id IN ('d0000000-0000-0000-0000-000000000001','d0000000-0000-0000-0000-000000000002');
 UPDATE public.dados_mercado SET valor_utilizado = 1000, valor_unitario = 20 WHERE id IN ('e0000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-000000000002');
 INSERT INTO public.dados_mercado(id, organization_id, imovel_id) VALUES ('e0000000-0000-0000-0000-000000000009', '0a000000-0000-0000-0000-00000000000a', 'd0000000-0000-0000-0000-000000000002');
