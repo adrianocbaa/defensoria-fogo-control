@@ -16,6 +16,7 @@ for f in "$ROOT"/supabase/migrations/2026111200*.sql "$ROOT"/supabase/migrations
   [ -f "$f" ] || continue
   "${PSQL[@]}" -f "$f" >/dev/null 2>"$DIR/err" || { echo "FALHOU ao aplicar $(basename "$f")"; cat "$DIR/err"; exit 1; }
 done
+node "$ROOT/tests/avaliacao-sql/gen_payload.mjs" "$DIR/payload.json"; chmod 644 "$DIR/payload.json"; export AVAL_PAYLOAD="$DIR/payload.json"
 fail=0
 for t in "$ROOT"/tests/avaliacao-sql/test_*.sql; do
   if "${PSQL[@]}" -f "$t" > "$DIR/out" 2>&1; then echo "ok - $(basename "$t")"; grep -h "NOTICE:  OK" "$DIR/out" | sed 's/^.*NOTICE:  /    /' || true
