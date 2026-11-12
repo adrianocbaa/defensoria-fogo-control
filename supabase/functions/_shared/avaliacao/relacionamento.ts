@@ -181,6 +181,7 @@ export interface PdfLike {
   circle(x: number, y: number, r: number, s?: string): unknown;
   text(t: string | string[], x: number, y: number, o?: Record<string, unknown>): unknown;
   splitTextToSize(t: string, w: number): string[];
+  getTextWidth(t: string): number;
 }
 export interface PdfChart { curve: RelationshipCurve; titulo: string; eixoX: string; eixoY: string }
 
@@ -225,7 +226,7 @@ export function drawRelationshipChartPdf(doc: PdfLike, c: PdfChart, x: number, y
   if (c.curve.meanPoint) { doc.setFillColor(200, 90, 20); doc.circle(px(c.curve.meanPoint.x), py(c.curve.meanPoint.y), 0.9, 'F'); }
   doc.setTextColor(20, 20, 20); doc.setFontSize(7);
   doc.text(c.eixoX, (L + R) / 2, B + 8, { align: 'center' });
-  doc.text(c.eixoY, x + 2.5, (T + B) / 2, { angle: 90, align: 'center' });
+  doc.text(c.eixoY, x + 2.5, (T + B) / 2 + doc.getTextWidth(c.eixoY) / 2, { angle: 90 });
   doc.setFontSize(6.5); doc.setTextColor(60, 60, 60);
   doc.text(doc.splitTextToSize(c.curve.synthesis, w - 4), x + w / 2, B + 12, { align: 'center' });
 }
