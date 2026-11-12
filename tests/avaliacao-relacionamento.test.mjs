@@ -15,6 +15,7 @@ const E = load('supabase/functions/_shared/avaliacao/engine.ts');
 const V = load('supabase/functions/_shared/avaliacao/validator.ts', { './engine.ts': E });
 const R = load('supabase/functions/_shared/avaliacao/relacionamento.ts', { './engine.ts': E });
 const C = load('src/lib/avaliacao/cicloModelo.ts');
+const plain = (x) => JSON.parse(JSON.stringify(x));
 const RULE = { codigo: 'RELACIONAMENTO', numero: 1, nome: 'Relacionamento', origem: 'NORMA_TECNICA', modo: 'AUTOMATICO', bloqueante: false, entra_fundamentacao: false, thresholds: {}, ativo: true };
 
 const AREA = [40.5, 60, 85.2, 110, 150, 210.7];
@@ -71,7 +72,7 @@ test('6) demais variáveis permanecem fixadas no ponto médio', () => {
   const inp = modelo('DIRECT', 12);
   const c = curva(inp, 'area');
   const qm = QUARTOS.reduce((s, x) => s + x, 0) / QUARTOS.length;
-  assert.deepEqual(Object.keys(c.fixed), ['quartos']);
+  assert.deepEqual(plain(Object.keys(c.fixed)), ['quartos']);
   assert.ok(Math.abs(c.fixed.quartos - qm) < 1e-12);
   for (const p of c.points) assert.ok(Math.abs(p.y - (1000 + 12 * p.x + 50 * qm)) < 1e-9);
   const am = AREA.reduce((s, x) => s + x, 0) / AREA.length;
@@ -92,9 +93,9 @@ test('7) gráfico usa só o intervalo observado no modelo (sem extrapolar)', () 
 test('8) variável discreta usa pontos inteiros do domínio observado', () => {
   const q = curva(modelo('DIRECT', 12), 'quartos');
   assert.equal(q.discrete, true);
-  assert.deepEqual(q.points.map((p) => p.x), [1, 2, 3, 4]);
+  assert.deepEqual(plain(q.points.map((p) => p.x)), [1, 2, 3, 4]);
   const d = R.domainPoints([0, 1, 1, 0], true, 'DICOTOMICA');
-  assert.deepEqual(d, [0, 1]);
+  assert.deepEqual(plain(d), [0, 1]);
   assert.equal(R.isDiscrete([1, 2, 3]), true);
   assert.equal(R.isDiscrete([24, 70, 520]), false, 'área inteira com grande amplitude continua contínua');
   assert.equal(R.isDiscrete([1.5, 2]), false);
@@ -125,7 +126,7 @@ test('Aceite — Guarantã: ln(valor) ~ 1/área + ln(banheiros), ambas crescente
   const curves = R.relationshipCurves({ coefficients: fit.coefficients, dependent: fx.input.dependent, independents: fx.input.independents }, meta);
   const ban = curves.find((c) => c.code === 'banheiro'), area = curves.find((c) => c.code === 'area');
   assert.equal(ban.discrete, true);
-  assert.deepEqual(ban.points.map((p) => p.x), [1, 2, 3]);
+  assert.deepEqual(plain(ban.points.map((p) => p.x)), [1, 2, 3]);
   assert.equal(ban.trend, 'CRESCENTE'); assert.equal(ban.coherence, 'COERENTE');
   assert.ok(area.beta < 0, 'coeficiente bruto de 1/área é negativo');
   assert.equal(area.trend, 'CRESCENTE'); assert.equal(area.coherence, 'COERENTE');
@@ -155,6 +156,6 @@ test('PDF: desenha um gráfico por variável em grade, sem sair da página', () 
   assert.equal(pages, 1, 'quebra de página quando não cabe');
   assert.ok(y > 20 && y < 280);
   assert.ok(calls.filter((c) => c[0] === 'text' && String(c[1]).startsWith('Estimativa por')).length === 2);
-  assert.deepEqual(R.chartLabels({ nome: 'Área construída', unidade: 'm²' }, { unidade: 'R$/mês' }),
+  assert.deepEqual(plain(R.chartLabels({ nome: 'Área construída', unidade: 'm²' }, { unidade: 'R$/mês' })),
     { titulo: 'Estimativa por Área construída', eixoX: 'Área construída (m²)', eixoY: 'Valor estimado (R$/mês)' });
 });
