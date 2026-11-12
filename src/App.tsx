@@ -80,6 +80,8 @@ import { RecebimentoObra } from "./pages/RecebimentoObra";
 import { EntregaInstitucional } from "./pages/EntregaInstitucional";
 import Dimensionamento from "./pages/Dimensionamento";
 import DimensionamentoCalhas from "./pages/DimensionamentoCalhas";
+import AvaliacoesList from "./pages/avaliacoes/AvaliacoesList";
+import AvaliacaoWorkspace from "./pages/avaliacoes/AvaliacaoWorkspace";
 import { SuporteChatWidget } from "@/components/suporte/SuporteChatWidget";
 
 const queryClient = new QueryClient();
@@ -216,6 +218,9 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route path="/avaliacoes" element={<ProtectedRoute><AvaliacoesList /></ProtectedRoute>} />
+      <Route path="/avaliacoes/:id" element={<ProtectedRoute><AvaliacaoWorkspace /></ProtectedRoute>} />
+      <Route path="/avaliacoes/:id/:bloco" element={<ProtectedRoute><AvaliacaoWorkspace /></ProtectedRoute>} />
       <Route
         path="/dimensionamento/calhas"
         element={

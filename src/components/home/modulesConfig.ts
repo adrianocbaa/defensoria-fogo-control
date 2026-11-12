@@ -9,6 +9,7 @@ import {
   Users,
   Calculator,
   Ruler,
+  FileSearch,
   type LucideIcon,
 } from 'lucide-react';
 import type { Sector } from '@/hooks/useUserSectors';
@@ -36,6 +37,7 @@ export const MODULES: ModuleDef[] = [
   { id: 'nucleos_central', title: 'Núcleos — Cadastro', category: 'Administrativos',     icon: Users,        path: '/nucleos-central' },
   { id: 'orcamento',       title: 'Orçamento',          category: 'Administrativos',     icon: Calculator,   path: '/orcamento' },
   { id: 'dimensionamento', title: 'Dimensionamento',    category: 'Ferramentas Técnicas',icon: Ruler,        path: '/dimensionamento' },
+  { id: 'avaliacao',       title: 'Avaliações',         category: 'Ferramentas Técnicas',icon: FileSearch,   path: '/avaliacoes' },
 ];
 
 /** Ids priorizados no acesso rápido, quando disponíveis */
@@ -44,5 +46,5 @@ export const QUICK_ACCESS_ORDER: Sector[] = ['preventivos', 'manutencao', 'obra'
 /** Agrupamento exibido na sidebar */
 export const SIDEBAR_GROUPS: { label: string; ids: Sector[] }[] = [
   { label: 'Operacionais',    ids: ['preventivos', 'manutencao', 'obra'] },
-  { label: 'Administrativos', ids: ['almoxarifado', 'nucleos', 'orcamento'] },
+  { label: 'Administrativos', ids: ['almoxarifado', 'nucleos', 'orcamento', 'avaliacao'] },
 ];

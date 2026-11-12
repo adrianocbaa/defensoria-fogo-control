@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado' | 'nucleos' | 'nucleos_central' | 'orcamento' | 'dimensionamento';
+export type Sector = 'manutencao' | 'obra' | 'preventivos' | 'ar_condicionado' | 'projetos' | 'almoxarifado' | 'nucleos' | 'nucleos_central' | 'orcamento' | 'dimensionamento' | 'avaliacao';
 
 // Setores atuantes (onde o usuário trabalha)
 export type SetorAtuante = 'dif' | 'segunda_sub' | 'contratada';
 
 // Lista de setores válidos para módulos
-const VALID_SECTORS: Sector[] = ['manutencao', 'obra', 'preventivos', 'ar_condicionado', 'projetos', 'almoxarifado', 'nucleos', 'nucleos_central', 'orcamento', 'dimensionamento'];
+const VALID_SECTORS: Sector[] = ['manutencao', 'obra', 'preventivos', 'ar_condicionado', 'projetos', 'almoxarifado', 'nucleos', 'nucleos_central', 'orcamento', 'dimensionamento', 'avaliacao'];
 
 export function useUserSectors() {
   const { user } = useAuth();
