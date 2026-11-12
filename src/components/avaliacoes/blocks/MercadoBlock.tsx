@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Pencil, Plus } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Lock, Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { EditAmostraDialog } from '../EditAmostraDialog';
+import { CamposDinamicosSection, CompletudeTable, useVariaveisStatus } from '../VariaveisShared';
 import { DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelCreator } from '../ImovelForm';
 import { db, rpc } from '@/lib/avaliacao/api';
-import { avalErrorMessage } from '@/lib/avaliacao/errors';
+import { avalErrorCode, avalErrorMessage } from '@/lib/avaliacao/errors';
+import { alteracoesDinamicas, bloqueiosCongelamento, bloqueiosDoServidor, camposDinamicos, mensagemCongelamento, nomesFaltando, obrigatoriasVazias } from '@/lib/avaliacao/variaveis';
 import { fmtDateTime, fmtMoney, fmtNum } from '@/lib/avaliacao/labels';
 
 const NATUREZA: Record<string, string> = { OFERTA: 'Oferta', NEGOCIACAO: 'Negociação', CONTRATO_PRIVADO: 'Contrato privado', CONTRATO_PUBLICO: 'Contrato público', OUTRO: 'Outro' };
@@ -33,6 +35,12 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const [editar, setEditar] = useState<{ amostra: any; indice: number } | null>(null);
   const [mun, setMun] = useState<{ nome: string; uf: string; just: string } | null>(null);
   const creator = useImovelCreator({ ibge: av.municipio_ibge, nome: av.municipio_nome, uf: av.uf });
+  const [dynNovo, setDynNovo] = useState<Record<string, string>>({});
+  const status = useVariaveisStatus(av.id);
+  const st = status.data;
+  const campos = camposDinamicos(st, 'AMOSTRA');
+  const stAmostra = new Map((st?.amostras ?? []).map((x) => [x.amostra_id, x]));
+  const bloqueios = bloqueiosCongelamento(st);
 
   const q = useAvalQuery(av.id, 'mercado', async () => {
     const [am, cj, mc] = await Promise.all([
@@ -51,6 +59,8 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const salvar = async (decision?: { useExisting?: string; forceNew?: boolean }) => {
     const valorUt = num(dado.utilizado) ?? num(dado.ofertado);
     if (!valorUt || valorUt <= 0) { toast.error('Informe o valor do dado de mercado.'); return; }
+    const pre = alteracoesDinamicas(campos, {}, dynNovo, { imovel_id: 'novo' });
+    if (pre.invalidos.length) { toast.error(`Revise: ${pre.invalidos.join(', ')}.`); return; }
     const imovelId = await creator.resolve(im, decision);
     if (!imovelId) return;
     try {
@@ -66,10 +76,17 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         if (fe) throw fe;
         await db.from('dados_mercado_fontes').insert({ dado_id: d.id, fonte_id: f.id, principal: true });
       }
-      const { error: ae } = await db.from('avaliacao_amostras').insert({ avaliacao_id: av.id, dado_id: d.id, origem_territorial: dado.origem });
+      const { data: a, error: ae } = await db.from('avaliacao_amostras').insert({ avaliacao_id: av.id, dado_id: d.id, origem_territorial: dado.origem }).select('id').single();
       if (ae) throw ae;
-      toast.success('Dado de mercado incluído.');
-      setAdd(false); setIm(emptyImovel(av.tipo_imovel)); setDado({ ...dado, ofertado: '', utilizado: '', fonteNome: '' });
+      // Variáveis desta avaliação: cada valor vai para a sua fonte (característica do imóvel ou valor manual).
+      const { alteracoes } = alteracoesDinamicas(campos, {}, dynNovo, { imovel_id: imovelId, dado_id: d.id, amostra_id: a.id, modo: 'COMPARTILHADO' });
+      let aviso = false;
+      if (alteracoes.length) {
+        try { await rpc('aval_apply_changes', { p_avaliacao: av.id, p_changes: alteracoes, p_motivo: 'Cadastro da amostra' }); }
+        catch (e) { aviso = true; toast.warning(`Dado incluído, mas as variáveis não foram salvas: ${avalErrorMessage(e)} Use Editar amostra para completar.`); }
+      }
+      if (!aviso) toast.success('Dado de mercado incluído.');
+      setAdd(false); setIm(emptyImovel(av.tipo_imovel)); setDado({ ...dado, ofertado: '', utilizado: '', fonteNome: '' }); setDynNovo({});
       ctx.refresh();
     } catch (e) { toast.error(avalErrorMessage(e)); }
   };
@@ -83,7 +100,11 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       await rpc('aval_dataset_freeze', { p_conjunto: cj });
       toast.success('Conjunto de dados congelado.');
       setFreeze(false); ctx.refresh();
-    } catch (e) { toast.error(avalErrorMessage(e)); }
+    } catch (e) {
+      const srv = avalErrorCode(e) === 'dataset_incomplete' ? bloqueiosDoServidor((e as { details?: unknown })?.details) : [];
+      toast.error(srv.length ? mensagemCongelamento(srv) : avalErrorMessage(e));
+      ctx.refresh();
+    }
   };
   const salvarMun = async () => {
     if (!mun || !mun.nome.trim() || mun.just.trim().length < 10) { toast.error('Informe o município e uma justificativa.'); return; }
@@ -98,6 +119,12 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
   return (
     <div className="space-y-5">
+      {st && campos.length > 0 && amostras.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base">Completude das variáveis</CardTitle></CardHeader>
+          <CardContent className="p-0 overflow-x-auto"><CompletudeTable st={st} /></CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between space-y-0 gap-2 flex-wrap">
           <CardTitle className="text-base">Amostras de mercado ({amostras.filter((a) => a.selecionada).length} selecionadas)</CardTitle>
@@ -112,6 +139,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
               <TableHeader><TableRow>
                 <TableHead className="w-12">Usar</TableHead><TableHead className="w-16">No modelo</TableHead><TableHead>Imóvel</TableHead>
                 <TableHead>Natureza</TableHead><TableHead className="text-right">Área (m²)</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">R$/m²</TableHead>
+                {campos.length > 0 && <TableHead>Variáveis</TableHead>}
                 {canEdit && <TableHead className="w-12"><span className="sr-only">Ações</span></TableHead>}
               </TableRow></TableHeader>
               <TableBody>
@@ -126,6 +154,17 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                       <TableCell className="text-right tabular-nums">{fmtNum(imv?.area_construida)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtMoney(d?.valor_utilizado)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtNum(d?.valor_unitario)}</TableCell>
+                      {campos.length > 0 && <TableCell className="text-xs">{(() => {
+                        const sa = stAmostra.get(a.id);
+                        if (!sa) return '—';
+                        if (sa.completa) return <span className="inline-flex items-center gap-1 text-muted-foreground"><CheckCircle2 className="h-3.5 w-3.5 text-primary" aria-hidden />Completa</span>;
+                        return (
+                          <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <span className="inline-flex items-center gap-1 font-medium text-destructive"><AlertTriangle className="h-3.5 w-3.5" aria-hidden />Falta {nomesFaltando(st!, sa.faltando).join(', ')}</span>
+                            {canEdit && <button type="button" className="underline underline-offset-2" onClick={() => setEditar({ amostra: a, indice: i + 1 })}>Corrigir amostra</button>}
+                          </span>
+                        );
+                      })()}</TableCell>}
                       {canEdit && <TableCell><Button size="icon" variant="ghost" aria-label={`Editar amostra ${i + 1}`} title="Editar amostra" onClick={() => setEditar({ amostra: a, indice: i + 1 })}><Pencil className="h-4 w-4" /></Button></TableCell>}
                     </TableRow>
                   );
@@ -195,6 +234,24 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 <SelectItem value="CONTRATO_PUBLICO_LOCAL">Contrato público local</SelectItem><SelectItem value="CONTRATO_PUBLICO_EXTERNO">Contrato público externo</SelectItem><SelectItem value="OUTRA_FONTE">Outra</SelectItem>
               </SelectContent></Select></div>
           </div>
+          {campos.length > 0 && (
+            <section className="space-y-3" aria-labelledby="nd-vars">
+              <h3 id="nd-vars" className="text-sm font-semibold">Variáveis desta avaliação</h3>
+              {(() => {
+                const area = num(im.area_construida); const vu = num(dado.utilizado) ?? num(dado.ofertado);
+                const refs = Object.fromEntries(campos.filter((c) => !c.editavel).map((c) => {
+                  const k = c.variavel.campo_origem;
+                  return [c.variavel.id, k === 'valor_utilizado' ? vu : k === 'valor_unitario' ? (vu && area ? Math.round((vu / area) * 10000) / 10000 : null)
+                    : k === 'area_construida' ? area : k === 'area_terreno' ? num(im.area_terreno) : null];
+                }));
+                const falta = obrigatoriasVazias(campos, dynNovo, refs);
+                return (<>
+                  <CamposDinamicosSection campos={campos} form={dynNovo} onChange={(id, v) => setDynNovo({ ...dynNovo, [id]: v })} referencias={refs} idPrefix="nd" />
+                  {falta.length > 0 && <p className="text-xs text-muted-foreground" role="status">Falta {falta.join(', ')}. Você pode incluir agora; a amostra fica marcada como incompleta até ser corrigida.</p>}
+                </>);
+              })()}
+            </section>
+          )}
           {creator.dups && <DuplicatePanel dups={creator.dups} onUse={(id) => salvar({ useExisting: id })} onForce={() => salvar({ forceNew: true })} />}
           <DialogFooter><Button variant="outline" onClick={() => setAdd(false)}>Cancelar</Button><Button onClick={() => salvar()}>Incluir</Button></DialogFooter>
         </DialogContent>
@@ -205,12 +262,29 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       <AlertDialog open={freeze} onOpenChange={setFreeze}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Congelar conjunto de dados?</AlertDialogTitle>
-            <AlertDialogDescription>
-              As {amostras.filter((a) => a.selecionada).length} amostras selecionadas e os valores atuais das variáveis serão fotografados. {vigente ? 'O conjunto vigente será substituído e os modelos atuais ficarão desatualizados (sem apagar nada).' : 'Os modelos passarão a usar esta versão.'}
+            <AlertDialogTitle>{bloqueios.length ? 'Ainda não é possível congelar' : 'Congelar conjunto de dados?'}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              {bloqueios.length > 0 ? (
+                <div className="space-y-3 text-sm">
+                  <p className="font-medium text-destructive">{mensagemCongelamento(bloqueios)}</p>
+                  <ul className="divide-y rounded-md border">{bloqueios.map((b) => {
+                    const a = amostras.find((x) => x.id === b.amostra_id);
+                    return (
+                      <li key={b.indice} className="flex items-center justify-between gap-2 px-3 py-2 text-foreground">
+                        <span>Amostra {b.indice}: falta {b.faltando.join(', ')}</span>
+                        {canEdit && a && <Button size="sm" variant="outline" onClick={() => { setFreeze(false); setEditar({ amostra: a, indice: b.indice }); }}>Corrigir amostra</Button>}
+                      </li>
+                    );
+                  })}</ul>
+                  <p className="text-muted-foreground">Complete os valores ou desmarque a amostra em “No modelo”.</p>
+                </div>
+              ) : (
+                <p>As {amostras.filter((a) => a.selecionada).length} amostras selecionadas e os valores atuais das variáveis serão fotografados. {vigente ? 'O conjunto vigente será substituído e os modelos atuais ficarão desatualizados (sem apagar nada).' : 'Os modelos passarão a usar esta versão.'}</p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={(e) => { e.preventDefault(); congelar(); }}>Congelar</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>{bloqueios.length ? 'Fechar' : 'Cancelar'}</AlertDialogCancel>
+            {bloqueios.length === 0 && <AlertDialogAction onClick={(e) => { e.preventDefault(); congelar(); }}>Congelar</AlertDialogAction>}</AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
