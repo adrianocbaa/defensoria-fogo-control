@@ -45,8 +45,8 @@ RESET ROLE;
 -- 4) EM_VALIDACAO não pode ser arquivado (RPC explícita, limpeza em lote e escrita direta)
 SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$SELECT public.aval_model_archive((SELECT av FROM fx), ARRAY[pg_temp.k('mod')], NULL, true)$$, 'model_in_validation', 'arquivar modelo em validação é recusado pela RPC');
-SELECT pg_temp.ok((public.aval_model_archive((SELECT av FROM fx), NULL, NULL, true)->>'em_validacao')::int = 1
-  AND NOT (SELECT arquivado FROM public.avaliacao_modelos WHERE id = pg_temp.k('mod')), '"Limpar lista" mantém o modelo em validação visível e informa a quantidade');
+SELECT pg_temp.ok((public.aval_model_archive((SELECT av FROM fx), NULL, NULL, true)->>'em_validacao')::int = 1, '"Limpar lista" informa quantos estão em validação');
+SELECT pg_temp.ok(NOT (SELECT arquivado FROM public.avaliacao_modelos WHERE id = pg_temp.k('mod')), '"Limpar lista" mantém o modelo em validação visível');
 SELECT pg_temp.login(NULL);
 SELECT pg_temp.throws($$UPDATE public.avaliacao_modelos SET arquivado = true WHERE id = pg_temp.k('mod')$$, 'model_in_validation', 'barreira no banco impede arquivar modelo em validação por qualquer caminho');
 
@@ -125,9 +125,8 @@ SELECT pg_temp.throws($$SELECT public.aval_model_withdraw_validation(pg_temp.k('
 SELECT pg_temp.throws($$SELECT public.aval_accept_model(pg_temp.k('v3'), NULL)$$, 'model_not_in_validation', 'modelo retirado não pode ser aceito sem reenvio');
 
 -- 5) CALCULADO pode ser arquivado; reenvio o traz de volta e fica registrado
-SELECT pg_temp.login(NULL); DO $$ BEGIN RAISE NOTICE 'DBG % % % % %', (SELECT row(status,candidato,favorito,arquivado) FROM public.avaliacao_modelos WHERE id = pg_temp.k('mod')), public.aval_model_protegido(pg_temp.k('mod')), (SELECT json_agg(status) FROM public.model_acceptances), (SELECT count(*) FROM public.avaliacao_projecoes), (SELECT count(*) FROM public.avaliacao_modelos WHERE modelo_origem_id = pg_temp.k('mod')); END $$; SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
-SELECT pg_temp.ok((public.aval_model_archive((SELECT av FROM fx), ARRAY[pg_temp.k('mod')], NULL, true)->>'alterados')::int = 1
-  AND (SELECT arquivado FROM public.avaliacao_modelos WHERE id = pg_temp.k('mod')), 'CALCULADO pode ser arquivado');
+SELECT pg_temp.ok((public.aval_model_archive((SELECT av FROM fx), ARRAY[pg_temp.k('mod')], NULL, true)->>'alterados')::int = 1, 'CALCULADO pode ser arquivado');
+SELECT pg_temp.ok((SELECT arquivado FROM public.avaliacao_modelos WHERE id = pg_temp.k('mod')), 'modelo retirado fica arquivado (sem exclusão)');
 SELECT public.aval_send_to_validation(pg_temp.k('mod'));
 SELECT pg_temp.ok((SELECT status = 'EM_VALIDACAO' AND NOT arquivado FROM public.avaliacao_modelos WHERE id = pg_temp.k('mod'))
   AND EXISTS (SELECT 1 FROM public.audit_events WHERE entity_id = pg_temp.k('mod') AND event_type = 'MODEL_RESENT_TO_VALIDATION' AND (details_json->>'validacoes_anteriores')::int = 3),
