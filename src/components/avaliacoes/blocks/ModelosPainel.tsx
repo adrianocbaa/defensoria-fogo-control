@@ -30,11 +30,11 @@ type Run = { id: string; numero: number; modo: string; conjunto_versao: number; 
 type Ordem = 'numero' | 'r2_ajustado' | 'pior_sig_regressor' | 'amplitude_pct' | 'n';
 type Sel = { nome: string; status: string; stale: boolean };
 
-export function rodadaResumo(r: Run): string {
+function rodadaResumo(r: Run): string {
   return `Rodada ${r.numero} • ${MODO_RODADA[r.modo] ?? r.modo} • ${r.modelos} modelo${r.modelos === 1 ? '' : 's'} • conjunto V${r.conjunto_versao}${r.arquivada ? ' • arquivada' : ''}`;
 }
 
-export function equacao(m: { dependente_variavel_id: string; dependente_transformacao: string; variaveis?: any[]; avaliacao_modelo_variaveis?: any[] }, vars: any[]) {
+function equacao(m: { dependente_variavel_id: string; dependente_transformacao: string; variaveis?: any[]; avaliacao_modelo_variaveis?: any[] }, vars: any[]) {
   const dep = vars.find((v) => v.id === m.dependente_variavel_id);
   const ind = [...(m.variaveis ?? m.avaliacao_modelo_variaveis ?? [])].sort((a: any, b: any) => (a.ordem ?? 0) - (b.ordem ?? 0));
   return `${(TRANSFORM_LABEL[m.dependente_transformacao] ?? 'x').replace('x', dep?.codigo ?? 'y')} ~ ${ind.map((mv: any) => (TRANSFORM_LABEL[mv.transformacao] ?? 'x').replace('x', vars.find((v) => v.id === mv.variavel_id)?.codigo ?? '?')).join(' + ')}`;
