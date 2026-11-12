@@ -3,7 +3,7 @@
 // Regras técnicas (limites, tolerâncias, faixas) NÃO ficam aqui: chegam por política versionada.
 
 export const ENGINE_NAME = 'SiDIF Statistical Engine';
-export const ENGINE_VERSION = '1.1.0';
+export const ENGINE_VERSION = '1.1.1';
 
 export type TransformCode = 'DIRECT' | 'INVERSE' | 'LN' | 'SQUARE' | 'SQRT' | 'INV_SQUARE' | 'INV_SQRT' | 'POWER';
 
@@ -236,7 +236,10 @@ export interface RegressionResult {
   f: number; fPValue: number;
   leverage: number[];
   residualsStd: number[];
+  /** Resíduo ÷ observado, ambos na escala transformada (padrão SisDEA). */
   residualsRelative: number[];
+  /** Auxiliar: (observado − estimado) ÷ observado na escala original. */
+  residualsRelativeOriginal: number[];
   estimatedOriginal: number[];
   cook: number[];
   correlation: { codes: string[]; matrix: number[][] };
@@ -344,9 +347,15 @@ export function fitRegression(input: RegressionInput): RegressionResult {
   const residualsStd = residuals.map((e) => e / s);
   const cook = residuals.map((e, i) => ((e * e) / (p * mse)) * (leverage[i] / (1 - leverage[i]) ** 2));
   const estimatedOriginal = yhat.map((z) => inverseTransform(dependent.transform, z, dependent.power));
-  const residualsRelative = dependent.values.map((yo, i) => (yo - estimatedOriginal[i]) / yo);
-  // R estimativa: correlação na escala original entre observado e inversa(ŷ) — sem correção moda/média.
-  const rEstimativa = pearson(dependent.values, estimatedOriginal);
+  // Resíduo relativo oficial (SisDEA): resíduo na escala transformada ÷ observado transformado.
+  const residualsRelative = residuals.map((e, i) => e / y[i]);
+  // Auxiliar (não oficial): diferença relativa na escala original.
+  const residualsRelativeOriginal = dependent.values.map((yo, i) => (yo - estimatedOriginal[i]) / yo);
+  // R estimativa: sqrt(1 − SSE/SST) na escala original, com estimado = inversa(ŷ) — sem correção moda/média.
+  const yoMean = mean(dependent.values);
+  const sseOriginal = dependent.values.reduce((acc, yo, i) => acc + (yo - estimatedOriginal[i]) ** 2, 0);
+  const sstOriginal = dependent.values.reduce((acc, yo) => acc + (yo - yoMean) ** 2, 0);
+  const rEstimativa = Math.sqrt(Math.max(0, 1 - sseOriginal / sstOriginal));
 
   const codes = [dependent.code, ...independents.map((v) => v.code)];
   const series = [y, ...cols];
@@ -378,7 +387,7 @@ export function fitRegression(input: RegressionInput): RegressionResult {
     n, k, p, dfReg, dfRes, coefficients,
     yTransformed: y, yhat, residuals, sse, sst, ssr, mse, s,
     r2, r2Adj, rRegressao: Math.sqrt(Math.max(0, r2)), rEstimativa,
-    f, fPValue, leverage, residualsStd, residualsRelative, estimatedOriginal, cook,
+    f, fPValue, leverage, residualsStd, residualsRelative, residualsRelativeOriginal, estimatedOriginal, cook,
     correlation: { codes, matrix }, normality, ranges, yOriginal: [...dependent.values], anova, variableStats,
     covUnscaled: C, sampleIds,
   };
