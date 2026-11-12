@@ -12466,6 +12466,21 @@ export type Database = {
         Args: { p_justificativa: string; p_validation: string }
         Returns: string
       }
+      aval_ai_decide: {
+        Args: { p_aprovar: boolean; p_conteudo: string; p_texto: string }
+        Returns: undefined
+      }
+      aval_apply_change: {
+        Args: {
+          p_avaliacao: string
+          p_campo: string
+          p_entity_id: string
+          p_entity_type: string
+          p_motivo?: string
+          p_valor: Json
+        }
+        Returns: Json
+      }
       aval_audit: {
         Args: {
           _av: string
@@ -12488,6 +12503,19 @@ export type Database = {
         Args: { p_avaliacao: string; p_motivo: string }
         Returns: undefined
       }
+      aval_confirm_economic: {
+        Args: {
+          p_aplicar: boolean
+          p_caracteristicas: string[]
+          p_centro: string
+          p_conclusao: string
+          p_conclusao_texto: string
+          p_justificativa: string
+          p_projecao: string
+          p_valor_arbitrado: number
+        }
+        Returns: string
+      }
       aval_create: {
         Args: {
           p_municipio_ibge: string
@@ -12502,6 +12530,40 @@ export type Database = {
       }
       aval_dataset_freeze: { Args: { p_conjunto: string }; Returns: string }
       aval_dataset_prepare: { Args: { p_avaliacao: string }; Returns: string }
+      aval_evaluate_change_impact: {
+        Args: {
+          p_avaliacao: string
+          p_campo: string
+          p_entity_id?: string
+          p_entity_type: string
+        }
+        Returns: Json
+      }
+      aval_find_duplicates: {
+        Args: {
+          p_anuncio_id: string
+          p_anuncio_url: string
+          p_area: number
+          p_complemento: string
+          p_endereco: string
+          p_exclude?: string
+          p_foto_hashes?: string[]
+          p_latitude: number
+          p_longitude: number
+          p_municipio_ibge: string
+          p_numero: string
+        }
+        Returns: {
+          area_construida: number
+          bairro: string
+          complemento: string
+          endereco: string
+          imovel_id: string
+          motivos: string[]
+          numero: string
+          pontos: number
+        }[]
+      }
       aval_fmt_money: { Args: { v: number }; Returns: string }
       aval_fmt_num: { Args: { casas: number; v: number }; Returns: string }
       aval_has_global_perm: { Args: { _perm: string }; Returns: boolean }
@@ -12524,6 +12586,24 @@ export type Database = {
       aval_is_technical: { Args: { _uid: string }; Returns: boolean }
       aval_keep_snapshot: {
         Args: { p_amostra: string; p_avaliacao: string }
+        Returns: undefined
+      }
+      aval_laudo_create_revision: {
+        Args: { p_laudo: string; p_motivo: string }
+        Returns: string
+      }
+      aval_laudo_init: { Args: { p_avaliacao: string }; Returns: string }
+      aval_laudo_issue: { Args: { p_laudo_versao: string }; Returns: string }
+      aval_laudo_preflight: {
+        Args: { p_laudo_versao: string }
+        Returns: string
+      }
+      aval_laudo_section_approve: {
+        Args: { p_aprovar: boolean; p_secao: string }
+        Returns: undefined
+      }
+      aval_laudo_section_refresh: {
+        Args: { p_secao: string }
         Returns: undefined
       }
       aval_list_tecnicos: {
@@ -12569,6 +12649,7 @@ export type Database = {
         Returns: number
       }
       aval_normalize_text: { Args: { t: string }; Returns: string }
+      aval_pendencias: { Args: { p_avaliacao: string }; Returns: Json }
       aval_send_to_validation: {
         Args: { p_modelo: string }
         Returns: undefined
@@ -12582,6 +12663,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      aval_tokens: { Args: { p_avaliacao: string }; Returns: Json }
       aval_variable_in_use: { Args: { _var: string }; Returns: boolean }
       can_edit: { Args: { user_uuid?: string }; Returns: boolean }
       can_edit_obra: {
