@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Info, Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,10 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ImpactDialog, type PendingChange } from '../ImpactDialog';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelCreator } from '../ImovelForm';
-import { db } from '@/lib/avaliacao/api';
+import { db, rpc } from '@/lib/avaliacao/api';
+import { camposInvalidos, montarAlteracoes, normalizar, paraFormulario, type CampoEdicao } from '@/lib/avaliacao/edicao';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { fmtDate, fmtNum } from '@/lib/avaliacao/labels';
 
@@ -24,7 +27,8 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const creator = useImovelCreator({ ibge: av.municipio_ibge, nome: av.municipio_nome, uf: av.uf });
   const [vist, setVist] = useState<{ data: string; estado: string; obs: string } | null>(null);
   const [carac, setCarac] = useState<{ descricao: string; efeito: string } | null>(null);
-  const [loc, setLoc] = useState<{ precisao: string; lat: string; lng: string } | null>(null);
+  const [edit, setEdit] = useState<{ form: Record<string, string>; original: Record<string, unknown>; share: { compartilhado: boolean; outros_dados: number; outras_avaliacoes: string[] } | null } | null>(null);
+  const [changes, setChanges] = useState<PendingChange[] | null>(null);
 
   const dados = useAvalQuery(av.id, 'imovel', async () => {
     const { data: link } = await db.from('avaliacao_imoveis').select('imovel_id').eq('avaliacao_id', av.id).eq('papel', 'AVALIANDO').maybeSingle();
@@ -61,13 +65,43 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     if (error) { toast.error(avalErrorMessage(error)); return; }
     setCarac(null); ctx.refresh();
   };
-  const salvarLoc = async () => {
-    if (!loc) return;
-    const lat = loc.lat ? Number(loc.lat.replace(',', '.')) : null; const lng = loc.lng ? Number(loc.lng.replace(',', '.')) : null;
+  const camposImovel = (id: string): CampoEdicao[] => [
+    { chave: 'tipo_imovel', entity_type: 'imovel', entity_id: id, campo: 'tipo_imovel', rotulo: 'Tipo de imóvel', tipo: 'texto' },
+    { chave: 'endereco', entity_type: 'imovel', entity_id: id, campo: 'endereco', rotulo: 'Endereço', tipo: 'texto' },
+    { chave: 'numero', entity_type: 'imovel', entity_id: id, campo: 'numero', rotulo: 'Número', tipo: 'texto' },
+    { chave: 'complemento', entity_type: 'imovel', entity_id: id, campo: 'complemento', rotulo: 'Complemento/unidade', tipo: 'texto' },
+    { chave: 'bairro', entity_type: 'imovel', entity_id: id, campo: 'bairro', rotulo: 'Bairro', tipo: 'texto' },
+    { chave: 'area_construida', entity_type: 'imovel', entity_id: id, campo: 'area_construida', rotulo: 'Área construída', tipo: 'numero', casas: 2, sufixo: 'm²' },
+    { chave: 'area_terreno', entity_type: 'imovel', entity_id: id, campo: 'area_terreno', rotulo: 'Área do terreno', tipo: 'numero', casas: 2, sufixo: 'm²' },
+    { chave: 'anuncio_url', entity_type: 'imovel', entity_id: id, campo: 'anuncio_url', rotulo: 'Link do anúncio', tipo: 'texto' },
+    { chave: 'anuncio_id', entity_type: 'imovel', entity_id: id, campo: 'anuncio_id', rotulo: 'Código do anúncio', tipo: 'texto' },
+    { chave: 'precisao', entity_type: 'imovel_localizacao', entity_id: id, campo: 'precisao', rotulo: 'Precisão da localização', tipo: 'opcao', opcoes: PRECISAO },
+    { chave: 'latitude', entity_type: 'imovel_localizacao', entity_id: id, campo: 'latitude', rotulo: 'Latitude', tipo: 'numero', casas: 7 },
+    { chave: 'longitude', entity_type: 'imovel_localizacao', entity_id: id, campo: 'longitude', rotulo: 'Longitude', tipo: 'numero', casas: 7 },
+  ];
+  const abrirEdicao = async () => {
+    const l = dados.data?.loc;
+    const original: Record<string, unknown> = { ...im, precisao: l?.precisao ?? null, latitude: l?.latitude ?? null, longitude: l?.longitude ?? null };
+    const form: Record<string, string> = {};
+    for (const c of camposImovel(im.id)) form[c.chave] = paraFormulario(c.tipo, original[c.chave]);
+    setEdit({ form, original, share: null });
+    try {
+      const share = await rpc<any>('aval_imovel_sharing', { p_avaliacao: av.id, p_imovel: im.id, p_dado: null });
+      setEdit((e) => (e ? { ...e, share } : e));
+    } catch { /* aviso de compartilhamento é informativo */ }
+  };
+  const revisar = () => {
+    if (!edit) return;
+    const cs = camposImovel(im.id);
+    const inval = camposInvalidos(cs, edit.form);
+    if (inval.length) { toast.error(`Revise: ${inval.join(', ')}.`); return; }
+    if (!edit.form.tipo_imovel.trim()) { toast.error('Informe o tipo de imóvel.'); return; }
+    for (const k of ['area_construida', 'area_terreno']) { const n = normalizar('numero', edit.form[k]); if (n !== null && !((n as number) > 0)) { toast.error('As áreas precisam ser maiores que zero.'); return; } }
+    const lat = normalizar('numero', edit.form.latitude, 7) as number | null; const lng = normalizar('numero', edit.form.longitude, 7) as number | null;
     if ((lat !== null && !(lat >= -90 && lat <= 90)) || (lng !== null && !(lng >= -180 && lng <= 180))) { toast.error('Coordenadas inválidas.'); return; }
-    const { error } = await db.from('imovel_localizacao').upsert({ imovel_id: im.id, precisao: loc.precisao, latitude: lat, longitude: lng }, { onConflict: 'imovel_id' });
-    if (error) { toast.error(avalErrorMessage(error)); return; }
-    setLoc(null); ctx.refresh();
+    const lote = montarAlteracoes(cs, edit.original, edit.form);
+    if (!lote.length) { toast.info('Nenhum campo foi alterado.'); return; }
+    setChanges(lote);
   };
 
   if (dados.isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
@@ -89,23 +123,16 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Imóvel avaliando</CardTitle></CardHeader>
+        <CardHeader className="pb-3 flex-row items-center justify-between space-y-0 gap-2">
+          <CardTitle className="text-base">Imóvel avaliando</CardTitle>
+          {canProp && <Button size="sm" variant="outline" onClick={abrirEdicao} aria-label="Editar imóvel avaliando"><Pencil className="h-4 w-4 mr-1" />Editar imóvel</Button>}
+        </CardHeader>
         <CardContent className="text-sm space-y-1.5">
           <p className="font-medium">{[im.endereco, im.numero, im.complemento].filter(Boolean).join(', ') || 'Endereço não informado'}</p>
           <p className="text-muted-foreground">{im.bairro ? `${im.bairro} · ` : ''}{im.municipio_nome}/{im.uf}</p>
           <p>{im.tipo_imovel} · Área construída {im.area_construida ? `${fmtNum(im.area_construida)} m²` : '—'} · Terreno {im.area_terreno ? `${fmtNum(im.area_terreno)} m²` : '—'}</p>
-          <div className="flex items-center justify-between pt-2">
-            <span>Localização: <Badge variant="outline">{PRECISAO[dados.data?.loc?.precisao ?? 'DESCONHECIDA']}</Badge></span>
-            {canProp && <Button size="sm" variant="outline" onClick={() => setLoc({ precisao: dados.data?.loc?.precisao ?? 'APROXIMADA', lat: dados.data?.loc?.latitude?.toString() ?? '', lng: dados.data?.loc?.longitude?.toString() ?? '' })}>Editar localização</Button>}
-          </div>
-          {loc && (
-            <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-3">
-              <Select value={loc.precisao} onValueChange={(p) => setLoc({ ...loc, precisao: p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(PRECISAO).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select>
-              <Input placeholder="Latitude" value={loc.lat} onChange={(e) => setLoc({ ...loc, lat: e.target.value })} />
-              <Input placeholder="Longitude" value={loc.lng} onChange={(e) => setLoc({ ...loc, lng: e.target.value })} />
-              <div className="sm:col-span-3 flex justify-end gap-2"><Button size="sm" variant="ghost" onClick={() => setLoc(null)}>Cancelar</Button><Button size="sm" onClick={salvarLoc}>Salvar</Button></div>
-            </div>
-          )}
+          <p className="pt-1">Localização: <Badge variant="outline">{PRECISAO[dados.data?.loc?.precisao ?? 'DESCONHECIDA']}</Badge>
+            {dados.data?.loc?.latitude != null && dados.data?.loc?.longitude != null && <span className="ml-2 text-xs text-muted-foreground tabular-nums">{dados.data.loc.latitude}, {dados.data.loc.longitude}</span>}</p>
         </CardContent>
       </Card>
 
@@ -148,6 +175,38 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           <ul className="divide-y">{(dados.data?.caracs ?? []).map((c) => <li key={c.id} className="flex items-center justify-between py-2"><span>{c.descricao}</span><Badge variant="outline">{EFEITO[c.efeito]}</Badge></li>)}</ul>
         </CardContent>
       </Card>
+
+      <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar imóvel avaliando</DialogTitle>
+            <DialogDescription>Corrige o cadastro físico existente; o imóvel continua o mesmo. Fotografias de conjuntos e laudos emitidos não mudam.</DialogDescription>
+          </DialogHeader>
+          {edit && (() => {
+            const setF = (k: string, v: string) => setEdit({ ...edit, form: { ...edit.form, [k]: v } });
+            const imv = edit.form as unknown as ImovelInput;
+            return (
+              <div className="space-y-4">
+                {edit.share?.compartilhado && (
+                  <p className="flex items-start gap-2 rounded-md border bg-muted/40 p-2.5 text-sm"><Info className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span><strong>Este cadastro físico é reutilizado em outros registros</strong>{edit.share.outros_dados > 0 ? ` (${edit.share.outros_dados} dado(s) de mercado` : ' ('}{edit.share.outras_avaliacoes.length > 0 ? `${edit.share.outros_dados > 0 ? '; ' : ''}avaliações ${edit.share.outras_avaliacoes.join(', ')}` : ''}). A correção vale para todos eles.</span>
+                  </p>
+                )}
+                <ImovelFields value={imv} onChange={(v) => setEdit({ ...edit, form: { ...edit.form, ...(v as unknown as Record<string, string>) } })} showAnuncio />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-1.5"><Label>Precisão da localização</Label>
+                    <Select value={edit.form.precisao || undefined} onValueChange={(p) => setF('precisao', p)}><SelectTrigger><SelectValue placeholder="Não informada" /></SelectTrigger><SelectContent>{Object.entries(PRECISAO).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
+                  <div className="grid gap-1.5"><Label htmlFor="ei-lat">Latitude</Label><Input id="ei-lat" inputMode="decimal" value={edit.form.latitude} onChange={(e) => setF('latitude', e.target.value)} placeholder="-15,6014" /></div>
+                  <div className="grid gap-1.5"><Label htmlFor="ei-lng">Longitude</Label><Input id="ei-lng" inputMode="decimal" value={edit.form.longitude} onChange={(e) => setF('longitude', e.target.value)} placeholder="-56,0979" /></div>
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter><Button variant="outline" onClick={() => setEdit(null)}>Cancelar</Button><Button onClick={revisar}>Revisar alterações</Button></DialogFooter>
+          <ImpactDialog avaliacaoId={av.id} changes={changes} titulo="Revisar alterações do imóvel avaliando"
+            onClose={() => setChanges(null)} onApplied={() => { setEdit(null); ctx.refresh(); }} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
