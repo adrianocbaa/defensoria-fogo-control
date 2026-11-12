@@ -134,7 +134,7 @@ test('7) decisão do avaliador: manter todas → atende (revisado); excluir → 
   assert.equal(manter.dados.decisoes[0].decisao, 'MANTER');
   const excluir = crit(run(fit, TH_V3, { s1: { decisao: 'EXCLUIR', justificativa: 'Erro de digitação da área' } }));
   assert.equal(excluir.status, 'REQUER_ANALISE');
-  assert.match(excluir.detalhe, /exclusão indicada pelo avaliador: 01/);
+  assert.match(excluir.detalhe, /Exclusão indicada pelo avaliador: 01/);
   // Análise genérica antiga não sobrepõe decisões por amostra
   const g = V.validateModel(fit, null, [], { transform: 'DIRECT' }, [rule()], { OUTLIERS: 'ATENDE' }, { outlierDecisions: { s1: { decisao: 'EXCLUIR' } } }).results[0];
   assert.equal(g.status, 'REQUER_ANALISE');
