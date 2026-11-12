@@ -99,7 +99,7 @@ test('6) Guarantã: maior |Resíduo/DP| ≈ 1,89 → atende (0 de 12 acima de 2,
   assert.equal(c.dados.acima_limite, 0);
   assert.ok(Math.abs(c.dados.maior.valor - 1.888) < 0.001, `maior ${c.dados.maior.valor}`);
   assert.match(c.detalhe, /Nenhum indício de outlier identificado\. Maior \|Resíduo\/DP\|: 1,89 · limite indicativo 2,00 · amostras acima de 2,00: 0 de 12/);
-  assert.deepEqual(O.resumoOutliers(c.dados), ['12 amostras analisadas', 'Maior |Resíduo/DP|: 1,89', 'Limite indicativo: 2,00', 'Amostras acima de 2,00: 0 de 12']);
+  assert.deepEqual([...O.resumoOutliers(c.dados)], ['12 amostras analisadas', 'Maior |Resíduo/DP|: 1,89', 'Limite indicativo: 2,00', 'Amostras acima de 2,00: 0 de 12']);
   // Informação complementar (não define o resultado nesta política): amostra 13 tem studentizado externo ≈ −2,75 (p ≈ 0,025)
   const a13 = c.dados.amostras.find((a) => a.amostra_id === '13');
   assert.ok(Math.abs(a13.studentizado_externo + 2.749) < 0.002 && Math.abs(a13.p_valor - 0.0251) < 0.001);
