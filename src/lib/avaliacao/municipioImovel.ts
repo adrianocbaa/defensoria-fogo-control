@@ -60,3 +60,8 @@ export function municipioValido(m: Partial<MunicipioImovel>): boolean {
 export function municipioParaGravar(m: Partial<MunicipioImovel>): { municipio_nome: string | null; municipio_ibge: string | null; uf: string | null } {
   return { municipio_nome: m.municipio_nome?.trim() || null, municipio_ibge: m.municipio_ibge?.trim() || null, uf: m.uf?.trim().toUpperCase() || null };
 }
+
+/** O formulário de edição trocou UF, código ou nome do município em relação ao cadastro. */
+export function mudouMunicipio(original: Record<string, unknown>, form: Record<string, string>): boolean {
+  return (['uf', 'municipio_ibge', 'municipio_nome'] as const).some((k) => String(original[k] ?? '').trim() !== String(form[k] ?? '').trim());
+}

@@ -19,6 +19,7 @@ import { DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelC
 import { db, rpc } from '@/lib/avaliacao/api';
 import { camposInvalidos, montarAlteracoes, normalizar, paraFormulario, type CampoEdicao } from '@/lib/avaliacao/edicao';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
+import { municipioSugerido, municipioValido, mudouMunicipio } from '@/lib/avaliacao/municipioImovel';
 import { fmtDate, fmtNum } from '@/lib/avaliacao/labels';
 import { alteracoesDinamicas, camposDinamicos, valorParaFormulario } from '@/lib/avaliacao/variaveis';
 
@@ -27,8 +28,8 @@ const EFEITO: Record<string, string> = { VALORIZA: 'Valoriza', DESVALORIZA: 'Des
 
 export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const av = ctx.avaliacao.data!;
-  const [form, setForm] = useState<ImovelInput>(emptyImovel(av.tipo_imovel));
-  const creator = useImovelCreator({ ibge: av.municipio_ibge, nome: av.municipio_nome, uf: av.uf });
+  const [form, setForm] = useState<ImovelInput>(emptyImovel(av.tipo_imovel, municipioSugerido(av)));
+  const creator = useImovelCreator();
   const [vist, setVist] = useState<{ data: string; estado: string; obs: string } | null>(null);
   const [carac, setCarac] = useState<{ descricao: string; efeito: string } | null>(null);
   const [edit, setEdit] = useState<{ form: Record<string, string>; original: Record<string, unknown>; share: Compartilhamento | null } | null>(null);
@@ -78,6 +79,9 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     { chave: 'numero', entity_type: 'imovel', entity_id: id, campo: 'numero', rotulo: 'Número', tipo: 'texto' },
     { chave: 'complemento', entity_type: 'imovel', entity_id: id, campo: 'complemento', rotulo: 'Complemento/unidade', tipo: 'texto' },
     { chave: 'bairro', entity_type: 'imovel', entity_id: id, campo: 'bairro', rotulo: 'Bairro', tipo: 'texto' },
+    { chave: 'uf', entity_type: 'imovel', entity_id: id, campo: 'uf', rotulo: 'UF do imóvel', tipo: 'texto' },
+    { chave: 'municipio_ibge', entity_type: 'imovel', entity_id: id, campo: 'municipio_ibge', rotulo: 'Código IBGE do município', tipo: 'texto' },
+    { chave: 'municipio_nome', entity_type: 'imovel', entity_id: id, campo: 'municipio_nome', rotulo: 'Município do imóvel', tipo: 'texto' },
     { chave: 'area_construida', entity_type: 'imovel', entity_id: id, campo: 'area_construida', rotulo: 'Área construída', tipo: 'numero', casas: 2, sufixo: 'm²' },
     { chave: 'area_terreno', entity_type: 'imovel', entity_id: id, campo: 'area_terreno', rotulo: 'Área do terreno', tipo: 'numero', casas: 2, sufixo: 'm²' },
     { chave: 'anuncio_url', entity_type: 'imovel', entity_id: id, campo: 'anuncio_url', rotulo: 'Link do anúncio', tipo: 'texto' },
@@ -103,6 +107,7 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     const inval = camposInvalidos(cs, edit.form);
     if (inval.length) { toast.error(`Revise: ${inval.join(', ')}.`); return; }
     if (!edit.form.tipo_imovel.trim()) { toast.error('Informe o tipo de imóvel.'); return; }
+    if (mudouMunicipio(edit.original, edit.form) && !municipioValido(edit.form)) { toast.error('Escolha a UF e o município do imóvel.'); return; }
     for (const k of ['area_construida', 'area_terreno']) { const n = normalizar('numero', edit.form[k]); if (n !== null && !((n as number) > 0)) { toast.error('As áreas precisam ser maiores que zero.'); return; } }
     const lat = normalizar('numero', edit.form.latitude, 7) as number | null; const lng = normalizar('numero', edit.form.longitude, 7) as number | null;
     if ((lat !== null && !(lat >= -90 && lat <= 90)) || (lng !== null && !(lng >= -180 && lng <= 180))) { toast.error('Coordenadas inválidas.'); return; }
@@ -130,7 +135,7 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         <CardHeader className="pb-3"><CardTitle className="text-base">Imóvel avaliando</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           {!canProp ? <p className="text-sm text-muted-foreground">Nenhum imóvel vinculado.</p> : <>
-            <ImovelFields value={form} onChange={setForm} />
+            <ImovelFields value={form} onChange={setForm} municipioAvaliacao={av} />
             {creator.dups && <DuplicatePanel dups={creator.dups} onUse={(id) => vincular({ useExisting: id })} onForce={() => vincular({ forceNew: true })} />}
             <div className="flex justify-end"><Button onClick={() => vincular()}>Cadastrar e vincular</Button></div>
           </>}
@@ -224,7 +229,7 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
             return (
               <div className="space-y-4">
                 {edit.share?.compartilhado && <CompartilhadoAviso share={edit.share}><p className="text-muted-foreground">A correção vale para todos os registros vivos que usam este imóvel.</p></CompartilhadoAviso>}
-                <ImovelFields value={imv} onChange={(v) => setEdit({ ...edit, form: { ...edit.form, ...(v as unknown as Record<string, string>) } })} showAnuncio />
+                <ImovelFields value={imv} onChange={(v) => setEdit({ ...edit, form: { ...edit.form, ...(v as unknown as Record<string, string>) } })} showAnuncio municipioAvaliacao={av} />
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="grid gap-1.5"><Label>Precisão da localização</Label>
                     <Select value={edit.form.precisao || undefined} onValueChange={(p) => setF('precisao', p)}><SelectTrigger><SelectValue placeholder="Não informada" /></SelectTrigger><SelectContent>{Object.entries(PRECISAO).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
