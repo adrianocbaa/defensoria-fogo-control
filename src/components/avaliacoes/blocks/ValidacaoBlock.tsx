@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, CircleDashed, HelpCircle, History, MinusCircle, PlayCircle, RefreshCw, Undo2, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, CircleDashed, Flag, HelpCircle, History, LineChart as LineChartIcon, MinusCircle, PlayCircle, RefreshCw, Undo2, XCircle } from 'lucide-react';
 import { CartesianGrid, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,9 @@ import { useAvalQuery } from '../useAvaliacao';
 import { db, engine, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { CRITERIO_STATUS_LABEL, OVERALL_LABEL, fmtDateTime, fmtNum } from '@/lib/avaliacao/labels';
-import { MSG_CONFIG_ALTERADA, MSG_MODELO_DESATUALIZADO, RETIRADA, eventosDoModelo, relacoesAlteradas, rotuloEventoModelo, situacaoValidacao, type EventoAuditoria } from '@/lib/avaliacao/cicloModelo';
+import { ANALISE_VISUAL_LABEL, MSG_CONFIG_ALTERADA, MSG_MODELO_DESATUALIZADO, RETIRADA, detalheAnaliseVisual, eventosDoModelo, relacoesAlteradas, rotuloEventoModelo, situacaoValidacao, type EventoAuditoria } from '@/lib/avaliacao/cicloModelo';
+import { relationshipCurves, type TransformCode } from '@/lib/avaliacao/engine';
+import { RelacionamentoDialog, type VarInfo } from '../RelacionamentoDialog';
 
 // Situação sempre com ícone + texto (nunca só cor).
 const STATUS_ICON: Record<string, { icon: typeof CheckCircle2; cls: string }> = {
@@ -40,6 +42,7 @@ function detalheEvento(e: EventoAuditoria): string {
     case 'VALIDATION_MARKED_STALE': return `${d.motivo ? `${d.motivo}. ` : ''}Coeficientes preservados.`;
     case 'MODEL_WITHDRAWN_FROM_VALIDATION': return `Em validação → Calculado${d.motivo ? ` — ${d.motivo}` : ''}${d.aceite_revogado ? ' · aceite revogado' : ''}`;
     case 'MODEL_RESENT_TO_VALIDATION': case 'MODEL_SENT_TO_VALIDATION': return d.status_anterior ? 'Calculado → Em validação' : '';
+    case 'RELATIONSHIP_VISUAL_ANALYSIS': return detalheAnaliseVisual(d);
     case 'MODEL_REVALIDATED': case 'VALIDATION_EXECUTED': return d.status ? `${OVERALL_LABEL[d.status] ?? d.status}${d.politica ? ` · política ${d.politica}` : ''}` : '';
     default: return '';
   }
@@ -55,7 +58,7 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
   const q = useAvalQuery(av.id, 'validacao', async () => {
     const [mods, ac] = await Promise.all([
-      db.from('avaliacao_modelos').select('id, numero, nome, status, stale, stale_motivo').eq('avaliacao_id', av.id).in('status', ['EM_VALIDACAO']).order('numero', { ascending: false }),
+      db.from('avaliacao_modelos').select('id, numero, nome, status, stale, stale_motivo, dependente_variavel_id').eq('avaliacao_id', av.id).in('status', ['EM_VALIDACAO']).order('numero', { ascending: false }),
       db.from('model_acceptances').select('*, avaliacao_modelos(nome)').eq('avaliacao_id', av.id).order('accepted_at', { ascending: false }).limit(20),
     ]);
     return { modelos: (mods.data ?? []) as any[], aceites: (ac.data ?? []) as any[] };
@@ -68,21 +71,25 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const tecnicos = useAvalQuery(av.id, 'tecnicos', () => rpc<{ user_id: string; display_name: string }[]>('aval_list_tecnicos', {}));
   const nomeUsuario = (uid: string | null) => (tecnicos.data ?? []).find((t) => t.user_id === uid)?.display_name ?? (uid ? 'Usuário' : 'Sistema');
   const val = useAvalQuery(av.id, `validacao-${modeloId}`, async () => {
-    const [{ data: vs }, { data: mvs }] = await Promise.all([
+    const depId = q.data?.modelos.find((m) => m.id === modeloId)?.dependente_variavel_id ?? null;
+    const [{ data: vs }, { data: mvs }, { data: exec }, { data: depVar }] = await Promise.all([
       db.from('model_validations').select('*').eq('modelo_id', modeloId).order('created_at', { ascending: false }).limit(200),
       db.from('avaliacao_modelo_variaveis').select('variavel_id').eq('modelo_id', modeloId).limit(1000),
+      db.from('avaliacao_modelo_execucoes').select('id, engine_version, coefs:output_json->fit->coefficients, rin:input_snapshot_json->regression_input')
+        .eq('modelo_id', modeloId).eq('status', 'SUCESSO').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      depId ? db.from('avaliacao_variaveis').select('codigo, nome, unidade').eq('id', depId).maybeSingle() : Promise.resolve({ data: null }),
     ]);
     const historico = (vs ?? []) as any[];
     const v = historico[0] ?? null;
     const varIds: string[] = (mvs ?? []).map((x: any) => x.variavel_id);
     const [vq, eq] = await Promise.all([
-      varIds.length ? db.from('avaliacao_variaveis').select('id, codigo, nome, relacao_esperada').in('id', varIds) : Promise.resolve({ data: [] }),
+      varIds.length ? db.from('avaliacao_variaveis').select('id, codigo, nome, relacao_esperada, unidade, tipo_variavel').in('id', varIds) : Promise.resolve({ data: [] }),
       db.from('audit_events').select('id, event_type, entity_type, entity_id, details_json, created_at, actor_id').eq('avaliacao_id', av.id)
         .in('entity_id', [modeloId, av.id, ...varIds]).order('created_at', { ascending: true }).limit(5000),
     ]);
-    const variaveis = (vq.data ?? []) as { id: string; codigo: string; nome: string; relacao_esperada: string }[];
+    const variaveis = (vq.data ?? []) as { id: string; codigo: string; nome: string; relacao_esperada: string; unidade: string | null; tipo_variavel: string }[];
     const eventos = eventosDoModelo((eq.data ?? []) as EventoAuditoria[], modeloId, varIds);
-    const extra = { historico, variaveis, eventos };
+    const extra = { historico, variaveis, eventos, exec: exec as any, depVar: depVar as { codigo: string; nome: string; unidade: string | null } | null };
     if (!v) return { v: null, results: [], reviews: [], grades: [], fsum: null, fitems: [], residuos: [], ...extra };
     const [r, rv, gr, fs, fi, res] = await Promise.all([
       db.from('model_validation_results').select('*').eq('validation_id', v.id).order('numero'),
@@ -113,6 +120,35 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const canRun = ctx.can('validation.run');
   const aceiteDoModelo = vigente && vigente.modelo_id === modeloId ? vigente : null;
   const [retirar, setRetirar] = useState<string | null>(null);
+  const [relOpen, setRelOpen] = useState(false);
+  const rel = byCode.RELACIONAMENTO;
+  const relCurves = useMemo(() => {
+    const ex = val.data?.exec; const rin = ex?.rin;
+    if (!ex || !rin?.independents || !Array.isArray(ex.coefs)) return null;
+    const meta = Object.fromEntries((val.data?.variaveis ?? []).map((x) => [x.codigo, { relacao_esperada: x.relacao_esperada, tipo: x.tipo_variavel }]));
+    try {
+      return relationshipCurves({ coefficients: ex.coefs, dependent: { transform: rin.dependent.transform as TransformCode, power: rin.dependent.power },
+        independents: rin.independents.map((i: any) => ({ code: i.code, transform: i.transform as TransformCode, power: i.power, values: (i.values ?? []).map(Number) })) }, meta);
+    } catch { return []; }
+  }, [val.data?.exec, val.data?.variaveis]);
+  const relNomes = useMemo(() => Object.fromEntries((val.data?.variaveis ?? []).map((x) => [x.codigo, { nome: x.nome, unidade: x.unidade }])) as Record<string, VarInfo>, [val.data?.variaveis]);
+  const relDep: VarInfo = { nome: val.data?.depVar?.nome ?? 'Valor', unidade: val.data?.depVar?.unidade ?? null };
+  const ultimaAnalise = useMemo(() => {
+    const e = [...(val.data?.eventos ?? [])].reverse().find((x) => x.event_type === 'RELATIONSHIP_VISUAL_ANALYSIS' && v && x.details_json?.validacao === v.id);
+    return e ? { conclusao: e.details_json.conclusao, observacao: e.details_json.observacao ?? null, created_at: e.created_at, autor: nomeUsuario(e.actor_id) } : null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [val.data?.eventos, v?.id, tecnicos.data]);
+  const relObrigatoria = !!rel && rel.modo !== 'AUTOMATICO';
+  const podeAnalisar = ctx.can('validation.manual_review') && !!v && situacao === 'ATUAL';
+  const motivoAnalise = !v ? 'Execute a validação para registrar a análise.' : situacao !== 'ATUAL' ? 'Revalide o modelo com as configurações atuais para registrar a análise.'
+    : !ctx.can('validation.manual_review') ? 'Seu papel nesta avaliação não permite registrar análises.' : null;
+  const registrarAnalise = async (conclusao: 'COERENTE' | 'REVISAR', observacao: string) => {
+    try {
+      const r = await rpc<{ incorpora_validacao: boolean }>('aval_relationship_visual_review', { p_validation: v.id, p_conclusao: conclusao, p_observacao: observacao || null });
+      toast.success(`${ANALISE_VISUAL_LABEL[conclusao]} registrada no histórico.${r?.incorpora_validacao ? ' Execute a validação novamente para incorporá-la.' : ''}`);
+      ctx.refresh(); return true;
+    } catch (e) { toast.error(avalErrorMessage(e)); return false; }
+  };
 
   const rodar = async () => {
     setBusy(true);
@@ -214,6 +250,17 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                           <p className="text-sm font-medium">{r.nome}{r.grau ? <span className="ml-2 text-xs font-normal text-muted-foreground">grau {r.grau}</span> : null}</p>
                           <p className="text-xs text-muted-foreground">{r.modo === 'MANUAL' ? 'Análise manual' : r.modo === 'ASSISTIDO' ? 'Assistido' : r.modo === 'DERIVADO' ? 'Derivado' : 'Automático'}{r.origem === 'PROCEDIMENTO_INTERNO' ? ' · procedimento interno' : ''}{r.bloqueante ? ' · bloqueante' : ''}{r.revisado ? ' · revisado' : ''}</p>
                           <p className="text-xs mt-0.5">{r.detalhe}</p>
+                          {r.codigo === 'RELACIONAMENTO' && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                              <Button size="sm" variant="outline" onClick={() => setRelOpen(true)}><LineChartIcon className="h-4 w-4 mr-1" />Ver gráficos de relacionamento</Button>
+                              {ultimaAnalise ? (
+                                <span className={`inline-flex items-center gap-1 text-xs ${ultimaAnalise.conclusao === 'REVISAR' ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                  {ultimaAnalise.conclusao === 'REVISAR' ? <Flag className="h-3.5 w-3.5" aria-hidden /> : <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />}
+                                  Análise visual: {ANALISE_VISUAL_LABEL[ultimaAnalise.conclusao] ?? ultimaAnalise.conclusao} · {ultimaAnalise.autor} · {fmtDateTime(ultimaAnalise.created_at)}
+                                </span>
+                              ) : <span className="text-xs text-muted-foreground">{relObrigatoria ? 'Análise visual pendente (exigida pela política).' : 'Análise visual ainda não registrada (opcional).'}</span>}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2"><StatusTag status={r.status} />
                           {canReview && ['REQUER_ANALISE', 'NAO_VERIFICADO'].includes(r.status) &&
@@ -298,7 +345,9 @@ export function ValidacaoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
               )}
 
               {ctx.can('validation.accept') && situacao === 'ATUAL' && !reviewsAfter && !aceiteDoModelo && ['APTO', 'APTO_COM_RESSALVAS'].includes(v.overall_status) && (
-                <div className="flex justify-end"><Button onClick={() => setAceite('')}><CheckCircle2 className="h-4 w-4 mr-1" />Aceitar este modelo</Button></div>
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  {ultimaAnalise?.conclusao === 'REVISAR' && <p className="flex items-center gap-1.5 text-sm"><Flag className="h-4 w-4 text-destructive" aria-hidden />O relacionamento das variáveis foi marcado para revisão.</p>}
+                  <Button onClick={() => setAceite('')}><CheckCircle2 className="h-4 w-4 mr-1" />Aceitar este modelo</Button></div>
               )}
             </>
           )}
