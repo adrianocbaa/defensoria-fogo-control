@@ -6,6 +6,8 @@ export type CampoTipo = 'texto' | 'numero' | 'data' | 'opcao';
 export interface CampoEdicao {
   /** Chave do formulário (permite dois campos com o mesmo nome em entidades diferentes). */
   chave: string;
+  /** Chave do valor original, quando difere da chave do formulário (padrão: chave). */
+  origem?: string;
   entity_type: string;
   entity_id: string;
   campo: string;
@@ -86,7 +88,7 @@ export function camposInvalidos(campos: CampoEdicao[], form: Record<string, stri
 export function montarAlteracoes(campos: CampoEdicao[], original: Record<string, unknown>, form: Record<string, string>): AlteracaoPendente[] {
   const out: AlteracaoPendente[] = [];
   for (const c of campos) {
-    const antes = normalizar(c.tipo, original[c.chave], c.casas ?? 2);
+    const antes = normalizar(c.tipo, original[c.origem ?? c.chave], c.casas ?? 2);
     const depois = normalizar(c.tipo, form[c.chave], c.casas ?? 2);
     if (antes === depois) continue;
     out.push({
