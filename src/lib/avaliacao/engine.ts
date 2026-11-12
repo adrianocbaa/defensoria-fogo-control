@@ -3,3 +3,4 @@ export * from '../../../supabase/functions/_shared/avaliacao/engine.ts';
 export * from '../../../supabase/functions/_shared/avaliacao/validator.ts';
 export * from '../../../supabase/functions/_shared/avaliacao/candidates.ts';
 export * from '../../../supabase/functions/_shared/avaliacao/derived.ts';
+export * from '../../../supabase/functions/_shared/avaliacao/relacionamento.ts';

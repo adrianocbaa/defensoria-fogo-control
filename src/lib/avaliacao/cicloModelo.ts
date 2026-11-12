@@ -74,10 +74,24 @@ export const EVENTO_MODELO_LABEL: Record<string, string> = {
   VALIDATION_MARKED_STALE: 'Validação marcada como desatualizada', MODEL_ACCEPTED: 'Validado (modelo aceito)',
   MODEL_WITHDRAWN_FROM_VALIDATION: 'Retirado da validação', MODELS_ARCHIVED: 'Arquivado', MODELS_UNARCHIVED: 'Desarquivado',
   VALIDATION_MANUAL_REVIEW: 'Análise manual registrada',
+  RELATIONSHIP_VISUAL_ANALYSIS: 'Análise visual do relacionamento',
 };
 const CAMPO_LABEL: Record<string, string> = { relacao_esperada: 'Relação esperada alterada', tipo_variavel: 'Tipo da variável alterado', categorica: 'Classificação categórica alterada' };
 
 export function rotuloEventoModelo(e: Pick<EventoAuditoria, 'event_type' | 'details_json'>): string {
   if (e.event_type === 'CHANGE_APPLIED') return CAMPO_LABEL[e.details_json?.campo] ?? 'Configuração alterada';
   return EVENTO_MODELO_LABEL[e.event_type] ?? e.event_type;
+}
+
+/** Conclusões da análise visual do critério 1 (gráficos de relacionamento). */
+export const ANALISE_VISUAL_LABEL: Record<string, string> = { COERENTE: 'Coerência confirmada', REVISAR: 'Marcado para revisão' };
+
+/** Resumo legível de um registro de análise visual (histórico). */
+export function detalheAnaliseVisual(d: { conclusao?: string; observacao?: string | null; modelo_nome?: string | null; engine_version?: string | null; validacao_numero?: number | null } | null | undefined): string {
+  const x = d ?? {};
+  const partes = [ANALISE_VISUAL_LABEL[x.conclusao ?? ''] ?? 'Análise registrada'];
+  const ref = [x.modelo_nome, x.validacao_numero ? `validação ${x.validacao_numero}` : null, x.engine_version ? `motor ${x.engine_version}` : null].filter(Boolean).join(' · ');
+  if (ref) partes.push(ref);
+  const base = partes.join(' · ');
+  return x.observacao ? `${base} — ${x.observacao}` : base;
 }

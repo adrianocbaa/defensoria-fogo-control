@@ -13765,6 +13765,14 @@ export type Database = {
         Returns: string
       }
       aval_pendencias: { Args: { p_avaliacao: string }; Returns: Json }
+      aval_relationship_visual_review: {
+        Args: {
+          p_conclusao: string
+          p_observacao?: string
+          p_validation: string
+        }
+        Returns: Json
+      }
       aval_run_recount: { Args: { p_run: string }; Returns: undefined }
       aval_send_to_validation: {
         Args: { p_modelo: string }
