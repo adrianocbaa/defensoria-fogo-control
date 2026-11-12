@@ -125,6 +125,7 @@ SELECT pg_temp.throws($$SELECT public.aval_model_withdraw_validation(pg_temp.k('
 SELECT pg_temp.throws($$SELECT public.aval_accept_model(pg_temp.k('v3'), NULL)$$, 'model_not_in_validation', 'modelo retirado não pode ser aceito sem reenvio');
 
 -- 5) CALCULADO pode ser arquivado; reenvio o traz de volta e fica registrado
+SELECT pg_temp.login(NULL); DO $$ BEGIN RAISE NOTICE 'DBG % % % % %', (SELECT row(status,candidato,favorito,arquivado) FROM public.avaliacao_modelos WHERE id = pg_temp.k('mod')), public.aval_model_protegido(pg_temp.k('mod')), (SELECT json_agg(status) FROM public.model_acceptances), (SELECT count(*) FROM public.avaliacao_projecoes), (SELECT count(*) FROM public.avaliacao_modelos WHERE modelo_origem_id = pg_temp.k('mod')); END $$; SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.ok((public.aval_model_archive((SELECT av FROM fx), ARRAY[pg_temp.k('mod')], NULL, true)->>'alterados')::int = 1
   AND (SELECT arquivado FROM public.avaliacao_modelos WHERE id = pg_temp.k('mod')), 'CALCULADO pode ser arquivado');
 SELECT public.aval_send_to_validation(pg_temp.k('mod'));
