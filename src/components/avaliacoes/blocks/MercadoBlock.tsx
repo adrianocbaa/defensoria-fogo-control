@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Plus } from 'lucide-react';
+import { Lock, Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
+import { EditAmostraDialog } from '../EditAmostraDialog';
 import { DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelCreator } from '../ImovelForm';
 import { db, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
@@ -29,12 +30,13 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const [im, setIm] = useState<ImovelInput>(emptyImovel(av.tipo_imovel));
   const [dado, setDado] = useState({ natureza: 'OFERTA', ofertado: '', utilizado: '', data: '', fonteTipo: 'IMOBILIARIA', fonteNome: '', origem: 'LOCAL' });
   const [freeze, setFreeze] = useState(false);
+  const [editar, setEditar] = useState<{ amostra: any; indice: number } | null>(null);
   const [mun, setMun] = useState<{ nome: string; uf: string; just: string } | null>(null);
   const creator = useImovelCreator({ ibge: av.municipio_ibge, nome: av.municipio_nome, uf: av.uf });
 
   const q = useAvalQuery(av.id, 'mercado', async () => {
     const [am, cj, mc] = await Promise.all([
-      db.from('avaliacao_amostras').select('*, dados_mercado(*, imoveis(*))').eq('avaliacao_id', av.id).order('created_at').limit(10000),
+      db.from('avaliacao_amostras').select('*, dados_mercado(*, imoveis(*), dados_mercado_fontes(principal, fontes_mercado(id, tipo, nome)))').eq('avaliacao_id', av.id).order('created_at').limit(10000),
       db.from('avaliacao_conjuntos_dados').select('*').eq('avaliacao_id', av.id).order('versao', { ascending: false }),
       db.from('avaliacao_municipios_comparaveis').select('*').eq('avaliacao_id', av.id).order('created_at'),
     ]);
@@ -110,6 +112,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
               <TableHeader><TableRow>
                 <TableHead className="w-12">Usar</TableHead><TableHead className="w-16">No modelo</TableHead><TableHead>Imóvel</TableHead>
                 <TableHead>Natureza</TableHead><TableHead className="text-right">Área (m²)</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">R$/m²</TableHead>
+                {canEdit && <TableHead className="w-12"><span className="sr-only">Ações</span></TableHead>}
               </TableRow></TableHeader>
               <TableBody>
                 {amostras.map((a, i) => {
@@ -123,6 +126,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                       <TableCell className="text-right tabular-nums">{fmtNum(imv?.area_construida)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtMoney(d?.valor_utilizado)}</TableCell>
                       <TableCell className="text-right tabular-nums">{fmtNum(d?.valor_unitario)}</TableCell>
+                      {canEdit && <TableCell><Button size="icon" variant="ghost" aria-label={`Editar amostra ${i + 1}`} title="Editar amostra" onClick={() => setEditar({ amostra: a, indice: i + 1 })}><Pencil className="h-4 w-4" /></Button></TableCell>}
                     </TableRow>
                   );
                 })}
@@ -195,6 +199,8 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           <DialogFooter><Button variant="outline" onClick={() => setAdd(false)}>Cancelar</Button><Button onClick={() => salvar()}>Incluir</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditAmostraDialog avaliacaoId={av.id} amostra={editar?.amostra ?? null} indice={editar?.indice ?? 0} onClose={() => setEditar(null)} onSaved={ctx.refresh} />
 
       <AlertDialog open={freeze} onOpenChange={setFreeze}>
         <AlertDialogContent>
