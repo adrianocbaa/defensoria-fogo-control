@@ -13514,12 +13514,32 @@ export type Database = {
         }
         Returns: undefined
       }
+      aval_sync_avaliando: {
+        Args: { p_av: string; p_var?: string }
+        Returns: number
+      }
       aval_tokens: { Args: { p_avaliacao: string }; Returns: Json }
       aval_transform_ok: {
         Args: { p_t: string; p_x: number }
         Returns: boolean
       }
+      aval_var_fonte: {
+        Args: { p_atributo: string; p_campo: string }
+        Returns: string
+      }
+      aval_var_no_conjunto: { Args: { p_var: string }; Returns: boolean }
+      aval_var_resolve: {
+        Args: {
+          p_amostra: string
+          p_dado: string
+          p_imovel: string
+          p_var: string
+        }
+        Returns: number
+      }
+      aval_var_usada: { Args: { p_var: string }; Returns: boolean }
       aval_variable_in_use: { Args: { _var: string }; Returns: boolean }
+      aval_variaveis_status: { Args: { p_avaliacao: string }; Returns: Json }
       aval_vars_match: {
         Args: {
           p_av: string

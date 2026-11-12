@@ -8,6 +8,7 @@ import { useAvaliacao } from '@/components/avaliacoes/useAvaliacao';
 import { STAGE_LABEL, STATUS_LABEL, TIPO_LABEL } from '@/lib/avaliacao/labels';
 import { ResumoBlock } from '@/components/avaliacoes/blocks/ResumoBlock';
 import { DadosBlock } from '@/components/avaliacoes/blocks/DadosBlock';
+import { VariaveisBlock } from '@/components/avaliacoes/blocks/VariaveisBlock';
 import { ImovelBlock } from '@/components/avaliacoes/blocks/ImovelBlock';
 import { MercadoBlock } from '@/components/avaliacoes/blocks/MercadoBlock';
 import { ModelagemBlock } from '@/components/avaliacoes/blocks/ModelagemBlock';
@@ -20,6 +21,7 @@ import { HistoricoBlock } from '@/components/avaliacoes/blocks/HistoricoBlock';
 const NAV = [
   { key: '', label: 'Resumo' },
   { key: 'dados', label: 'Dados', bloco: 'DADOS' },
+  { key: 'variaveis', label: 'Variáveis', bloco: 'VARIAVEIS' },
   { key: 'imovel', label: 'Imóvel', bloco: 'IMOVEL' },
   { key: 'mercado', label: 'Mercado', bloco: 'MERCADO' },
   { key: 'modelagem', label: 'Modelagem', bloco: 'MODELAGEM' },
@@ -56,6 +58,7 @@ export default function AvaliacaoWorkspace() {
   const content = (() => {
     switch (bloco) {
       case 'dados': return <DadosBlock ctx={ctx} />;
+      case 'variaveis': return <VariaveisBlock ctx={ctx} />;
       case 'imovel': return <ImovelBlock ctx={ctx} />;
       case 'mercado': return <MercadoBlock ctx={ctx} />;
       case 'modelagem': return <ModelagemBlock ctx={ctx} />;

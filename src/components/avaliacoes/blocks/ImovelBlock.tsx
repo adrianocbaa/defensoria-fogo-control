@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImpactDialog, type PendingChange } from '../ImpactDialog';
 import { CompartilhadoAviso, type Compartilhamento } from '../CompartilhadoAviso';
+import { CamposDinamicosSection, useVariaveisStatus } from '../VariaveisShared';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { DuplicatePanel, emptyImovel, ImovelFields, type ImovelInput, useImovelCreator } from '../ImovelForm';
@@ -18,6 +20,7 @@ import { db, rpc } from '@/lib/avaliacao/api';
 import { camposInvalidos, montarAlteracoes, normalizar, paraFormulario, type CampoEdicao } from '@/lib/avaliacao/edicao';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { fmtDate, fmtNum } from '@/lib/avaliacao/labels';
+import { alteracoesDinamicas, camposDinamicos, valorParaFormulario } from '@/lib/avaliacao/variaveis';
 
 const PRECISAO: Record<string, string> = { EXATA: 'Exata', APROXIMADA: 'Aproximada', BAIRRO: 'Bairro', MUNICIPIO: 'Município', DESCONHECIDA: 'Desconhecida' };
 const EFEITO: Record<string, string> = { VALORIZA: 'Valoriza', DESVALORIZA: 'Desvaloriza', NEUTRO: 'Neutro' };
@@ -30,6 +33,9 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const [carac, setCarac] = useState<{ descricao: string; efeito: string } | null>(null);
   const [edit, setEdit] = useState<{ form: Record<string, string>; original: Record<string, unknown>; share: Compartilhamento | null } | null>(null);
   const [changes, setChanges] = useState<PendingChange[] | null>(null);
+  const [dyn, setDyn] = useState<Record<string, string> | null>(null);
+  const [dynChanges, setDynChanges] = useState<PendingChange[] | null>(null);
+  const status = useVariaveisStatus(av.id);
 
   const dados = useAvalQuery(av.id, 'imovel', async () => {
     const { data: link } = await db.from('avaliacao_imoveis').select('imovel_id').eq('avaliacao_id', av.id).eq('papel', 'AVALIANDO').maybeSingle();
@@ -105,6 +111,18 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     setChanges(lote);
   };
 
+  // Dados que as variáveis da avaliação exigem do avaliando (gravados na própria fonte: característica do imóvel ou valor manual).
+  const camposAv = camposDinamicos(status.data, 'AVALIANDO');
+  const originalAv = Object.fromEntries((status.data?.variaveis ?? []).map((v) => [v.id, v.valor_avaliando]));
+  const dynForm = dyn ?? Object.fromEntries(camposAv.map((c) => [c.variavel.id, valorParaFormulario(c.variavel, c.variavel.valor_avaliando)]));
+  const salvarDyn = () => {
+    if (!im) return;
+    const { alteracoes, invalidos } = alteracoesDinamicas(camposAv, originalAv, dynForm, { imovel_id: im.id });
+    if (invalidos.length) { toast.error(`Revise: ${invalidos.join(', ')}.`); return; }
+    if (!alteracoes.length) { toast.info('Nenhum campo foi alterado.'); return; }
+    setDynChanges(alteracoes);
+  };
+
   if (dados.isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
   if (!im) {
     return (
@@ -156,6 +174,23 @@ export function ImovelBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           {(dados.data?.vistorias ?? []).length === 0 ? <p className="text-muted-foreground">Nenhuma vistoria registrada.</p> : (
             <ul className="divide-y">{dados.data!.vistorias.map((v) => <li key={v.id} className="py-2"><p className="font-medium">{fmtDate(v.data_vistoria)}{v.estado_conservacao ? ` · ${v.estado_conservacao}` : ''}</p>{v.observacao && <p className="text-muted-foreground whitespace-pre-wrap">{v.observacao}</p>}</li>)}</ul>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader className="pb-3 flex-row items-start justify-between space-y-0 gap-3 flex-wrap">
+          <div className="space-y-1">
+            <CardTitle className="text-base">Dados necessários para esta avaliação</CardTitle>
+            <p className="text-sm text-muted-foreground">Vêm das variáveis da pesquisa. O valor de mercado (variável dependente) não é pedido no avaliando.</p>
+          </div>
+          {canProp && camposAv.some((c) => c.editavel) && <Button size="sm" onClick={salvarDyn} disabled={!dyn}>Salvar dados</Button>}
+        </CardHeader>
+        <CardContent>
+          <CamposDinamicosSection campos={camposAv} form={dynForm} onChange={(id, v) => setDyn({ ...dynForm, [id]: v })} referencias={originalAv}
+            idPrefix="av" disabled={!canProp}
+            vazio={<p className="text-sm text-muted-foreground">Nenhuma variável exige dados do avaliando. <Link className="underline underline-offset-2" to={`/avaliacoes/${av.id}/variaveis`}>Definir variáveis da pesquisa</Link></p>} />
+          <ImpactDialog avaliacaoId={av.id} changes={dynChanges} titulo="Revisar dados do avaliando"
+            onClose={() => setDynChanges(null)} onApplied={() => { setDyn(null); ctx.refresh(); }} />
         </CardContent>
       </Card>
 
