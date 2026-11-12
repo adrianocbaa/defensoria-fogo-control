@@ -122,7 +122,7 @@ export function evaluateNormality(fit: RegressionResult, th: Record<string, any>
     const tol = f.tolerancia === undefined || f.tolerancia === null ? null : Number(f.tolerancia);
     let criterio: NormalityBandResult['criterio'] = null; let ok: boolean | null = null; let li: number | null = null; let ls: number | null = null;
     if (tol !== null) {
-      criterio = 'INTERVALO'; li = f.referencia - tol; ls = f.referencia + tol;
+      criterio = 'INTERVALO'; li = Math.round((f.referencia - tol) * 1e12) / 1e12; ls = Math.round((f.referencia + tol) * 1e12) / 1e12;
       ok = obs >= li - eps && obs <= ls + eps;
     } else {
       const c = (f.comparacao ?? padrao) as string | null;
