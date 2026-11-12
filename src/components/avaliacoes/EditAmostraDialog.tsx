@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ImovelFields, type ImovelInput } from './ImovelForm';
 import { ImpactDialog, type PendingChange } from './ImpactDialog';
 import { CompartilhadoAviso, type Compartilhamento } from './CompartilhadoAviso';
+import { CamposDinamicosSection, useVariaveisStatus } from './VariaveisShared';
 import { rpc } from '@/lib/avaliacao/api';
 import { fmtNum } from '@/lib/avaliacao/labels';
 import { camposInvalidos, montarAlteracoes, normalizar, paraFormulario, valorUnitario, type CampoEdicao } from '@/lib/avaliacao/edicao';
+import { alteracoesDinamicas, camposDinamicos, obrigatoriasVazias, valorParaFormulario } from '@/lib/avaliacao/variaveis';
 
 export const NATUREZA: Record<string, string> = { OFERTA: 'Oferta', NEGOCIACAO: 'Negociação', CONTRATO_PRIVADO: 'Contrato privado', CONTRATO_PUBLICO: 'Contrato público', OUTRO: 'Outro' };
 export const FONTE: Record<string, string> = { IMOBILIARIA: 'Imobiliária', CORRETOR: 'Corretor', PROPRIETARIO: 'Proprietário', PORTAL: 'Portal', ORGAO_PUBLICO: 'Órgão público', REDE_SOCIAL: 'Rede social', PLACA: 'Placa', OUTRO: 'Outro' };
@@ -62,6 +64,10 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
   const [share, setShare] = useState<Compartilhamento | null>(null);
   const [modo, setModo] = useState<Modo | ''>('');
   const [changes, setChanges] = useState<PendingChange[] | null>(null);
+  const [dyn, setDyn] = useState<Record<string, string>>({});
+  const status = useVariaveisStatus(avaliacaoId);
+  const amostraSt = status.data?.amostras.find((x) => x.amostra_id === amostra?.id) ?? null;
+  const campos = camposDinamicos(status.data, 'AMOSTRA');
   const ids = amostra ? { id: amostra.id as string, dado_id: amostra.dado_id as string, imovel_id: amostra.dados_mercado?.imovel_id as string } : null;
   const original = useMemo(() => (amostra ? originalAmostra(amostra) : {}), [amostra]);
 
@@ -78,6 +84,11 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
       .then(setShare).catch(() => setShare(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [amostra?.id]);
+  // Variáveis desta avaliação: valores atuais lidos das fontes (característica do imóvel ou valor manual).
+  useEffect(() => {
+    setDyn(Object.fromEntries(campos.filter((c) => c.editavel).map((c) => [c.variavel.id, valorParaFormulario(c.variavel, amostraSt?.valores?.[c.variavel.id])])));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amostra?.id, !!amostraSt, campos.length]);
 
   if (!amostra || !ids) return null;
   const set = (k: string, v: string) => form && setForm({ ...form, [k]: v });
@@ -87,13 +98,22 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
     return !['anuncio_url', 'anuncio_id'].includes(chave) || form?.[chave] !== inicial[chave];
   });
   const lotePrevio = form ? filtrar(montarAlteracoes(camposAmostra(ids), original, form)) : [];
-  const mudaImovel = lotePrevio.some((c) => c.entity_type === 'imovel');
+  const destino = { imovel_id: ids.imovel_id, dado_id: ids.dado_id, amostra_id: ids.id };
+  const dynPrevio = alteracoesDinamicas(campos, amostraSt?.valores ?? {}, dyn, destino).alteracoes;
+  const mudaImovel = lotePrevio.some((c) => c.entity_type === 'imovel') || dynPrevio.some((c) => c.entity_type === 'imovel_atributo');
   const precisaEscolha = !!share?.compartilhado && mudaImovel;
 
   const area = normalizar('numero', form?.area_construida) as number | null;
   const valor = (normalizar('numero', form?.valor_utilizado) as number | null);
   const vuNovo = valorUnitario(valor, area);
   const vuAtual = amostra.dados_mercado?.valor_unitario ?? null;
+  const referencias = Object.fromEntries(campos.filter((c) => !c.editavel).map((c) => {
+    const k = c.variavel.campo_origem;
+    const r = k === 'valor_utilizado' ? valor : k === 'valor_unitario' ? (vuNovo ?? (vuAtual === null ? null : Number(vuAtual)))
+      : k === 'area_construida' ? area : k === 'area_terreno' ? (normalizar('numero', form?.area_terreno) as number | null) : null;
+    return [c.variavel.id, r];
+  }));
+  const faltando = obrigatoriasVazias(campos, dyn, referencias);
 
   const revisar = () => {
     if (!form) return;
@@ -109,6 +129,9 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
     let lote = filtrar(montarAlteracoes(cs, original, form));
     // Fonte: sem fonte anterior e sem nome, não há o que vincular.
     if (!original.fonte_nome && !form.fonte_nome.trim()) lote = lote.filter((c) => c.entity_type !== 'fonte_principal');
+    const din = alteracoesDinamicas(campos, amostraSt?.valores ?? {}, dyn, { ...destino, ...(precisaEscolha && modo ? { modo } : {}) });
+    if (din.invalidos.length) { toast.error(`Revise: ${din.invalidos.join(', ')}.`); return; }
+    lote = [...lote, ...din.alteracoes];
     if (!lote.length) { toast.info('Nenhum campo foi alterado.'); return; }
     setChanges(lote);
   };
@@ -154,6 +177,13 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
                 <p className="text-xs text-muted-foreground">Este dado de mercado também é usado em {share!.dado_outras_avaliacoes!.join(', ')}; a correção da observação vale lá também.</p>
               )}
             </section>
+            {campos.length > 0 && (
+              <section className="space-y-3" aria-labelledby="ea-vars">
+                <h3 id="ea-vars" className="text-sm font-semibold">Variáveis desta avaliação</h3>
+                <CamposDinamicosSection campos={campos} form={dyn} onChange={(id, v) => setDyn({ ...dyn, [id]: v })} referencias={referencias} idPrefix="ea" />
+                {faltando.length > 0 && <p className="text-xs text-destructive" role="status">Falta {faltando.join(', ')}. A amostra pode ser salva, mas fica incompleta e não entra no conjunto congelado.</p>}
+              </section>
+            )}
             <section className="space-y-3" aria-labelledby="ea-fonte">
               <h3 id="ea-fonte" className="text-sm font-semibold">Fonte principal</h3>
               <div className="grid gap-3 sm:grid-cols-6">
