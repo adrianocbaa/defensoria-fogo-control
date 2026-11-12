@@ -58,6 +58,7 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
   avaliacaoId: string; amostra: any | null; indice: number; onClose: () => void; onSaved: () => void;
 }) {
   const [form, setForm] = useState<Record<string, string> | null>(null);
+  const [inicial, setInicial] = useState<Record<string, string>>({});
   const [share, setShare] = useState<Compartilhamento | null>(null);
   const [modo, setModo] = useState<Modo | ''>('');
   const [changes, setChanges] = useState<PendingChange[] | null>(null);
@@ -71,7 +72,8 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
     for (const c of camposAmostra(ids)) if (!(c.chave in f)) f[c.chave] = paraFormulario(c.tipo, original[c.origem ?? c.chave]);
     if (!f.anuncio_url) f.anuncio_url = paraFormulario('texto', original.imovel_anuncio_url);
     if (!f.anuncio_id) f.anuncio_id = paraFormulario('texto', original.imovel_anuncio_id);
-    setForm(f);
+    if (!f.fonte_tipo) f.fonte_tipo = 'IMOBILIARIA';
+    setForm(f); setInicial(f);
     rpc<Compartilhamento>('aval_imovel_sharing', { p_avaliacao: avaliacaoId, p_imovel: ids.imovel_id, p_dado: ids.dado_id })
       .then(setShare).catch(() => setShare(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,7 +81,12 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
 
   if (!amostra || !ids) return null;
   const set = (k: string, v: string) => form && setForm({ ...form, [k]: v });
-  const lotePrevio = form ? montarAlteracoes(camposAmostra(ids), original, form) : [];
+  // Link/código do anúncio só entram no lote quando o usuário os altera (imóvel e dado podem divergir em cadastros antigos).
+  const filtrar = (lote: PendingChange[]) => lote.filter((c) => {
+    const chave = c.entity_type === 'dado_mercado' && c.campo === 'url_anuncio' ? 'anuncio_url' : c.campo;
+    return !['anuncio_url', 'anuncio_id'].includes(chave) || form?.[chave] !== inicial[chave];
+  });
+  const lotePrevio = form ? filtrar(montarAlteracoes(camposAmostra(ids), original, form)) : [];
   const mudaImovel = lotePrevio.some((c) => c.entity_type === 'imovel');
   const precisaEscolha = !!share?.compartilhado && mudaImovel;
 
@@ -99,7 +106,7 @@ export function EditAmostraDialog({ avaliacaoId, amostra, indice, onClose, onSav
     const vo = normalizar('numero', form.valor_ofertado) as number | null;
     if (vo !== null && vo < 0) { toast.error('O valor ofertado não pode ser negativo.'); return; }
     if (precisaEscolha && !modo) { toast.error('Escolha como tratar o imóvel compartilhado.'); return; }
-    let lote = montarAlteracoes(cs, original, form);
+    let lote = filtrar(montarAlteracoes(cs, original, form));
     // Fonte: sem fonte anterior e sem nome, não há o que vincular.
     if (!original.fonte_nome && !form.fonte_nome.trim()) lote = lote.filter((c) => c.entity_type !== 'fonte_principal');
     if (!lote.length) { toast.info('Nenhum campo foi alterado.'); return; }
