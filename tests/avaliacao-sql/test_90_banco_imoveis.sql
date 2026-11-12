@@ -123,6 +123,6 @@ SELECT pg_temp.ok((public.aval_banco_buscar(pg_temp.id('avB'), '{"municipio_ibge
 SELECT pg_temp.throws($$SELECT public.aval_amostras_adicionar(pg_temp.id('avB'), ARRAY['e2000000-0000-0000-0000-000000000021']::uuid[])$$, 'not_found', 'não inclui dado de outra organização');
 SELECT pg_temp.throws($$SELECT public.aval_amostras_importar(pg_temp.id('avB'), pg_temp.id('av2'), NULL)$$, 'not_found', 'não importa avaliação de outra organização');
 SELECT pg_temp.throws($$INSERT INTO public.avaliacao_amostras(avaliacao_id, dado_id) VALUES (pg_temp.id('avB'), 'e2000000-0000-0000-0000-000000000021')$$, 'cross_org|not_found|row-level', 'inserção direta com dado de outra organização é recusada');
-SELECT pg_temp.login('a2000000-0000-0000-0000-000000000002');
+SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$SELECT public.aval_amostras_importar(pg_temp.id('av2'), pg_temp.id('avB'), NULL)$$, 'not_found', 'organização A não importa da B');
 ROLLBACK;
