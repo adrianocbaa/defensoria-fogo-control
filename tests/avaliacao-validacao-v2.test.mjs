@@ -253,3 +253,7 @@ test('limite de candidatos configurável por organização, sem teto fixo de 30'
   assert.equal(C.evaluateCandidateLimit(5000, 'AMPLA', { ...SETTINGS, hard_limit: null, require_confirmation_over: null, exploration_candidate_soft_limit: 10000 }).ok, true);
   assert.equal(C.evaluateCandidateLimit(0, 'AMPLA', SETTINGS).ok, false);
 });
+
+test('candidatos: POWER fica restrita ao modo Manual (exige expoente do profissional)', () => {
+  assert.deepEqual(JSON.parse(JSON.stringify(C.validTransforms(['POWER', 'DIRECT', 'LN'], [1, 2, 3]))), ['DIRECT', 'LN']);
+});
