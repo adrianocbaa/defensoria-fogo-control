@@ -17,7 +17,14 @@ export class EngineCallError extends Error {
 }
 
 /** Chama a função do servidor que executa o motor oficial. Erros são traduzidos por allowlist. */
-export async function engine(body: { action: 'run_model' | 'run_validation'; modelo_id: string } | { action: 'project'; acceptance_id: string }) {
+export type EngineBody =
+  | { action: 'run_model' | 'run_validation'; modelo_id: string }
+  | { action: 'project'; acceptance_id: string }
+  | { action: 'issue_files'; emissao_id: string }
+  | { action: 'ai_generate'; secao_id: string; context_type: string; modo: 'GERAR' | 'MELHORAR' };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function engine(body: EngineBody): Promise<any> {
   const { data, error } = await supabase.functions.invoke('avaliacao-engine', { body });
   if (error) {
     let code: string | null = null;
@@ -32,6 +39,12 @@ export async function engine(body: { action: 'run_model' | 'run_validation'; mod
     throw new EngineCallError(code ?? 'internal_error', avalMessageFromCode(code, 'O cálculo não pôde ser concluído.'));
   }
   return data;
+}
+
+/** SHA-256 hexadecimal (confere arquivos oficiais baixados com o registro da emissão). */
+export async function sha256Hex(data: ArrayBuffer): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 export interface Pendencia {

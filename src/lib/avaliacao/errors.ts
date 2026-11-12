@@ -54,6 +54,23 @@ const MESSAGES: Record<string, string> = {
   MISSING_VALUES: 'Há valores faltantes nas amostras do conjunto congelado ou no avaliando.',
   INVALID_INPUT: 'Dados de entrada incompletos.',
   forbidden: 'Você não tem permissão para esta ação.',
+  candidate_confirmation_required: 'O volume de candidatos exige confirmação.',
+  candidate_hard_limit: 'A quantidade de candidatos passa do máximo permitido pela sua organização.',
+  invalid_domain: 'Uma transformação não é válida para algum valor do conjunto congelado (ex.: logaritmo de zero).',
+  use_candidate_batch: 'Candidatos gerados devem ser criados pelo modo Assistido ou Exploração ampla.',
+  invalid_mode: 'Modo de modelagem inválido.',
+  technical_permission_requires_role: 'Decisões técnicas exigem papel na avaliação.',
+  files_failed: 'Não foi possível gerar os arquivos oficiais. Tente novamente.',
+  files_partial: 'Arquivos oficiais incompletos para esta emissão. Acione o suporte técnico.',
+  snapshot_mismatch: 'O registro da emissão não confere com o snapshot oficial.',
+  ai_not_configured: 'Integração de IA não configurada. O laudo pode ser redigido manualmente.',
+  ai_credits: 'Sem créditos de IA no momento. O laudo pode ser redigido manualmente.',
+  ai_rate_limited: 'Muitas solicitações de IA. Aguarde alguns instantes.',
+  ai_denied: 'A IA não está liberada para esta organização.',
+  ai_failed: 'A IA não respondeu. Tente novamente.',
+  ai_rejected: 'A proposta da IA alterou dados protegidos e foi descartada. Tente novamente.',
+  ai_empty_base: 'Escreva um texto antes de pedir melhoria.',
+  internal_error: 'Não foi possível concluir a ação.',
 };
 
 export function avalErrorCode(err: unknown): string | null {

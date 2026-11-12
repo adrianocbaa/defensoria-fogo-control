@@ -502,10 +502,13 @@ export type Database = {
       }
       avaliacao_ai_conteudos: {
         Row: {
+          alertas: Json
           approved_at: string | null
           approved_by: string | null
           approved_text: string | null
           avaliacao_id: string
+          base_text: string | null
+          context_hash: string | null
           context_id: string | null
           context_json: Json
           context_type: string
@@ -514,16 +517,20 @@ export type Database = {
           generated_text: string
           id: string
           model: string
+          modo: string
           organization_id: string
           prompt_version: string
           purpose: string
           status: string
         }
         Insert: {
+          alertas?: Json
           approved_at?: string | null
           approved_by?: string | null
           approved_text?: string | null
           avaliacao_id: string
+          base_text?: string | null
+          context_hash?: string | null
           context_id?: string | null
           context_json: Json
           context_type: string
@@ -532,16 +539,20 @@ export type Database = {
           generated_text: string
           id?: string
           model: string
+          modo?: string
           organization_id: string
           prompt_version: string
           purpose: string
           status?: string
         }
         Update: {
+          alertas?: Json
           approved_at?: string | null
           approved_by?: string | null
           approved_text?: string | null
           avaliacao_id?: string
+          base_text?: string | null
+          context_hash?: string | null
           context_id?: string | null
           context_json?: Json
           context_type?: string
@@ -550,6 +561,7 @@ export type Database = {
           generated_text?: string
           id?: string
           model?: string
+          modo?: string
           organization_id?: string
           prompt_version?: string
           purpose?: string
@@ -1520,6 +1532,53 @@ export type Database = {
           },
         ]
       }
+      avaliacao_modeling_settings: {
+        Row: {
+          assisted_candidate_soft_limit: number
+          cook_regra: Json | null
+          exploration_candidate_soft_limit: number
+          hard_limit: number | null
+          id: string
+          organization_id: string | null
+          origem: string
+          require_confirmation_over: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          assisted_candidate_soft_limit?: number
+          cook_regra?: Json | null
+          exploration_candidate_soft_limit?: number
+          hard_limit?: number | null
+          id?: string
+          organization_id?: string | null
+          origem?: string
+          require_confirmation_over?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          assisted_candidate_soft_limit?: number
+          cook_regra?: Json | null
+          exploration_candidate_soft_limit?: number
+          hard_limit?: number | null
+          id?: string
+          organization_id?: string | null
+          origem?: string
+          require_confirmation_over?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_modeling_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       avaliacao_modelo_execucoes: {
         Row: {
           avaliacao_id: string
@@ -2267,6 +2326,7 @@ export type Database = {
           atributo_id: string | null
           avaliacao_id: string
           campo_origem: string | null
+          categorica: boolean | null
           codigo: string
           created_at: string
           id: string
@@ -2286,6 +2346,7 @@ export type Database = {
           atributo_id?: string | null
           avaliacao_id: string
           campo_origem?: string | null
+          categorica?: boolean | null
           codigo: string
           created_at?: string
           id?: string
@@ -2305,6 +2366,7 @@ export type Database = {
           atributo_id?: string | null
           avaliacao_id?: string
           campo_origem?: string | null
+          categorica?: boolean | null
           codigo?: string
           created_at?: string
           id?: string
@@ -5829,31 +5891,55 @@ export type Database = {
         Row: {
           avaliacao_id: string
           created_at: string
+          created_by: string | null
+          display_filename: string | null
           emissao_id: string
+          file_size: number | null
+          file_type: string | null
           formato: string
           hash: string | null
           id: string
+          mime_type: string | null
           organization_id: string
+          sha256: string | null
+          storage_bucket: string | null
+          storage_path: string | null
           storage_ref: string
         }
         Insert: {
           avaliacao_id: string
           created_at?: string
+          created_by?: string | null
+          display_filename?: string | null
           emissao_id: string
+          file_size?: number | null
+          file_type?: string | null
           formato: string
           hash?: string | null
           id?: string
+          mime_type?: string | null
           organization_id: string
+          sha256?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
           storage_ref: string
         }
         Update: {
           avaliacao_id?: string
           created_at?: string
+          created_by?: string | null
+          display_filename?: string | null
           emissao_id?: string
+          file_size?: number | null
+          file_type?: string | null
           formato?: string
           hash?: string | null
           id?: string
+          mime_type?: string | null
           organization_id?: string
+          sha256?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
           storage_ref?: string
         }
         Relationships: [
@@ -7633,6 +7719,83 @@ export type Database = {
           },
         ]
       }
+      modelo_anova: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          execucao_id: string
+          f: number | null
+          fonte: string
+          gl: number
+          id: string
+          modelo_id: string
+          mq: number
+          ordem: number
+          organization_id: string
+          significancia: number | null
+          sq: number
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          execucao_id: string
+          f?: number | null
+          fonte: string
+          gl: number
+          id?: string
+          modelo_id: string
+          mq: number
+          ordem: number
+          organization_id: string
+          significancia?: number | null
+          sq: number
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          execucao_id?: string
+          f?: number | null
+          fonte?: string
+          gl?: number
+          id?: string
+          modelo_id?: string
+          mq?: number
+          ordem?: number
+          organization_id?: string
+          significancia?: number | null
+          sq?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_anova_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_anova_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_anova_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_anova_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modelo_coeficientes: {
         Row: {
           avaliacao_id: string
@@ -7690,6 +7853,169 @@ export type Database = {
           },
         ]
       }
+      modelo_correlacoes: {
+        Row: {
+          avaliacao_id: string
+          correlacao: number | null
+          created_at: string
+          escala: string
+          execucao_id: string
+          id: string
+          modelo_id: string
+          organization_id: string
+          variavel_a: string
+          variavel_b: string
+        }
+        Insert: {
+          avaliacao_id: string
+          correlacao?: number | null
+          created_at?: string
+          escala?: string
+          execucao_id: string
+          id?: string
+          modelo_id: string
+          organization_id: string
+          variavel_a: string
+          variavel_b: string
+        }
+        Update: {
+          avaliacao_id?: string
+          correlacao?: number | null
+          created_at?: string
+          escala?: string
+          execucao_id?: string
+          id?: string
+          modelo_id?: string
+          organization_id?: string
+          variavel_a?: string
+          variavel_b?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_correlacoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_correlacoes_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_correlacoes_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_correlacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_estatisticas_variaveis: {
+        Row: {
+          amplitude: number
+          avaliacao_id: string
+          created_at: string
+          desvio_padrao: number
+          desvio_padrao_transformado: number
+          execucao_id: string
+          id: string
+          maximo: number
+          maximo_transformado: number
+          media: number
+          media_transformada: number
+          minimo: number
+          minimo_transformado: number
+          modelo_id: string
+          n: number
+          organization_id: string
+          papel: string
+          transformacao: string
+          variavel: string
+        }
+        Insert: {
+          amplitude: number
+          avaliacao_id: string
+          created_at?: string
+          desvio_padrao: number
+          desvio_padrao_transformado: number
+          execucao_id: string
+          id?: string
+          maximo: number
+          maximo_transformado: number
+          media: number
+          media_transformada: number
+          minimo: number
+          minimo_transformado: number
+          modelo_id: string
+          n: number
+          organization_id: string
+          papel: string
+          transformacao: string
+          variavel: string
+        }
+        Update: {
+          amplitude?: number
+          avaliacao_id?: string
+          created_at?: string
+          desvio_padrao?: number
+          desvio_padrao_transformado?: number
+          execucao_id?: string
+          id?: string
+          maximo?: number
+          maximo_transformado?: number
+          media?: number
+          media_transformada?: number
+          minimo?: number
+          minimo_transformado?: number
+          modelo_id?: string
+          n?: number
+          organization_id?: string
+          papel?: string
+          transformacao?: string
+          variavel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_estatisticas_variaveis_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_estatisticas_variaveis_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_estatisticas_variaveis_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_estatisticas_variaveis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modelo_execucao_erros: {
         Row: {
           avaliacao_id: string
@@ -7731,6 +8057,256 @@ export type Database = {
             columns: ["execucao_id"]
             isOneToOne: false
             referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_extrapolacoes: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          execucao_id: string
+          id: string
+          inside: boolean
+          max_amostra: number
+          min_amostra: number
+          modelo_id: string
+          organization_id: string
+          valor_avaliando: number
+          variavel: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          execucao_id: string
+          id?: string
+          inside: boolean
+          max_amostra: number
+          min_amostra: number
+          modelo_id: string
+          organization_id: string
+          valor_avaliando: number
+          variavel: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          execucao_id?: string
+          id?: string
+          inside?: boolean
+          max_amostra?: number
+          min_amostra?: number
+          modelo_id?: string
+          organization_id?: string
+          valor_avaliando?: number
+          variavel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_extrapolacoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_extrapolacoes_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_extrapolacoes_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_extrapolacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_normalidade: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          criterio: string | null
+          execucao_id: string
+          id: string
+          limite_inferior: number | null
+          limite_superior: number | null
+          modelo_id: string
+          observado: number
+          organization_id: string
+          policy_id: string | null
+          referencia: number | null
+          status: string
+          tolerancia: number | null
+          z: number
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          criterio?: string | null
+          execucao_id: string
+          id?: string
+          limite_inferior?: number | null
+          limite_superior?: number | null
+          modelo_id: string
+          observado: number
+          organization_id: string
+          policy_id?: string | null
+          referencia?: number | null
+          status: string
+          tolerancia?: number | null
+          z: number
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          criterio?: string | null
+          execucao_id?: string
+          id?: string
+          limite_inferior?: number | null
+          limite_superior?: number | null
+          modelo_id?: string
+          observado?: number
+          organization_id?: string
+          policy_id?: string | null
+          referencia?: number | null
+          status?: string
+          tolerancia?: number | null
+          z?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_normalidade_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_normalidade_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_normalidade_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_normalidade_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_normalidade_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "validation_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modelo_residuos: {
+        Row: {
+          amostra_id: string
+          avaliacao_id: string
+          cook: number
+          created_at: string
+          estimado_original: number
+          estimado_transformado: number
+          execucao_id: string
+          id: string
+          leverage: number
+          modelo_id: string
+          observado_original: number
+          observado_transformado: number
+          ordem: number
+          organization_id: string
+          residuo: number
+          residuo_dp: number
+          residuo_relativo: number | null
+        }
+        Insert: {
+          amostra_id: string
+          avaliacao_id: string
+          cook: number
+          created_at?: string
+          estimado_original: number
+          estimado_transformado: number
+          execucao_id: string
+          id?: string
+          leverage: number
+          modelo_id: string
+          observado_original: number
+          observado_transformado: number
+          ordem: number
+          organization_id: string
+          residuo: number
+          residuo_dp: number
+          residuo_relativo?: number | null
+        }
+        Update: {
+          amostra_id?: string
+          avaliacao_id?: string
+          cook?: number
+          created_at?: string
+          estimado_original?: number
+          estimado_transformado?: number
+          execucao_id?: string
+          id?: string
+          leverage?: number
+          modelo_id?: string
+          observado_original?: number
+          observado_transformado?: number
+          ordem?: number
+          organization_id?: string
+          residuo?: number
+          residuo_dp?: number
+          residuo_relativo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelo_residuos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_residuos_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelo_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_residuos_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_residuos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -11906,6 +12482,217 @@ export type Database = {
         }
         Relationships: []
       }
+      validation_foundation_items: {
+        Row: {
+          avaliacao_id: string
+          codigo: string
+          created_at: string
+          criterio_codigo: string | null
+          details_json: Json
+          grade_achieved: string | null
+          id: string
+          item_number: number
+          mandatory_for_grade: boolean
+          organization_id: string
+          points: number
+          source_type: string
+          status: string
+          titulo: string
+          validation_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          codigo: string
+          created_at?: string
+          criterio_codigo?: string | null
+          details_json?: Json
+          grade_achieved?: string | null
+          id?: string
+          item_number: number
+          mandatory_for_grade?: boolean
+          organization_id: string
+          points?: number
+          source_type: string
+          status: string
+          titulo: string
+          validation_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          codigo?: string
+          created_at?: string
+          criterio_codigo?: string | null
+          details_json?: Json
+          grade_achieved?: string | null
+          id?: string
+          item_number?: number
+          mandatory_for_grade?: boolean
+          organization_id?: string
+          points?: number
+          source_type?: string
+          status?: string
+          titulo?: string
+          validation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_foundation_items_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_foundation_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_foundation_items_validation_id_fkey"
+            columns: ["validation_id"]
+            isOneToOne: false
+            referencedRelation: "model_validations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validation_foundation_manual_grades: {
+        Row: {
+          avaliacao_id: string
+          codigo: string
+          created_at: string
+          created_by: string
+          grau: string
+          id: string
+          justificativa: string
+          modelo_id: string
+          organization_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          codigo: string
+          created_at?: string
+          created_by?: string
+          grau: string
+          id?: string
+          justificativa: string
+          modelo_id: string
+          organization_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          codigo?: string
+          created_at?: string
+          created_by?: string
+          grau?: string
+          id?: string
+          justificativa?: string
+          modelo_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_foundation_manual_grades_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_foundation_manual_grades_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_foundation_manual_grades_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validation_foundation_summary: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          grade_calculated: string | null
+          id: string
+          mandatory_requirements_json: Json
+          organization_id: string
+          pendencias: Json
+          policy_id: string
+          policy_reference: string | null
+          policy_version: number
+          requirements_met: boolean
+          total_points: number
+          validation_id: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          grade_calculated?: string | null
+          id?: string
+          mandatory_requirements_json?: Json
+          organization_id: string
+          pendencias?: Json
+          policy_id: string
+          policy_reference?: string | null
+          policy_version: number
+          requirements_met: boolean
+          total_points: number
+          validation_id: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          grade_calculated?: string | null
+          id?: string
+          mandatory_requirements_json?: Json
+          organization_id?: string
+          pendencias?: Json
+          policy_id?: string
+          policy_reference?: string | null
+          policy_version?: number
+          requirements_met?: boolean
+          total_points?: number
+          validation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_foundation_summary_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_foundation_summary_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_foundation_summary_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "validation_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_foundation_summary_validation_id_fkey"
+            columns: ["validation_id"]
+            isOneToOne: true
+            referencedRelation: "model_validations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       validation_manual_reviews: {
         Row: {
           avaliacao_id: string
@@ -12530,6 +13317,12 @@ export type Database = {
       }
       aval_dataset_freeze: { Args: { p_conjunto: string }; Returns: string }
       aval_dataset_prepare: { Args: { p_avaliacao: string }; Returns: string }
+      aval_domain_ok: {
+        Args: { p_conjunto: string; p_t: string; p_variavel: string }
+        Returns: boolean
+      }
+      aval_engine_persist_run: { Args: { p: Json }; Returns: string }
+      aval_engine_persist_validation: { Args: { p: Json }; Returns: string }
       aval_evaluate_change_impact: {
         Args: {
           p_avaliacao: string
@@ -12639,9 +13432,35 @@ export type Database = {
         }
         Returns: string
       }
+      aval_model_create_core: {
+        Args: {
+          p_amostras_excluidas?: string[]
+          p_avaliacao: string
+          p_conjunto: string
+          p_dep_power: number
+          p_dep_transf: string
+          p_dep_var: string
+          p_espaco?: string
+          p_modelo_origem?: string
+          p_nome: string
+          p_origem_tipo?: string
+          p_vars: Json
+        }
+        Returns: string
+      }
       aval_model_flag: {
         Args: { p_candidato: boolean; p_favorito: boolean; p_modelo: string }
         Returns: undefined
+      }
+      aval_model_generate_batch: {
+        Args: {
+          p_avaliacao: string
+          p_candidatos: Json
+          p_confirmado?: boolean
+          p_conjunto: string
+          p_modo: string
+        }
+        Returns: string[]
       }
       aval_my_perms: { Args: { p_avaliacao: string }; Returns: string[] }
       aval_next_sequence: {
@@ -12664,6 +13483,10 @@ export type Database = {
         Returns: undefined
       }
       aval_tokens: { Args: { p_avaliacao: string }; Returns: Json }
+      aval_transform_ok: {
+        Args: { p_t: string; p_x: number }
+        Returns: boolean
+      }
       aval_variable_in_use: { Args: { _var: string }; Returns: boolean }
       can_edit: { Args: { user_uuid?: string }; Returns: boolean }
       can_edit_obra: {

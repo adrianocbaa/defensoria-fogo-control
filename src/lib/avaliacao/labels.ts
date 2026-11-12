@@ -1,4 +1,5 @@
 // Rótulos e mapeamentos de exibição do módulo Avaliações.
+export { CENTRO_LABEL, CRITERIO_STATUS_LABEL, TRANSFORM_LABEL, VALOR_ADM_LABEL } from '../../../supabase/functions/_shared/avaliacao/docLabels.ts';
 export const TIPO_LABEL: Record<string, string> = {
   NOVA_LOCACAO: 'Nova locação',
   RENOVACAO: 'Renovação',
@@ -10,19 +11,8 @@ export const STAGE_LABEL: Record<string, string> = {
   CADASTRO: 'Cadastro', IMOVEL: 'Imóvel', PESQUISA_MERCADO: 'Pesquisa de mercado', MODELAGEM: 'Modelagem',
   VALIDACAO: 'Validação', RESULTADO_ECONOMICO: 'Resultado econômico', LAUDO: 'Laudo', EMISSAO: 'Emitido',
 };
-export const VALOR_ADM_LABEL: Record<string, string> = {
-  CONTRATO_ATUAL: 'Valor do contrato atual',
-  SOLICITADO_PROPRIETARIO: 'Valor solicitado pelo proprietário',
-  PROPOSTO_RENOVACAO: 'Valor proposto para renovação',
-  REAJUSTADO: 'Valor reajustado',
-  OUTRO: 'Outro valor',
-};
 export const PAPEL_LABEL: Record<string, string> = { RESPONSAVEL_TECNICO: 'Responsável técnico', COLABORADOR: 'Colaborador', REVISOR: 'Revisor' };
-export const TRANSFORM_LABEL: Record<string, string> = {
-  DIRECT: 'x', INVERSE: '1/x', LN: 'ln(x)', SQUARE: 'x²', SQRT: '√x', INV_SQUARE: '1/x²', INV_SQRT: '1/√x', POWER: 'x^k',
-};
 export const TRANSFORMS = ['DIRECT', 'INVERSE', 'LN', 'SQUARE', 'SQRT', 'INV_SQUARE', 'INV_SQRT'] as const;
-export const CENTRO_LABEL: Record<string, string> = { DIRECT: 'Estimativa central', MODE: 'Moda', MEDIAN: 'Mediana', MEAN: 'Média' };
 export const CONCLUSAO_LABEL: Record<string, string> = {
   COMPATIVEL: 'Compatível com o mercado',
   FAVORAVEL_ADMINISTRACAO: 'Favorável à Administração',
@@ -30,9 +20,6 @@ export const CONCLUSAO_LABEL: Record<string, string> = {
   ACIMA_REFERENCIA: 'Acima do valor de referência',
   REQUER_ANALISE: 'Requer análise',
   OUTRA: 'Outra (descrever)',
-};
-export const CRITERIO_STATUS_LABEL: Record<string, string> = {
-  ATENDE: 'Atende', NAO_ATENDE: 'Não atende', REQUER_ANALISE: 'Requer análise', NAO_APLICAVEL: 'Não aplicável', NAO_VERIFICADO: 'Não verificado',
 };
 export const OVERALL_LABEL: Record<string, string> = {
   APTO: 'Apto', APTO_COM_RESSALVAS: 'Apto com ressalvas', REQUER_AJUSTES: 'Requer ajustes', BLOQUEADO: 'Bloqueado',

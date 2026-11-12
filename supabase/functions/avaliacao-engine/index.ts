@@ -10,19 +10,35 @@ import {
   canonicalJson, describeEngineError, ENGINE_NAME, ENGINE_VERSION, EngineError, fitRegression, project,
   type PrecisionBand, type RegressionInput, type RegressionResult, type TransformCode,
 } from '../_shared/avaliacao/engine.ts';
-import { type ManualDecision, type PolicyRule, validateModel, type VariableMeta } from '../_shared/avaliacao/validator.ts';
+import { type CookRule, type FoundationGrade, type FoundationPolicy, type ManualDecision, type PolicyRule, validateModel, type VariableMeta } from '../_shared/avaliacao/validator.ts';
+import { buildRunPayload, buildValidationPayload } from '../_shared/avaliacao/persist.ts';
+import { buildLaudoDocx, buildLaudoPdf, issuedLaudoData, type LaudoData } from '../_shared/avaliacao/laudoDoc.ts';
+import { imageInfo } from '../_shared/avaliacao/images.ts';
+import { AI_CONTEXTS, AI_PROMPT_VERSION, AI_PURPOSE, type AiContext, checkAiText, systemPrompt } from '../_shared/avaliacao/aiText.ts';
+import { jsPDF } from 'npm:jspdf@4.2.1';
+import { autoTable } from 'npm:jspdf-autotable@5.0.8';
+import * as docx from 'npm:docx@9.5.1';
+import {
+  AuthenticationError, ConfigurationError, GatewayError, generateResponse, PaymentRequiredError, PermissionDeniedError, RateLimitError,
+} from 'npm:@lovable.dev/ai-gateway@0.1.11';
+import type {} from './ai-gateway.models.ts';
 
 const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('run_model'), modelo_id: z.string().uuid() }),
   z.object({ action: z.literal('run_validation'), modelo_id: z.string().uuid() }),
   z.object({ action: z.literal('project'), acceptance_id: z.string().uuid() }),
+  z.object({ action: z.literal('issue_files'), emissao_id: z.string().uuid() }),
+  z.object({ action: z.literal('ai_generate'), secao_id: z.string().uuid(), context_type: z.enum(AI_CONTEXTS), modo: z.enum(['GERAR', 'MELHORAR']) }),
 ]);
+
+const ISSUED_BUCKET = 'avaliacao-emitidos';
+const AI_MODEL = 'openai/gpt-6-astra' as const;
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-async function sha256(text: string): Promise<string> {
-  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+async function sha256(text: string | Uint8Array): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', typeof text === 'string' ? new TextEncoder().encode(text) : new Uint8Array(text));
   return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
@@ -35,11 +51,12 @@ function userClient(req: Request): SupabaseClient {
 
 type Caller = Awaited<ReturnType<typeof resolveCaller>>;
 
-async function authorize(req: Request, admin: SupabaseClient, caller: Caller, avaliacaoId: string, perm: string) {
-  const { data: av } = await admin.from('avaliacoes').select('id, organization_id, status').eq('id', avaliacaoId).maybeSingle();
+async function authorize(req: Request, admin: SupabaseClient, caller: Caller, avaliacaoId: string, perm: string, onlyActive = true) {
+  const { data: av } = await admin.from('avaliacoes').select('id, organization_id, status, codigo').eq('id', avaliacaoId).maybeSingle();
   if (!av) throw new GuardError(404, 'not_found');
   assertSameOrg(caller, av.organization_id);
-  const { data: ok, error } = await userClient(req).rpc('aval_can_edit', { _avaliacao: avaliacaoId, _perm: perm });
+  // aval_can_edit exige avaliação ativa; ações sobre emissões concluídas usam aval_has_perm (mesmo papel na avaliação).
+  const { data: ok, error } = await userClient(req).rpc(onlyActive ? 'aval_can_edit' : 'aval_has_perm', { _avaliacao: avaliacaoId, _perm: perm });
   if (error || ok !== true) throw new GuardError(403, 'forbidden');
   return { caller: caller as { kind: 'user'; userId: string }, av };
 }
@@ -53,7 +70,16 @@ async function loadPolicy(admin: SupabaseClient, orgId: string) {
   if (!pol) throw new GuardError(500, 'policy_missing');
   const { data: rules } = await admin.from('validation_policy_rules').select('*').eq('policy_id', pol.id).order('numero');
   const bands: PrecisionBand[] = ((pol.parametros as any)?.precisao_graus ?? []).map((g: any) => ({ grau: g.grau, maxAmplitudePct: Number(g.max) }));
-  return { policy: pol, rules: (rules ?? []) as PolicyRule[], bands };
+  const normality = ((rules ?? []) as PolicyRule[]).find((r) => r.codigo === 'NORMALIDADE' && r.ativo)?.thresholds ?? null;
+  const foundation = ((pol.parametros as any)?.fundamentacao ?? null) as FoundationPolicy | null;
+  return { policy: pol, rules: (rules ?? []) as PolicyRule[], bands, normality, foundation };
+}
+
+/** Regra operacional de Cook configurada pela organização (procedimento interno); sem ela vale a da política. */
+async function loadCookRule(admin: SupabaseClient, orgId: string): Promise<CookRule | null> {
+  const { data } = await admin.from('avaliacao_modeling_settings').select('organization_id, cook_regra').or(`organization_id.eq.${orgId},organization_id.is.null`);
+  const own = (data ?? []).find((r: any) => r.organization_id === orgId);
+  return ((own?.cook_regra ?? (data ?? []).find((r: any) => r.organization_id === null)?.cook_regra) ?? null) as CookRule | null;
 }
 
 interface ModelBundle {
@@ -104,7 +130,8 @@ async function runModel(req: Request, admin: SupabaseClient, caller0: Caller, mo
   const { data: prev } = await admin.from('avaliacao_modelo_execucoes').select('id').eq('modelo_id', modeloId).eq('status', 'SUCESSO').limit(1);
   if (prev && prev.length) return json(409, { error: 'model_already_executed', message: 'Este modelo já foi calculado e é imutável. Duplique-o para alterar.' });
   const b = await loadModel(admin, modeloId);
-  const { bands } = await loadPolicy(admin, m0.organization_id);
+  const pol = await loadPolicy(admin, m0.organization_id);
+  const { bands } = pol;
   const startedAt = new Date().toISOString();
   const inputSnapshot = {
     engine: { name: ENGINE_NAME, version: ENGINE_VERSION },
@@ -125,26 +152,11 @@ async function runModel(req: Request, admin: SupabaseClient, caller0: Caller, mo
     catch (e) { projErr = e instanceof EngineError ? e.code : 'NON_FINITE'; }
     const output = { fit, preliminary_projection: preliminary, preliminary_projection_error: projErr };
     const outputHash = await sha256(canonicalJson(output));
-    const { data: ex, error } = await admin.from('avaliacao_modelo_execucoes').insert({
-      ...base, status: 'SUCESSO', output_json: output, output_hash: outputHash, concluido_em: new Date().toISOString(),
-    }).select('id').single();
+    // Execução, resumo, coeficientes e tabelas derivadas gravados numa única transação, a partir do MESMO output.
+    const payload = buildRunPayload(base, output, outputHash, b.input, { policyId: pol.policy.id, thresholds: pol.normality });
+    const { data: exId, error } = await admin.rpc('aval_engine_persist_run', { p: payload });
     if (error) throw error;
-    const indep = fit.coefficients.slice(1);
-    const center = preliminary?.centers.find((c) => c.center === (preliminary!.logResponse ? 'MEDIAN' : 'DIRECT'));
-    await admin.from('modelo_resultado_resumo').insert({
-      organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, execucao_id: ex.id, modelo_id: modeloId,
-      n: fit.n, k: fit.k, r2: fit.r2, r2_ajustado: fit.r2Adj, f: fit.f, sig_f: fit.fPValue,
-      pior_sig_regressor: indep.length ? Math.max(...indep.map((c) => c.pValue)) : null,
-      amplitude_pct: center?.amplitudePct ?? null, grau_precisao: center?.precisionGrade ?? null,
-      extrapola: preliminary ? preliminary.extrapolation.some((x) => !x.inside) : null, centro_preliminar: center?.value ?? null,
-    });
-    await admin.from('modelo_coeficientes').insert(fit.coefficients.map((c, i) => ({
-      organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, execucao_id: ex.id, codigo: c.code, transformacao: c.transform,
-      beta: c.beta, erro_padrao: c.stdError, t: c.t, sig: c.pValue, ordem: i,
-    })));
-    await admin.from('avaliacao_modelos').update({ status: 'CALCULADO' }).eq('id', modeloId);
-    await admin.from('audit_events').insert({ organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, entity_type: 'modelo',
-      entity_id: modeloId, event_type: 'MODEL_EXECUTED', actor_id: caller.userId, details_json: { execucao: ex.id, input_hash: inputHash, output_hash: outputHash, n: fit.n } });
+    const ex = { id: exId as string };
     return json(200, { ok: true, execucao_id: ex.id, n: fit.n, r2: fit.r2, preliminary_error: projErr });
   } catch (e) {
     if (!(e instanceof EngineError)) throw e;
@@ -170,31 +182,30 @@ async function runValidation(req: Request, admin: SupabaseClient, caller0: Calle
   const b = await loadModel(admin, modeloId);
   const fit = (ex.output_json as any).fit as RegressionResult;
   const input = (ex.input_snapshot_json as any).regression_input as RegressionInput;
-  const { policy, rules, bands } = await loadPolicy(admin, m0.organization_id);
+  const { policy, rules, bands, foundation } = await loadPolicy(admin, m0.organization_id);
   let projection = null;
   try { projection = project(fit, input, b.avaliando, Number(b.modelo.nivel_confianca), bands); } catch { projection = null; }
   const vars: VariableMeta[] = b.indepVars.map(({ mv, v }, i) => ({
-    code: v.codigo, tipo: v.tipo_variavel, relacao_esperada: v.relacao_esperada, transform: mv.transformacao, power: mv.power ?? undefined,
+    code: v.codigo, tipo: v.tipo_variavel, categorica: v.categorica ?? null, relacao_esperada: v.relacao_esperada, transform: mv.transformacao, power: mv.power ?? undefined,
     values: input.independents[i].values,
   }));
-  const { data: reviews } = await admin.from('validation_manual_reviews').select('codigo, decisao, created_at').eq('modelo_id', modeloId).order('created_at');
+  const [{ data: reviews }, { data: grades }, cookRule] = await Promise.all([
+    admin.from('validation_manual_reviews').select('codigo, decisao, created_at').eq('modelo_id', modeloId).order('created_at'),
+    admin.from('validation_foundation_manual_grades').select('codigo, grau, created_at').eq('modelo_id', modeloId).order('created_at'),
+    loadCookRule(admin, m0.organization_id),
+  ]);
   const manual: Record<string, ManualDecision> = {};
   for (const r of reviews ?? []) manual[(r as any).codigo] = (r as any).decisao;
-  const out = validateModel(fit, projection, vars, { transform: b.modelo.dependente_transformacao, power: b.modelo.dependente_power ?? undefined }, rules, manual);
-  const { data: val, error } = await admin.from('model_validations').insert({
-    organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, modelo_id: modeloId, execucao_id: ex.id, policy_id: policy.id,
-    overall_status: out.overall, fundamentacao_grau: out.fundamentacao.grau, precisao_grau: out.precisao.grau, amplitude_pct: out.precisao.amplitudePct,
-    resumo_json: { fundamentacao: out.fundamentacao, precisao: out.precisao, pendentes_revisao: out.pendentesRevisao, impedimentos_grau_iii: out.impedimentosGrauIII, politica: { codigo: policy.codigo, versao: policy.versao } },
-    created_by: caller.userId,
-  }).select('id').single();
+  const foundationGrades: Record<string, FoundationGrade> = {};
+  for (const g of grades ?? []) foundationGrades[(g as any).codigo] = (g as any).grau;
+  const out = validateModel(fit, projection, vars, { transform: b.modelo.dependente_transformacao, power: b.modelo.dependente_power ?? undefined }, rules, manual,
+    { cookRule, foundation, foundationGrades });
+  const payload = buildValidationPayload(
+    { organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, modelo_id: modeloId, execucao_id: ex.id, created_by: caller.userId },
+    policy, out, manual, { cook_regra: cookRule, fundamentacao_estruturada: out.foundation?.summary ?? null });
+  const { data: valId, error } = await admin.rpc('aval_engine_persist_validation', { p: payload });
   if (error) throw error;
-  await admin.from('model_validation_results').insert(out.results.map((r) => ({
-    organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, validation_id: val.id, codigo: r.codigo, numero: r.numero, nome: r.nome,
-    origem: r.origem, modo: r.modo, status: r.status, grau: r.grau, valor: r.valor, detalhe: r.detalhe, dados: r.dados ?? null,
-    revisado: !!manual[r.codigo] || !!r.revisado, bloqueante: r.bloqueante,
-  })));
-  await admin.from('audit_events').insert({ organization_id: m0.organization_id, avaliacao_id: m0.avaliacao_id, entity_type: 'modelo', entity_id: modeloId,
-    event_type: 'VALIDATION_EXECUTED', actor_id: caller.userId, details_json: { validacao: val.id, status: out.overall, politica: policy.codigo + ' v' + policy.versao } });
+  const val = { id: valId as string };
   return json(200, { ok: true, validation_id: val.id, overall: out.overall });
 }
 
@@ -231,6 +242,177 @@ async function runProjection(req: Request, admin: SupabaseClient, caller0: Calle
   }
 }
 
+/** Fotos do avaliando para o anexo fotográfico (somente arquivos da própria organização). */
+async function loadFigures(admin: SupabaseClient, orgId: string, avaliacaoId: string): Promise<NonNullable<LaudoData['figuras']>> {
+  const { data: ai } = await admin.from('avaliacao_imoveis').select('imovel_id').eq('avaliacao_id', avaliacaoId).eq('papel', 'AVALIANDO').maybeSingle();
+  if (!ai) return [];
+  const { data: midias } = await admin.from('imovel_midias').select('storage_ref, legenda').eq('imovel_id', ai.imovel_id).eq('organization_id', orgId)
+    .eq('tipo', 'FOTO').order('created_at').limit(6);
+  const out: NonNullable<LaudoData['figuras']> = [];
+  for (const m of midias ?? []) {
+    const ref = String((m as any).storage_ref ?? '');
+    const mm = ref.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/([^?]+)/) ?? ref.match(/^([a-z0-9-]+)\/(.+)$/);
+    if (!mm) continue;
+    const bucket = mm[1]; const path = decodeURIComponent(mm[2]);
+    if (!['documents', 'service-photos'].includes(bucket) || !path.startsWith(`${orgId}/`)) continue;
+    const { data: blob } = await admin.storage.from(bucket).download(path);
+    if (!blob || blob.size > 8 * 1024 * 1024) continue;
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const info = imageInfo(bytes);
+    if (info) out.push({ titulo: (m as any).legenda || 'Imóvel avaliando', data: bytes, ...info });
+  }
+  return out;
+}
+
+const slug = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'laudo';
+
+/** Gera e congela os arquivos oficiais (PDF e DOCX) de uma emissão, a partir do snapshot imutável. Idempotente. */
+async function issueFiles(req: Request, admin: SupabaseClient, caller0: Caller, emissaoId: string) {
+  const { data: em } = await admin.from('laudo_emissoes').select('id, organization_id, avaliacao_id, codigo, hash').eq('id', emissaoId).maybeSingle();
+  if (!em) throw new GuardError(404, 'not_found');
+  const { caller } = await authorize(req, admin, caller0, em.avaliacao_id, 'report.issue', false);
+  const cols = 'id, formato, display_filename, mime_type, file_size, sha256, storage_path';
+  const { data: existing } = await admin.from('laudo_arquivos_emitidos').select(cols).eq('emissao_id', em.id);
+  if ((existing ?? []).length >= 2) return json(200, { ok: true, arquivos: existing });
+  if ((existing ?? []).length) return json(409, { error: 'files_partial', message: 'Arquivos oficiais incompletos para esta emissão. Acione o suporte técnico.' });
+  const { data: snap } = await admin.from('laudo_emissao_snapshots').select('dados, hash').eq('emissao_id', em.id).single();
+  if (!snap || snap.hash !== em.hash) throw new GuardError(409, 'snapshot_mismatch');
+  const data = issuedLaudoData(snap.dados, em.hash);
+  data.figuras = await loadFigures(admin, em.organization_id, em.avaliacao_id);
+  const pdf = new Uint8Array(buildLaudoPdf(data, { jsPDF, autoTable }).output('arraybuffer'));
+  const docxBytes = new Uint8Array(await docx.Packer.toBuffer(buildLaudoDocx(data, docx)));
+  const base = `${em.organization_id}/avaliacoes/${em.avaliacao_id}/${em.id}`;
+  const nome = `laudo-${slug(em.codigo)}`;
+  const files = [
+    { formato: 'PDF', bytes: pdf, mime: 'application/pdf', ext: 'pdf' },
+    { formato: 'DOCX', bytes: docxBytes, mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', ext: 'docx' },
+  ];
+  const rows = [];
+  const uploaded: string[] = [];
+  try {
+    for (const f of files) {
+      const path = `${base}/${nome}.${f.ext}`;
+      const { error } = await admin.storage.from(ISSUED_BUCKET).upload(path, f.bytes, { contentType: f.mime, upsert: true });
+      if (error) throw error;
+      uploaded.push(path);
+      const hash = await sha256(f.bytes);
+      rows.push({ organization_id: em.organization_id, avaliacao_id: em.avaliacao_id, emissao_id: em.id, formato: f.formato,
+        storage_ref: `${ISSUED_BUCKET}/${path}`, hash, storage_bucket: ISSUED_BUCKET, storage_path: path, display_filename: `${nome}.${f.ext}`,
+        mime_type: f.mime, file_size: f.bytes.byteLength, sha256: hash, created_by: caller.userId });
+    }
+    const { data: ins, error } = await admin.from('laudo_arquivos_emitidos').insert(rows).select(cols);
+    if (error) throw error;
+    await admin.from('audit_events').insert({ organization_id: em.organization_id, avaliacao_id: em.avaliacao_id, entity_type: 'laudo_emissao', entity_id: em.id,
+      event_type: 'REPORT_FILES_FROZEN', actor_id: caller.userId, details_json: { arquivos: rows.map((r) => ({ formato: r.formato, sha256: r.sha256, bytes: r.file_size })) } });
+    return json(200, { ok: true, arquivos: ins });
+  } catch (e) {
+    if (uploaded.length) await admin.storage.from(ISSUED_BUCKET).remove(uploaded);
+    console.error('avaliacao-engine: falha ao congelar arquivos', e instanceof Error ? e.name : 'unknown');
+    return json(500, { error: 'files_failed', message: 'Não foi possível gerar os arquivos oficiais. Tente novamente.' });
+  }
+}
+
+const pick = (o: Record<string, unknown> | null | undefined, keys: string[]) =>
+  Object.fromEntries(keys.filter((k) => o && o[k] !== null && o[k] !== undefined && o[k] !== '').map((k) => [k, o![k]]));
+
+/** Contexto factual (sem dados pessoais) entregue à IA, conforme o tipo de texto. */
+async function aiContext(req: Request, admin: SupabaseClient, av: any, secao: any, tipo: AiContext) {
+  const { data: tokens } = await userClient(req).rpc('aval_tokens', { p_avaliacao: av.id });
+  const { data: dt } = await admin.from('document_tokens').select('codigo, descricao');
+  const marcadores = Object.fromEntries((dt ?? []).map((t: any) => [t.codigo, { descricao: t.descricao, valor: (tokens as any)?.[t.codigo] ?? null }]));
+  const ctx: Record<string, unknown> = {
+    secao: { codigo: secao.codigo, titulo: secao.titulo },
+    avaliacao: pick(av, ['tipo', 'uf', 'municipio_nome', 'tipo_imovel']),
+    marcadores,
+  };
+  if (tipo === 'PROPERTY_DESCRIPTION') {
+    const { data: ai } = await admin.from('avaliacao_imoveis').select('imovel_id').eq('avaliacao_id', av.id).eq('papel', 'AVALIANDO').maybeSingle();
+    if (ai) {
+      const { data: im } = await admin.from('imoveis').select('*').eq('id', ai.imovel_id).maybeSingle();
+      ctx.imovel = pick(im, ['tipo_imovel', 'descricao', 'bairro', 'municipio_nome', 'uf', 'area_construida', 'area_terreno', 'padrao']);
+      const { data: at } = await admin.from('imovel_atributos').select('*').eq('imovel_id', ai.imovel_id).limit(100);
+      ctx.atributos = (at ?? []).map((a: any) => pick(a, ['codigo', 'nome', 'valor_texto', 'valor_numero', 'valor_booleano', 'unidade']));
+    }
+  } else if (tipo === 'MARKET_DIAGNOSIS') {
+    const [{ count }, { data: mc }] = await Promise.all([
+      admin.from('avaliacao_amostras').select('id', { count: 'exact', head: true }).eq('avaliacao_id', av.id).eq('selecionada', true),
+      admin.from('avaliacao_municipios_comparaveis').select('*').eq('avaliacao_id', av.id).limit(50),
+    ]);
+    ctx.pesquisa = { amostras_selecionadas: count ?? 0, municipios_comparaveis: (mc ?? []).map((m: any) => pick(m, ['municipio_nome', 'uf', 'decisao', 'justificativa'])) };
+  } else if (tipo === 'VALIDATION_EXPLANATION') {
+    const { data: ac } = await admin.from('model_acceptances').select('validation_id').eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle();
+    if (ac) {
+      const [{ data: rs }, { data: fi }] = await Promise.all([
+        admin.from('model_validation_results').select('numero, nome, status, grau, detalhe').eq('validation_id', ac.validation_id).order('numero'),
+        admin.from('validation_foundation_items').select('item_number, titulo, status, grade_achieved').eq('validation_id', ac.validation_id).order('item_number'),
+      ]);
+      ctx.validacao = { criterios: rs ?? [], fundamentacao_itens: fi ?? [] };
+    }
+  } else if (tipo === 'COMPATIBILITY' || tipo === 'CONCLUSION') {
+    const { data: res } = await admin.from('avaliacao_resultado_economico').select('id, centro, conclusao, conclusao_texto').eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle();
+    if (res) {
+      ctx.resultado = pick(res, ['centro', 'conclusao', 'conclusao_texto']);
+      const { data: cp } = await admin.from('avaliacao_compatibilidades').select('tipo_valor, direcao, posicao_ic, posicao_campo, diferenca_percentual').eq('resultado_id', res.id);
+      ctx.compatibilidades = cp ?? [];
+    }
+  }
+  return { ctx, allowedTokens: Object.keys(marcadores) };
+}
+
+function responseText(r: any): string {
+  if (typeof r?.output_text === 'string') return r.output_text;
+  return (r?.output ?? []).flatMap((o: any) => (o?.type === 'message' ? o.content ?? [] : []))
+    .filter((c: any) => c?.type === 'output_text').map((c: any) => c.text ?? '').join('');
+}
+
+/** IA propõe texto; o profissional revisa e aprova depois (aval_ai_decide). Nunca grava no laudo diretamente. */
+async function aiGenerate(req: Request, admin: SupabaseClient, caller0: Caller, secaoId: string, tipo: AiContext, modo: 'GERAR' | 'MELHORAR') {
+  const { data: secao } = await admin.from('laudo_secoes').select('id, avaliacao_id, laudo_versao_id, codigo, titulo, conteudo').eq('id', secaoId).maybeSingle();
+  if (!secao) throw new GuardError(404, 'not_found');
+  const { caller, av } = await authorize(req, admin, caller0, secao.avaliacao_id, 'report.edit');
+  const { data: lv } = await admin.from('laudo_versoes').select('status').eq('id', secao.laudo_versao_id).single();
+  if (!['RASCUNHO', 'EM_REVISAO'].includes(lv?.status)) return json(409, { error: 'report_issued_immutable', message: 'O laudo emitido não pode ser alterado.' });
+  const { data: avFull } = await admin.from('avaliacoes').select('id, tipo, uf, municipio_nome, tipo_imovel').eq('id', av.id).single();
+  const baseText = String(secao.conteudo ?? '');
+  if (modo === 'MELHORAR' && !baseText.trim()) return json(400, { error: 'ai_empty_base', message: 'Escreva um texto antes de pedir melhoria.' });
+  const { ctx, allowedTokens } = await aiContext(req, admin, avFull, secao, tipo);
+  const contextJson = { ...ctx, finalidade: AI_PURPOSE[tipo], modo };
+  const contextText = JSON.stringify(contextJson);
+  const contextHash = await sha256(canonicalJson(contextJson));
+  let generated: string;
+  try {
+    const r = await generateResponse({
+      model: AI_MODEL,
+      instructions: systemPrompt(modo),
+      input: [{ role: 'user', content: `CONTEXTO:\n${contextText}\n\nTEXTO_BASE:\n${baseText || '(vazio)'}` }],
+      max_output_tokens: 2000,
+    });
+    generated = responseText(r).trim();
+  } catch (e) {
+    if (e instanceof ConfigurationError || e instanceof AuthenticationError) return json(503, { error: 'ai_not_configured', message: 'Integração de IA não configurada. O laudo pode ser redigido manualmente.' });
+    if (e instanceof PaymentRequiredError) return json(402, { error: 'ai_credits', message: 'Sem créditos de IA no momento. O laudo pode ser redigido manualmente.' });
+    if (e instanceof RateLimitError) return json(429, { error: 'ai_rate_limited', message: 'Muitas solicitações de IA. Aguarde alguns instantes.' });
+    if (e instanceof PermissionDeniedError) return json(403, { error: 'ai_denied', message: 'A IA não está liberada para esta organização.' });
+    if (e instanceof GatewayError) { console.error('avaliacao-engine: IA', e.code); return json(502, { error: 'ai_failed', message: 'A IA não respondeu. Tente novamente.' }); }
+    throw e;
+  }
+  const check = checkAiText(generated, modo === 'MELHORAR' ? baseText : '', allowedTokens, contextText);
+  if (!check.ok) {
+    const msg = check.erro === 'TOKEN_REMOVIDO' ? 'A proposta removeu dados protegidos e foi descartada. Tente novamente.'
+      : check.erro === 'TOKEN_DESCONHECIDO' ? 'A proposta criou marcadores inexistentes e foi descartada. Tente novamente.' : 'A IA não retornou texto.';
+    return json(422, { error: 'ai_rejected', message: msg });
+  }
+  const { data: row, error } = await admin.from('avaliacao_ai_conteudos').insert({
+    organization_id: av.organization_id, avaliacao_id: av.id, context_type: tipo, context_id: secao.id, purpose: AI_PURPOSE[tipo],
+    prompt_version: AI_PROMPT_VERSION, model: AI_MODEL, context_json: contextJson, context_hash: contextHash, base_text: baseText || null,
+    modo, generated_text: generated, alertas: check.alertas, status: 'PROPOSTO', created_by: caller.userId,
+  }).select('id').single();
+  if (error) throw error;
+  await admin.from('audit_events').insert({ organization_id: av.organization_id, avaliacao_id: av.id, entity_type: 'ai_conteudo', entity_id: row.id,
+    event_type: 'AI_TEXT_PROPOSED', actor_id: caller.userId, details_json: { contexto: tipo, modo, secao: secao.codigo, prompt_version: AI_PROMPT_VERSION, model: AI_MODEL } });
+  return json(200, { ok: true, conteudo_id: row.id, alertas: check.alertas });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' });
@@ -246,6 +428,8 @@ Deno.serve(async (req) => {
     const caller = await resolveCaller(req, admin, false);
     if (body.action === 'run_model') return await runModel(req, admin, caller, body.modelo_id);
     if (body.action === 'run_validation') return await runValidation(req, admin, caller, body.modelo_id);
+    if (body.action === 'issue_files') return await issueFiles(req, admin, caller, body.emissao_id);
+    if (body.action === 'ai_generate') return await aiGenerate(req, admin, caller, body.secao_id, body.context_type, body.modo);
     return await runProjection(req, admin, caller, body.acceptance_id);
   } catch (e) {
     const g = guardResponse(e, corsHeaders);

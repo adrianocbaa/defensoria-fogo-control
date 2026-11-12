@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
-import { Calculator, ChevronDown, ChevronRight, Plus, Send, Sparkles, Star, Wand2 } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronRight, Compass, Hand, Plus, Send, Sparkles, Star, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,40 +9,51 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { db, engine, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { TRANSFORM_LABEL, TRANSFORMS, fmtNum } from '@/lib/avaliacao/labels';
-import { countCandidates, type TransformCode } from '@/lib/avaliacao/engine';
+import { buildCandidates, estimateCandidates, evaluateCandidateLimit, type CandidateMode, type ModelingSettings, type TransformCode } from '@/lib/avaliacao/engine';
 
 const ORIGENS: Record<string, string> = {
   valor_utilizado: 'Valor utilizado (R$/mês)', valor_unitario: 'Valor unitário (R$/m²)', area_construida: 'Área construída (m²)', area_terreno: 'Área do terreno (m²)',
 };
 const STATUS_MOD: Record<string, string> = { RASCUNHO: 'A calcular', CALCULADO: 'Calculado', ERRO: 'Erro no cálculo', EM_VALIDACAO: 'Em validação' };
-const MAX_CANDIDATOS = 30;
+const ORIGEM_MOD: Record<string, string> = { MANUAL: 'Manual', GERADO_ASSISTIDO: 'Assistido', GERADO_AMPLA: 'Exploração ampla', SIMULACAO_VARIAVEL: 'Simulação', SIMULACAO_AMOSTRA: 'Simulação' };
+const DEFAULT_SETTINGS: ModelingSettings = { assisted_candidate_soft_limit: 30, exploration_candidate_soft_limit: 200, hard_limit: 2000, require_confirmation_over: 100 };
+const categoricoPossivel = (tipo: string) => tipo === 'PROXY' || tipo === 'CODIGO_ALOCADO';
 const parse = (s: string) => { if (!s.trim()) return null; const n = Number(s.replace(/\./g, '').replace(',', '.')); return Number.isFinite(n) ? n : NaN; };
 
 export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const av = ctx.avaliacao.data!;
-  const [novaVar, setNovaVar] = useState<{ nome: string; codigo: string; papel: string; tipo: string; rel: string; unidade: string; origem: string; trans: string[] } | null>(null);
+  const [novaVar, setNovaVar] = useState<{ nome: string; codigo: string; papel: string; tipo: string; rel: string; unidade: string; origem: string; trans: string[]; categorica?: boolean } | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [novoModelo, setNovoModelo] = useState<{ dep: string; depT: string; vars: Record<string, string> } | null>(null);
-  const [gerar, setGerar] = useState<{ dep: string; depTs: string[]; obrig: Record<string, boolean> } | null>(null);
+  const [gerar, setGerar] = useState<{ modo: CandidateMode; dep: string; depTs: string[]; obrig: Record<string, boolean> } | null>(null);
+  const [confirmar, setConfirmar] = useState<number | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const q = useAvalQuery(av.id, 'modelagem', async () => {
-    const [vars, vals, am, cj, mods, link] = await Promise.all([
+    const [vars, vals, am, cj, mods, link, st] = await Promise.all([
       db.from('avaliacao_variaveis').select('*').eq('avaliacao_id', av.id).eq('ativo', true).order('created_at'),
       db.from('avaliacao_variavel_valores').select('*').eq('avaliacao_id', av.id).limit(10000),
       db.from('avaliacao_amostras').select('id, selecionada, habilitada_modelo, dados_mercado(valor_utilizado, valor_unitario, imoveis(area_construida, area_terreno, endereco, numero))').eq('avaliacao_id', av.id).eq('selecionada', true).order('created_at').limit(10000),
       db.from('avaliacao_conjuntos_dados').select('id, versao').eq('avaliacao_id', av.id).eq('status', 'CONGELADO').maybeSingle(),
       db.from('avaliacao_modelos').select('*, avaliacao_modelo_variaveis(variavel_id, transformacao, ordem), modelo_resultado_resumo(*)').eq('avaliacao_id', av.id).order('numero', { ascending: false }),
       db.from('avaliacao_imoveis').select('imoveis(area_construida, area_terreno)').eq('avaliacao_id', av.id).eq('papel', 'AVALIANDO').maybeSingle(),
+      db.from('avaliacao_modeling_settings').select('organization_id, assisted_candidate_soft_limit, exploration_candidate_soft_limit, hard_limit, require_confirmation_over'),
     ]);
-    return { vars: (vars.data ?? []) as any[], vals: (vals.data ?? []) as any[], amostras: (am.data ?? []) as any[], conjunto: cj.data as any, modelos: (mods.data ?? []) as any[], avaliando: (link.data as any)?.imoveis ?? null };
+    const conjunto = cj.data as any;
+    // Valores congelados do conjunto (os mesmos que o servidor usa para validar o domínio das transformações).
+    const snaps = conjunto ? (await db.from('avaliacao_amostra_snapshots').select('dados').eq('conjunto_id', conjunto.id).limit(10000)).data ?? [] : [];
+    const settingsRows = (st.data ?? []) as any[];
+    const settings: ModelingSettings = settingsRows.find((r) => r.organization_id) ?? settingsRows.find((r) => !r.organization_id) ?? DEFAULT_SETTINGS;
+    return { vars: (vars.data ?? []) as any[], vals: (vals.data ?? []) as any[], amostras: (am.data ?? []) as any[], conjunto, modelos: (mods.data ?? []) as any[],
+      avaliando: (link.data as any)?.imoveis ?? null, snaps: (snaps as any[]).filter((x) => x.dados?.habilitada_modelo !== false), settings };
   });
   const vars = q.data?.vars ?? [];
   const amostras = q.data?.amostras ?? [];
@@ -69,6 +80,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       avaliacao_id: av.id, nome: novaVar.nome.trim() || novaVar.codigo, codigo: novaVar.codigo, papel: novaVar.papel, tipo_variavel: novaVar.tipo,
       relacao_esperada: novaVar.rel, unidade: novaVar.unidade.trim() || null, transformacoes_autorizadas: novaVar.trans,
       origem_tipo: novaVar.origem ? 'CAMPO_DADO_MERCADO' : 'MANUAL', campo_origem: novaVar.origem || null,
+      categorica: categoricoPossivel(novaVar.tipo) ? novaVar.categorica !== false : null,
     });
     if (error) { toast.error(avalErrorMessage(error)); return; }
     setNovaVar(null); ctx.refresh();
@@ -132,31 +144,41 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     try { await rpc('aval_model_flag', { p_modelo: m.id, p_favorito: !m.favorito, p_candidato: null }); ctx.refresh(); }
     catch (e) { toast.error(avalErrorMessage(e)); }
   };
-  const candidatos = gerar && dep ? countCandidates(indeps.map((v) => ({ transforms: v.transformacoes_autorizadas as TransformCode[], obrigatoria: !!gerar.obrig[v.id] })), gerar.depTs.length) : 0;
-  const gerarCandidatos = async () => {
-    if (!gerar || !dep) return;
-    // Exclui a combinação vazia (sem variável independente).
-    let combos: [string, string][][] = [[]];
-    for (const v of indeps) {
-      const opts: (string | null)[] = [...v.transformacoes_autorizadas, ...(gerar.obrig[v.id] ? [] : [null])];
-      combos = combos.flatMap((c) => opts.map((t) => (t ? [...c, [v.id, t] as [string, string]] : c)));
-    }
-    combos = combos.filter((c) => c.length > 0);
-    const total = combos.length * gerar.depTs.length;
-    if (total > MAX_CANDIDATOS) { toast.error(`São ${total} candidatos; o limite por geração é ${MAX_CANDIDATOS}. Torne variáveis obrigatórias ou reduza transformações.`); return; }
+  const frozen = (code: string) => (q.data?.snaps ?? []).map((x: any) => x.dados?.variaveis?.[code]).filter((x: unknown) => x !== null && x !== undefined && x !== '').map(Number);
+  const avaliandoVal = (v: any) => { const raw = valMap.get(cellKey(v.id, 'AV'))?.valor; return raw === null || raw === undefined ? [] : [Number(raw)]; };
+  const candSpec = () => {
+    if (!gerar || !dep) return null;
+    const depSpec = { transforms: dep.transformacoes_autorizadas as TransformCode[], selected: gerar.depTs as TransformCode[], values: frozen(dep.codigo) };
+    const ind = indeps.map((v) => ({ id: v.id, code: v.codigo, transforms: v.transformacoes_autorizadas as TransformCode[], obrigatoria: !!gerar.obrig[v.id], values: [...frozen(v.codigo), ...avaliandoVal(v)] }));
+    return { depSpec, ind };
+  };
+  const spec = candSpec();
+  const estimativa = gerar && spec ? estimateCandidates(gerar.modo, spec.depSpec, spec.ind) : { total: 0, descartadasDominio: 0 };
+  const settings = q.data?.settings ?? DEFAULT_SETTINGS;
+  const limite = gerar ? evaluateCandidateLimit(estimativa.total, gerar.modo, settings) : null;
+  const gerarCandidatos = async (confirmado: boolean) => {
+    if (!gerar || !dep || !spec || !limite) return;
+    if (limite.ok === false) { toast.error(limite.reason === 'EMPTY' ? 'Nenhuma combinação válida com as transformações autorizadas.' : `São ${estimativa.total} candidatos; o limite da organização é ${limite.limit}. Torne variáveis obrigatórias ou reduza transformações.`); return; }
+    if (limite.requiresConfirmation && !confirmado) { setConfirmar(estimativa.total); return; }
+    setConfirmar(null);
+    const lista = buildCandidates(gerar.modo, spec.depSpec, spec.ind).map((c) => ({ dep_transf: c.depT, vars: c.vars.map(([variavel_id, transformacao]) => ({ variavel_id, transformacao })) }));
     setBusy('gerar');
     let ok = 0, falhas = 0;
     try {
-      for (const depT of gerar.depTs) for (const c of combos) {
-        try {
-          const id = await criarModelo({ dep: dep.id, depT, vars: c, origem: 'GERADO_ASSISTIDO' });
-          await engine({ action: 'run_model', modelo_id: id }); ok++;
-        } catch { falhas++; }
+      const ids = await rpc<string[]>('aval_model_generate_batch', { p_avaliacao: av.id, p_conjunto: q.data!.conjunto.id, p_modo: gerar.modo, p_candidatos: lista, p_confirmado: confirmado });
+      for (const id of ids) {
+        try { await engine({ action: 'run_model', modelo_id: id }); ok++; } catch { falhas++; }
       }
       toast.success(`${ok} candidato(s) calculado(s)${falhas ? `; ${falhas} não puderam ser calculados (veja o motivo em cada modelo)` : ''}. Compare e escolha com critério técnico.`);
       setGerar(null);
-    } finally { setBusy(null); ctx.refresh(); }
+    } catch (e) { toast.error(avalErrorMessage(e)); } finally { setBusy(null); ctx.refresh(); }
   };
+  const abrirModo = (modo: 'MANUAL' | CandidateMode) => {
+    if (!dep) return;
+    if (modo === 'MANUAL') { setNovoModelo({ dep: dep.id, depT: dep.transformacoes_autorizadas.includes('LN') ? 'LN' : dep.transformacoes_autorizadas[0], vars: Object.fromEntries(indeps.map((v) => [v.id, v.transformacoes_autorizadas[0]])) }); return; }
+    setGerar({ modo, dep: dep.id, depTs: modo === 'AMPLA' ? [...dep.transformacoes_autorizadas] : (dep.transformacoes_autorizadas as string[]).includes('LN') ? ['LN'] : [dep.transformacoes_autorizadas[0]], obrig: {} });
+  };
+  const podeCriar = canModel && !!q.data?.conjunto && !!dep && indeps.length > 0;
 
   return (
     <div className="space-y-5">
@@ -214,18 +236,29 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between space-y-0 flex-wrap gap-2">
           <CardTitle className="text-base">Modelos</CardTitle>
-          {canModel && q.data?.conjunto && dep && indeps.length > 0 && (
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setGerar({ dep: dep.id, depTs: (dep.transformacoes_autorizadas as string[]).includes('LN') ? ['LN'] : [dep.transformacoes_autorizadas[0]], obrig: {} })}><Sparkles className="h-4 w-4 mr-1" />Gerar candidatos</Button>
-              <Button size="sm" onClick={() => setNovoModelo({ dep: dep.id, depT: dep.transformacoes_autorizadas.includes('LN') ? 'LN' : dep.transformacoes_autorizadas[0], vars: Object.fromEntries(indeps.map((v) => [v.id, v.transformacoes_autorizadas[0]])) })}><Plus className="h-4 w-4 mr-1" />Modelo manual</Button>
-            </div>
-          )}
         </CardHeader>
+        {podeCriar && (
+          <CardContent className="pt-0 pb-4">
+            <div className="grid gap-3 sm:grid-cols-3" role="group" aria-label="Modo de modelagem">
+              {([
+                { modo: 'MANUAL', icon: Hand, titulo: 'Manual', texto: 'Você escolhe as variáveis e transformações de um modelo.' },
+                { modo: 'ASSISTIDO', icon: Sparkles, titulo: 'Assistido', texto: 'Testa as transformações autorizadas, com variáveis obrigatórias.', destaque: true },
+                { modo: 'AMPLA', icon: Compass, titulo: 'Exploração ampla', texto: 'Testa todas as combinações válidas do espaço autorizado.' },
+              ] as const).map((m) => (
+                <button key={m.modo} type="button" onClick={() => abrirModo(m.modo)}
+                  className={`text-left rounded-lg border p-3 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${'destaque' in m ? 'border-primary bg-primary/5' : ''}`}>
+                  <span className="flex items-center gap-2 font-medium text-sm"><m.icon className="h-4 w-4" aria-hidden />{m.titulo}{'destaque' in m && <Badge className="ml-auto">Recomendado</Badge>}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{m.texto}</span>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        )}
         <CardContent className="p-0 overflow-x-auto">
           {!q.data?.conjunto ? <p className="p-6 text-sm text-muted-foreground">Preencha as variáveis e congele o conjunto de dados no bloco Mercado para criar modelos.</p> :
             (q.data.modelos.length === 0 ? <p className="p-6 text-sm text-muted-foreground">Nenhum modelo. Conjunto vigente: versão {q.data.conjunto.versao}.</p> : (
               <Table>
-                <TableHeader><TableRow><TableHead /><TableHead>Modelo</TableHead><TableHead>Equação</TableHead><TableHead className="text-right">n</TableHead><TableHead className="text-right">R² aj.</TableHead><TableHead className="text-right">Pior sig.</TableHead><TableHead className="text-right">Amplitude IC</TableHead><TableHead>Situação</TableHead><TableHead /></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead /><TableHead>Modelo</TableHead><TableHead>Origem</TableHead><TableHead>Equação</TableHead><TableHead className="text-right">n</TableHead><TableHead className="text-right">R² aj.</TableHead><TableHead className="text-right">Pior sig.</TableHead><TableHead className="text-right">Amplitude IC</TableHead><TableHead>Situação</TableHead><TableHead /></TableRow></TableHeader>
                 <TableBody>{q.data.modelos.map((m) => {
                   const r = Array.isArray(m.modelo_resultado_resumo) ? m.modelo_resultado_resumo[0] : m.modelo_resultado_resumo;
                   const depV = vars.find((v) => v.id === m.dependente_variavel_id);
@@ -234,7 +267,8 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                     <Fragment key={m.id}>
                       <TableRow className={m.stale ? 'opacity-60' : ''}>
                         <TableCell><Button size="icon" variant="ghost" aria-label="Detalhes" onClick={() => setAberto(aberto === m.id ? null : m.id)}>{aberto === m.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</Button></TableCell>
-                        <TableCell className="font-medium whitespace-nowrap">{m.favorito && <Star className="inline h-3.5 w-3.5 mr-1 fill-current" />}{m.nome}</TableCell>
+                        <TableCell className="font-medium whitespace-nowrap">{m.favorito && <Star className="inline h-3.5 w-3.5 mr-1 fill-current" aria-label="Favorito" />}{m.nome}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{ORIGEM_MOD[m.origem_tipo] ?? m.origem_tipo}</TableCell>
                         <TableCell className="text-xs font-mono">{eq}</TableCell>
                         <TableCell className="text-right tabular-nums">{r?.n ?? '—'}</TableCell>
                         <TableCell className="text-right tabular-nums">{r ? fmtNum(r.r2_ajustado, 4) : '—'}</TableCell>
@@ -247,13 +281,13 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                           {canModel && m.status !== 'RASCUNHO' && <Button size="icon" variant="ghost" aria-label="Favorito" onClick={() => favoritar(m)}><Star className={`h-4 w-4 ${m.favorito ? 'fill-current' : ''}`} /></Button>}
                         </TableCell>
                       </TableRow>
-                      {aberto === m.id && <TableRow><TableCell colSpan={9} className="bg-muted/30"><ModeloDetalhe modeloId={m.id} avaliacaoId={av.id} /></TableCell></TableRow>}
+                      {aberto === m.id && <TableRow><TableCell colSpan={10} className="bg-muted/30"><ModeloDetalhe modeloId={m.id} avaliacaoId={av.id} /></TableCell></TableRow>}
                     </Fragment>
                   );
                 })}</TableBody>
               </Table>
             ))}
-          <p className="px-6 py-3 text-xs text-muted-foreground">Não há escolha automática: compare significâncias, coerência das relações e precisão. R² sozinho não decide.</p>
+          <p className="px-6 py-3 text-xs text-muted-foreground">Não há escolha automática nem pontuação: compare significâncias, coerência das relações e precisão. R² sozinho não decide.</p>
         </CardContent>
       </Card>
 
@@ -267,6 +301,10 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
               <div className="grid gap-1.5"><Label>Papel</Label><Select value={novaVar.papel} onValueChange={(p) => setNovaVar({ ...novaVar, papel: p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="DEPENDENTE" disabled={!!dep}>Dependente</SelectItem><SelectItem value="INDEPENDENTE">Independente</SelectItem></SelectContent></Select></div>
               <div className="grid gap-1.5"><Label>Tipo</Label><Select value={novaVar.tipo} onValueChange={(p) => setNovaVar({ ...novaVar, tipo: p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="QUANTITATIVA">Quantitativa</SelectItem><SelectItem value="DICOTOMICA">Dicotômica</SelectItem><SelectItem value="PROXY">Proxy</SelectItem><SelectItem value="CODIGO_ALOCADO">Código alocado</SelectItem></SelectContent></Select></div>
               <div className="grid gap-1.5"><Label>Relação esperada</Label><Select value={novaVar.rel} onValueChange={(p) => setNovaVar({ ...novaVar, rel: p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="POSITIVA">Positiva</SelectItem><SelectItem value="NEGATIVA">Negativa</SelectItem><SelectItem value="INDEFINIDA">Indefinida</SelectItem></SelectContent></Select></div>
+              {categoricoPossivel(novaVar.tipo) && (
+                <label className="flex items-start gap-2 text-sm sm:col-span-2"><Checkbox checked={novaVar.categorica !== false} onCheckedChange={(c) => setNovaVar({ ...novaVar, categorica: !!c })} />
+                  <span>Representa categorias ou grupos discretos <span className="block text-xs text-muted-foreground">Quando marcado, entra na verificação de micronumerosidade.</span></span></label>
+              )}
               <div className="grid gap-1.5"><Label>Unidade</Label><Input value={novaVar.unidade} onChange={(e) => setNovaVar({ ...novaVar, unidade: e.target.value })} maxLength={20} /></div>
               <div className="grid gap-1.5 sm:col-span-2"><Label>Preencher a partir de</Label><Select value={novaVar.origem || 'MANUAL'} onValueChange={(p) => setNovaVar({ ...novaVar, origem: p === 'MANUAL' ? '' : p })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="MANUAL">Digitação manual</SelectItem>{Object.entries(ORIGENS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
               <div className="grid gap-1.5 sm:col-span-2"><Label>Transformações autorizadas</Label>
@@ -299,19 +337,41 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
       <Dialog open={!!gerar} onOpenChange={(o) => !o && setGerar(null)}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Gerar candidatos (modo assistido)</DialogTitle><DialogDescription>Testa apenas as transformações autorizadas. Variáveis obrigatórias entram em todos os candidatos.</DialogDescription></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{gerar?.modo === 'AMPLA' ? 'Exploração ampla' : 'Gerar candidatos (modo assistido)'}</DialogTitle>
+            <DialogDescription>{gerar?.modo === 'AMPLA'
+              ? 'Testa todas as combinações matematicamente válidas das transformações autorizadas. Nenhum modelo é escolhido automaticamente.'
+              : 'Testa apenas as transformações autorizadas. Variáveis obrigatórias entram em todos os candidatos.'}</DialogDescription>
+          </DialogHeader>
           {gerar && dep && (
             <div className="grid gap-3 text-sm">
-              <div><p className="font-medium mb-1">Transformações da dependente</p>
-                <div className="flex flex-wrap gap-3">{(dep.transformacoes_autorizadas as string[]).map((t) => <label key={t} className="flex items-center gap-1.5"><Checkbox checked={gerar.depTs.includes(t)} onCheckedChange={(c) => setGerar({ ...gerar, depTs: c ? [...gerar.depTs, t] : gerar.depTs.filter((x) => x !== t) })} />{TRANSFORM_LABEL[t]}</label>)}</div></div>
-              <div><p className="font-medium mb-1">Variáveis obrigatórias</p>
-                {indeps.map((v) => <label key={v.id} className="flex items-center gap-1.5 py-0.5"><Checkbox checked={!!gerar.obrig[v.id]} onCheckedChange={(c) => setGerar({ ...gerar, obrig: { ...gerar.obrig, [v.id]: !!c } })} />{v.nome} <span className="text-muted-foreground">({(v.transformacoes_autorizadas as string[]).length} transformações)</span></label>)}</div>
-              <p className={candidatos > MAX_CANDIDATOS ? 'text-destructive' : 'text-muted-foreground'}>Candidatos estimados: {candidatos} (limite {MAX_CANDIDATOS} por geração).</p>
+              {gerar.modo === 'ASSISTIDO' && <div><p className="font-medium mb-1">Transformações da dependente</p>
+                <div className="flex flex-wrap gap-3">{(dep.transformacoes_autorizadas as string[]).map((t) => <label key={t} className="flex items-center gap-1.5"><Checkbox checked={gerar.depTs.includes(t)} onCheckedChange={(c) => setGerar({ ...gerar, depTs: c ? [...gerar.depTs, t] : gerar.depTs.filter((x) => x !== t) })} />{TRANSFORM_LABEL[t]}</label>)}</div></div>}
+              {gerar.modo === 'ASSISTIDO' && <div><p className="font-medium mb-1">Variáveis obrigatórias</p>
+                {indeps.map((v) => <label key={v.id} className="flex items-center gap-1.5 py-0.5"><Checkbox checked={!!gerar.obrig[v.id]} onCheckedChange={(c) => setGerar({ ...gerar, obrig: { ...gerar.obrig, [v.id]: !!c } })} />{v.nome} <span className="text-muted-foreground">({(v.transformacoes_autorizadas as string[]).length} transformações)</span></label>)}</div>}
+              {gerar.modo === 'AMPLA' && <p className="text-muted-foreground">Espaço: {indeps.length} variáveis independentes e {(dep.transformacoes_autorizadas as string[]).length} transformações da dependente, todas dentro do que foi autorizado.</p>}
+              <div className={`rounded-md border p-3 ${limite && !limite.ok ? 'border-destructive/50 bg-destructive/5' : ''}`} role="status">
+                <p className="font-medium">Candidatos estimados: {estimativa.total}</p>
+                {estimativa.descartadasDominio > 0 && <p className="text-xs text-muted-foreground">{estimativa.descartadasDominio} transformação(ões) fora do domínio dos dados foram descartadas (ex.: logaritmo de zero).</p>}
+                <p className="text-xs text-muted-foreground">Limite da organização: {gerar.modo === 'AMPLA' ? settings.exploration_candidate_soft_limit : settings.assisted_candidate_soft_limit} sem confirmação{settings.hard_limit ? ` · máximo ${settings.hard_limit}` : ''}.</p>
+                {limite && limite.ok === false && limite.reason === 'HARD_LIMIT' && <p className="text-xs text-destructive mt-1">Acima do máximo permitido. Reduza transformações ou marque variáveis obrigatórias.</p>}
+              </div>
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setGerar(null)}>Cancelar</Button><Button onClick={gerarCandidatos} disabled={busy === 'gerar' || !gerar?.depTs.length}>{busy === 'gerar' ? 'Calculando…' : 'Gerar e calcular'}</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setGerar(null)}>Cancelar</Button>
+            <Button onClick={() => gerarCandidatos(false)} disabled={busy === 'gerar' || !gerar?.depTs.length || !limite?.ok}>{busy === 'gerar' ? 'Calculando…' : 'Gerar e calcular'}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmar !== null} onOpenChange={(o) => !o && setConfirmar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar {confirmar} candidatos?</AlertDialogTitle>
+            <AlertDialogDescription>O volume está acima do limite sem confirmação da sua organização e o cálculo pode levar alguns minutos. Nenhum modelo será escolhido automaticamente.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => gerarCandidatos(true)}>Gerar mesmo assim</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
