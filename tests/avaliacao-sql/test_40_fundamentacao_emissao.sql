@@ -46,7 +46,6 @@ INSERT INTO public.validation_foundation_manual_grades(modelo_id, codigo, grau, 
 SELECT pg_temp.ok((SELECT avaliacao_id = (SELECT av FROM fx) AND created_by = 'a1000000-0000-0000-0000-000000000001' FROM public.validation_foundation_manual_grades),
   'RT atribui grau; avaliação e autor preenchidos pelo servidor');
 SELECT pg_temp.login(NULL);
-UPDATE public.validation_foundation_manual_grades SET created_at = now() + interval '1 second' WHERE false;  -- imutável: só para documentar
 INSERT INTO public.validation_foundation_manual_grades(modelo_id, codigo, grau, justificativa, created_by, created_at)
 SELECT id, 'IDENTIFICACAO_DADOS', 'II', 'Dados identificados com fonte e data', 'a1000000-0000-0000-0000-000000000001', now() + interval '1 second' FROM m;
 SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
