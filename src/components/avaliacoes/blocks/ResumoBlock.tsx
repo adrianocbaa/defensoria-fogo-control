@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { db, rpc } from '@/lib/avaliacao/api';
-import { BLOCO_LABEL, BLOCO_ROUTE, CENTRO_LABEL, ESTADO_LABEL, OVERALL_LABEL, fmtMoney, fmtNum } from '@/lib/avaliacao/labels';
+import { BLOCO_LABEL, BLOCO_ROUTE, CENTRO_LABEL, ESTADO_LABEL, OVERALL_LABEL, fmtMoney } from '@/lib/avaliacao/labels';
 
 const ICON = { PRONTA: CheckCircle2, EM_ANDAMENTO: Clock, PENDENTE: Circle, BLOQUEADA: Lock, DESATUALIZADA: AlertTriangle } as const;
 
@@ -18,15 +18,17 @@ export function ResumoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const tecnicos = useAvalQuery(av.id, 'tecnicos', () => rpc<{ user_id: string; display_name: string }[]>('aval_list_tecnicos', {}));
   const resumo = useAvalQuery(av.id, 'resumo', async () => {
     const [ac, res] = await Promise.all([
-      db.from('model_acceptances').select('id, modelo_id, validation_id, avaliacao_modelos(nome), model_validations(overall_status, fundamentacao_grau)').eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle(),
-      db.from('avaliacao_resultado_economico').select('id, centro, status, avaliacao_valores_adotados(valor_final_apresentacao, origem), avaliacao_projecao_centros:avaliacao_valores_adotados(centro_id)').eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle(),
+      db.from('model_acceptances').select('id, modelo_id, avaliacao_modelos(nome), model_validations(overall_status, fundamentacao_grau)')
+        .eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle(),
+      db.from('avaliacao_resultado_economico').select('id, centro, valor_adotado_id').eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle(),
     ]);
-    let precisao: string | null = null;
-    if (res.data) {
-      const { data: ad } = await db.from('avaliacao_valores_adotados').select('avaliacao_projecao_centros(grau_precisao, amplitude_pct)').eq('id', (res.data as any).valor_adotado_id ?? '').maybeSingle();
-      precisao = (ad as any)?.avaliacao_projecao_centros?.grau_precisao ?? null;
+    let adotado: any = null;
+    if (res.data?.valor_adotado_id) {
+      const { data } = await db.from('avaliacao_valores_adotados').select('valor_final_apresentacao, origem, avaliacao_projecao_centros(grau_precisao)')
+        .eq('id', res.data.valor_adotado_id).maybeSingle();
+      adotado = data;
     }
-    return { ac: ac.data as any, res: res.data as any, precisao };
+    return { ac: ac.data as any, res: res.data as any, adotado };
   });
   const resp = (tecnicos.data ?? []).find((t) => t.user_id === av.responsavel_tecnico_id)?.display_name ?? '—';
   const amostras = pend.find((p) => p.bloco === 'MERCADO')?.amostras as number | undefined;
@@ -84,8 +86,8 @@ export function ResumoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
             <Row k="Modelo aceito" v={ac?.avaliacao_modelos?.nome ?? 'Nenhum'} />
             <Row k="Validação" v={ac?.model_validations?.overall_status ? OVERALL_LABEL[ac.model_validations.overall_status] : '—'} />
             <Row k="Fundamentação" v={ac?.model_validations?.fundamentacao_grau ? `Grau ${ac.model_validations.fundamentacao_grau}` : '—'} />
-            <Row k="Precisão" v={resumo.data?.precisao ? `Grau ${resumo.data.precisao}` : '—'} />
-            <Row k="Valor adotado" v={res ? `${fmtMoney(res.avaliacao_valores_adotados?.valor_final_apresentacao)} (${CENTRO_LABEL[res.centro]})` : '—'} />
+            <Row k="Precisão" v={resumo.data?.adotado?.avaliacao_projecao_centros?.grau_precisao ? `Grau ${resumo.data.adotado.avaliacao_projecao_centros.grau_precisao}` : '—'} />
+            <Row k="Valor adotado" v={res && resumo.data?.adotado ? `${fmtMoney(resumo.data.adotado.valor_final_apresentacao)} (${CENTRO_LABEL[res.centro]})` : '—'} />
           </CardContent>
         </Card>
       </div>
@@ -96,5 +98,3 @@ export function ResumoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 function Row({ k, v }: { k: string; v: string }) {
   return <div className="flex justify-between gap-3"><span className="text-muted-foreground">{k}</span><span className="text-right font-medium">{v}</span></div>;
 }
-// fmtNum reservado para indicadores numéricos futuros
-void fmtNum;
