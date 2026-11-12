@@ -59,6 +59,10 @@ export const AUDIT_EVENT_LABEL: Record<string, string> = {
   AI_TEXT_APPROVED: 'Texto sugerido aprovado', AI_TEXT_DISCARDED: 'Texto sugerido descartado', CHANGE_APPLIED: 'Campo corrigido', CHANGES_APPLIED: 'Correção de dados salva', PROPERTY_CLONED: 'Imóvel separado criado para a amostra',
   VARIABLE_VALUE_SYNCED: 'Valor de variável atualizado pelo cadastro', SHARED_RECORD_CHANGED: 'Cadastro compartilhado corrigido em outra avaliação',
   INVALIDATION_APPLIED: 'Itens dependentes marcados como desatualizados',
+  MODEL_RESENT_TO_VALIDATION: 'Modelo reenviado à validação', MODEL_WITHDRAWN_FROM_VALIDATION: 'Modelo retirado da validação',
+  MODEL_REVALIDATED: 'Modelo revalidado com as configurações atuais', VALIDATION_MARKED_STALE: 'Validação do modelo marcada como desatualizada',
+  MODELS_ARCHIVED: 'Modelos arquivados', MODELS_UNARCHIVED: 'Modelos restaurados', MODEL_ROUND_CREATED: 'Rodada de modelos gerada',
+  MODEL_ROUND_ARCHIVED: 'Rodada de modelos arquivada', MODEL_ROUND_UNARCHIVED: 'Rodada de modelos restaurada',
 };
 
 export const fmtMoney = (v: number | null | undefined) =>
