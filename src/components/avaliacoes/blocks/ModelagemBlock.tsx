@@ -1,6 +1,6 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Calculator, ChevronDown, ChevronRight, Compass, Hand, Pencil, Send, Sparkles, Star } from 'lucide-react';
+import { AlertTriangle, Compass, Hand, Pencil, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,21 +11,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { ImpactDialog, type PendingChange } from '../ImpactDialog';
 import { useVariaveisStatus } from '../VariaveisShared';
 import { db, engine, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
-import { TRANSFORM_LABEL, TRANSFORMS, fmtNum, transformLabel } from '@/lib/avaliacao/labels';
+import { TRANSFORM_LABEL, TRANSFORMS, transformLabel } from '@/lib/avaliacao/labels';
 import { codigoExibicao, exibirValor, fonteLabel } from '@/lib/avaliacao/variaveis';
-import { MODE_HELP, TRANSFORM_MODAL_INTRO, compatSummary, explainModelError, frozenCompleteness, transformHelp, transformRoleNote, type ConjuntoCompat } from '@/lib/avaliacao/modelDiagnostics';
+import { MODE_HELP, TRANSFORM_MODAL_INTRO, compatSummary, frozenCompleteness, transformHelp, transformRoleNote, type ConjuntoCompat } from '@/lib/avaliacao/modelDiagnostics';
+import { ModelosPainel } from './ModelosPainel';
 import { buildCandidates, estimateCandidates, evaluateCandidateLimit, type CandidateMode, type ModelingSettings, type TransformCode } from '@/lib/avaliacao/engine';
 
 const RELACAO: Record<string, string> = { POSITIVA: 'Positiva', NEGATIVA: 'Negativa', INDEFINIDA: 'Indefinida' };
-const STATUS_MOD: Record<string, string> = { RASCUNHO: 'A calcular', CALCULADO: 'Calculado', ERRO: 'Erro no cálculo', EM_VALIDACAO: 'Em validação' };
-const ORIGEM_MOD: Record<string, string> = { MANUAL: 'Manual', GERADO_ASSISTIDO: 'Assistido', GERADO_AMPLA: 'Exploração ampla', SIMULACAO_VARIAVEL: 'Simulação', SIMULACAO_AMOSTRA: 'Simulação' };
 const DEFAULT_SETTINGS: ModelingSettings = { assisted_candidate_soft_limit: 30, exploration_candidate_soft_limit: 200, hard_limit: 2000, require_confirmation_over: 100 };
 
 export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
@@ -37,14 +35,12 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const [novoModelo, setNovoModelo] = useState<{ dep: string; depT: string; vars: Record<string, string> } | null>(null);
   const [gerar, setGerar] = useState<{ modo: CandidateMode; dep: string; depTs: string[]; obrig: Record<string, boolean> } | null>(null);
   const [confirmar, setConfirmar] = useState<number | null>(null);
-  const [aberto, setAberto] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const q = useAvalQuery(av.id, 'modelagem', async () => {
-    const [vars, cj, mods, st] = await Promise.all([
+    const [vars, cj, st] = await Promise.all([
       db.from('avaliacao_variaveis').select('*').eq('avaliacao_id', av.id).eq('ativo', true).order('created_at'),
       db.from('avaliacao_conjuntos_dados').select('id, versao').eq('avaliacao_id', av.id).eq('status', 'CONGELADO').order('versao', { ascending: false }).limit(1).maybeSingle(),
-      db.from('avaliacao_modelos').select('*, avaliacao_modelo_variaveis(variavel_id, transformacao, ordem), modelo_resultado_resumo(*)').eq('avaliacao_id', av.id).order('numero', { ascending: false }),
       db.from('avaliacao_modeling_settings').select('organization_id, assisted_candidate_soft_limit, exploration_candidate_soft_limit, hard_limit, require_confirmation_over'),
     ]);
     const conjunto = cj.data as any;
@@ -55,13 +51,11 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     if (conjunto) { try { compat = await rpc<ConjuntoCompat>('aval_conjunto_compat', { p_conjunto: conjunto.id }); } catch { compat = null; } }
     const settingsRows = (st.data ?? []) as any[];
     const settings: ModelingSettings = settingsRows.find((r) => r.organization_id) ?? settingsRows.find((r) => !r.organization_id) ?? DEFAULT_SETTINGS;
-    return { vars: (vars.data ?? []) as any[], conjunto, modelos: (mods.data ?? []) as any[],
+    return { vars: (vars.data ?? []) as any[], conjunto,
       snaps: (snaps as any[]).filter((x) => x.dados?.habilitada_modelo !== false), settings, compat };
   });
   const vars = q.data?.vars ?? [];
   const canModel = ctx.can('model.create');
-  const canRun = ctx.can('model.run');
-  const canVal = ctx.can('validation.run');
   const dep = vars.find((v) => v.papel === 'DEPENDENTE');
   const indeps = vars.filter((v) => v.papel === 'INDEPENDENTE');
   const espaco = [...(dep ? [dep] : []), ...vars.filter((v) => v.papel !== 'DEPENDENTE')];
@@ -91,20 +85,14 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     if (!novoModelo) return;
     const sel = Object.entries(novoModelo.vars).filter(([, t]) => t && t !== 'NONE');
     if (sel.length === 0) { toast.error('Escolha ao menos uma variável independente.'); return; }
-    try { await criarModelo({ dep: novoModelo.dep, depT: novoModelo.depT, vars: sel }); toast.success('Modelo criado. Calcule-o para ver os resultados.'); setNovoModelo(null); ctx.refresh(); }
-    catch (e) { toast.error(avalErrorMessage(e)); }
-  };
-  const calcular = async (m: any) => {
-    setBusy(m.id);
-    try { await engine({ action: 'run_model', modelo_id: m.id }); toast.success(`Modelo ${m.numero} calculado.`); }
-    catch (e) { toast.error(avalErrorMessage(e, 'O cálculo não pôde ser concluído. Abra o modelo para ver o motivo.')); } finally { setBusy(null); setAberto(m.id); ctx.refresh(); }
-  };
-  const enviar = async (m: any) => {
-    try { await rpc('aval_send_to_validation', { p_modelo: m.id }); toast.success('Modelo enviado à validação.'); ctx.refresh(); }
-    catch (e) { toast.error(avalErrorMessage(e)); }
-  };
-  const favoritar = async (m: any) => {
-    try { await rpc('aval_model_flag', { p_modelo: m.id, p_favorito: !m.favorito, p_candidato: null }); ctx.refresh(); }
+    try {
+      const id = await criarModelo({ dep: novoModelo.dep, depT: novoModelo.depT, vars: sel });
+      const { data: vinc } = await db.from('avaliacao_model_run_modelos').select('situacao').eq('modelo_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const { data: mod } = await db.from('avaliacao_modelos').select('nome').eq('id', id).maybeSingle();
+      if ((vinc as any)?.situacao === 'JA_EXISTENTE') toast.info(`Já existe um modelo idêntico neste conjunto (${(mod as any)?.nome ?? 'modelo existente'}). Nada foi duplicado.`);
+      else toast.success('Modelo criado. Calcule-o para ver os resultados.');
+      setNovoModelo(null); ctx.refresh();
+    }
     catch (e) { toast.error(avalErrorMessage(e)); }
   };
   const frozen = (code: string) => (q.data?.snaps ?? []).map((x: any) => x.dados?.variaveis?.[code]).filter((x: unknown) => x !== null && x !== undefined && x !== '').map(Number);
@@ -128,11 +116,16 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     setBusy('gerar');
     let ok = 0, falhas = 0;
     try {
-      const ids = await rpc<string[]>('aval_model_generate_batch', { p_avaliacao: av.id, p_conjunto: q.data!.conjunto.id, p_modo: gerar.modo, p_candidatos: lista, p_confirmado: confirmado });
-      for (const id of ids) {
+      const r = await rpc<{ numero: number; criados: string[]; ignorados_duplicidade: number; a_calcular: string[] }>('aval_model_generate_round', {
+        p_avaliacao: av.id, p_conjunto: q.data!.conjunto.id, p_modo: gerar.modo, p_candidatos: lista, p_confirmado: confirmado, p_estimados: estimativa.total,
+        p_parametros: { modo: gerar.modo, dep_transformacoes: gerar.depTs, obrigatorias: Object.keys(gerar.obrig).filter((k) => gerar.obrig[k]),
+          transformacoes: Object.fromEntries(espaco.map((v) => [v.codigo, v.transformacoes_autorizadas])), candidatos: lista.length },
+      });
+      for (const id of r.a_calcular ?? []) {
         try { await engine({ action: 'run_model', modelo_id: id }); ok++; } catch { falhas++; }
       }
-      toast.success(`${ok} candidato(s) calculado(s)${falhas ? `; ${falhas} não puderam ser calculados (veja o motivo em cada modelo)` : ''}. Compare e escolha com critério técnico.`);
+      const dup = r.ignorados_duplicidade ?? 0;
+      toast.success(`Rodada ${r.numero}: ${r.criados?.length ?? 0} modelo(s) novo(s), ${ok} calculado(s)${falhas ? `, ${falhas} com erro (veja o motivo em cada modelo)` : ''}${dup ? `; ${dup} ignorado(s) por duplicidade (já existiam neste conjunto)` : ''}. Compare e escolha com critério técnico.`);
       setGerar(null);
     } catch (e) { toast.error(avalErrorMessage(e)); } finally { setBusy(null); ctx.refresh(); }
   };
@@ -220,45 +213,7 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
             </div>
           </CardContent>
         )}
-        <CardContent className="p-0 overflow-x-auto">
-          {!q.data?.conjunto ? <p className="p-6 text-sm text-muted-foreground">Congele o conjunto de dados no bloco Mercado para criar modelos.</p> :
-            (q.data.modelos.length === 0 ? <p className="p-6 text-sm text-muted-foreground">Nenhum modelo. Conjunto vigente: versão {q.data.conjunto.versao}.</p> : (
-              <Table>
-                <TableHeader><TableRow><TableHead /><TableHead>Modelo</TableHead><TableHead>Origem</TableHead><TableHead>Equação</TableHead><TableHead className="text-right">n</TableHead><TableHead className="text-right">R² aj.</TableHead><TableHead className="text-right">Pior sig.</TableHead><TableHead className="text-right">Amplitude IC</TableHead><TableHead>Situação</TableHead><TableHead /></TableRow></TableHeader>
-                <TableBody>{q.data.modelos.map((m) => {
-                  const r = Array.isArray(m.modelo_resultado_resumo) ? m.modelo_resultado_resumo[0] : m.modelo_resultado_resumo;
-                  const depV = vars.find((v) => v.id === m.dependente_variavel_id);
-                  const eq = `${TRANSFORM_LABEL[m.dependente_transformacao].replace('x', depV?.codigo ?? 'y')} ~ ${(m.avaliacao_modelo_variaveis ?? []).sort((a: any, b: any) => a.ordem - b.ordem).map((mv: any) => TRANSFORM_LABEL[mv.transformacao].replace('x', vars.find((v) => v.id === mv.variavel_id)?.codigo ?? '?')).join(' + ')}`;
-                  return (
-                    <Fragment key={m.id}>
-                      <TableRow className={m.stale ? 'opacity-60' : ''}>
-                        <TableCell><Button size="icon" variant="ghost" aria-label="Detalhes" onClick={() => setAberto(aberto === m.id ? null : m.id)}>{aberto === m.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</Button></TableCell>
-                        <TableCell className="font-medium whitespace-nowrap">{m.favorito && <Star className="inline h-3.5 w-3.5 mr-1 fill-current" aria-label="Favorito" />}{m.nome}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{ORIGEM_MOD[m.origem_tipo] ?? m.origem_tipo}</TableCell>
-                        <TableCell className="text-xs font-mono">{eq}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r?.n ?? '—'}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r ? fmtNum(r.r2_ajustado, 4) : '—'}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r?.pior_sig_regressor != null ? `${fmtNum(r.pior_sig_regressor * 100, 2)}%` : '—'}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r?.amplitude_pct != null ? `${fmtNum(r.amplitude_pct, 2)}%` : '—'}</TableCell>
-                        <TableCell>{m.stale ? <Badge variant="destructive">Desatualizado</Badge> : m.status === 'ERRO'
-                          ? <button type="button" className="inline-flex items-center gap-1 text-left" onClick={() => setAberto(m.id)} aria-label={`Ver por que o ${m.nome} não foi calculado`}>
-                              <Badge variant="destructive">{STATUS_MOD[m.status]}</Badge><span className="text-xs underline underline-offset-2 text-destructive">Ver motivo</span></button>
-                          : <Badge variant="outline">{STATUS_MOD[m.status]}</Badge>}</TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          {canRun && !m.stale && m.status === 'RASCUNHO' && <Button size="sm" variant="outline" disabled={busy === m.id || (desatualizado && m.conjunto_id === q.data?.conjunto?.id)}
-                            title={desatualizado && m.conjunto_id === q.data?.conjunto?.id ? resumoCompat.mensagem ?? undefined : undefined} onClick={() => calcular(m)}><Calculator className="h-4 w-4 mr-1" />Calcular</Button>}
-                          {canVal && !m.stale && m.status === 'CALCULADO' && <Button size="sm" variant="outline" onClick={() => enviar(m)}><Send className="h-4 w-4 mr-1" />Validar</Button>}
-                          {canModel && m.status !== 'RASCUNHO' && <Button size="icon" variant="ghost" aria-label="Favorito" onClick={() => favoritar(m)}><Star className={`h-4 w-4 ${m.favorito ? 'fill-current' : ''}`} /></Button>}
-                        </TableCell>
-                      </TableRow>
-                      {aberto === m.id && <TableRow><TableCell colSpan={10} className="bg-muted/30"><ModeloDetalhe modeloId={m.id} avaliacaoId={av.id} conjuntoId={m.conjunto_id} vars={vars} /></TableCell></TableRow>}
-                    </Fragment>
-                  );
-                })}</TableBody>
-              </Table>
-            ))}
-          <p className="px-6 py-3 text-xs text-muted-foreground">Não há escolha automática nem pontuação: compare significâncias, coerência das relações e precisão. R² sozinho não decide.</p>
-        </CardContent>
+        <ModelosPainel ctx={ctx} vars={vars} conjunto={q.data?.conjunto ?? null} desatualizado={desatualizado} mensagemDesatualizado={resumoCompat.mensagem ?? null} />
       </Card>
 
       <Dialog open={!!transf} onOpenChange={(o) => !o && setTransf(null)}>
@@ -340,73 +295,6 @@ export function ModelagemBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => gerarCandidatos(true)}>Gerar mesmo assim</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-function ModeloDetalhe({ modeloId, avaliacaoId, conjuntoId, vars }: { modeloId: string; avaliacaoId: string; conjuntoId: string; vars: any[] }) {
-  const q = useAvalQuery(avaliacaoId, `modelo-${modeloId}`, async () => {
-    const { data: ex } = await db.from('avaliacao_modelo_execucoes').select('id, status, erro_codigo, engine_version, input_hash, output_hash, concluido_em').eq('modelo_id', modeloId).order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (!ex) return { ex: null, coefs: [], resumo: null, erro: null, compat: null, indices: new Map<string, number>() };
-    if (ex.status === 'ERRO') {
-      const [er, am] = await Promise.all([
-        db.from('modelo_execucao_erros').select('codigo, detalhe').eq('execucao_id', ex.id).limit(1).maybeSingle(),
-        db.from('avaliacao_amostras').select('id, created_at').eq('avaliacao_id', avaliacaoId).order('created_at').order('id').limit(10000),
-      ]);
-      let compat: ConjuntoCompat | null = null;
-      try { compat = await rpc<ConjuntoCompat>('aval_conjunto_compat', { p_conjunto: conjuntoId }); } catch { compat = null; }
-      const indices = new Map<string, number>(((am.data ?? []) as any[]).map((a, i) => [a.id, i + 1]));
-      return { ex, coefs: [], resumo: null, erro: (er.data as any) ?? { codigo: ex.erro_codigo, detalhe: null }, compat, indices };
-    }
-    const [c, r] = await Promise.all([
-      db.from('modelo_coeficientes').select('*').eq('execucao_id', ex.id).order('ordem'),
-      db.from('modelo_resultado_resumo').select('*').eq('execucao_id', ex.id).maybeSingle(),
-    ]);
-    return { ex, coefs: (c.data ?? []) as any[], resumo: r.data as any, erro: null, compat: null, indices: new Map<string, number>() };
-  });
-  if (!q.data?.ex) return <p className="text-sm text-muted-foreground">Modelo ainda não calculado.</p>;
-  if (q.data.ex.status === 'ERRO') {
-    const info = explainModelError(q.data.erro?.codigo ?? q.data.ex.erro_codigo, q.data.erro?.detalhe,
-      { variaveis: vars, amostraIndice: (id) => q.data!.indices.get(id) ?? null, compat: q.data.compat });
-    const destino = info.acao === 'MERCADO' ? 'mercado' : info.acao === 'IMOVEL' ? 'imovel' : info.acao === 'VARIAVEIS' ? 'variaveis' : null;
-    return (
-      <Alert variant="destructive" role="alert">
-        <AlertTriangle className="h-4 w-4" aria-hidden />
-        <AlertTitle>{info.titulo}</AlertTitle>
-        <AlertDescription className="space-y-2">
-          <p>{info.mensagem}</p>
-          {info.contexto && <p className="text-xs">{info.contexto}</p>}
-          {info.acaoTexto && (destino
-            ? <Button asChild size="sm" variant="outline"><Link to={`/avaliacoes/${avaliacaoId}/${destino}`}>{info.acaoTexto}</Link></Button>
-            : <p className="text-xs font-medium">O que fazer: {info.acaoTexto}.</p>)}
-          <Collapsible>
-            <CollapsibleTrigger className="text-xs underline underline-offset-2">Detalhes técnicos</CollapsibleTrigger>
-            <CollapsibleContent className="mt-1 text-xs font-mono text-muted-foreground break-all">
-              código {info.codigo}{q.data.erro?.detalhe ? ` · ${JSON.stringify(q.data.erro.detalhe)}` : ''} · motor {q.data.ex.engine_version}
-            </CollapsibleContent>
-          </Collapsible>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  const r = q.data.resumo;
-  return (
-    <div className="grid gap-3 text-sm md:grid-cols-[1fr_260px]">
-      <Table>
-        <TableHeader><TableRow><TableHead>Termo</TableHead><TableHead className="text-right">Coeficiente</TableHead><TableHead className="text-right">Erro padrão</TableHead><TableHead className="text-right">t</TableHead><TableHead className="text-right">Significância</TableHead></TableRow></TableHeader>
-        <TableBody>{q.data.coefs.map((c) => (
-          <TableRow key={c.id}><TableCell>{c.codigo === '(intercepto)' ? 'Intercepto' : `${TRANSFORM_LABEL[c.transformacao]?.replace('x', c.codigo) ?? c.codigo}`}</TableCell>
-            <TableCell className="text-right tabular-nums">{fmtNum(c.beta, 6)}</TableCell><TableCell className="text-right tabular-nums">{fmtNum(c.erro_padrao, 6)}</TableCell>
-            <TableCell className="text-right tabular-nums">{fmtNum(c.t, 4)}</TableCell><TableCell className="text-right tabular-nums">{fmtNum(c.sig * 100, 2)}%</TableCell></TableRow>
-        ))}</TableBody>
-      </Table>
-      <div className="space-y-1">
-        <p>n = {r?.n} · k = {r?.k}</p>
-        <p>R² = {fmtNum(r?.r2, 4)} · R² ajustado = {fmtNum(r?.r2_ajustado, 4)}</p>
-        <p>F = {fmtNum(r?.f, 4)} · sig. F = {r?.sig_f != null ? `${fmtNum(r.sig_f * 100, 4)}%` : '—'}</p>
-        <p>Estimativa preliminar: {r?.centro_preliminar != null ? fmtNum(r.centro_preliminar, 2) : '—'}{r?.grau_precisao ? ` · precisão grau ${r.grau_precisao}` : ''}{r?.extrapola ? ' · com extrapolação' : ''}</p>
-        <p className="text-xs text-muted-foreground pt-2">Motor {q.data.ex.engine_version} · entrada {String(q.data.ex.input_hash).slice(0, 12)}… · saída {String(q.data.ex.output_hash ?? '').slice(0, 12)}…</p>
-      </div>
     </div>
   );
 }

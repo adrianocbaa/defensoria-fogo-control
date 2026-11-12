@@ -1532,6 +1532,133 @@ export type Database = {
           },
         ]
       }
+      avaliacao_model_generation_runs: {
+        Row: {
+          arquivada: boolean
+          arquivada_em: string | null
+          arquivada_por: string | null
+          avaliacao_id: string
+          conjunto_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          modo: string
+          numero: number
+          organization_id: string
+          parametros: Json
+          qtd_calculada: number
+          qtd_criada: number
+          qtd_erro: number
+          qtd_estimada: number
+          qtd_existente: number
+          updated_at: string
+        }
+        Insert: {
+          arquivada?: boolean
+          arquivada_em?: string | null
+          arquivada_por?: string | null
+          avaliacao_id: string
+          conjunto_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          modo: string
+          numero: number
+          organization_id: string
+          parametros?: Json
+          qtd_calculada?: number
+          qtd_criada?: number
+          qtd_erro?: number
+          qtd_estimada?: number
+          qtd_existente?: number
+          updated_at?: string
+        }
+        Update: {
+          arquivada?: boolean
+          arquivada_em?: string | null
+          arquivada_por?: string | null
+          avaliacao_id?: string
+          conjunto_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          modo?: string
+          numero?: number
+          organization_id?: string
+          parametros?: Json
+          qtd_calculada?: number
+          qtd_criada?: number
+          qtd_erro?: number
+          qtd_estimada?: number
+          qtd_existente?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_model_generation_runs_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_model_generation_runs_conjunto_id_fkey"
+            columns: ["conjunto_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_conjuntos_dados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_model_run_modelos: {
+        Row: {
+          avaliacao_id: string
+          created_at: string
+          modelo_id: string
+          organization_id: string
+          run_id: string
+          situacao: string
+        }
+        Insert: {
+          avaliacao_id: string
+          created_at?: string
+          modelo_id: string
+          organization_id: string
+          run_id: string
+          situacao: string
+        }
+        Update: {
+          avaliacao_id?: string
+          created_at?: string
+          modelo_id?: string
+          organization_id?: string
+          run_id?: string
+          situacao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_model_run_modelos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_model_run_modelos_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_modelos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_model_run_modelos_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_model_generation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       avaliacao_modeling_settings: {
         Row: {
           assisted_candidate_soft_limit: number
@@ -1716,6 +1843,10 @@ export type Database = {
       avaliacao_modelos: {
         Row: {
           amostras_excluidas: string[]
+          arquivado: boolean
+          arquivado_em: string | null
+          arquivado_por: string | null
+          assinatura: string | null
           avaliacao_id: string
           candidato: boolean
           conjunto_id: string
@@ -1741,6 +1872,10 @@ export type Database = {
         }
         Insert: {
           amostras_excluidas?: string[]
+          arquivado?: boolean
+          arquivado_em?: string | null
+          arquivado_por?: string | null
+          assinatura?: string | null
           avaliacao_id: string
           candidato?: boolean
           conjunto_id: string
@@ -1766,6 +1901,10 @@ export type Database = {
         }
         Update: {
           amostras_excluidas?: string[]
+          arquivado?: boolean
+          arquivado_em?: string | null
+          arquivado_por?: string | null
+          assinatura?: string | null
           avaliacao_id?: string
           candidato?: boolean
           conjunto_id?: string
@@ -13448,6 +13587,15 @@ export type Database = {
         }
         Returns: string
       }
+      aval_model_archive: {
+        Args: {
+          p_arquivar?: boolean
+          p_avaliacao: string
+          p_modelos?: string[]
+          p_rodada?: string
+        }
+        Returns: Json
+      }
       aval_model_create: {
         Args: {
           p_amostras_excluidas?: string[]
@@ -13480,6 +13628,10 @@ export type Database = {
         }
         Returns: string
       }
+      aval_model_find_duplicate: {
+        Args: { p_assinatura: string; p_avaliacao: string; p_conjunto: string }
+        Returns: string
+      }
       aval_model_flag: {
         Args: { p_candidato: boolean; p_favorito: boolean; p_modelo: string }
         Returns: undefined
@@ -13494,6 +13646,51 @@ export type Database = {
         }
         Returns: string[]
       }
+      aval_model_generate_round: {
+        Args: {
+          p_avaliacao: string
+          p_candidatos: Json
+          p_confirmado?: boolean
+          p_conjunto: string
+          p_estimados?: number
+          p_modo: string
+          p_parametros?: Json
+        }
+        Returns: Json
+      }
+      aval_model_list: {
+        Args: {
+          p_avaliacao: string
+          p_desc?: boolean
+          p_filtros?: Json
+          p_limit?: number
+          p_offset?: number
+          p_ordem?: string
+          p_rodada?: string
+        }
+        Returns: Json
+      }
+      aval_model_protegido: { Args: { p_modelo: string }; Returns: boolean }
+      aval_model_run_archive: {
+        Args: { p_arquivar?: boolean; p_run: string }
+        Returns: Json
+      }
+      aval_model_runs: { Args: { p_avaliacao: string }; Returns: Json }
+      aval_model_signature: {
+        Args: {
+          p_conjunto: string
+          p_dep: string
+          p_dep_power: number
+          p_dep_transf: string
+          p_excluidas: string[]
+          p_vars: Json
+        }
+        Returns: string
+      }
+      aval_model_triagem_dados: {
+        Args: { p_avaliacao: string; p_ids?: string[]; p_rodada?: string }
+        Returns: Json
+      }
       aval_my_perms: { Args: { p_avaliacao: string }; Returns: string[] }
       aval_next_sequence: {
         Args: { _ano: number; _org: string; _scope: string }
@@ -13502,6 +13699,7 @@ export type Database = {
       aval_nivel_rank: { Args: { p: string }; Returns: number }
       aval_normalize_text: { Args: { t: string }; Returns: string }
       aval_pendencias: { Args: { p_avaliacao: string }; Returns: Json }
+      aval_run_recount: { Args: { p_run: string }; Returns: undefined }
       aval_send_to_validation: {
         Args: { p_modelo: string }
         Returns: undefined
