@@ -42,7 +42,7 @@ SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.modelo_estatisticas_variaveis
   AND (SELECT count(*) FROM public.modelo_estatisticas_variaveis WHERE execucao_id = (SELECT id FROM ex)) = jsonb_array_length((SELECT j->'fit'->'variableStats' FROM o)),
   'modelo_estatisticas_variaveis = output_json');
 SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.modelo_correlacoes c, o WHERE c.execucao_id = (SELECT id FROM ex) AND c.correlacao <>
-    (o.j->'fit'->'correlation'->'matrix'->(SELECT i - 1 FROM jsonb_array_elements_text(o.j->'fit'->'correlation'->'codes') WITH ORDINALITY t(code, i) WHERE code = c.variavel_a)
+    (o.j->'fit'->'correlation'->'matrix'->(SELECT (i - 1)::int FROM jsonb_array_elements_text(o.j->'fit'->'correlation'->'codes') WITH ORDINALITY t(code, i) WHERE code = c.variavel_a)
        ->>(SELECT (i - 1)::int FROM jsonb_array_elements_text(o.j->'fit'->'correlation'->'codes') WITH ORDINALITY t(code, i) WHERE code = c.variavel_b))::numeric)
   AND (SELECT count(*) FROM public.modelo_correlacoes WHERE execucao_id = (SELECT id FROM ex)) = 6, 'modelo_correlacoes = matriz do output_json');
 SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.modelo_extrapolacoes e, o, LATERAL (SELECT v FROM jsonb_array_elements(o.j->'preliminary_projection'->'extrapolation') v WHERE v->>'code' = e.variavel) x
