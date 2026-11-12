@@ -31,8 +31,8 @@ SELECT pg_temp.throws($$SELECT public.aval_model_generate_batch((SELECT av FROM 
 INSERT INTO out_ids SELECT public.aval_model_generate_batch((SELECT av FROM fx), '10000000-0000-0000-0000-000000000001', 'ASSISTIDO', (SELECT j FROM c3), true);
 SELECT pg_temp.ok((SELECT cardinality(ids) FROM out_ids) = 3 AND (SELECT bool_and(origem_tipo = 'GERADO_ASSISTIDO') FROM public.avaliacao_modelos), 'confirmado: 3 candidatos assistidos criados');
 SELECT pg_temp.ok((SELECT count(*) FROM public.avaliacao_modelos WHERE status = 'RASCUNHO' AND NOT favorito AND NOT candidato) = 3, 'nenhum candidato é escolhido automaticamente');
-SELECT pg_temp.ok(public.aval_model_generate_batch((SELECT av FROM fx), '10000000-0000-0000-0000-000000000001', 'AMPLA', (SELECT j FROM c3), false) IS NOT NULL
-  AND (SELECT count(*) FROM public.avaliacao_modelos WHERE origem_tipo = 'GERADO_AMPLA') = 3, 'exploração ampla dentro do limite (4) sem confirmação, origem GERADO_AMPLA');
+SELECT public.aval_model_generate_batch((SELECT av FROM fx), '10000000-0000-0000-0000-000000000001', 'AMPLA', (SELECT j FROM c3), false);
+SELECT pg_temp.ok((SELECT count(*) FROM public.avaliacao_modelos WHERE origem_tipo = 'GERADO_AMPLA') = 3, 'exploração ampla dentro do limite (4) sem confirmação, origem GERADO_AMPLA');
 SELECT pg_temp.throws($$SELECT public.aval_model_generate_batch((SELECT av FROM fx), '10000000-0000-0000-0000-000000000001', 'AMPLA', (SELECT j || j FROM c3), true)$$,
   'candidate_hard_limit', 'limite rígido (5) bloqueia mesmo com confirmação');
 SELECT pg_temp.throws($$SELECT public.aval_model_generate_batch((SELECT av FROM fx), '10000000-0000-0000-0000-000000000001', 'AMPLA',
