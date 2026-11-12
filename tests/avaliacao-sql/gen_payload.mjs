@@ -15,7 +15,7 @@ const V = load('supabase/functions/_shared/avaliacao/validator.ts', { './engine.
 const D = load('supabase/functions/_shared/avaliacao/derived.ts', { './engine.ts': E, './validator.ts': V });
 const P = load('supabase/functions/_shared/avaliacao/persist.ts', { './derived.ts': D });
 const c = JSON.parse(read('tests/fixtures/avaliacao-engine-cases.json'))[0];
-const input = { ...c.input, sampleIds: c.input.sampleIds ?? c.input.dependent.values.map((_, i) => `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`) };
+const input = { ...c.input, sampleIds: c.input.dependent.values.map((_, i) => `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`) };
 const fit = E.fitRegression(input);
 const avaliando = c.avaliando ?? Object.fromEntries(input.independents.map((v) => [v.code, v.values[0]]));
 const bands = [{ grau: 'III', maxAmplitudePct: 30 }, { grau: 'II', maxAmplitudePct: 40 }, { grau: 'I', maxAmplitudePct: 50 }];
