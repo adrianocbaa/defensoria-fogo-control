@@ -4,15 +4,24 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MunicipioCombobox } from '@/components/MunicipioCombobox';
+import { UFS } from '@/lib/ufs';
 import { db, rpc } from '@/lib/avaliacao/api';
+import { municipioParaGravar, municipioValido, type MunicipioImovel } from '@/lib/avaliacao/municipioImovel';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { fmtNum } from '@/lib/avaliacao/labels';
 
 export interface ImovelInput {
   tipo_imovel: string; endereco: string; numero: string; complemento: string; bairro: string;
   area_construida: string; area_terreno: string; anuncio_url: string; anuncio_id: string;
+  /** Município do imóvel (lista oficial IBGE). O da avaliação é só a sugestão inicial. */
+  uf: string; municipio_ibge: string; municipio_nome: string;
 }
-export const emptyImovel = (tipo = ''): ImovelInput => ({ tipo_imovel: tipo, endereco: '', numero: '', complemento: '', bairro: '', area_construida: '', area_terreno: '', anuncio_url: '', anuncio_id: '' });
+export const emptyImovel = (tipo = '', mun?: Partial<MunicipioImovel>): ImovelInput => ({
+  tipo_imovel: tipo, endereco: '', numero: '', complemento: '', bairro: '', area_construida: '', area_terreno: '', anuncio_url: '', anuncio_id: '',
+  uf: mun?.uf ?? '', municipio_ibge: mun?.municipio_ibge ?? '', municipio_nome: mun?.municipio_nome ?? '',
+});
 const num = (s: string) => { if (!s.trim()) return null; const n = Number(s.replace(/\./g, '').replace(',', '.')); return Number.isFinite(n) ? n : null; };
 
 interface Dup { imovel_id: string; pontos: number; motivos: string[]; endereco: string | null; numero: string | null; complemento: string | null; bairro: string | null; area_construida: number | null }
@@ -21,11 +30,28 @@ interface Dup { imovel_id: string; pontos: number; motivos: string[]; endereco: 
  * Cadastro físico único de imóvel. Antes de criar, procura possíveis duplicidades por endereço/unidade,
  * coordenadas, anúncio, fotos, bairro/tipo e área — nunca por telefone, corretor ou imobiliária, e nunca une automaticamente.
  */
-export function ImovelFields({ value, onChange, showAnuncio }: { value: ImovelInput; onChange: (v: ImovelInput) => void; showAnuncio?: boolean }) {
+export function ImovelFields({ value, onChange, showAnuncio, municipioAvaliacao }: {
+  value: ImovelInput; onChange: (v: ImovelInput) => void; showAnuncio?: boolean;
+  /** Município da avaliação, para avisar quando o imóvel é de outro município. */
+  municipioAvaliacao?: { municipio_ibge?: string | null; municipio_nome?: string | null; uf?: string | null };
+}) {
   const f = (k: keyof ImovelInput) => (e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...value, [k]: e.target.value });
+  const outro = !!municipioAvaliacao?.municipio_ibge && !!value.municipio_ibge && value.municipio_ibge !== municipioAvaliacao.municipio_ibge;
   return (
     <div className="grid gap-3 sm:grid-cols-6">
       <div className="grid gap-1.5 sm:col-span-6"><Label>Tipo de imóvel</Label><Input value={value.tipo_imovel} onChange={f('tipo_imovel')} maxLength={120} /></div>
+      <div className="grid gap-1.5 sm:col-span-2"><Label htmlFor="imv-uf">UF do imóvel</Label>
+        <Select value={value.uf || undefined} onValueChange={(uf) => onChange({ ...value, uf, municipio_ibge: '', municipio_nome: '' })}>
+          <SelectTrigger id="imv-uf" aria-label="UF do imóvel"><SelectValue placeholder="UF" /></SelectTrigger>
+          <SelectContent>{UFS.map((u) => <SelectItem key={u.sigla} value={u.sigla}>{u.sigla} — {u.nome}</SelectItem>)}</SelectContent>
+        </Select></div>
+      <div className="grid gap-1.5 sm:col-span-4"><Label>Município do imóvel</Label>
+        <MunicipioCombobox uf={value.uf} value={value.municipio_ibge} savedName={value.municipio_nome}
+          onChange={(m) => onChange({ ...value, municipio_ibge: m.ibge, municipio_nome: m.nome })} /></div>
+      <p className="-mt-1 text-xs text-muted-foreground sm:col-span-6" aria-live="polite">
+        {outro ? `Imóvel fora do município da avaliação (${municipioAvaliacao?.municipio_nome}/${municipioAvaliacao?.uf}).`
+          : municipioAvaliacao?.municipio_ibge ? 'Sugerido: município da avaliação. Troque se o imóvel for de outra cidade.' : 'Escolha o município onde o imóvel fica.'}
+      </p>
       <div className="grid gap-1.5 sm:col-span-4"><Label>Endereço</Label><Input value={value.endereco} onChange={f('endereco')} maxLength={200} /></div>
       <div className="grid gap-1.5 sm:col-span-2"><Label>Número</Label><Input value={value.numero} onChange={f('numero')} maxLength={20} /></div>
       <div className="grid gap-1.5 sm:col-span-3"><Label>Complemento/unidade</Label><Input value={value.complemento} onChange={f('complemento')} maxLength={80} /></div>
@@ -40,11 +66,12 @@ export function ImovelFields({ value, onChange, showAnuncio }: { value: ImovelIn
   );
 }
 
-export function useImovelCreator(municipio: { ibge: string | null; nome: string; uf: string }) {
+/** Cadastro do imóvel com o município escolhido no formulário (o da avaliação é só a sugestão inicial). */
+export function useImovelCreator() {
   const [dups, setDups] = useState<Dup[] | null>(null);
   const check = async (v: ImovelInput) => {
     const rows = await rpc<Dup[]>('aval_find_duplicates', {
-      p_endereco: v.endereco, p_numero: v.numero, p_complemento: v.complemento, p_municipio_ibge: municipio.ibge,
+      p_endereco: v.endereco, p_numero: v.numero, p_complemento: v.complemento, p_municipio_ibge: municipioParaGravar(v).municipio_ibge,
       p_latitude: null, p_longitude: null, p_anuncio_url: v.anuncio_url || null, p_anuncio_id: v.anuncio_id || null,
       p_area: num(v.area_construida), p_foto_hashes: [], p_exclude: null,
       p_bairro: v.bairro.trim() || null, p_tipo_imovel: v.tipo_imovel.trim() || null,
@@ -54,7 +81,7 @@ export function useImovelCreator(municipio: { ibge: string | null; nome: string;
   const create = async (v: ImovelInput): Promise<string> => {
     const { data, error } = await db.from('imoveis').insert({
       tipo_imovel: v.tipo_imovel.trim() || 'Não informado', endereco: v.endereco.trim() || null, numero: v.numero.trim() || null,
-      complemento: v.complemento.trim() || null, bairro: v.bairro.trim() || null, municipio_nome: municipio.nome, municipio_ibge: municipio.ibge, uf: municipio.uf,
+      complemento: v.complemento.trim() || null, bairro: v.bairro.trim() || null, ...municipioParaGravar(v),
       area_construida: num(v.area_construida), area_terreno: num(v.area_terreno), anuncio_url: v.anuncio_url.trim() || null, anuncio_id: v.anuncio_id.trim() || null,
     }).select('id').single();
     if (error) throw error;
@@ -64,6 +91,7 @@ export function useImovelCreator(municipio: { ibge: string | null; nome: string;
   const resolve = async (v: ImovelInput, decision?: { useExisting?: string; forceNew?: boolean }): Promise<string | null> => {
     try {
       if (decision?.useExisting) { setDups(null); return decision.useExisting; }
+      if (!municipioValido(v)) { toast.error('Escolha a UF e o município do imóvel.'); return null; }
       if (!decision?.forceNew) {
         const found = await check(v);
         if (found.length) { setDups(found); return null; }
