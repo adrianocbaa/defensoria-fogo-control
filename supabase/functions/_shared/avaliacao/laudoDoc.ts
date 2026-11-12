@@ -17,6 +17,8 @@ export interface LaudoData {
   amostras: { endereco: string; area: number | null; valor: number | null; unitario: number | null }[];
   compatibilidades: { tipo_valor: string; valor_comparado: number; diferenca_percentual: number }[];
   anexos: { numero: string; titulo: string }[];
+  /** Fotos do avaliando (somente arquivos da própria organização), inseridas no anexo fotográfico. */
+  figuras?: { titulo: string; data: Uint8Array; tipo: 'png' | 'jpg'; largura: number; altura: number }[];
 }
 
 export const fmtNum = (v: number | null | undefined, c = 2) => (v === null || v === undefined || !Number.isFinite(Number(v)) ? '—'
@@ -126,6 +128,15 @@ export function buildLaudoPdf(d: LaudoData, deps: { jsPDF: any; autoTable: (doc:
     ensure(14); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('Anexos', M, y); y += 7;
     para(d.anexos.map((a) => `Anexo ${a.numero} — ${a.titulo}`).join('\n'));
   }
+  if (d.figuras?.length) {
+    ensure(14); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('Anexo fotográfico', M, y); y += 7;
+    for (const [i, f] of d.figuras.entries()) {
+      const w = Math.min(120, W - 2 * M); const h = Math.min(150, (w * f.altura) / Math.max(1, f.largura));
+      ensure(h + 10);
+      doc.addImage(f.data, f.tipo === 'png' ? 'PNG' : 'JPEG', (W - w) / 2, y, w, h); y += h + 4;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(`Figura ${i + 1} — ${f.titulo}`, W / 2, y, { align: 'center' }); y += 8;
+    }
+  }
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
@@ -144,7 +155,7 @@ export function buildLaudoPdf(d: LaudoData, deps: { jsPDF: any; autoTable: (doc:
 /** Documento Word editável e estruturado (estilos de título, tabelas, cabeçalho, rodapé com numeração). */
 // deno-lint-ignore no-explicit-any
 export function buildLaudoDocx(d: LaudoData, x: any) {
-  const { Document, Paragraph, TextRun, Table: DTable, TableRow, TableCell, WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel, Header, Footer, PageNumber } = x;
+  const { Document, Paragraph, TextRun, ImageRun, Table: DTable, TableRow, TableCell, WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel, Header, Footer, PageNumber } = x;
   const CONTENT = 9026; // A4 com margens de 1"
   const border = { style: BorderStyle.SINGLE, size: 4, color: 'BFBFBF' };
   const borders = { top: border, bottom: border, left: border, right: border };
@@ -179,6 +190,15 @@ export function buildLaudoDocx(d: LaudoData, x: any) {
   if (d.anexos.length) {
     children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('Anexos')] }));
     for (const a of d.anexos) children.push(new Paragraph({ children: [new TextRun(`Anexo ${a.numero} — ${a.titulo}`)] }));
+  }
+  if (d.figuras?.length) {
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('Anexo fotográfico')] }));
+    for (const [i, f] of d.figuras.entries()) {
+      const w = 420; const h = Math.round(Math.min(520, (w * f.altura) / Math.max(1, f.largura)));
+      children.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: f.tipo, data: f.data, transformation: { width: w, height: h },
+        altText: { title: `Figura ${i + 1}`, description: f.titulo, name: `figura-${i + 1}` } })] }));
+      children.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: `Figura ${i + 1} — ${f.titulo}`, size: 18, italics: true })] }));
+    }
   }
   return new Document({
     creator: 'SiDIF', title: `Laudo ${d.codigo}`,
