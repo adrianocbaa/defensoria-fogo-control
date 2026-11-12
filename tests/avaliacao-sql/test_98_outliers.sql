@@ -101,7 +101,6 @@ SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$SELECT public.aval_accept_model(pg_temp.k('v1'), 'Justificativa do aceite técnico')$$, 'validation_outdated_reviews', 'decisão posterior à validação exige nova validação');
 SELECT pg_temp.login(NULL);
 UPDATE public.model_validations SET created_at = created_at - interval '1 minute' WHERE id = pg_temp.k('v1');
-UPDATE public.audit_events SET created_at = created_at - interval '30 seconds' WHERE entity_id = pg_temp.k('mod') AND event_type = 'OUTLIER_DECISION';
 SET LOCAL ROLE service_role;
 INSERT INTO k SELECT 'v2', pg_temp.validar('APTO_COM_RESSALVAS', (SELECT c || jsonb_build_object('status', 'ATENDE', 'revisado', true) FROM crit));
 RESET ROLE;
