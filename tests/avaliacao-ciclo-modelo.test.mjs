@@ -14,6 +14,7 @@ function load(path, imports = {}) {
 const E = load('supabase/functions/_shared/avaliacao/engine.ts');
 const V = load('supabase/functions/_shared/avaliacao/validator.ts', { './engine.ts': E });
 const C = load('src/lib/avaliacao/cicloModelo.ts');
+const plain = (x) => JSON.parse(JSON.stringify(x));
 const RULE = { codigo: 'RELACIONAMENTO', numero: 1, nome: 'Relacionamento', origem: 'NORMA_TECNICA', modo: 'AUTOMATICO', bloqueante: false, entra_fundamentacao: false, thresholds: {}, ativo: true };
 
 /** Ajuste mínimo: só o que o critério de relacionamento lê (coeficientes). */
@@ -55,26 +56,26 @@ test('Guarantã do Norte real: ln(valor) ~ ln(banheiro) + 1/area com relações 
   const dep = { transform: fx.input.dependent.transform };
   const atual = V.validateModel(fit, null, vars('POSITIVA'), dep, [RULE], {}).results[0];
   assert.equal(atual.status, 'ATENDE');
-  assert.deepEqual(atual.dados.itens.map((i) => i.efeito), ['POSITIVA', 'POSITIVA']);
+  assert.deepEqual(plain(atual.dados.itens.map((i) => i.efeito)), ['POSITIVA', 'POSITIVA']);
   const antiga = V.validateModel(fit, null, vars('NEGATIVA'), dep, [RULE], {}).results[0];
   assert.equal(antiga.status, 'NAO_ATENDE');
   // Revalidar com a configuração atual usa o MESMO ajuste: coeficientes idênticos nas duas leituras.
-  assert.deepEqual(atual.dados.itens.map((i) => i.code), antiga.dados.itens.map((i) => i.code));
+  assert.deepEqual(plain(atual.dados.itens.map((i) => i.code)), plain(antiga.dados.itens.map((i) => i.code)));
 });
 
 test('4/5) arquivar: em validação bloqueado com orientação; calculado permitido', () => {
-  assert.deepEqual(C.podeArquivar({ status: 'EM_VALIDACAO' }), { ok: false, motivo: 'Retire o modelo da validação antes de arquivá-lo.' });
+  assert.deepEqual(plain(C.podeArquivar({ status: 'EM_VALIDACAO' })), { ok: false, motivo: 'Retire o modelo da validação antes de arquivá-lo.' });
   assert.equal(C.podeArquivar({ status: 'CALCULADO' }).ok, true);
   const s = C.separarArquivaveis([{ id: 'a', status: 'CALCULADO' }, { id: 'b', status: 'EM_VALIDACAO' }, { id: 'c', status: 'ERRO' }]);
-  assert.deepEqual(s.arquivaveis.map((m) => m.id), ['a', 'c']);
-  assert.deepEqual(s.emValidacao.map((m) => m.id), ['b']);
+  assert.deepEqual(plain(s.arquivaveis.map((m) => m.id)), ['a', 'c']);
+  assert.deepEqual(plain(s.emValidacao.map((m) => m.id)), ['b']);
 });
 
 test('7) validação desatualizada após alterar a relação esperada; modelo continua revalidável', () => {
   const itens = [{ code: 'area_construida', esperado: 'NEGATIVA' }, { code: 'banheiros', esperado: 'NEGATIVA' }];
   const atuais = [{ codigo: 'area_construida', nome: 'Área construída', relacao_esperada: 'POSITIVA' }, { codigo: 'banheiros', nome: 'Banheiros', relacao_esperada: 'NEGATIVA' }];
   const alt = C.relacoesAlteradas(itens, atuais);
-  assert.deepEqual(alt, [{ codigo: 'area_construida', nome: 'Área construída', antes: 'NEGATIVA', agora: 'POSITIVA' }]);
+  assert.deepEqual(plain(alt), [{ codigo: 'area_construida', nome: 'Área construída', antes: 'NEGATIVA', agora: 'POSITIVA' }]);
   assert.equal(C.situacaoValidacao({ modeloStale: false, validacao: { stale: false }, alteradas: alt }), 'CONFIG_ALTERADA');
   assert.equal(C.situacaoValidacao({ modeloStale: false, validacao: { stale: true }, alteradas: [] }), 'CONFIG_ALTERADA');
   assert.equal(C.situacaoValidacao({ modeloStale: false, validacao: { stale: false }, alteradas: [] }), 'ATUAL');
@@ -100,7 +101,7 @@ test('3/8) histórico do modelo: eventos próprios, mudança de relação das su
     ev('8', 'MODEL_SENT_TO_VALIDATION', 'modelo', 'M2', '2026-11-12T18:20:00Z'),
   ];
   const h = C.eventosDoModelo(lista, 'M1', ['VA']);
-  assert.deepEqual(h.map((e) => e.id), ['1', '2', '3', '4', '5', '6', '7']);
+  assert.deepEqual(plain(h.map((e) => e.id)), ['1', '2', '3', '4', '5', '6', '7']);
   assert.deepEqual(h.map(C.rotuloEventoModelo), ['Enviado para validação', 'Validação executada', 'Relação esperada alterada',
     'Validação marcada como desatualizada', 'Revalidado com as configurações atuais', 'Retirado da validação', 'Arquivado']);
   assert.equal(C.rotuloEventoModelo({ event_type: 'MODEL_RESENT_TO_VALIDATION', details_json: {} }), 'Reenviado para validação');
