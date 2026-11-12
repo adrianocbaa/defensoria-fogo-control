@@ -28,3 +28,6 @@ verify_jwt = false
 
 [functions.check-maintenance-confirmations]
 verify_jwt = false
+
+[functions.avaliacao-engine]
+verify_jwt = false

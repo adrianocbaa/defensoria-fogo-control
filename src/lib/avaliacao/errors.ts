@@ -1,0 +1,76 @@
+// Tradução segura (allowlist) dos códigos de erro do módulo Avaliações. Nunca exibe a mensagem bruta do servidor.
+const MESSAGES: Record<string, string> = {
+  permission_denied: 'Você não tem permissão para esta ação nesta avaliação.',
+  not_found: 'Registro não encontrado ou fora da sua organização.',
+  unauthenticated: 'Sua sessão expirou. Entre novamente.',
+  invalid_tipo: 'Tipo de avaliação inválido.',
+  missing_required: 'Preencha os campos obrigatórios.',
+  invalid_responsavel: 'O responsável técnico precisa ser um técnico ativo da sua organização.',
+  invalid_member: 'A pessoa escolhida precisa ser um técnico ativo da sua organização.',
+  invalid_papel: 'Papel inválido.',
+  rt_required: 'A avaliação precisa ter um responsável técnico ativo.',
+  justification_required: 'Escreva uma justificativa mais completa.',
+  dataset_frozen: 'O conjunto de dados está congelado e não pode ser alterado. Crie uma nova versão.',
+  dataset_empty: 'Selecione ao menos uma amostra antes de congelar.',
+  dataset_not_frozen: 'Congele o conjunto de dados antes de criar modelos.',
+  transform_not_authorized: 'Há transformação não autorizada para uma das variáveis.',
+  missing_variables: 'Escolha ao menos uma variável independente.',
+  model_stale: 'Este modelo está desatualizado. Crie um novo modelo.',
+  model_not_calculated: 'Calcule o modelo antes desta etapa.',
+  model_immutable: 'Modelo calculado não pode ser alterado. Duplique-o para mudar.',
+  model_already_executed: 'Este modelo já foi calculado e é imutável. Crie um novo para alterar.',
+  model_not_in_validation: 'Envie o modelo para validação antes.',
+  validation_stale: 'A validação está desatualizada. Execute novamente.',
+  validation_not_latest: 'Existe uma validação mais recente para este modelo.',
+  validation_outdated_reviews: 'Há análises manuais posteriores a esta validação. Execute a validação novamente.',
+  validation_not_apt: 'O modelo não está apto para aceite.',
+  manual_review_pending: 'Há critérios que exigem análise manual antes do aceite.',
+  projection_stale: 'A projeção está desatualizada. Calcule novamente.',
+  acceptance_not_current: 'O aceite do modelo não está vigente.',
+  invalid_center: 'Tendência central inválida.',
+  invalid_conclusion: 'Escolha uma conclusão.',
+  arbitration_out_of_field: 'O valor arbitrado está fora do campo de arbítrio.',
+  characteristics_required: 'Vincule ao menos uma característica relevante ao arbítrio.',
+  invalid_characteristic: 'Característica inválida.',
+  section_stale: 'Revise a seção desatualizada antes de aprovar.',
+  report_issued_immutable: 'Laudo emitido não pode ser alterado. Crie uma revisão.',
+  preflight_required: 'Execute a verificação de emissão e corrija as falhas antes de emitir.',
+  preflight_outdated: 'Houve alterações após a verificação. Execute-a novamente.',
+  revision_requires_issued: 'Só é possível criar revisão de um laudo emitido.',
+  evaluation_cancelled: 'Avaliação cancelada.',
+  ai_already_decided: 'Este texto sugerido já foi decidido.',
+  field_not_allowed: 'Este campo não pode ser alterado por aqui.',
+  entity_not_allowed: 'Alteração não permitida.',
+  protected_field: 'Este campo é controlado pelo sistema.',
+  immutable_record: 'Registro oficial imutável.',
+  organization_immutable: 'A organização do registro não pode ser alterada.',
+  cross_org_reference: 'Referência a dado de outra organização não é permitida.',
+  ZERO_VARIANCE: 'Uma variável tem o mesmo valor em todas as amostras.',
+  INVALID_DOMAIN: 'Uma transformação não é válida para algum valor (ex.: logaritmo de zero ou negativo).',
+  N_LE_P: 'Há poucas amostras para a quantidade de variáveis.',
+  RANK_DEFICIENT: 'Há variáveis redundantes (combinação exata de outras).',
+  NON_FINITE: 'O cálculo produziu valores inválidos.',
+  ZERO_RESIDUAL_VARIANCE: 'O modelo ajusta perfeitamente os dados (sem variância residual).',
+  MISSING_VALUES: 'Há valores faltantes nas amostras do conjunto congelado ou no avaliando.',
+  INVALID_INPUT: 'Dados de entrada incompletos.',
+  forbidden: 'Você não tem permissão para esta ação.',
+};
+
+export function avalErrorCode(err: unknown): string | null {
+  const anyErr = err as { message?: string; code?: string; context?: unknown } | null;
+  const msg = anyErr?.message ?? '';
+  const m = /aval:([a-z_]+)/.exec(msg);
+  if (m) return m[1];
+  if (/row-level security/i.test(msg)) return 'permission_denied';
+  if (/permission denied/i.test(msg)) return 'permission_denied';
+  return null;
+}
+
+export function avalErrorMessage(err: unknown, fallback = 'Não foi possível concluir a ação.'): string {
+  const code = avalErrorCode(err);
+  return (code && MESSAGES[code]) || fallback;
+}
+
+export function avalMessageFromCode(code: string | null | undefined, fallback = 'Não foi possível concluir a ação.'): string {
+  return (code && MESSAGES[code]) || fallback;
+}
