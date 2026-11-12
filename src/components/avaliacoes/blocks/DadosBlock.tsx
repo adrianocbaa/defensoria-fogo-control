@@ -15,6 +15,7 @@ import { ImpactDialog, type PendingChange } from '../ImpactDialog';
 import { db, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { PAPEL_LABEL, VALOR_ADM_LABEL, fmtDate, fmtMoney } from '@/lib/avaliacao/labels';
+import { camposInvalidos, montarAlteracoes, paraFormulario, type CampoEdicao } from '@/lib/avaliacao/edicao';
 
 const parseMoney = (s: string) => {
   const n = Number(s.replace(/\./g, '').replace(',', '.'));
@@ -24,9 +25,10 @@ const parseMoney = (s: string) => {
 export function DadosBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const av = ctx.avaliacao.data!;
   const [change, setChange] = useState<PendingChange | null>(null);
+  const [changes, setChanges] = useState<PendingChange[] | null>(null);
   const [edit, setEdit] = useState<{ campo: string; rotulo: string; valor: string } | null>(null);
   const [novoValor, setNovoValor] = useState<{ tipo: string; valor: string; data: string; obs: string } | null>(null);
-  const [editValor, setEditValor] = useState<{ id: string; valor: string } | null>(null);
+  const [editValor, setEditValor] = useState<{ row: any; form: Record<string, string> } | null>(null);
   const [membro, setMembro] = useState<{ user: string; papel: string } | null>(null);
   const [cancelar, setCancelar] = useState<string | null>(null);
 
@@ -71,6 +73,26 @@ export function DadosBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     catch (e) { toast.error(avalErrorMessage(e)); }
   };
 
+  const camposValor = (id: string): CampoEdicao[] => [
+    { chave: 'tipo', entity_type: 'valor_administrativo', entity_id: id, campo: 'tipo', rotulo: 'Tipo do valor', tipo: 'opcao', opcoes: VALOR_ADM_LABEL },
+    { chave: 'valor', entity_type: 'valor_administrativo', entity_id: id, campo: 'valor', rotulo: 'Valor mensal', tipo: 'numero', casas: 2, prefixo: 'R$' },
+    { chave: 'data_referencia', entity_type: 'valor_administrativo', entity_id: id, campo: 'data_referencia', rotulo: 'Data de referência', tipo: 'data' },
+    { chave: 'observacao', entity_type: 'valor_administrativo', entity_id: id, campo: 'observacao', rotulo: 'Observação', tipo: 'texto' },
+  ];
+  const abrirValor = (v: any) => {
+    const form: Record<string, string> = {};
+    for (const c of camposValor(v.id)) form[c.chave] = paraFormulario(c.tipo, v[c.chave]);
+    setEditValor({ row: v, form });
+  };
+  const revisarValor = () => {
+    if (!editValor) return;
+    const cs = camposValor(editValor.row.id);
+    if (camposInvalidos(cs, editValor.form).length || !(parseMoney(editValor.form.valor || '') > 0)) { toast.error('Informe um valor mensal válido.'); return; }
+    const lote = montarAlteracoes(cs, editValor.row, editValor.form);
+    if (!lote.length) { toast.info('Nenhum campo foi alterado.'); return; }
+    setChanges(lote);
+  };
+
   const campos: { campo: string; rotulo: string; valor: string | null }[] = [
     { campo: 'processo_administrativo', rotulo: 'Processo administrativo', valor: av.processo_administrativo },
     { campo: 'numero_contrato', rotulo: 'Número do contrato', valor: av.numero_contrato },
@@ -104,7 +126,7 @@ export function DadosBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                   <div><p className="font-medium">{VALOR_ADM_LABEL[v.tipo]}</p><p className="text-xs text-muted-foreground">Referência: {fmtDate(v.data_referencia)}{v.observacao ? ` · ${v.observacao}` : ''}</p></div>
                   <div className="flex items-center gap-1">
                     <span className="font-semibold tabular-nums">{fmtMoney(v.valor)}</span>
-                    {canEdit && <Button size="icon" variant="ghost" aria-label="Alterar valor" onClick={() => setEditValor({ id: v.id, valor: String(v.valor).replace('.', ',') })}><Pencil className="h-4 w-4" /></Button>}
+                    {canEdit && <Button size="icon" variant="ghost" aria-label={`Editar ${VALOR_ADM_LABEL[v.tipo] ?? 'valor administrativo'}`} title="Editar valor administrativo" onClick={() => abrirValor(v)}><Pencil className="h-4 w-4" /></Button>}
                   </div>
                 </li>
               ))}
@@ -159,18 +181,29 @@ export function DadosBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
       <Dialog open={!!editValor} onOpenChange={(o) => !o && setEditValor(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Alterar valor administrativo</DialogTitle></DialogHeader>
-          <Input inputMode="decimal" value={editValor?.valor ?? ''} onChange={(e) => editValor && setEditValor({ ...editValor, valor: e.target.value })} placeholder="0,00" />
+          <DialogHeader><DialogTitle>Editar valor administrativo</DialogTitle></DialogHeader>
+          {editValor && (() => {
+            const set = (k: string) => (v: string) => setEditValor({ ...editValor, form: { ...editValor.form, [k]: v } });
+            return (
+              <div className="grid gap-3">
+                <div className="grid gap-2"><Label>Tipo do valor</Label>
+                  <Select value={editValor.form.tipo} onValueChange={set('tipo')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{Object.entries(VALOR_ADM_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2"><Label htmlFor="ev-valor">Valor mensal (R$)</Label><Input id="ev-valor" inputMode="decimal" value={editValor.form.valor} onChange={(e) => set('valor')(e.target.value)} placeholder="0,00" /></div>
+                <div className="grid gap-2"><Label htmlFor="ev-data">Data de referência</Label><Input id="ev-data" type="date" value={editValor.form.data_referencia} onChange={(e) => set('data_referencia')(e.target.value)} /></div>
+                <div className="grid gap-2"><Label htmlFor="ev-obs">Observação</Label><Textarea id="ev-obs" value={editValor.form.observacao} onChange={(e) => set('observacao')(e.target.value)} rows={2} maxLength={300} /></div>
+              </div>
+            );
+          })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditValor(null)}>Cancelar</Button>
-            <Button onClick={() => {
-              if (!editValor) return;
-              const v = parseMoney(editValor.valor);
-              if (!(v > 0)) { toast.error('Informe um valor válido.'); return; }
-              setChange({ entity_type: 'valor_administrativo', entity_id: editValor.id, campo: 'valor', valor: v, rotulo: 'Valor administrativo' });
-              setEditValor(null);
-            }}>Continuar</Button>
+            <Button onClick={revisarValor}>Revisar alterações</Button>
           </DialogFooter>
+          <ImpactDialog avaliacaoId={av.id} changes={changes} titulo="Revisar alterações do valor administrativo"
+            onClose={() => setChanges(null)} onApplied={() => { setEditValor(null); ctx.refresh(); }} />
         </DialogContent>
       </Dialog>
 
