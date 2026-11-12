@@ -20,6 +20,7 @@
 - [x] Homologação numérica Aripuanã (65/65) e São Félix do Araguaia (88/88) — motor 1.1.1 sem alteração de fórmula; três casos reais concluídos
 - [x] Edição completa de dados (valor administrativo, imóvel avaliando com localização, amostra com fonte) — um resumo de impacto por salvamento, maior nível, antes/depois no histórico, valor unitário recalculado, opção de imóvel separado para amostra; 122 testes JS + 101 verificações SQL; banco atualizado; motor e avaliacao-engine intocados; frontend aguarda Publish → Update
 - [ ] Conferir na tela a edição dos três pontos com usuário logado — bloqueado: login de teste indisponível no Supabase externo
+- [ ] Variáveis antes da coleta — etapa Variáveis (catálogo), campos dinâmicos no avaliando e nas amostras, completude, bloqueio no congelamento, Modelagem sem redigitação
 
 - [x] Housekeeping inbound — limites técnicos 10 anexos/10 MiB/25 MiB, validação antes de gravar e configuração transacional Super Admin; 29 testes Node + 3 Deno, UI simulada com releitura e build OK; somente inbound-maintenance-email republicada; frontend aguarda Publish → Update. Quota de plano adiada (contagem diária); salvamento autenticado real não verificado no Supabase externo.
 
