@@ -73,7 +73,7 @@ test('salvar Banheiros grava na característica do imóvel; variável personaliz
   const campos = V.camposDinamicos(st, 'AMOSTRA');
   const { alteracoes, invalidos } = V.alteracoesDinamicas(campos, { ap: 120, bn: null, id: null },
     { ap: '120,00', bn: '2', id: '7' }, { imovel_id: 'im5', dado_id: 'd5', amostra_id: 'a5' });
-  assert.deepEqual(invalidos, []);
+  assert.deepEqual(plain(invalidos), []);
   assert.deepEqual(plain(alteracoes.map((a) => [a.entity_type, a.entity_id, a.campo, a.valor, a.contexto])), [
     ['imovel_atributo', 'im5', 'BANHEIROS', '2', { dado_id: 'd5' }],
     ['variavel_valor', 'id', 'valor', 7, { amostra_id: 'a5' }],
