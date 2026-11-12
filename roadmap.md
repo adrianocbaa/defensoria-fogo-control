@@ -17,7 +17,7 @@
 - [ ] Confirmar com o RT a edição vigente da NBR 14653-2 usada na política de fundamentação (hoje: 2011, itens 1 e 3 exigem grau manual)
 - [ ] Teste logado ponta a ponta — bloqueado: login de teste indisponível no Supabase externo e não há avaliações cadastradas
 - [x] Homologação numérica Guarantã do Norte — motor 1.1.1 (R estimativa por 1−SSE/SST na escala original; resíduo relativo na escala transformada); 124 verificações de paridade SisDEA passaram; avaliacao-engine atualizada
-- [ ] Homologação numérica Aripuanã e São Félix do Araguaia — aguarda planilhas de referência
+- [x] Homologação numérica Aripuanã (65/65) e São Félix do Araguaia (88/88) — motor 1.1.1 sem alteração de fórmula; três casos reais concluídos
 
 - [x] Housekeeping inbound — limites técnicos 10 anexos/10 MiB/25 MiB, validação antes de gravar e configuração transacional Super Admin; 29 testes Node + 3 Deno, UI simulada com releitura e build OK; somente inbound-maintenance-email republicada; frontend aguarda Publish → Update. Quota de plano adiada (contagem diária); salvamento autenticado real não verificado no Supabase externo.
 
