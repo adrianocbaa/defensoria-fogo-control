@@ -1,0 +1,573 @@
+{
+ "name": "Guarantã do Norte — base real (12 habilitadas; ID 6 excluída)",
+ "source": "Relatório SisDEA de referência fornecido para homologação numérica",
+ "input": {
+  "sampleIds": [
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "7",
+   "8",
+   "9",
+   "10",
+   "11",
+   "12",
+   "13"
+  ],
+  "dependent": {
+   "code": "valor",
+   "transform": "LN",
+   "values": [
+    6000,
+    3000,
+    8000,
+    2000,
+    2850,
+    3242,
+    2000,
+    9000,
+    13000,
+    2000,
+    3000,
+    3000
+   ]
+  },
+  "independents": [
+   {
+    "code": "banheiro",
+    "transform": "LN",
+    "values": [
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     1,
+     3,
+     2,
+     1,
+     1,
+     2
+    ]
+   },
+   {
+    "code": "area",
+    "transform": "INVERSE",
+    "values": [
+     242.0,
+     70.0,
+     315.0,
+     69.4,
+     80.0,
+     65.0,
+     24.0,
+     360.0,
+     520.0,
+     24.0,
+     70.0,
+     170.0
+    ]
+   }
+  ]
+ },
+ "variables": [
+  {
+   "code": "banheiro",
+   "tipo": "QUANTITATIVA",
+   "relacao_esperada": "POSITIVA",
+   "transform": "LN"
+  },
+  {
+   "code": "area",
+   "tipo": "QUANTITATIVA",
+   "relacao_esperada": "POSITIVA",
+   "transform": "INVERSE"
+  }
+ ],
+ "avaliando": {
+  "banheiro": 2,
+  "area": 127.82
+ },
+ "confidenceLevel": 0.8,
+ "policy": {
+  "codigo": "SIDIF_V1",
+  "versao": 2,
+  "rules": [
+   {
+    "codigo": "RELACIONAMENTO",
+    "numero": 1,
+    "nome": "Relacionamento das variáveis",
+    "origem": "NORMA_TECNICA",
+    "modo": "AUTOMATICO",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {},
+    "ativo": true
+   },
+   {
+    "codigo": "SIGNIF_REGRESSORES",
+    "numero": 2,
+    "nome": "Significância dos regressores",
+    "origem": "NORMA_TECNICA",
+    "modo": "AUTOMATICO",
+    "bloqueante": true,
+    "entra_fundamentacao": true,
+    "thresholds": {
+     "graus": [
+      {
+       "max": 0.1,
+       "grau": "III"
+      },
+      {
+       "max": 0.2,
+       "grau": "II"
+      },
+      {
+       "max": 0.3,
+       "grau": "I"
+      }
+     ]
+    },
+    "ativo": true
+   },
+   {
+    "codigo": "SIGNIF_MODELO",
+    "numero": 3,
+    "nome": "Significância do modelo (F)",
+    "origem": "NORMA_TECNICA",
+    "modo": "AUTOMATICO",
+    "bloqueante": true,
+    "entra_fundamentacao": true,
+    "thresholds": {
+     "graus": [
+      {
+       "max": 0.01,
+       "grau": "III"
+      },
+      {
+       "max": 0.02,
+       "grau": "II"
+      },
+      {
+       "max": 0.05,
+       "grau": "I"
+      }
+     ]
+    },
+    "ativo": true
+   },
+   {
+    "codigo": "NORMALIDADE",
+    "numero": 4,
+    "nome": "Normalidade dos resíduos",
+    "origem": "NORMA_TECNICA",
+    "modo": "AUTOMATICO",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {
+     "faixas": [
+      {
+       "z": 1,
+       "referencia": 0.68,
+       "tolerancia": 0.02,
+       "tolerancia_origem": "PROCEDIMENTO_INTERNO"
+      },
+      {
+       "z": 1.64,
+       "referencia": 0.9,
+       "tolerancia": null
+      },
+      {
+       "z": 1.96,
+       "referencia": 0.95,
+       "tolerancia": null
+      }
+     ],
+     "status_fora": "REQUER_ANALISE",
+     "comparacao_origem": "PROCEDIMENTO_INTERNO",
+     "comparacao_sem_tolerancia": "MINIMO"
+    },
+    "ativo": true
+   },
+   {
+    "codigo": "PRECISAO",
+    "numero": 5,
+    "nome": "Grau de precisão (amplitude do IC)",
+    "origem": "NORMA_TECNICA",
+    "modo": "AUTOMATICO",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {
+     "graus": [
+      {
+       "max": 30,
+       "grau": "III"
+      },
+      {
+       "max": 40,
+       "grau": "II"
+      },
+      {
+       "max": 50,
+       "grau": "I"
+      }
+     ]
+    },
+    "ativo": true
+   },
+   {
+    "codigo": "EXTRAPOLACAO",
+    "numero": 6,
+    "nome": "Extrapolação",
+    "origem": "NORMA_TECNICA",
+    "modo": "ASSISTIDO",
+    "bloqueante": false,
+    "entra_fundamentacao": true,
+    "thresholds": {
+     "status_fora": "REQUER_ANALISE"
+    },
+    "ativo": true
+   },
+   {
+    "codigo": "NUMERO_DADOS",
+    "numero": 7,
+    "nome": "Número de dados",
+    "origem": "NORMA_TECNICA",
+    "modo": "AUTOMATICO",
+    "bloqueante": true,
+    "entra_fundamentacao": true,
+    "thresholds": {
+     "graus": [
+      {
+       "grau": "III",
+       "multiplicador": 6
+      },
+      {
+       "grau": "II",
+       "multiplicador": 4
+      },
+      {
+       "grau": "I",
+       "multiplicador": 3
+      }
+     ]
+    },
+    "ativo": true
+   },
+   {
+    "codigo": "T_DERIVADO",
+    "numero": 8,
+    "nome": "Teste t (derivado)",
+    "origem": "MOTOR_ESTATISTICO",
+    "modo": "DERIVADO",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {},
+    "ativo": true
+   },
+   {
+    "codigo": "MULTICOLINEARIDADE",
+    "numero": 9,
+    "nome": "Multicolinearidade",
+    "origem": "PROCEDIMENTO_INTERNO",
+    "modo": "AUTOMATICO",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {
+     "r_max": 0.8
+    },
+    "ativo": true
+   },
+   {
+    "codigo": "HOMOCEDASTICIDADE",
+    "numero": 10,
+    "nome": "Homocedasticidade",
+    "origem": "NORMA_TECNICA",
+    "modo": "MANUAL",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {},
+    "ativo": true
+   },
+   {
+    "codigo": "PONTOS_INFLUENTES",
+    "numero": 11,
+    "nome": "Pontos influentes (Cook)",
+    "origem": "PROCEDIMENTO_INTERNO",
+    "modo": "ASSISTIDO",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {
+     "cook_regra": {
+      "k": 4,
+      "tipo": "K_SOBRE_N",
+      "origem": "PROCEDIMENTO_INTERNO",
+      "descricao": "Heurística operacional D > 4/n para sinalizar amostras influentes. Não é limite normativo; nenhuma amostra é excluída automaticamente."
+     }
+    },
+    "ativo": true
+   },
+   {
+    "codigo": "OUTLIERS",
+    "numero": 12,
+    "nome": "Outliers",
+    "origem": "NORMA_TECNICA",
+    "modo": "ASSISTIDO",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {},
+    "ativo": true
+   },
+   {
+    "codigo": "MICRONUMEROSIDADE",
+    "numero": 13,
+    "nome": "Micronumerosidade",
+    "origem": "NORMA_TECNICA",
+    "modo": "AUTOMATICO",
+    "bloqueante": false,
+    "entra_fundamentacao": false,
+    "thresholds": {
+     "tipos": [
+      "DICOTOMICA",
+      "PROXY",
+      "CODIGO_ALOCADO"
+     ],
+     "faixas": [
+      {
+       "n_max": 30,
+       "minimo_abs": 3
+      },
+      {
+       "n_max": 100,
+       "minimo_pct": 10
+      },
+      {
+       "n_max": null,
+       "minimo_abs": 10
+      }
+     ]
+    },
+    "ativo": true
+   }
+  ],
+  "fundamentacao": {
+   "itens": [
+    {
+     "item": 1,
+     "codigo": "CARACTERIZACAO_AVALIANDO",
+     "titulo": "Caracterização do imóvel avaliando",
+     "obrigatorio": false,
+     "source_type": "MANUAL"
+    },
+    {
+     "item": 2,
+     "codigo": "QUANTIDADE_DADOS",
+     "titulo": "Quantidade mínima de dados de mercado efetivamente utilizados",
+     "criterio": "NUMERO_DADOS",
+     "obrigatorio": true,
+     "source_type": "CRITERIO"
+    },
+    {
+     "item": 3,
+     "codigo": "IDENTIFICACAO_DADOS",
+     "titulo": "Identificação dos dados de mercado",
+     "obrigatorio": false,
+     "source_type": "MANUAL"
+    },
+    {
+     "item": 4,
+     "codigo": "EXTRAPOLACAO",
+     "titulo": "Extrapolação",
+     "criterio": "EXTRAPOLACAO",
+     "obrigatorio": true,
+     "source_type": "CRITERIO"
+    },
+    {
+     "item": 5,
+     "codigo": "SIGNIF_REGRESSORES",
+     "titulo": "Nível de significância máximo de cada regressor (bicaudal)",
+     "criterio": "SIGNIF_REGRESSORES",
+     "obrigatorio": true,
+     "source_type": "CRITERIO"
+    },
+    {
+     "item": 6,
+     "codigo": "SIGNIF_MODELO",
+     "titulo": "Nível de significância máximo do modelo (teste F)",
+     "criterio": "SIGNIF_MODELO",
+     "obrigatorio": true,
+     "source_type": "CRITERIO"
+    }
+   ],
+   "origem": "NORMA_TECNICA",
+   "pontos": {
+    "I": 1,
+    "II": 2,
+    "III": 3
+   },
+   "referencia": "ABNT NBR 14653-2:2011 — Tabelas 1 e 2 (graus de fundamentação em regressão linear). Conferir com a edição vigente da norma.",
+   "enquadramento": [
+    {
+     "grau": "III",
+     "pontos_min": 16,
+     "demais_grau_min": "II",
+     "obrigatorios_grau_min": "III"
+    },
+    {
+     "grau": "II",
+     "pontos_min": 10,
+     "demais_grau_min": "I",
+     "obrigatorios_grau_min": "II"
+    },
+    {
+     "grau": "I",
+     "pontos_min": 6,
+     "demais_grau_min": "I",
+     "obrigatorios_grau_min": "I"
+    }
+   ]
+  },
+  "precisao_graus": [
+   {
+    "max": 30,
+    "grau": "III"
+   },
+   {
+    "max": 40,
+    "grau": "II"
+   },
+   {
+    "max": 50,
+    "grau": "I"
+   }
+  ]
+ },
+ "foundationManualGrades": {
+  "CARACTERIZACAO_AVALIANDO": "II",
+  "IDENTIFICACAO_DADOS": "II"
+ },
+ "expected": {
+  "n": 12,
+  "p": {
+   "banheiro": 0.0700534396219216,
+   "area": 0.0732720510072979
+  },
+  "dfReg": 2,
+  "dfRes": 9,
+  "dfTotal": 11,
+  "sse": 1.43876281682019,
+  "sst": 4.52682139698292,
+  "ssr": 3.08805858016272,
+  "mse": 0.159862535202244,
+  "rRegressao": 0.825935408636543,
+  "rEstimativa": 0.769159488441883,
+  "r2": 0.682169299239613,
+  "f": 9.6584811952844,
+  "fP": 0.00575282687341551,
+  "beta": [
+   8.37299675808908,
+   0.743134497076474,
+   -21.5729311517294
+  ],
+  "t": [
+   33.5160153181007,
+   2.05492332723467,
+   -2.02714130027687
+  ],
+  "normalityCounts": [
+   {
+    "z": 1,
+    "count": 8
+   },
+   {
+    "z": 1.64,
+    "count": 11
+   },
+   {
+    "z": 1.96,
+    "count": 12
+   }
+  ],
+  "cook": [
+   0.205399,
+   0.001362,
+   0.017062,
+   0.084145,
+   0.010078,
+   0.000683,
+   0.056592,
+   0.00226,
+   0.249754,
+   0.056592,
+   0.001362,
+   0.330629
+  ],
+  "residualRelativePct": [
+   4.77799447157,
+   -0.729974725817,
+   1.86469685945,
+   -6.06829450792,
+   -1.86372672758,
+   0.529941618516,
+   1.66793132065,
+   -0.26917998748,
+   6.60943972201,
+   1.66793132065,
+   -0.729974725817,
+   -9.42788562324
+  ],
+  "centers": [
+   {
+    "center": "MODE",
+    "value": 5215.86352525878,
+    "lower": 4106.35358168353,
+    "upper": 6625.15581597123
+   },
+   {
+    "center": "MEDIAN",
+    "value": 6120.03120182298,
+    "lower": 4818.18819145079,
+    "upper": 7773.62369899645
+   },
+   {
+    "center": "MEAN",
+    "value": 6629.29499169519,
+    "lower": 5219.12222230425,
+    "upper": 8420.48724191633
+   }
+  ],
+  "amplitudePct": 48.2911836571,
+  "precisionGrade": "I",
+  "foundation": {
+   "items": {
+    "CARACTERIZACAO_AVALIANDO": "II",
+    "QUANTIDADE_DADOS": "II",
+    "IDENTIFICACAO_DADOS": "II",
+    "EXTRAPOLACAO": "III",
+    "SIGNIF_REGRESSORES": "III",
+    "SIGNIF_MODELO": "III"
+   },
+   "points": 15,
+   "grade": "II"
+  },
+  "compatibility": {
+   "contratoAtual": 3500,
+   "reajustado": 3611.22,
+   "center": "MEAN",
+   "referenciaBruta": 6629.29499169519,
+   "diferenca": 3018.07499169519,
+   "percentual": 45.53,
+   "posicaoIc": "ABAIXO_IC",
+   "direcao": "ABAIXO_REFERENCIA",
+   "arbitramentoAplicado": false,
+   "campoPct": 15,
+   "campo": [
+    5634.90074294091,
+    7623.68924044947
+   ]
+  }
+ }
+}
