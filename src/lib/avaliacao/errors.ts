@@ -12,6 +12,8 @@ const MESSAGES: Record<string, string> = {
   justification_required: 'Escreva uma justificativa mais completa.',
   dataset_frozen: 'O conjunto de dados está congelado e não pode ser alterado. Crie uma nova versão.',
   dataset_empty: 'Selecione ao menos uma amostra antes de congelar.',
+  dataset_incomplete: 'Não é possível congelar o conjunto: há amostras sem variáveis obrigatórias.',
+  dependent_exists: 'Já existe uma variável dependente nesta avaliação.',
   dataset_not_frozen: 'Congele o conjunto de dados antes de criar modelos.',
   transform_not_authorized: 'Há transformação não autorizada para uma das variáveis.',
   missing_variables: 'Escolha ao menos uma variável independente.',

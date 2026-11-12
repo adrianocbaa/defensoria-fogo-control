@@ -1,4 +1,5 @@
 // Rótulos e mapeamentos de exibição do módulo Avaliações.
+import { TRANSFORM_LABEL as TRANSFORM_LABEL_LOCAL } from '../../../supabase/functions/_shared/avaliacao/docLabels.ts';
 export { CENTRO_LABEL, CRITERIO_STATUS_LABEL, TRANSFORM_LABEL, VALOR_ADM_LABEL } from '../../../supabase/functions/_shared/avaliacao/docLabels.ts';
 export const TIPO_LABEL: Record<string, string> = {
   NOVA_LOCACAO: 'Nova locação',
@@ -25,10 +26,15 @@ export const OVERALL_LABEL: Record<string, string> = {
   APTO: 'Apto', APTO_COM_RESSALVAS: 'Apto com ressalvas', REQUER_AJUSTES: 'Requer ajustes', BLOQUEADO: 'Bloqueado',
 };
 export const BLOCO_LABEL: Record<string, string> = {
-  DADOS: 'Dados', IMOVEL: 'Imóvel', MERCADO: 'Mercado', MODELAGEM: 'Modelagem', VALIDACAO: 'Validação', RESULTADO: 'Resultado', LAUDO: 'Laudo',
+  DADOS: 'Dados', VARIAVEIS: 'Variáveis', IMOVEL: 'Imóvel', MERCADO: 'Mercado', MODELAGEM: 'Modelagem', VALIDACAO: 'Validação', RESULTADO: 'Resultado', LAUDO: 'Laudo',
 };
 export const BLOCO_ROUTE: Record<string, string> = {
-  DADOS: 'dados', IMOVEL: 'imovel', MERCADO: 'mercado', MODELAGEM: 'modelagem', VALIDACAO: 'validacao', RESULTADO: 'resultado', LAUDO: 'laudo',
+  DADOS: 'dados', VARIAVEIS: 'variaveis', IMOVEL: 'imovel', MERCADO: 'mercado', MODELAGEM: 'modelagem', VALIDACAO: 'validacao', RESULTADO: 'resultado', LAUDO: 'laudo',
+};
+/** Rótulo da transformação; para a variável dependente usa y (ln(y), 1/y…). */
+export const transformLabel = (t: string, dependente = false) => {
+  const l = TRANSFORM_LABEL_LOCAL[t] ?? t;
+  return dependente ? l.replace(/x/g, 'y') : l;
 };
 export const ESTADO_LABEL: Record<string, string> = {
   PRONTA: 'Concluído', EM_ANDAMENTO: 'Em andamento', PENDENTE: 'Pendente', BLOQUEADA: 'Aguardando etapa anterior', DESATUALIZADA: 'Desatualizado',
