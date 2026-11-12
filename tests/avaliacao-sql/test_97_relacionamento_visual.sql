@@ -59,8 +59,9 @@ SELECT pg_temp.ok((SELECT count(*) FROM public.audit_events WHERE entity_id = pg
 SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.modelo_coeficientes c FULL JOIN coef0 o ON o.codigo = c.codigo AND c.execucao_id = pg_temp.k('ex') WHERE c.beta IS DISTINCT FROM o.beta)
   AND (SELECT count(*) FROM public.avaliacao_modelo_execucoes) = 1, 'análise visual não recalcula nem altera coeficientes');
 
--- Somente a validação mais recente
+-- Somente a validação mais recente (no teste tudo ocorre na mesma transação: recua a data da primeira)
 SELECT pg_temp.login(NULL);
+UPDATE public.model_validations SET created_at = created_at - interval '1 minute' WHERE id = pg_temp.k('v1');
 SET LOCAL ROLE service_role;
 INSERT INTO k SELECT 'v2', pg_temp.validar('APTO');
 RESET ROLE;
