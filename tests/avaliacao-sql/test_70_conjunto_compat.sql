@@ -67,6 +67,6 @@ SELECT pg_temp.ok((SELECT count(*) FROM public.avaliacao_amostra_snapshots s JOI
   'snapshots congelados permanecem idênticos (só leitura)');
 
 -- 4) Outra organização não enxerga o conjunto
-SELECT pg_temp.login('b1000000-0000-0000-0000-00000000000b');
+SELECT pg_temp.login('b1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($q$SELECT public.aval_conjunto_compat('10000000-0000-0000-0000-000000000001')$q$, 'aval:not_found', 'outra organização não consulta a compatibilidade');
 ROLLBACK;
