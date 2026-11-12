@@ -39,8 +39,9 @@ SELECT pg_temp.ok((SELECT count(DISTINCT assinatura) FROM public.avaliacao_model
 SELECT pg_temp.ok(public.aval_model_create((SELECT av FROM fx), '10000000-0000-0000-0000-000000000002', 'Manual', 'c0000000-0000-0000-0000-000000000001', 'DIRECT', NULL,
   '[{"variavel_id":"c0000000-0000-0000-0000-000000000002","transformacao":"DIRECT"}]') = (SELECT (j->'criados'->>0)::uuid FROM r WHERE k = 'g3')
   AND (SELECT count(*) FROM public.avaliacao_modelos) = 6, 'modelo manual idêntico devolve o existente (sem duplicar)');
-SELECT pg_temp.ok(public.aval_model_create((SELECT av FROM fx), '10000000-0000-0000-0000-000000000002', 'Manual 2', 'c0000000-0000-0000-0000-000000000001', 'INVERSE', NULL,
-  '[{"variavel_id":"c0000000-0000-0000-0000-000000000002","transformacao":"SQRT"}]') IS NOT NULL
+INSERT INTO r SELECT 'm2', to_jsonb(public.aval_model_create((SELECT av FROM fx), '10000000-0000-0000-0000-000000000002', 'Manual 2', 'c0000000-0000-0000-0000-000000000001', 'INVERSE', NULL,
+  '[{"variavel_id":"c0000000-0000-0000-0000-000000000002","transformacao":"SQRT"}]'));
+SELECT pg_temp.ok((SELECT j FROM r WHERE k = 'm2') IS NOT NULL
   AND (SELECT count(*) FROM public.avaliacao_model_run_modelos rm JOIN public.avaliacao_model_generation_runs g ON g.id = rm.run_id WHERE g.numero = 3) = 4,
   'modelo manual novo entra na rodada vigente do mesmo conjunto');
 
