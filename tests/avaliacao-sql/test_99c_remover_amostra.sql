@@ -59,10 +59,11 @@ SELECT pg_temp.ok(EXISTS (SELECT 1 FROM public.avaliacao_amostras WHERE id = 'f0
   AND (SELECT count(*) FROM public.avaliacao_amostra_snapshots) = (SELECT snap FROM n0)
   AND NOT EXISTS (SELECT 1 FROM public.audit_events WHERE avaliacao_id = (SELECT av FROM fx) AND event_type = 'AMOSTRA_REMOVIDA_DA_AVALIACAO'),
   'vínculo, fotos do conjunto e histórico ficam intactos; nenhuma remoção registrada');
-DO $$ BEGIN
+DO $$ DECLARE v_det text; BEGIN
   PERFORM public.aval_amostra_remover((SELECT av FROM fx), 'f0000000-0000-0000-0000-000000000001');
 EXCEPTION WHEN OTHERS THEN
-  IF NOT ((SQLERRM ~ 'amostra_historica') AND (PG_EXCEPTION_DETAIL::jsonb->'motivos') ? 'CONJUNTO_CONGELADO') THEN RAISE EXCEPTION 'FALHA: detalhe sem motivo'; END IF;
+  GET STACKED DIAGNOSTICS v_det = PG_EXCEPTION_DETAIL;
+  IF NOT ((SQLERRM ~ 'amostra_historica') AND (v_det::jsonb->'motivos') ? 'CONJUNTO_CONGELADO') THEN RAISE EXCEPTION 'FALHA: detalhe sem motivo'; END IF;
   RAISE NOTICE 'OK erro traz o motivo CONJUNTO_CONGELADO para a tela orientar';
 END $$;
 -- Amostra nova (sem congelar) na avaliação fx, para testar permissões
