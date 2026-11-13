@@ -94,3 +94,6 @@
 - [ ] S2 Edge Functions (P0) — aguardando autorização
 - [x] S3 RLS auxiliar (P1) — concluído 11/10/2026
 - [x] S4 admins/RPCs/crons (P1) — concluído 11/10/2026; aguardando avaliação antes do teste final Org A × Org B
+- [x] 003/2026 Peixoto: colaborador (criador que indicou outro RT) passa a buscar no banco e importar amostras (incluir = market.edit; Usar/No modelo/congelar seguem com o RT); aviso de município comparável na busca — 16 verificações SQL novas, todas as suítes e 121 testes JS passam; banco atualizado; frontend aguarda Publish → Update
+- [ ] Usuário: adicionar o imóvel de Terra Nova (Av Brasil) à 003/2026 pelo banco; existem 2 dados de mercado iguais (R$ 12.000, 12/01/2026) gerados pelas tentativas recusadas — escolher um; o outro pode ser marcado Descartado
+- [ ] Conferir na tela, logado como colaborador, os botões do Mercado — bloqueado: login de teste indisponível no Supabase externo
