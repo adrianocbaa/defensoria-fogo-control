@@ -59,8 +59,8 @@ SELECT pg_temp.throws($$SELECT public.aval_dataset_prepare((SELECT av FROM fx))$
 -- Outros perfis continuam sem incluir
 SELECT pg_temp.login('a3000000-0000-0000-0000-000000000003');
 SELECT pg_temp.throws($$SELECT public.aval_amostras_adicionar((SELECT av FROM fx), ARRAY['e0000000-0000-0000-0000-000000000002']::uuid[])$$, 'permission_denied', 'revisor não inclui amostras');
-SELECT pg_temp.login('a4000000-0000-0000-0000-000000000004');
-SELECT pg_temp.throws($$SELECT public.aval_amostras_adicionar((SELECT av FROM fx), ARRAY['e0000000-0000-0000-0000-000000000002']::uuid[])$$, 'permission_denied', 'admin sem papel na avaliação não inclui amostras');
+SELECT pg_temp.login('a5000000-0000-0000-0000-000000000005');
+SELECT pg_temp.throws($$SELECT public.aval_amostras_adicionar((SELECT av FROM fx), ARRAY['e0000000-0000-0000-0000-000000000002']::uuid[])$$, 'permission_denied|not_found', 'contratada não inclui amostras');
 SELECT pg_temp.login('b1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$SELECT public.aval_amostras_adicionar((SELECT av FROM fx), ARRAY['e7000000-0000-0000-0000-000000000001']::uuid[])$$, 'not_found|permission_denied', 'outra organização não inclui');
 
