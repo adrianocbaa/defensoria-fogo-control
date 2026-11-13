@@ -22,6 +22,7 @@ import {
 import { situacaoComparavel, type SituacaoComparavel } from '@/lib/avaliacao/municipioImovel';
 
 const PAGE = 50;
+const munRow = (x: BancoRow) => ({ uf: x.uf ?? '', municipio_ibge: x.municipio_ibge ?? '', municipio_nome: x.municipio_nome ?? '' });
 const COMPARAVEL_CURTO: Record<SituacaoComparavel, string> = {
   APROVADO: 'Comparável aprovado', SUGERIDO: 'Comparável sugerido (aguarda RT)', REJEITADO: 'Comparável rejeitado nesta avaliação',
   NAO_CADASTRADO: 'Fora da lista de comparáveis', MESMO_MUNICIPIO: '', SEM_MUNICIPIO: '',
@@ -71,7 +72,7 @@ export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado, compar
       const escolhidos = rows.filter((x) => sel.has(x.dado_id));
       const r = await rpc<{ adicionadas: number; ja_existentes: number }>('aval_amostras_adicionar', { p_avaliacao: av.id, p_dados: [...sel] });
       toast.success(`${r.adicionadas} amostra(s) adicionada(s) à avaliação${r.ja_existentes ? ` · ${r.ja_existentes} já estava(m) incluída(s)` : ''}. Nenhum cadastro foi duplicado.`);
-      const pendentes = [...new Set(escolhidos.filter((x) => ['NAO_CADASTRADO', 'SUGERIDO', 'REJEITADO'].includes(situacaoComparavel(av, x, comparaveis)))
+      const pendentes = [...new Set(escolhidos.filter((x) => ['NAO_CADASTRADO', 'SUGERIDO', 'REJEITADO'].includes(situacaoComparavel(av, munRow(x), comparaveis)))
         .map((x) => `${x.municipio_nome}/${x.uf ?? ''}`))];
       if (pendentes.length) toast.info(`Amostra(s) de outro município (${pendentes.join(', ')}): confira a situação em “Municípios comparáveis”.`);
       setSel(new Set()); ctx.refresh(); onOpenChange(false);
@@ -169,7 +170,7 @@ export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado, compar
                         <p className="font-medium">{r.municipio_nome ? `${r.municipio_nome}/${r.uf ?? ''}` : 'Não informado'}</p>
                         {av.municipio_ibge && r.municipio_ibge && r.municipio_ibge !== av.municipio_ibge && <>
                           <Badge variant="outline" className="mt-1 text-[11px] font-normal">Outro município</Badge>
-                          <p className="mt-1 text-[11px] text-muted-foreground">{COMPARAVEL_CURTO[situacaoComparavel(av, r, comparaveis)]}</p>
+                          <p className="mt-1 text-[11px] text-muted-foreground">{COMPARAVEL_CURTO[situacaoComparavel(av, munRow(r), comparaveis)]}</p>
                         </>}
                       </TableCell>
                       <TableCell className="min-w-[200px]">
