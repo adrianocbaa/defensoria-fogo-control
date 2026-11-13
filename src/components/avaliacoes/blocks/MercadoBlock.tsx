@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Copy, Database, History, Lock, Pencil, Plus } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Copy, Database, History, Info, Lock, Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -69,6 +69,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     }
     return { amostras: am.data as any[], conjuntos: (cj.data ?? []) as any[], municipios: (mc.data ?? []) as any[], fotos };
   });
+  // Incluir amostra (novo, banco, importação) é editar a pesquisa; marcar Usar/No modelo e congelar são decisões do RT.
   const canEdit = ctx.can('market.edit');
   const canSel = ctx.can('market.select_samples');
   const amostras = q.data?.amostras ?? [];
@@ -165,12 +166,13 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           <CardTitle className="text-base">Amostras de mercado ({amostras.filter((a) => a.selecionada).length} selecionadas)</CardTitle>
           <div className="flex flex-wrap gap-2">
             {canEdit && <Button size="sm" variant="outline" onClick={() => abrirNovo(null)}><Plus className="h-4 w-4 mr-1" aria-hidden />Cadastrar novo imóvel</Button>}
-            {canSel && <Button size="sm" variant="outline" onClick={() => setBanco(true)}><Database className="h-4 w-4 mr-1" aria-hidden />Buscar imóveis existentes</Button>}
-            {canSel && <Button size="sm" variant="outline" onClick={() => setImportar(true)}><Copy className="h-4 w-4 mr-1" aria-hidden />Importar amostras de outra avaliação</Button>}
+            {canEdit && <Button size="sm" variant="outline" onClick={() => setBanco(true)}><Database className="h-4 w-4 mr-1" aria-hidden />Buscar imóveis existentes</Button>}
+            {canEdit && <Button size="sm" variant="outline" onClick={() => setImportar(true)}><Copy className="h-4 w-4 mr-1" aria-hidden />Importar amostras de outra avaliação</Button>}
             {canSel && <Button size="sm" onClick={() => setFreeze(true)} disabled={!amostras.some((a) => a.selecionada)}><Lock className="h-4 w-4 mr-1" aria-hidden />Congelar conjunto</Button>}
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
+          {canEdit && !canSel && !concluida && <p className="flex items-center gap-2 border-b px-4 py-2 text-xs text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" aria-hidden />Você pode incluir e corrigir amostras. Marcar “Usar” e “No modelo” e congelar o conjunto cabem ao responsável técnico.</p>}
           {concluida && amostras.length > 0 && <p className="flex items-center gap-2 border-b px-4 py-2 text-xs text-muted-foreground"><History className="h-3.5 w-3.5" aria-hidden />Avaliação concluída: os valores abaixo são a foto dos dados usados no laudo, mesmo que o cadastro tenha mudado depois.</p>}
           {amostras.length === 0 ? <p className="p-6 text-sm text-muted-foreground">Nenhum dado de mercado incluído. Cadastre um imóvel, busque no banco da organização ou importe amostras de outra avaliação.</p> : (
             <Table>
@@ -335,7 +337,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         </DialogContent>
       </Dialog>
 
-      {banco && <BancoImoveisDialog ctx={ctx} open={banco} onOpenChange={setBanco} onNovoDado={(r) => abrirNovo(r)} />}
+      {banco && <BancoImoveisDialog ctx={ctx} open={banco} onOpenChange={setBanco} onNovoDado={(r) => abrirNovo(r)} comparaveis={comparaveis} />}
       {importar && <ImportarAmostrasDialog ctx={ctx} open={importar} onOpenChange={setImportar} />}
 
       <EditAmostraDialog avaliacaoId={av.id} avaliacao={av} comparaveis={comparaveis} amostra={editar?.amostra ?? null} indice={editar?.indice ?? 0} onClose={() => setEditar(null)} onSaved={ctx.refresh} />

@@ -19,14 +19,20 @@ import {
   avisoDadoRecente, type BancoFiltros, type BancoRow, filtrosIniciais, filtrosParaServidor, fmtData, rotuloEndereco, selecionaveis,
   SITUACAO_LABEL, TIPO_NEGOCIO_LABEL,
 } from '@/lib/avaliacao/banco';
+import { situacaoComparavel, type SituacaoComparavel } from '@/lib/avaliacao/municipioImovel';
 
 const PAGE = 50;
+const COMPARAVEL_CURTO: Record<SituacaoComparavel, string> = {
+  APROVADO: 'Comparável aprovado', SUGERIDO: 'Comparável sugerido (aguarda RT)', REJEITADO: 'Comparável rejeitado nesta avaliação',
+  NAO_CADASTRADO: 'Fora da lista de comparáveis', MESMO_MUNICIPIO: '', SEM_MUNICIPIO: '',
+};
 const TODOS = '__todos__';
 const FONTE: Record<string, string> = { IMOBILIARIA: 'Imobiliária', CORRETOR: 'Corretor', PROPRIETARIO: 'Proprietário', PORTAL: 'Portal', ORGAO_PUBLICO: 'Órgão público', REDE_SOCIAL: 'Rede social', PLACA: 'Placa', OUTRO: 'Outro' };
 
 /** Busca no banco de imóveis/dados de mercado da organização e inclusão em lote na avaliação (sem copiar o cadastro). */
-export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado }: {
+export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado, comparaveis = [] }: {
   ctx: AvaliacaoCtx; open: boolean; onOpenChange: (v: boolean) => void; onNovoDado: (row: BancoRow) => void;
+  comparaveis?: { municipio_ibge: string | null; municipio_nome: string; uf: string; status: string }[];
 }) {
   const av = ctx.avaliacao.data!;
   const [rascunho, setRascunho] = useState<BancoFiltros>(() => filtrosIniciais(av));
@@ -35,8 +41,9 @@ export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado }: {
   const [page, setPage] = useState(0);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  const canSel = ctx.can('market.select_samples');
+  // Incluir amostras na avaliação segue "Editar pesquisa de mercado" (o mesmo de cadastrar um imóvel novo).
   const canEdit = ctx.can('market.edit');
+  const canSel = canEdit;
 
   useEffect(() => { if (open) { setSel(new Set()); setPage(0); } }, [open]);
 
@@ -61,8 +68,12 @@ export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado }: {
     if (!sel.size) return;
     setBusy(true);
     try {
+      const escolhidos = rows.filter((x) => sel.has(x.dado_id));
       const r = await rpc<{ adicionadas: number; ja_existentes: number }>('aval_amostras_adicionar', { p_avaliacao: av.id, p_dados: [...sel] });
       toast.success(`${r.adicionadas} amostra(s) adicionada(s) à avaliação${r.ja_existentes ? ` · ${r.ja_existentes} já estava(m) incluída(s)` : ''}. Nenhum cadastro foi duplicado.`);
+      const pendentes = [...new Set(escolhidos.filter((x) => ['NAO_CADASTRADO', 'SUGERIDO', 'REJEITADO'].includes(situacaoComparavel(av, x, comparaveis)))
+        .map((x) => `${x.municipio_nome}/${x.uf ?? ''}`))];
+      if (pendentes.length) toast.info(`Amostra(s) de outro município (${pendentes.join(', ')}): confira a situação em “Municípios comparáveis”.`);
       setSel(new Set()); ctx.refresh(); onOpenChange(false);
     } catch (e) { toast.error(avalErrorMessage(e)); } finally { setBusy(false); }
   };
@@ -156,7 +167,10 @@ export function BancoImoveisDialog({ ctx, open, onOpenChange, onNovoDado }: {
                       </TableCell>
                       <TableCell className="min-w-[140px]">
                         <p className="font-medium">{r.municipio_nome ? `${r.municipio_nome}/${r.uf ?? ''}` : 'Não informado'}</p>
-                        {av.municipio_ibge && r.municipio_ibge && r.municipio_ibge !== av.municipio_ibge && <Badge variant="outline" className="mt-1 text-[11px] font-normal">Outro município</Badge>}
+                        {av.municipio_ibge && r.municipio_ibge && r.municipio_ibge !== av.municipio_ibge && <>
+                          <Badge variant="outline" className="mt-1 text-[11px] font-normal">Outro município</Badge>
+                          <p className="mt-1 text-[11px] text-muted-foreground">{COMPARAVEL_CURTO[situacaoComparavel(av, r, comparaveis)]}</p>
+                        </>}
                       </TableCell>
                       <TableCell className="min-w-[200px]">
                         <p className="tabular-nums"><span className="font-medium">{fmtMoney(r.valor_utilizado)}</span>{r.periodicidade === 'MENSAL' ? '/mês' : ''} · {TIPO_NEGOCIO_LABEL[r.tipo_negocio] ?? r.tipo_negocio}</p>
