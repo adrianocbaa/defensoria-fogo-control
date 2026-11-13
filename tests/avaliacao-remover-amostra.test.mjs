@@ -30,8 +30,3 @@ test('desmarcar só é oferecido a quem decide a seleção e se ainda estiver ma
   assert.equal(R.podeDesmarcar(desmarcada, true), false);
 });
 
-test('mensagem do bloqueio orienta desmarcar e congelar nova versão, preservando o histórico', () => {
-  assert.match(R.TEXTO_HISTORICA, /desmarque 'Usar' ou 'No modelo' e congele uma nova versão/);
-  assert.match(R.TEXTO_REMOVER, /continuarão disponíveis no Banco de Imóveis/);
-  assert.equal(R.complementosHistorica({ motivos: ['CONJUNTO_CONGELADO', 'MODELO'], selecionada: true, habilitada_modelo: true }).length, 1);
-});

@@ -59,6 +59,7 @@ const MESSAGES: Record<string, string> = {
   use_change_flow: 'Este dado já é usado na avaliação. Corrija pelo botão de edição para registrar o impacto.',
   evaluation_not_active: 'Só é possível alterar dados de uma avaliação ativa.',
   snapshot_immutable: 'A foto dos dados usados nesta amostra é permanente e não pode ser alterada.',
+  amostra_historica: 'Esta amostra já integra uma versão congelada do conjunto de dados e não pode ser removida. Desmarque \'Usar\' ou \'No modelo\' e congele uma nova versão.',
   ZERO_VARIANCE: 'Uma variável não varia entre as amostras.',
   INVALID_DOMAIN: 'Há valor incompatível com a transformação escolhida (ex.: ln(x) exige valor > 0; 1/x exige valor diferente de zero).',
   N_LE_P: 'Há poucos dados para a quantidade de parâmetros do modelo.',
