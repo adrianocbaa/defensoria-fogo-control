@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Copy, Database, History, Info, Lock, Pencil, Plus } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Copy, Database, History, Info, Link2Off, Loader2, Lock, Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import { db, rpc } from '@/lib/avaliacao/api';
 import { avalErrorCode, avalErrorMessage } from '@/lib/avaliacao/errors';
 import { alteracoesDinamicas, bloqueiosCongelamento, bloqueiosDoServidor, camposDinamicos, mensagemCongelamento, nomesFaltando, obrigatoriasVazias } from '@/lib/avaliacao/variaveis';
 import { fmtDateTime, fmtMoney, fmtNum } from '@/lib/avaliacao/labels';
+import { type AmostraHistorica, complementosHistorica, lerAmostraHistorica, podeDesmarcar, TEXTO_HISTORICA, TEXTO_REMOVER, TITULO_REMOVER } from '@/lib/avaliacao/removerAmostra';
 import { type BancoRow, exibicaoAmostra, type Foto, ORIGEM_INCLUSAO_LABEL, rotuloEndereco, SITUACAO_LABEL, TIPO_NEGOCIO_LABEL } from '@/lib/avaliacao/banco';
 
 const NATUREZA: Record<string, string> = { OFERTA: 'Oferta', NEGOCIACAO: 'Negociação', CONTRATO_PRIVADO: 'Contrato privado', CONTRATO_PUBLICO: 'Contrato público', OUTRO: 'Outro' };
@@ -43,6 +44,8 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const [importar, setImportar] = useState(false);
   const [freeze, setFreeze] = useState(false);
   const [editar, setEditar] = useState<{ amostra: any; indice: number } | null>(null);
+  const [remover, setRemover] = useState<{ amostra: any; indice: number; historica: AmostraHistorica | null } | null>(null);
+  const [removendo, setRemovendo] = useState(false);
   const [mun, setMun] = useState<{ nome: string; uf: string; ibge: string; just: string; noCadastro?: boolean } | null>(null);
   const creator = useImovelCreator();
   const [dynNovo, setDynNovo] = useState<Record<string, string>>({});
@@ -135,6 +138,32 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       ctx.refresh();
     }
   };
+  // Remover desfaz só o vínculo (RPC central); amostra já congelada é histórica e a tela orienta desmarcar + nova versão.
+  const abrirRemover = (a: any, indice: number) => {
+    const congelada = q.data?.fotos.has(a.id);
+    setRemover({ amostra: a, indice, historica: congelada ? { motivos: ['CONJUNTO_CONGELADO'], selecionada: !!a.selecionada, habilitada_modelo: !!a.habilitada_modelo } : null });
+  };
+  const confirmarRemover = async () => {
+    if (!remover) return;
+    setRemovendo(true);
+    try {
+      await rpc('aval_amostra_remover', { p_avaliacao: av.id, p_amostra: remover.amostra.id });
+      toast.success('Amostra removida da avaliação. O imóvel e o dado de mercado continuam no Banco de Imóveis.');
+      setRemover(null); ctx.refresh();
+    } catch (e) {
+      const h = avalErrorCode(e) === 'amostra_historica' ? lerAmostraHistorica((e as { details?: unknown })?.details) : null;
+      if (h) setRemover({ ...remover, historica: h }); else toast.error(avalErrorMessage(e));
+    } finally { setRemovendo(false); }
+  };
+  const desmarcarParaNovaVersao = async () => {
+    if (!remover) return;
+    setRemovendo(true);
+    const { error } = await db.from('avaliacao_amostras').update({ selecionada: false, habilitada_modelo: false }).eq('id', remover.amostra.id);
+    setRemovendo(false);
+    if (error) { toast.error(avalErrorMessage(error)); return; }
+    toast.success('Amostra desmarcada. Congele uma nova versão do conjunto para que as próximas análises deixem de usá-la.');
+    setRemover(null); ctx.refresh();
+  };
   const salvarMun = async () => {
     if (!mun || !mun.ibge || !mun.nome.trim() || mun.just.trim().length < 10) { toast.error('Escolha o município e escreva uma justificativa (mínimo 10 caracteres).'); return; }
     const { error } = await db.from('avaliacao_municipios_comparaveis').insert({ avaliacao_id: av.id, uf: mun.uf, municipio_nome: mun.nome.trim(), municipio_ibge: mun.ibge, justificativa: mun.just.trim(), status: 'SUGERIDO' });
@@ -180,7 +209,7 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 <TableHead className="w-12">Usar</TableHead><TableHead className="w-16">No modelo</TableHead><TableHead>Imóvel</TableHead>
                 <TableHead>Natureza</TableHead><TableHead className="text-right">Área (m²)</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">R$/m²</TableHead>
                 {campos.length > 0 && <TableHead>Variáveis</TableHead>}
-                {canEdit && <TableHead className="w-12"><span className="sr-only">Ações</span></TableHead>}
+                {canEdit && <TableHead className="w-20"><span className="sr-only">Ações</span></TableHead>}
               </TableRow></TableHeader>
               <TableBody>
                 {amostras.map((a, i) => {
@@ -215,7 +244,10 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                           </span>
                         );
                       })()}</TableCell>}
-                      {canEdit && <TableCell><Button size="icon" variant="ghost" aria-label={`Editar amostra ${i + 1}`} title="Editar amostra" onClick={() => setEditar({ amostra: a, indice: i + 1 })}><Pencil className="h-4 w-4" /></Button></TableCell>}
+                      {canEdit && <TableCell><div className="flex gap-1">
+                        <Button size="icon" variant="ghost" aria-label={`Editar amostra ${i + 1}`} title="Editar amostra" onClick={() => setEditar({ amostra: a, indice: i + 1 })}><Pencil className="h-4 w-4" /></Button>
+                        {!concluida && <Button size="icon" variant="ghost" aria-label={`Remover amostra ${i + 1} da avaliação`} title="Remover da avaliação" onClick={() => abrirRemover(a, i + 1)}><Link2Off className="h-4 w-4" /></Button>}
+                      </div></TableCell>}
                     </TableRow>
                   );
                 })}
@@ -341,6 +373,31 @@ export function MercadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
       {importar && <ImportarAmostrasDialog ctx={ctx} open={importar} onOpenChange={setImportar} />}
 
       <EditAmostraDialog avaliacaoId={av.id} avaliacao={av} comparaveis={comparaveis} amostra={editar?.amostra ?? null} indice={editar?.indice ?? 0} onClose={() => setEditar(null)} onSaved={ctx.refresh} />
+
+      <AlertDialog open={!!remover} onOpenChange={(v) => { if (!v && !removendo) setRemover(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{remover?.historica ? 'Esta amostra não pode ser removida' : TITULO_REMOVER}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                {remover && <p className="font-medium text-foreground">Amostra {remover.indice}: {rotuloEndereco(remover.amostra.dados_mercado?.imoveis ?? {})}</p>}
+                {remover?.historica ? (<>
+                  <p>{TEXTO_HISTORICA}</p>
+                  {complementosHistorica(remover.historica).map((c) => <p key={c}>{c}</p>)}
+                  {!canSel && (remover.historica.selecionada || remover.historica.habilitada_modelo) && <p>Desmarcar a amostra cabe ao responsável técnico.</p>}
+                </>) : <p>{TEXTO_REMOVER}</p>}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removendo}>{remover?.historica ? 'Fechar' : 'Cancelar'}</AlertDialogCancel>
+            {remover && !remover.historica && <AlertDialogAction disabled={removendo} onClick={(e) => { e.preventDefault(); confirmarRemover(); }}>
+              {removendo && <Loader2 className="h-4 w-4 mr-1 animate-spin" aria-hidden />}Remover da avaliação</AlertDialogAction>}
+            {remover?.historica && podeDesmarcar(remover.historica, canSel) && <AlertDialogAction disabled={removendo} onClick={(e) => { e.preventDefault(); desmarcarParaNovaVersao(); }}>
+              {removendo && <Loader2 className="h-4 w-4 mr-1 animate-spin" aria-hidden />}Desmarcar e preparar nova versão</AlertDialogAction>}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={freeze} onOpenChange={setFreeze}>
         <AlertDialogContent>

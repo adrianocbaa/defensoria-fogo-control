@@ -13423,6 +13423,10 @@ export type Database = {
       }
       aval_amostra_chave: { Args: { p: Json }; Returns: string }
       aval_amostra_payload: { Args: { p_dado: string }; Returns: Json }
+      aval_amostra_remover: {
+        Args: { p_amostra: string; p_avaliacao: string }
+        Returns: Json
+      }
       aval_amostras_adicionar: {
         Args: { p_avaliacao: string; p_dados: string[] }
         Returns: Json
