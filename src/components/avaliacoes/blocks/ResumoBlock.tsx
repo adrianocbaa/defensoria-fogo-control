@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { db, rpc } from '@/lib/avaliacao/api';
-import { BLOCO_LABEL, BLOCO_ROUTE, CENTRO_LABEL, ESTADO_LABEL, OVERALL_LABEL, fmtMoney } from '@/lib/avaliacao/labels';
+import { BLOCO_LABEL, BLOCO_ROUTE, CENTRO_LABEL, ESTADO_LABEL, OVERALL_LABEL, fmtMoney, unidadeSufixo } from '@/lib/avaliacao/labels';
 
 const ICON = { PRONTA: CheckCircle2, EM_ANDAMENTO: Clock, PENDENTE: Circle, BLOQUEADA: Lock, DESATUALIZADA: AlertTriangle } as const;
 
