@@ -14,7 +14,8 @@ function load(path, imports = {}) {
 }
 const L = load('supabase/functions/_shared/avaliacao/docLabels.ts');
 const D = load('supabase/functions/_shared/avaliacao/laudoDoc.ts', { './docLabels.ts': L });
-const table = (rows) => D.systemTables({ tokens: {}, compatibilidades: rows }, 'TABELA_COMPATIBILIDADE')[0];
+const plain = x => JSON.parse(JSON.stringify(x));
+const table = (rows) => plain(D.systemTables({ tokens: {}, compatibilidades: rows }, 'TABELA_COMPATIBILIDADE')[0]);
 
 // Linha como gravada por aval_confirm_economic para a 004/2026 (38,28 R$/m² × 6.500 R$/mês, área 140,98 m²)
 const convertida = { tipo_valor: 'SOLICITADO_PROPRIETARIO', regra_versao: 1, status_comparacao: 'COMPARAVEL', valor_referencia: 38.2839991959842,
