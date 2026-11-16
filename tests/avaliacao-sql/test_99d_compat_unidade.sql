@@ -57,8 +57,6 @@ SELECT pg_temp.ok((SELECT j->>'status' = 'NAO_COMPARAVEL_UNIDADE' AND j->>'difer
 
 -- Cenário integrado: aceite → projeção (avaliando com 140,98 m²) → confirmação pelo RT
 SELECT pg_temp.login(NULL);
-UPDATE public.avaliacao_variaveis SET unidade = 'R$/m²', campo_origem = 'valor_unitario', origem_tipo = 'CAMPO_DADO_MERCADO' WHERE id = 'c0000000-0000-0000-0000-000000000001';
-UPDATE public.avaliacao_variaveis SET unidade = 'm²', campo_origem = 'area_construida', codigo = 'area_construida', origem_tipo = 'CAMPO_DADO_MERCADO' WHERE id = 'c0000000-0000-0000-0000-000000000002';
 INSERT INTO public.imoveis(id, organization_id, tipo_imovel, area_construida) VALUES ('d0000000-0000-0000-0000-000000000010', '0a000000-0000-0000-0000-00000000000a', 'Sala comercial', 999);
 INSERT INTO public.avaliacao_imoveis(organization_id, avaliacao_id, imovel_id, papel) SELECT '0a000000-0000-0000-0000-00000000000a', av, 'd0000000-0000-0000-0000-000000000010', 'AVALIANDO' FROM fx;
 INSERT INTO public.avaliacao_valores_administrativos(id, organization_id, avaliacao_id, tipo, valor) SELECT '20000000-0000-0000-0000-0000000000a1', '0a000000-0000-0000-0000-00000000000a', av, 'SOLICITADO_PROPRIETARIO', 6500 FROM fx;
@@ -67,6 +65,9 @@ CREATE TEMP TABLE m AS SELECT public.aval_model_create((SELECT av FROM fx), '100
   '[{"variavel_id":"c0000000-0000-0000-0000-000000000002","transformacao":"DIRECT"}]') AS id;
 SELECT pg_temp.login(NULL);
 GRANT SELECT ON m TO authenticated, service_role;
+-- Metadados da variável dependente (R$/m², valor unitário) e da área (área construída)
+UPDATE public.avaliacao_variaveis SET unidade = 'R$/m²', campo_origem = 'valor_unitario', origem_tipo = 'CAMPO_DADO_MERCADO' WHERE id = 'c0000000-0000-0000-0000-000000000001';
+UPDATE public.avaliacao_variaveis SET unidade = 'm²', campo_origem = 'area_construida', origem_tipo = 'CAMPO_DADO_MERCADO' WHERE id = 'c0000000-0000-0000-0000-000000000002';
 INSERT INTO public.avaliacao_modelo_execucoes(id, avaliacao_id, modelo_id, engine_name, engine_version, status, input_snapshot_json, input_hash, output_json, output_hash, iniciado_em, concluido_em)
 SELECT '20000000-0000-0000-0000-000000000001', (SELECT av FROM fx), id, 'sidif', '1.1.1', 'SUCESSO', '{}', repeat('a', 64), '{}', repeat('b', 64), now(), now() FROM m;
 SET LOCAL ROLE service_role;
@@ -85,7 +86,7 @@ GRANT SELECT ON ac TO authenticated;
 INSERT INTO public.avaliacao_projecoes(id, organization_id, avaliacao_id, modelo_id, acceptance_id, execucao_id, nivel_confianca, z0, se_media, t_critico, log_response,
   avaliando_json, extrapolacao, intervalo_predicao_status, engine_version)
 SELECT '40000000-0000-0000-0000-000000000001', '0a000000-0000-0000-0000-00000000000a', av, (SELECT id FROM m), (SELECT id FROM ac), '20000000-0000-0000-0000-000000000001',
-  0.8, 38.284, 1, 1.3, false, '{"area_construida": 140.98}', '[]', 'NAO_OFICIAL', '1.1.1' FROM fx;
+  0.8, 38.284, 1, 1.3, false, '{"area": 140.98}', '[]', 'NAO_OFICIAL', '1.1.1' FROM fx;
 INSERT INTO public.avaliacao_projecao_centros(organization_id, avaliacao_id, projecao_id, centro, valor, limite_inferior, limite_superior, amplitude_pct, grau_precisao)
 SELECT '0a000000-0000-0000-0000-00000000000a', av, '40000000-0000-0000-0000-000000000001', 'DIRECT', 38.284, 33.0, 43.5, 27.4, 'III' FROM fx;
 SELECT pg_temp.ok((public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area')::numeric = 140.98
