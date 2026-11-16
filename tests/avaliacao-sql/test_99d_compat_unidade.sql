@@ -90,7 +90,7 @@ SELECT '40000000-0000-0000-0000-000000000001', '0a000000-0000-0000-0000-00000000
 INSERT INTO public.avaliacao_projecao_centros(organization_id, avaliacao_id, projecao_id, centro, valor, limite_inferior, limite_superior, amplitude_pct, grau_precisao)
 SELECT '0a000000-0000-0000-0000-00000000000a', av, '40000000-0000-0000-0000-000000000001', 'DIRECT', 38.284, 33.0, 43.5, 27.4, 'III' FROM fx;
 SELECT pg_temp.ok((public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area')::numeric = 140.98
-  AND public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area_origem' = 'PROJECAO', 'área vem do avaliando usado na projeção (não do cadastro atual)');
+  AND public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area_origem' = 'PROJECAO', 'área vem do avaliando usado na projeção');
 
 SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 CREATE TEMP TABLE r1 AS SELECT public.aval_confirm_economic('40000000-0000-0000-0000-000000000001', 'DIRECT', false, NULL, NULL, '{}', 'FAVORAVEL_ADMINISTRACAO', NULL) AS id;
