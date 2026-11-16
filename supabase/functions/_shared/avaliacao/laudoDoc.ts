@@ -1,7 +1,7 @@
 // Documentos do laudo (PDF e DOCX) a partir de dados estruturados. Tabelas são sempre montadas pelo sistema
 // (nunca digitadas). Graus vêm dos marcadores e da fundamentação estruturada, nunca do texto.
 // As bibliotecas são injetadas para o mesmo código rodar no navegador (rascunho) e no servidor (emissão oficial).
-import { CENTRO_LABEL, CRITERIO_STATUS_LABEL, TRANSFORM_LABEL, VALOR_ADM_LABEL } from './docLabels.ts';
+import { CENTRO_LABEL, CRITERIO_STATUS_LABEL, TRANSFORM_LABEL, VALOR_ADM_LABEL, compatView, unidadeSufixo } from './docLabels.ts';
 
 export interface LaudoData {
   codigo: string;
@@ -15,7 +15,10 @@ export interface LaudoData {
   fundamentacao: { itens: { item_number: number; titulo: string; grade_achieved: string | null; points: number; status: string }[]; total_points: number; grau: string | null } | null;
   centros: { centro: string; valor: number; limite_inferior: number; limite_superior: number; amplitude_pct: number; grau_precisao: string | null }[];
   amostras: { endereco: string; area: number | null; valor: number | null; unitario: number | null }[];
-  compatibilidades: { tipo_valor: string; valor_comparado: number; diferenca_percentual: number }[];
+  /** Linhas gravadas por aval_confirm_economic (valor original, unidade, convertido, área, situação). */
+  compatibilidades: { tipo_valor: string; valor_comparado: number | null; diferenca_percentual: number | null; valor_referencia?: number;
+    regra_versao?: number | null; status_comparacao?: string | null; valor_administrativo_original?: number | null; unidade_original?: string | null;
+    unidade_comparacao?: string | null; area_conversao?: number | null; motivo?: string | null }[];
   anexos: { numero: string; titulo: string }[];
   /** Fotos do avaliando (somente arquivos da própria organização), inseridas no anexo fotográfico. */
   figuras?: { titulo: string; data: Uint8Array; tipo: 'png' | 'jpg'; largura: number; altura: number }[];
@@ -87,7 +90,12 @@ export function systemTables(d: LaudoData, bloco: string): Table[] {
     }
     case 'TABELA_CENTROS': return [{ head: ['Tendência', 'Valor', 'Lim. inferior', 'Lim. superior', 'Amplitude', 'Precisão'], body: d.centros.map((c) => [
       CENTRO_LABEL[c.centro] ?? c.centro, fmtNum(c.valor), fmtNum(c.limite_inferior), fmtNum(c.limite_superior), `${fmtNum(c.amplitude_pct)}%`, c.grau_precisao ?? 'Não enquadrado']) }];
-    case 'TABELA_COMPATIBILIDADE': return [{ head: ['Valor administrativo', 'Valor (R$)', 'Diferença'], body: d.compatibilidades.map((c) => [VALOR_ADM_LABEL[c.tipo_valor] ?? c.tipo_valor, fmtNum(c.valor_comparado), `${fmtNum(c.diferenca_percentual)}%`]) }];
+    case 'TABELA_COMPATIBILIDADE': return [{ head: ['Valor administrativo', 'Valor informado', 'Valor comparado', 'Diferença'], body: d.compatibilidades.map((c) => {
+      const v = compatView(c);
+      return [VALOR_ADM_LABEL[c.tipo_valor] ?? c.tipo_valor, `R$ ${fmtNum(v.original)}${unidadeSufixo(v.unidadeOriginal)}`,
+        !v.comparavel ? (v.status ?? 'Não comparável') : `R$ ${fmtNum(v.comparado)}${unidadeSufixo(v.unidadeComparacao)}${v.convertido ? ` (área ${fmtNum(v.area)} m²)` : ''}`,
+        v.diferenca == null ? '—' : `${fmtNum(v.diferenca)}%`];
+    }) }];
     default: return [];
   }
 }

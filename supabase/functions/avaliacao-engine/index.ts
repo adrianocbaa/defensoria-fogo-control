@@ -361,7 +361,7 @@ async function aiContext(req: Request, admin: SupabaseClient, av: any, secao: an
     const { data: res } = await admin.from('avaliacao_resultado_economico').select('id, centro, conclusao, conclusao_texto').eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle();
     if (res) {
       ctx.resultado = pick(res, ['centro', 'conclusao', 'conclusao_texto']);
-      const { data: cp } = await admin.from('avaliacao_compatibilidades').select('tipo_valor, direcao, posicao_ic, posicao_campo, diferenca_percentual').eq('resultado_id', res.id);
+      const { data: cp } = await admin.from('avaliacao_compatibilidades').select('tipo_valor, direcao, posicao_ic, posicao_campo, diferenca_percentual, status_comparacao, valor_administrativo_original, unidade_original, valor_comparado, unidade_comparacao, area_conversao, motivo').eq('resultado_id', res.id);
       ctx.compatibilidades = cp ?? [];
     }
   }
