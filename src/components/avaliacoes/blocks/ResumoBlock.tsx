@@ -24,7 +24,7 @@ export function ResumoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     ]);
     let adotado: any = null;
     if (res.data?.valor_adotado_id) {
-      const { data } = await db.from('avaliacao_valores_adotados').select('valor_final_apresentacao, origem, avaliacao_projecao_centros(grau_precisao)')
+      const { data } = await db.from('avaliacao_valores_adotados').select('valor_final_apresentacao, unidade, origem, avaliacao_projecao_centros(grau_precisao)')
         .eq('id', res.data.valor_adotado_id).maybeSingle();
       adotado = data;
     }
@@ -87,7 +87,7 @@ export function ResumoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
             <Row k="Validação" v={ac?.model_validations?.overall_status ? OVERALL_LABEL[ac.model_validations.overall_status] : '—'} />
             <Row k="Fundamentação" v={ac?.model_validations?.fundamentacao_grau ? `Grau ${ac.model_validations.fundamentacao_grau}` : '—'} />
             <Row k="Precisão" v={resumo.data?.adotado?.avaliacao_projecao_centros?.grau_precisao ? `Grau ${resumo.data.adotado.avaliacao_projecao_centros.grau_precisao}` : '—'} />
-            <Row k="Valor adotado" v={res && resumo.data?.adotado ? `${fmtMoney(resumo.data.adotado.valor_final_apresentacao)} (${CENTRO_LABEL[res.centro]})` : '—'} />
+            <Row k="Valor adotado" v={res && resumo.data?.adotado ? `${fmtMoney(resumo.data.adotado.valor_final_apresentacao)}${unidadeSufixo(resumo.data.adotado.unidade)} (${CENTRO_LABEL[res.centro]})` : '—'} />
           </CardContent>
         </Card>
       </div>
