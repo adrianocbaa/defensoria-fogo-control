@@ -86,7 +86,7 @@ GRANT SELECT ON ac TO authenticated;
 INSERT INTO public.avaliacao_projecoes(id, organization_id, avaliacao_id, modelo_id, acceptance_id, execucao_id, nivel_confianca, z0, se_media, t_critico, log_response,
   avaliando_json, extrapolacao, intervalo_predicao_status, engine_version)
 SELECT '40000000-0000-0000-0000-000000000001', '0a000000-0000-0000-0000-00000000000a', av, (SELECT id FROM m), (SELECT id FROM ac), '20000000-0000-0000-0000-000000000001',
-  0.8, 38.284, 1, 1.3, false, '{"area": 140.98}', '[]', 'NAO_OFICIAL', '1.1.1' FROM fx;
+  0.8, 38.284, 1, 1.3, false, '{"area": 140.98}', '[]', 'NOT_VALIDATED', '1.1.1' FROM fx;
 INSERT INTO public.avaliacao_projecao_centros(organization_id, avaliacao_id, projecao_id, centro, valor, limite_inferior, limite_superior, amplitude_pct, grau_precisao)
 SELECT '0a000000-0000-0000-0000-00000000000a', av, '40000000-0000-0000-0000-000000000001', 'DIRECT', 38.284, 33.0, 43.5, 27.4, 'III' FROM fx;
 SELECT pg_temp.ok((public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area')::numeric = 140.98
