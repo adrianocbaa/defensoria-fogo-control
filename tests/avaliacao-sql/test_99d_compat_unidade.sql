@@ -57,7 +57,7 @@ SELECT pg_temp.ok((SELECT j->>'status' = 'NAO_COMPARAVEL_UNIDADE' AND j->>'difer
 
 -- Cenário integrado: aceite → projeção (avaliando com 140,98 m²) → confirmação pelo RT
 SELECT pg_temp.login(NULL);
-INSERT INTO public.imoveis(id, organization_id, tipo_imovel, area_construida) VALUES ('d0000000-0000-0000-0000-000000000010', '0a000000-0000-0000-0000-00000000000a', 'Sala comercial', 999);
+INSERT INTO public.imoveis(id, organization_id, tipo_imovel, area_construida) VALUES ('d0000000-0000-0000-0000-000000000010', '0a000000-0000-0000-0000-00000000000a', 'Sala comercial', NULL);
 INSERT INTO public.avaliacao_imoveis(organization_id, avaliacao_id, imovel_id, papel) SELECT '0a000000-0000-0000-0000-00000000000a', av, 'd0000000-0000-0000-0000-000000000010', 'AVALIANDO' FROM fx;
 INSERT INTO public.avaliacao_valores_administrativos(id, organization_id, avaliacao_id, tipo, valor) SELECT '20000000-0000-0000-0000-0000000000a1', '0a000000-0000-0000-0000-00000000000a', av, 'SOLICITADO_PROPRIETARIO', 6500 FROM fx;
 SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
@@ -131,15 +131,18 @@ SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.throws($$SELECT public.aval_compat_revisar_legado()$$, 'permission denied', 'cliente não executa a revisão em massa');
 SELECT pg_temp.throws($$SELECT public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')$$, 'permission denied', 'cliente não consulta a unidade/área por fora do fluxo');
 
--- 6 integrado) Sem área no avaliando nem na projeção → não comparável
+-- 6 integrado) Sem área na projeção nem no cadastro do avaliando → não comparável
 SELECT pg_temp.login(NULL);
 UPDATE public.avaliacao_projecoes SET avaliando_json = '{}' WHERE id = '40000000-0000-0000-0000-000000000001';
-SELECT pg_temp.ok((public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area')::numeric = 999
-  AND public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area_origem' = 'IMOVEL_AVALIANDO', 'sem área na projeção usa a área construída do avaliando');
-UPDATE public.imoveis SET area_construida = NULL WHERE id = 'd0000000-0000-0000-0000-000000000010';
+SELECT pg_temp.ok(public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area' IS NULL, 'sem área disponível nenhuma área é inventada');
 SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 CREATE TEMP TABLE r2 AS SELECT public.aval_confirm_economic('40000000-0000-0000-0000-000000000001', 'DIRECT', false, NULL, NULL, '{}', 'REQUER_ANALISE', NULL) AS id;
 SELECT pg_temp.ok((SELECT c.status_comparacao = 'NAO_COMPARAVEL_FALTA_AREA' AND c.diferenca_percentual IS NULL AND c.valor_comparado IS NULL
    AND c.valor_administrativo_original = 6500 AND c.posicao_ic = 'NAO_APLICAVEL' FROM public.avaliacao_compatibilidades c WHERE c.resultado_id = (SELECT id FROM r2))
   AND public.aval_tokens((SELECT av FROM fx))->>'DIFERENCA_PERCENTUAL' = 'não comparável', 'sem área: confirmação grava "não comparável" sem percentual');
+-- Sem área na projeção, a área construída cadastrada do avaliando é usada (origem registrada)
+SELECT pg_temp.login(NULL);
+UPDATE public.imoveis SET area_construida = 120 WHERE id = 'd0000000-0000-0000-0000-000000000010';
+SELECT pg_temp.ok((public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area')::numeric = 120
+  AND public.aval_unidade_resultado('40000000-0000-0000-0000-000000000001')->>'area_origem' = 'IMOVEL_AVALIANDO', 'sem área na projeção usa a área construída do avaliando');
 ROLLBACK;
