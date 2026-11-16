@@ -1,6 +1,6 @@
 // Rótulos e mapeamentos de exibição do módulo Avaliações.
 import { TRANSFORM_LABEL as TRANSFORM_LABEL_LOCAL } from '../../../supabase/functions/_shared/avaliacao/docLabels.ts';
-export { CENTRO_LABEL, CRITERIO_STATUS_LABEL, TRANSFORM_LABEL, VALOR_ADM_LABEL } from '../../../supabase/functions/_shared/avaliacao/docLabels.ts';
+export { CENTRO_LABEL, COMPAT_STATUS_LABEL, CRITERIO_STATUS_LABEL, TRANSFORM_LABEL, VALOR_ADM_LABEL, compatView, unidadeSufixo } from '../../../supabase/functions/_shared/avaliacao/docLabels.ts';
 export const TIPO_LABEL: Record<string, string> = {
   NOVA_LOCACAO: 'Nova locação',
   RENOVACAO: 'Renovação',
@@ -63,6 +63,7 @@ export const AUDIT_EVENT_LABEL: Record<string, string> = {
   MODEL_REVALIDATED: 'Modelo revalidado com as configurações atuais', VALIDATION_MARKED_STALE: 'Validação do modelo marcada como desatualizada',
   MODELS_ARCHIVED: 'Modelos arquivados', MODELS_UNARCHIVED: 'Modelos restaurados', MODEL_ROUND_CREATED: 'Rodada de modelos gerada',
   MODEL_ROUND_ARCHIVED: 'Rodada de modelos arquivada', MODEL_ROUND_UNARCHIVED: 'Rodada de modelos restaurada',
+  ECONOMIC_RESULT_UNIT_MISMATCH: 'Resultado comparado em unidades diferentes — reconfirmação exigida',
 };
 
 export const fmtMoney = (v: number | null | undefined) =>

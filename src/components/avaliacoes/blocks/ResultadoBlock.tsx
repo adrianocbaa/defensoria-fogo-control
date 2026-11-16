@@ -16,7 +16,7 @@ import type { AvaliacaoCtx } from '../useAvaliacao';
 import { useAvalQuery } from '../useAvaliacao';
 import { db, engine, rpc } from '@/lib/avaliacao/api';
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
-import { CENTRO_LABEL, CONCLUSAO_LABEL, VALOR_ADM_LABEL, fmtDateTime, fmtMoney, fmtNum } from '@/lib/avaliacao/labels';
+import { CENTRO_LABEL, CONCLUSAO_LABEL, VALOR_ADM_LABEL, compatView, fmtDateTime, fmtMoney, fmtNum, unidadeSufixo } from '@/lib/avaliacao/labels';
 
 const DIRECAO: Record<string, string> = { ABAIXO_REFERENCIA: 'abaixo da referência', IGUAL_REFERENCIA: 'igual à referência', ACIMA_REFERENCIA: 'acima da referência' };
 const POS_IC: Record<string, string> = { ABAIXO_IC: 'abaixo do intervalo de confiança', DENTRO_IC: 'dentro do intervalo de confiança', ACIMA_IC: 'acima do intervalo de confiança', NAO_APLICAVEL: '—' };
@@ -48,7 +48,7 @@ export function ResultadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
 
   const q = useAvalQuery(av.id, 'resultado', async () => {
     const [ac, pj, res, car, pol] = await Promise.all([
-      db.from('model_acceptances').select('*, avaliacao_modelos(nome)').eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle(),
+      db.from('model_acceptances').select('*, avaliacao_modelos(nome, dependente:avaliacao_variaveis!avaliacao_modelos_dependente_variavel_id_fkey(nome, unidade))').eq('avaliacao_id', av.id).eq('status', 'VIGENTE').maybeSingle(),
       db.from('avaliacao_projecoes').select('*, avaliacao_projecao_centros(*)').eq('avaliacao_id', av.id).eq('stale', false).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       db.from('avaliacao_resultado_economico').select('*, avaliacao_valores_adotados(*), avaliacao_compatibilidades(*)').eq('avaliacao_id', av.id).order('confirmado_em', { ascending: false }).limit(10),
       db.from('avaliacao_caracteristicas_relevantes').select('*').eq('avaliacao_id', av.id),
@@ -113,7 +113,7 @@ export function ResultadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                   ));
                 })()}
               </RadioGroup>
-              <p className="text-xs text-muted-foreground">Valores na unidade da variável dependente. A escolha da tendência central é sua; o sistema não escolhe.</p>
+              <p className="text-xs text-muted-foreground">Valores na unidade da variável dependente{ac.avaliacao_modelos?.dependente?.unidade ? ` (${ac.avaliacao_modelos.dependente.nome} · ${ac.avaliacao_modelos.dependente.unidade})` : ''}. A escolha da tendência central é sua; o sistema não escolhe.</p>
             </>
           )}
         </CardContent>
@@ -159,21 +159,40 @@ export function ResultadoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           {!vigente ? <p className="text-muted-foreground">{(q.data?.resultados ?? []).some((r) => r.status === 'DESATUALIZADO') ? 'O resultado anterior ficou desatualizado após alterações. Confirme novamente.' : 'Nenhum resultado confirmado.'}</p> : (
             <>
               <div className="flex flex-wrap items-baseline gap-3">
-                <span className="text-2xl font-bold tabular-nums">{fmtMoney(vigente.avaliacao_valores_adotados?.valor_final_apresentacao)}</span>
+                <span className="text-2xl font-bold tabular-nums">{fmtMoney(vigente.avaliacao_valores_adotados?.valor_final_apresentacao)}{unidadeSufixo(vigente.avaliacao_valores_adotados?.unidade)}</span>
                 <Badge variant="outline">{vigente.avaliacao_valores_adotados?.origem === 'ARBITRAMENTO' ? 'Arbitrado' : CENTRO_LABEL[vigente.centro]}</Badge>
                 <span className="text-muted-foreground">valor bruto {fmtNum(vigente.avaliacao_valores_adotados?.valor_adotado_bruto, 4)}</span>
               </div>
               <p>Conclusão: <strong>{CONCLUSAO_LABEL[vigente.conclusao]}</strong>{vigente.conclusao_texto ? ` — ${vigente.conclusao_texto}` : ''}</p>
               {(vigente.avaliacao_compatibilidades ?? []).length > 0 && <p className="font-medium pt-1">Compatibilidade com valores administrativos</p>}
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {(vigente.avaliacao_compatibilidades ?? []).map((c: any) => (
-                <div key={c.id} className="rounded-lg border p-3 space-y-1">
-                  <p className="text-xs text-muted-foreground">{VALOR_ADM_LABEL[c.tipo_valor]}</p>
-                  <p className="text-lg font-semibold tabular-nums">{fmtMoney(c.valor_comparado)}</p>
-                  <p>{DIRECAO[c.direcao]} <span className="tabular-nums">({fmtNum(c.diferenca_percentual, 2)}%)</span></p>
-                  <p className="text-xs text-muted-foreground">{POS_IC[c.posicao_ic]}{c.posicao_campo !== 'NAO_APLICAVEL' ? ` · ${POS_CAMPO[c.posicao_campo]}` : ''}</p>
-                </div>
-              ))}
+              {(vigente.avaliacao_compatibilidades ?? []).map((c: any) => {
+                const v = compatView(c);
+                return (
+                  <div key={c.id} className="rounded-lg border p-3 space-y-1.5">
+                    <p className="text-xs text-muted-foreground">{VALOR_ADM_LABEL[c.tipo_valor]}</p>
+                    <p className="text-lg font-semibold tabular-nums">{fmtMoney(v.original)}{unidadeSufixo(v.unidadeOriginal)}</p>
+                    {v.convertido && <p className="text-xs tabular-nums">Equivalente: <strong>{fmtMoney(v.comparado)}{unidadeSufixo(v.unidadeComparacao)}</strong> (área utilizada: {fmtNum(v.area, 2)} m²)</p>}
+                    {v.comparavel ? (
+                      <>
+                        {!v.legado && (
+                          <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-xs tabular-nums">
+                            <dt className="text-muted-foreground">Resultado</dt><dd>{fmtMoney(v.resultado)}{unidadeSufixo(v.unidadeResultado)}</dd>
+                            <dt className="text-muted-foreground">Referência comparável</dt><dd>{fmtMoney(v.comparado)}{unidadeSufixo(v.unidadeComparacao)}</dd>
+                          </dl>
+                        )}
+                        <p>{DIRECAO[c.direcao]} <span className="tabular-nums">({fmtNum(v.diferenca, 2)}%)</span></p>
+                        <p className="text-xs text-muted-foreground">{POS_IC[c.posicao_ic]}{c.posicao_campo !== 'NAO_APLICAVEL' ? ` · ${POS_CAMPO[c.posicao_campo]}` : ''}</p>
+                      </>
+                    ) : (
+                      <div className="space-y-1">
+                        <Badge variant="outline" className="border-destructive/50 text-destructive">{v.status}</Badge>
+                        <p className="text-xs text-muted-foreground">{v.motivo} Nenhum percentual foi calculado.</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               </div>
             </>
           )}
