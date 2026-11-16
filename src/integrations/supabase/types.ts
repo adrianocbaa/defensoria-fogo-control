@@ -893,51 +893,84 @@ export type Database = {
       }
       avaliacao_compatibilidades: {
         Row: {
+          area_campo: string | null
+          area_conversao: number | null
+          area_origem: string | null
           avaliacao_id: string
+          conversao_formula: string | null
           created_at: string
-          diferenca_absoluta: number
-          diferenca_percentual: number
-          direcao: string
+          diferenca_absoluta: number | null
+          diferenca_percentual: number | null
+          direcao: string | null
           id: string
+          motivo: string | null
           organization_id: string
           posicao_campo: string
           posicao_ic: string
+          regra_versao: number | null
           resultado_id: string
+          status_comparacao: string | null
           tipo_valor: string
+          unidade_comparacao: string | null
+          unidade_original: string | null
+          unidade_resultado: string | null
           valor_administrativo_id: string
-          valor_comparado: number
+          valor_administrativo_original: number | null
+          valor_comparado: number | null
           valor_referencia: number
         }
         Insert: {
+          area_campo?: string | null
+          area_conversao?: number | null
+          area_origem?: string | null
           avaliacao_id: string
+          conversao_formula?: string | null
           created_at?: string
-          diferenca_absoluta: number
-          diferenca_percentual: number
-          direcao: string
+          diferenca_absoluta?: number | null
+          diferenca_percentual?: number | null
+          direcao?: string | null
           id?: string
+          motivo?: string | null
           organization_id: string
           posicao_campo: string
           posicao_ic: string
+          regra_versao?: number | null
           resultado_id: string
+          status_comparacao?: string | null
           tipo_valor: string
+          unidade_comparacao?: string | null
+          unidade_original?: string | null
+          unidade_resultado?: string | null
           valor_administrativo_id: string
-          valor_comparado: number
+          valor_administrativo_original?: number | null
+          valor_comparado?: number | null
           valor_referencia: number
         }
         Update: {
+          area_campo?: string | null
+          area_conversao?: number | null
+          area_origem?: string | null
           avaliacao_id?: string
+          conversao_formula?: string | null
           created_at?: string
-          diferenca_absoluta?: number
-          diferenca_percentual?: number
-          direcao?: string
+          diferenca_absoluta?: number | null
+          diferenca_percentual?: number | null
+          direcao?: string | null
           id?: string
+          motivo?: string | null
           organization_id?: string
           posicao_campo?: string
           posicao_ic?: string
+          regra_versao?: number | null
           resultado_id?: string
+          status_comparacao?: string | null
           tipo_valor?: string
+          unidade_comparacao?: string | null
+          unidade_original?: string | null
+          unidade_resultado?: string | null
           valor_administrativo_id?: string
-          valor_comparado?: number
+          valor_administrativo_original?: number | null
+          valor_comparado?: number | null
           valor_referencia?: number
         }
         Relationships: [
@@ -13508,6 +13541,22 @@ export type Database = {
         Args: { p_av: string; p_changes: Json }
         Returns: Json
       }
+      aval_compat_calcular: {
+        Args: {
+          p_adm: Json
+          p_adm_valor: number
+          p_area: number
+          p_area_origem: string
+          p_campo_inf: number
+          p_campo_sup: number
+          p_lim_inf: number
+          p_lim_sup: number
+          p_res: Json
+          p_resultado: number
+        }
+        Returns: Json
+      }
+      aval_compat_revisar_legado: { Args: never; Returns: number }
       aval_confirm_economic: {
         Args: {
           p_aplicar: boolean
@@ -13555,6 +13604,7 @@ export type Database = {
         Args: { p_avaliacao: string; p_changes: Json }
         Returns: Json
       }
+      aval_finalidade: { Args: { p_tipo_avaliacao: string }; Returns: string }
       aval_find_duplicates: {
         Args: {
           p_anuncio_id: string
@@ -13811,6 +13861,20 @@ export type Database = {
         Returns: boolean
       }
       aval_uf_codigo: { Args: { p_uf: string }; Returns: string }
+      aval_unidade_administrativa: {
+        Args: { p_finalidade: string }
+        Returns: Json
+      }
+      aval_unidade_classificar: {
+        Args: {
+          p_campo_origem: string
+          p_finalidade: string
+          p_unidade: string
+        }
+        Returns: Json
+      }
+      aval_unidade_resultado: { Args: { p_projecao: string }; Returns: Json }
+      aval_unidade_sufixo: { Args: { p_unidade: string }; Returns: string }
       aval_var_fonte: {
         Args: { p_atributo: string; p_campo: string }
         Returns: string
