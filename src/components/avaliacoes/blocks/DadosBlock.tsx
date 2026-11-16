@@ -126,7 +126,7 @@ export function DadosBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 <li key={v.id} className="flex items-center justify-between gap-3 py-2">
                   <div><p className="font-medium">{VALOR_ADM_LABEL[v.tipo]}</p><p className="text-xs text-muted-foreground">Referência: {fmtDate(v.data_referencia)}{v.observacao ? ` · ${v.observacao}` : ''}</p></div>
                   <div className="flex items-center gap-1">
-                    <span className="font-semibold tabular-nums">{fmtMoney(v.valor)}</span>
+                    <span className="font-semibold tabular-nums">{fmtMoney(v.valor)}/mês</span>
                     {canEdit && <Button size="icon" variant="ghost" aria-label={`Editar ${VALOR_ADM_LABEL[v.tipo] ?? 'valor administrativo'}`} title="Editar valor administrativo" onClick={() => abrirValor(v)}><Pencil className="h-4 w-4" /></Button>}
                   </div>
                 </li>

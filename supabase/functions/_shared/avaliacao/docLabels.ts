@@ -13,3 +13,34 @@ export const CENTRO_LABEL: Record<string, string> = { DIRECT: 'Estimativa centra
 export const CRITERIO_STATUS_LABEL: Record<string, string> = {
   ATENDE: 'Atende', NAO_ATENDE: 'Não atende', REQUER_ANALISE: 'Requer análise', NAO_APLICAVEL: 'Não aplicável', NAO_VERIFICADO: 'Não verificado',
 };
+
+// Compatibilidade com valores administrativos — somente apresentação dos campos gravados pelo servidor
+// (aval_confirm_economic decide unidade, conversão e posições; nenhuma regra é recalculada aqui).
+export const COMPAT_STATUS_LABEL: Record<string, string> = {
+  COMPARAVEL: 'Comparável',
+  NAO_COMPARAVEL_FALTA_AREA: 'Não comparável — falta área para conversão',
+  NAO_COMPARAVEL_UNIDADE: 'Não comparável — unidades incompatíveis',
+};
+/** Sufixo de unidade monetária: 'R$/m²' → '/m²', 'R$/mês' → '/mês', 'R$' → ''. */
+export const unidadeSufixo = (u: string | null | undefined) => (u ?? '').replace(/^R\$\s*/, '');
+/** Linha de compatibilidade como gravada; registros anteriores à regra (regra_versao nula) mostram o valor como foi comparado. */
+// deno-lint-ignore no-explicit-any
+export function compatView(c: any) {
+  const legado = c?.regra_versao == null;
+  return {
+    legado,
+    comparavel: legado || c.status_comparacao === 'COMPARAVEL',
+    status: legado ? null : (COMPAT_STATUS_LABEL[c.status_comparacao] ?? c.status_comparacao),
+    original: legado ? Number(c.valor_comparado) : Number(c.valor_administrativo_original),
+    unidadeOriginal: legado ? '' : (c.unidade_original ?? ''),
+    convertido: !legado && c.status_comparacao === 'COMPARAVEL' && c.area_conversao != null,
+    comparado: c.valor_comparado == null ? null : Number(c.valor_comparado),
+    unidadeComparacao: legado ? '' : (c.unidade_comparacao ?? ''),
+    area: c.area_conversao == null ? null : Number(c.area_conversao),
+    resultado: Number(c.valor_referencia),
+    unidadeResultado: legado ? '' : (c.unidade_resultado ?? ''),
+    diferenca: c.diferenca_percentual == null ? null : Number(c.diferenca_percentual),
+    formula: c.conversao_formula ?? null,
+    motivo: c.motivo ?? null,
+  };
+}
