@@ -104,8 +104,8 @@ export async function chartPng(spec: ChartSpec, deflate: Deflate = zlibDeflate):
   const sy = (v: number) => B - ((v - y0) / (y1 - y0)) * (B - T);
   if (spec.title) r.text(fit(spec.title, W - 40, r), W / 2, 50, { align: 'center' });
   const grid: RGB = [228, 228, 228];
-  for (const t of niceTicks(y0, y1)) { r.line(L, sy(t), R, sy(t), grid, 2); r.text(fmtAxis(t), L - 12, sy(t) + 10, { align: 'right', color: [70, 70, 70] }); }
-  for (const t of spec.xTicks ?? niceTicks(x0, x1)) { if (t < x0 || t > x1) continue; r.line(sx(t), T, sx(t), B, grid, 2); r.text(fmtAxis(t), sx(t), B + 40, { align: 'center', color: [70, 70, 70] }); }
+  for (const t of niceTicks(y0, y1, 7)) { r.line(L, sy(t), R, sy(t), grid, 2); r.text(fmtAxis(t), L - 12, sy(t) + 10, { align: 'right', color: [70, 70, 70] }); }
+  for (const t of spec.xTicks ?? niceTicks(x0, x1, 7)) { if (t < x0 || t > x1) continue; r.line(sx(t), T, sx(t), B, grid, 2); r.text(fmtAxis(t), sx(t), B + 40, { align: 'center', color: [70, 70, 70] }); }
   const axis: RGB = [90, 90, 90];
   r.line(L, T, L, B, axis, 2); r.line(L, B, R, B, axis, 2); r.line(R, T, R, B, axis, 2); r.line(L, T, R, T, axis, 2);
   for (const l of spec.refLines ?? []) {
