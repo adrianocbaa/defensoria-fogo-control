@@ -28,7 +28,7 @@ export interface Cell { text?: string; runs?: Run[]; bold?: boolean; fill?: stri
 export interface FigItem { img: Img; w: number; legenda?: string | null; fonte?: string | null }
 export type Block =
   | { k: 'heading'; nivel: number; texto: string }
-  | { k: 'para'; runs: Run[]; align?: 'justify' | 'center' | 'left' | 'right'; size?: number; before?: number; after?: number; indent?: boolean }
+  | { k: 'para'; runs: Run[]; align?: 'justify' | 'center' | 'left' | 'right'; size?: number; before?: number; after?: number; indent?: boolean; keepNext?: boolean }
   | { k: 'table'; legenda?: string; fonte?: string; widths: number[]; head?: Cell[]; rows: Cell[][]; size?: number }
   | { k: 'figure'; items: FigItem[] }
   | { k: 'equation'; texto: string }
@@ -138,7 +138,15 @@ export interface ComposeAssets {
 }
 
 const H = (texto: string, nivel = 1): Block => ({ k: 'heading', nivel, texto });
-const P = (t: string, o: Partial<Extract<Block, { k: 'para' }>> = {}): Block => ({ k: 'para', runs: [{ t }], align: 'justify', ...o });
+/** Texto do usuário/IA: **negrito** vira trecho em negrito; demais marcações ficam como texto. */
+export function inlineRuns(t: string): Run[] {
+  const out: Run[] = []; const re = /\*\*([^*]+)\*\*/g; let last = 0; let m: RegExpExecArray | null;
+  while ((m = re.exec(t))) { if (m.index > last) out.push({ t: t.slice(last, m.index) }); out.push({ t: m[1], b: true }); last = m.index + m[0].length; }
+  if (last < t.length) out.push({ t: t.slice(last) });
+  return out.length ? out : [{ t }];
+}
+const resolve = (text: string, tokens: Record<string, string | null>) => text.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, k) => tokens[k] ?? '—');
+const P = (t: string, o: Partial<Extract<Block, { k: 'para' }>> = {}): Block => ({ k: 'para', runs: inlineRuns(t), align: 'justify', ...o });
 const PB = (pares: [string, string | null | undefined][]): Block[] => pares.filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '')
   .map(([r, v]) => ({ k: 'para', runs: [{ t: `${r}: `, b: true }, { t: String(v) }], align: 'left', after: 2 }) as Block);
 
@@ -308,7 +316,7 @@ export async function composeDif(snap: any, assets: ComposeAssets, opts: { rascu
   for (const s of secoes) {
     if (Number(s.nivel ?? 1) === 0) continue;
     blocks.push(H(tituloNumerado(numeros.get(s.codigo), s.titulo, Number(s.nivel ?? 1)), Number(s.nivel ?? 1)));
-    for (const linha of String(s.texto ?? '').split(/\n+/).map((x) => x.trim()).filter(Boolean)) blocks.push(P(linha, /^[a-z]\)\s/.test(linha) ? { indent: true } : {}));
+    for (const linha of resolve(String(s.texto ?? ''), t).split(/\n+/).map((x) => x.trim()).filter(Boolean)) blocks.push(P(linha, /^[a-z]\)\s/.test(linha) ? { indent: true } : {}));
     for (const b of s.blocos_sistema ?? []) await bloco(b);
     if ((s.blocos_sistema ?? []).includes('ASSINATURA')) {
       blocks.push({ k: 'spacer', mm: 14 });
@@ -349,7 +357,7 @@ export async function composeDif(snap: any, assets: ComposeAssets, opts: { rascu
           ['Valor', f.valor != null ? `${money(f.valor)}${f.periodicidade === 'MENSAL' ? ' mensais' : ''}${f.unitario != null ? ` (${money(f.unitario)}/m²)` : ''}` : null],
           ['Natureza do dado', f.natureza ? f.natureza.charAt(0) + f.natureza.slice(1).toLowerCase() : null], ['Fonte/contato', f.fontes.join('; ') || null]]));
         if (f.observacao) blocks.push({ k: 'para', runs: [{ t: 'Observação: ', b: true }, { t: f.observacao }], align: 'left', after: 2 });
-        blocks.push({ k: 'para', runs: [{ t: '2. Imagens do Imóvel', b: true }], align: 'left', before: 4, after: 2 });
+        blocks.push({ k: 'para', runs: [{ t: '2. Imagens do Imóvel', b: true }], align: 'left', before: 4, after: 2, keepNext: true });
         const fotos = midias.filter((m) => m.categoria === 'AMOSTRA_MERCADO' && m.amostra_id === f.id);
         if (!fotos.length) blocks.push(P('Sem imagens cadastradas para esta amostra.', { align: 'left' }));
         for (const g of layoutFiguras(fotos)) blocks.push({ k: 'figure', items: g.itens.map((m, i) => ({ img: img(m.id), w: g.larguras[i], legenda: m.legenda ?? null, fonte: fonteTexto(m) ? `Fonte: ${fonteTexto(m)}` : null })) });
@@ -372,7 +380,7 @@ export async function composeDif(snap: any, assets: ComposeAssets, opts: { rascu
 // deno-lint-ignore no-explicit-any
 async function relatorioEstatistico(blocks: Block[], snap: any, c: any) {
   const { fit, input, coefs, nomes, depNome, depUnid, mvars, numAmostra, deflate, tk } = c;
-  const sub = (s: string) => blocks.push({ k: 'para', runs: [{ t: s, b: true }], align: 'left', before: 6, after: 3 });
+  const sub = (s: string) => blocks.push({ k: 'para', runs: [{ t: s, b: true }], align: 'left', before: 6, after: 3, keepNext: true });
   const tab = (widths: number[], head: string[], rows: string[][], size = 8.5) => blocks.push({ k: 'table', widths, size,
     head: head.map((h) => ({ text: h, bold: true, fill: 'D9D9D9', align: 'center' })), rows: rows.map((r) => r.map((x) => ({ text: x }))) });
   if (!fit || !input) { blocks.push(P('Não há modelo aceito com execução registrada para compor o relatório estatístico.')); return; }
@@ -420,7 +428,7 @@ async function relatorioEstatistico(blocks: Block[], snap: any, c: any) {
   blocks.push({ k: 'equation', texto: equacaoModelo({ nome: depNome, transform: input.dependent.transform, power: input.dependent.power }, coefs, nomes) });
 
   sub('9. Coeficientes e significância dos regressores');
-  tab([0.28, 0.14, 0.18, 0.14, 0.12, 0.14], ['Variável', 'Transformação', 'Coeficiente', 'Erro padrão', 't calculado', 'Significância'],
+  tab([0.24, 0.16, 0.2, 0.14, 0.12, 0.14], ['Variável', 'Transformação', 'Coeficiente', 'Erro padrão', 't calculado', 'Significância'],
     coefs.map((k: CoefLike) => [k.code === '(intercepto)' ? 'Intercepto' : nomeVar(k.code), k.code === '(intercepto)' ? '—' : TRANSFORM_LABEL[k.transform ?? 'DIRECT'] ?? '—',
       (k.beta < 0 ? '−' : '') + fmtCoef(k.beta), fmt(k.stdError, 6), fmt(k.t, 3), pct(k.pValue)]));
 
@@ -432,7 +440,7 @@ async function relatorioEstatistico(blocks: Block[], snap: any, c: any) {
   }
 
   sub('11. Resíduos e distância de Cook');
-  tab([0.08, 0.16, 0.16, 0.14, 0.14, 0.16, 0.16], ['Amostra', 'Observado', 'Estimado', 'Resíduo', 'Resíduo relativo', 'Resíduo / DP', 'Cook'],
+  tab([0.1, 0.16, 0.16, 0.14, 0.14, 0.15, 0.15], ['Amostra', 'Observado', 'Estimado', 'Resíduo', 'Resíduo relativo', 'Resíduo / DP', 'Cook'],
     (fit.sampleIds ?? []).map((id: string, i: number) => [sampleNum(id, i), fmt(fit.yOriginal?.[i]), fmt(fit.estimatedOriginal?.[i]), fmt(fit.residuals?.[i], 4),
       pct(fit.residualsRelative?.[i]), fmt(fit.residualsStd?.[i], 3), fmt(fit.cook?.[i], 4)]), 7.5);
 
@@ -475,7 +483,7 @@ async function relatorioEstatistico(blocks: Block[], snap: any, c: any) {
 
   sub('14. Tabela de dados');
   const indep = input.independents as { code: string; values: number[] }[];
-  const wN = 0.08; const wv = (1 - wN) / (indep.length + 1);
+  const wN = 0.1; const wv = (1 - wN) / (indep.length + 1);
   tab([wN, ...indep.map(() => wv), wv], ['Amostra', ...indep.map((v) => nomeVar(v.code)), depNome],
     (input.sampleIds ?? []).map((id: string, i: number) => [sampleNum(id, i), ...indep.map((v) => fmt(v.values[i], Number.isInteger(v.values[i]) ? 0 : 2)), fmt(input.dependent.values[i])]), 7.5);
 

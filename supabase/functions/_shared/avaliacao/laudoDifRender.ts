@@ -84,13 +84,14 @@ export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: P
         para([{ t: b.texto, b: true, i: b.nivel >= 3 }], { size: 11, align: 'left', before: b.nivel === 1 ? 4 : 2.5, after: 2 });
         break;
       }
-      case 'para': para(b.runs, { size: b.size, align: b.align, after: b.after, before: b.before, indent: b.indent }); break;
+      case 'para': if (b.keepNext) ensure(30); para(b.runs, { size: b.size, align: b.align, after: b.after, before: b.before, indent: b.indent }); break;
       case 'equation': ensure(14); para([{ t: b.texto, i: true }], { size: 10.5, align: 'center', before: 2, after: 4 }); break;
       case 'spacer': y += b.mm; if (y > limit) { doc.addPage(); y = MT; } break;
       case 'pagebreak': doc.addPage(); y = MT; break;
       case 'table': {
         const size = b.size ?? 9;
-        if (b.legenda) { ensure(20); caption(b.legenda, 9, true, ML, CW); y += 0.8; }
+        ensure(b.legenda ? 22 : 16);
+        if (b.legenda) { caption(b.legenda, 9, true, ML, CW); y += 0.8; }
         deps.autoTable(doc, {
           startY: y, margin: { left: ML, right: MR, top: MT, bottom: MB }, tableWidth: CW, theme: 'grid',
           styles: { font: 'helvetica', fontSize: size, cellPadding: 1.3, lineColor: [0, 0, 0], lineWidth: 0.15, textColor: [0, 0, 0], valign: 'middle', overflow: 'linebreak' },
@@ -164,7 +165,8 @@ export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: P
       const gs = doc.GState ? new doc.GState({ opacity: 0.12 }) : null;
       if (gs) { doc.saveGraphicsState(); doc.setGState(gs); }
       doc.setFont('helvetica', 'bold'); doc.setFontSize(46); doc.setTextColor(150, 0, 0);
-      doc.text('RASCUNHO — NÃO EMITIDO', PW / 2, PH / 2 + 20, { align: 'center', angle: 35 });
+      const wm = 'RASCUNHO — NÃO EMITIDO'; const tw = doc.getTextWidth(wm); const ang = (35 * Math.PI) / 180;
+      doc.text(wm, PW / 2 - (Math.cos(ang) * tw) / 2, PH / 2 + (Math.sin(ang) * tw) / 2, { angle: 35 });
       if (gs) doc.restoreGraphicsState();
       doc.setTextColor(0, 0, 0);
     }
@@ -226,7 +228,7 @@ export function renderDifDocx(m: DocModel, x: any) {
         children.push(new Paragraph({ heading: lvl, keepNext: true, spacing: { before: Math.round((b.nivel === 1 ? 4 : 2.5) * MM), after: Math.round(2 * MM) }, children: [new TextRun({ text: b.texto })] }));
         break;
       }
-      case 'para': children.push(P(b.runs, { align: b.align, size: b.size, after: b.after, before: b.before, indent: b.indent })); break;
+      case 'para': children.push(P(b.runs, { align: b.align, size: b.size, after: b.after, before: b.before, indent: b.indent, keepNext: b.keepNext })); break;
       case 'equation': children.push(P([{ t: b.texto, i: true }], { align: 'center', size: 10.5, before: 2, after: 4 })); break;
       case 'spacer': children.push(new Paragraph({ spacing: { before: Math.round(b.mm * MM), after: 0 }, children: [] })); break;
       case 'pagebreak': children.push(new Paragraph({ children: [new PageBreak()] })); break;
