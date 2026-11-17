@@ -8,6 +8,13 @@ const PT = 0.3528; // mm por ponto
 /** As fontes padrão do PDF só cobrem Latin-1/cp1252: troca os poucos símbolos fora dele. */
 export const pdfSafe = (s: string) => s.replace(/−/g, '-').replace(/√/g, 'raiz ').replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[\u200b\u00ad]/g, '');
 const rgb = (hex?: string): [number, number, number] | undefined => (hex ? [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)] : undefined);
+/** Cada imagem entra uma única vez no PDF (alias) e PNG é comprimido — o logotipo repetido por página não multiplica o tamanho. */
+const aliases = new WeakMap<Uint8Array, string>(); let aliasSeq = 0;
+// deno-lint-ignore no-explicit-any
+const addImg = (doc: any, im: { data: Uint8Array; tipo: string }, x: number, y: number, w: number, h: number) => {
+  let a = aliases.get(im.data); if (!a) { a = `img${++aliasSeq}`; aliases.set(im.data, a); }
+  doc.addImage(im.data, im.tipo === 'png' ? 'PNG' : 'JPEG', x, y, w, h, a, 'FAST');
+};
 const fontStyle = (r: Run) => (r.b && r.i ? 'bolditalic' : r.b ? 'bold' : r.i ? 'italic' : 'normal');
 
 // deno-lint-ignore no-explicit-any
@@ -115,7 +122,7 @@ export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: P
             const raw = d.cell.raw; if (!raw?._img) return;
             const im: Img = raw._img; let w = raw._imgW * CW; let h = (w * im.altura) / im.largura;
             if (h > d.cell.height - 2) { h = d.cell.height - 2; w = (h * im.largura) / im.altura; }
-            doc.addImage(im.data, im.tipo === 'png' ? 'PNG' : 'JPEG', d.cell.x + (d.cell.width - w) / 2, d.cell.y + (d.cell.height - h) / 2, w, h);
+            addImg(doc, im, d.cell.x + (d.cell.width - w) / 2, d.cell.y + (d.cell.height - h) / 2, w, h);
           },
         });
         y = doc.lastAutoTable.finalY + 1;
@@ -132,7 +139,7 @@ export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: P
         let x = ML + (CW - totalW) / 2; const top = y; let bottom = y;
         b.items.forEach((it, i) => {
           const d = dims[i];
-          doc.addImage(it.img.data, it.img.tipo === 'png' ? 'PNG' : 'JPEG', x, top + (rowH - d.h), d.w, d.h);
+          addImg(doc, it.img, x, top + (rowH - d.h), d.w, d.h);
           y = top + rowH + 1.5;
           const cw = n > 1 ? d.w : CW; const cx = n > 1 ? x : ML;
           if (it.legenda) caption(it.legenda, 9, true, cx, cw);
@@ -156,7 +163,7 @@ export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: P
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
-    if (m.header.logo) { const w = 62; const h = (w * m.header.logo.altura) / m.header.logo.largura; doc.addImage(m.header.logo.data, 'PNG', (PW - w) / 2, 8, w, h); }
+    if (m.header.logo) { const w = 62; const h = (w * m.header.logo.altura) / m.header.logo.largura; addImg(doc, m.header.logo, (PW - w) / 2, 8, w, h); }
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(0, 0, 0);
     m.header.linhas.forEach((l, i) => doc.text(pdfSafe(l), PW / 2, 29 + i * 4, { align: 'center' }));
     const ly = 31 + (m.header.linhas.length - 1) * 4;
