@@ -416,7 +416,7 @@ async function relatorioEstatistico(blocks: Block[], snap: any, c: any) {
 
   sub('6. Outliers');
   const outl = (fit.residualsStd ?? []).map((r: number, i: number) => ({ r, i })).filter((x: { r: number }) => Math.abs(x.r) > 2);
-  blocks.push(P(outl.length ? `Dados com resíduo padronizado superior a 2 desvios-padrão (em módulo): ${outl.map((x: { i: number }) => `amostra ${sampleNum(fit.sampleIds[x.i], x.i)} (${fmt(x.r, 2)})`).join('; ')}.`
+  blocks.push(P(outl.length ? `Dados com resíduo padronizado superior a 2 desvios-padrão (em módulo): ${outl.map((x: { r: number; i: number }) => `amostra ${sampleNum(fit.sampleIds[x.i], x.i)} (${fmt(x.r, 2)})`).join('; ')}.`
     : 'Nenhum dado apresentou resíduo padronizado superior a 2 desvios-padrão (em módulo).'));
 
   sub('7. Análise da variância');
