@@ -59,8 +59,10 @@ SELECT pg_temp.throws($$SELECT public.aval_laudo_capa_salvar((SELECT id FROM lv)
 SELECT pg_temp.throws($$SELECT public.aval_laudo_capa_salvar((SELECT id FROM lv), '{"especificacao":"Grau II"}')$$, 'field_not_allowed', 'capa não aceita campo fora da lista');
 SELECT pg_temp.throws($$SELECT public.aval_laudo_capa_salvar((SELECT id FROM lv), '{"data_vistoria":"2026-02-30"}')$$, 'invalid_value', 'data de vistoria inválida recusada');
 SELECT public.aval_laudo_capa_salvar((SELECT id FROM lv), '{"data_vistoria":"2026-03-10","responsavel_cargo":"Analista","responsavel_crea":"MT 000000"}');
+SELECT pg_temp.login(NULL);
 SELECT pg_temp.ok((SELECT public.aval_laudo_capa_efetiva(id)->>'responsavel_titulo' = 'Engenheiro Civil' AND public.aval_laudo_capa_efetiva(id)->>'responsavel_nome' = 'Teste'
   AND public.aval_laudo_capa_efetiva(id)->>'local' = 'Cuiabá – MT' FROM lv), 'capa efetiva: perfil do RT + identidade do modelo');
+SELECT pg_temp.login('a1000000-0000-0000-0000-000000000001');
 SELECT pg_temp.ok(public.aval_tokens((SELECT av FROM fx))->>'DATA_VISTORIA' = '10/03/2026' AND public.aval_tokens((SELECT av FROM fx))->>'N_DADOS_COLETADOS' = '8',
   'marcadores do modelo DIF vêm dos dados');
 
