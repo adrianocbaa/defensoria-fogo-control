@@ -77,14 +77,25 @@ export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: P
   };
   const caption = (t: string, size: number, bold: boolean, x: number, w: number) => para([{ t, b: bold }], { size, align: 'center', after: 0.6, x, width: w });
 
-  for (const b of m.blocks) {
+  const figDims = (b: Extract<Block, { k: 'figure' }>) => {
+    const n = b.items.length;
+    return b.items.map((it) => {
+      let w = Math.min(it.w, n > 1 ? 0.48 : 1) * CW; let h = (w * it.img.altura) / it.img.largura;
+      const maxH = n > 1 ? 105 : limit - MT - 24;
+      if (h > maxH) { h = maxH; w = (h * it.img.largura) / it.img.altura; }
+      return { w, h };
+    });
+  };
+  const lookAhead = (i: number) => { const nb = m.blocks[i + 1]; return nb?.k === 'figure' ? Math.max(...figDims(nb).map((d) => d.h)) + 22 : 30; };
+  for (let bi = 0; bi < m.blocks.length; bi++) {
+    const b = m.blocks[bi];
     switch (b.k) {
       case 'heading': {
-        ensure(18);
+        ensure(Math.max(18, Math.min(lookAhead(bi), 60)));
         para([{ t: b.texto, b: true, i: b.nivel >= 3 }], { size: 11, align: 'left', before: b.nivel === 1 ? 4 : 2.5, after: 2 });
         break;
       }
-      case 'para': if (b.keepNext) ensure(30); para(b.runs, { size: b.size, align: b.align, after: b.after, before: b.before, indent: b.indent }); break;
+      case 'para': if (b.keepNext) ensure(lookAhead(bi)); para(b.runs, { size: b.size, align: b.align, after: b.after, before: b.before, indent: b.indent }); break;
       case 'equation': ensure(14); para([{ t: b.texto, i: true }], { size: 10.5, align: 'center', before: 2, after: 4 }); break;
       case 'spacer': y += b.mm; if (y > limit) { doc.addPage(); y = MT; } break;
       case 'pagebreak': doc.addPage(); y = MT; break;
@@ -114,12 +125,7 @@ export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: P
       }
       case 'figure': {
         const gap = 6; const n = b.items.length;
-        const dims = b.items.map((it) => {
-          let w = Math.min(it.w, n > 1 ? 0.48 : 1) * CW; let h = (w * it.img.altura) / it.img.largura;
-          const maxH = n > 1 ? 105 : limit - MT - 24;
-          if (h > maxH) { h = maxH; w = (h * it.img.largura) / it.img.altura; }
-          return { w, h };
-        });
+        const dims = figDims(b);
         const rowH = Math.max(...dims.map((d) => d.h));
         ensure(rowH + 14);
         const totalW = dims.reduce((s, d) => s + d.w, 0) + gap * (n - 1);
