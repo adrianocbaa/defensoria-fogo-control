@@ -12,38 +12,35 @@ const fontStyle = (r: Run) => (r.b && r.i ? 'bolditalic' : r.b ? 'bold' : r.i ? 
 
 // deno-lint-ignore no-explicit-any
 type Pdf = any;
-interface Word { t: string; style: string; w: number }
+interface Piece { t: string; style: string; w: number }
+interface Group { parts: Piece[]; w: number }
 
-function wrapRuns(doc: Pdf, runs: Run[], size: number, width: number): { words: Word[]; sum: number }[] {
-  const words: Word[] = [];
+/** Quebra de linhas com estilos mistos (negrito/itálico) — permite justificar como no Word. */
+function wrapRuns(doc: Pdf, runs: Run[], size: number, width: number): { groups: Group[]; sum: number }[] {
+  const groups: Group[] = []; let cur: Piece[] = [];
+  const flush = () => { if (cur.length) { groups.push({ parts: cur, w: cur.reduce((s, p) => s + p.w, 0) }); cur = []; } };
+  doc.setFontSize(size);
   for (const r of runs) {
-    doc.setFont('helvetica', fontStyle(r)); doc.setFontSize(size);
-    const parts = pdfSafe(r.t).split(/(\s+)/);
-    for (const p of parts) {
+    const style = fontStyle(r); doc.setFont('helvetica', style);
+    for (const p of pdfSafe(r.t).split(/(\s+)/)) {
       if (!p) continue;
-      if (/^\s+$/.test(p)) { if (words.length) words[words.length - 1] = { ...words[words.length - 1], t: words[words.length - 1].t }; words.push({ t: ' ', style: fontStyle(r), w: 0 }); continue; }
-      words.push({ t: p, style: fontStyle(r), w: doc.getTextWidth(p) });
+      if (/^\s+$/.test(p)) { flush(); continue; }
+      cur.push({ t: p, style, w: doc.getTextWidth(p) });
     }
   }
-  // junta palavras coladas (run seguinte sem espaço) e separa por marcadores de espaço
-  const tokens: Word[][] = [[]];
-  for (const w of words) { if (w.t === ' ') { if (tokens[tokens.length - 1].length) tokens.push([]); } else tokens[tokens.length - 1].push(w); }
-  const groups = tokens.filter((g) => g.length);
+  flush();
   doc.setFont('helvetica', 'normal'); const space = doc.getTextWidth(' ');
-  const lines: { words: Word[]; sum: number }[] = []; let cur: Word[][] = []; let curW = 0;
-  const gw = (g: Word[]) => g.reduce((s, w) => s + w.w, 0);
+  const lines: { groups: Group[]; sum: number }[] = []; let line: Group[] = []; let lw = 0;
   for (const g of groups) {
-    const w = gw(g);
-    if (cur.length && curW + space + w > width) { lines.push({ words: cur.map((c) => ({ t: '', style: '', w: gw(c), parts: c }) as unknown as Word), sum: cur.reduce((s, c) => s + gw(c), 0) }); cur = []; curW = 0; }
-    curW += (cur.length ? space : 0) + w; cur.push(g);
+    if (line.length && lw + space + g.w > width) { lines.push({ groups: line, sum: line.reduce((s, x) => s + x.w, 0) }); line = []; lw = 0; }
+    lw += (line.length ? space : 0) + g.w; line.push(g);
   }
-  if (cur.length) lines.push({ words: cur.map((c) => ({ t: '', style: '', w: gw(c), parts: c }) as unknown as Word), sum: cur.reduce((s, c) => s + gw(c), 0) });
+  if (line.length) lines.push({ groups: line, sum: line.reduce((s, x) => s + x.w, 0) });
   return lines;
 }
 
-function drawGroup(doc: Pdf, g: Word, x: number, y: number, size: number) {
-  // deno-lint-ignore no-explicit-any
-  let px = x; for (const w of (g as any).parts as Word[]) { doc.setFont('helvetica', w.style); doc.setFontSize(size); doc.text(w.t, px, y); px += w.w; }
+function drawGroup(doc: Pdf, g: Group, x: number, y: number, size: number) {
+  let px = x; for (const w of g.parts) { doc.setFont('helvetica', w.style); doc.setFontSize(size); doc.text(w.t, px, y); px += w.w; }
 }
 
 export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: Pdf, opts: Pdf) => void }): Pdf {
@@ -61,13 +58,13 @@ export function renderDifPdf(m: DocModel, deps: { jsPDF: Pdf; autoTable: (doc: P
       ensure(lh);
       const base = y + size * PT * 0.85;
       const last = i === lines.length - 1;
-      const total = ln.sum + space * (ln.words.length - 1);
-      if ((o.align ?? 'justify') === 'justify' && !last && ln.words.length > 1) {
-        const gap = (width - ln.sum) / (ln.words.length - 1); let px = x0;
-        for (const g of ln.words) { drawGroup(doc, g, px, base, size); px += g.w + gap; }
+      const total = ln.sum + space * (ln.groups.length - 1);
+      if ((o.align ?? 'justify') === 'justify' && !last && ln.groups.length > 1) {
+        const gap = (width - ln.sum) / (ln.groups.length - 1); let px = x0;
+        for (const g of ln.groups) { drawGroup(doc, g, px, base, size); px += g.w + gap; }
       } else {
         let px = o.align === 'center' ? x0 + (width - total) / 2 : o.align === 'right' ? x0 + width - total : x0;
-        for (const g of ln.words) { drawGroup(doc, g, px, base, size); px += g.w + space; }
+        for (const g of ln.groups) { drawGroup(doc, g, px, base, size); px += g.w + space; }
       }
       y += lh;
     });
