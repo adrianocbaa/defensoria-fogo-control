@@ -6313,6 +6313,102 @@ export type Database = {
           },
         ]
       }
+      laudo_midias: {
+        Row: {
+          altura: number
+          amostra_id: string | null
+          ano: number | null
+          avaliacao_id: string
+          categoria: string
+          created_at: string
+          created_by: string | null
+          documento_grupo: string | null
+          file_size: number | null
+          fonte: string | null
+          id: string
+          incluir: boolean
+          largura: number
+          legenda: string | null
+          mime_type: string
+          nome_arquivo: string | null
+          observacao: string | null
+          ordem: number
+          organization_id: string
+          pagina: number | null
+          sha256: string
+          storage_bucket: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          altura: number
+          amostra_id?: string | null
+          ano?: number | null
+          avaliacao_id: string
+          categoria: string
+          created_at?: string
+          created_by?: string | null
+          documento_grupo?: string | null
+          file_size?: number | null
+          fonte?: string | null
+          id?: string
+          incluir?: boolean
+          largura: number
+          legenda?: string | null
+          mime_type: string
+          nome_arquivo?: string | null
+          observacao?: string | null
+          ordem?: number
+          organization_id: string
+          pagina?: number | null
+          sha256: string
+          storage_bucket?: string
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          altura?: number
+          amostra_id?: string | null
+          ano?: number | null
+          avaliacao_id?: string
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          documento_grupo?: string | null
+          file_size?: number | null
+          fonte?: string | null
+          id?: string
+          incluir?: boolean
+          largura?: number
+          legenda?: string | null
+          mime_type?: string
+          nome_arquivo?: string | null
+          observacao?: string | null
+          ordem?: number
+          organization_id?: string
+          pagina?: number | null
+          sha256?: string
+          storage_bucket?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_midias_amostra_id_fkey"
+            columns: ["amostra_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_amostras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_midias_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       laudo_preflight_results: {
         Row: {
           avaliacao_id: string
@@ -6403,63 +6499,163 @@ export type Database = {
           },
         ]
       }
+      laudo_secao_mensagens: {
+        Row: {
+          ai_conteudo_id: string | null
+          avaliacao_id: string
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          model: string | null
+          organization_id: string
+          papel: string
+          perguntas: Json | null
+          prompt_version: string | null
+          secao_id: string
+        }
+        Insert: {
+          ai_conteudo_id?: string | null
+          avaliacao_id: string
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string | null
+          organization_id: string
+          papel: string
+          perguntas?: Json | null
+          prompt_version?: string | null
+          secao_id: string
+        }
+        Update: {
+          ai_conteudo_id?: string | null
+          avaliacao_id?: string
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string | null
+          organization_id?: string
+          papel?: string
+          perguntas?: Json | null
+          prompt_version?: string | null
+          secao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_secao_mensagens_ai_conteudo_id_fkey"
+            columns: ["ai_conteudo_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacao_ai_conteudos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_secao_mensagens_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_secao_mensagens_secao_id_fkey"
+            columns: ["secao_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_secoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       laudo_secoes: {
         Row: {
           aprovada_em: string | null
           aprovada_por: string | null
           avaliacao_id: string
           blocos_sistema: string[]
+          classe: string
           codigo: string
           conteudo: string
+          dependencias: string[] | null
+          grupo: string | null
           id: string
           laudo_versao_id: string
+          nivel: number
           numerada: boolean
           obrigatoria: boolean
+          ocultavel: boolean
           ordem: number
           organization_id: string
+          perguntas: Json
+          respostas: Json
           stale: boolean
+          stale_em: string | null
+          stale_motivo: string | null
           status: string
+          texto_base: string | null
           titulo: string
           updated_at: string
           updated_by: string | null
+          visivel: boolean
         }
         Insert: {
           aprovada_em?: string | null
           aprovada_por?: string | null
           avaliacao_id: string
           blocos_sistema?: string[]
+          classe?: string
           codigo: string
           conteudo?: string
+          dependencias?: string[] | null
+          grupo?: string | null
           id?: string
           laudo_versao_id: string
+          nivel?: number
           numerada?: boolean
           obrigatoria?: boolean
+          ocultavel?: boolean
           ordem: number
           organization_id: string
+          perguntas?: Json
+          respostas?: Json
           stale?: boolean
+          stale_em?: string | null
+          stale_motivo?: string | null
           status?: string
+          texto_base?: string | null
           titulo: string
           updated_at?: string
           updated_by?: string | null
+          visivel?: boolean
         }
         Update: {
           aprovada_em?: string | null
           aprovada_por?: string | null
           avaliacao_id?: string
           blocos_sistema?: string[]
+          classe?: string
           codigo?: string
           conteudo?: string
+          dependencias?: string[] | null
+          grupo?: string | null
           id?: string
           laudo_versao_id?: string
+          nivel?: number
           numerada?: boolean
           obrigatoria?: boolean
+          ocultavel?: boolean
           ordem?: number
           organization_id?: string
+          perguntas?: Json
+          respostas?: Json
           stale?: boolean
+          stale_em?: string | null
+          stale_motivo?: string | null
           status?: string
+          texto_base?: string | null
           titulo?: string
           updated_at?: string
           updated_by?: string | null
+          visivel?: boolean
         }
         Relationships: [
           {
@@ -6513,36 +6709,57 @@ export type Database = {
       laudo_template_sections: {
         Row: {
           blocos_sistema: string[]
+          classe: string
           codigo: string
           conteudo_padrao: string
+          dependencias: string[] | null
+          grupo: string | null
           id: string
+          nivel: number
           numerada: boolean
           obrigatoria: boolean
+          ocultavel: boolean
           ordem: number
+          perguntas: Json
           template_version_id: string
           titulo: string
+          variantes: Json
         }
         Insert: {
           blocos_sistema?: string[]
+          classe?: string
           codigo: string
           conteudo_padrao?: string
+          dependencias?: string[] | null
+          grupo?: string | null
           id?: string
+          nivel?: number
           numerada?: boolean
           obrigatoria?: boolean
+          ocultavel?: boolean
           ordem: number
+          perguntas?: Json
           template_version_id: string
           titulo: string
+          variantes?: Json
         }
         Update: {
           blocos_sistema?: string[]
+          classe?: string
           codigo?: string
           conteudo_padrao?: string
+          dependencias?: string[] | null
+          grupo?: string | null
           id?: string
+          nivel?: number
           numerada?: boolean
           obrigatoria?: boolean
+          ocultavel?: boolean
           ordem?: number
+          perguntas?: Json
           template_version_id?: string
           titulo?: string
+          variantes?: Json
         }
         Relationships: [
           {
@@ -6556,22 +6773,34 @@ export type Database = {
       }
       laudo_template_versions: {
         Row: {
+          anexos: Json | null
+          codigo: string | null
           created_at: string
           id: string
+          identidade: Json
+          layout: string
           status: string
           template_id: string
           versao: number
         }
         Insert: {
+          anexos?: Json | null
+          codigo?: string | null
           created_at?: string
           id?: string
+          identidade?: Json
+          layout?: string
           status?: string
           template_id: string
           versao: number
         }
         Update: {
+          anexos?: Json | null
+          codigo?: string | null
           created_at?: string
           id?: string
+          identidade?: Json
+          layout?: string
           status?: string
           template_id?: string
           versao?: number
@@ -6662,6 +6891,8 @@ export type Database = {
         Row: {
           avaliacao_id: string
           avaliacao_versao_id: string
+          capa: Json
+          capa_atualizada_em: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -6670,10 +6901,13 @@ export type Database = {
           organization_id: string
           revisao: number
           status: string
+          template_version_id: string | null
         }
         Insert: {
           avaliacao_id: string
           avaliacao_versao_id: string
+          capa?: Json
+          capa_atualizada_em?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -6682,10 +6916,13 @@ export type Database = {
           organization_id: string
           revisao: number
           status?: string
+          template_version_id?: string | null
         }
         Update: {
           avaliacao_id?: string
           avaliacao_versao_id?: string
+          capa?: Json
+          capa_atualizada_em?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -6694,6 +6931,7 @@ export type Database = {
           organization_id?: string
           revisao?: number
           status?: string
+          template_version_id?: string | null
         }
         Relationships: [
           {
@@ -6715,6 +6953,13 @@ export type Database = {
             columns: ["laudo_id"]
             isOneToOne: false
             referencedRelation: "laudos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_versoes_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "laudo_template_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -13664,12 +13909,25 @@ export type Database = {
         Args: { p_amostra: string; p_avaliacao: string }
         Returns: undefined
       }
+      aval_laudo_capa_efetiva: {
+        Args: { p_laudo_versao: string }
+        Returns: Json
+      }
+      aval_laudo_capa_salvar: {
+        Args: { p_capa: Json; p_laudo_versao: string }
+        Returns: Json
+      }
       aval_laudo_create_revision: {
         Args: { p_laudo: string; p_motivo: string }
         Returns: string
       }
+      aval_laudo_deps_nivel: { Args: { p_nivel: string }; Returns: string[] }
       aval_laudo_init: { Args: { p_avaliacao: string }; Returns: string }
       aval_laudo_issue: { Args: { p_laudo_versao: string }; Returns: string }
+      aval_laudo_migrar_modelo: {
+        Args: { p_laudo_versao: string }
+        Returns: Json
+      }
       aval_laudo_preflight: {
         Args: { p_laudo_versao: string }
         Returns: string
@@ -13681,6 +13939,15 @@ export type Database = {
       aval_laudo_section_refresh: {
         Args: { p_secao: string }
         Returns: undefined
+      }
+      aval_laudo_section_visibility: {
+        Args: { p_secao: string; p_visivel: boolean }
+        Returns: undefined
+      }
+      aval_laudo_snapshot: { Args: { p_laudo_versao: string }; Returns: Json }
+      aval_laudo_snapshot_build: {
+        Args: { p_codigo: string; p_laudo_versao: string }
+        Returns: Json
       }
       aval_list_tecnicos: {
         Args: never
@@ -13856,6 +14123,8 @@ export type Database = {
         Returns: number
       }
       aval_tokens: { Args: { p_avaliacao: string }; Returns: Json }
+      aval_tokens_base: { Args: { p_avaliacao: string }; Returns: Json }
+      aval_tokens_dif: { Args: { p_av: string }; Returns: Json }
       aval_transform_ok: {
         Args: { p_t: string; p_x: number }
         Returns: boolean

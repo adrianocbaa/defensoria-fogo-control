@@ -21,7 +21,9 @@ export type EngineBody =
   | { action: 'run_model' | 'run_validation'; modelo_id: string }
   | { action: 'project'; acceptance_id: string }
   | { action: 'issue_files'; emissao_id: string }
-  | { action: 'ai_generate'; secao_id: string; context_type: string; modo: 'GERAR' | 'MELHORAR' };
+  | { action: 'ai_generate'; secao_id: string; context_type: string; modo: 'GERAR' | 'MELHORAR' }
+  | { action: 'ai_secao'; secao_id: string; modo: 'GERAR' | 'MELHORAR'; mensagem?: string }
+  | { action: 'laudo_contexto'; laudo_versao_id: string };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function engine(body: EngineBody): Promise<any> {

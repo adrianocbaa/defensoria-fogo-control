@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Bot, CheckCircle2, Eye, FileDown, FilePlus2, FileText, History, RotateCcw, ShieldCheck, Sparkles, Stamp, Wand2, XCircle } from 'lucide-react';
+import { AlertTriangle, Bot, CheckCircle2, Circle, CircleDashed, Eye, EyeOff, FileDown, FilePlus2, FileText, History, Landmark, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Stamp, Wand2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { AvaliacaoCtx } from '../useAvaliacao';
@@ -16,6 +17,17 @@ import { EngineCallError, db, engine, rpc, sha256Hex } from '@/lib/avaliacao/api
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { fmtDateTime } from '@/lib/avaliacao/labels';
 import { buildLaudoDocxBlob, buildLaudoPdf, foundationFrom, resolveTokens, snapAmostra, type LaudoData } from '@/lib/avaliacao/laudoPdf';
+import { ESTADO_LABEL, LAYOUT_DIF, buildDifDraft, difDocxBlob, difPdf, estadoTopico, numerar, type EstadoTopico } from '@/lib/avaliacao/laudoDif';
+import { LaudoAssistente } from './laudo/LaudoAssistente';
+import { LaudoCapa } from './laudo/LaudoCapa';
+import { LaudoMidias } from './laudo/LaudoMidias';
+
+const CLASSE_LABEL: Record<string, string> = { FIXO: 'Texto institucional', ASSISTIDO: 'Texto assistido', ESTRUTURADO: 'Automático (dados do sistema)' };
+const ESTADO_ICON: Record<EstadoTopico, { icon: typeof Circle; cls: string }> = {
+  NAO_INICIADO: { icon: CircleDashed, cls: 'text-muted-foreground' }, DADOS_INSUFICIENTES: { icon: AlertTriangle, cls: 'text-destructive' },
+  TEXTO_GERADO: { icon: Sparkles, cls: 'text-primary' }, REVISAO: { icon: Circle, cls: 'text-muted-foreground' },
+  APROVADO: { icon: CheckCircle2, cls: 'text-primary' }, DESATUALIZADO: { icon: RefreshCw, cls: 'text-destructive' },
+};
 
 const AI_CONTEXT_LABEL: Record<string, string> = {
   REPORT_SECTION: 'Texto da seção', PROPERTY_DESCRIPTION: 'Descrição do imóvel', MARKET_DIAGNOSIS: 'Diagnóstico de mercado',
@@ -71,19 +83,32 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     if (!laudo) return null;
     const { data: versoes } = await db.from('laudo_versoes').select('*').eq('laudo_id', laudo.id).order('revisao', { ascending: false });
     const atual = (versoes ?? [])[0];
-    const [sec, anx, pf, em, tk, files] = await Promise.all([
+    const tvId = atual.template_version_id ?? laudo.template_version_id;
+    const [sec, anx, pf, em, tk, files, tv, md, pr] = await Promise.all([
       db.from('laudo_secoes').select('*').eq('laudo_versao_id', atual.id).order('ordem'),
       db.from('laudo_anexos').select('*').eq('laudo_versao_id', atual.id).order('numero'),
       db.from('laudo_preflight_runs').select('*, laudo_preflight_results(*)').eq('laudo_versao_id', atual.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       db.from('laudo_emissoes').select('*').eq('avaliacao_id', av.id).order('emitido_em', { ascending: false }),
       db.from('document_tokens').select('codigo, descricao').order('codigo'),
       db.from('laudo_arquivos_emitidos').select('id, emissao_id, formato, storage_bucket, storage_path, display_filename, mime_type, file_size, sha256').eq('avaliacao_id', av.id),
+      tvId ? db.from('laudo_template_versions').select('codigo, layout, versao').eq('id', tvId).maybeSingle() : Promise.resolve({ data: null }),
+      db.from('laudo_midias').select('categoria').eq('avaliacao_id', av.id).eq('incluir', true).limit(1000),
+      db.from('avaliacao_ai_conteudos').select('context_id').eq('avaliacao_id', av.id).eq('status', 'PROPOSTO').limit(1000),
     ]);
+    const midias: Record<string, number> = {};
+    for (const m of (md.data ?? []) as { categoria: string }[]) midias[m.categoria] = (midias[m.categoria] ?? 0) + 1;
     return { laudo, versoes: (versoes ?? []) as any[], atual, secoes: (sec.data ?? []) as any[], anexos: (anx.data ?? []) as any[], preflight: pf.data as any,
-      emissoes: (em.data ?? []) as any[], tokens: (tk.data ?? []) as any[], arquivos: (files.data ?? []) as any[] };
+      emissoes: (em.data ?? []) as any[], tokens: (tk.data ?? []) as any[], arquivos: (files.data ?? []) as any[],
+      template: tv.data as any, midias, propostas: new Set(((pr.data ?? []) as any[]).map((x) => x.context_id as string)) };
   });
   const d = q.data;
-  useEffect(() => { if (d && !secaoId && d.secoes.length) setSecaoId(d.secoes[0].id); }, [d, secaoId]);
+  const isDif = d?.template?.layout === LAYOUT_DIF;
+  const contexto = useAvalQuery(av.id, `laudo-contexto-${d?.atual?.id}`, async () => {
+    const r = await engine({ action: 'laudo_contexto', laudo_versao_id: d!.atual.id });
+    return { fatos: (r?.fatos ?? {}) as Record<string, string>, conclusao: (r?.conclusao ?? []) as { rotulo: string; valor: string }[] };
+  }, !!d && isDif);
+  const fatos = contexto.data?.fatos ?? {};
+  useEffect(() => { if (d && !secaoId && d.secoes.length) setSecaoId((d.secoes.find((s) => (s.nivel ?? 1) > 0) ?? d.secoes[0]).id); }, [d, secaoId]);
   const secao = d?.secoes.find((s) => s.id === secaoId) ?? null;
   const side = useAvalQuery(av.id, `laudo-side-${secaoId}`, async () => {
     const [ai, hist] = await Promise.all([
@@ -113,8 +138,14 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const baixarRascunho = async (fmt: 'pdf' | 'docx') => {
     setBusy(fmt);
     try {
-      const data = await draftData(av.id, `Avaliação ${av.codigo}`, d!.secoes, d!.anexos);
       const nome = `laudo-${av.codigo.replace('/', '-')}-rascunho`;
+      if (isDif) {
+        const model = await buildDifDraft(d!.atual.id);
+        if (fmt === 'pdf') difPdf(model).save(`${nome}.pdf`);
+        else saveBlob(await difDocxBlob(model), `${nome}.docx`);
+        return;
+      }
+      const data = await draftData(av.id, `Avaliação ${av.codigo}`, d!.secoes, d!.anexos);
       if (fmt === 'pdf') buildLaudoPdf(data).save(`${nome}.pdf`);
       else saveBlob(await buildLaudoDocxBlob(data), `${nome}.docx`);
     } catch (e) { toast.error(avalErrorMessage(e, 'Não foi possível gerar o rascunho.')); } finally { setBusy(null); }
@@ -151,6 +182,13 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     if (aprovar) await gravarTexto(c.context_id, texto);
   }, aprovar ? 'Texto aprovado e aplicado à seção. A seção volta a rascunho até ser aprovada.' : 'Proposta descartada.');
   const restaurar = (h: any) => secao && call(`h-${h.id}`, () => gravarTexto(secao.id, h.conteudo), 'Versão anterior restaurada. A seção volta a rascunho.');
+  const restaurarBase = () => secao && call(`tb-${secao.id}`, () => gravarTexto(secao.id, secao.texto_base ?? ''), 'Texto-base institucional restaurado. A versão anterior fica no histórico.');
+  const atualizarTexto = () => secao && call(`up-${secao.id}`, async () => {
+    const r = await engine({ action: 'ai_secao', secao_id: secao.id, modo: 'GERAR' });
+    if (r?.perguntas?.length) toast.message('O assistente precisa de mais informações. Veja as perguntas no painel do tópico.');
+  }, undefined);
+  const migrarDif = () => call('migrar', () => rpc('aval_laudo_migrar_modelo', { p_laudo_versao: d!.atual.id }), 'Laudo convertido para o modelo institucional DIF. Textos e histórico anteriores foram preservados.');
+  const alternarVisivel = (s: any, v: boolean) => call(`vis-${s.id}`, () => rpc('aval_laudo_section_visibility', { p_secao: s.id, p_visivel: v }), v ? 'Tópico incluído no laudo.' : 'Tópico ocultado; a numeração dos seguintes foi ajustada.');
 
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
   if (!d) {
@@ -162,7 +200,10 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     );
   }
   const aprovadas = d.secoes.filter((s) => s.status === 'APROVADA' && !s.stale).length;
+  const numerosDif = numerar(d.secoes);
   const numeroDe = (id: string) => { const i = d.secoes.findIndex((x) => x.id === id); return d.secoes.slice(0, i + 1).filter((x) => x.numerada).length; };
+  const rotulo = (s: any) => isDif ? `${numerosDif.get(s.codigo) ? `${numerosDif.get(s.codigo)} ` : ''}${s.titulo}` : `${s.numerada ? `${numeroDe(s.id)}. ` : ''}${s.titulo}`;
+  const estadoDe = (s: any) => estadoTopico(s, { fatos, midias: d.midias, propostaPendente: d.propostas.has(s.id) });
   const dirty = secao ? textos[secao.id] !== undefined : false;
   const falhas = (d.preflight?.laudo_preflight_results ?? []).filter((r: any) => r.status !== 'OK');
 
@@ -172,9 +213,11 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         <CardHeader className="pb-3 flex-row items-center justify-between space-y-0 flex-wrap gap-2">
           <div>
             <CardTitle className="text-base">Laudo {av.codigo}{d.atual.revisao > 0 ? ` — Revisão ${String(d.atual.revisao).padStart(2, '0')}` : ''}</CardTitle>
-            <p className="text-xs text-muted-foreground">{d.atual.status === 'EMITIDO' ? 'Emitido' : `Rascunho · ${aprovadas}/${d.secoes.length} seções aprovadas`}</p>
+            <p className="text-xs text-muted-foreground">{d.atual.status === 'EMITIDO' ? 'Emitido' : `Rascunho · ${aprovadas}/${d.secoes.length} ${isDif ? 'tópicos' : 'seções'} aprovados`}
+              {d.template?.codigo ? ` · ${isDif ? 'Modelo institucional DIF' : 'Modelo'} ${d.template.codigo} v${d.template.versao}` : ''}</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {editavel && !isDif && canEdit && <Button size="sm" variant="outline" onClick={migrarDif} disabled={busy === 'migrar'}><Landmark className="h-4 w-4 mr-1" />{busy === 'migrar' ? 'Convertendo…' : 'Converter para o modelo DIF'}</Button>}
             {editavel && <Button size="sm" variant="outline" onClick={() => baixarRascunho('pdf')} disabled={busy === 'pdf'}><FileDown className="h-4 w-4 mr-1" />Rascunho PDF</Button>}
             {editavel && <Button size="sm" variant="outline" onClick={() => baixarRascunho('docx')} disabled={busy === 'docx'}><FileText className="h-4 w-4 mr-1" />Rascunho DOCX</Button>}
             {editavel && ctx.can('report.render_draft') && <Button size="sm" variant="outline" onClick={() => call('pf', () => rpc('aval_laudo_preflight', { p_laudo_versao: d.atual.id }))} disabled={busy === 'pf'}><ShieldCheck className="h-4 w-4 mr-1" />Verificar emissão</Button>}
@@ -193,27 +236,69 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         )}
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_300px]">
-        <nav aria-label="Seções do laudo" className="rounded-lg border p-2 lg:sticky lg:top-4 lg:self-start">
-          <ul className="space-y-0.5">{d.secoes.map((s) => (
-            <li key={s.id}>
-              <button type="button" onClick={() => setSecaoId(s.id)} aria-current={s.id === secaoId ? 'true' : undefined}
-                className={`flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent ${s.id === secaoId ? 'bg-accent font-medium' : ''}`}>
-                {s.stale ? <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" aria-label="Revisar" /> : s.status === 'APROVADA' ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-primary" aria-label="Aprovada" /> : <FileText className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" aria-label="Rascunho" />}
-                <span>{s.numerada ? `${numeroDe(s.id)}. ` : ''}{s.titulo}</span>
-              </button>
-            </li>
-          ))}</ul>
+      <Tabs defaultValue="topicos">
+      {isDif && (
+        <TabsList className="mb-3">
+          <TabsTrigger value="topicos">Tópicos</TabsTrigger>
+          <TabsTrigger value="capa">Página inicial e assinatura</TabsTrigger>
+          <TabsTrigger value="midias">Fotos e figuras</TabsTrigger>
+        </TabsList>
+      )}
+      {isDif && (
+        <TabsContent value="capa"><Card><CardContent className="p-4">
+          <LaudoCapa laudoVersaoId={d.atual.id} capa={d.atual.capa ?? null} canEdit={canEdit} onSaved={ctx.refresh} />
+        </CardContent></Card></TabsContent>
+      )}
+      {isDif && (
+        <TabsContent value="midias"><Card><CardContent className="p-4">
+          <LaudoMidias avaliacaoId={av.id} canEdit={canEdit} onChanged={ctx.refresh} />
+        </CardContent></Card></TabsContent>
+      )}
+      <TabsContent value="topicos" className="mt-0">
+      <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_320px]">
+        <nav aria-label={isDif ? 'Tópicos do laudo' : 'Seções do laudo'} className="rounded-lg border p-2 lg:sticky lg:top-4 lg:self-start lg:max-h-[85vh] lg:overflow-auto">
+          <ul className="space-y-0.5">{d.secoes.map((s) => {
+            if (!isDif) return (
+              <li key={s.id}>
+                <button type="button" onClick={() => setSecaoId(s.id)} aria-current={s.id === secaoId ? 'true' : undefined}
+                  className={`flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent ${s.id === secaoId ? 'bg-accent font-medium' : ''}`}>
+                  {s.stale ? <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" aria-label="Revisar" /> : s.status === 'APROVADA' ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-primary" aria-label="Aprovada" /> : <FileText className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" aria-label="Rascunho" />}
+                  <span>{rotulo(s)}</span>
+                </button>
+              </li>
+            );
+            const est = estadoDe(s); const I = ESTADO_ICON[est.estado]; const nivel = Number(s.nivel ?? 1);
+            return (
+              <li key={s.id}>
+                <button type="button" onClick={() => setSecaoId(s.id)} aria-current={s.id === secaoId ? 'true' : undefined}
+                  className={`flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent ${s.id === secaoId ? 'bg-accent font-medium' : ''} ${s.visivel === false ? 'opacity-50' : ''}`}
+                  style={{ paddingLeft: `${0.5 + Math.max(0, nivel - 1) * 0.75}rem` }}>
+                  {s.visivel === false ? <EyeOff className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" aria-label="Oculto" /> : <I.icon className={`h-4 w-4 mt-0.5 shrink-0 ${I.cls}`} aria-label={ESTADO_LABEL[est.estado]} />}
+                  <span className="min-w-0">
+                    <span className={nivel === 1 ? 'text-sm' : 'text-xs'}>{nivel === 0 ? 'Página inicial (resumo)' : rotulo(s)}</span>
+                    {s.visivel !== false && (est.detalhe || est.estado !== 'NAO_INICIADO') && <span className="block text-[11px] text-muted-foreground font-normal">{ESTADO_LABEL[est.estado]}{est.detalhe ? ` · ${est.detalhe}` : ''}</span>}
+                  </span>
+                </button>
+              </li>
+            );
+          })}</ul>
         </nav>
 
         <div className="space-y-4 min-w-0">
           {secao && (
             <Card>
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0 gap-2 flex-wrap">
-                <CardTitle className="text-sm">{secao.numerada ? `${numeroDe(secao.id)}. ` : ''}{secao.titulo}</CardTitle>
-                <div className="flex items-center gap-2">
-                  {secao.stale ? <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Revisar após alteração</Badge>
+                <div className="space-y-1">
+                  <CardTitle className="text-sm">{isDif && Number(secao.nivel ?? 1) === 0 ? 'Página inicial (quadro-resumo)' : rotulo(secao)}</CardTitle>
+                  {isDif && <p className="text-xs text-muted-foreground">{CLASSE_LABEL[secao.classe] ?? secao.classe}{secao.visivel === false ? ' · oculto no laudo' : ''}</p>}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {isDif ? (() => { const est = estadoDe(secao); return <Badge variant={est.estado === 'APROVADO' ? 'secondary' : est.estado === 'DESATUALIZADO' || est.estado === 'DADOS_INSUFICIENTES' ? 'destructive' : 'outline'}>{ESTADO_LABEL[est.estado]}</Badge>; })()
+                    : secao.stale ? <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Revisar após alteração</Badge>
                     : secao.status === 'APROVADA' ? <Badge variant="secondary"><CheckCircle2 className="h-3 w-3 mr-1" />Aprovada</Badge> : <Badge variant="outline">Rascunho</Badge>}
+                  {isDif && canEdit && secao.ocultavel && <div className="flex items-center gap-1.5"><Label htmlFor={`vis-${secao.id}`} className="text-xs">No laudo</Label>
+                    <Switch id={`vis-${secao.id}`} checked={secao.visivel !== false} onCheckedChange={(v) => alternarVisivel(secao, v)} disabled={busy === `vis-${secao.id}`} /></div>}
+                  {isDif && canEdit && secao.stale && secao.classe === 'ASSISTIDO' && <Button size="sm" variant="outline" onClick={atualizarTexto} disabled={!!busy}><RefreshCw className="h-4 w-4 mr-1" />{busy === `up-${secao.id}` ? 'Atualizando…' : 'Atualizar texto'}</Button>}
                   {canEdit && secao.stale && <Button size="sm" variant="outline" onClick={() => call(`r-${secao.id}`, () => rpc('aval_laudo_section_refresh', { p_secao: secao.id }))}>Marcar como revisada</Button>}
                   {canApprove && !secao.stale && !dirty && (secao.status === 'APROVADA'
                     ? <Button size="sm" variant="ghost" onClick={() => call(`a-${secao.id}`, () => rpc('aval_laudo_section_approve', { p_secao: secao.id, p_aprovar: false }))}>Reabrir</Button>
@@ -221,6 +306,11 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
+                {isDif && secao.stale && (
+                  <p className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs" role="status"><AlertTriangle className="h-4 w-4 shrink-0 text-destructive" aria-hidden />
+                    <span>Dado usado por este tópico mudou{secao.stale_motivo ? `: ${secao.stale_motivo}` : ''}{secao.stale_em ? ` (${fmtDateTime(secao.stale_em)})` : ''}. A versão atual fica no histórico ao atualizar.</span></p>
+                )}
+                {isDif && secao.classe === 'ESTRUTURADO' && <p className="text-xs text-muted-foreground">Conteúdo montado diretamente do banco e do modelo aceito. Confira no rascunho e aprove.</p>}
                 {canEdit ? (
                   <>
                     <Textarea aria-label={`Texto da seção ${secao.titulo}`} rows={Math.min(18, Math.max(8, Math.ceil((textos[secao.id] ?? secao.conteudo).length / 90)))} value={textos[secao.id] ?? secao.conteudo} onChange={(e) => setTextos({ ...textos, [secao.id]: e.target.value })} maxLength={20000} />
@@ -229,11 +319,18 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                         <SelectTrigger className="w-64 h-8 text-xs" aria-label="Inserir dado protegido"><SelectValue placeholder="Inserir dado protegido…" /></SelectTrigger>
                         <SelectContent>{d.tokens.map((t: any) => <SelectItem key={t.codigo} value={t.codigo}>{t.descricao}</SelectItem>)}</SelectContent>
                       </Select>
-                      {dirty && <Button size="sm" onClick={() => salvarSecao(secao)} disabled={busy === `s-${secao.id}`}>Salvar seção</Button>}
+                      <div className="flex gap-2">
+                        {isDif && secao.texto_base && !dirty && secao.conteudo !== secao.texto_base && <Button size="sm" variant="ghost" onClick={restaurarBase} disabled={busy === `tb-${secao.id}`}><RotateCcw className="h-4 w-4 mr-1" />Restaurar texto-base</Button>}
+                        {dirty && <Button size="sm" onClick={() => salvarSecao(secao)} disabled={busy === `s-${secao.id}`}>{isDif ? 'Salvar texto' : 'Salvar seção'}</Button>}
+                      </div>
                     </div>
                   </>
                 ) : <p className="text-sm whitespace-pre-wrap">{secao.conteudo || <span className="text-muted-foreground">Sem texto.</span>}</p>}
-                {(secao.blocos_sistema ?? []).length > 0 && <p className="text-xs text-muted-foreground">Tabelas geradas pelo sistema nesta seção: {(secao.blocos_sistema as string[]).map((b) => b.replace('TABELA_', '').toLowerCase()).join(', ')}.</p>}
+                {(secao.blocos_sistema ?? []).length > 0 && <p className="text-xs text-muted-foreground">{isDif ? 'Inserido automaticamente neste tópico' : 'Tabelas geradas pelo sistema nesta seção'}: {(secao.blocos_sistema as string[]).map((b) => b.replace('TABELA_', '').replace('FIGURAS_', 'figuras ').replace(/_/g, ' ').toLowerCase()).join(', ')}.</p>}
+                {isDif && secao.codigo === 'CONCLUSAO' && (contexto.data?.conclusao ?? []).length > 0 && (
+                  <div className="rounded-md border p-2 text-xs space-y-0.5"><p className="font-medium">Conclusão estruturada (base obrigatória do texto)</p>
+                    {contexto.data!.conclusao.map((l) => <p key={l.rotulo}><span className="text-muted-foreground">{l.rotulo}:</span> {l.valor}</p>)}</div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -253,7 +350,8 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
         </div>
 
         <aside className="space-y-4" aria-label="Assistente e fontes">
-          <div className="rounded-lg border p-3 space-y-2">
+          {isDif && secao && <LaudoAssistente avaliacaoId={av.id} secao={secao} fatos={fatos} canEdit={canEdit} dirty={dirty} onChanged={ctx.refresh} onVerContexto={setVerContexto} />}
+          {!isDif && <div className="rounded-lg border p-3 space-y-2">
             <p className="flex items-center gap-1.5 text-sm font-medium"><Bot className="h-4 w-4" aria-hidden />Assistente de redação</p>
             <p className="text-xs text-muted-foreground">A IA só propõe texto com os fatos registrados. Não calcula, não decide e não altera dados protegidos. Você revisa e aprova.</p>
             {canEdit && secao ? (
@@ -283,7 +381,7 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
                 <Button size="sm" variant="link" className="h-auto p-0 text-xs" onClick={() => setVerContexto(c)}><Eye className="h-3.5 w-3.5 mr-1" />Ver contexto utilizado</Button>
               </li>
             ))}</ul>
-          </div>
+          </div>}
 
           <div className="rounded-lg border p-3 space-y-2">
             <p className="flex items-center gap-1.5 text-sm font-medium"><History className="h-4 w-4" aria-hidden />Versões anteriores</p>
@@ -304,6 +402,8 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
           </div>
         </aside>
       </div>
+      </TabsContent>
+      </Tabs>
 
       {d.emissoes.length > 0 && (
         <Card>
