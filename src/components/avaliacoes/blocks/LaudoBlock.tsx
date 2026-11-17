@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Bot, CheckCircle2, Eye, FileDown, FilePlus2, FileText, History, RotateCcw, ShieldCheck, Sparkles, Stamp, Wand2, XCircle } from 'lucide-react';
+import { AlertTriangle, Bot, CheckCircle2, Circle, CircleDashed, Eye, EyeOff, FileDown, FilePlus2, FileText, History, Landmark, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Stamp, Wand2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { AvaliacaoCtx } from '../useAvaliacao';
@@ -16,6 +17,17 @@ import { EngineCallError, db, engine, rpc, sha256Hex } from '@/lib/avaliacao/api
 import { avalErrorMessage } from '@/lib/avaliacao/errors';
 import { fmtDateTime } from '@/lib/avaliacao/labels';
 import { buildLaudoDocxBlob, buildLaudoPdf, foundationFrom, resolveTokens, snapAmostra, type LaudoData } from '@/lib/avaliacao/laudoPdf';
+import { ESTADO_LABEL, LAYOUT_DIF, buildDifDraft, difDocxBlob, difPdf, estadoTopico, numerar, type EstadoTopico } from '@/lib/avaliacao/laudoDif';
+import { LaudoAssistente } from './laudo/LaudoAssistente';
+import { LaudoCapa } from './laudo/LaudoCapa';
+import { LaudoMidias } from './laudo/LaudoMidias';
+
+const CLASSE_LABEL: Record<string, string> = { FIXO: 'Texto institucional', ASSISTIDO: 'Texto assistido', ESTRUTURADO: 'Automático (dados do sistema)' };
+const ESTADO_ICON: Record<EstadoTopico, { icon: typeof Circle; cls: string }> = {
+  NAO_INICIADO: { icon: CircleDashed, cls: 'text-muted-foreground' }, DADOS_INSUFICIENTES: { icon: AlertTriangle, cls: 'text-destructive' },
+  TEXTO_GERADO: { icon: Sparkles, cls: 'text-primary' }, REVISAO: { icon: Circle, cls: 'text-muted-foreground' },
+  APROVADO: { icon: CheckCircle2, cls: 'text-primary' }, DESATUALIZADO: { icon: RefreshCw, cls: 'text-destructive' },
+};
 
 const AI_CONTEXT_LABEL: Record<string, string> = {
   REPORT_SECTION: 'Texto da seção', PROPERTY_DESCRIPTION: 'Descrição do imóvel', MARKET_DIAGNOSIS: 'Diagnóstico de mercado',
@@ -71,19 +83,32 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     if (!laudo) return null;
     const { data: versoes } = await db.from('laudo_versoes').select('*').eq('laudo_id', laudo.id).order('revisao', { ascending: false });
     const atual = (versoes ?? [])[0];
-    const [sec, anx, pf, em, tk, files] = await Promise.all([
+    const tvId = atual.template_version_id ?? laudo.template_version_id;
+    const [sec, anx, pf, em, tk, files, tv, md, pr] = await Promise.all([
       db.from('laudo_secoes').select('*').eq('laudo_versao_id', atual.id).order('ordem'),
       db.from('laudo_anexos').select('*').eq('laudo_versao_id', atual.id).order('numero'),
       db.from('laudo_preflight_runs').select('*, laudo_preflight_results(*)').eq('laudo_versao_id', atual.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       db.from('laudo_emissoes').select('*').eq('avaliacao_id', av.id).order('emitido_em', { ascending: false }),
       db.from('document_tokens').select('codigo, descricao').order('codigo'),
       db.from('laudo_arquivos_emitidos').select('id, emissao_id, formato, storage_bucket, storage_path, display_filename, mime_type, file_size, sha256').eq('avaliacao_id', av.id),
+      tvId ? db.from('laudo_template_versions').select('codigo, layout, versao').eq('id', tvId).maybeSingle() : Promise.resolve({ data: null }),
+      db.from('laudo_midias').select('categoria').eq('avaliacao_id', av.id).eq('incluir', true).limit(1000),
+      db.from('avaliacao_ai_conteudos').select('context_id').eq('avaliacao_id', av.id).eq('status', 'PROPOSTO').limit(1000),
     ]);
+    const midias: Record<string, number> = {};
+    for (const m of (md.data ?? []) as { categoria: string }[]) midias[m.categoria] = (midias[m.categoria] ?? 0) + 1;
     return { laudo, versoes: (versoes ?? []) as any[], atual, secoes: (sec.data ?? []) as any[], anexos: (anx.data ?? []) as any[], preflight: pf.data as any,
-      emissoes: (em.data ?? []) as any[], tokens: (tk.data ?? []) as any[], arquivos: (files.data ?? []) as any[] };
+      emissoes: (em.data ?? []) as any[], tokens: (tk.data ?? []) as any[], arquivos: (files.data ?? []) as any[],
+      template: tv.data as any, midias, propostas: new Set(((pr.data ?? []) as any[]).map((x) => x.context_id as string)) };
   });
   const d = q.data;
-  useEffect(() => { if (d && !secaoId && d.secoes.length) setSecaoId(d.secoes[0].id); }, [d, secaoId]);
+  const isDif = d?.template?.layout === LAYOUT_DIF;
+  const contexto = useAvalQuery(av.id, `laudo-contexto-${d?.atual?.id}`, async () => {
+    const r = await engine({ action: 'laudo_contexto', laudo_versao_id: d!.atual.id });
+    return { fatos: (r?.fatos ?? {}) as Record<string, string>, conclusao: (r?.conclusao ?? []) as { rotulo: string; valor: string }[] };
+  }, !!d && isDif);
+  const fatos = contexto.data?.fatos ?? {};
+  useEffect(() => { if (d && !secaoId && d.secoes.length) setSecaoId((d.secoes.find((s) => (s.nivel ?? 1) > 0) ?? d.secoes[0]).id); }, [d, secaoId]);
   const secao = d?.secoes.find((s) => s.id === secaoId) ?? null;
   const side = useAvalQuery(av.id, `laudo-side-${secaoId}`, async () => {
     const [ai, hist] = await Promise.all([
@@ -113,8 +138,14 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
   const baixarRascunho = async (fmt: 'pdf' | 'docx') => {
     setBusy(fmt);
     try {
-      const data = await draftData(av.id, `Avaliação ${av.codigo}`, d!.secoes, d!.anexos);
       const nome = `laudo-${av.codigo.replace('/', '-')}-rascunho`;
+      if (isDif) {
+        const model = await buildDifDraft(d!.atual.id);
+        if (fmt === 'pdf') difPdf(model).save(`${nome}.pdf`);
+        else saveBlob(await difDocxBlob(model), `${nome}.docx`);
+        return;
+      }
+      const data = await draftData(av.id, `Avaliação ${av.codigo}`, d!.secoes, d!.anexos);
       if (fmt === 'pdf') buildLaudoPdf(data).save(`${nome}.pdf`);
       else saveBlob(await buildLaudoDocxBlob(data), `${nome}.docx`);
     } catch (e) { toast.error(avalErrorMessage(e, 'Não foi possível gerar o rascunho.')); } finally { setBusy(null); }
@@ -151,6 +182,13 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     if (aprovar) await gravarTexto(c.context_id, texto);
   }, aprovar ? 'Texto aprovado e aplicado à seção. A seção volta a rascunho até ser aprovada.' : 'Proposta descartada.');
   const restaurar = (h: any) => secao && call(`h-${h.id}`, () => gravarTexto(secao.id, h.conteudo), 'Versão anterior restaurada. A seção volta a rascunho.');
+  const restaurarBase = () => secao && call(`tb-${secao.id}`, () => gravarTexto(secao.id, secao.texto_base ?? ''), 'Texto-base institucional restaurado. A versão anterior fica no histórico.');
+  const atualizarTexto = () => secao && call(`up-${secao.id}`, async () => {
+    const r = await engine({ action: 'ai_secao', secao_id: secao.id, modo: 'GERAR' });
+    if (r?.perguntas?.length) toast.message('O assistente precisa de mais informações. Veja as perguntas no painel do tópico.');
+  }, undefined);
+  const migrarDif = () => call('migrar', () => rpc('aval_laudo_migrar_modelo', { p_laudo_versao: d!.atual.id }), 'Laudo convertido para o modelo institucional DIF. Textos e histórico anteriores foram preservados.');
+  const alternarVisivel = (s: any, v: boolean) => call(`vis-${s.id}`, () => rpc('aval_laudo_section_visibility', { p_secao: s.id, p_visivel: v }), v ? 'Tópico incluído no laudo.' : 'Tópico ocultado; a numeração dos seguintes foi ajustada.');
 
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
   if (!d) {
@@ -162,7 +200,10 @@ export function LaudoBlock({ ctx }: { ctx: AvaliacaoCtx }) {
     );
   }
   const aprovadas = d.secoes.filter((s) => s.status === 'APROVADA' && !s.stale).length;
+  const numerosDif = numerar(d.secoes);
   const numeroDe = (id: string) => { const i = d.secoes.findIndex((x) => x.id === id); return d.secoes.slice(0, i + 1).filter((x) => x.numerada).length; };
+  const rotulo = (s: any) => isDif ? `${numerosDif.get(s.codigo) ? `${numerosDif.get(s.codigo)} ` : ''}${s.titulo}` : `${s.numerada ? `${numeroDe(s.id)}. ` : ''}${s.titulo}`;
+  const estadoDe = (s: any) => estadoTopico(s, { fatos, midias: d.midias, propostaPendente: d.propostas.has(s.id) });
   const dirty = secao ? textos[secao.id] !== undefined : false;
   const falhas = (d.preflight?.laudo_preflight_results ?? []).filter((r: any) => r.status !== 'OK');
 
