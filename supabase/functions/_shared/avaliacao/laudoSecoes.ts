@@ -117,3 +117,77 @@ export const FATO_LABEL: Record<string, string> = {
   'pesquisa.nao_utilizadas': 'Dados não utilizados', 'pesquisa.tipologias': 'Tipologias', 'pesquisa.area_min': 'Menor área (m²)', 'pesquisa.area_max': 'Maior área (m²)',
   'pesquisa.variaveis': 'Variáveis analisadas', 'pesquisa.municipios_comparaveis': 'Municípios comparáveis', 'pesquisa.justificativa_comparaveis': 'Justificativa dos comparáveis',
 };
+
+// ---------------------------------------------------------------- fatos do laudo (sistema → tela e assistente)
+const n2 = (v: unknown) => (v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null
+  : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }));
+const TIPO_AV: Record<string, string> = { REAJUSTE: 'Reajuste contratual', NOVA_LOCACAO: 'Nova locação', RENOVACAO: 'Renovação/prorrogação contratual' };
+
+export interface FatosBrutos {
+  avaliacao?: { tipo?: string | null; numero_contrato?: string | null } | null;
+  // deno-lint-ignore no-explicit-any
+  imovel?: Record<string, any> | null;
+  ambientes?: { nome?: string | null; tipo?: string | null; quantidade?: number | null; area?: number | null }[];
+  atributos?: { nome: string; unidade?: string | null; valor_numeric?: number | null; valor_text?: string | null; valor_bool?: boolean | null; valor_category?: string | null }[];
+  midias?: { categoria: string }[];
+  documentos?: string[];
+  capa?: Record<string, string | null | undefined> | null;
+  // deno-lint-ignore no-explicit-any
+  amostras?: { utilizada: boolean; dados: any }[];
+  totalUtilizado?: number | null;
+  variaveis?: string[];
+  comparaveis?: { municipio_nome: string; uf?: string | null; status?: string | null; justificativa?: string | null }[];
+}
+
+/** Fatos objetivos já registrados no sistema, em texto, com as chaves usadas pelas perguntas dos tópicos. */
+export function montarFatos(b: FatosBrutos): Record<string, string> {
+  const f: Record<string, string | null> = {};
+  const im = b.imovel ?? {};
+  f['avaliacao.tipo'] = b.avaliacao?.tipo ? TIPO_AV[b.avaliacao.tipo] ?? b.avaliacao.tipo : null;
+  f['avaliacao.numero_contrato'] = b.avaliacao?.numero_contrato ?? null;
+  f['imovel.tipo_imovel'] = im.tipo_imovel ?? null;
+  f['imovel.endereco'] = [im.endereco, im.numero, im.complemento].filter(Boolean).join(', ') || null;
+  f['imovel.bairro'] = im.bairro ?? null;
+  f['imovel.municipio'] = im.municipio_nome ? `${im.municipio_nome}${im.uf ? `/${im.uf}` : ''}` : null;
+  f['imovel.area_construida'] = n2(im.area_construida);
+  f['imovel.area_terreno'] = n2(im.area_terreno);
+  f['imovel.padrao'] = im.padrao ?? null;
+  f['imovel.descricao'] = im.descricao ?? null;
+  f['imovel.ambientes'] = (b.ambientes ?? []).map((a) => [a.quantidade && a.quantidade > 1 ? `${a.quantidade} ` : '', a.nome ?? a.tipo ?? 'ambiente', a.area ? ` (${n2(a.area)} m²)` : ''].join('')).join('; ') || null;
+  f['imovel.atributos'] = (b.atributos ?? []).map((a) => {
+    const v = a.valor_numeric != null ? `${n2(a.valor_numeric)}${a.unidade ? ` ${a.unidade}` : ''}` : a.valor_bool != null ? (a.valor_bool ? 'sim' : 'não') : a.valor_category ?? a.valor_text;
+    return v ? `${a.nome}: ${v}` : null;
+  }).filter(Boolean).join('; ') || null;
+  const cats = (b.midias ?? []).map((m) => m.categoria);
+  const fotos = cats.filter((c) => !['MAPA_LOCALIZACAO', 'DOCUMENTO', 'AMOSTRA_MERCADO', 'PLANTA'].includes(c));
+  f['midias.total_fotos'] = fotos.length ? String(fotos.length) : null;
+  f['midias.ambientes'] = [...new Set(fotos.filter((c) => !['FOTO_PRINCIPAL', 'FACHADA', 'OUTRA'].includes(c)))].map((c) => c.toLowerCase()).join(', ') || null;
+  f['documentos.lista'] = (b.documentos ?? []).filter(Boolean).join('; ') || null;
+  f['capa.data_vistoria'] = b.capa?.data_vistoria ? String(b.capa.data_vistoria).split('-').reverse().join('/') : null;
+  const am = b.amostras ?? [];
+  const usadas = am.filter((a) => a.utilizada);
+  const base = usadas.length ? usadas : am;
+  // deno-lint-ignore no-explicit-any
+  const areas = base.map((a) => Number(a.dados?.imovel?.area_construida)).filter((x: any) => Number.isFinite(x) && x > 0);
+  f['pesquisa.total_coletado'] = am.length ? String(am.length) : null;
+  f['pesquisa.total_utilizado'] = b.totalUtilizado != null ? String(b.totalUtilizado) : usadas.length ? String(usadas.length) : null;
+  f['pesquisa.nao_utilizadas'] = am.length ? String(am.length - (b.totalUtilizado ?? usadas.length)) : null;
+  f['pesquisa.tipologias'] = [...new Set(base.map((a) => a.dados?.imovel?.tipo_imovel).filter(Boolean))].join(', ') || null;
+  f['pesquisa.municipios'] = [...new Set(base.map((a) => a.dados?.imovel?.municipio_nome ? `${a.dados.imovel.municipio_nome}${a.dados.imovel.uf ? `/${a.dados.imovel.uf}` : ''}` : null).filter(Boolean))].join(', ') || null;
+  f['pesquisa.area_min'] = areas.length ? n2(Math.min(...areas)) : null;
+  f['pesquisa.area_max'] = areas.length ? n2(Math.max(...areas)) : null;
+  f['pesquisa.variaveis'] = (b.variaveis ?? []).join(', ') || null;
+  const comp = (b.comparaveis ?? []).filter((c) => c.status !== 'REJEITADO' && c.status !== 'RECUSADO');
+  f['pesquisa.municipios_comparaveis'] = comp.map((c) => `${c.municipio_nome}${c.uf ? `/${c.uf}` : ''}`).join(', ') || null;
+  f['pesquisa.justificativa_comparaveis'] = comp.length ? comp.map((c) => c.justificativa).filter(Boolean).join(' ') || null : 'não se aplica (pesquisa sem dados de outros municípios)';
+  return Object.fromEntries(Object.entries(f).filter(([, v]) => v !== null && v !== '')) as Record<string, string>;
+}
+
+/** Contexto do assistente: classe da seção, mapeada aos tipos de conteúdo de IA já auditados. */
+export function aiContextoDaSecao(codigo: string): 'PROPERTY_DESCRIPTION' | 'MARKET_DIAGNOSIS' | 'COMPATIBILITY' | 'CONCLUSION' | 'REPORT_SECTION' {
+  if (['CARACTERIZACAO_IMOVEL', 'LOCALIZACAO', 'MELHORAMENTOS', 'VISTORIA'].includes(codigo)) return 'PROPERTY_DESCRIPTION';
+  if (['DIAGNOSTICO_MERCADO', 'SELECAO_DADOS'].includes(codigo)) return 'MARKET_DIAGNOSIS';
+  if (codigo === 'COMPATIBILIDADE') return 'COMPATIBILITY';
+  if (codigo === 'CONCLUSAO') return 'CONCLUSION';
+  return 'REPORT_SECTION';
+}

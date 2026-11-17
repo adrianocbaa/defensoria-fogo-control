@@ -58,3 +58,46 @@ export function checkAiText(generated: string, baseText: string, allowedTokens: 
   if (out.includes('[INFORMAÇÃO A COMPLEMENTAR]')) alertas.push('A IA indicou informações a complementar.');
   return { ok: true, alertas };
 }
+
+// ---------------------------------------------------------------- assistente contextual por tópico (laudo DIF)
+export const AI_PROMPT_VERSION_SECAO = 'aval-laudo-dif-2026.11-v1';
+
+export function systemPromptSecao(modo: 'GERAR' | 'MELHORAR'): string {
+  return [
+    'Você é o redator técnico da Diretoria de Infraestrutura Física (DIF) da Defensoria Pública do Estado de Mato Grosso e redige um tópico de laudo de avaliação de imóvel.',
+    'Escreva em português formal, impessoal e técnico, no mesmo padrão, nível de formalidade e estrutura argumentativa do TEXTO_BASE_INSTITUCIONAL do tópico. Não use linguagem genérica nem marketing.',
+    'Fontes permitidas, em ordem de prioridade: FATOS_DO_SISTEMA, RESPOSTAS_DO_AVALIADOR, CONVERSA (somente o que o avaliador afirmou) e, para o tópico de conclusão, CONCLUSAO_ESTRUTURADA.',
+    'Nunca invente fatos locais, normas, fontes, datas, nomes, materiais ou características. Nunca declare conformidade normativa sem que o fato esteja nas fontes.',
+    'Não faça cálculos e não digite valores monetários, percentuais de resultado, graus ou áreas do resultado: use exatamente os marcadores {{CODIGO}} listados em MARCADORES. Nunca escreva "R$" seguido de número nem "grau I/II/III".',
+    'Não decida nem recomende amostras, variáveis, modelo, arbitramento, valor final ou conclusão: descreva apenas o que já está decidido.',
+    'Se faltar informação indispensável para redigir o tópico, NÃO suponha: devolva perguntas objetivas ao avaliador.',
+    modo === 'MELHORAR' ? 'Tarefa: melhore a redação do TEXTO_ATUAL sem mudar o sentido técnico, mantendo todos os marcadores {{...}} exatamente como estão.' : 'Tarefa: redija o texto completo do tópico.',
+    'Responda SOMENTE com JSON válido, sem markdown, em um dos formatos:',
+    '{"tipo":"TEXTO","texto":"<texto final do tópico, parágrafos separados por \\n>"}',
+    '{"tipo":"PERGUNTAS","perguntas":["<pergunta 1>","<pergunta 2>"]}',
+  ].join('\n');
+}
+
+export type RespostaAssistente = { tipo: 'TEXTO'; texto: string } | { tipo: 'PERGUNTAS'; perguntas: string[] };
+/** Interpreta a resposta do modelo; texto livre (fora do JSON) é tratado como proposta de texto. */
+export function parseAssistente(raw: string): RespostaAssistente | null {
+  const t = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim();
+  if (!t) return null;
+  try {
+    const j = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));
+    if (j?.tipo === 'PERGUNTAS' && Array.isArray(j.perguntas)) {
+      const p = j.perguntas.map((x: unknown) => String(x ?? '').trim()).filter(Boolean).slice(0, 8);
+      if (p.length) return { tipo: 'PERGUNTAS', perguntas: p };
+    }
+    if (j?.tipo === 'TEXTO' && typeof j.texto === 'string' && j.texto.trim()) return { tipo: 'TEXTO', texto: j.texto.trim() };
+  } catch { /* texto livre */ }
+  return t.startsWith('{') ? null : { tipo: 'TEXTO', texto: t };
+}
+
+/** Bloqueio duro: valor monetário ou grau digitado (fora dos marcadores) torna a proposta inválida. */
+export function dadoProtegidoDigitado(texto: string): 'MONEY' | 'GRADE' | null {
+  const semTok = texto.replace(TOKEN_RE, ' ');
+  if (/R\$\s*\d/.test(semTok)) return 'MONEY';
+  if (/\bgraus?(\s+de\s+[^\s{]+)?\s*:?\s+(iii|ii|i)\b/i.test(semTok)) return 'GRADE';
+  return null;
+}
