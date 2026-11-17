@@ -87,6 +87,7 @@ const MESSAGES: Record<string, string> = {
   ai_empty_base: 'Escreva um texto antes de pedir melhoria.',
   ai_not_applicable: 'Este tópico é gerado diretamente dos dados do sistema.',
   media_mismatch: 'Uma imagem do laudo não confere com o registro da emissão. Os arquivos oficiais não foram gerados.',
+  file_too_large: 'Arquivo maior que o limite de 15 MB.',
   typed_money: 'Valores monetários entram somente pelos dados protegidos do sistema.',
   typed_grade: 'Graus de fundamentação e precisão entram somente pelos dados protegidos do sistema.',
   internal_error: 'Não foi possível concluir a ação.',
