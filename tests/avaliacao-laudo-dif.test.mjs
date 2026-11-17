@@ -50,7 +50,7 @@ async function montar() {
   const model = await DIF.composeDif(snap, { midias: new Map(Object.entries(imgs)) }, { rascunho: false, hash: 'f'.repeat(64) });
   return { snap, model };
 }
-const textoDe = (b) => b.k === 'heading' ? b.texto : b.k === 'para' ? b.runs.map((r) => r.t).join('') : b.k === 'equation' ? b.texto : b.k === 'table' ? [b.legenda, ...(b.head ?? []).map((c) => c.text), ...b.rows.flat().map((c) => c.text ?? '')].join(' | ') : '';
+const textoDe = (b) => b.k === 'heading' ? b.texto : b.k === 'para' ? b.runs.map((r) => r.t).join('') : b.k === 'equation' ? b.texto : b.k === 'figure' ? b.items.map((i) => [i.legenda, i.fonte].filter(Boolean).join(' | ')).join(' | ') : b.k === 'table' ? [b.legenda, ...(b.head ?? []).map((c) => c.text), ...b.rows.flat().map((c) => c.text ?? '')].join(' | ') : '';
 
 test('numeração hierárquica: ocultar um tópico renumera os seguintes sem lacunas', () => {
   const secs = [{ codigo: 'R', titulo: 'Resumo', nivel: 0 }, { codigo: 'A', titulo: 'Solicitante', nivel: 1 }, { codigo: 'B', titulo: 'Caracterização', nivel: 1 },
@@ -195,10 +195,9 @@ test('DOCX e PDF a partir da mesma composição: cabeçalho DIF, página 0 sem n
   assert.ok(files.filter((f) => f.startsWith('word/media/')).length >= 8);
   const pdf = R.renderDifPdf(model, { jsPDF, autoTable });
   const pdfTxt = pdf.output();
-  for (const s of ['LAUDO DE AVALIA', 'RESUMO', 'ANEXO III', 'Tabela 1', 'Figura 4: Banheiro', 'Fulano de Tal']) {
-    assert.ok(pdfTxt.includes(s), `PDF: ${s}`);
-    assert.ok(xml.includes(s.replace('LAUDO DE AVALIA', 'LAUDO DE AVALIAÇÃO')), `DOCX: ${s}`);
-  }
+  // O PDF desenha palavra a palavra (texto justificado); o DOCX guarda trechos inteiros.
+  for (const s of ['LAUDO', 'RESUMO', 'SOLICITANTE', 'ANEXO', 'III', 'Tabela', 'Figura', 'Banheiro', 'Fulano', 'Tal']) assert.ok(pdfTxt.includes(`(${s}`), `PDF: ${s}`);
+  for (const s of ['LAUDO DE AVALIAÇÃO DE IMÓVEL Nº 006/2026.', 'RESUMO', 'ANEXO III', 'Tabela 1 – Variáveis do modelo', 'Figura 4: Banheiro', 'Fulano de Tal']) assert.ok(xml.includes(s), `DOCX: ${s}`);
   assert.ok(pdf.getNumberOfPages() > 20);
   assert.ok(pdfTxt.includes('integridade') && !pdfTxt.includes('RASCUNHO'));
 });
