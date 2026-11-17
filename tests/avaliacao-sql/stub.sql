@@ -7,7 +7,7 @@ CREATE EXTENSION unaccent SCHEMA extensions;
 CREATE TYPE public.user_role AS ENUM ('admin','editor','viewer','manutencao','gm','prestadora','contratada','demo','super_admin');
 CREATE TYPE public.sector_type AS ENUM ('obras');
 CREATE TABLE public.organizations (id uuid PRIMARY KEY, name text, slug text, nome text GENERATED ALWAYS AS (name) STORED);
-CREATE TABLE public.profiles (user_id uuid PRIMARY KEY, display_name text, email text, position text, is_active boolean DEFAULT true, sectors public.sector_type[]);
+CREATE TABLE public.profiles (user_id uuid PRIMARY KEY, display_name text, email text, position text, crea_cau text, is_active boolean DEFAULT true, sectors public.sector_type[]);
 CREATE TABLE public.organization_members (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid REFERENCES public.organizations(id), user_id uuid, status text DEFAULT 'active');
 CREATE TABLE public.user_roles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid, role public.user_role);
 CREATE FUNCTION public.has_role(_user_id uuid, _role public.user_role) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
