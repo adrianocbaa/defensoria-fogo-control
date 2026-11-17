@@ -105,8 +105,9 @@
 - [ ] Usuário: decidir possíveis duplicatas no banco — Rua dos Ipês 38 (110 m² novo × 2 cadastros antigos de 127,82 m²), Av. Cambará 1095 × "sn" 242 m², Rua das Figueiras 133 × nº 66 80 m²; itens 15/16 antigos estão como contrato privado sem fonte; dado duplicado antigo de R$ 12.000 da Av. Brasil (pode ser marcado Descartado); informar data da pesquisa dos 14 dados novos
 
 ## Avaliações — Laudo institucional DIF (17/11/2026)
-- [ ] Banco: modelo TEMPLATE_DIF_AVALIACAO_V1 (estrutura 1–13, textos-base por finalidade), mídias do laudo, conversa do assistente, capa/assinatura, foto única do laudo para rascunho e emissão, seções desatualizadas por dado usado
-- [ ] Documento DIF (capa com quadro-resumo, corpo, assinatura, Anexos I–III) igual em DOCX e PDF; laudos antigos e emitidos intactos
-- [ ] Tela Laudo: checklist por tópico, assistente por tópico (perguntas, conversa, proposta), fotos/figuras, capa, atualizar para o modelo DIF
-- [ ] Testes (composição, IA, estados, banco) e documentação
+- [x] Banco: modelo TEMPLATE_DIF_AVALIACAO_V1 (estrutura 1–13, textos-base por finalidade), mídias do laudo, conversa do assistente, capa/assinatura, foto única do laudo para rascunho e emissão, seções desatualizadas por dado usado — 30 verificações SQL
+- [x] Documento DIF (capa com quadro-resumo, corpo, assinatura, Anexos I–III com fichas e relatório estatístico SiDIF) igual em DOCX e PDF; laudos antigos e emitidos intactos; avaliacao-engine atualizada
+- [x] Tela Laudo: checklist por tópico, assistente por tópico (perguntas, conversa, proposta), fotos/figuras, capa, converter para o modelo DIF; frontend aguarda Publish → Update
+- [x] Testes: 13 novos (142 JS no total) cobrindo composição, DOCX/PDF, estados, perguntas, conclusão e bloqueio de valores digitados pela IA
+- [ ] Conferir na tela, logado, iniciar/converter laudo, fotos, assistente e emissão — bloqueado: login de teste indisponível no Supabase externo
 - [ ] Conferir textos-base com o laudo 006/2026 de Guarantã do Norte — aguarda o documento de referência (não anexado)
