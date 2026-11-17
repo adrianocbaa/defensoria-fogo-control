@@ -177,7 +177,7 @@ export function montarFatos(b: FatosBrutos): Record<string, string> {
   f['pesquisa.area_min'] = areas.length ? n2(Math.min(...areas)) : null;
   f['pesquisa.area_max'] = areas.length ? n2(Math.max(...areas)) : null;
   f['pesquisa.variaveis'] = (b.variaveis ?? []).join(', ') || null;
-  const comp = (b.comparaveis ?? []).filter((c) => c.status !== 'REJEITADO' && c.status !== 'RECUSADO');
+  const comp = (b.comparaveis ?? []).filter((c) => c.status === 'APROVADO');
   f['pesquisa.municipios_comparaveis'] = comp.map((c) => `${c.municipio_nome}${c.uf ? `/${c.uf}` : ''}`).join(', ') || null;
   f['pesquisa.justificativa_comparaveis'] = comp.length ? comp.map((c) => c.justificativa).filter(Boolean).join(' ') || null : 'não se aplica (pesquisa sem dados de outros municípios)';
   return Object.fromEntries(Object.entries(f).filter(([, v]) => v !== null && v !== '')) as Record<string, string>;
