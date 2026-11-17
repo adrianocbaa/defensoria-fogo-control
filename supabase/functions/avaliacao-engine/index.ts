@@ -14,7 +14,10 @@ import { type CookRule, type FoundationGrade, type FoundationPolicy, type Manual
 import { buildRunPayload, buildValidationPayload } from '../_shared/avaliacao/persist.ts';
 import { buildLaudoDocx, buildLaudoPdf, issuedLaudoData, type LaudoData } from '../_shared/avaliacao/laudoDoc.ts';
 import { imageInfo } from '../_shared/avaliacao/images.ts';
-import { AI_CONTEXTS, AI_PROMPT_VERSION, AI_PURPOSE, type AiContext, checkAiText, systemPrompt } from '../_shared/avaliacao/aiText.ts';
+import { AI_CONTEXTS, AI_PROMPT_VERSION, AI_PROMPT_VERSION_SECAO, AI_PURPOSE, type AiContext, checkAiText, dadoProtegidoDigitado, parseAssistente, systemPrompt, systemPromptSecao } from '../_shared/avaliacao/aiText.ts';
+import { composeDif, type Img, LAYOUT_DIF } from '../_shared/avaliacao/laudoDif.ts';
+import { renderDifDocx, renderDifPdf } from '../_shared/avaliacao/laudoDifRender.ts';
+import { aiContextoDaSecao, conclusaoEstruturada, FATOS_POR_TOPICO, FATO_LABEL, montarFatos, type Pergunta, perguntasPendentes } from '../_shared/avaliacao/laudoSecoes.ts';
 import { jsPDF } from 'npm:jspdf@4.2.1';
 import { autoTable } from 'npm:jspdf-autotable@5.0.8';
 import * as docx from 'npm:docx@9.5.1';
@@ -29,6 +32,8 @@ const Body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('project'), acceptance_id: z.string().uuid() }),
   z.object({ action: z.literal('issue_files'), emissao_id: z.string().uuid() }),
   z.object({ action: z.literal('ai_generate'), secao_id: z.string().uuid(), context_type: z.enum(AI_CONTEXTS), modo: z.enum(['GERAR', 'MELHORAR']) }),
+  z.object({ action: z.literal('ai_secao'), secao_id: z.string().uuid(), modo: z.enum(['GERAR', 'MELHORAR']), mensagem: z.string().trim().max(4000).optional() }),
+  z.object({ action: z.literal('laudo_contexto'), laudo_versao_id: z.string().uuid() }),
 ]);
 
 const ISSUED_BUCKET = 'avaliacao-emitidos';
@@ -273,6 +278,23 @@ async function loadFigures(admin: SupabaseClient, orgId: string, avaliacaoId: st
   return out;
 }
 
+/** Imagens do laudo DIF listadas no snapshot: só da própria organização/avaliação e com SHA-256 idêntico ao congelado. */
+async function loadSnapshotMedia(admin: SupabaseClient, orgId: string, avaliacaoId: string, midias: any[]): Promise<Map<string, Img>> {
+  const out = new Map<string, Img>();
+  for (const m of midias) {
+    const path = String(m.path ?? '');
+    if (m.bucket !== 'documents' || !path.startsWith(`${orgId}/avaliacao/${avaliacaoId}/`) || path.includes('..')) throw new Error('media_path');
+    const { data: blob } = await admin.storage.from('documents').download(path);
+    if (!blob || blob.size > 15 * 1024 * 1024) throw new Error('media_missing');
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    if (await sha256(bytes) !== m.sha256) throw new Error('media_hash');
+    const info = imageInfo(bytes);
+    if (!info) throw new Error('media_type');
+    out.set(m.id, { data: bytes, ...info });
+  }
+  return out;
+}
+
 const slug = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'laudo';
 
 /** Gera e congela os arquivos oficiais (PDF e DOCX) de uma emissão, a partir do snapshot imutável. Idempotente. */
@@ -286,10 +308,21 @@ async function issueFiles(req: Request, admin: SupabaseClient, caller0: Caller, 
   if ((existing ?? []).length) return json(409, { error: 'files_partial', message: 'Arquivos oficiais incompletos para esta emissão. Acione o suporte técnico.' });
   const { data: snap } = await admin.from('laudo_emissao_snapshots').select('dados, hash').eq('emissao_id', em.id).single();
   if (!snap || snap.hash !== em.hash) throw new GuardError(409, 'snapshot_mismatch');
-  const data = issuedLaudoData(snap.dados, em.hash);
-  data.figuras = await loadFigures(admin, em.organization_id, em.avaliacao_id);
-  const pdf = new Uint8Array(buildLaudoPdf(data, { jsPDF, autoTable }).output('arraybuffer'));
-  const docxBytes = new Uint8Array(await docx.Packer.toBuffer(buildLaudoDocx(data, docx)));
+  let pdf: Uint8Array; let docxBytes: Uint8Array;
+  if ((snap.dados as any)?.layout === LAYOUT_DIF) {
+    // Modelo institucional DIF: mesma composição para DOCX e PDF; imagens conferidas pelo SHA-256 congelado no snapshot.
+    let midias: Map<string, Img>;
+    try { midias = await loadSnapshotMedia(admin, em.organization_id, em.avaliacao_id, (snap.dados as any).midias ?? []); }
+    catch { return json(409, { error: 'media_mismatch', message: 'Uma imagem do laudo não confere com o registro da emissão. Os arquivos oficiais não foram gerados.' }); }
+    const model = await composeDif(snap.dados, { midias }, { rascunho: false, hash: em.hash });
+    pdf = new Uint8Array(renderDifPdf(model, { jsPDF, autoTable }).output('arraybuffer'));
+    docxBytes = new Uint8Array(await docx.Packer.toBuffer(renderDifDocx(model, docx)));
+  } else {
+    const data = issuedLaudoData(snap.dados, em.hash);
+    data.figuras = await loadFigures(admin, em.organization_id, em.avaliacao_id);
+    pdf = new Uint8Array(buildLaudoPdf(data, { jsPDF, autoTable }).output('arraybuffer'));
+    docxBytes = new Uint8Array(await docx.Packer.toBuffer(buildLaudoDocx(data, docx)));
+  }
   const base = `${em.organization_id}/avaliacoes/${em.avaliacao_id}/${em.id}`;
   const nome = `laudo-${slug(em.codigo)}`;
   const files = [
@@ -422,6 +455,140 @@ async function aiGenerate(req: Request, admin: SupabaseClient, caller0: Caller, 
   return json(200, { ok: true, conteudo_id: row.id, alertas: check.alertas });
 }
 
+/** Fatos objetivos do laudo (imóvel, pesquisa, mídias, documentos) — sem dados pessoais. */
+async function fatosLaudo(admin: SupabaseClient, avaliacaoId: string, laudoVersaoId: string) {
+  const [{ data: av }, { data: ai }, { data: md }, { data: docs }, { data: am }, { data: ac }, { data: comp }, { data: capa }] = await Promise.all([
+    admin.from('avaliacoes').select('tipo, numero_contrato').eq('id', avaliacaoId).single(),
+    admin.from('avaliacao_imoveis').select('imovel_id').eq('avaliacao_id', avaliacaoId).eq('papel', 'AVALIANDO').maybeSingle(),
+    admin.from('laudo_midias').select('categoria').eq('avaliacao_id', avaliacaoId).eq('incluir', true).limit(1000),
+    admin.from('avaliacao_documentos').select('titulo, categoria').eq('avaliacao_id', avaliacaoId).limit(200),
+    admin.from('avaliacao_amostras').select('id, selecionada, habilitada_modelo, snapshot_inclusao').eq('avaliacao_id', avaliacaoId).order('id').limit(10000),
+    admin.from('model_acceptances').select('modelo_id, execucao_id').eq('avaliacao_id', avaliacaoId).eq('status', 'VIGENTE').maybeSingle(),
+    admin.from('avaliacao_municipios_comparaveis').select('municipio_nome, uf, status, justificativa').eq('avaliacao_id', avaliacaoId).limit(100),
+    admin.rpc('aval_laudo_capa_efetiva', { p_laudo_versao: laudoVersaoId }),
+  ]);
+  let imovel = null; let ambientes: any[] = []; let atributos: any[] = []; let imDocs: any[] = [];
+  if (ai) {
+    const [im, amb, atr, idc] = await Promise.all([
+      admin.from('imoveis').select('tipo_imovel, descricao, endereco, numero, complemento, bairro, municipio_nome, uf, area_construida, area_terreno, padrao').eq('id', ai.imovel_id).maybeSingle(),
+      admin.from('imovel_ambientes').select('nome, tipo, quantidade, area').eq('imovel_id', ai.imovel_id).limit(200),
+      admin.from('imovel_atributos').select('valor_numeric, valor_text, valor_bool, valor_category, atributos_imobiliarios(nome, unidade)').eq('imovel_id', ai.imovel_id).limit(200),
+      admin.from('imovel_documentos').select('tipo, descricao').eq('imovel_id', ai.imovel_id).limit(100),
+    ]);
+    imovel = im.data; ambientes = amb.data ?? []; imDocs = idc.data ?? [];
+    atributos = (atr.data ?? []).map((a: any) => ({ ...a, nome: a.atributos_imobiliarios?.nome ?? 'Atributo', unidade: a.atributos_imobiliarios?.unidade ?? null }));
+  }
+  let variaveis: string[] = []; let totalUtilizado: number | null = null;
+  if (ac) {
+    const [{ data: mv }, { data: ex }] = await Promise.all([
+      admin.from('avaliacao_modelo_variaveis').select('ordem, avaliacao_variaveis(nome)').eq('modelo_id', ac.modelo_id).order('ordem'),
+      admin.from('avaliacao_modelo_execucoes').select('output_json').eq('id', ac.execucao_id).maybeSingle(),
+    ]);
+    variaveis = (mv ?? []).map((v: any) => v.avaliacao_variaveis?.nome).filter(Boolean);
+    totalUtilizado = Number((ex as any)?.output_json?.fit?.n) || null;
+  } else {
+    const { data: vs } = await admin.from('avaliacao_variaveis').select('nome').eq('avaliacao_id', avaliacaoId).eq('ativo', true).neq('papel', 'DEPENDENTE').limit(100);
+    variaveis = (vs ?? []).map((v: any) => v.nome);
+  }
+  const amostras = (am ?? []).filter((a: any) => a.selecionada !== false).map((a: any) => ({ utilizada: a.habilitada_modelo !== false, dados: a.snapshot_inclusao ?? {} }));
+  return montarFatos({
+    avaliacao: av, imovel, ambientes, atributos, midias: md ?? [],
+    documentos: [...(docs ?? []).map((d: any) => d.titulo), ...imDocs.map((d: any) => [d.tipo, d.descricao].filter(Boolean).join(' — '))],
+    capa: (capa as any) ?? {}, amostras, totalUtilizado, variaveis, comparaveis: comp ?? [],
+  });
+}
+
+async function laudoContexto(req: Request, admin: SupabaseClient, caller0: Caller, laudoVersaoId: string) {
+  const { data: lv } = await admin.from('laudo_versoes').select('id, avaliacao_id').eq('id', laudoVersaoId).maybeSingle();
+  if (!lv) throw new GuardError(404, 'not_found');
+  const { av } = await authorize(req, admin, caller0, lv.avaliacao_id, 'report.edit', false);
+  const { data: tokens } = await userClient(req).rpc('aval_tokens', { p_avaliacao: av.id });
+  const { data: avt } = await admin.from('avaliacoes').select('tipo').eq('id', av.id).single();
+  return json(200, { ok: true, fatos: await fatosLaudo(admin, av.id, lv.id), conclusao: conclusaoEstruturada((tokens ?? {}) as Record<string, string | null>, avt?.tipo) });
+}
+
+/** Assistente por tópico: pergunta o que falta; quando há dados, propõe texto (nunca grava no laudo). */
+async function aiSecao(req: Request, admin: SupabaseClient, caller0: Caller, secaoId: string, modo: 'GERAR' | 'MELHORAR', mensagem?: string) {
+  const { data: secao } = await admin.from('laudo_secoes').select('id, organization_id, avaliacao_id, laudo_versao_id, codigo, titulo, classe, conteudo, texto_base, perguntas, respostas').eq('id', secaoId).maybeSingle();
+  if (!secao) throw new GuardError(404, 'not_found');
+  const { caller, av } = await authorize(req, admin, caller0, secao.avaliacao_id, 'report.edit');
+  const { data: lv } = await admin.from('laudo_versoes').select('status').eq('id', secao.laudo_versao_id).single();
+  if (!['RASCUNHO', 'EM_REVISAO'].includes(lv?.status)) return json(409, { error: 'report_issued_immutable', message: 'O laudo emitido não pode ser alterado.' });
+  if (secao.classe === 'ESTRUTURADO') return json(400, { error: 'ai_not_applicable', message: 'Este tópico é gerado diretamente dos dados do sistema.' });
+  const baseText = String(secao.conteudo ?? '');
+  if (modo === 'MELHORAR' && !baseText.trim()) return json(400, { error: 'ai_empty_base', message: 'Escreva um texto antes de pedir melhoria.' });
+  const msg = async (papel: 'USUARIO' | 'ASSISTENTE', conteudo: string, extra: Record<string, unknown> = {}) => {
+    const { error } = await admin.from('laudo_secao_mensagens').insert({ organization_id: av.organization_id, avaliacao_id: av.id, secao_id: secao.id, papel, conteudo: conteudo.slice(0, 8000), created_by: caller.userId, ...extra });
+    if (error) throw error;
+  };
+  if (mensagem) await msg('USUARIO', mensagem);
+  const fatos = await fatosLaudo(admin, av.id, secao.laudo_versao_id);
+  const perguntas = (secao.perguntas ?? []) as Pergunta[];
+  const respostas = (secao.respostas ?? {}) as Record<string, unknown>;
+  const pend = perguntasPendentes(perguntas, respostas, fatos);
+  if (modo === 'GERAR' && pend.length) {
+    await msg('ASSISTENTE', 'Para redigir este tópico sem supor informações, responda antes às perguntas abaixo.', { perguntas: pend.map((p) => p.pergunta) });
+    return json(200, { ok: true, perguntas: pend.map((p) => p.pergunta) });
+  }
+  const { data: tokens } = await userClient(req).rpc('aval_tokens', { p_avaliacao: av.id });
+  const { data: dt } = await admin.from('document_tokens').select('codigo, descricao');
+  const marcadores = Object.fromEntries((dt ?? []).map((t: any) => [t.codigo, { descricao: t.descricao, valor: (tokens as any)?.[t.codigo] ?? null }]));
+  const { data: hist } = await admin.from('laudo_secao_mensagens').select('papel, conteudo').eq('secao_id', secao.id).order('created_at', { ascending: false }).limit(12);
+  const { data: avt } = await admin.from('avaliacoes').select('tipo').eq('id', av.id).single();
+  const chaves = FATOS_POR_TOPICO[secao.codigo];
+  const fatosTopico = Object.fromEntries(Object.entries(fatos).filter(([k]) => !chaves || chaves.length === 0 || chaves.includes(k)).map(([k, v]) => [FATO_LABEL[k] ?? k, v]));
+  const tipo = aiContextoDaSecao(secao.codigo);
+  const contextJson: Record<string, unknown> = {
+    topico: { codigo: secao.codigo, titulo: secao.titulo }, finalidade_avaliacao: fatos['avaliacao.tipo'] ?? null,
+    FATOS_DO_SISTEMA: fatosTopico,
+    RESPOSTAS_DO_AVALIADOR: perguntas.filter((p) => respostas[p.id] !== undefined && String(respostas[p.id]).trim()).map((p) => ({ pergunta: p.pergunta, resposta: respostas[p.id] })),
+    CONVERSA: (hist ?? []).reverse().map((h: any) => ({ papel: h.papel, texto: h.conteudo })),
+    TEXTO_BASE_INSTITUCIONAL: secao.texto_base ?? null,
+    MARCADORES: marcadores, modo, finalidade: AI_PURPOSE[tipo],
+  };
+  if (secao.codigo === 'CONCLUSAO') contextJson.CONCLUSAO_ESTRUTURADA = conclusaoEstruturada((tokens ?? {}) as Record<string, string | null>, avt?.tipo);
+  const contextText = JSON.stringify(contextJson);
+  const contextHash = await sha256(canonicalJson(contextJson));
+  let raw: string;
+  try {
+    const r = await generateResponse({
+      model: AI_MODEL, instructions: systemPromptSecao(modo),
+      input: [{ role: 'user', content: `CONTEXTO:\n${contextText}\n\nTEXTO_ATUAL:\n${baseText || '(vazio)'}` }], max_output_tokens: 2500,
+    });
+    raw = responseText(r).trim();
+  } catch (e) {
+    if (e instanceof ConfigurationError || e instanceof AuthenticationError) return json(503, { error: 'ai_not_configured', message: 'Integração de IA não configurada. O laudo pode ser redigido manualmente.' });
+    if (e instanceof PaymentRequiredError) return json(402, { error: 'ai_credits', message: 'Sem créditos de IA no momento. O laudo pode ser redigido manualmente.' });
+    if (e instanceof RateLimitError) return json(429, { error: 'ai_rate_limited', message: 'Muitas solicitações de IA. Aguarde alguns instantes.' });
+    if (e instanceof PermissionDeniedError) return json(403, { error: 'ai_denied', message: 'A IA não está liberada para esta organização.' });
+    if (e instanceof GatewayError) { console.error('avaliacao-engine: IA', e.code); return json(502, { error: 'ai_failed', message: 'A IA não respondeu. Tente novamente.' }); }
+    throw e;
+  }
+  const resp = parseAssistente(raw);
+  if (!resp) return json(422, { error: 'ai_rejected', message: 'A IA não retornou texto.' });
+  if (resp.tipo === 'PERGUNTAS') {
+    await msg('ASSISTENTE', 'Preciso destas informações para redigir o tópico sem supor dados:', { perguntas: resp.perguntas, model: AI_MODEL, prompt_version: AI_PROMPT_VERSION_SECAO });
+    return json(200, { ok: true, perguntas: resp.perguntas });
+  }
+  const protegido = dadoProtegidoDigitado(resp.texto);
+  if (protegido) return json(422, { error: 'ai_rejected', message: protegido === 'MONEY' ? 'A proposta digitou valores no lugar dos dados protegidos e foi descartada. Tente novamente.' : 'A proposta digitou graus no lugar dos dados protegidos e foi descartada. Tente novamente.' });
+  const check = checkAiText(resp.texto, modo === 'MELHORAR' ? baseText : '', Object.keys(marcadores), contextText);
+  if (!check.ok) {
+    return json(422, { error: 'ai_rejected', message: check.erro === 'TOKEN_REMOVIDO' ? 'A proposta removeu dados protegidos e foi descartada. Tente novamente.'
+      : check.erro === 'TOKEN_DESCONHECIDO' ? 'A proposta criou marcadores inexistentes e foi descartada. Tente novamente.' : 'A IA não retornou texto.' });
+  }
+  const { data: row, error } = await admin.from('avaliacao_ai_conteudos').insert({
+    organization_id: av.organization_id, avaliacao_id: av.id, context_type: tipo, context_id: secao.id, purpose: AI_PURPOSE[tipo],
+    prompt_version: AI_PROMPT_VERSION_SECAO, model: AI_MODEL, context_json: contextJson, context_hash: contextHash, base_text: baseText || null,
+    modo, generated_text: resp.texto, alertas: check.alertas, status: 'PROPOSTO', created_by: caller.userId,
+  }).select('id').single();
+  if (error) throw error;
+  await msg('ASSISTENTE', 'Proposta de texto pronta para sua revisão.', { ai_conteudo_id: row.id, model: AI_MODEL, prompt_version: AI_PROMPT_VERSION_SECAO });
+  await admin.from('audit_events').insert({ organization_id: av.organization_id, avaliacao_id: av.id, entity_type: 'ai_conteudo', entity_id: row.id,
+    event_type: 'AI_TEXT_PROPOSED', actor_id: caller.userId, details_json: { contexto: tipo, modo, secao: secao.codigo, prompt_version: AI_PROMPT_VERSION_SECAO, model: AI_MODEL } });
+  return json(200, { ok: true, conteudo_id: row.id, alertas: check.alertas });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' });
@@ -439,6 +606,8 @@ Deno.serve(async (req) => {
     if (body.action === 'run_validation') return await runValidation(req, admin, caller, body.modelo_id);
     if (body.action === 'issue_files') return await issueFiles(req, admin, caller, body.emissao_id);
     if (body.action === 'ai_generate') return await aiGenerate(req, admin, caller, body.secao_id, body.context_type, body.modo);
+    if (body.action === 'ai_secao') return await aiSecao(req, admin, caller, body.secao_id, body.modo, body.mensagem);
+    if (body.action === 'laudo_contexto') return await laudoContexto(req, admin, caller, body.laudo_versao_id);
     return await runProjection(req, admin, caller, body.acceptance_id);
   } catch (e) {
     const g = guardResponse(e, corsHeaders);
