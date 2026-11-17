@@ -38,8 +38,6 @@ SELECT pg_temp.ok((SELECT string_agg(codigo, ',' ORDER BY ordem) FROM public.lau
   'capítulos 1 a 13 na ordem institucional');
 
 -- Novo laudo de nova locação nasce no modelo DIF com o texto da finalidade
-SELECT pg_temp.ok((SELECT texto_base FROM public.laudo_template_sections s JOIN public.laudo_template_versions v ON v.id = s.template_version_id
-  WHERE v.codigo = 'TEMPLATE_DIF_AVALIACAO_V1' AND s.codigo = 'FINALIDADE') IS NULL OR true, 'noop');
 SELECT pg_temp.ok((SELECT variantes->>'NOVA_LOCACAO' LIKE '%art. 51 da Lei nº 14.133/2021%' FROM public.laudo_template_sections s JOIN public.laudo_template_versions v ON v.id = s.template_version_id
   WHERE v.codigo = 'TEMPLATE_DIF_AVALIACAO_V1' AND s.codigo = 'FINALIDADE'), 'texto-base por finalidade (nova locação)');
 
