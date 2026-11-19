@@ -38,6 +38,8 @@ import { ObraAuditLogs } from '@/components/ObraAuditLogs';
 import { ExportMedicaoDialog } from '@/components/ExportMedicaoDialog';
 import { useObraActionLogs } from '@/hooks/useObraActionLogs';
 import { useMedicoesFinanceiro } from '@/hooks/useMedicoesFinanceiro';
+import { somarTotaisLiquidos } from '@/lib/medicaoCalculo';
+import { montarItemPersistido, itemPersistidoVazio, medicaoTemLancamentos, lancamentoEhEstorno } from '@/lib/medicaoPersistencia';
 import { truncar2, arredondar2, unitarioLiquido, totalItem, derivarUnitarioBruto } from '@/lib/precisao';
 
 import { readExcelFile, readCsvAsExcel, writeExcelFile } from '@/lib/excelUtils';
@@ -3103,9 +3105,8 @@ export function Medicao() {
     if (!medicao || !obra) return;
 
     // Verificar se há dados preenchidos
-    const temDados = Object.values(medicao.dados).some(dados => 
-      dados.qnt > 0 || dados.percentual > 0 || dados.total > 0
-    );
+    // Lançamentos negativos (estornos) também contam como dados da medição.
+    const temDados = medicaoTemLancamentos(medicao.dados);
 
     if (!temDados) {
       toast.error('Não há dados para salvar.');
@@ -3164,27 +3165,12 @@ export function Medicao() {
           const item = items.find(i => i.id === itemId);
           if (!item || !item.item || !item.item.trim()) return null;
 
-          const qtd = Number(dados.qnt) || 0;
+          // Regra única: estornos (qtd/total negativos) são gravados com sinal,
+          // inclusive em item suprimido por aditivo (contrato ajustado = 0).
           const totalContrato = calcularTotalContratoComAditivos(item, medicaoId);
-
-          let total = 0;
-          let pct = 0;
-
-          if (totalContrato > 0) {
-            if (dados.total !== undefined && dados.total !== null && !isNaN(Number(dados.total as number))) {
-              total = Number(dados.total);
-              pct = (total / totalContrato) * 100;
-            } else if (qtd > 0) {
-              total = (qtd / (item.quantidade || 1)) * totalContrato;
-              pct = (total / totalContrato) * 100;
-            }
-          }
-
           return {
             item_code: item.item.trim(),
-            qtd,
-            pct,
-            total,
+            ...montarItemPersistido(dados, totalContrato, item.quantidade || 0),
           };
         })
         .filter(Boolean) as { item_code: string; qtd: number; pct: number; total: number }[];
@@ -3241,9 +3227,8 @@ export function Medicao() {
     if (!medicao || !obra) return;
 
     // Verificar se há dados preenchidos
-    const temDados = Object.values(medicao.dados).some(dados => 
-      dados.qnt > 0 || dados.percentual > 0 || dados.total > 0
-    );
+    // Lançamentos negativos (estornos) também contam como dados da medição.
+    const temDados = medicaoTemLancamentos(medicao.dados);
 
     if (!temDados) {
       toast.error('Não é possível bloquear uma medição sem dados preenchidos.');
@@ -3312,9 +3297,8 @@ export function Medicao() {
     if (!medicao || !obra) return;
 
     // Verificar se há dados preenchidos
-    const temDados = Object.values(medicao.dados).some(dados => 
-      dados.qnt > 0 || dados.percentual > 0 || dados.total > 0
-    );
+    // Lançamentos negativos (estornos) também contam como dados da medição.
+    const temDados = medicaoTemLancamentos(medicao.dados);
 
     if (!temDados) {
       toast.error('Não é possível bloquear uma medição sem dados preenchidos.');
@@ -3369,19 +3353,13 @@ export function Medicao() {
           const item = items.find(i => i.id === itemId);
           if (!item || !item.item || !item.item.trim()) return null;
 
-          const qtd = Number(dados.qnt) || 0;
-          if (qtd <= 0) return null;
           const totalContrato = calcularTotalContratoComAditivos(item, medicaoId);
-          const total = dados.total && !isNaN(dados.total)
-            ? Number(dados.total)
-            : (totalContrato > 0 ? (qtd / (item.quantidade || 1)) * totalContrato : 0);
-          const pct = totalContrato > 0 ? (total / totalContrato) * 100 : 0;
-
+          const persistido = montarItemPersistido(dados, totalContrato, item.quantidade || 0);
+          // Ignora apenas registros sem efeito; estornos negativos são mantidos.
+          if (itemPersistidoVazio(persistido)) return null;
           return {
             item_code: item.item.trim(),
-            qtd,
-            pct,
-            total,
+            ...persistido,
           };
         })
         .filter(Boolean) as { item_code: string; qtd: number; pct: number; total: number }[];
@@ -3769,6 +3747,9 @@ export function Medicao() {
         const qntAcumAnterior = qntAcumAnteriorMap.get(item.id) || 0;
         const disponivel = quantidadeTotal - qntAcumAnterior;
 
+        // Sem saldo (item suprimido/pago a maior): não sobrescrever o estorno já lançado.
+        if (disponivel <= 1e-9 && lancamentoEhEstorno(novoDados[item.id])) return;
+
         const qtdLimitada = Math.min(qtdExecutada, Math.max(0, disponivel));
 
         const totalContratoItem = calcularTotalContratoComAditivos(item, medicaoAtual);
@@ -3927,6 +3908,8 @@ export function Medicao() {
         const disponivel = quantidadeTotal - qntAcumAnterior;
 
         if (disponivel <= 1e-9) {
+          // Preserva estorno já lançado (ex.: item suprimido pago a maior antes).
+          if (lancamentoEhEstorno(novoDados[item.id])) return;
           novoDados[item.id] = { qnt: 0, percentual: 0, total: 0 };
           return;
         }
@@ -4180,17 +4163,14 @@ export function Medicao() {
   // Calcular total de serviços executados na medição atual
   // Usa medicao.dados (estado após useEffect de AL) para incluir administração local calculada
   const medicaoAtualData = medicaoAtual ? medicoes.find(m => m.id === medicaoAtual) : null;
+  // Mesma regra de soma líquida (algébrica, inclui estornos) usada nos marcos
+  // da lista "Medições Realizadas" e no Acumulado.
   const totalServicosExecutados = medicaoAtualData
-    ? Math.round(
+    ? somarTotaisLiquidos(
         items
           .filter(item => ehItemFolha(item.item))
-          .reduce((sum, item) => {
-            const dados = medicaoAtualData.dados[item.id];
-            // Arredonda cada item individualmente para 2 casas decimais
-            // ocultando a terceira casa e evitando divergências de R$0,01
-            return sum + Math.round((dados?.total || 0) * 100) / 100;
-          }, 0)
-        * 100) / 100
+          .map(item => medicaoAtualData.dados[item.id]?.total)
+      )
     : 0;
 
   const valorAcumuladoTotal = valorAcumuladoCalculado;

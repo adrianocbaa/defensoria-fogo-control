@@ -52,6 +52,21 @@ export interface ResultadoCalculoFinanceiro {
   marcos: MarcoCalculado[];
 }
 
+/**
+ * FONTE ÚNICA do valor líquido de uma medição: soma ALGÉBRICA dos totais dos
+ * itens (positivos + negativos/estornos), arredondando item a item para 2
+ * casas e depois o total. Nunca usar abs(), Math.max(0, …) nem filtros `> 0`.
+ * Usada pelos marcos/acumulado (abaixo) e pelo card "Executado" da tela.
+ */
+export function somarTotaisLiquidos(valores: Iterable<number | null | undefined>): number {
+  let soma = 0;
+  for (const v of valores) {
+    const n = Number(v);
+    soma += Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
+  }
+  return Math.round(soma * 100) / 100;
+}
+
 /** Verifica se um item do orçamento é folha (não tem filhos) */
 export function ehItemFolha(itemCode: string, todosItems: OrcamentoItemFinanceiro[]): boolean {
   const prefix = itemCode + '.';
@@ -181,13 +196,8 @@ export function calcularFinanceiroMedicao(
   // IMPORTANTE: arredonda ITEM A ITEM (mesma regra do card "Executado", da
   // planilha exportada e do relatório) e depois arredonda o total da sessão,
   // para que o Acumulado seja exatamente a soma dos Executados de cada medição.
-  const sumTotalSessao = (sessionId: string) => {
-    let soma = 0;
-    medicaoItems.forEach(i => {
-      if (i.medicao_id === sessionId) soma += round2(Number(i.total || 0));
-    });
-    return round2(soma);
-  };
+  const sumTotalSessao = (sessionId: string) =>
+    somarTotaisLiquidos(medicaoItems.filter(i => i.medicao_id === sessionId).map(i => i.total));
 
   // Soma acumulada congelada das sessões bloqueadas até (e incluindo) idx.
   // Soma os totais JÁ arredondados de cada sessão — nunca valores brutos.

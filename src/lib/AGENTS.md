@@ -1,0 +1,1 @@
+- Medição totals come only from `somarTotaisLiquidos` (`src/lib/medicaoCalculo.ts`, algebraic per-item round2 sum) and every save path builds rows with `montarItemPersistido` (`src/lib/medicaoPersistencia.ts`); covered by `tests/medicao-soma-liquida.test.mjs`. Why: one save path dropped negative estornos while cards summed screen state, so list/Acumulado diverged from Executado.
