@@ -4795,7 +4795,6 @@ export function Medicao() {
                                   }}
                                   className="w-full h-6 text-xs font-mono text-right border-0 bg-transparent p-1"
                                   step="0.01"
-                                  min="0"
                                   disabled={medicaoAtualObj.bloqueada || !canEdit}
                                 />
                               ) : (
